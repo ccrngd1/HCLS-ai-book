@@ -192,7 +192,7 @@ flowchart TB
 | **A2I Workforce** | Private workforce configured in Amazon A2I and authenticated via Amazon Cognito. Reviewers must complete HIPAA training before access is granted. Public (Mechanical Turk) and vendor workforces are not permitted for PHI. |
 | **A2I Worker Task Template** | Custom HTML template defining the reviewer interface. The template must include the document image (with S3 pre-signed URL), the OCR extraction with confidence score, and input fields for corrections. Example template structure is included in the Code section below. |
 | **Encryption** | S3: SSE-KMS on all buckets; DynamoDB: encryption at rest (default); all API calls over TLS; A2I task outputs encrypted at rest in the review-output bucket |
-| **VPC** | Production: Lambda functions in a VPC with VPC endpoints for S3, Textract, Comprehend Medical, DynamoDB, and CloudWatch Logs. Step Functions VPC endpoint optional but recommended. |
+| **VPC** | Production: Lambda functions in a VPC with VPC endpoints for S3 (gateway, free), Textract, Comprehend Medical, DynamoDB, KMS, SageMaker API (`com.amazonaws.{region}.sagemaker.api` for A2I StartHumanLoop calls containing PHI), Step Functions, and CloudWatch Logs. Note: `com.amazonaws.{region}.sagemaker.api` is distinct from `com.amazonaws.{region}.sagemaker.runtime`; you need the API endpoint for A2I. |
 | **CloudTrail** | Enabled for all API calls. A2I task assignments and completions must be logged. DynamoDB writes to completed-extractions table require an audit trail for PHI access. |
 | **Sample Data** | Synthetic handwritten notes for development and testing. The IAB (International Association of Better Business Bureaus) handwriting datasets and similar publicly available handwriting corpora can provide realistic samples. For accuracy benchmarking, prepare 50-100 synthetic notes with known ground-truth transcriptions. Never use real patient notes in development. |
 | **Cost Estimate** | Textract FORMS: $0.05/page. Comprehend Medical: $0.01 per 100 characters (typical 1-page note is ~1,000 characters = ~$0.10). A2I: no per-task fee from AWS, but reviewer time is the cost; at ~$25/hr and 3 minutes per review, each human-reviewed page runs ~$1.25. If 30% of pages need human review, blended cost is ~$0.15–$0.50/page depending on handwriting quality. |
@@ -490,7 +490,7 @@ FUNCTION route_entities(document_key, tiered_entities, task_token):
     <p><strong>Category:</strong> {{ entity.category }}</p>
     <p>
       <strong>OCR extracted:</strong>
-      <code>{{ entity.text }}</code>
+      <code>{{ entity.text | escape }}</code>
       &nbsp;&nbsp;
       <span style="color: #888; font-size: 0.9em;">
         (OCR confidence: {{ entity.ocr_confidence }}%,
@@ -502,7 +502,7 @@ FUNCTION route_entities(document_key, tiered_entities, task_token):
     <crowd-input
       name="corrected_text_{{ entity.id }}"
       label="Correct text (edit if OCR is wrong)"
-      value="{{ entity.text }}"
+      value="{{ entity.text | escape }}"
       required>
     </crowd-input>
 
@@ -714,6 +714,22 @@ FUNCTION assemble_final_record(document_key, step_functions_execution_id):
 | Correction rate after 6 months (with fine-tuning) | 10-20% (model improves on your population) |
 
 **Where it struggles:** Very poor image quality where preprocessing cannot recover legibility. Highly personalized shorthand that no general-purpose model was trained on. Documents with mixed languages or scripts. Multi-page notes where context from page one would help interpret an abbreviation on page three (Comprehend Medical processes each page independently). Medications recently approved or renamed that aren't in Comprehend Medical's training data.
+
+---
+
+## Why This Isn't Production-Ready
+
+**HumanLoopName collision on reprocessing.** A2I requires unique `HumanLoopName` values. If you generate the name from a hash of the document key alone, reprocessing the same document (failed pipeline, retry, duplicate delivery) throws a `ConflictException` and the execution dies silently. Include the Step Functions execution ID in the hash source so retries generate distinct names.
+
+**XSS in the A2I worker task template.** Raw OCR output injected into HTML attributes without escaping is an XSS vector. A document containing `"><script>...</script>` in a handwritten field would execute in reviewer browsers. Always use `| escape` on any template variable that comes from document content.
+
+**SageMaker A2I VPC endpoint missing.** `StartHumanLoop` calls embed entity text (PHI) in the request payload. Without the `com.amazonaws.{region}.sagemaker.api` VPC endpoint, those calls route through NAT to the public internet. This endpoint is distinct from `sagemaker.runtime`. Add it explicitly.
+
+**No DLQ on the resume Lambda.** If `SendTaskSuccess` fails (DynamoDB write error, transient fault), the Step Functions execution hangs until the heartbeat timeout fires (up to 8 hours by default). Configure a DLQ on the resume Lambda and reduce the heartbeat timeout to 2 hours so stuck executions surface quickly.
+
+**Confidence thresholds need calibration.** The thresholds in this recipe (85% for handwriting, 92% for print) are reasonable starting points, not empirically tuned values. Your actual documents will have different characteristics. Measure your false acceptance rate and false rejection rate in staging before going live. A threshold that sends 60% of documents to human review is defeating the purpose.
+
+**Pre-signed URL expiry.** A2I reviewer task URLs expire after the configured window. For review queues that back up overnight, a 4-hour expiry means reviewers open stale links. Either extend the expiry to 48 hours or use a Lambda proxy that validates the reviewer's Cognito session and regenerates the URL on demand.
 
 ---
 

@@ -48,6 +48,7 @@ Everything that is really configuration rather than logic lives here. The confid
 
 ```python
 import boto3
+from boto3.dynamodb.conditions import Key  # for DynamoDB query expressions
 import datetime
 import io
 import json
@@ -696,7 +697,7 @@ The template is included in the main Recipe 1.6 walkthrough. The Python side of 
     <p><strong>Category:</strong> {{ entity.category }}</p>
     <p>
       <strong>OCR extracted:</strong>
-      <code>{{ entity.text }}</code>
+      <code>{{ entity.text | escape }}</code>
       &nbsp;&nbsp;
       <span style="color: #888; font-size: 0.9em;">
         (OCR confidence: {{ entity.ocr_confidence }}%,
@@ -706,7 +707,7 @@ The template is included in the main Recipe 1.6 walkthrough. The Python side of 
     <crowd-input
       name="corrected_text_{{ entity.id }}"
       label="Correct text (edit if OCR is wrong)"
-      value="{{ entity.text }}"
+      value="{{ entity.text | escape }}"
       required>
     </crowd-input>
   </div>
@@ -889,7 +890,7 @@ def assemble_final_record(document_key: str, execution_id: str) -> dict:
     # In production, add a GSI on pk to avoid a full table scan.
     # This Query uses the partition key directly, which is efficient.
     response    = entities_table.query(
-        KeyConditionExpression=boto3.dynamodb.conditions.Key("pk").eq(document_key)
+        KeyConditionExpression=Key("pk").eq(document_key)
     )
     all_records = response["Items"]
 
@@ -917,7 +918,7 @@ def assemble_final_record(document_key: str, execution_id: str) -> dict:
             "entity_type":   record.get("entity_type", ""),
             "traits":        record.get("traits", []),
             "review_status": record.get("review_status", ""),
-            "confidence":    float(record.get("confidence", Decimal("0"))),
+            "confidence":    record.get("confidence", Decimal("0")),  # keep as Decimal for DynamoDB
         })
 
         # Tally by review path.
