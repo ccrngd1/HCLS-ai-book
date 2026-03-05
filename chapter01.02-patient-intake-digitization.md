@@ -423,7 +423,7 @@ FUNCTION assemble_and_store(document_key, page_count, clean_fields, clean_checkb
     RETURN record
 ```
 
-> **Want the working code?** The pseudocode above is designed to be readable by anyone. If you're ready to see it implemented, the [Python Example](chapter01.02-python-example) provides a complete, heavily commented Python implementation of all six steps using boto3, along with the full async coordination pattern and notes on the gap between this example and a production deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.02-python-example). It walks through each step with inline comments, including the async coordination pattern, and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 

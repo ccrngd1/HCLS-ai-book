@@ -50,7 +50,9 @@ Every recipe follows a two-part structure. The first half is vendor-agnostic. Th
 
 After the walkthrough, include a callout linking to the Python companion:
 
-> **Want the working code?** The pseudocode above is designed to be readable by anyone. If you're ready to see it implemented, the [Python Example](chapter{NN}.{RR}-python-example) provides a complete, heavily commented Python implementation of all steps, along with notes on the gap between this example and a production deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter{NN}.{RR}-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+The tone here is important: the Python file is a set of illustrative samples, not a complete or production-ready implementation. Frame it as "want to see how this might look in code?" not "here's the working implementation."
 
 **Expected Results.** Sample JSON output showing what the pipeline produces. Performance benchmarks table (latency, accuracy, confidence, cost, throughput). Where it struggles (honest list of failure modes).
 
