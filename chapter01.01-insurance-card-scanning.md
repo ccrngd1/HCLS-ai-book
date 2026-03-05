@@ -143,112 +143,109 @@ flowchart LR
 
 ### Code
 
-> **Full source:** `github.com/aws-samples/healthcare-ai-cookbook/ch01/recipe-1.1/`
+> **Reference implementations:** The following AWS sample repos demonstrate the patterns used in this recipe:
+>
+> - [`amazon-textract-code-samples`](https://github.com/aws-samples/amazon-textract-code-samples) — General Textract code samples including FORMS extraction for key-value pair documents
+> - [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example) — Healthcare-specific: extracting and validating medical claims data with Textract and Comprehend Medical
+> - [`guidance-for-low-code-intelligent-document-processing-on-aws`](https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws) — Full IDP pipeline guidance covering ingestion, extraction, enrichment, and storage
 
 #### Walkthrough
 
 **Step 1 — Textract call.** The Lambda handler receives the S3 event and calls Textract synchronously. We use `AnalyzeDocument` (not `DetectDocumentText`) because we need key-value pair extraction, not just raw text. Insurance cards are single-page, so the synchronous API is fine here. Multi-page documents would need the async `StartDocumentAnalysis` flow.
 
-```python
-import boto3
-
-textract = boto3.client('textract')
-
-def extract_card(bucket: str, key: str) -> dict:
-    response = textract.analyze_document(
-        Document={'S3Object': {'Bucket': bucket, 'Name': key}},
-        FeatureTypes=['FORMS']
-    )
-    return response
+```
+FUNCTION extract_card(bucket, key):
+    response = call Textract.AnalyzeDocument with:
+        document  = S3 object at bucket/key
+        features  = ["FORMS"]
+    RETURN response
 ```
 
 **Step 2 — Parse key-value pairs.** Textract returns a flat list of Block objects connected by relationships. KEY blocks point to their VALUE blocks via a `CHILD` relationship. We walk that graph to assemble the pairs. (Yes, it's a little awkward. You get used to it.)
 
-```python
-def parse_key_value_pairs(textract_response: dict) -> dict[str, dict]:
-    blocks = textract_response['Blocks']
-    block_map = {b['Id']: b for b in blocks}
-    key_values = {}
+```
+FUNCTION parse_key_value_pairs(textract_response):
+    blocks    = textract_response.Blocks
+    block_map = build map of block.Id -> block for all blocks
+    key_values = empty map
 
-    for block in blocks:
-        if block['BlockType'] == 'KEY_VALUE_SET' and 'KEY' in block.get('EntityTypes', []):
-            key_text = get_text_from_children(block, block_map)
-            value_block = get_value_block(block, block_map)
-            value_text = get_text_from_children(value_block, block_map)
-            confidence = min(
-                block.get('Confidence', 0),
-                value_block.get('Confidence', 0)
-            )
-            key_values[key_text] = {
-                'value': value_text,
-                'confidence': confidence
-            }
-    return key_values
+    FOR each block in blocks:
+        IF block.BlockType == "KEY_VALUE_SET" AND block is a KEY entity:
+            key_text    = get concatenated text from block's CHILD blocks in block_map
+            value_block = follow block's VALUE relationship to find the linked value block
+            value_text  = get concatenated text from value_block's CHILD blocks in block_map
+            confidence  = minimum of (block.Confidence, value_block.Confidence)
+
+            key_values[key_text] = { value: value_text, confidence: confidence }
+
+    RETURN key_values
 ```
 
 **Step 3 — Normalize field names.** This is the unglamorous but necessary part. We map all the variants we've seen in the wild to a canonical field name. Your field map will grow over time as you encounter new payer layouts. That's expected. Maintain it as a config file, not hardcoded.
 
-```python
-FIELD_MAP = {
-    'member_id': ['member id', 'mem id', 'member #', 'subscriber id', 'id number', 'member number'],
-    'group_number': ['group #', 'group number', 'group', 'grp #', 'grp'],
-    'payer_name': ['insurance company', 'plan name', 'payer', 'carrier'],
-    'plan_type': ['plan type', 'plan', 'product'],
-    'copay_pcp': ['pcp copay', 'office visit', 'copay', 'pcp'],
-    'copay_specialist': ['specialist copay', 'specialist'],
-    'copay_er': ['er copay', 'emergency room', 'er'],
-    'rx_bin': ['rx bin', 'bin'],
-    'rx_pcn': ['rx pcn', 'pcn'],
-    'rx_group': ['rx group', 'rx grp'],
+```json
+{
+  "member_id":        ["member id", "mem id", "member #", "subscriber id", "id number", "member number"],
+  "group_number":     ["group #", "group number", "group", "grp #", "grp"],
+  "payer_name":       ["insurance company", "plan name", "payer", "carrier"],
+  "plan_type":        ["plan type", "plan", "product"],
+  "copay_pcp":        ["pcp copay", "office visit", "copay", "pcp"],
+  "copay_specialist": ["specialist copay", "specialist"],
+  "copay_er":         ["er copay", "emergency room", "er"],
+  "rx_bin":           ["rx bin", "bin"],
+  "rx_pcn":           ["rx pcn", "pcn"],
+  "rx_group":         ["rx group", "rx grp"]
 }
+```
 
-def normalize_fields(raw_kv: dict[str, dict]) -> dict:
-    normalized = {}
-    for canonical, variants in FIELD_MAP.items():
-        for raw_key, raw_val in raw_kv.items():
-            if raw_key.strip().lower() in variants:
-                normalized[canonical] = {
-                    'value': raw_val['value'].strip(),
-                    'confidence': raw_val['confidence']
+```
+FUNCTION normalize_fields(raw_kv):
+    normalized = empty map
+
+    FOR each canonical_name, variants in FIELD_MAP:
+        FOR each raw_key, raw_val in raw_kv:
+            IF lowercase(trim(raw_key)) is in variants:
+                normalized[canonical_name] = {
+                    value:      trim(raw_val.value),
+                    confidence: raw_val.confidence
                 }
-                break
-    return normalized
+                BREAK   // found a match; move to next canonical field
+
+    RETURN normalized
 ```
 
 **Step 4 — Confidence gating.** Any field below 90% confidence gets flagged for manual review rather than silently passing through. In production this feeds a review queue. We'll build the full human-in-the-loop pipeline in Recipe 1.6. For now, the important thing is that you never let low-confidence extractions silently become facts in your database.
 
-```python
+```
 CONFIDENCE_THRESHOLD = 90.0
 
-def flag_low_confidence(fields: dict) -> tuple[dict, list]:
-    clean = {}
-    flagged = []
-    for field, data in fields.items():
-        if data['confidence'] >= CONFIDENCE_THRESHOLD:
-            clean[field] = data['value']
-        else:
-            flagged.append({
-                'field': field,
-                'extracted_value': data['value'],
-                'confidence': data['confidence']
-            })
-    return clean, flagged
+FUNCTION flag_low_confidence(fields):
+    clean   = empty map
+    flagged = empty list
+
+    FOR each field, data in fields:
+        IF data.confidence >= CONFIDENCE_THRESHOLD:
+            clean[field] = data.value
+        ELSE:
+            append to flagged: {
+                field:           field,
+                extracted_value: data.value,
+                confidence:      data.confidence
+            }
+
+    RETURN clean, flagged
 ```
 
 **Step 5 — Store results.**
 
-```python
-dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('card-extractions')
-
-def store_result(image_key: str, fields: dict, flagged: list):
-    table.put_item(Item={
-        'image_key': image_key,
-        'extraction_timestamp': datetime.utcnow().isoformat(),
-        'fields': fields,
-        'flagged_fields': flagged,
-        'needs_review': len(flagged) > 0
-    })
+```
+FUNCTION store_result(image_key, fields, flagged):
+    write record to database table "card-extractions":
+        image_key            = image_key
+        extraction_timestamp = current UTC timestamp (ISO 8601)
+        fields               = fields
+        flagged_fields       = flagged
+        needs_review         = (length of flagged > 0)
 ```
 
 ### Expected Results
