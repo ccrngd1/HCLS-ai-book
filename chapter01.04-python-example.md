@@ -402,6 +402,8 @@ def parse_tables_from_blocks(page_blocks: list, block_map: dict) -> list:
 
 Steps 1 and 2 follow the Recipe 1.2 pattern with one meaningful addition: include `LAYOUT` in the `FeatureTypes` list. LAYOUT blocks capture the structural organization of each page (headers, body paragraphs, key-value regions, figure captions) and those structural signals feed directly into the page classifier in Step 4.
 
+> **Note on botocore version:** The `LAYOUT` FeatureType requires botocore 1.31.0 or later. If you're running an older version (check with `python3 -c "import botocore; print(botocore.__version__)"`), you'll get a `ParamValidationError`. Upgrade with `pip install --upgrade boto3 botocore`.
+
 In a production deployment, `pa-start` submits the job and exits. `pa-retrieve` fires on the SNS completion notification, retrieves all result pages, writes the raw blocks to S3 (to stay under Step Functions payload limits), and starts the state machine. The script version here does all of this in sequence with a polling loop instead.
 
 ```python
@@ -1409,12 +1411,24 @@ def assemble_prior_auth_record(
                     record["clinical_evidence"]["imaging_sections"][section_name] = section_text
 
             # Also merge any clinical entities found in the imaging report.
+            # Imaging reports can mention medications (contrast agents, current meds)
+            # and procedures (prior surgeries noted in history sections).
             ce = data.get("clinical_entities", {})
             for entity in ce.get("MEDICAL_CONDITION", []):
                 normalized = entity["text"].lower().strip()
                 if normalized not in seen_conditions:
                     seen_conditions.add(normalized)
                     record["clinical_evidence"]["conditions"].append(entity)
+            for entity in ce.get("MEDICATION", []):
+                normalized = entity["text"].lower().strip()
+                if normalized not in seen_medications:
+                    seen_medications.add(normalized)
+                    record["clinical_evidence"]["medications"].append(entity)
+            for entity in ce.get("TEST_TREATMENT_PROCEDURE", []):
+                normalized = entity["text"].lower().strip()
+                if normalized not in seen_procedures:
+                    seen_procedures.add(normalized)
+                    record["clinical_evidence"]["procedures"].append(entity)
 
         # --- Lab results ---
         elif page_type == "lab_results":
