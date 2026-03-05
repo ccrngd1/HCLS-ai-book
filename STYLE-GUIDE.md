@@ -49,6 +49,7 @@ Where it breaks. What surprised you. What you'd do differently. Self-deprecating
 - ❌ Unexplained jargon (define terms inline, not condescendingly)
 - ❌ Documentation-voice ("This recipe demonstrates how to leverage...")
 - ❌ Hype without substance
+- ❌ Em dashes (—) anywhere. Use periods, commas, colons, semicolons, parentheses, or restructure the sentence.
 - ❌ "AWS architects, we need to talk about X" — too LinkedIn-influencer
 - ❌ Long, complex sentences with multiple subordinate clauses
 - ✅ Personal experience hooks → context → structured breakdown → honest lessons
