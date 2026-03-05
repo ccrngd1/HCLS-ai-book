@@ -101,7 +101,7 @@ SIG_CODES = {
     "oint":   "ointment",
     "crm":    "cream",
     "pch":    "patch",
-    "inh":    "inhaler",
+    "inhlr":  "inhaler",
     "neb":    "nebulizer",
 }
 
@@ -138,7 +138,7 @@ CONFIDENCE_THRESHOLD = 90.0
 RX_FIELD_MAP = {
     "drug_name": [
         "drug name", "medication", "medication name", "drug",
-        "rx", "product", "item", "drug/product"
+        "product", "item", "drug/product"
     ],
     "dosage": [
         "strength", "dosage", "dose", "potency", "drug strength"
