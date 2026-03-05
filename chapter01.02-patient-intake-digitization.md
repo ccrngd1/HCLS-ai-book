@@ -527,6 +527,7 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 
 ## Additional Resources
 
+**AWS Documentation:**
 - [Amazon Textract Async Operations](https://docs.aws.amazon.com/textract/latest/dg/async.html)
 - [Amazon Textract AnalyzeDocument vs StartDocumentAnalysis](https://docs.aws.amazon.com/textract/latest/dg/sync-versus-async.html)
 - [Amazon Textract Tables Feature](https://docs.aws.amazon.com/textract/latest/dg/how-it-works-tables.html)
@@ -535,6 +536,18 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [FHIR R4 Patient Resource](https://www.hl7.org/fhir/patient.html)
 - [Amazon HealthLake](https://aws.amazon.com/healthlake/)
+
+**AWS Sample Repos:**
+- [`amazon-textract-and-comprehend-medical-document-processing`](https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing): Workshop for building a medical document processing pipeline with Textract and Comprehend Medical, including PDF extraction and clinical entity recognition
+- [`aws-ai-intelligent-document-processing`](https://github.com/aws-samples/aws-ai-intelligent-document-processing): Comprehensive IDP solutions including document classification, multi-page extraction, and A2I human review integration
+- [`amazon-textract-textractor`](https://github.com/aws-samples/amazon-textract-textractor): Python SDK wrapper for Textract that simplifies table extraction, form parsing, and response visualization (installable via pip)
+- [`amazon-textract-idp-cdk-constructs`](https://github.com/aws-samples/amazon-textract-idp-cdk-constructs): CDK constructs for building Textract IDP pipelines, including async processing and Step Functions orchestration
+
+**AWS Solutions and Blogs:**
+- [Guidance for Intelligent Document Processing on AWS](https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws): Reference architecture for classifying, extracting, and enriching documents at scale
+- [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
+- [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing using foundation models
+- [Processing PDF Documents with a Human Loop Using Amazon Textract and Amazon A2I](https://aws.amazon.com/blogs/machine-learning/processing-pdf-documents-with-a-human-loop-using-amazon-textract-and-amazon-augmented-ai): Multi-page PDF processing with human review for low-confidence extractions
 
 ---
 
