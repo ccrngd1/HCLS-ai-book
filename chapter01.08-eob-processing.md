@@ -1,6 +1,6 @@
 # Recipe 1.8: Explanation of Benefits Processing 🔶
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.01–0.03 per EOB
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13–0.20 per EOB page
 
 ---
 
@@ -703,6 +703,14 @@ FUNCTION assemble_and_route(document_key, payer_id, header_fields, line_items, v
 ## Why This Isn't Production-Ready
 
 There are a few gaps in the pseudocode above that will cause real problems in a production deployment. These are the ones that have bitten people.
+
+**Financial validation tolerances.** The $1.00 tolerance in the pseudocode is too loose for production. At scale, a $1.00 discrepancy on member responsibility is a real billing error, not a rounding artifact. Tighten to $0.01 for exact-match validation and use a separate pennies-level tolerance ($0.05) only for known rounding scenarios. Also: the `member_responsibility = allowed - plan_paid` identity breaks when non-covered amounts exist. Add a `non_covered` column to the profile and adjust the formula.
+
+**Payer detection confidence.** First-match-wins keyword matching with no confidence score creates silent misclassification. Medicare Advantage plans from UHC contain both "Medicare" and "UHC" keywords. Regional BCBS plans may not match "Anthem" at all. Add a scoring system that counts keyword matches and returns the highest-scoring payer with a confidence value. Route low-confidence detections to manual review.
+
+**Merged cells in Textract tables.** Textract occasionally merges adjacent cells, especially for header rows that span columns. This shifts the column alignment for all subsequent data in that table. Check for cells with `ColumnSpan > 1` and handle them before mapping columns to the layout profile.
+
+**KMS VPC endpoint.** Missing from the VPC endpoint list. Every SSE-KMS encrypted S3 read and DynamoDB operation calls KMS. Without the endpoint in a private subnet, you get cryptic AccessDeniedException failures.
 
 **The Textract service role gotcha.** The `eob-start` Lambda needs to pass a role to Textract so Textract can publish to your SNS topic when the job completes. This role is not the Lambda execution role: Textract can't assume that role, and it wouldn't be appropriate if it could. You need a separate IAM role with a trust policy allowing `textract.amazonaws.com` and an `sns:Publish` permission on your specific topic ARN. If you miss the `iam:PassRole` permission on the Lambda execution role, job submissions succeed but completion notifications never arrive. The job just disappears. This is a common first-time setup failure; see the Textract async documentation for the exact IAM configuration.
 
