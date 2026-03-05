@@ -27,6 +27,7 @@
 * [1.7 — Prescription Label OCR](chapter01.07-prescription-label-ocr)
   * [Python Example](chapter01.07-python-example)
 * [1.8 — EOB Processing](chapter01.08-eob-processing)
+  * [Python Example](chapter01.08-python-example)
 * [1.9 — Medical Records Extraction](chapter01.09-medical-records-request-extraction)
 * [1.10 — Historical Chart Migration](chapter01.10-historical-chart-migration)
 
