@@ -114,6 +114,7 @@ RESULTS_TABLE_NAME = "intake-extractions"  # stores completed extraction records
 ```python
 import boto3
 import datetime
+from datetime import timezone
 
 # boto3 clients. These are module-level so they're reused across invocations
 # inside a warm Lambda container rather than re-created on every call.
@@ -192,7 +193,7 @@ def submit_extraction_job(
             "job_id": job_id,
             "bucket": bucket,
             "key": key,                                                      # path to the original PDF
-            "submitted_at": datetime.datetime.utcnow().isoformat() + "Z",   # audit timestamp
+            "submitted_at": datetime.datetime.now(timezone.utc).isoformat(),   # audit timestamp
             "status": "PENDING",
         }
     )
@@ -258,8 +259,8 @@ def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
         raise TimeoutError(f"Textract job {job_id} did not complete in time. Last status: {job_status}")
 
     # Job succeeded. Now collect ALL result pages.
-    # We already have the first page from the polling loop above.
-    # Loop through any additional pages using the NextToken pagination cursor.
+    # The polling loop above only checked status; it did not save blocks.
+    # We fetch all results fresh here using the pagination cursor.
     all_blocks = []
     next_token = None   # None means "start from the beginning"
 
@@ -681,7 +682,7 @@ def assemble_and_store(
     record = {
         # Primary key and audit fields.
         "document_key": document_key,                                   # links back to S3 source
-        "extracted_at": datetime.datetime.utcnow().isoformat() + "Z",  # audit timestamp
+        "extracted_at": datetime.datetime.now(timezone.utc).isoformat(),  # audit timestamp
         "page_count": page_count,                                       # pages Textract saw
 
         # needs_review is the single most important flag for downstream routing.
@@ -941,7 +942,7 @@ This example works: run it against a real intake form PDF and it will produce a 
 
 **Table ordering assumptions.** The pipeline stores `tables[0]` as medications and `tables[1]` as allergies. That's a convention based on common intake form layouts, not a guarantee. A more robust implementation uses the column headers from the first row of each table to identify what kind of data it contains. A medication table's headers include words like "Medication", "Dosage", and "Frequency". An allergy table's headers include "Allergen" and "Reaction". Match on headers, not on position.
 
-**DynamoDB data types.** Confidence scores in flagged fields use `Decimal` rather than `float` because DynamoDB's Python SDK requires it. This is fixed in the example code already, but it's worth calling out explicitly: if you add any new numeric field to the DynamoDB record, wrap it in `Decimal(str(value))` before writing. A plain Python float will raise a `TypeError` from boto3 at runtime.
+**DynamoDB data types.** This example already wraps confidence scores in `Decimal` (see Step 5), but be aware: if you add any new numeric field to the DynamoDB record, wrap it in `Decimal(str(value))` before writing. A plain Python float will raise a `TypeError` from boto3 at runtime.
 
 **Handwriting.** This pipeline handles handwritten fields at best effort and confidence-gates them conservatively. If your patient population frequently fills intake forms in cursive, expect a higher flagged field rate than the benchmarks in the main recipe suggest. That's not a failure: it's the confidence gating routing uncertain extractions to human review instead of writing wrong data silently. Build the review queue from Recipe 1.6 before this goes to production.
 

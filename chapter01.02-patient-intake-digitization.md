@@ -263,6 +263,9 @@ FUNCTION parse_forms(all_blocks, block_map):
         IF selection_child exists:
             // This is a checkbox field. Record its checked/unchecked state.
             // SelectionStatus will be "SELECTED" or "NOT_SELECTED".
+            // Note: for DynamoDB storage, you may want to keep the string value
+            // rather than converting to boolean, since booleans lose the original
+            // Textract status and make flagged-field reporting less descriptive.
             checkbox_fields[key_text] = (selection_child.SelectionStatus == "SELECTED")
 
         ELSE:
@@ -489,6 +492,26 @@ FUNCTION assemble_and_store(document_key, page_count, clean_fields, clean_checkb
 | Cost per 3-page form | ~$0.009 (Textract) + negligible Lambda/DynamoDB |
 
 **Where it struggles:** Handwritten entries in printed tables, which is exactly what patients do when listing their medications in a hurry. Borderless tables where Textract infers grid structure from spatial alignment: a slightly skewed scan can shift cell assignments by one row. Forms with very dense small-font tables are also challenging: Textract may merge adjacent cells or misalign rows. And any free-text field longer than a sentence ("please describe your symptoms") produces raw text that needs additional processing before it's structured enough to use downstream.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the pattern. Deploying this to a real intake workflow requires addressing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
+
+**Dead Letter Queue.** Both Lambdas in this pipeline receive asynchronous invocations (S3 event for the first, SNS for the second). If either fails, the event retries up to three times and then silently disappears. A lost intake form is a lost patient record. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.
+
+**Textract job failure handling.** The SNS notification from Textract includes a `Status` field. It will be `SUCCEEDED` or `FAILED`. The pseudocode calls `GetDocumentAnalysis` without checking. If the document is corrupted, exceeds Textract's limits, or hits an internal error, the job status will be `FAILED` and the API call will return an error, not results. Check the status first. On failure: log the error, move the document to a `failed-documents/` S3 prefix, update the job record in DynamoDB, and fire a CloudWatch alarm.
+
+**Full SSN in flagged fields.** The `assemble_and_store` step truncates SSN to last-four digits on the clean path. But if the SSN extraction falls below the confidence threshold, the full value lands in `flagged_fields.extracted_value` and gets written to DynamoDB verbatim. Add a redaction step for known PII fields (SSN, date of birth) before writing flagged records, regardless of which path they took.
+
+**CloudWatch Logs VPC endpoint.** The prerequisites list VPC endpoints for S3, Textract, DynamoDB, and SNS. Missing: `com.amazonaws.region.logs`. A Lambda in a private subnet with no internet gateway and no CloudWatch Logs endpoint silently drops all log output. Your audit trail vanishes. Add it.
+
+**Table-to-section mapping.** The `assemble_and_store` step assigns `tables[0]` as medications and `tables[1]` as allergies based on position. Not all intake forms have the same table order. A production implementation must classify tables by header content (look for column headers like "Medication Name" or "Allergy"), not by position. Positional assignment will silently produce wrong data on forms with a different layout.
+
+**Lambda timeout.** The default Lambda timeout is 3 seconds. The processing Lambda runs a pagination loop, two full parsing passes, normalization, and a DynamoDB write. For a complex 10-page form, this easily takes 15-30 seconds. Set the timeout to at least 60 seconds and tune based on your p99 processing time.
+
+**Idempotency.** SNS delivers at least once, not exactly once. The processing Lambda can be invoked twice for the same document. Use DynamoDB conditional writes (check whether a record with the same `document_key` exists before writing) to prevent duplicate or partially-overwritten records.
 
 ---
 

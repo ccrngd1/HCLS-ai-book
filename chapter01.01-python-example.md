@@ -358,6 +358,7 @@ def flag_low_confidence(fields: dict) -> tuple[dict, list]:
 
 ```python
 import datetime
+from datetime import timezone
 
 # Create a DynamoDB resource. boto3 will use your configured credentials.
 dynamodb = boto3.resource("dynamodb")
@@ -394,7 +395,7 @@ def store_result(image_key: str, fields: dict, flagged: list) -> dict:
         # When did we process this? ISO 8601 format in UTC.
         # This is your audit timestamp: required for HIPAA compliance and useful
         # for debugging ("why did this card get the wrong member ID?").
-        "extraction_timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "extraction_timestamp": datetime.datetime.now(timezone.utc).isoformat(),
 
         # High-confidence fields, ready for downstream use.
         "fields": fields,
@@ -504,7 +505,7 @@ This example works. Run it against a real card image and it will return a struct
 
 **The FIELD_MAP and unmatched keys.** When Textract reads a label that doesn't match any known variant, this code silently drops it. A production system logs those unrecognized keys so you can review them and add new variants to FIELD_MAP as you encounter new payer layouts. Without that feedback loop, you'll never know what you're missing.
 
-**DynamoDB data types.** DynamoDB doesn't natively store Python floats well at all precision levels. The confidence scores in `flagged_fields` should be stored as `Decimal` rather than `float` in a real implementation. The `boto3` DynamoDB resource layer requires this. You'll hit a `TypeError` on the first float you try to write if you don't handle it.
+**DynamoDB data types.** DynamoDB doesn't natively store Python floats well at all precision levels. This example already wraps confidence scores in `Decimal` (see Step 4), but be aware that any new numeric fields you add must also use `Decimal`. The `boto3` DynamoDB resource layer will raise a `TypeError` on any raw float in a `put_item` call.
 
 **Testing.** There are no tests here. A production pipeline has unit tests for `parse_key_value_pairs` (with mocked Textract responses), integration tests against a real Textract call with a known test image, and a fixture library of card images that cover the payer layouts you support. Never use real patient cards in your test fixtures.
 
