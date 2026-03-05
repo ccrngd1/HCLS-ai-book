@@ -17,6 +17,7 @@
 * [1.2 — Patient Intake Digitization](chapter01.02-patient-intake-digitization)
   * [Python Example](chapter01.02-python-example)
 * [1.3 — Lab Requisition Extraction](chapter01.03-lab-requisition-extraction)
+  * [Python Example](chapter01.03-python-example)
 * [1.4 — Prior Auth Document Processing](chapter01.04-prior-auth-document-processing)
 * [1.5 — Claims Attachment Processing](chapter01.05-claims-attachment-processing)
 * [1.6 — Handwritten Clinical Notes](chapter01.06-handwritten-clinical-note-digitization)
