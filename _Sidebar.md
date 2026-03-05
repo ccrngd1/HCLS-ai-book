@@ -29,6 +29,7 @@
 * [1.8 — EOB Processing](chapter01.08-eob-processing)
   * [Python Example](chapter01.08-python-example)
 * [1.9 — Medical Records Extraction](chapter01.09-medical-records-request-extraction)
+  * [Python Example](chapter01.09-python-example)
 * [1.10 — Historical Chart Migration](chapter01.10-historical-chart-migration)
 
 ---
