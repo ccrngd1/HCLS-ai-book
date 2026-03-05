@@ -21,6 +21,7 @@
 * [1.4 — Prior Auth Document Processing](chapter01.04-prior-auth-document-processing)
   * [Python Example](chapter01.04-python-example)
 * [1.5 — Claims Attachment Processing](chapter01.05-claims-attachment-processing)
+  * [Python Example](chapter01.05-python-example)
 * [1.6 — Handwritten Clinical Notes](chapter01.06-handwritten-clinical-note-digitization)
 * [1.7 — Prescription Label OCR](chapter01.07-prescription-label-ocr)
 * [1.8 — EOB Processing](chapter01.08-eob-processing)
