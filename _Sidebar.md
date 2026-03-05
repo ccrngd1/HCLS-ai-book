@@ -15,6 +15,7 @@
 * [1.1 — Insurance Card Scanning](chapter01.01-insurance-card-scanning)
   * [Python Example](chapter01.01-python-example)
 * [1.2 — Patient Intake Digitization](chapter01.02-patient-intake-digitization)
+  * [Python Example](chapter01.02-python-example)
 * [1.3 — Lab Requisition Extraction](chapter01.03-lab-requisition-extraction)
 * [1.4 — Prior Auth Document Processing](chapter01.04-prior-auth-document-processing)
 * [1.5 — Claims Attachment Processing](chapter01.05-claims-attachment-processing)
