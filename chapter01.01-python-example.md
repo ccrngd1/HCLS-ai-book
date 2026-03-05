@@ -303,6 +303,8 @@ def normalize_fields(raw_kv: dict) -> dict:
 *The pseudocode calls this `flag_low_confidence(fields)`. It applies a quality gate: any field below the confidence threshold is held back for human review rather than written directly to the database.*
 
 ```python
+from decimal import Decimal  # DynamoDB requires Decimal, not float
+
 def flag_low_confidence(fields: dict) -> tuple[dict, list]:
     """
     Split extracted fields into two groups: clean (high confidence) and
@@ -339,7 +341,10 @@ def flag_low_confidence(fields: dict) -> tuple[dict, list]:
             flagged.append({
                 "field": field_name,
                 "extracted_value": data["value"],       # what Textract thinks it saw
-                "confidence": round(data["confidence"], 2),  # how sure it was
+                "confidence": Decimal(str(round(data["confidence"], 2))),  # how sure it was
+                    # DynamoDB does not accept Python floats. You must wrap numeric
+                    # values in Decimal() or put_item will raise a TypeError.
+                    # str() first to avoid Decimal floating-point artifacts.
             })
 
     return clean, flagged
