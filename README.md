@@ -50,5 +50,4 @@ An O'Reilly-style cookbook covering AI/ML applications in healthcare. Each secti
 All patterns assume HIPAA compliance, PHI handling requirements, and enterprise-scale concerns. Regulatory considerations (FDA, state laws) are noted where relevant.
 
 ---
-
-*Built by CABAL for CC • 2026*
+ 
