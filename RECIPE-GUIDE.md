@@ -133,11 +133,32 @@ The Python companion serves developers specifically. It assumes basic Python fam
 
 ---
 
-## GitHub References
+## References and Resources
 
-- **Never use fake or made-up GitHub URLs.**
-- Reference real AWS sample repos that demonstrate relevant patterns.
+Every recipe must include a rich Additional Resources section with three categories:
+
+### AWS Documentation
+Links to the specific API references, feature guides, and pricing pages for services used in the recipe.
+
+### AWS Sample Repos
+Search for relevant repos from `aws-samples` and `aws-solutions-library-samples` on GitHub. Look for:
+- Service-specific code samples (e.g., `amazon-textract-code-samples`)
+- Healthcare-specific workshops and examples
+- IDP, ML, or AI pipeline repos that demonstrate the recipe's patterns
+- CDK/CloudFormation constructs for the services used
 - Frame as "these repos demonstrate the patterns used here," not "this is the source code for this recipe."
+
+### AWS Solutions and Blogs
+Check these sources for deployable solutions, reference architectures, and deep-dive blog posts:
+- **AWS Solutions Library:** https://aws.amazon.com/solutions/ (filter by AI/ML + Healthcare)
+- **AWS Reference Architecture Diagrams:** https://aws.amazon.com/architecture/reference-architecture-diagrams/ (filter by AI/ML + Healthcare)
+- **AWS ML Blog:** Search https://aws.amazon.com/blogs/machine-learning/ for the recipe's use case
+- Include blog posts that show end-to-end architectures, customer case studies, or deep dives on the services used
+
+### Rules
+- **Never use fake or made-up GitHub URLs.** Verify every link exists before including it.
+- Each resource entry gets a brief description of what it contains and why it's relevant.
+- Aim for 5-10 documentation links, 3-5 sample repos, and 2-4 solutions/blogs per recipe.
 
 ---
 
