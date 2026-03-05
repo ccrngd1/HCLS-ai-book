@@ -23,6 +23,7 @@
 * [1.5 — Claims Attachment Processing](chapter01.05-claims-attachment-processing)
   * [Python Example](chapter01.05-python-example)
 * [1.6 — Handwritten Clinical Notes](chapter01.06-handwritten-clinical-note-digitization)
+  * [Python Example](chapter01.06-python-example)
 * [1.7 — Prescription Label OCR](chapter01.07-prescription-label-ocr)
 * [1.8 — EOB Processing](chapter01.08-eob-processing)
 * [1.9 — Medical Records Extraction](chapter01.09-medical-records-request-extraction)
