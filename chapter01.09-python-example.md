@@ -417,7 +417,9 @@ def parse_and_normalize_fields(kv_blocks: list, block_map: dict) -> dict:
             # Lowercase both sides before comparing.
             # This handles capitalization differences and any stray whitespace
             # that Textract may have included in the label text.
-            if raw_key.lower().strip() in label_variants:
+            # Strip trailing colons and whitespace (Textract often returns "Patient Name:")
+            cleaned_key = raw_key.lower().strip().rstrip(":")
+            if cleaned_key in label_variants:
                 normalized[canonical_name] = {
                     "value":      raw_val["value"].strip(),
                     "confidence": raw_val["confidence"],
@@ -933,6 +935,7 @@ def _send_deficiency_notification(
             or record["requestor"]["organization"]
         ),
         "missing":      validation["missing"],
+        "review_reasons": validation["review_reasons"],  # includes low-confidence details
         "expired":      validation["expired"],
     }
 

@@ -159,7 +159,7 @@ flowchart TB
 | **VPC** | Production: all Lambda functions in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SQS, SNS, CloudWatch Logs, and KMS. |
 | **CloudTrail** | Enabled for all API calls touching PHI. Every authorization validation decision must be logged with document key, elements checked, and outcome. Deficiency determinations require an audit trail for HIPAA compliance purposes. |
 | **Sample Data** | HHS publishes a model HIPAA authorization form at https://www.hhs.gov/hipaa/for-professionals/privacy/guidance/model-notices-of-privacy-practices/index.html. Create synthetic versions. Test with: (1) complete valid authorization, (2) missing signature, (3) missing expiration, (4) expired authorization, (5) missing purpose. These five test cases cover the main validation paths. Never use real PHI in development. |
-| **Cost Estimate** | Textract FORMS: $0.05/page. SIGNATURES detection: $0.0015/page (same rate as DetectDocumentText; Signatures uses the base text detection tier). For a 2-page request form, Textract cost is approximately $0.103 per form (2 × $0.05 for FORMS + 2 × $0.0015 for SIGNATURES). DynamoDB, SQS, and SNS costs at this document scale are negligible (under $0.001 per request). At 50,000 requests per year, Textract costs run approximately $5,150 annually. A single FTE processing 200 requests per day has a loaded cost that dwarfs that number. |
+| **Cost Estimate** | Textract FORMS + SIGNATURES: $0.05/page (SIGNATURES detection is bundled into the FORMS tier, not separately billed). For a 2-page request form, Textract cost is approximately $0.10 per form. DynamoDB, SQS, and SNS costs at this document scale are negligible (under $0.001 per request). At 50,000 requests per year, Textract costs run approximately $5,000 annually. A single FTE processing 200 requests per day has a loaded cost that dwarfs that number. |
 
 ### Ingredients
 
@@ -527,12 +527,12 @@ The routing map connects request types to queue ARNs. Deficient requests go to a
 // Routing table: request type -> SQS queue ARN.
 // These ARNs are loaded from environment variables in the Lambda; not hardcoded.
 FULFILLMENT_QUEUES = {
-    "care_coordination":  env.CARE_COORDINATION_QUEUE_ARN,
-    "legal":              env.LEGAL_QUEUE_ARN,
-    "underwriting":       env.UNDERWRITING_QUEUE_ARN,
-    "utilization_review": env.UR_QUEUE_ARN,
-    "patient_access":     env.PATIENT_ACCESS_QUEUE_ARN,
-    "general":            env.GENERAL_REVIEW_QUEUE_ARN
+    "care_coordination":  env.CARE_COORDINATION_QUEUE_URL,
+    "legal":              env.LEGAL_QUEUE_URL,
+    "underwriting":       env.UNDERWRITING_QUEUE_URL,
+    "utilization_review": env.UR_QUEUE_URL,
+    "patient_access":     env.PATIENT_ACCESS_QUEUE_URL,
+    "general":            env.GENERAL_REVIEW_QUEUE_URL
 }
 
 FUNCTION assemble_and_route(document_key, normalized_fields, signatures, validation, request_type):
@@ -746,6 +746,12 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures, validat
 ## Why This Isn't Production-Ready
 
 The pseudocode above demonstrates the core pipeline. A production deployment in a real release-of-information operation requires several additions that are intentionally outside this recipe's scope.
+
+**HIPAA authorization validation is incomplete.** The pseudocode checks 5 of the 6 elements required by 45 CFR 164.508(c)(1): patient identity, purpose, scope, expiration, and signature. Missing: the disclosing entity identity (who is authorized to disclose) and the recipient identity (who receives the records). Both are required. Additionally, 164.508(c)(2) requires three statements be present on the form (right to revoke, whether conditioning applies, re-disclosure risk). The pseudocode does not validate (c)(2) at all. A production implementation must check all of these. Your compliance team should review the full authorization validation logic before deployment.
+
+**Classifier tie-breaking is risk-inverted.** The pseudocode breaks classification ties by priority order, with `care_coordination` first. A request that scores equally as `legal` and `care_coordination` routes to care coordination. That's backwards from a risk perspective: legal requests have stricter handling requirements, shorter deadlines, and higher liability if misrouted. Reverse the priority order so the highest-risk classification wins ties, or route all ties to manual review.
+
+**Authorized representative signatures.** 164.508(c)(1)(vi) allows personal representatives to sign on behalf of a patient, but requires documentation of the representative's authority (power of attorney, legal guardian designation). The pseudocode validates signature presence but has no mechanism to detect or flag representative signatures versus patient signatures. This is a compliance gap that needs human review workflow integration.
 
 **The signature confidence threshold is a policy decision, not a technical one.** Seventy percent is a reasonable starting point for fax-quality documents, but the right threshold depends on your risk tolerance. Too high, and you generate deficiency letters for valid authorizations where the fax degraded the signature. Too low, and you accept typed text or blank-adjacent patterns as valid signatures. Your compliance and legal teams need to set this threshold. It should be configurable per environment, not hardcoded.
 
