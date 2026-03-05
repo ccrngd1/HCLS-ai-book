@@ -271,7 +271,7 @@ flowchart TB
 | **Encryption** | S3: SSE-KMS with customer-managed key on all buckets. DynamoDB: encryption at rest with KMS. Step Functions: execution history encrypted with KMS. HealthLake: encryption at rest (included, KMS-managed). All API calls over TLS. Text sent to Comprehend Medical and A2I is not retained by AWS beyond the immediate transaction. |
 | **VPC** | Production: all Lambdas and Batch jobs in a VPC with VPC endpoints for S3 (gateway), Textract, Comprehend Medical, DynamoDB, SNS, SQS, Step Functions, HealthLake, CloudWatch Logs, and KMS. Chart data should not traverse the public internet. |
 | **Sample Data** | Use de-identified or synthetic charts during development. CMS provides sample clinical document templates. The `synthea` open-source tool generates realistic synthetic patient records and can export clinical notes for testing. Never use real PHI in development environments. |
-| **Cost Estimate** | Textract FORMS + TABLES: $0.065/page ($0.05 forms + $0.015 tables). Textract LAYOUT: no additional per-page cost. Comprehend Medical DetectEntitiesV2 on clinical pages: ~$0.01/unit (one unit per 100 characters, minimum 3 units). A2I human review at $0.83/reviewed page (using AWS-managed workforce pricing). HealthLake import: $0.16 per 1,000 resources. For a 200-page chart with 30% handwritten content, 80% clinical pages needing Comprehend Medical, and 10% A2I review rate: Textract ~$13.00, Comprehend Medical ~$2.00, A2I ~$5.00, HealthLake ~$0.50, compute ~$0.50 = roughly $21 per chart with A2I. At 5% A2I review rate (good confidence tuning): ~$13–16. A2I dominates cost when review rates are high. |
+| **Cost Estimate** | Textract FORMS + TABLES: $0.065/page ($0.05 forms + $0.015 tables). Textract LAYOUT: no additional per-page cost. Comprehend Medical DetectEntitiesV2 on clinical pages: ~$0.01/unit (one unit per 100 characters, minimum 3 units). A2I human review at $2.00-6.00/reviewed page (using a private workforce; AWS Mechanical Turk is NOT HIPAA-eligible and cannot be used for PHI). HealthLake import: $0.16 per 1,000 resources. For a 200-page chart with 30% handwritten content, 80% clinical pages needing Comprehend Medical, and 10% A2I review rate: Textract ~$13.00, Comprehend Medical ~$2.00, A2I ~$12.00-36.00, HealthLake ~$0.50, compute ~$0.50 = roughly $28-52 per chart with A2I. At 5% A2I review rate (good confidence tuning): ~$19-30. A2I dominates cost when review rates are high; private workforce pricing is significantly higher than public marketplace rates. |
 
 ### Ingredients
 
@@ -1019,12 +1019,10 @@ FUNCTION map_document_to_fhir_resources(
         FOR each icd10_entity in extraction.icd10_accepted:
             condition = {
                 resourceType:    "Condition",
-                clinicalStatus:  {
-                    coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                               code: "unknown" }]
-                    // We can't reliably determine active vs. resolved from historical notes.
-                    // Use "unknown" rather than making a clinical claim we can't support.
-                },
+                // clinicalStatus intentionally omitted. FHIR R4 does not require it,
+                // and the condition-clinical ValueSet has no "unknown" code.
+                // We cannot reliably determine active vs. resolved from historical notes,
+                // so omitting is more correct than guessing.
                 verificationStatus: {
                     coding: [{ system: "http://terminology.hl7.org/CodeSystem/condition-ver-status",
                                code: "unconfirmed" }]
@@ -1339,19 +1337,19 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
     "observations": 521800,
     "medication_statements": 198400,
     "immunizations": 31240,
-    "procedures": 44180,
+    "procedures": 0,          // Note: Procedure resource mapping not implemented in this recipe (see Variations)
     "total_fhir_resources": 1169140
   },
   "cost_summary": {
-    "textract_forms_tables": "$9,633.00",
+    "textract_forms_tables": "$96,330.00",
     "comprehend_medical": "$3,240.00",
-    "a2i_human_review": "$68,392.00",
+    "a2i_human_review": "$164,800.00",
     "healthlake_import": "$187.00",
     "aws_batch_compute": "$820.00",
     "step_functions": "$210.00",
     "s3_storage_and_transfer": "$680.00",
-    "total": "$83,162.00",
-    "cost_per_chart": "$8.44"
+    "total": "$266,267.00",
+    "cost_per_chart": "$27.03"
   }
 }
 ```
@@ -1402,6 +1400,24 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
 | Cost per chart, heavy A2I review (20%+ pages reviewed) | $15 to $50 |
 
 **Where it struggles:** Scanned documents from the 1980s and early 1990s that were originally printed on dot-matrix or daisy-wheel printers. Character shapes are formed from dots rather than continuous strokes; degraded ribbons produce light, faint text that OCR often misses or misreads. Textract does not distinguish printed text from handwriting reliably on these pages; they sometimes get classified as handwriting and route to A2I review even though a human reviewer can read them fine. Also: charts from practices that documented exclusively in cursive, free-flowing handwriting with no structure have very low segmentation accuracy. The boundary signals (title lines, header discontinuities) aren't there because the provider never used them. The segmentation algorithm produces either a single massive segment (if no boundary fires) or many false-boundary micro-segments.
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode captures the core logic, but a production chart migration program requires several additions that would significantly expand scope and cost.
+
+**A2I requires a private workforce for PHI.** The Amazon Mechanical Turk (AWS-managed) workforce is not HIPAA-eligible and cannot be used with PHI under any circumstance. Sending chart images to MTurk workers is a HIPAA breach. You must configure a private workforce using your own employees or a contracted medical transcription vendor. Private workforce pricing is $2.00-6.00 per reviewed page rather than the marketplace rate, which materially changes the cost model for handwriting-heavy collections.
+
+**HealthLake import format.** The `StartFHIRImportJob` `InputDataConfig.S3Uri` must point to a prefix or file containing actual FHIR NDJSON resources, not a manifest listing other files. Organize chart bundles under a shared import prefix and pass the prefix directly.
+
+**FHIR Condition clinicalStatus.** The `condition-clinical` ValueSet has no `unknown` code. HealthLake will reject every Condition resource that uses it. Omit `clinicalStatus` entirely (FHIR R4 does not require it) and rely on `verificationStatus = unconfirmed` to communicate the OCR-derived provenance.
+
+**Comprehend Medical at batch scale.** The real-time `DetectEntitiesV2` API handles 20,000 characters per request. For millions of charts, use the async Comprehend Medical bulk inference API (`StartEntitiesDetectionV2Job`), which processes S3 files in batch and is significantly cheaper at scale.
+
+**AWS Batch array job limit.** Array jobs are capped at 10,000 child jobs. A program processing millions of charts needs chunked batch submissions or an SQS-based queue model where workers pull work independently rather than relying on array indexing.
+
+**Textract quota lead time.** Textract async page limits default to 1,000 pages per account per region. For 500-page charts at scale, request a quota increase before the program starts. Lead time is 2-4 weeks. Missing this quota blocks the entire program on launch day.
 
 ---
 

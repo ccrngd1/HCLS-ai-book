@@ -16,6 +16,8 @@ You will need the AWS SDK for Python and a handful of supporting libraries:
 
 ```bash
 pip install boto3 Pillow
+
+> **Python version note:** This code uses union type syntax (`str | None`) and lowercase generics (`list[str]`) that require Python 3.10+. Amazon Linux 2 Lambda runtimes ship Python 3.8. Use the `python3.12` Lambda runtime, or replace union syntax with `Optional[str]` from `typing` if you need 3.8/3.9 compatibility.
 ```
 
 For production-quality image deskewing, also install:
@@ -1223,13 +1225,16 @@ def extract_table_document(classified_doc: dict, pages: dict, block_map: dict) -
             all_tables.append(table_rows)
 
     # Run Comprehend Medical on the text portion for any inline entity mentions.
+    # Use chunked processing (same as extract_clinical_document) to avoid silently
+    # losing entities from longer table documents.
     entities     = []
     icd10_accepted = []
 
     if segment_text.strip():
-        chunk = segment_text[:COMPREHEND_MAX_CHARS]
-        ent_response = comprehend_client.detect_entities_v2(Text=chunk)
-        entities     = ent_response.get("Entities", [])
+        text_chunks = split_text_with_overlap(segment_text, max_chars=COMPREHEND_MAX_CHARS)
+        for chunk in text_chunks:
+            ent_response = comprehend_client.detect_entities_v2(Text=chunk)
+            entities.extend(ent_response.get("Entities", []))
 
     document_date = extract_primary_date_from_text(
         "\n".join(segment_text.split("\n")[:10])
@@ -1343,12 +1348,16 @@ def extract_handwritten_document(
     direct_pages = sorted(high_pages + unconfirmed_pages, key=lambda p: p["page_num"])
     direct_text  = "\n".join(p["text"] for p in direct_pages)
 
-    # Run Comprehend Medical on whatever text we have from the direct-path pages.
+    # Run Comprehend Medical with chunked processing to avoid silently losing
+    # entities from longer handwritten documents.
     entities    = []
     icd10_accepted = []
 
     if direct_text.strip():
-        chunk        = direct_text[:COMPREHEND_MAX_CHARS]
+        text_chunks = split_text_with_overlap(direct_text, max_chars=COMPREHEND_MAX_CHARS)
+        for chunk in text_chunks:
+            ent_response = comprehend_client.detect_entities_v2(Text=chunk)
+            entities.extend(ent_response.get("Entities", []))
         ent_response = comprehend_client.detect_entities_v2(Text=chunk)
         entities     = ent_response.get("Entities", [])
 
@@ -1479,8 +1488,11 @@ def score_extracted_document(
     # A segment with no handwriting scores 1.0 here (no penalty).
     # A segment where 100% of handwritten pages went to A2I scores 0.0.
     if classified_doc.get("extraction_path") == "handwriting_pipeline":
+        # Denominator is handwritten page count, not total segment pages.
+        # A 5-page segment with 2 HW pages where 1 went to A2I = 50% review rate.
+        # Using total pages would undercount review rate for mixed segments.
         total_hw_pages  = max(
-            classified_doc["end_page"] - classified_doc["start_page"] + 1, 1
+            extraction.get("handwritten_page_count", 0), 1
         )
         review_pages    = extraction.get("review_page_count", 0)
         review_rate     = review_pages / total_hw_pages
@@ -1662,14 +1674,11 @@ def map_document_to_fhir(
 
             condition = {
                 "resourceType": "Condition",
-                "clinicalStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
-                        "code":   "unknown",
-                    }]
-                    # Cannot reliably determine active vs. resolved from a paper chart.
-                    # Use "unknown" rather than making a clinical claim we cannot support.
-                },
+                # clinicalStatus intentionally omitted. FHIR R4 does not require it,
+                # and the condition-clinical ValueSet has no "unknown" code. HealthLake
+                # will reject resources with invalid coded values. We cannot reliably
+                # determine active vs. resolved from historical paper chart OCR, so
+                # omitting is more correct than guessing.
                 "verificationStatus": {
                     "coding": [{
                         "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
@@ -1975,25 +1984,26 @@ def submit_healthlake_import_batch(
         print("  No charts in fhir_ready status. Skipping import batch.")
         return None
 
-    # Write the import manifest: one S3 URI per line in NDJSON format.
-    manifest_lines = [
-        json.dumps({"url": f"s3://{FHIR_OUTPUT_BUCKET}/{item['fhir_bundle_key']}"})
-        for item in ready_items
-    ]
-    timestamp      = datetime.datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    manifest_key   = f"healthlake-imports/manifest-{timestamp}.ndjson"
+    # Copy all FHIR bundle NDJSON files to a shared import prefix.
+    # HealthLake StartFHIRImportJob requires S3Uri to point to a prefix (or specific
+    # NDJSON file) containing the actual FHIR resources -- not a manifest listing other
+    # files. Each chart's bundle NDJSON is copied to a timestamped import prefix.
+    timestamp    = datetime.datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    import_prefix = f"healthlake-imports/{timestamp}/"
 
-    s3_client.put_object(
-        Bucket=FHIR_OUTPUT_BUCKET,
-        Key=manifest_key,
-        Body="\n".join(manifest_lines).encode("utf-8"),
-        ContentType="application/x-ndjson",
-    )
+    for item in ready_items:
+        source_key = item["fhir_bundle_key"]
+        dest_key   = import_prefix + source_key.split("/")[-1]
+        s3_client.copy_object(
+            Bucket=FHIR_OUTPUT_BUCKET,
+            CopySource={"Bucket": FHIR_OUTPUT_BUCKET, "Key": source_key},
+            Key=dest_key,
+        )
 
-    # Submit the HealthLake FHIR import job.
+    # Submit the HealthLake FHIR import job pointing at the prefix containing NDJSON.
     response = healthlake_client.start_fhir_import_job(
         InputDataConfig={
-            "S3Uri": f"s3://{FHIR_OUTPUT_BUCKET}/{manifest_key}",
+            "S3Uri": f"s3://{FHIR_OUTPUT_BUCKET}/{import_prefix}",
         },
         JobOutputDataConfig={
             "S3Configuration": {
