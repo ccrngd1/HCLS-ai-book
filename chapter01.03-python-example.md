@@ -505,7 +505,7 @@ def extract_clinical_text(text_key_values: dict) -> tuple[str | None, str | None
         - diagnosis_text: raw text from the diagnosis field (None if not found)
         - notes_text:     raw text from the clinical notes field (None if not found)
         - combined_text:  diagnosis + notes joined for Comprehend Medical input,
-                          clipped to stay within the 20,000-character API limit
+                          clipped to stay within the 10,000-character InferICD10CM API limit
     """
     diagnosis_text = None
     notes_text = None
@@ -526,7 +526,7 @@ def extract_clinical_text(text_key_values: dict) -> tuple[str | None, str | None
             notes_text = data["value"].strip()
 
     # Combine for Comprehend Medical. The character limit for InferICD10CM
-    # and DetectEntitiesV2 is 20,000 characters per request. We clip well
+    # InferICD10CM accepts 10,000 characters and DetectEntitiesV2 accepts 20,000 characters per request. We clip well
     # below that to leave margin and avoid silent truncation.
     parts = [p for p in [diagnosis_text, notes_text] if p]
     combined = ". ".join(parts)
@@ -608,7 +608,7 @@ def infer_icd10_codes(diagnosis_text: str | None) -> tuple[list, list]:
                 "evidence_text": evidence_text,
                 "icd10_code":    top_concept["Code"],          # e.g., "E11.9"
                 "description":   top_concept["Description"],   # e.g., "Type 2 diabetes mellitus without complications"
-                "confidence":    round(score, 3),
+                "confidence":    Decimal(str(round(score, 3))),
             })
         else:
             # Below threshold. Preserve the top candidate so a reviewer
@@ -618,7 +618,7 @@ def infer_icd10_codes(diagnosis_text: str | None) -> tuple[list, list]:
                 "top_candidate": {
                     "icd10_code":  top_concept["Code"],
                     "description": top_concept["Description"],
-                    "confidence":  round(score, 3),
+                    "confidence":  Decimal(str(round(score, 3))),
                 },
             })
 
@@ -649,7 +649,7 @@ def detect_clinical_entities(text: str | None) -> dict:
     An entity with a NEGATION trait means the patient does NOT have
     that condition: "no chest pain" and "chest pain" both produce a
     MEDICAL_CONDITION entity, but only the latter should influence coding.
-    FAMILY means a family member has the condition, not the patient.
+    PERTAINS_TO_FAMILY means a family member has the condition, not the patient.
     PAST_HISTORY means historical, not current.
 
     Args:
@@ -1173,7 +1173,7 @@ def lambda_handler_process(event: dict, context) -> None:
 
 This example works: run it against a real lab requisition PDF and it will produce a structured JSON record with patient fields, ordered tests with CPT codes, ICD-10 diagnosis codes, clinical entities, and medical necessity flags. The distance between that and a production deployment is real. Here's where it lives.
 
-**Comprehend Medical character limits per request.** `InferICD10CM` and `DetectEntitiesV2` each accept up to 20,000 UTF-8 characters per request. The clipping in `extract_clinical_text` keeps the example safe, but silently truncating a diagnosis field is worse than processing it correctly in two chunks. A production implementation splits at sentence or clause boundaries, processes each chunk, and deduplicates entities by text span and code. Build this before you go live, even if most forms stay well under the limit. The one that doesn't will be the one containing the code you care most about.
+**Comprehend Medical character limits per request.** `InferICD10CM` accepts up to 10,000 UTF-8 characters per request and `DetectEntitiesV2` accepts up to 20,000. The clipping in `extract_clinical_text` keeps the example safe, but silently truncating a diagnosis field is worse than processing it correctly in two chunks. A production implementation splits at sentence or clause boundaries, processes each chunk, and deduplicates entities by text span and code. Build this before you go live, even if most forms stay well under the limit. The one that doesn't will be the one containing the code you care most about.
 
 **Composite confidence scoring.** This example evaluates OCR confidence and NLP confidence independently. They should be combined: an ICD-10 code inferred from text with 72% OCR confidence is less reliable than the same NLP score applied to text read at 98% confidence. A production system propagates the Textract confidence of the source text through to the ICD-10 inference and uses the composite (minimum) score for gating. Right now, a borderline OCR read can produce a high-confidence-looking ICD-10 code.
 
@@ -1191,7 +1191,7 @@ This example works: run it against a real lab requisition PDF and it will produc
 
 **Multiple diagnosis fields on the same form.** Some lab requisition templates have separate "Primary Diagnosis" and "Secondary Diagnosis" fields. `extract_clinical_text` concatenates them with a period separator, which works reasonably well for most Comprehend Medical inputs. A production implementation detects multiple diagnosis fields, processes them in a single combined string, and maps each accepted ICD-10 code back to the specific field it came from. The provenance matters when a reviewer is deciding whether the code is primary or secondary.
 
-**Negation and family history traits.** `detect_clinical_entities` captures traits like NEGATION and FAMILY in the entity record. But nothing in the pipeline currently uses those traits to filter or reclassify the ICD-10 inferences from Step 5. In production, if `InferICD10CM` returns a condition that `DetectEntitiesV2` flags with a NEGATION trait (the text said "no diabetes"), that's a signal to route the diagnosis code to human review rather than accepting it automatically. Wiring these two steps together is real work, but it catches a meaningful class of errors.
+**Negation and family history traits.** `detect_clinical_entities` captures traits like NEGATION and PERTAINS_TO_FAMILY in the entity record. But nothing in the pipeline currently uses those traits to filter or reclassify the ICD-10 inferences from Step 5. In production, if `InferICD10CM` returns a condition that `DetectEntitiesV2` flags with a NEGATION trait (meaning the text said "no diabetes"), that's a signal to route the diagnosis code to human review rather than accepting it automatically. Wiring these two steps together is real work, but it catches a meaningful class of errors.
 
 **VPC and encryption.** This example makes API calls without VPC configuration. A production Lambda handling lab requisitions runs inside a VPC with private subnets and VPC endpoints for S3, Textract, DynamoDB, SNS, and Comprehend Medical. Lab requisitions contain diagnoses, ordered tests, and provider identification: they are PHI-bearing clinical documents. S3 SSE-KMS with a customer-managed key. DynamoDB encryption at rest. All calls over TLS. Add a VPC endpoint for CloudWatch Logs or your Lambda will have no log output inside a private subnet.
 

@@ -1,6 +1,6 @@
 # Recipe 1.3: Lab Requisition Form Extraction 🔶
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.008 per form
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.04-0.06 per form
 
 ---
 
@@ -142,10 +142,10 @@ flowchart LR
 | **IAM Permissions** | All permissions from Recipe 1.2, plus: `comprehend:DetectEntitiesV2`, `comprehend:InferICD10CM` |
 | **BAA** | AWS BAA signed. Comprehend Medical is a HIPAA-eligible service under the same account-level BAA as Textract. No additional BAA action required beyond the account-level agreement already in place. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled (default). All API calls over TLS. Clinical text sent to Comprehend Medical is not retained by AWS. |
-| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3, Textract, DynamoDB, SNS, and Comprehend Medical. Add a VPC endpoint for CloudWatch Logs, or your Lambda has no log output in a private subnet. |
+| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. |
 | **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, and DynamoDB API calls. Lab requisitions are PHI-containing clinical documents; the full audit trail is a compliance requirement. |
 | **Sample Data** | Quest Diagnostics and LabCorp publish sample requisition forms on their provider portals. Create synthetic versions with realistic patient names, DOBs, and ICD-10 codes. CMS provides ICD-10-CM code lookup tools at [ICD10Data.com](https://www.icd10data.com/) for reference. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS + TABLES): ~$3.00 per 1,000 pages, roughly $0.003 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, approximately $0.003 for a 200-character diagnosis field. DetectEntitiesV2: $0.01 per 100 characters. Total per form: approximately $0.008. |
+| **Cost Estimate** | Textract async (FORMS + TABLES): ~$3.00 per 1,000 pages, roughly $0.003 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, so a 200-character diagnosis field costs ~$0.02. DetectEntitiesV2: $0.01 per 100 characters, similar range. Total per form: approximately $0.04-0.06 depending on text length. |
 
 ### Ingredients
 
@@ -338,7 +338,7 @@ FUNCTION infer_icd10_codes(diagnosis_text):
 
 **Step 6: Extract additional clinical entities.** The diagnosis text often contains more than just diagnosis names. It might mention the ordering physician, a relevant medication, or a procedure that contextualizes the order. `DetectEntitiesV2` gives us a broader view of the clinical content in any free-text field on the form. We're particularly interested in catching entities that might improve downstream processing: a medication name that contextualizes an HbA1c order, or a provider name that doesn't appear in the structured provider fields.
 
-This step also helps catch clinical context that affects how the form should be processed. An entity tagged with a "NEGATION" trait means the patient does NOT have that condition. An entity tagged "FAMILY" means a family member has it, not the patient. These traits can change the meaning of a diagnosis entirely.
+This step also helps catch clinical context that affects how the form should be processed. An entity tagged with a "NEGATION" trait means the patient does NOT have that condition. An entity tagged "PERTAINS_TO_FAMILY" means a family member has it, not the patient. These traits can change the meaning of a diagnosis entirely.
 
 ```
 FUNCTION detect_clinical_entities(text):
@@ -361,7 +361,7 @@ FUNCTION detect_clinical_entities(text):
             text:       entity.Text,                     // the original text span
             type:       entity.Type,                     // more specific than category
             confidence: round(entity.Score, 3),          // how sure Comprehend Medical is
-            // Traits: NEGATION, HYPOTHETICAL, PAST_HISTORY, FAMILY, SIGN, SYMPTOM.
+            // Traits: NEGATION, HYPOTHETICAL, PAST_HISTORY, PERTAINS_TO_FAMILY, SIGN, SYMPTOM.
             // These modify how the entity should be interpreted.
             traits:     [t.Name for t in entity.Traits if t.Score >= 0.75]
         }
@@ -552,7 +552,7 @@ FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
 | ICD-10 inference accuracy (from OCR of handwritten text) | 65–80% (OCR errors compound NLP errors) |
 | Checkbox test detection accuracy | 97–99% for cleanly printed checkboxes |
 | CPT mapping coverage | 80–90% for common panels; long tail requires table expansion |
-| Cost per lab requisition | ~$0.008 (Textract + two Comprehend Medical calls) |
+| Cost per lab requisition | ~$0.04-0.06 (Textract + two Comprehend Medical calls, varies with text length) |
 | Throughput | Textract is the bottleneck; scales via concurrency limits |
 
 **Where it struggles:** Handwritten ICD-10 codes (especially the I/1/l confusion described earlier) are the most common failure mode. OCR reads "I10" as "l10"; Comprehend Medical receives bad input; the inference misses. Low-specificity diagnosis text ("chronic conditions" or "routine labs") produces low-confidence or absent ICD-10 inferences. Lab requisitions from non-standard templates may have the diagnosis section in an unexpected location that the FIELD_MAP doesn't recognize. And CPT mapping for specialty tests (genetic panels, pathology, specialized assays) requires substantial table expansion.
@@ -563,7 +563,7 @@ FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
 
 The pseudocode and architecture above demonstrate the two-stage extraction pattern. Deploying this to a real lab order workflow requires addressing several gaps. These are the ones that will catch you:
 
-**Comprehend Medical character limits per request.** `InferICD10CM` and `DetectEntitiesV2` each accept up to 20,000 UTF-8 characters per request. Diagnosis text on a typical lab requisition is well under that limit, but forms with extended clinical notes, attached medication lists, or multi-page clinical summaries can exceed it. The pseudocode clips at 9,800 characters, which is conservative. A production implementation splits text at sentence boundaries, processes each chunk independently, and deduplicates the resulting entities. Silently truncating medical content is worse than processing it in chunks.
+**Comprehend Medical character limits per request.** `InferICD10CM` accepts up to 10,000 UTF-8 characters per request; `DetectEntitiesV2` accepts up to 20,000. Diagnosis text on a typical lab requisition is well under either limit, but forms with extended clinical notes, attached medication lists, or multi-page clinical summaries can exceed the 10,000-character InferICD10CM limit. The pseudocode clips at 9,800 characters, which is conservative for InferICD10CM. A production implementation splits text at sentence boundaries, processes each chunk independently, and deduplicates the resulting entities. Silently truncating medical content is worse than processing it in chunks.
 
 **Composite confidence scoring.** The pseudocode evaluates OCR confidence and ICD-10 inference confidence in separate steps with separate thresholds. In production, you need a composite score: the ICD-10 code confidence should account for the underlying OCR confidence of the text that produced it. A code inferred from text with 98% OCR confidence and 80% NLP confidence is more reliable than the same NLP score applied to text with 72% OCR confidence. Track the provenance of each field from Textract through Comprehend Medical.
 
