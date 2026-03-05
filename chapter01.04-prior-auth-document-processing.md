@@ -1,6 +1,6 @@
 # Recipe 1.4: Prior Authorization Document Processing 🔶
 
-**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.20–0.60 per submission
+**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.85–1.25 per 10-page submission
 
 ---
 
@@ -189,7 +189,7 @@ flowchart TB
 | **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. |
 | **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, Step Functions, and DynamoDB API calls. Prior auth submissions are clinical decision records; the complete audit trail is a regulatory requirement. |
 | **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1-2 clinical notes, a lab results page, and a physician letter. HL7 FHIR Examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for building test cases. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS + TABLES + LAYOUT): approximately $4.50 per 1,000 pages, or $0.045 for a 10-page submission. Comprehend Medical (InferICD10CM + DetectEntitiesV2) on extracted clinical text: approximately $0.05-0.15 per clinical page, depending on text length. A 10-page submission with 4 clinical pages runs approximately $0.25-0.65 total. Step Functions Standard Workflows: $0.025 per 1,000 state transitions. A 10-page submission with 6 states per page runs approximately $0.002 per submission. At 500,000 submissions per year with an average of 8 pages and 3 clinical pages each: roughly $200K-400K per year in service costs. That math looks different when you consider that replacing even one clinical reviewer FTE (fully loaded: $150K-200K/year) pays for the infrastructure at a fraction of the volume. |
+| **Cost Estimate** | Textract async (FORMS + TABLES + LAYOUT): $0.065 per page ($0.05 forms + $0.015 tables; LAYOUT adds no per-page cost), or $0.65 for a 10-page submission. Comprehend Medical (InferICD10CM + DetectEntitiesV2) on extracted clinical text: approximately $0.05-0.15 per clinical page, depending on text length. A 10-page submission with 4 clinical pages runs approximately $0.85-1.25 total. Step Functions Standard Workflows: $0.025 per 1,000 state transitions, approximately $0.002 per submission. At 500,000 submissions per year with an average of 8 pages and 3 clinical pages each: roughly $500K-800K per year in service costs. That math looks different when you consider that replacing even one clinical reviewer FTE (fully loaded: $150K-200K/year) pays for the infrastructure at a fraction of the volume. |
 
 ### Ingredients
 

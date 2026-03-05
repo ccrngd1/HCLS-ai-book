@@ -145,7 +145,7 @@ flowchart LR
 | **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3, Textract, DynamoDB, and SNS. No traffic to these services should cross the public internet. |
 | **CloudTrail** | Enabled for all Textract, S3, and DynamoDB API calls. Intake forms are HIPAA-covered documents; the audit trail is a compliance requirement. |
 | **Sample Data** | Blank form templates from EHR vendors, filled with synthetic patient data. CMS publishes the [CMS-1500](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) form for layout reference. Never use real PHI in development. |
-| **Cost Estimate** | Textract async analysis (FORMS + TABLES): ~$3.00 per 1,000 pages. A 3-page intake form costs about $0.009. Lambda and DynamoDB costs are negligible at this scale. |
+| **Cost Estimate** | Textract async analysis (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables). A 3-page intake form costs about $0.20. Lambda and DynamoDB costs are negligible at this scale. |
 
 ### Ingredients
 

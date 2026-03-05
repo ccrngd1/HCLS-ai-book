@@ -41,6 +41,7 @@ Everything that is really configuration rather than logic lives here, at the top
 
 ```python
 import boto3
+from botocore.exceptions import ClientError
 import datetime
 import json
 import re
@@ -874,7 +875,7 @@ def detect_document_boundaries(pages: dict) -> list:
         # the first page of a new logical document.
         for pattern in DOCUMENT_TITLE_PATTERNS:
             if pattern in first_lines:
-                # Suppress this signal on page 1 of the PDF: every document has a
+                # Suppress this signal on the first page of the current segment: every document has a
                 # first page. We only want to split when we encounter a title AFTER
                 # the very beginning of the package.
                 if page_num > seg_start:
@@ -1275,9 +1276,9 @@ def extract_pathology_report(
     # Entity extraction from the full report.
     clinical_entities = detect_clinical_entities(segment_text[:COMPREHEND_MAX_CHARS])
 
-    # Extract accession number. Common format: one or two letters followed by
-    # 6-10 digits. Examples: S26-00483, C2026-00123, H-123456.
-    accession_match = re.search(r"\b([A-Z]{1,2}[-]?\d{2}[-]\d{4,6})\b", segment_text)
+    # Extract accession number. Common formats vary by lab system: one or two letters
+    # followed by digits with optional hyphens. Examples: S26-00483, C2026-00123, H-123456.
+    accession_match = re.search(r"\b([A-Z]{1,2}[-]?\d{2,6}[-]?\d{0,6})\b", segment_text)
     accession_number = accession_match.group(1) if accession_match else None
 
     primary_date = extract_primary_date_from_text(
@@ -2247,10 +2248,12 @@ def store_attachment_record(record: dict) -> dict:
             },
         )
         print(f"  S3 Object Lock set (GOVERNANCE mode, retain until {retain_until.date()})")
-    except s3_client.exceptions.NoSuchKey:
+    except ClientError as e:
+        error_code = e.response["Error"]["Code"]
         print(
             f"  WARNING: Could not set Object Lock on {record['attachment_key']}. "
-            f"Key not found. Was the PDF deleted before the lock was set?"
+            f"Error: {error_code}. Verify that Object Lock is enabled on the bucket "
+            f"and that the Lambda role has s3:PutObjectRetention permission."
         )
 
     # Route to review queue or downstream adjudication.

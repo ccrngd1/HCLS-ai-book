@@ -1,6 +1,6 @@
 # Recipe 1.3: Lab Requisition Form Extraction 🔶
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.04-0.06 per form
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.10-0.15 per form
 
 ---
 
@@ -145,7 +145,7 @@ flowchart LR
 | **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. |
 | **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, and DynamoDB API calls. Lab requisitions are PHI-containing clinical documents; the full audit trail is a compliance requirement. |
 | **Sample Data** | Quest Diagnostics and LabCorp publish sample requisition forms on their provider portals. Create synthetic versions with realistic patient names, DOBs, and ICD-10 codes. CMS provides ICD-10-CM code lookup tools at [ICD10Data.com](https://www.icd10data.com/) for reference. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS + TABLES): ~$3.00 per 1,000 pages, roughly $0.003 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, so a 200-character diagnosis field costs ~$0.02. DetectEntitiesV2: $0.01 per 100 characters, similar range. Total per form: approximately $0.04-0.06 depending on text length. |
+| **Cost Estimate** | Textract async (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables), roughly $0.065 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, so a 200-character diagnosis field costs ~$0.02. DetectEntitiesV2: $0.01 per 100 characters, similar range. Total per form: approximately $0.10-0.15 depending on text length. |
 
 ### Ingredients
 

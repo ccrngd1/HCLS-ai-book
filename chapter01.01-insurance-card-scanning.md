@@ -1,6 +1,6 @@
 # Recipe 1.1: Insurance Card Scanning ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.002 per card
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.05 per card
 
 ---
 
@@ -128,7 +128,7 @@ flowchart LR
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Textract, DynamoDB |
 | **CloudTrail** | Enabled: log all Textract and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic insurance card images. CMS provides [sample Medicare cards](https://www.cms.gov/medicare/new-medicare-card) for layout reference. Never use real member cards in dev. |
-| **Cost Estimate** | Textract AnalyzeDocument (FORMS): ~$1.50 per 1,000 pages. At one page per card, that's $0.0015/card. Lambda and DynamoDB costs are negligible at this scale. |
+| **Cost Estimate** | Textract AnalyzeDocument (FORMS): $0.05 per page. At one page per card, that's $0.05/card. Lambda and DynamoDB costs are negligible at this scale. |
 
 ### Ingredients
 

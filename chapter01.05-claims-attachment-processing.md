@@ -1,6 +1,6 @@
 # Recipe 1.5: Claims Attachment Processing 🔴
 
-**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$0.75–1.75 per claims package
+**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$3.50–5.50 per 30-page claims package
 
 ---
 
@@ -208,7 +208,7 @@ flowchart TB
 | **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, SQS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. Claims data should not traverse the public internet. |
 | **CloudTrail** | Enabled for all services. Claims processing is subject to CMS audit requirements. Every extraction, every Comprehend Medical call, and every DynamoDB write needs to be in the audit trail. |
 | **Sample Data** | CMS publishes [sample 837 transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets) for claim line item reference. Build synthetic multi-document PDFs by concatenating an operative report template, a pathology report, a discharge summary, a payer EOB printout, and therapy notes. X12 835/837 samples provide claim line item structures to match against. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS + TABLES + LAYOUT): approximately $4.50 per 1,000 pages, or $0.135 for a 30-page package. Comprehend Medical (DetectEntitiesV2 + InferICD10CM) on clinical pages: approximately $0.05–0.15 per clinical page. A 30-page package with 12 clinical pages (operative report, pathology, discharge summary, therapy notes) runs approximately $0.60–1.80 in Comprehend Medical. Step Functions Standard Workflows: $0.025 per 1,000 transitions. A 30-page package with 8 document segments and roughly 80 state transitions runs approximately $0.002. Total: roughly $0.75–1.95 per package. At 300,000 claims packages per year: $225K–585K. At 500,000: $375K–975K. Compare that to the cost of manual attachment review at 30–60 minutes per case at $35–55/hour loaded cost: at 500,000 packages, manual review runs $8.75M–27.5M per year. The math is not close. |
+| **Cost Estimate** | Textract async with FORMS + TABLES: $0.065 per page ($0.05 for forms + $0.015 for tables), so a 30-page package runs approximately $1.95 in Textract alone. LAYOUT does not add per-page cost. Comprehend Medical (DetectEntitiesV2 + InferICD10CM) on clinical pages: approximately $0.05-0.15 per clinical page. A 30-page package with 12 clinical pages runs approximately $0.60-1.80 in Comprehend Medical. Step Functions Standard Workflows: approximately $0.002 per package. Total: roughly $2.55-3.75 per package. At 300,000 claims packages per year: $765K-1.1M. At 500,000: $1.3M-1.9M. Compare that to manual attachment review at 30-60 minutes per case at $35-55/hour loaded cost: at 500,000 packages, manual review runs $8.75M-27.5M per year. The math still favors automation by a wide margin. |
 
 ### Ingredients
 
@@ -980,7 +980,7 @@ FUNCTION store_attachment_record(record):
 | ICD-10 inference accuracy (typed clinical narrative) | 83–90% |
 | Claim line CPT match rate (explicit codes in documents) | 40–60% of surgical claims |
 | Claim line procedure description match rate | 75–85% (when explicit CPT not present) |
-| Cost per 30-page package | ~$0.75–1.50 |
+| Cost per 30-page package | ~$2.55-3.75 |
 | Cost per 50-page package | ~$1.25–2.50 |
 
 **Where it struggles:** Continuous EHR dump documents where a provider prints their entire problem list, medication list, and all visit notes as one long PDF with no section breaks between logical documents. Boundary detection finds no signals and treats the entire thing as one document. Classification accuracy drops dramatically for these because the aggregated text contains vocabulary from multiple document types. Also: therapy notes without visit dates in the header mean the date matching step can't link them to claim lines. EOB printouts from payer web portals that use dense JavaScript-rendered layouts produce fax scans that Textract may capture poorly. And claims with atypical CPT codes (unlisted procedure codes, compound modifier strings) don't match the procedure description lookup table.
