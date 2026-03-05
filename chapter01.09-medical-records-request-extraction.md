@@ -267,4 +267,4 @@ def classify_request_type(fields: dict, full_text: str) -> str:
 
 ---
 
-*← [Recipe 1.8 — EOB Processing](recipe-1.8-eob-processing.md) · [Next: Recipe 1.10 — Historical Chart Migration →](recipe-1.10-historical-chart-migration.md)*
+*← [Recipe 1.8 — EOB Processing](chapter01.08-eob-processing) · [Next: Recipe 1.10 — Historical Chart Migration →](chapter01.10-historical-chart-migration)*

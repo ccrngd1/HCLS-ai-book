@@ -285,4 +285,4 @@ def assemble_intake_record(key_values: dict, tables: list, checkboxes: dict) -> 
 
 ---
 
-*← [Recipe 1.1 — Insurance Card Scanning](recipe-1.1-insurance-card-scanning.md) · [Next: Recipe 1.3 — Lab Requisition Form Extraction →](recipe-1.3-lab-requisition-extraction.md)*
+*← [Recipe 1.1 — Insurance Card Scanning](chapter01.01-insurance-card-scanning) · [Next: Recipe 1.3 — Lab Requisition Form Extraction →](chapter01.03-lab-requisition-extraction)*

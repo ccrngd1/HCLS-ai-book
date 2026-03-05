@@ -289,4 +289,4 @@ def validate_eob_financials(eob: dict) -> list[dict]:
 
 ---
 
-*← [Recipe 1.7 — Prescription Label OCR](recipe-1.7-prescription-label-ocr.md) · [Next: Recipe 1.9 — Medical Records Request Extraction →](recipe-1.9-medical-records-request-extraction.md)*
+*← [Recipe 1.7 — Prescription Label OCR](chapter01.07-prescription-label-ocr) · [Next: Recipe 1.9 — Medical Records Request Extraction →](chapter01.09-medical-records-request-extraction)*

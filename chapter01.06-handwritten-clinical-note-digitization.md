@@ -451,4 +451,4 @@ def save_training_data(
 
 ---
 
-*← [Recipe 1.5 — Claims Attachment Processing](recipe-1.5-claims-attachment-processing.md) · [↑ Chapter 1 Index](ch01-index.md)*
+*← [Recipe 1.5 — Claims Attachment Processing](chapter01.05-claims-attachment-processing) · [↑ Chapter 1 Index](chapter01-index)*

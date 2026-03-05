@@ -390,4 +390,4 @@ def merge_and_match(claim_id: str, document_extractions: list[dict]) -> dict:
 
 ---
 
-*← [Recipe 1.4 — Prior Auth Document Processing](recipe-1.4-prior-auth-document-processing.md) · [Next: Recipe 1.6 — Handwritten Clinical Note Digitization →](recipe-1.6-handwritten-clinical-note-digitization.md)*
+*← [Recipe 1.4 — Prior Auth Document Processing](chapter01.04-prior-auth-document-processing) · [Next: Recipe 1.6 — Handwritten Clinical Note Digitization →](chapter01.06-handwritten-clinical-note-digitization)*

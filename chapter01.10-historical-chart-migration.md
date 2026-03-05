@@ -457,4 +457,4 @@ def load_to_healthlake(datastore_id: str, resources: list[dict]):
 
 ---
 
-*← [Recipe 1.9 — Medical Records Request Extraction](recipe-1.9-medical-records-request-extraction.md) · [↑ Chapter 1 Index](ch01-index.md)*
+*← [Recipe 1.9 — Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) · [↑ Chapter 1 Index](chapter01-index)*

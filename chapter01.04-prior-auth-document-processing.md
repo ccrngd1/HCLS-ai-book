@@ -400,4 +400,4 @@ def assemble_prior_auth_record(
 
 ---
 
-*← [Recipe 1.3 — Lab Requisition Form Extraction](recipe-1.3-lab-requisition-extraction.md) · [Next: Recipe 1.5 — Claims Attachment Processing →](recipe-1.5-claims-attachment-processing.md)*
+*← [Recipe 1.3 — Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) · [Next: Recipe 1.5 — Claims Attachment Processing →](chapter01.05-claims-attachment-processing)*

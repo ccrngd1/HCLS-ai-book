@@ -51,19 +51,19 @@ Before diving into these recipes, make sure you have:
 
 | # | Recipe | Complexity | Phase |
 |---|--------|------------|-------|
-| 1.1 | [Insurance Card Scanning](recipe-1.1-insurance-card-scanning.md) | Simple | ⭐ MVP |
-| 1.2 | [Patient Intake Form Digitization](recipe-1.2-patient-intake-digitization.md) | Simple | ⭐ MVP |
-| 1.3 | [Lab Requisition Form Extraction](recipe-1.3-lab-requisition-extraction.md) | Moderate | 🔶 Phase 2 |
-| 1.4 | [Prior Authorization Document Processing](recipe-1.4-prior-auth-document-processing.md) | Moderate | ⭐ MVP |
-| 1.5 | [Claims Attachment Processing](recipe-1.5-claims-attachment-processing.md) | Complex | 🔶 Phase 2 |
-| 1.6 | [Handwritten Clinical Note Digitization](recipe-1.6-handwritten-clinical-note-digitization.md) | Complex | 🔷 Phase 3 |
-| 1.7 | [Prescription Label OCR](recipe-1.7-prescription-label-ocr.md) | Simple | 🔶 Phase 2 |
-| 1.8 | [EOB Processing](recipe-1.8-eob-processing.md) | Moderate | 🔶 Phase 2 |
-| 1.9 | [Medical Records Request Extraction](recipe-1.9-medical-records-request-extraction.md) | Moderate | 🔶 Phase 2 |
-| 1.10 | [Historical Chart Migration](recipe-1.10-historical-chart-migration.md) | Complex | 🔷 Phase 3 |
+| 1.1 | [Insurance Card Scanning](chapter01.01-insurance-card-scanning) | Simple | ⭐ MVP |
+| 1.2 | [Patient Intake Form Digitization](chapter01.02-patient-intake-digitization) | Simple | ⭐ MVP |
+| 1.3 | [Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) | Moderate | 🔶 Phase 2 |
+| 1.4 | [Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) | Moderate | ⭐ MVP |
+| 1.5 | [Claims Attachment Processing](chapter01.05-claims-attachment-processing) | Complex | 🔶 Phase 2 |
+| 1.6 | [Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) | Complex | 🔷 Phase 3 |
+| 1.7 | [Prescription Label OCR](chapter01.07-prescription-label-ocr) | Simple | 🔶 Phase 2 |
+| 1.8 | [EOB Processing](chapter01.08-eob-processing) | Moderate | 🔶 Phase 2 |
+| 1.9 | [Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) | Moderate | 🔶 Phase 2 |
+| 1.10 | [Historical Chart Migration](chapter01.10-historical-chart-migration) | Complex | 🔷 Phase 3 |
 
 **Reading order:** Recipes build on each other. Start with 1.1 — each successive recipe introduces new concepts while referencing patterns established earlier. If you're only here for one thing, Recipe 1.4 (Prior Auth) is the most common real-world ask and can be read after 1.1-1.2 for context.
 
 ---
 
-*Next: [Recipe 1.1 — Insurance Card Scanning →](recipe-1.1-insurance-card-scanning.md)*
+*Next: [Recipe 1.1 — Insurance Card Scanning →](chapter01.01-insurance-card-scanning)*

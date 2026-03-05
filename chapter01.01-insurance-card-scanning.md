@@ -248,4 +248,4 @@ def store_result(image_key: str, fields: dict, flagged: list):
 
 ---
 
-*← [Chapter 1 Index](ch01-index.md) · [Next: Recipe 1.2 — Patient Intake Form Digitization →](recipe-1.2-patient-intake-digitization.md)*
+*← [Chapter 1 Index](chapter01-index) · [Next: Recipe 1.2 — Patient Intake Form Digitization →](chapter01.02-patient-intake-digitization)*

@@ -209,4 +209,4 @@ def map_to_rxnorm(drug_text: str) -> list[dict]:
 
 ---
 
-*← [Recipe 1.6 — Handwritten Clinical Note Digitization](recipe-1.6-handwritten-clinical-note-digitization.md) · [Next: Recipe 1.8 — EOB Processing →](recipe-1.8-eob-processing.md)*
+*← [Recipe 1.6 — Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) · [Next: Recipe 1.8 — EOB Processing →](chapter01.08-eob-processing)*

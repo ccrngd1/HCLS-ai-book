@@ -263,4 +263,4 @@ def check_medical_necessity(icd10_codes: list[dict], ordered_tests: list[dict]) 
 
 ---
 
-*← [Recipe 1.2 — Patient Intake Form Digitization](recipe-1.2-patient-intake-digitization.md) · [Next: Recipe 1.4 — Prior Authorization Document Processing →](recipe-1.4-prior-auth-document-processing.md)*
+*← [Recipe 1.2 — Patient Intake Form Digitization](chapter01.02-patient-intake-digitization) · [Next: Recipe 1.4 — Prior Authorization Document Processing →](chapter01.04-prior-auth-document-processing)*
