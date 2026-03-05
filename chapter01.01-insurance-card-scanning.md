@@ -301,6 +301,8 @@ FUNCTION store_result(image_key, fields, flagged):
                                                                   // downstream systems check this flag to route cards appropriately
 ```
 
+> **Want the working code?** The pseudocode above is designed to be readable by anyone. If you're ready to see it implemented, the [Python Example](chapter01.01-python-example) provides a complete, heavily commented Python implementation of all five steps using boto3, along with notes on the gap between this example and a production deployment.
+
 ### Expected Results
 
 **Sample output for a typical BCBS card:**
