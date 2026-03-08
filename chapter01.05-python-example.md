@@ -19,8 +19,8 @@ You'll also need:
 - An AWS account with Bedrock, Textract, Comprehend Medical, DynamoDB, SNS, and S3 configured
 - Nova Lite and Claude Sonnet 4.6 enabled in Bedrock Model Access (us-east-1)
 - A signed AWS BAA covering PHI processing
-- IAM permissions: `bedrock:InvokeModel`, `textract:*`, `comprehend-medical:*`,
-  `dynamodb:PutItem`, `s3:GetObject`, `s3:PutObject`, `s3:PutObjectRetention`
+- IAM permissions: `bedrock:InvokeModel`, `textract:StartDocumentAnalysis`, `textract:GetDocumentAnalysis`,
+  `comprehendmedical:InferICD10CM`, `dynamodb:PutItem`, `s3:GetObject`, `s3:PutObject`, `s3:PutObjectRetention`
 
 <!-- [EDITOR: "Claude Sonnet" → "Claude Sonnet 4.6" in setup requirements, consistent with version-number guidance.] -->
 
@@ -187,13 +187,13 @@ In match_reasoning, explain your assessment using the document summary provided.
 Do not use quotation marks as if citing verbatim text from the original document;
 the summary you received is an LLM extraction, not a direct transcript.
 If a claim line is not supported, state what documentation would be needed.
-"""
+""".strip()
 # [EDITOR: review fix P1-4] Renamed supporting_evidence to match_reasoning and added
 # evidence_type: "llm_synthesis". The claim-matching LLM receives a summarized extraction,
 # not the original OCR text. Any evidence it surfaces is LLM-reconstructed from that
 # summary, not a verbatim quote from the document. Labeling it match_reasoning and
 # setting evidence_type to "llm_synthesis" makes this explicit for downstream consumers
-# and claims examiners auditing automated decisions..strip()
+# and claims examiners auditing automated decisions.
 ```
 
 ---

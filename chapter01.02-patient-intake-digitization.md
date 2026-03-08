@@ -1,6 +1,6 @@
 # Recipe 1.2: Patient Intake Form Digitization ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.009 per 3-page form
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.20 per 3-page form
 
 ---
 
@@ -489,7 +489,7 @@ FUNCTION assemble_and_store(document_key, page_count, clean_fields, clean_checkb
 | Table extraction accuracy | 90–96% (depends on table formatting) |
 | Checkbox detection accuracy | 97–99% for cleanly printed checkboxes |
 | Handwriting accuracy | 70–85% (highly variable; see Recipe 1.6) |
-| Cost per 3-page form | ~$0.009 (Textract) + negligible Lambda/DynamoDB |
+| Cost per 3-page form | ~$0.20 (Textract FORMS + TABLES at $0.065/page) + negligible Lambda/DynamoDB |
 
 **Where it struggles:** Handwritten entries in printed tables, which is exactly what patients do when listing their medications in a hurry. Borderless tables where Textract infers grid structure from spatial alignment: a slightly skewed scan can shift cell assignments by one row. Forms with very dense small-font tables are also challenging: Textract may merge adjacent cells or misalign rows. And any free-text field longer than a sentence ("please describe your symptoms") produces raw text that needs additional processing before it's structured enough to use downstream.
 

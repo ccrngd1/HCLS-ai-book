@@ -81,8 +81,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------------
 MODEL_TIER1_CLASSIFY = "us.amazon.nova-lite-v1:0"
 MODEL_TIER2_EXTRACT  = "us.amazon.nova-pro-v1:0"
-MODEL_TIER3_SONNET   = "us.anthropic.claude-sonnet-4-6-v1"
-MODEL_TIER4_OPUS     = "us.anthropic.claude-opus-4-6-v1"
+MODEL_TIER3_SONNET   = "us.anthropic.claude-sonnet-4-6-20260217-v1:0"
+MODEL_TIER4_OPUS     = "us.anthropic.claude-opus-4-6-20260204-v1:0"
 
 # Confidence thresholds for tier routing
 TEXTRACT_VISION_THRESHOLD = 0.65   # below this, route to vision model

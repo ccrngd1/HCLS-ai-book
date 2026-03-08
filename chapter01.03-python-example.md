@@ -999,7 +999,7 @@ def process_lab_requisition(
     print("Step 4: Extracting diagnosis and clinical notes text...")
     diagnosis_text, notes_text, combined_text = extract_clinical_text(text_key_values)
     if diagnosis_text:
-        print(f"  Diagnosis text: {diagnosis_text[:80]}{'...' if len(diagnosis_text) > 80 else ''}")
+        print(f"  Diagnosis field extracted, length={len(diagnosis_text)}")
     else:
         print("  No diagnosis field found on this form")
 
