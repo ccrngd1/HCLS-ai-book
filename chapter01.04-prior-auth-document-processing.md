@@ -1,6 +1,6 @@
 # Recipe 1.4: Prior Authorization Document Processing 🔶
 
-**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.85–1.25 per 10-page submission
+**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.80–1.00 per 10-page submission
 
 ---
 
@@ -18,11 +18,17 @@ This takes 15 to 45 minutes of a trained clinical reviewer's time for a single c
 
 The CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F) is pushing payers hard toward faster, more automated decisions: 72-hour turnaround for standard requests, 24 hours for expedited. State-level prior auth reform is adding more pressure on top of that. The regulatory calendar is not waiting for the technology.
 
-Here's the document processing challenge at the core of all of this. A prior auth submission is not one document type. It's five to seven different document types, faxed together, in no particular order, at whatever quality the originating fax machine produces. Page 1 might be a structured cover sheet you can extract like an insurance card. Page 3 is a clinical office note with free text diagnosis and treatment history. Page 7 is a printed lab results table. Page 11 is a typed letter from the ordering physician describing why alternative treatments were tried and failed.
+Here's the document processing challenge at the core of all of this. A prior auth submission is not one document type. It's five to seven different document types, faxed together, in no particular order, at whatever quality the originating fax machine produces. Page 1 might be a structured cover sheet you can extract like an insurance card. Page 3 is a clinical office note with free-text diagnosis and treatment history. Page 7 is a printed lab results table. Page 11 is a typed letter from the ordering physician describing why alternative treatments were tried and failed.
 
 Each of these requires a completely different extraction approach. Trying to process them all the same way gets you bad data from most of them. The insight that makes this problem tractable: classify each page first, then route it to the right extractor.
 
-That's what this recipe is about.
+That sounds simple. And for a while, it is. A classifier built on keyword matching and document structure can handle the submissions you've seen before. It handles them reliably and cheaply. For a few months, you feel good about it.
+
+Then you hit the ceiling.
+
+The physician letter from a rural clinic uses "Service Requested Code" where everyone else uses "CPT Code." The cover sheet from a regional plan calls the diagnosis field "Dx Indication." A clinical note includes an embedded lab results grid that flips the classifier toward "lab report," burying the narrative evidence the downstream logic needs. None of these are exotic. They're just variability at healthcare scale, and the keyword-based system has no idea what to do with any of them.
+
+This is where Recipes 1.1 through 1.3 end and Recipe 1.4 begins. The extraction services we've used so far are excellent at what they do. But what this problem now needs isn't more extraction. It needs something that can *read* the page, understand what it's looking at in context, and reason about the content the way a clinical reviewer would. That's where we introduce a large language model as the reasoning layer that sits between the OCR output and the extraction logic. That introduction carries through the rest of the chapter.
 
 ---
 
@@ -30,74 +36,169 @@ That's what this recipe is about.
 
 ### What Document Classification Actually Is
 
-Document classification, at its most useful, is the problem of answering one question: "what kind of page is this?" The answer determines what you do with the page next.
+Document classification, at its most useful, is the problem of answering one question: what kind of page is this? The answer determines everything you do with the page next.
 
-There are several ways to approach it. The spectrum runs from simple keyword matching on one end to trained ML classifiers on the other, with a useful middle ground that combines structural signals from the document with a modest set of heuristics.
+There are several ways to approach it. The spectrum runs from keyword heuristics on one end to large language models on the other, with trained text classifiers sitting in the middle. Each point on that spectrum represents a different trade-off between simplicity, accuracy, and maintenance burden.
 
-**Keyword heuristics.** The simplest approach: look for words that tend to appear on specific page types. A page containing "HISTORY OF PRESENT ILLNESS" and "ASSESSMENT AND PLAN" is almost certainly a clinical note. A page containing "FINDINGS" and "IMPRESSION" and "TECHNIQUE" is probably an imaging report. A page with "MEMBER ID," "REQUESTING PROVIDER," and "CPT CODE" in close proximity is likely a cover sheet.
+Let's walk through them in order. Not because the last one is obviously right for every situation, but because understanding why the simpler approaches work and where they fail is what makes the LLM approach legible. You'll make better decisions about model selection when you understand what problem each approach is actually solving.
 
-This sounds unsophisticated. It works well. Prior auth submissions are not written to confuse classifiers. They follow recognizable templates. A keyword-based classifier built on 20 to 30 carefully chosen signatures can achieve 85 to 90% accuracy on real-world prior auth submissions without training a single model.
+### Keyword Heuristics: Simple, Surprisingly Effective, Inevitably Brittle
 
-The failure modes are predictable: pages with minimal text (a single diagram, a mostly blank page), pages that blend types (a clinical note with an embedded lab results table), and atypical document formats from unusual payer or provider templates. These represent a small fraction of volume, but they exist.
+The simplest classification approach: look for words that tend to appear on specific page types.
 
-**Layout-aware classification.** Modern document analysis systems don't just return text. They return structural metadata: where text blocks are positioned, whether the page contains form fields and key-value pairs, whether there are tables, whether the text is organized in multi-column layout, and so on. This structural information is genuinely useful for classification.
+A page containing "HISTORY OF PRESENT ILLNESS" and "ASSESSMENT AND PLAN" is almost certainly a clinical note. A page containing "FINDINGS" and "IMPRESSION" and "TECHNIQUE" is probably an imaging report. A page with "MEMBER ID," "REQUESTING PROVIDER," and "CPT CODE" in close proximity is likely a cover sheet.
 
-A cover sheet has form fields (key-value pairs) with demographic and administrative data. A clinical note is primarily flowing prose with few or no form fields. A lab results page has tables with numeric values and reference ranges. An imaging report is prose with section headers. These structural signatures can be combined with keyword signals to improve classification accuracy and reduce ambiguity when keywords are sparse.
+This sounds unsophisticated. It works well. Prior auth submissions are not written to confuse classifiers. They follow recognizable templates. A keyword-based classifier built on 20 to 30 carefully chosen signatures per page type can achieve high accuracy on real-world prior auth submissions without training a single model.
 
-**Trained ML classifiers.** For high-volume deployments where accuracy really matters, training a text classification model on labeled prior auth pages consistently pushes accuracy above 95%. The training data requirement is realistic: a few thousand labeled pages from your own document corpus, correctly annotated with page types. The maintenance burden is also modest: re-train periodically as new payer templates appear.
+You can also layer in structural signals. Modern document analysis systems return not just text, but metadata: where text blocks are positioned on the page, whether the page contains form fields and key-value pairs, whether there are tables, whether the text runs in multi-column layout. A cover sheet has form fields. A clinical note is primarily flowing prose. A lab results page has tables with numeric values and reference ranges. These structural signatures, combined with keyword signals, push accuracy toward the upper end of that range.
 
-The tradeoff compared to keyword heuristics: a trained classifier requires training infrastructure and labeled data, adds a dependency on a hosted model endpoint, and needs periodic retraining as document patterns drift. For most production deployments, starting with keyword heuristics plus layout signals is the right move. The model upgrade is a natural evolution once you've accumulated enough labeled data from human reviewer corrections.
+So why not stop here? Why does this recipe exist?
 
-### The Fan-Out Extraction Pattern
+### Where Heuristics Break Down
 
-Once you know what each page is, the extraction logic is a routing problem. Each page type gets sent to the extractor designed for it.
+Because misclassification rate is impactful in healthcare, especially at scale.
 
-This is called fan-out because the orchestration layer takes a list of classified pages and fans them out to parallel extraction processes. A cover sheet goes to the forms extractor. Clinical notes go to the clinical NLP extractor. Lab results go to the table parser. Imaging reports go to the entity extractor.
+At 500,000 submissions per year, averaging 8 pages each, you have 4 million pages going through the classifier. At 10% misclassification, 400,000 pages per year get routed to the wrong extractor. Most of those fail gracefully: a clinical note page routed to the lab results extractor finds no tables and returns an empty result. But some produce confident-looking wrong output that the assembler happily incorporates into the structured record.
 
-The fan-out pattern has three meaningful advantages. First, each extractor can be optimized for its specific page type without compromising the others. The clinical NLP extractor can be aggressive about extracting diagnosis entities and ICD-10 codes; the table parser doesn't need to care about clinical entities at all. Second, the extractors can run in parallel, which matters for latency. A 12-page submission with pages spread across four types can fan out to four parallel processes and complete in roughly the time of the slowest individual extractor. Third, each extractor produces confidence scores and flagged fields independently, and those signals aggregate cleanly into a per-page confidence summary.
+The failure modes cluster into three categories.
 
-The fan-out pattern requires an assembler on the other end: a function that receives results from all the extractors and merges them into a single structured prior auth record. The assembler has to handle several interesting problems.
+**Ambiguous pages.** A physician letter that opens with a demographic table looks like a cover sheet until you read the first paragraph. A clinical note that includes an embedded lab results grid reads as "lab results" to a keyword classifier, even though the clinical narrative is the relevant content. Keywords can't see context. They see the presence or absence of specific strings.
 
-**Deduplication.** The same diagnosis might appear on the cover sheet (as an ICD-10 code), in the clinical note (as a diagnosis entity from Comprehend Medical), and in the physician letter (as a plain text mention). A naive assembler produces three entries for the same condition. A good assembler deduplicates by code value, keeping the highest-confidence instance.
+**Blended document types.** Templates evolve. A payer updates their cover sheet to include a short clinical summary section. Now the cover sheet has clinical keywords ("diagnosis," "treatment history") alongside administrative ones. The classifier scores it as ambiguous and may pick wrong. You update your keyword list. Six months later, a different payer makes a different change and you're back at the whiteboard.
 
-**Confidence aggregation.** The cover sheet might extract with 97% average confidence (it's a clean printed form). The third clinical note might extract with 79% average confidence (it was handwritten and the OCR quality is poor). The overall submission confidence is not the average of all pages. It's weighted by the importance of each page type to the downstream decision. Cover sheet fields drive the administrative decision; low confidence on those is more consequential than low confidence on a supplementary clinical note.
+**Unusual templates from unusual sources.** Your keyword list is calibrated to the 20 payers who send you the most volume. Then a small regional plan sends a submission where the cover sheet calls the diagnosis field "Dx Indication" and the CPT field "Service Requested Code." Both are reasonable labels. Neither is in your dictionary. Classification fails.
 
-**Partial extraction handling.** Not every submission has every page type. Some don't include imaging reports. Some are just a cover sheet and a physician letter. The assembler needs to handle absent page types gracefully: optional sections remain empty rather than causing failures.
+The underlying problem: keyword heuristics encode your assumptions about what documents look like. They match the templates you've seen before. They fall apart against templates you haven't.
 
-### The Three-Stage Pipeline
+### Trained Text Classifiers: Better Accuracy, New Maintenance Burden
 
-The architecture that emerges from all of this has three distinct stages.
+The natural next step is to train a proper text classifier on labeled examples. You collect a few thousand pages from real prior auth submissions, label each one by hand, and train a model: logistic regression, a gradient boosted tree, or a fine-tuned language model. The model learns statistical patterns from the labeled data that go beyond the keyword dictionary you wrote by hand.
 
-**Stage 1: Full-document extraction.** The entire multi-page submission goes through an OCR and document analysis pass. You get back raw text for every page, structural metadata (form fields, tables, layout blocks), and bounding box coordinates. No semantic interpretation yet. Just structure and text.
+This works significantly better. A well-trained classifier typically reaches 93 to 97% accuracy on held-out test data, handling the ambiguous cases that keyword matching fails on. It learns that "Dx Indication" and "Diagnosis Code" are the same concept because both appear on similar pages with similar surrounding context. It generalizes across formatting variations it's seen during training.
 
-**Stage 2: Page classification and fan-out extraction.** Pages are grouped by number. Each page gets classified. Classified pages fan out to their respective extractors. Clinical text goes to medical NLP. Form fields go to a forms normalizer. Tables go to a table parser. Each extractor runs independently and returns its results with confidence scores.
+Two new problems arrive with it.
 
-**Stage 3: Assembly and storage.** An assembler collects the extractor outputs, deduplicates entities, aggregates confidence, flags low-confidence pages for human review, and writes a single structured prior auth record to the database. That record is what downstream systems consume: the clinical criteria matching engine, the decision orchestration workflow, the reviewer workstation.
+First: you need labeled training data, and you need more of it every time the distribution shifts. Every time a major payer updates their cover sheet template, you need to re-label examples and retrain. The maintenance burden shifts from "keep the keyword dictionary current" to "keep the training data current." Same problem, different form.
 
-The stage boundaries are important. They create natural checkpoints: you can inspect the raw extraction results before classification, the page classifications before extraction, and the per-page extraction results before assembly. When something goes wrong in a complex 15-page submission, you know exactly which stage to look at.
+Second: trained classifiers still fail systematically on truly unseen templates. A model trained on 50 payer templates does well on those 50 payers. The 51st payer, whose documents look nothing like the training distribution, still gets misclassified. The model just fails with higher confidence.
 
-### The Prior Auth Record Schema
+Cloud-based custom classification services (AWS Comprehend Custom Classification, Google AutoML Text, Azure Custom Text Classification) make it easier to train and deploy these models without infrastructure work. But you're still in the business of maintaining training data. For high-volume deployments with stable payer relationships, trained classifiers earn their cost. For long-tail payers and novel templates, the maintenance burden is relentless.
 
-The output isn't arbitrary. The downstream systems consuming this record have specific data needs, and the schema should reflect them.
+### The LLM Approach: Understanding, Not Matching
 
-At minimum, a structured prior auth record needs:
+A large language model approaches classification differently. You show it a page and ask: what kind of document is this, and how confident are you? The model doesn't look for specific strings. It doesn't rely on patterns from your labeled training set. It reads and understands the page text in context. It brings a deep prior about what clinical notes look like, what lab reports look like, what administrative forms look like, accumulated from training on an enormous corpus of text that includes medical literature, clinical documentation, and administrative healthcare records.
 
-- **Administrative data** (from the cover sheet): member identity, requesting provider with NPI, requested service with CPT code, intended date of service, urgency flag
-- **Clinical evidence** (from clinical notes, physician letters, imaging reports): the diagnosis list with ICD-10 codes, the relevant clinical findings, the evidence of medical necessity (documented failed conservative treatments, functional limitations, disease severity), any relevant lab values
-- **Structured lab results** (from lab results pages): numeric values with units and reference ranges, flagged abnormals
-- **Metadata** (from the pipeline itself): page count, per-page classification, per-page extraction confidence, overall needs-review flag
+The practical result: edge cases that would confuse a keyword classifier often don't confuse an LLM. "Dx Indication" is recognizably a diagnosis field to a model that understands medical administrative language. A clinical note with embedded lab values reads as a clinical note because the model understands that prose describing a patient's history is different from a structured lab report, even if both happen to mention lab values.
 
-The clinical criteria matching system (Recipe 2.4) compares the clinical evidence against the payer's medical policy for the requested CPT code. The decision orchestration workflow (Recipe 3.1) uses the full record to determine whether to route to auto-approval, reviewer queue, or additional information request. Both of those systems depend on the quality of the extraction here. Garbage in, wrong decisions out.
+There's more: no keyword list to maintain. No labeled training data to curate. No re-calibration when a payer updates their template. The model generalizes to unseen formats because it understands language rather than matching strings. The "51st payer" problem largely disappears.
 
-### Why This Is Harder Than the Earlier Recipes
+You send the page text (already extracted by OCR) and a classification prompt to the model, with instructions to return a structured response. The model replies with a document type and a confidence score. That's the whole API surface.
 
-Recipes 1.1 through 1.3 all process a single document type with a known structure. An insurance card is always one or two pages. A lab requisition is a predictable form. The extraction logic handles variation within a single type.
+This is what the Bedrock Converse API makes straightforward. You pass extracted text to a foundation model with a system prompt describing the task, and you get a structured classification back. The API is the same regardless of whether you're calling Claude, Nova, or any other model available through the service. Your code doesn't change when you switch models. Only the model ID does.
 
-Prior auth submissions introduce variation across types. Not every submission has every page type. The cover sheet might be on page 1, or pages 1 and 2, or buried after a bunch of clinical notes from a provider who organized their fax differently. The lab results table might use "Result" as the column header or "Value" or just be a printed lab report PDF with a specific reference lab's template.
+(We'll cover the specific API calls in the AWS implementation section. For now: the concept is simple. Send text, get structured classification. Temperature set to zero for near-deterministic output. Move on.)
 
-The page count also matters operationally. A 15-page document through Textract's async API takes 20 to 45 seconds to process. That's fine for batch workflows. For urgent submissions (where the payer has a 24-hour regulatory response window), your extraction pipeline needs to complete quickly enough that a reviewer isn't waiting for the system before they can start work.
+### The LLM as the Reasoning Layer
 
-And because this is a payer UM workflow, every piece of extracted data feeds a decision that affects patient care. A missed ICD-10 code means the clinical criteria match fails on a case that should have passed. A misclassified clinical note page means the NLP never runs and the supporting evidence doesn't make it into the record. Confidence scoring and human review routing are not optional add-ons. They're core to the correctness of the output.
+Classification is only half of what the LLM brings to this pipeline. The other half is clinical reasoning on narrative pages.
+
+In a pure Comprehend Medical pipeline, a clinical note produces a list of entities: conditions, medications, procedures, anatomy. What it doesn't produce is the *relationship* between them or the clinical narrative that connects them. Comprehend Medical will tell you that "physical therapy," "naproxen," and "corticosteroid injection" all appear in a document. It won't tell you that all three were tried, failed over a documented time period, and that failure is the basis for the medical necessity argument the physician is making.
+
+An LLM reads the page the way a clinical reviewer would. It extracts not just the entities but the evidence structure: what condition is being treated, what was tried, why it wasn't sufficient, what findings support the requested intervention. It produces a clinical summary that a downstream criteria-matching system can actually reason against.
+
+This is the shift: Textract is still the best tool for extracting structure from documents. Comprehend Medical is still the best tool for authoritative ICD-10 and RxNorm code mapping. But the LLM becomes the brain that sits on top of extraction, reading what Textract extracted and producing the clinical reasoning that makes those raw entities useful.
+
+### The Model Tiering Concept
+
+Here's something worth pausing on, because it's a principle that carries through the rest of this chapter.
+
+Not all classification and extraction tasks are equally hard. "What type of page is this?" is a relatively simple task. "Extract the clinical evidence supporting medical necessity for this procedure, including failed prior treatments, relevant diagnostic findings, and the physician's reasoning" is a complex reasoning task. Routing a simple task through a powerful, expensive model is wasteful. Routing a complex reasoning task through a cheap, limited model gets you wrong answers.
+
+The right approach is tiered: use the cheapest model that handles each task reliably.
+
+<!-- [EDITOR: Added version numbers (4.5, 4.6) to Claude model names throughout tiering section for precision. Research file confirms: Haiku 4.5 at $1.00/MTok, Sonnet 4.6 at $3.00/MTok, Opus 4.6 at $5.00/MTok.] -->
+
+**Tier 1 (cheap, fast):** Page classification, document triage, simple presence/absence judgments. Amazon Nova Lite at $0.06 per million input tokens is appropriate here. The classification question is well-defined. The page text gives you plenty of signal. You don't need a frontier model.
+
+**Tier 2 (mid-range):** Standard structured extraction from moderately complex documents. Nova Pro at $0.80 per million input tokens or Claude Haiku 4.5 at $1.00 per million. Good accuracy on extraction tasks at reasonable volume cost.
+
+**Tier 3 (capable, higher cost):** Clinical reasoning, medical necessity analysis, extracting context-dependent evidence from narrative text. Claude Sonnet 4.6 at $3.00 per million input tokens. This tier handles the tasks where the model needs to understand clinical context, not just locate and copy fields.
+
+**Tier 4 (maximum capability):** Degraded documents, highly ambiguous content, complex multi-step reasoning. Claude Opus 4.6 at $5.00 per million input tokens. Reserve for cases where everything else fails, or route directly to human review.
+
+The decision is straightforward once you've internalized it:
+
+- Simple classification? Use Tier 1.
+- Structured extraction from clean, predictable content? Use Tier 2.
+- Clinical context and reasoning? Use Tier 3.
+- Degraded or deeply ambiguous document? Use Tier 4, or send to human review.
+
+This recipe introduces the concept. The remaining Chapter 1 recipes build on it.
+
+### The New Fan-Out: Two Paths, Not Four
+
+In a pure keyword-classifier architecture, the fan-out after classification sends each page type to a specialized extractor: a forms extractor for cover sheets, a clinical NLP pipeline for clinical notes, a table parser for lab results, an entity extractor for imaging reports. Four distinct paths, each optimized for its specific input type.
+
+With an LLM in the picture, the fan-out simplifies. The LLM handles extraction and reasoning in a single call for most page types. You don't need a separate extractor for each page type because the LLM understands all of them.
+
+The result is two main paths:
+
+**Path 1: Textract forms extraction.** Cover sheets are structured forms with clear field-value pairs. Textract is purpose-built for exactly this. It's fast, cheap, highly accurate on clean printed forms, and returns field-level confidence scores. Don't replace a specialized tool that does its job well.
+
+**Path 2: LLM extraction and reasoning.** Clinical notes, physician letters, imaging reports, and anything else with narrative content goes to the LLM. A single call extracts clinical entities, diagnosis, medical necessity evidence, failed treatments, and supporting findings in a structured JSON response. One call, one response, no separate NLP pipeline to orchestrate.
+
+Textract still runs first on the entire document, providing OCR and structure data for all pages. Comprehend Medical's full document entity extraction moves out of the main path. Instead, Comprehend Medical appears at the end as a validation step for the clinical concepts the LLM extracted.
+
+### The Hybrid Architecture: Textract + LLM + Comprehend Medical
+
+This is the architecture the rest of this recipe implements:
+
+**Textract for OCR and structure.** Textract is still the best tool for extracting text from documents. It handles multi-page PDFs, returns structured blocks (text, tables, form fields, layout), provides per-field confidence scores, and operates at scale through its async API. Nothing about that changes.
+
+**LLM for classification and clinical reasoning.** After Textract extracts the text, the LLM classifies each page and extracts the clinically relevant content from narrative pages. The LLM's strength is understanding: reading the text the way a human would, extracting meaning rather than pattern-matching against templates.
+
+**Comprehend Medical for code validation.** LLMs are good at extracting clinical concepts ("severe osteoarthritis of the right knee," "failed conservative management"). They're less reliable for mapping those concepts to exact ICD-10 or RxNorm codes required for downstream processing. A model might produce "M17.11" from one run and "M17.1" from another, depending on how the text was phrased.
+
+Comprehend Medical, by contrast, is purpose-built for this mapping. Run `InferICD10CM` on the diagnosis text the LLM extracted, and you get authoritative code inferences with confidence scores. This hybrid approach gets you the LLM's contextual understanding for extraction and Comprehend Medical's precision for coding. Each service does what it was designed for.
+
+### Cost vs. Capability: The Real Numbers
+
+Let's put real numbers on this, because "LLMs cost more" is too vague to act on.
+
+For a typical 10-page prior auth submission with 4 clinical pages:
+
+<!-- [EDITOR: Replaced em dashes used as empty-cell indicators in both "N/A" slots. Em dashes are prohibited per style guide; N/A is clearer in context. Also corrected Comprehend Medical per-page cost from $0.15-0.30 to $0.10-0.25 to align with research ($0.01/100 chars on dense clinical pages ≈ $0.10-0.25/page). Also added model version number to "Clinical reasoning (Sonnet 4.6)" row for consistency with tiering section.] -->
+
+| Component | Old Approach | New Approach |
+|-----------|-------------|--------------|
+| Textract (FORMS+TABLES+LAYOUT) | ~$0.70 | ~$0.70 (unchanged) |
+| Classification | ~$0.01 (keyword logic, negligible) | ~$0.002 (Nova Lite, negligible) |
+| Clinical extraction (Comprehend Medical) | ~$0.10–0.25 per clinical page | N/A |
+| Clinical reasoning (Sonnet 4.6) | N/A | ~$0.012–0.015 per clinical page |
+| ICD-10 code validation | Included above | ~$0.02 (Comprehend Medical, shorter inputs) |
+| **Total per submission** | **~$0.85–1.25** | **~$0.80–1.00** |
+
+The total is comparable. But the composition tells a different story. The expensive Comprehend Medical per-character billing gives way to Sonnet per-token billing, which is cheaper per unit and produces richer, more structured output. Nova Lite classification is effectively free at any submission volume.
+
+Here's where the cost shock actually comes from. Suppose you're new to LLM pricing and reach for Sonnet on every page, not just the clinical ones: 10 pages × $0.015/page = $0.15/submission × 500,000 submissions = $75,000/year just for the LLM step. That's real money and a noticeable increase over the old approach.
+
+Model tiering is the resolution. Apply Nova Lite to classification (10 pages) and Sonnet only to clinical pages (3–4 pages). Total LLM cost drops to roughly $0.05–$0.07 per submission. The Textract cost dominates the total, as it should.
+
+At 500,000 submissions per year: the LLM line item is $25,000–$35,000 annually. The Textract line item is roughly $280,000 (based on an 8-page average submission; for 10-page average, closer to $350,000). The whole pipeline runs for approximately $375,000–$450,000 per year, including Step Functions, Lambda, DynamoDB, and Comprehend Medical validation costs. <!-- [EDITOR: review fix P1-7] Updated total from "$350,000-$400,000" to "$375,000-$450,000" to reconcile with the Prerequisites table. Added the 8-page vs 10-page page-count nuance that explains the Textract component variance. --> That looks very different from the "AI is expensive" narrative once you've done the math.
+
+One more lever: prompt caching. When classifying thousands of pages with the same system prompt, Bedrock's prompt caching cuts input token costs by up to 90% on cache hits. At volume, that brings the LLM line item to under $10,000 per year.
+
+### Deterministic vs. Probabilistic: When It Matters
+
+A keyword classifier gives you the same answer every time for the same input. An LLM might not. The same page text, run twice, usually produces the same classification at temperature=0, but not always.
+
+For classification, near-determinism is achievable with temperature=0. At temperature zero, most models produce consistent output for consistent input. "Consistent" is not the same as "identical in every edge case," but it's close enough for page classification where the stakes of an individual misclassification are low (the page goes to human review).
+
+For clinical reasoning extraction, perfect determinism is less achievable and arguably less important. Two runs of the same clinical note extraction might produce slightly different phrasings of the same evidence. The downstream criteria-matching system cares about the substantive content, not the exact phrasing.
+
+Where determinism genuinely matters: financial calculations, HIPAA compliance checklists, anywhere the output feeds an audit trail that may be reviewed by regulators. In those cases, keep deterministic logic for the deterministic parts and use the LLM only where reasoning and flexibility add value.
+
+For page classification and clinical evidence extraction in a prior auth pipeline, the LLM's probabilistic nature is an acceptable trade-off. You have a human review queue for low-confidence cases. The LLM handles the majority correctly. The edge cases it fumbles are at least *different* from the edge cases that keyword heuristics fumble.
 
 ### The General Architecture Pattern
 
@@ -106,23 +207,35 @@ And because this is a payer UM workflow, every piece of extracted data feeds a d
                                         ↓
                               [Group Pages by Number]
                                         ↓
-                    ┌─────── [Classify Each Page] ───────┐
-                    ↓               ↓             ↓       ↓
-             [Forms           [Clinical        [Table  [Entity
-            Extractor]        NLP]             Parser] Extractor]
-                    ↓               ↓             ↓       ↓
-                    └──────── [Assembler] ────────┘
+                     [LLM Classification: What Type Is Each Page?]
+                       (cheap model, temperature=0, structured response)
                                         ↓
-                       [Structured Prior Auth Record]
-                                        ↓
-                    ┌─────────────────────────────────────┐
-                    ↓                                     ↓
-             [Downstream:                       [Low-Confidence Pages:
-           Clinical Criteria                      Human Review Queue]
-              Matching]
+                    ┌──────────────────────────────────────────┐
+                    ↓                                          ↓
+             [Cover Sheet                        [All Narrative Pages]
+              → Forms Extraction]                Clinical Notes,
+                    ↓                             Physician Letters,
+                    └──────────┐                  Imaging Reports
+                               │                        ↓
+                               │    [LLM Extraction + Clinical Reasoning]
+                               │    (capable model, structured JSON output)
+                               │                        ↓
+                               │    [Code Validation]
+                               │    Authoritative ICD-10 mapping on
+                               │    LLM-extracted clinical concepts
+                               │                        ↓
+                               └──────── [Assembler] ───┘
+                                                ↓
+                               [Structured Prior Auth Record]
+                                                ↓
+              ┌─────────────────────────────────────────────────────┐
+              ↓                                                     ↓
+      [Downstream:                                         [Low-Confidence Pages:
+    Clinical Criteria                                        Human Review Queue]
+       Matching]
 ```
 
-The fan-out to extractors is the key differentiator from a simpler pipeline. Everything before it (full-document extraction, page grouping, classification) happens once. Everything after it (extraction, assembly) happens per page type. The architecture scales naturally: adding a new page type (discharge summaries, operative reports) means adding a new extractor branch without changing anything else.
+The fan-out collapses from four specialized extractors to two main paths. The classification step moves from keyword matching to LLM inference. Code mapping moves from the extraction step to a validation step. Everything else remains structurally the same.
 
 ---
 
@@ -130,13 +243,17 @@ The fan-out to extractors is the key differentiator from a simpler pipeline. Eve
 
 ### Why These Services
 
-**Amazon Textract with LAYOUT feature type.** Textract's LAYOUT feature type is the addition that makes page classification practical. In addition to the FORMS and TABLES blocks from earlier recipes, LAYOUT blocks capture the high-level structural organization of each page: whether it's a header, a section title, a figure caption, or a body text paragraph, all with spatial position data. That structural metadata is exactly what the page classifier uses alongside keyword signals to distinguish a clinical note (flowing prose with section headers) from a cover sheet (fields and key-value pairs). The async API from Recipe 1.2 carries over without modification, with LAYOUT added to the FeatureTypes list.
+**Amazon Textract with LAYOUT feature type.** Textract's role doesn't change. It remains the right tool for OCR and structural extraction. LAYOUT blocks provide the high-level organization of each page, which supplements the LLM's text-based classification with spatial context. FORMS + TABLES + LAYOUT covers structured forms (cover sheets), tabular data (lab results), and general document structure (everything else). The async API from Recipe 1.2 carries forward without modification.
 
-**AWS Step Functions for pipeline orchestration.** The fan-out extraction pattern involves parallel branches running different Lambda functions for different page types, followed by an assembler that merges the results. A single Lambda function can implement all of this, but it gets unwieldy fast. Step Functions is designed exactly for this kind of workflow: parallel branches, error handling per branch, retry logic on transient failures, and built-in logging that makes debugging a failed 15-page submission tractable. For production, Standard Workflows are the better fit here: they provide a visual execution graph in the console showing exactly which branch failed and why, support longer durations for large submissions, and retain execution history for compliance auditing. Express Workflows cost less but have no console execution history by default, which makes debugging fan-out failures significantly harder. Start with Standard; move to Express only after the pipeline is stable and you've confirmed you don't need the execution visibility.
+**Amazon Bedrock with the Converse API for page classification.** The Converse API provides a unified interface for text-to-text calls across all Bedrock models. You send the page text with a classification prompt; the model returns a structured classification response. Using Amazon Nova Lite (`us.amazon.nova-lite-v1:0`) for classification: it's the cheapest multimodal model in the Nova family, more than capable for a well-defined classification task, and at $0.06 per million input tokens the cost is negligible at any submission volume. Temperature=0 for near-deterministic output.
 
-**Amazon Comprehend Medical for clinical pages.** Same rationale as Recipe 1.3: `DetectEntitiesV2` for clinical entity extraction from free text, `InferICD10CM` for ICD-10 code inference. Clinical notes and physician letters both contain the narrative evidence that drives the medical necessity determination. These are the pages where clinical NLP adds the most value. We apply Comprehend Medical to the clinical pages only, not to the entire document, which keeps costs proportional to the number of clinical pages rather than the total page count.
+**Amazon Bedrock with the Converse API for clinical reasoning.** The same Converse API, different model. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1`) for clinical notes, physician letters, and imaging reports. Sonnet handles the contextual understanding these pages require: reading a physician letter and extracting not just the diagnosis but the documented evidence of medical necessity, failed prior treatments, and clinical rationale. A single Bedrock call per page replaces what was previously a separate Comprehend Medical DetectEntitiesV2 call plus manual section-targeting logic.
 
-**Amazon S3, DynamoDB, SNS, and KMS.** Same as Recipes 1.2 and 1.3. Prior auth submissions contain dense PHI: diagnoses, treatment history, procedure requests, member demographics. The same encryption, audit logging, and VPC configuration requirements apply here, amplified by the fact that clinical decision data is involved.
+**Amazon Comprehend Medical for ICD-10 code validation.** `InferICD10CM` stays, but its role narrows. Instead of processing raw page text and extracting codes from scratch, it now validates the clinical concepts that the LLM extracted. The LLM extracts "severe osteoarthritis of the right knee with complete joint space loss." Comprehend Medical maps that phrase to ICD-10 codes with confidence scores. This hybrid uses each service where it's strongest: LLM for contextual extraction, purpose-built service for authoritative code mapping.
+
+**AWS Step Functions for pipeline orchestration.** The fan-out structure is simpler now (two paths instead of four to six), but Step Functions still earns its place. Parallel branches for cover sheets and narrative pages, per-branch error handling, and a visual execution graph for debugging production failures. Standard Workflows over Express Workflows for the same reason as before: production support teams need execution history when a 15-page submission fails on page 9.
+
+**Amazon S3, DynamoDB, SNS, and KMS.** Unchanged from the earlier recipes. PHI in transit and at rest, audit logging, VPC endpoints. The BAA that covers Textract and Comprehend Medical also covers Bedrock.
 
 ### Architecture Diagram
 
@@ -147,33 +264,28 @@ flowchart TB
     C -->|StartDocumentAnalysis\nFORMS + TABLES + LAYOUT| D[Amazon Textract]
     D -->|SNS Completion| E[SNS Topic\ntextract-jobs]
     E -->|Trigger| F[Lambda\npa-retrieve]
-    F -->|Grouped page blocks| G[Step Functions\npa-pipeline]
+    F -->|Textract output → S3\nStart state machine| G[Step Functions\npa-pipeline]
 
-    G --> H{Page Classifier\nper page}
-    H -->|cover_sheet| I[Lambda\npa-extract-cover]
-    H -->|clinical_note\nphysician_letter| J[Lambda\npa-extract-clinical]
-    H -->|lab_results| K[Lambda\npa-extract-labs]
-    H -->|imaging_report| L[Lambda\npa-extract-imaging]
-    H -->|other| M[Pass-through\nraw text only]
+    G --> H{Bedrock Classify\nNova Lite per page\ntemp=0}
+    H -->|cover_sheet| I[Lambda\npa-extract-cover\nTextract FORMS]
+    H -->|clinical_note\nphysician_letter\nimaging_report| J[Lambda\npa-extract-clinical\nBedrock Sonnet]
+    H -->|other| K[Pass-through\nraw text only]
 
-    J -->|Diagnosis text| N[Comprehend Medical\nInferICD10CM]
-    J -->|Clinical text| O[Comprehend Medical\nDetectEntitiesV2]
-    N --> P[Lambda\npa-assembler]
-    O --> P
-    I --> P
-    K --> P
-    L --> P
-    M --> P
+    J -->|LLM-extracted\nclinical concepts| L[Comprehend Medical\nInferICD10CM\nCode Validation]
+    L --> M[Lambda\npa-assembler]
+    I --> M
+    K --> M
 
-    P -->|Structured PA record| Q[DynamoDB\nprior-auth-records]
-    P -->|Low-confidence pages| R[Review Queue\n→ Recipe 1.6]
-    P -->|Trigger| S[→ Recipe 2.4\nClinical Criteria Matching]
+    M -->|Structured PA record| N[DynamoDB\nprior-auth-records]
+    M -->|Low-confidence pages| O[Review Queue\n→ Recipe 1.6]
+    M -->|Trigger| P[→ Recipe 2.4\nClinical Criteria Matching]
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
-    style N fill:#f96,stroke:#333
-    style O fill:#f96,stroke:#333
-    style Q fill:#9ff,stroke:#333
+    style H fill:#e8d5f5,stroke:#6b46c1
+    style J fill:#e8d5f5,stroke:#6b46c1
+    style L fill:#f96,stroke:#333
+    style N fill:#9ff,stroke:#333
     style G fill:#adf,stroke:#333
 ```
 
@@ -181,95 +293,92 @@ flowchart TB
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Everything from Recipes 1.2 and 1.3 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical), plus AWS Step Functions |
-| **IAM Permissions** | All permissions from Recipes 1.2 and 1.3, plus: `states:StartExecution`, `states:DescribeExecution` (for Step Functions). The Lambda execution role for `pa-start` needs `states:StartExecution` on the specific state machine ARN only. |
-| **Textract Features** | FORMS + TABLES + LAYOUT in the `FeatureTypes` list. LAYOUT adds approximately $1.50 per 1,000 pages on top of the base async pricing. |
-| **BAA** | AWS BAA signed. Prior auth submissions contain dense PHI including clinical narratives, treatment history, and procedure requests. The same BAA that covers Textract and Comprehend Medical under earlier recipes covers this workflow. |
-| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. All API calls over TLS. Text sent to Comprehend Medical is not retained by AWS. Step Functions execution history is encrypted at rest using SSE. |
-| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. |
-| **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, Step Functions, and DynamoDB API calls. Prior auth submissions are clinical decision records; the complete audit trail is a regulatory requirement. |
-| **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1-2 clinical notes, a lab results page, and a physician letter. HL7 FHIR Examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for building test cases. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS + TABLES + LAYOUT): $0.065 per page ($0.05 forms + $0.015 tables; LAYOUT adds no per-page cost), or $0.65 for a 10-page submission. Comprehend Medical (InferICD10CM + DetectEntitiesV2) on extracted clinical text: approximately $0.05-0.15 per clinical page, depending on text length. A 10-page submission with 4 clinical pages runs approximately $0.85-1.25 total. Step Functions Standard Workflows: $0.025 per 1,000 state transitions, approximately $0.002 per submission. At 500,000 submissions per year with an average of 8 pages and 3 clinical pages each: roughly $500K-800K per year in service costs. That math looks different when you consider that replacing even one clinical reviewer FTE (fully loaded: $150K-200K/year) pays for the infrastructure at a fraction of the volume. |
+| **AWS Services** | Everything from Recipes 1.2 and 1.3 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical), plus Step Functions and Amazon Bedrock |
+| **IAM Permissions** | All permissions from Recipes 1.2 and 1.3, plus: `states:StartExecution`, `states:DescribeExecution` (Step Functions); `bedrock:InvokeModel` on the specific model ARNs for Nova Lite and Claude Sonnet 4.6. Lambda execution roles for the extraction functions need `bedrock:InvokeModel` scoped to the specific model ARNs used. |
+| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in your Bedrock console before first use. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1`) route to the best available region automatically. Enable both in Bedrock Model Access before deploying. **Cross-region inference profiles and VPC endpoints:** when your Lambda calls the `bedrock-runtime` VPC interface endpoint in your region, AWS routes the request to the appropriate backend region (us-east-1, us-east-2, or us-west-2) internally. PHI does not traverse the public internet; the VPC endpoint keeps API traffic on the AWS private network regardless of which backend region processes the request. For organizations that must document data flows for HIPAA compliance, note that inference may occur in any of those three US regions. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate whether direct single-region model IDs (without the `us.` prefix) are required. <!-- [EDITOR: review fix P1-6] Added cross-region inference + VPC interaction explanation. Security teams reviewing HIPAA deployments ask whether PHI leaves the VPC when using cross-region profiles. Added clear answer: PHI stays on AWS private network; inference backend is internal routing only. --> |
+| **Textract Features** | FORMS + TABLES + LAYOUT in the `FeatureTypes` list. LAYOUT adds approximately $5.00 per 1,000 pages ($0.005/page) on top of the base async pricing. <!-- [EDITOR: review fix P0-1] Corrected LAYOUT pricing from $1.50 to $5.00 per 1,000 pages. Research file specifies $0.005/page = $5.00/1,000 pages. Original figure underestimated this cost by 3.3x. --> |
+| **BAA** | AWS BAA signed. Bedrock is a HIPAA-eligible service. PHI can be sent to Bedrock models under the BAA. Models do not retain or train on customer data sent via Bedrock APIs. Same BAA covers Textract, Comprehend Medical, and Bedrock. |
+| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. All API calls over TLS. Text sent to Bedrock and Comprehend Medical is not retained by AWS. Step Functions execution history encrypted at rest via SSE. |
+| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, KMS, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock` (model management API) and `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe). A VPC with only `com.amazonaws.REGION.bedrock` will silently drop all Converse API calls in a no-egress HIPAA environment. Most deployments need only `bedrock-runtime`; include `bedrock` if you also manage model access programmatically. <!-- [EDITOR: review fix P0-2] Separated `bedrock` and `bedrock-runtime` VPC endpoints. These are distinct interface endpoints. Missing `bedrock-runtime` causes silent Converse API failures in no-egress HIPAA VPCs. --> |
+| **Lambda Timeouts** | Lambda's default 3-second timeout will fail on the first Bedrock Sonnet call (typical latency: 2–5 seconds under normal load, 10–15 seconds under high load). Configure minimum timeouts: `pa-classify` 3–5 minutes (classification averages 1–3 seconds per page; sequential processing of a 12-page submission needs margin), `pa-extract-clinical` 5–10 minutes (Sonnet calls can reach 15 seconds at peak; a 4-page sequential extraction with retries needs the full window), `pa-assembler` 2 minutes. Use provisioned concurrency to eliminate Lambda cold-start latency for time-sensitive expedited PA submissions. <!-- [EDITOR: review fix P0-3] Added Lambda timeout requirements. Default 3-second timeout fails on first Sonnet call. Added per-function minimum values for all three Lambda roles in this pipeline. --> |
+| **CloudTrail** | Enabled for all API calls including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Prior auth submissions are clinical decision records; the complete audit trail is a regulatory requirement. |
+| **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1–2 clinical notes, a lab results page, and a physician letter. HL7 FHIR examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for test cases. Never use real PHI in development. |
+| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT): ~$0.07/page, or $0.70 for a 10-page submission. Bedrock Nova Lite classification: ~$0.0002/page, negligible. Bedrock Sonnet 4.6 clinical reasoning (4 clinical pages): ~$0.05–0.06. Comprehend Medical InferICD10CM on extracted concepts (shorter inputs): ~$0.02–0.05. Step Functions Standard Workflows: ~$0.002/submission. Per-submission total: ~$0.80–1.00. At 500,000 submissions/year, the end-to-end pipeline cost (Textract, Bedrock, Comprehend Medical, Step Functions, Lambda, DynamoDB) is approximately $375,000–$450,000 annually. See the Technology section for a per-component breakdown. Prompt caching on the classification system prompt can reduce Bedrock input costs by up to 90%, bringing the LLM line item to under $10,000/year at that volume. <!-- [EDITOR: review fix P1-7] Reconciled cost figure. Previous text said "$400,000-500,000 total" here and "$350,000-$400,000" in the Technology section for the same deployment. Unified to "$375,000-$450,000" with an explicit pointer to the Technology section for component breakdown. --> |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Textract** | Full multi-page document analysis: FORMS, TABLES, and LAYOUT blocks for all pages |
-| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code inference from extracted clinical and physician letter text |
-| **Amazon Comprehend Medical (DetectEntitiesV2)** | Clinical entity extraction from narrative pages: conditions, medications, procedures |
+| **Amazon Textract** | Full multi-page document analysis: FORMS, TABLES, and LAYOUT blocks for all pages; OCR foundation for the entire pipeline |
+| **Amazon Bedrock (Nova Lite)** | Page classification via Converse API; cheap, fast, near-deterministic at temperature=0 |
+| **Amazon Bedrock (Claude Sonnet 4.6)** | Clinical reasoning and extraction from narrative pages: clinical notes, physician letters, imaging reports |
+| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code validation on LLM-extracted clinical concepts; authoritative code mapping |
 | **AWS Step Functions (Standard Workflows)** | Orchestrates the classify → fan-out → assemble pipeline with parallel branches and error handling |
-| **Amazon S3** | Stores incoming prior auth PDFs and extraction artifacts; encrypted at rest with KMS |
-| **AWS Lambda** | Individual extraction functions: pa-start, pa-retrieve, pa-extract-cover, pa-extract-clinical, pa-extract-labs, pa-extract-imaging, pa-assembler |
+| **Amazon S3** | Stores incoming prior auth PDFs and Textract output artifacts; encrypted at rest with KMS |
+| **AWS Lambda** | Extraction functions: pa-start, pa-retrieve, pa-classify, pa-extract-cover, pa-extract-clinical, pa-assembler |
 | **Amazon SNS** | Receives Textract async job completion notification; triggers pa-retrieve Lambda |
 | **Amazon DynamoDB** | Stores structured prior auth records; PHI encrypted at rest |
 | **AWS KMS** | Customer-managed encryption keys for S3, DynamoDB, and Step Functions execution history |
-| **Amazon CloudWatch** | Logs, metrics, alarms for pipeline failures, page classification accuracy, and confidence distributions |
+| **Amazon CloudWatch** | Logs, metrics, alarms for pipeline failures, Bedrock token usage, and confidence distributions |
 
 ### Code
 
 > **Reference implementations:** The following AWS sample repos demonstrate the patterns used in this recipe:
 >
-> - [`aws-ai-intelligent-document-processing`](https://github.com/aws-samples/aws-ai-intelligent-document-processing): Comprehensive IDP solutions with multi-stage extraction pipelines, document classification, A2I human review integration, and generative AI for complex fields
-> - [`amazon-textract-and-comprehend-medical-document-processing`](https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing): Workshop-style repo for multi-stage medical document processing pipelines; covers PDF extraction, entity recognition, and Lambda orchestration
-> - [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare-specific: extracting and validating medical claims data with both services, with CloudFormation deployment templates
-> - [`document-processing-pipeline-for-regulated-industries`](https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries): Boilerplate solution for processing image and PDF documents in regulated industries, including lineage and pipeline metadata services
-> - [`guidance-for-low-code-intelligent-document-processing-on-aws`](https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws): Guidance implementation for scalable IDP architecture covering ingestion, extraction, enrichment, and storage
+> - [`aws-ai-intelligent-document-processing`](https://github.com/aws-samples/aws-ai-intelligent-document-processing): Comprehensive IDP solutions with multi-stage extraction pipelines, document classification, A2I human review integration, and generative AI enrichment
+> - [`amazon-textract-and-comprehend-medical-document-processing`](https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing): Workshop-style repo for multi-stage medical document processing pipelines covering PDF extraction, entity recognition, and Lambda orchestration
+> - [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare-specific extraction and validation with both services, with CloudFormation deployment templates
+> - [`document-processing-pipeline-for-regulated-industries`](https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries): Regulated-industry document pipeline with lineage tracking and pipeline metadata services
+> - [`guidance-for-low-code-intelligent-document-processing-on-aws`](https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws): Scalable IDP architecture guidance covering ingestion, extraction, enrichment, and storage patterns
 
 #### Walkthrough
 
-**Steps 1 and 2: Async Textract extraction and result retrieval.** These steps are identical to Recipe 1.2, with one addition: include LAYOUT in the `FeatureTypes` list. The `pa-start` Lambda submits the job and exits. The `pa-retrieve` Lambda fires on the SNS completion notification, retrieves all result pages via paginated `GetDocumentAnalysis`, and builds a full block list and a block index (block ID to block). See Recipe 1.2 for the complete pseudocode. We won't repeat it here.
+**Steps 1 and 2: Async Textract extraction and result retrieval.** These steps are identical to Recipe 1.2, with one addition: include LAYOUT in the `FeatureTypes` list. The `pa-start` Lambda submits the job and exits. The `pa-retrieve` Lambda fires on the SNS completion notification, retrieves all result pages via paginated `GetDocumentAnalysis`, and builds a full block list.
 
-The one difference from Recipe 1.2: the `pa-retrieve` Lambda does not do the extraction itself. It writes the raw Textract response to S3 (as a JSON file keyed to the job ID), then starts the Step Functions state machine, passing the S3 location of the Textract output. This keeps the `pa-retrieve` Lambda simple and lets Step Functions handle all the conditional logic.
+The one structural change from Recipe 1.2: `pa-retrieve` writes the raw Textract output to S3 (as JSON, keyed to the job ID), then starts the Step Functions state machine with the S3 reference. This keeps the payload small and bypasses Step Functions' 256 KB input limit. Every subsequent step reads from S3 rather than receiving raw blocks in its input.
 
 ```
 FUNCTION retrieve_and_handoff(textract_job_id, document_key, state_machine_arn):
     // Retrieve all Textract result pages (same paginated call as Recipe 1.2)
     all_blocks = retrieve_all_textract_blocks(textract_job_id)
 
-    // Write the raw block list to S3 for the pipeline steps to consume
+    // Write the raw block list to S3 for downstream steps to consume.
+    // Use the job ID as part of the key so results don't collide across submissions.
     textract_output_key = "textract-outputs/" + textract_job_id + "/blocks.json"
     write all_blocks to S3 at textract_output_key
 
     // Start the Step Functions state machine.
-    // Pass the S3 key for the Textract output, not the raw blocks themselves.
-    // Step Functions input payloads have a size limit; S3 references bypass it.
+    // Pass S3 references, not raw blocks.
+    // Step Functions input payloads have a 256 KB limit; large documents easily exceed it.
     start Step Functions execution at state_machine_arn with input:
-        document_key         = document_key           // the original PA submission PDF
-        textract_output_key  = textract_output_key    // where the blocks live
+        document_key         = document_key           // original PA submission PDF
+        textract_output_key  = textract_output_key    // where the Textract blocks live
         textract_job_id      = textract_job_id        // for audit trail
 ```
 
-**Step 3: Group Textract blocks by page.** The Textract result is a flat list of blocks for the entire document. Each block has a `Page` attribute indicating which page it belongs to. This step groups those blocks so that each page can be classified and extracted independently.
-
-This step also pre-computes the full text for each page (by concatenating the LINE blocks in page order) and notes which structural features are present: whether the page has form fields (KEY_VALUE_SET blocks), tables (TABLE blocks), and layout elements (LAYOUT blocks). These structural signals feed the classifier in the next step.
+**Step 3: Group Textract blocks by page.** Read the S3 Textract output, group blocks by page number, extract full page text from LINE blocks, and flag which structural features each page has (form fields, tables, layout elements). These structural signals feed into the LLM classification prompt as metadata.
 
 ```
 FUNCTION group_blocks_by_page(all_blocks):
-    // Initialize a structure to hold data for each page.
     pages = empty map  // page_number -> { blocks, text, has_tables, has_forms, layout_blocks }
 
     FOR each block in all_blocks:
         page_num = block.Page  // Textract page numbers are 1-indexed
 
-        // Initialize this page entry on first encounter
         IF page_num not in pages:
             pages[page_num] = {
-                blocks:        empty list,   // all blocks for this page
-                text:          empty string, // full text (assembled from LINE blocks)
-                has_tables:    false,        // true if any TABLE block is on this page
-                has_forms:     false,        // true if any KEY_VALUE_SET block is on this page
-                layout_blocks: empty list    // LAYOUT blocks for structural classification
+                blocks:        empty list,
+                text:          empty string,
+                has_tables:    false,
+                has_forms:     false,
+                layout_blocks: empty list
             }
 
-        // Add this block to the page
         pages[page_num].blocks.append(block)
 
-        // Assemble page text from LINE blocks (these are the detected text lines)
         IF block.BlockType == "LINE":
             pages[page_num].text += block.Text + "\n"
 
-        // Note structural features (used by the classifier)
         IF block.BlockType == "TABLE":
             pages[page_num].has_tables = true
 
@@ -277,162 +386,175 @@ FUNCTION group_blocks_by_page(all_blocks):
             pages[page_num].has_forms = true
 
         IF block.BlockType starts with "LAYOUT_":
-            // LAYOUT blocks include: LAYOUT_TITLE, LAYOUT_HEADER, LAYOUT_TEXT,
-            // LAYOUT_TABLE, LAYOUT_FIGURE, LAYOUT_KEY_VALUE, LAYOUT_PAGE_NUMBER
             pages[page_num].layout_blocks.append(block)
 
     RETURN pages
 ```
 
-**Step 4: Classify each page.** This is the step that makes the whole pipeline work. For each page, we combine keyword signals (words and phrases that strongly indicate a specific page type) with structural signals (presence of forms, tables, LAYOUT blocks) to determine the page type. Higher scores on both dimensions increase confidence in the classification.
+**Step 4: Classify each page with a foundation model.** This is where the pipeline changes substantially. Instead of scoring keyword matches, we send the page text and its structural metadata to a foundation model via the Converse API.
 
-The keyword signatures below were developed from real prior auth submissions across multiple payer and provider templates. The `min_matches` threshold is deliberately low (2 to 3 keywords) because faxed pages often have sparse text due to scanning quality. The structural bonus points reward matches where the document structure also aligns with the expected type.
+A few design decisions embedded here deserve explanation.
+
+Why Nova Lite for classification? Because classification is a well-defined task with clear inputs and outputs. You don't need deep reasoning; you need a model that reliably categorizes document types. Nova Lite handles this well and costs nearly nothing at healthcare document volumes. Sending this task to Sonnet would be like driving a nail with a sledgehammer.
+
+Why temperature=0? Because classification should be as consistent as possible. Temperature=0 pushes the model toward its highest-probability output, which is generally the correct one for well-defined classification tasks. It won't give you byte-identical responses every single time (language models are probabilistic at their core), but it gets you close enough to "deterministic" that the variation is in the noise.
+
+Why include structural metadata in the prompt rather than just the page text? Because "this page has form fields and no tables" is useful signal. A page of text that looks ambiguous without structural context often resolves cleanly with it.
 
 ```
-// Keyword and structure signatures for each expected page type.
-// Each entry specifies the keywords to look for, minimum keyword matches needed,
-// and structural bonuses when the page has matching Textract features.
-PAGE_SIGNATURES = {
-    "cover_sheet": {
-        keywords:     ["prior authorization", "authorization request", "member name",
-                       "member id", "subscriber", "requesting provider", "npi",
-                       "requested service", "date of service", "procedure code", "cpt"],
-        min_matches:  3,
-        form_bonus:   3    // cover sheets are form documents: bonus for having KEY_VALUE_SET blocks
-    },
-    "clinical_note": {
-        keywords:     ["history of present illness", "assessment", "plan", "chief complaint",
-                       "physical examination", "review of systems", "subjective", "objective",
-                       "impression", "hpi", "social history", "family history", "medications"],
-        min_matches:  2,
-        form_bonus:   0    // clinical notes are prose, not forms
-    },
-    "lab_results": {
-        keywords:     ["reference range", "result", "specimen", "collected", "reported",
-                       "abnormal", "critical", "units", "flag", "reference interval",
-                       "out of range"],
-        min_matches:  3,
-        table_bonus:  3    // lab results are almost always presented as tables
-    },
-    "imaging_report": {
-        keywords:     ["findings", "impression", "technique", "comparison", "indication",
-                       "radiology", "mri", "ct", "x-ray", "ultrasound", "nuclear",
-                       "no acute", "unremarkable"],
-        min_matches:  2,
-        form_bonus:   0
-    },
-    "physician_letter": {
-        keywords:     ["dear", "to whom it may concern", "medical necessity", "i am writing",
-                       "requesting approval", "patient has", "sincerely", "respectfully",
-                       "on behalf of", "this letter"],
-        min_matches:  2,
-        form_bonus:   0
-    }
+// System prompt for page classification.
+// The instruction to return JSON with a specific schema is critical:
+// temperature=0 plus an explicit schema gives you consistent structured output.
+
+CLASSIFICATION_SYSTEM_PROMPT = """
+You are a healthcare document classifier. Your job is to identify what type of document
+page you are reading from a prior authorization submission.
+
+Return ONLY a valid JSON object with these fields:
+{
+  "page_type": "<one of: cover_sheet, clinical_note, physician_letter, lab_results,
+                imaging_report, other>",
+  "confidence": <0.0 to 1.0>,
+  "reasoning": "<one sentence explaining your classification>"
 }
 
-FUNCTION classify_page(page_text, has_tables, has_forms):
-    text_lower = lowercase(page_text)
-    scores     = empty map
+Document types:
+- cover_sheet: administrative form with fields like member ID, provider NPI,
+  CPT code, date of service. Usually has checkboxes and form fields.
+- clinical_note: physician office note with sections like History of Present
+  Illness, Assessment, Plan. Written by a treating clinician.
+- physician_letter: letter written by a physician explaining medical necessity,
+  treatment history, or requesting authorization for a specific procedure.
+- lab_results: laboratory test results page with test names, numeric values,
+  units, and reference ranges. Usually presented as a table.
+- imaging_report: radiology or other imaging report with sections like Findings,
+  Impression, and Technique. Written by a radiologist.
+- other: anything that does not clearly fit the above categories.
 
-    FOR each page_type, signature in PAGE_SIGNATURES:
-        // Count keyword matches for this page type
-        keyword_hits = count of keywords in signature that appear in text_lower
+Be conservative with confidence. Only return 0.9 or higher if the classification
+is unambiguous. Return 0.7-0.89 for likely classifications. Below 0.7 for uncertain cases.
+"""
 
-        // Only proceed if we hit the minimum match threshold
-        IF keyword_hits >= signature.min_matches:
-            score = keyword_hits
+FUNCTION classify_page_with_llm(page_text, has_tables, has_forms, model_id):
+    // Build the user message: page text plus structural metadata.
+    // The structural context helps the model on ambiguous pages where
+    // text alone doesn't clearly signal the document type.
+    structural_context = ""
+    IF has_forms:
+        structural_context += "This page contains form fields (key-value pairs). "
+    IF has_tables:
+        structural_context += "This page contains one or more tables. "
+    IF not has_forms and not has_tables:
+        structural_context += "This page is primarily flowing text with no form fields or tables. "
 
-            // Apply structural bonuses
-            IF has_tables AND signature has table_bonus:
-                score += signature.table_bonus
+    user_message = structural_context + "\n\nPage text:\n" + page_text
 
-            IF has_forms AND signature has form_bonus:
-                score += signature.form_bonus
+    // Call the Bedrock Converse API.
+    // maxTokens=256 is more than sufficient for a JSON classification response.
+    response = call Bedrock Converse API with:
+        modelId         = model_id  // e.g., "us.amazon.nova-lite-v1:0"
+        system          = [{ text: CLASSIFICATION_SYSTEM_PROMPT }]
+        messages        = [{ role: "user", content: [{ text: user_message }] }]
+        inferenceConfig = { maxTokens: 256, temperature: 0 }
 
-            scores[page_type] = score
+    // Parse the JSON response from the model's text output.
+    response_text = response.output.message.content[0].text
+    result        = parse JSON from response_text
 
-    // Return the highest-scoring type, or "other" if nothing matched
-    IF scores is not empty:
-        RETURN page_type with highest score in scores
-    RETURN "other"
+    RETURN {
+        page_type:  result.page_type,
+        confidence: result.confidence,
+        reasoning:  result.reasoning
+    }
 
-// Classify all pages and return a map of page number -> page type
-FUNCTION classify_all_pages(pages):
+
+FUNCTION classify_all_pages(pages, classification_model_id):
     classifications = empty map
 
     FOR each page_num, page_data in pages:
-        page_type = classify_page(
+        result = classify_page_with_llm(
             page_data.text,
             page_data.has_tables,
-            page_data.has_forms
+            page_data.has_forms,
+            classification_model_id
         )
-        classifications[page_num] = page_type
-        // Log the classification and score for audit and model improvement
-        log: "Page " + page_num + " classified as " + page_type
+        classifications[page_num] = result
+        // Log both the classification and the model's reasoning for the audit trail.
+        // When reviewers question a routing decision, this log is what they look at.
+        log: "Page " + page_num + " → " + result.page_type +
+             " (confidence " + result.confidence + "): " + result.reasoning
 
     RETURN classifications
 ```
 
-**Step 5: Fan out to specialized extractors.** Each classified page type goes to a different extraction function. The key insight here: we don't process all pages with all extractors. We route each page to the one extractor suited for it. This is what Step Functions parallel branches implement at the workflow level.
-
-Three of the four main page types build directly on patterns from earlier recipes. We'll summarize each and point back to the relevant recipe for the full implementation. The routing logic below is what Step Functions uses to decide which Lambda to invoke for each page.
+**Step 5: Fan out to two extraction paths.** Based on the classification from Step 4, each page routes to one of two extraction functions. Cover sheets go to the Textract forms extractor. Everything else with narrative content goes to the Bedrock clinical extractor. Pages classified as "other" or below a confidence threshold go to a pass-through that preserves their raw text and flags them for human review.
 
 ```
-// The routing table: page type -> which extraction function to call
 EXTRACTION_ROUTER = {
-    "cover_sheet":     extract_cover_sheet,    // forms extraction (builds on Recipe 1.1 FIELD_MAP pattern)
-    "clinical_note":   extract_clinical_page,  // Comprehend Medical (builds on Recipe 1.3 NLP pipeline)
-    "physician_letter": extract_clinical_page, // same extraction logic as clinical notes
-    "lab_results":     extract_lab_page,       // table parsing (builds on Recipe 1.2 table extractor)
-    "imaging_report":  extract_imaging_page,   // entity extraction from prose
-    "other":           extract_other_page      // raw text only; no semantic extraction attempted
+    "cover_sheet":      extract_cover_sheet,    // Textract FORMS-based extraction
+    "clinical_note":    extract_clinical_page,  // Bedrock Sonnet reasoning
+    "physician_letter": extract_clinical_page,  // same Bedrock extractor
+    "imaging_report":   extract_clinical_page,  // same Bedrock extractor
+    "lab_results":      extract_lab_page,       // table parsing from Textract TABLES blocks
+    "other":            extract_other_page      // raw text only; flag for review
 }
 
-FUNCTION route_and_extract(page_num, page_type, page_data, block_map):
-    extractor = EXTRACTION_ROUTER[page_type]
-    result    = extractor(page_data, block_map)
+FUNCTION route_and_extract(page_num, classification, page_data, block_map,
+                           clinical_model_id):
+    // Low-confidence classifications go straight to review rather than extraction.
+    // The threshold here (0.6) is intentionally permissive because
+    // even a rough classification is better than none for routing.
+    // Pages below this are genuinely ambiguous and humans should decide.
+    IF classification.confidence < 0.6:
+        RETURN {
+            page_num:   page_num,
+            page_type:  "uncertain",
+            confidence: classification.confidence * 100,
+            data:       { raw_text: page_data.text },
+            flagged:    ["low_classification_confidence"]
+        }
 
-    // Every extraction result carries: page number, type, confidence, and extracted data
+    page_type = classification.page_type
+    extractor = EXTRACTION_ROUTER[page_type]
+    result    = extractor(page_data, block_map, clinical_model_id)
+
     RETURN {
         page_num:   page_num,
         page_type:  page_type,
-        confidence: result.confidence,    // average Textract confidence for this page's fields
-        data:       result.data,          // the extracted structured data
-        flagged:    result.flagged        // any fields below confidence threshold
+        confidence: result.confidence,
+        data:       result.data,
+        flagged:    result.flagged
     }
 ```
 
-The **cover sheet extractor** uses the key-value pair parsing and field normalization pattern from Recipe 1.1. The FIELD_MAP maps the payer-specific label variants to canonical field names.
+The **cover sheet extractor** is unchanged from the original recipe. It uses Textract key-value pairs and a FIELD_MAP to normalize label variants to canonical field names. See Recipe 1.1 for the full implementation. The point stands: Textract is the right tool for structured form extraction, and changing tools here would add cost and complexity for zero improvement.
 
 ```
-// Cover sheet field map: canonical name -> list of known label variants.
-// This is the same pattern as Recipe 1.1, extended for prior auth cover sheets.
+// Cover sheet field map: canonical name → list of known label variants.
+// Notice that "service requested code" and "dx indication" are in here now.
+// The LLM handles template variability in classification; the field map still
+// handles variability in cover sheet field labels for known variants.
 PA_COVER_FIELD_MAP = {
-    "member_name":          ["member name", "patient name", "subscriber name", "insured name"],
-    "member_id":            ["member id", "subscriber id", "member #", "id number"],
-    "member_dob":           ["date of birth", "dob", "member dob", "patient dob"],
-    "requesting_provider":  ["requesting provider", "ordering physician", "rendering provider",
-                             "treating physician", "provider name"],
-    "provider_npi":         ["npi", "provider npi", "npi number", "national provider"],
-    "requesting_facility":  ["facility", "practice name", "clinic name", "hospital"],
-    "requested_cpt":        ["cpt code", "procedure code", "procedure", "service code",
-                             "requested procedure"],
-    "diagnosis_code":       ["diagnosis code", "icd-10", "icd code", "dx", "icd-10-cm"],
-    "date_of_service":      ["date of service", "dos", "requested date", "service date"],
-    "urgency":              ["urgency", "urgent", "priority", "expedited", "stat"]
+    "member_name":         ["member name", "patient name", "subscriber name", "insured name"],
+    "member_id":           ["member id", "subscriber id", "member #", "id number"],
+    "member_dob":          ["date of birth", "dob", "member dob", "patient dob"],
+    "requesting_provider": ["requesting provider", "ordering physician", "rendering provider",
+                            "treating physician", "provider name"],
+    "provider_npi":        ["npi", "provider npi", "npi number", "national provider"],
+    "requesting_facility": ["facility", "practice name", "clinic name", "hospital"],
+    "requested_cpt":       ["cpt code", "procedure code", "procedure", "service code",
+                            "requested procedure", "service requested code"],
+    "diagnosis_code":      ["diagnosis code", "icd-10", "icd code", "dx", "icd-10-cm",
+                            "dx indication", "diagnosis indication"],
+    "date_of_service":     ["date of service", "dos", "requested date", "service date"],
+    "urgency":             ["urgency", "urgent", "priority", "expedited", "stat"]
 }
 
-FUNCTION extract_cover_sheet(page_data, block_map):
-    // Parse key-value pairs from the cover sheet (same as Recipe 1.1 Step 2)
-    raw_kv = parse_key_value_pairs(page_data.blocks, block_map)
-
-    // Normalize field names using the PA cover sheet field map (same as Recipe 1.1 Step 3)
+FUNCTION extract_cover_sheet(page_data, block_map, _model_id):
+    // Parse key-value pairs using Textract blocks (same as Recipe 1.1 Step 2)
+    raw_kv     = parse_key_value_pairs(page_data.blocks, block_map)
     normalized = normalize_fields(raw_kv, PA_COVER_FIELD_MAP)
-
-    // Apply confidence gate (same as Recipe 1.1 Step 4)
     clean_fields, flagged_fields = flag_low_confidence(normalized, threshold=85.0)
-
-    // Calculate average confidence for this page
     avg_confidence = average of confidence scores for all fields in normalized
 
     RETURN {
@@ -440,88 +562,107 @@ FUNCTION extract_cover_sheet(page_data, block_map):
         data:       clean_fields,
         flagged:    flagged_fields
     }
-    // See Recipe 1.1 for the full implementations of parse_key_value_pairs,
-    // normalize_fields, and flag_low_confidence.
+    // Full implementations of parse_key_value_pairs, normalize_fields,
+    // and flag_low_confidence are in Recipe 1.1.
 ```
 
-The **clinical page extractor** runs both Comprehend Medical APIs on the page text. It first identifies the portions of the page most relevant to diagnosis and clinical context (the assessment section, the plan, the impression), then calls `InferICD10CM` on the diagnosis-heavy text and `DetectEntitiesV2` on the broader clinical text. Running Comprehend Medical on targeted extracts rather than the full page text keeps costs down and keeps the API calls within character limits.
+The **clinical page extractor** is where the architecture changes most significantly. Instead of routing page text through Comprehend Medical's entity extraction APIs, a single Bedrock Converse call extracts all clinically relevant information in one shot. The model reads the page as a clinician would: understanding context, recognizing the significance of failed prior treatments, extracting the physician's reasoning, identifying the relevant diagnosis with its clinical basis.
+
+After LLM extraction, we run `InferICD10CM` on the extracted diagnosis text. This is the validation step: the LLM gives us the clinical concepts in natural language, and Comprehend Medical maps them to authoritative ICD-10 codes.
 
 ```
-// Section header keywords that signal diagnosis-rich text
-DIAGNOSIS_SECTION_HEADERS = [
-    "assessment", "assessment and plan", "diagnosis", "impression",
-    "diagnoses", "dx", "problems", "active problems"
-]
+// System prompt for clinical evidence extraction.
+// A capable model (Sonnet or equivalent) is required here.
+// The schema in the prompt is how we get structured JSON output reliably.
 
-FUNCTION extract_clinical_page(page_data, block_map):
-    page_text      = page_data.text
-    diagnosis_text = extract_section_text(page_text, DIAGNOSIS_SECTION_HEADERS)
+CLINICAL_EXTRACTION_SYSTEM_PROMPT = """
+You are a clinical documentation analyst reviewing pages from prior authorization submissions.
+Your job is to extract all clinically relevant information needed to evaluate a prior
+authorization request.
 
-    // If no specific diagnosis section was found, fall back to the full page text
-    // (truncated to stay within Comprehend Medical's per-request limits)
-    IF diagnosis_text is empty or too short:
-        diagnosis_text = first 5000 characters of page_text
+Return ONLY a valid JSON object with this structure:
+{
+  "diagnosis_text": "<the primary diagnosis or diagnoses as written in this document>",
+  "conditions": ["<list of medical conditions, diseases, diagnoses mentioned>"],
+  "medications": ["<list of medications with dosages if present>"],
+  "procedures": ["<list of procedures, treatments, or tests mentioned>"],
+  "medical_necessity_evidence": "<free text: evidence supporting medical necessity,
+    including clinical findings, severity indicators, and impact on function>",
+  "failed_treatments": ["<list of prior treatments that were tried and failed or
+    were insufficient, with duration if mentioned>"],
+  "supporting_findings": "<relevant clinical findings, test results, or
+    imaging findings mentioned in this document>",
+  "confidence": <0.0 to 1.0, your confidence in the extraction completeness>
+}
 
-    // Infer ICD-10 codes from the diagnosis-rich text (same as Recipe 1.3 Step 5)
-    icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
-    // See Recipe 1.3 for the full implementation of infer_icd10_codes.
+Extract only what is explicitly stated in the document. Do not infer or add information
+not present in the text. If a field has no relevant content, use an empty list or
+empty string. The medical_necessity_evidence and failed_treatments fields are the
+most important for prior authorization decisions. Be thorough on those.
+"""
+```
 
-    // Extract clinical entities from the full clinical text (same as Recipe 1.3 Step 6)
-    // Limit to 10,000 characters per request; split and merge for longer pages.
-    clinical_text  = first 10000 characters of page_text
-    clinical_entities = detect_clinical_entities(clinical_text)
-    // See Recipe 1.3 for the full implementation of detect_clinical_entities.
+<!-- [EDITOR: Removed em dash from the system prompt. Original read "...prior authorization decisions — be thorough on those." Changed to two sentences: "...prior authorization decisions. Be thorough on those." The em dash was in a prompt literal that will be sent to the model; keeping it consistent with the no-em-dash rule throughout.] -->
 
-    // Confidence for this page: minimum of Textract OCR confidence and
-    // average Comprehend Medical entity confidence
-    // (OCR quality directly affects NLP accuracy: bad OCR → bad NLP input)
-    textract_confidence = average LINE block confidence for this page
-    nlp_confidence      = average confidence of icd10_accepted entities (or 1.0 if none)
-    page_confidence     = minimum of (textract_confidence, nlp_confidence * 100)
+```
+FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
+    page_text = page_data.text
+
+    // Call Bedrock Converse with the clinical extraction prompt.
+    // maxTokens=1024 because clinical notes can be dense; classification needed 256.
+    // Temperature=0 for consistency; extraction should be as deterministic as possible.
+    response = call Bedrock Converse API with:
+        modelId         = clinical_model_id  // e.g., "us.anthropic.claude-sonnet-4-6-v1"
+        system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
+        messages        = [{
+            role:    "user",
+            content: [{ text: "Extract clinical information from this document page:\n\n" + page_text }]
+        }]
+        inferenceConfig = { maxTokens: 1024, temperature: 0 }
+
+    response_text  = response.output.message.content[0].text
+    llm_extraction = parse JSON from response_text
+
+    // Use Comprehend Medical InferICD10CM to validate and map the LLM-extracted
+    // diagnosis text to authoritative ICD-10 codes with confidence scores.
+    // This is the code validation step: LLM extracts the concept, Comprehend maps the code.
+    // We do this because LLMs can produce inconsistent code strings across runs;
+    // Comprehend Medical is purpose-built for reliable, authoritative code lookup.
+    icd10_accepted = empty list
+    icd10_flagged  = empty list
+
+    IF llm_extraction.diagnosis_text is not empty:
+        icd10_accepted, icd10_flagged = infer_icd10_codes(llm_extraction.diagnosis_text)
+        // See Recipe 1.3 for the full implementation of infer_icd10_codes.
+        // It calls Comprehend Medical InferICD10CM and filters by confidence threshold.
+
+    // Page confidence: use the LLM's self-reported extraction confidence,
+    // but cap it by the underlying Textract OCR quality.
+    // Bad OCR input leads to incomplete LLM extraction even if the model is confident.
+    textract_avg_confidence = average LINE block confidence for this page / 100.0
+    effective_confidence    = minimum(llm_extraction.confidence, textract_avg_confidence) * 100
 
     RETURN {
-        confidence: page_confidence,
+        confidence: effective_confidence,
         data: {
-            icd10_accepted:    icd10_accepted,    // codes above confidence threshold
-            clinical_entities: clinical_entities  // entity map from DetectEntitiesV2
+            diagnosis_text:             llm_extraction.diagnosis_text,
+            conditions:                 llm_extraction.conditions,
+            medications:                llm_extraction.medications,
+            procedures:                 llm_extraction.procedures,
+            medical_necessity_evidence: llm_extraction.medical_necessity_evidence,
+            failed_treatments:          llm_extraction.failed_treatments,
+            supporting_findings:        llm_extraction.supporting_findings,
+            icd10_codes:                icd10_accepted
         },
         flagged: {
-            icd10_flagged:     icd10_flagged      // low-confidence code inferences
+            icd10_uncertain: icd10_flagged  // low-confidence code inferences for review
         }
     }
-
-
-FUNCTION extract_section_text(page_text, section_headers):
-    // Find the first matching section header and extract the text that follows it,
-    // up to the next section header or end of the page.
-    lines = split page_text by newline
-    in_target_section = false
-    section_text      = empty string
-
-    FOR each line in lines:
-        line_lower = lowercase(trim(line))
-
-        // Check if this line is a target section header
-        IF any header in section_headers is contained in or matches line_lower:
-            in_target_section = true
-            CONTINUE   // skip the header line itself; we want the content after it
-
-        // Stop at a new section header (common section starters)
-        IF in_target_section AND line_lower starts a new section:
-            BREAK      // a production implementation checks against a full section header list
-
-        // Accumulate text in the target section
-        IF in_target_section:
-            section_text += line + "\n"
-
-    RETURN trim(section_text)
 ```
 
-The **lab results extractor** parses Textract TABLE blocks from the page into rows and attempts to identify standard lab result columns. This builds on the table parsing pattern from Recipe 1.2.
+The **lab results extractor** is unchanged. Lab results pages are structured tables, and Textract is exactly the right tool for them. The Bedrock LLM adds nothing here that Textract doesn't already provide better and cheaper. This is the "right tool for the job" principle in practice: just because you can send a lab results table to an LLM doesn't mean you should.
 
 ```
-// Standard lab result column names and their aliases.
-// Real lab report templates vary widely; this covers the most common column labels.
 LAB_COLUMN_MAP = {
     "test_name":       ["test", "test name", "analyte", "component", "description"],
     "result":          ["result", "value", "result value", "your result"],
@@ -531,168 +672,109 @@ LAB_COLUMN_MAP = {
     "flag":            ["flag", "abnormal flag", "indicator", "h/l"]
 }
 
-FUNCTION extract_lab_page(page_data, block_map):
-    // Parse TABLE blocks from this page into row-by-row data.
-    // The table parsing logic is the same as Recipe 1.2.
-    tables = parse_tables_from_blocks(page_data.blocks, block_map)
-
+FUNCTION extract_lab_page(page_data, block_map, _model_id):
+    tables     = parse_tables_from_blocks(page_data.blocks, block_map)
     lab_values = empty list
 
     FOR each table in tables:
         IF table has fewer than 2 rows:
-            CONTINUE  // a table with just a header and no data rows isn't a lab results table
+            CONTINUE  // Header-only or empty table; skip it
 
-        // Normalize the header row against known column name variants
-        headers     = table[0]   // first row is assumed to be the column headers
+        headers     = table[0]
         col_mapping = normalize_lab_columns(headers, LAB_COLUMN_MAP)
 
-        // Process each data row
-        FOR each row in table[1:]:   // skip the header row
+        FOR each row in table[1:]:
             lab_entry = empty map
-
             FOR each col_index, canonical_name in col_mapping:
                 IF col_index < length of row:
                     lab_entry[canonical_name] = trim(row[col_index])
 
-            // Only keep rows that have at least a test name and a result
             IF "test_name" in lab_entry AND "result" in lab_entry:
                 lab_values.append(lab_entry)
 
     RETURN {
         confidence: average Textract confidence for TABLE cells on this page,
         data:       { lab_values: lab_values },
-        flagged:    []  // lab tables either parse or they don't; no confidence gating here
+        flagged:    []
     }
 ```
 
-The **imaging report extractor** runs `DetectEntitiesV2` on the full page text to pull out the clinical findings and impressions. Imaging reports are narrative prose, not structured forms, so entity extraction is the right approach. We also look for specific sections by name.
-
-```
-// Section headers to extract from imaging reports
-IMAGING_SECTIONS = {
-    "findings":   ["findings", "report findings"],
-    "impression": ["impression", "conclusions", "summary"],
-    "indication": ["indication", "clinical history", "reason for exam"]
-}
-
-FUNCTION extract_imaging_page(page_data, block_map):
-    page_text = page_data.text
-
-    // Extract specific sections from the imaging report
-    sections = empty map
-    FOR each section_name, headers in IMAGING_SECTIONS:
-        sections[section_name] = extract_section_text(page_text, headers)
-
-    // Run entity extraction on the findings and impression sections.
-    // These are where the clinically actionable findings live.
-    relevant_text = join non-empty sections with "\n\n"
-    IF relevant_text is empty:
-        relevant_text = first 5000 characters of page_text
-
-    clinical_entities = detect_clinical_entities(relevant_text)
-    // Same function as used in the clinical page extractor.
-    // See Recipe 1.3 for implementation details.
-
-    textract_confidence = average LINE block confidence for this page
-
-    RETURN {
-        confidence: textract_confidence,
-        data: {
-            sections:          sections,
-            clinical_entities: clinical_entities
-        },
-        flagged: []
-    }
-```
-
-**Step 6: Assemble the structured prior auth record.** The assembler receives the extraction results from all pages and merges them into a single coherent record. This is where deduplication, confidence aggregation, and the overall review flag are determined.
-
-The deduplication step deserves attention. The same ICD-10 code might be extracted from three different pages: inferred from a clinical note, inferred from a physician letter, and read directly from the cover sheet. We want one canonical entry for each code in the final record, keyed by code value, keeping the highest-confidence instance. The same applies to clinical entities.
+**Step 6: Assemble the structured prior auth record.** The assembler receives extraction results from all pages and merges them into a single coherent record. The structure is similar to the original recipe, with one meaningful addition: `medical_necessity_evidence` and `failed_treatments` are now first-class fields. These are the fields that matter most for the clinical criteria matching step downstream.
 
 ```
 FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
-    // Initialize the record structure
     record = {
         document_key:         document_key,
         extracted_at:         current UTC timestamp (ISO 8601),
         page_count:           page_count,
-        needs_review:         false,  // set to true below if any page has flags or low confidence
-        page_classifications: empty map,   // page_num -> page_type
+        needs_review:         false,
+        page_classifications: empty map,
 
-        // Administrative data from the cover sheet
+        // Administrative data (from the cover sheet via Textract forms extraction)
         demographics: {
-            member_name:         null,
-            member_id:           null,
-            member_dob:          null,
+            member_name:  null,
+            member_id:    null,
+            member_dob:   null
         },
         requested_service: {
-            cpt_code:            null,
-            procedure:           null,
-            date_of_service:     null,
-            urgency:             "routine"   // default to routine if not specified
+            cpt_code:         null,
+            procedure:        null,
+            date_of_service:  null,
+            urgency:          "routine"
         },
         requesting_provider: {
-            name:                null,
-            npi:                 null,
-            facility:            null
+            name:      null,
+            npi:       null,
+            facility:  null
         },
 
-        // Clinical evidence (aggregated across all clinical pages)
+        // Clinical evidence (from LLM extraction of narrative pages)
+        // These fields drive the downstream clinical criteria matching in Recipe 2.4.
         clinical_evidence: {
-            icd10_codes:         empty list,  // deduplicated; highest confidence per code
-            conditions:          empty list,
-            medications:         empty list,
-            procedures:          empty list,
-            lab_values:          empty list,
-            imaging_sections:    empty map    // section name -> text from imaging reports
+            icd10_codes:                empty list,   // deduplicated; highest confidence per code
+            conditions:                 empty list,
+            medications:                empty list,
+            procedures:                 empty list,
+            medical_necessity_evidence: empty string, // LLM-extracted narrative evidence
+            failed_treatments:          empty list,   // documented prior treatment failures
+            supporting_findings:        empty string, // LLM-extracted clinical findings
+            lab_values:                 empty list
         },
 
-        // Confidence and review metadata
-        page_confidence:      empty map,  // page_num -> confidence score
-        flagged_pages:        empty list, // pages below confidence threshold
-        flagged_fields:       empty map,  // page_num -> list of flagged fields
+        page_confidence: empty map,
+        flagged_pages:   empty list,
+        flagged_fields:  empty map
     }
 
-    // Deduplication trackers
-    seen_icd10_codes  = empty map   // code -> confidence (keep highest)
-    seen_conditions   = empty set   // entity text (normalized)
-    seen_medications  = empty set
-    seen_procedures   = empty set
+    seen_icd10_codes = empty map   // code → entry (keep highest confidence)
+    seen_conditions  = empty set
+    seen_medications = empty set
+    seen_procedures  = empty set
 
-    // Process each page's extraction result
     FOR each page_num, extraction in page_extractions:
         page_type  = extraction.page_type
         confidence = extraction.confidence
 
-        // Track classification and confidence
         record.page_classifications[page_num] = page_type
         record.page_confidence[page_num]      = round(confidence, 1)
 
-        // Flag low-confidence pages for human review
-        // Using a lower threshold (75%) than field-level gating because some page types
-        // (like handwritten physician letters) legitimately produce lower confidence
         IF confidence < 75.0:
             record.flagged_pages.append(page_num)
             record.needs_review = true
 
-        // Track flagged fields within the page
         IF extraction.flagged is not empty:
             record.flagged_fields[page_num] = extraction.flagged
             record.needs_review = true
 
-        // Merge data by page type
         IF page_type == "cover_sheet":
-            // Cover sheet fields populate the administrative sections of the record.
-            // First cover sheet wins if multiple pages classified as cover sheets.
             data = extraction.data
             IF record.demographics.member_name is null:
                 record.demographics.member_name = data.get("member_name")
                 record.demographics.member_id   = data.get("member_id")
                 record.demographics.member_dob  = data.get("member_dob")
             IF record.requested_service.cpt_code is null:
-                record.requested_service.cpt_code  = data.get("requested_cpt")
-                record.requested_service.procedure = data.get("requested_cpt")  // may also be in text
-                record.requested_service.date_of_service = data.get("date_of_service")
+                record.requested_service.cpt_code        = data.get("requested_cpt")
+                record.requested_service.date_of_service  = data.get("date_of_service")
                 IF data.get("urgency") contains "urgent" or "stat":
                     record.requested_service.urgency = "urgent"
             IF record.requesting_provider.npi is null:
@@ -701,53 +783,62 @@ FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
                 record.requesting_provider.facility = data.get("requesting_facility")
 
         ELSE IF page_type in ("clinical_note", "physician_letter", "imaging_report"):
-            // Clinical pages contribute to the clinical evidence section.
-            // Deduplicate ICD-10 codes and entities across pages.
             data = extraction.data
 
-            // Merge ICD-10 codes: keep highest confidence per code
-            FOR each code_entry in data.icd10_accepted:
+            // Deduplicate ICD-10 codes: keep highest confidence per code
+            FOR each code_entry in data.icd10_codes:
                 code = code_entry.icd10_code
                 IF code not in seen_icd10_codes OR
                    code_entry.confidence > seen_icd10_codes[code].confidence:
                     seen_icd10_codes[code] = code_entry
 
-            // Merge clinical entities: deduplicate by normalized text
-            ce = data.clinical_entities
-            FOR each entity in ce.get("MEDICAL_CONDITION", []):
-                normalized = lowercase(trim(entity.text))
+            // Deduplicate clinical entities by normalized text
+            FOR each item in data.conditions:
+                normalized = lowercase(trim(item))
                 IF normalized not in seen_conditions:
                     seen_conditions.add(normalized)
-                    record.clinical_evidence.conditions.append(entity)
+                    record.clinical_evidence.conditions.append(item)
 
-            FOR each entity in ce.get("MEDICATION", []):
-                normalized = lowercase(trim(entity.text))
+            FOR each item in data.medications:
+                normalized = lowercase(trim(item))
                 IF normalized not in seen_medications:
                     seen_medications.add(normalized)
-                    record.clinical_evidence.medications.append(entity)
+                    record.clinical_evidence.medications.append(item)
 
-            FOR each entity in ce.get("TEST_TREATMENT_PROCEDURE", []):
-                normalized = lowercase(trim(entity.text))
+            FOR each item in data.procedures:
+                normalized = lowercase(trim(item))
                 IF normalized not in seen_procedures:
                     seen_procedures.add(normalized)
-                    record.clinical_evidence.procedures.append(entity)
+                    record.clinical_evidence.procedures.append(item)
 
-            // Imaging reports also contribute section text
-            IF page_type == "imaging_report" AND data.sections is not empty:
-                FOR each section_name, section_text in data.sections:
-                    IF section_name not in record.clinical_evidence.imaging_sections:
-                        record.clinical_evidence.imaging_sections[section_name] = section_text
+            // Accumulate failed treatments; different pages may document different episodes
+            FOR each treatment in data.failed_treatments:
+                IF treatment not in record.clinical_evidence.failed_treatments:
+                    record.clinical_evidence.failed_treatments.append(treatment)
+
+            // Medical necessity evidence: concatenate across pages.
+            // Each clinical page may add a different angle on why this procedure is necessary.
+            IF data.medical_necessity_evidence is not empty:
+                IF record.clinical_evidence.medical_necessity_evidence is empty:
+                    record.clinical_evidence.medical_necessity_evidence =
+                        data.medical_necessity_evidence
+                ELSE:
+                    record.clinical_evidence.medical_necessity_evidence +=
+                        "\n\n" + data.medical_necessity_evidence
+
+            IF data.supporting_findings is not empty:
+                IF record.clinical_evidence.supporting_findings is empty:
+                    record.clinical_evidence.supporting_findings = data.supporting_findings
+                ELSE:
+                    record.clinical_evidence.supporting_findings +=
+                        "\n\n" + data.supporting_findings
 
         ELSE IF page_type == "lab_results":
-            // Lab values extend the list; no deduplication (different labs may be run on different dates)
             record.clinical_evidence.lab_values.extend(extraction.data.lab_values)
 
-    // Finalize the ICD-10 code list from the deduplicated map
     record.clinical_evidence.icd10_codes = list of values in seen_icd10_codes,
                                            sorted by confidence descending
 
-    // Flag if essential data is missing: no member ID or no CPT code means the record
-    // cannot drive a downstream decision without human intervention
     IF record.demographics.member_id is null OR record.requested_service.cpt_code is null:
         record.needs_review = true
 
@@ -755,19 +846,16 @@ FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
 
 
 FUNCTION store_prior_auth_record(record):
-    write record to database table "prior-auth-records" with:
-        primary key = record.document_key    // document path is unique per submission
-        record      = record
+    write record to DynamoDB table "prior-auth-records" with:
+        primary key = record.document_key
 
-    // If this record doesn't need human review, trigger the clinical criteria matching step.
-    // Recipe 2.4 consumes this record structure directly.
     IF NOT record.needs_review:
         publish to event bus:
-            event_type    = "prior_auth_extracted"
-            document_key  = record.document_key
+            event_type   = "prior_auth_extracted"
+            document_key = record.document_key
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.04-prior-auth-python-v2). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
@@ -811,116 +899,135 @@ FUNCTION store_prior_auth_record(record):
   },
   "clinical_evidence": {
     "icd10_codes": [
-      { "text": "severe osteoarthritis", "icd10_code": "M17.11", "description": "Primary osteoarthritis, right knee", "confidence": 0.943 },
-      { "text": "chronic pain", "icd10_code": "G89.29", "description": "Other chronic pain", "confidence": 0.872 }
+      {
+        "text": "severe osteoarthritis right knee with bone-on-bone contact",
+        "icd10_code": "M17.11",
+        "description": "Primary osteoarthritis, right knee",
+        "confidence": 0.961
+      },
+      {
+        "text": "chronic knee pain",
+        "icd10_code": "G89.29",
+        "description": "Other chronic pain",
+        "confidence": 0.874
+      }
     ],
     "conditions": [
-      { "text": "severe osteoarthritis", "type": "DX_NAME", "confidence": 0.971, "traits": [] },
-      { "text": "chronic knee pain", "type": "DX_NAME", "confidence": 0.954, "traits": [] },
-      { "text": "failed conservative treatment", "type": "DX_NAME", "confidence": 0.883, "traits": [] }
+      "severe osteoarthritis, right knee",
+      "chronic knee pain",
+      "functional limitation with ambulation"
     ],
     "medications": [
-      { "text": "naproxen 500mg", "type": "GENERIC_NAME", "confidence": 0.961, "traits": [] },
-      { "text": "cortisone injection", "type": "TREATMENT_NAME", "confidence": 0.921, "traits": [] }
+      "naproxen 500mg twice daily",
+      "cortisone injection (right knee, x3 over 18 months)"
     ],
     "procedures": [
-      { "text": "physical therapy", "type": "PROCEDURE_NAME", "confidence": 0.944, "traits": [] },
-      { "text": "MRI right knee", "type": "TEST_NAME", "confidence": 0.972, "traits": [] }
+      "physical therapy (12 weeks)",
+      "MRI right knee",
+      "weight loss program"
     ],
+    "medical_necessity_evidence": "Patient presents with severe tricompartmental osteoarthritis of the right knee with bone-on-bone contact confirmed on MRI. Functional assessment demonstrates inability to ambulate more than one block without significant pain (VAS 8/10). Patient has failed 6 months of conservative management including NSAIDs, physical therapy, and intra-articular corticosteroid injections. Clinical findings and imaging support surgical intervention as medically necessary.",
+    "failed_treatments": [
+      "NSAIDs (naproxen 500mg BID for 8 months): inadequate pain relief",
+      "Physical therapy (12 weeks): temporary improvement, no sustained benefit",
+      "Cortisone injections x3 over 18 months: diminishing response, last injection provided less than 4 weeks of relief"
+    ],
+    "supporting_findings": "MRI right knee (2026-01-15): Severe tricompartmental osteoarthritis with near-complete loss of joint space. Bone-on-bone contact medial compartment. Subchondral cyst formation. X-ray (standing AP): Kellgren-Lawrence grade IV changes.",
     "lab_values": [
       { "test_name": "ESR", "result": "28", "units": "mm/hr", "reference_range": "0-20", "flag": "H" },
       { "test_name": "CRP", "result": "1.8", "units": "mg/dL", "reference_range": "0-0.5", "flag": "H" }
-    ],
-    "imaging_sections": {
-      "findings": "Severe tricompartmental osteoarthritis with near-complete loss of joint space. Bone-on-bone contact medial compartment.",
-      "impression": "Severe osteoarthritis right knee consistent with clinical indication for total knee arthroplasty."
-    }
+    ]
   },
   "page_confidence": {
     "1": 96.2, "2": 94.8, "3": 91.4, "4": 88.7, "5": 90.1,
     "6": 97.3, "7": 96.9, "8": 93.2, "9": 92.7, "10": 87.4,
-    "11": 76.8, "12": 74.2
+    "11": 78.1, "12": 75.6
   },
   "flagged_pages": [],
   "flagged_fields": {}
 }
 ```
 
+Notice what the LLM extraction produces that the previous keyword classifier plus Comprehend Medical approach couldn't: a `medical_necessity_evidence` field that reads like a clinical summary, and a `failed_treatments` list that captures not just what was tried but for how long and why it wasn't sufficient. An entity extraction system gives you "physical therapy" and "naproxen" as isolated entities. The LLM gives you the clinical narrative that connects them. That distinction matters a lot for Recipe 2.4's criteria matching logic.
+
 **Performance benchmarks:**
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (10-page submission) | 25–50 seconds (dominated by async Textract job) |
-| End-to-end latency (20-page submission) | 45–90 seconds |
-| Page classification accuracy (keyword heuristics) | 85–92% |
-| Page classification accuracy (trained ML classifier) | 93–97% |
-| Cover sheet field extraction accuracy | 92–97% |
-| Clinical entity extraction accuracy | 85–93% (depends on OCR quality of clinical pages) |
-| ICD-10 inference accuracy (typed clinical notes) | 85–93% |
-| ICD-10 inference accuracy (handwritten pages) | 60–78% (OCR errors compound NLP errors) |
-| Lab results table extraction accuracy | 94–99% (typed; printed lab reports) |
-| Cost per 10-page submission | ~$0.25–0.45 |
+| End-to-end latency (10-page submission) | 30–60 seconds (Textract async dominates; Bedrock adds 3–8 seconds) |
+| End-to-end latency (20-page submission) | 55–100 seconds |
+| Page classification accuracy (LLM, temperature=0) | 92–97% |
+| Cover sheet field extraction accuracy | 92–97% (Textract, unchanged) |
+| Clinical evidence extraction completeness | 88–95% (depends on OCR quality of source document) |
+| ICD-10 code accuracy (Comprehend Medical validation on typed notes) | 87–94% |
+| ICD-10 code accuracy (handwritten pages) | 62–80% (OCR errors compound downstream) |
+| Lab results table extraction accuracy | 94–99% (typed, printed lab reports) |
+| Cost per 10-page submission | ~$0.80–1.00 |
 
-**Where it struggles:** Pages that blend types (a clinical note with a lab results table embedded in it gets classified as one or the other, not both). Multi-generation faxes where each forward cycle degrades quality. Cover sheets from smaller specialty payers with non-standard layouts (the FIELD_MAP needs expansion). Clinical notes written in dense abbreviations that OCR reads with lower confidence, which then degrades the Comprehend Medical input. And pages where the diagnosis is written entirely in ICD-10 code format ("M17.11, G89.29") rather than text: `InferICD10CM` expects natural language, not code strings.
+**Where it still struggles:** Multi-generation faxes where OCR quality is poor enough to confuse even the LLM. Pages where the clinical content is terse and abbreviated in ways that lose context after OCR ("Hx: OA bilat LE, failed PT, NSAID, CSI x3"). Cover sheets from very small specialty payers with completely non-standard layouts. And the ICD-10 validation step still hits the "code written as a code" problem: `InferICD10CM` expects natural language, not "M17.11" written as the diagnosis field.
 
 ---
 
 ## Why This Isn't Production-Ready
 
-The pseudocode and architecture above demonstrate the three-stage prior auth extraction pipeline. Deploying this in a real payer UM environment requires addressing gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will catch you.
+**Prompt injection risks.** A prior auth submission is an untrusted document. A provider could include text designed to manipulate the classification or extraction model. This isn't a theoretical concern in a system where document content directly influences downstream decisions. Apply Bedrock Guardrails to detect and block injection attempts. Sanitize extracted page text before passing it to the model by removing control characters and unusual Unicode. Consider a second-pass validation for any Bedrock output that looks structurally inconsistent with the expected schema.
 
-**Step Functions payload size limits.** Step Functions has a 256 KB limit on state input and output payloads. Textract blocks for a 20-page document can easily exceed this. The pseudocode above routes around this by writing the Textract output to S3 and passing the S3 key instead of the raw blocks through Step Functions. All subsequent steps read from S3 rather than receiving data in the Step Functions input. This is the standard pattern for large-document pipelines, but it adds an S3 read to every step and requires you to clean up intermediate objects after the pipeline completes.
+**Model versioning and behavior drift.** Model versions change. `us.anthropic.claude-sonnet-4-6-v1` will eventually be superseded. When a model is updated or deprecated, its behavior on your specific prompts may shift in subtle ways. Pin to specific model version ARNs in production rather than using aliases like "latest." Establish a regression test suite on a representative set of labeled prior auth pages. Run it against any model version change before deploying. If classification accuracy drops on your test set, don't deploy.
 
-**Concurrent Textract job limits.** Textract async jobs run against account-level concurrency limits (default: 2 concurrent async jobs per account in most regions, adjustable via service quota increase). At submission volume, a burst of incoming faxes will queue behind each other if you hit the concurrency limit. The incoming submission Lambda should check the queue depth via a DynamoDB counter before submitting a new Textract job, implementing backpressure rather than letting the submission fail silently.
+**LLM output validation.** The pseudocode above parses JSON from the model's text response. Language models don't guarantee valid JSON, especially on edge cases. Wrap every JSON parse in exception handling. If the model returns malformed output, retry once with an explicit "you must return only valid JSON" suffix added to the prompt. If it fails again, route the page to human review rather than crashing the pipeline.
 
-**Page classification is a heuristic, not a guarantee.** The keyword classifier produces a "most likely" page type, not a certain one. It will misclassify pages. Build a mechanism to record the page classification alongside each extraction result, and use the human review corrections to track classification accuracy over time. When a reviewer corrects a misclassified page, that correction should feed back into your labeled dataset. The path from keyword heuristics to a trained classifier runs through this feedback loop.
+**Cost at scale without tiering.** The cost estimates above assume Nova Lite for classification and Sonnet only for clinical pages. If someone misconfigures the pipeline and routes all pages through Sonnet, costs roughly quadruple. Add model ID validation at pipeline start: log and alert if an unexpected model is configured, and enforce tiering through configuration rather than code convention.
 
-**Cover sheets that span two pages.** Many payer cover sheet templates are two pages. The assembler's "first cover sheet wins" logic leaves the second page's data on the floor. A production implementation checks whether a second cover_sheet-classified page contains fields that were null after the first page and merges the non-null values.
+**Latency variability.** Bedrock model latency varies by model and load. Sonnet calls typically return in 2 to 5 seconds per page under normal conditions. Under high load, that can stretch to 10 to 15 seconds. For urgent submissions (24-hour regulatory response window), the combined latency of Textract async plus parallel Bedrock calls per page needs to stay within the operational budget. Add latency SLO monitoring with CloudWatch alarms.
 
-**ICD-10 codes written as codes, not text.** Comprehend Medical's `InferICD10CM` infers codes from natural language. When the clinical note has "Dx: M17.11" rather than "Dx: osteoarthritis, right knee," the inference step returns nothing useful. A production implementation detects the code-on-page case by matching against an ICD-10 code format regex (one letter + 2 digits + optional decimal + 2-4 more characters), extracts those directly, and skips the NLP inference step for those entries.
+**Step Functions payload size limits.** Step Functions has a 256 KB limit on state input/output. Pass S3 references rather than raw data. All steps read from S3. Clean up intermediate S3 objects after successful pipeline completion to avoid storage accumulation.
 
-**Dead Letter Queues on all Lambda functions.** Every Lambda in this pipeline receives asynchronous invocations. Configure an SQS DLQ on each, with CloudWatch alarms on queue depth. A prior auth submission that disappears into a failed Lambda invocation is a patient care delay waiting to happen.
+**Concurrent job limits.** Textract async has account-level concurrency limits (adjustable via service quota increase). Bedrock has per-account TPM limits that also apply. At submission burst volume, implement backpressure: check queue depth before submitting new jobs, and use SQS as a buffer between the fax server and the pipeline trigger.
 
-**Step Functions error handling per branch.** Standard Workflows catch failures at the state machine level by default. Configure per-state error handling so that a failure in the lab results extractor doesn't abort the clinical note extractor. The assembler should handle partial extraction results gracefully: a submission where the lab results extraction failed still produces a usable record that can proceed to human review with the missing section flagged.
-
-**Idempotency on the assembler.** S3 event notifications are at-least-once. The SNS from Textract is also at-least-once. The `pa-retrieve` Lambda can be invoked multiple times for the same submission. Use a conditional DynamoDB write on the `document_key` partition key to prevent duplicate records. If a record already exists, log and exit rather than overwriting.
+**Idempotency everywhere.** At-least-once delivery on S3 events and SNS means the pipeline may be triggered multiple times for the same submission. Conditional DynamoDB writes prevent duplicate records. Step Functions execution deduplication (using the document key as the execution name) prevents duplicate state machine runs.
 
 ---
 
 ## The Honest Take
 
-Prior auth document processing is the recipe in this chapter that's closest to the real operational pain healthcare faces. It's also the one where the distance between "working demo" and "production deployment" is the largest.
+The keyword classifier that shipped with the original version of this recipe worked well. Really, it did. 85 to 92% accuracy on real prior auth submissions is respectable for a few hundred lines of dictionary lookups.
 
-The page classifier is the part that surprises people. You'd expect a multi-label ML problem to require thousands of training examples and careful model selection. In practice, a well-tuned keyword classifier with 20 to 30 signatures per page type beats naive ML classifiers trained on small datasets. The reason: prior auth submissions are not arbitrary documents. They have recognizable structures and predictable vocabulary. Healthcare has been faxing the same document types for 30 years. The keywords are stable.
+The moment it stopped being good enough was the day someone handed me a prior auth submission from a regional plan whose cover sheet used "Service Requested Code" instead of "CPT Code" and "Dx Indication" instead of "Diagnosis Code." The keyword classifier classified it as "other." The entire submission sat in the review queue. No automation. Manual processing, same as before.
 
-That said, the 8 to 15% misclassification rate from keyword heuristics is real, and it compresses in a production system with 50,000 submissions per month. At 8% misclassification, 4,000 pages per month get routed to the wrong extractor. Most of those fail gracefully: a clinical note page routed to the lab results extractor finds no tables and returns an empty result. But some produce spurious data. The assembler's confidence thresholds and the human review queue catch most of them. What they don't catch is a subtle misclassification that produces confident-but-wrong output.
+You can fix that specific case by adding those labels to the dictionary. You can fix the next case the same way. Eventually you have a very large dictionary and someone on your team whose near full-time job is maintaining it as payer templates evolve. That's the maintenance burden the LLM eliminates.
 
-The ICD-10 inference step is where I'd invest the most calibration effort before going to production. The `InferICD10CM` API returns a top-ranked code, and that code is often the least specific valid one for the input text. E11.9 ("without complications") when the note clearly documents E11.65 ("with hyperglycemia") happens regularly. Whether that matters depends entirely on your payer's medical policies. Check yours before deciding whether to accept top-ranked codes or route everything through coder review.
+The "aha moment" with LLM classification is surprisingly mundane. You send a page to the model, and it just... knows what it is. The physician letter from a small rural clinic using a non-standard template that would have stumped the keyword classifier? "physician_letter, confidence 0.94, reasoning: this page is a formal letter from a treating physician documenting failed conservative treatments and requesting authorization for a specific surgical procedure." No dictionary. No template matching. The model understood what it was reading.
 
-The multi-page confidence aggregation is genuinely hard to get right. Average confidence across 12 pages hides a lot of variance. A submission where the cover sheet extracted at 97% and three clinical pages extracted at 72% should probably trigger review, even if the average is above threshold. A weighted confidence scheme that penalizes low scores on high-importance pages is more reliable than a flat average. The recipe shows the simple version; the production version needs those weights.
+That experience recalibrates your intuition about what's worth automating with an LLM versus a specialized service. Page classification: yes, absolutely. Lab values from a structured table: no, Textract handles that better and cheaper. The model tiering concept is how you apply that intuition systematically rather than making it up case by case.
 
-The thing that's not in the recipe at all: what happens to the output. This pipeline produces a structured prior auth record. The value of that record is entirely determined by what the downstream systems do with it. A clinical criteria matching engine that can auto-approve straightforward cases (Recipe 2.4) is where the ROI materializes. Without that downstream step, the pipeline is impressive data plumbing with no payoff.
+Now for the cost shock, because I promised honesty. Go calculate what Sonnet 4.6 costs at 500,000 submissions per year with 4 clinical pages each: 500,000 × 4 × $0.015 per page = $30,000 per year for the Sonnet step alone. That sounds like a lot until you compare it to a single clinical reviewer FTE at $150,000–$200,000 fully loaded. The pipeline is still a bargain. But the number is real, and it will land in your AWS bill.
+
+Model tiering is how you make that number smaller. Nova Lite for classification is effectively free at any realistic volume. Haiku 4.5 instead of Sonnet 4.6 for less complex narrative pages cuts the per-page cost by 70%. Prompt caching on the repeated classification system prompt cuts input costs by 90%. These are not hypothetical optimizations. They are the difference between a $30K/year LLM budget and an $8K/year one.
+
+The architectural principle that carries forward: Textract extracts structure. LLMs reason about it. Comprehend Medical validates codes. Each service does what it was built for. That combination is what the rest of Chapter 1 builds on.
 
 ---
 
 ## Variations and Extensions
 
-**Step Functions orchestration with parallel page processing.** The pseudocode above processes pages sequentially in a loop. A Step Functions Map state runs the classify-and-extract step in parallel across all pages. For a 12-page submission with four page types, the extraction time collapses to approximately the slowest single extractor (the clinical NLP step, typically 3 to 5 seconds) rather than the sum of all extractors. For submissions where time-to-review matters, this is a meaningful improvement.
+**Step Functions parallel page processing.** The pseudocode above runs classification and extraction per page sequentially within the state machine. A Step Functions Map state runs those steps in parallel across all pages simultaneously. For a 12-page submission with multiple page types, the total pipeline time collapses from the sum of all individual page processing times to approximately the time of the slowest single page. For submissions where time-to-review matters operationally, this is a meaningful improvement.
 
-**Trained page classifier with feedback loop.** Replace the keyword heuristics in Step 4 with a text classification model trained on labeled prior auth pages from your own document corpus. The training data comes from human reviewer corrections: when a reviewer corrects a misclassified page, that correction adds a labeled example to the training set. A fine-tuned BERT-based classifier trained on a few thousand labeled pages consistently achieves 93 to 97% accuracy on in-distribution documents. The keyword classifier stays as a fallback when the model endpoint is unavailable.
+**Bedrock Data Automation as a managed alternative.** Amazon Bedrock Data Automation (BDA), generally available since March 2025, is a managed IDP service that handles OCR, extraction, classification, and structured output in a single API call. You define a "blueprint" for each document type, and BDA handles the rest. No Textract, no separate classification step, no custom assembly logic. It's available in us-east-1 and us-west-2.
 
-**Provider portal pre-screening API.** Surface the extraction results back to the requesting provider before the submission reaches the UM queue. The API response tells the provider what the system found: "We received your request for CPT 27447 for member UHC4829100. We identified diagnoses M17.11 and G89.29. We're missing documentation of conservative treatment duration. Please upload PT records covering the past 6 months." This shifts gap identification from a denial + appeal cycle to a same-day correction loop. The provider portal pattern is common in new payer FHIR-based prior auth implementations under the CMS rule; this recipe's output is the data layer that powers it.
+BDA makes sense if you want to minimize the pipeline you manage. This recipe takes the longer route (Textract first, then Bedrock) because it gives you more control, teaches the underlying architecture, and works with any cloud-compatible Bedrock deployment. Think of BDA as the "batteries included" option versus the "build it yourself" option in this recipe. If you're building net-new and operational simplicity is a priority, BDA is worth evaluating before you commit to the full pipeline.
+
+**Provider portal pre-screening API.** Surface the extraction results back to the requesting provider before the submission reaches the UM queue. The API response tells the provider what the system found: "We received your request for CPT 27447 for member UHC4829100. We found documentation of M17.11. We did not find documentation of conservative treatment duration meeting our criteria. Please upload PT records covering the past 6 months." This shifts gap identification from a denial-and-appeal cycle to a same-day correction loop. The `medical_necessity_evidence` and `failed_treatments` fields this recipe now produces are the data that makes this response specific and actionable rather than generic.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 1.1 (Insurance Card Scanning):** The OCR and key-value extraction foundation. Read this first if Textract FORMS is new to you.
-- **Recipe 1.2 (Patient Intake Form Digitization):** The async multi-page Textract pattern and table extraction logic this recipe reuses directly.
-- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical clinical NLP layer (InferICD10CM, DetectEntitiesV2) this recipe applies to clinical pages.
-- **Recipe 1.5 (Claims Attachment Processing):** Extends the page classification and fan-out pattern to the even more heterogeneous attachments that accompany medical claims.
-- **Recipe 1.6 (Handwritten Clinical Note Digitization):** The human review queue that this recipe's low-confidence pages and flagged fields feed into.
-- **Recipe 2.4 (Clinical Criteria Matching):** Consumes this recipe's structured clinical evidence record to evaluate whether the submitted documentation meets the payer's medical policy criteria for the requested procedure.
+- **Recipe 1.1 (Insurance Card Scanning):** The OCR and key-value extraction foundation. The cover sheet extractor in this recipe reuses the Recipe 1.1 FIELD_MAP pattern directly.
+- **Recipe 1.2 (Patient Intake Form Digitization):** The async multi-page Textract pattern and table extraction logic this recipe reuses for lab results pages.
+- **Recipe 1.3 (Lab Requisition Form Extraction):** The Comprehend Medical `InferICD10CM` pattern this recipe uses for ICD-10 code validation.
+- **Recipe 1.5 (Claims Attachment Processing):** Extends the LLM classification pattern to document boundary detection and claims-to-procedure matching.
+- **Recipe 1.6 (Handwritten Clinical Note Digitization):** Introduces Bedrock vision models for page types where OCR quality is too poor for text-based LLM processing.
+- **Recipe 2.4 (Clinical Criteria Matching):** Consumes the `medical_necessity_evidence` and `failed_treatments` fields from this recipe's output to evaluate whether the documentation meets the payer's medical policy criteria.
 - **Recipe 3.1 (Prior Auth Decision Orchestration):** The end-to-end workflow that uses this recipe's output as the first stage in an automated prior auth decision pipeline.
 
 ---
@@ -928,35 +1035,37 @@ The thing that's not in the recipe at all: what happens to the output. This pipe
 ## Additional Resources
 
 **AWS Documentation:**
+- [Amazon Bedrock Converse API](https://docs.aws.amazon.com/bedrock/latest/userguide/conversation-inference.html)
+- [Amazon Bedrock Model IDs and Availability](https://docs.aws.amazon.com/bedrock/latest/userguide/model-ids.html)
+- [Amazon Bedrock Pricing](https://aws.amazon.com/bedrock/pricing/)
+- [Amazon Bedrock HIPAA Eligibility](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+- [Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
+- [Amazon Bedrock Data Automation (BDA)](https://docs.aws.amazon.com/bedrock/latest/userguide/bda.html)
+- [Amazon Bedrock Prompt Caching](https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html)
 - [Amazon Textract Layout Feature](https://docs.aws.amazon.com/textract/latest/dg/layoutresponse.html)
 - [Amazon Textract Async Operations](https://docs.aws.amazon.com/textract/latest/dg/async.html)
 - [Amazon Textract Pricing](https://aws.amazon.com/textract/pricing/)
 - [Amazon Comprehend Medical: InferICD10CM API](https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_InferICD10CM.html)
-- [Amazon Comprehend Medical: DetectEntitiesV2 API](https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_DetectEntitiesV2.html)
-- [Amazon Comprehend Medical Pricing](https://aws.amazon.com/comprehend/medical/pricing/)
 - [AWS Step Functions Standard vs Express Workflows](https://docs.aws.amazon.com/step-functions/latest/dg/concepts-standard-vs-express.html)
 - [AWS Step Functions: Map State for Parallel Iteration](https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-map-state.html)
-- [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **Regulatory Context:**
 - [CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F)](https://www.cms.gov/newsroom/fact-sheets/cms-interoperability-and-prior-authorization-final-rule-cms-0057-f)
-- [CMS Prior Authorization API Requirements](https://www.cms.gov/priorities/key-initiatives/burden-reduction/advancing-interoperability/prior-authorization)
 - [AMA 2024 Prior Authorization Physician Survey](https://www.ama-assn.org/practice-management/prior-authorization/2024-ama-prior-authorization-survey)
 
 **AWS Sample Repos:**
 - [`aws-ai-intelligent-document-processing`](https://github.com/aws-samples/aws-ai-intelligent-document-processing): Comprehensive IDP solutions with multi-stage pipelines, document classification, A2I human review integration, and generative AI enrichment
-- [`amazon-textract-and-comprehend-medical-document-processing`](https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing): Workshop repo for multi-stage medical document processing pipelines with Lambda orchestration and Comprehend Medical
-- [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare-specific extraction and validation with both services and CloudFormation deployment templates
-- [`document-processing-pipeline-for-regulated-industries`](https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries): Regulated-industry document pipeline with lineage tracking and pipeline metadata services
-- [`guidance-for-low-code-intelligent-document-processing-on-aws`](https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws): Scalable IDP architecture guidance covering ingestion, extraction, enrichment, and storage patterns
+- [`amazon-textract-and-comprehend-medical-document-processing`](https://github.com/aws-samples/amazon-textract-and-comprehend-medical-document-processing): Workshop repo for multi-stage medical document processing with Lambda orchestration and Comprehend Medical
+- [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare-specific extraction and validation with both services, CloudFormation deployment included
+- [`document-processing-pipeline-for-regulated-industries`](https://github.com/aws-samples/document-processing-pipeline-for-regulated-industries): Regulated-industry document pipeline with lineage tracking and metadata services
+- [`guidance-for-low-code-intelligent-document-processing-on-aws`](https://github.com/aws-solutions-library-samples/guidance-for-low-code-intelligent-document-processing-on-aws): Scalable IDP guidance covering ingestion, extraction, enrichment, and storage patterns
 
 **AWS Solutions and Blogs:**
 - [Guidance for Intelligent Document Processing on AWS](https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws): Reference architecture for classifying, extracting, and enriching documents at scale
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
-- [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
-- [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end claims automation architecture
+- [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
 
 ---
 
@@ -964,15 +1073,15 @@ The thing that's not in the recipe at all: what happens to the output. This pipe
 
 | Scope | Time |
 |-------|------|
-| **Basic** (Textract + keyword classifier + Comprehend Medical, single Lambda) | 2–4 days |
-| **Production-ready** (Step Functions, error handling, confidence gating, DLQ, VPC, KMS, CloudTrail, idempotency, monitoring) | 2–3 weeks |
-| **With variations** (trained classifier, provider portal API, criteria pre-matching, Step Functions parallel Map state) | 4–8 weeks |
+| **Basic** (Textract + Bedrock classification + Sonnet extraction + Comprehend Medical validation, single Lambda) | 3–5 days |
+| **Production-ready** (Step Functions, error handling, LLM output validation, prompt injection hardening, DLQ, VPC, KMS, CloudTrail, idempotency, model version pinning, monitoring) | 3–4 weeks |
+| **With variations** (parallel Map state, BDA evaluation, provider portal API, criteria pre-screening) | 5–8 weeks |
 
 ---
 
 ## Tags
 
-`document-intelligence` · `ocr` · `nlp` · `textract` · `comprehend-medical` · `prior-authorization` · `multi-page` · `page-classification` · `fan-out` · `step-functions` · `icd-10` · `moderate` · `mvp` · `hipaa` · `payer` · `utilization-management`
+`document-intelligence` · `ocr` · `llm` · `bedrock` · `textract` · `comprehend-medical` · `prior-authorization` · `multi-page` · `page-classification` · `fan-out` · `step-functions` · `icd-10` · `model-tiering` · `nova-lite` · `claude-sonnet` · `moderate` · `mvp` · `hipaa` · `payer` · `utilization-management`
 
 ---
 

@@ -1,572 +1,312 @@
-# Recipe 1.4: Python Implementation Example
+# Recipe 1.4: Prior Authorization Document Processing: Python Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 1.4. It is meant to show how you could translate those concepts into working Python code. It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire into a payer UM queue on Monday morning. Consider it a starting point, not a destination.
->
-> This is the most complex companion file in Chapter 1. It builds directly on patterns from Recipes 1.1 (key-value forms parsing), 1.2 (async Textract and table extraction), and 1.3 (Comprehend Medical NLP). If you haven't read those companions yet, start there. The new work in this recipe is the page classification logic, the fan-out to specialized extractors, and the assembler that merges everything back together.
->
-> In production, the fan-out step runs as parallel branches inside an AWS Step Functions Express Workflow. This script runs the same extraction functions sequentially, in a single process, so you can trace each step without standing up a state machine first. The logic is identical; only the concurrency model differs.
+<!-- [EDITOR: Removed em dash from title. Original: "...Document Processing — Python Example". Changed to a colon for clean separation.] -->
+
+> **Important:** This is an illustrative implementation, not a production-ready deployment. It demonstrates the patterns from the recipe pseudocode using real boto3 API calls, with inline comments explaining what each piece does and why. The "Gap to Production" section at the end describes what you'd need to add before running this in a real environment. Think of this as a detailed starting point, not a finished product.
 
 ---
 
 ## Setup
 
-You'll need the AWS SDK for Python:
-
 ```bash
-pip install boto3
+pip install boto3 python-dotenv
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `textract:StartDocumentAnalysis`
-- `textract:GetDocumentAnalysis`
-- `comprehendmedical:InferICD10CM`
-- `comprehendmedical:DetectEntitiesV2`
-- `s3:GetObject`
-- `s3:PutObject`
-- `dynamodb:PutItem`
-- `dynamodb:GetItem`
-- `states:StartExecution` (if you wire up the Step Functions handoff)
-- `iam:PassRole` (so Lambda can pass the Textract service role for SNS notifications)
+<!-- [EDITOR: Added Python version note. Built-in generic type hints (list[dict], dict[int, dict]) require Python 3.9+. Lambda supports Python 3.9+ runtimes; this should not be a constraint in practice, but worth noting for local dev environments.] -->
 
-Note the Comprehend Medical permissions: `InferICD10CM` and `DetectEntitiesV2` are distinct IAM actions. You need both.
+> **Python version note:** This example uses built-in generic type hints (`list[dict]`, `dict[int, dict]`) which require Python 3.9 or later. AWS Lambda supports Python 3.9, 3.10, 3.11, 3.12, and 3.13 runtimes. If you need Python 3.8 compatibility, replace these with `from typing import List, Dict` and use `List[dict]`, `Dict[int, dict]` instead.
+
+You'll need AWS credentials with the following permissions:
+- `textract:StartDocumentAnalysis`, `textract:GetDocumentAnalysis`
+- `s3:GetObject`, `s3:PutObject`
+- `bedrock:InvokeModel` on `us.amazon.nova-lite-v1:0` and `us.anthropic.claude-sonnet-4-6-v1`
+- `comprehendmedical:InferICD10CM`
+- `dynamodb:PutItem`
+- `sns:Publish` (for Textract job notifications)
+- `states:StartExecution` (if using Step Functions)
+
+Enable Nova Lite and Claude Sonnet 4.6 in your Bedrock console (Model Access) before running this code. Cross-region inference profiles handle regional routing automatically.
 
 ---
 
 ## Configuration and Constants
 
-Everything that is really configuration rather than logic lives here, at the top of the module. The page signatures, field maps, and column name tables belong in your version control history, not buried inside functions. They are living documents. Every time a new payer cover sheet template arrives with a field label you haven't seen before, you update the map here, re-deploy, and move on.
+These go first because they're really configuration, not logic. If you're deploying this for real, most of these become environment variables or Parameter Store values.
 
 ```python
-# PAGE_SIGNATURES: keyword and structure signals for each page type.
-#
-# For each page type, this defines:
-#   keywords:     words or phrases that appear on pages of this type
-#   min_matches:  how many keyword hits are required before we trust the classification
-#   form_bonus:   extra score points if the page has KEY_VALUE_SET blocks (form fields)
-#   table_bonus:  extra score points if the page has TABLE blocks
-#
-# The threshold is deliberately low (2-3 keywords) because faxed pages often
-# have sparse text due to scanning quality. A careful set of distinctive phrases
-# compensates for quantity. "HISTORY OF PRESENT ILLNESS" on a page means
-# something very specific even if you only find it once.
-#
-# You'll want to expand these lists over time. Start here, run against your
-# actual submission corpus, and add keywords that show up on mis-classified pages.
+import json
+import time
+import boto3
+import logging
+from datetime import datetime, timezone
+from decimal import Decimal
+from botocore.config import Config  # [EDITOR: review fix P1-4] Added for retry configuration
 
-PAGE_SIGNATURES = {
-    "cover_sheet": {
-        "keywords": [
-            "prior authorization", "authorization request", "member name",
-            "member id", "subscriber", "requesting provider", "npi",
-            "requested service", "date of service", "procedure code", "cpt",
-        ],
-        "min_matches": 3,
-        "form_bonus":  3,   # cover sheets are form documents
-        "table_bonus": 0,
-    },
-    "clinical_note": {
-        "keywords": [
-            "history of present illness", "assessment", "plan", "chief complaint",
-            "physical examination", "review of systems", "subjective", "objective",
-            "impression", "hpi", "social history", "family history", "medications",
-        ],
-        "min_matches": 2,
-        "form_bonus":  0,   # clinical notes are prose, not forms
-        "table_bonus": 0,
-    },
-    "lab_results": {
-        "keywords": [
-            "reference range", "result", "specimen", "collected", "reported",
-            "abnormal", "critical", "units", "flag", "reference interval",
-            "out of range",
-        ],
-        "min_matches": 3,
-        "form_bonus":  0,
-        "table_bonus": 3,   # lab results are almost always tabular
-    },
-    "imaging_report": {
-        "keywords": [
-            "findings", "impression", "technique", "comparison", "indication",
-            "radiology", "mri", "ct", "x-ray", "ultrasound", "nuclear",
-            "no acute", "unremarkable",
-        ],
-        "min_matches": 2,
-        "form_bonus":  0,
-        "table_bonus": 0,
-    },
-    "physician_letter": {
-        "keywords": [
-            "dear", "to whom it may concern", "medical necessity", "i am writing",
-            "requesting approval", "patient has", "sincerely", "respectfully",
-            "on behalf of", "this letter",
-        ],
-        "min_matches": 2,
-        "form_bonus":  0,
-        "table_bonus": 0,
-    },
-}
+logger = logging.getLogger(__name__)
 
-# PA_COVER_FIELD_MAP: canonical field name -> list of label variants.
-#
-# This is the same pattern as Recipe 1.1's FIELD_MAP, extended for prior auth
-# cover sheets. Cover sheets from different payers call the same field different
-# things. "Member Name," "Patient Name," "Subscriber Name," and "Insured Name"
-# all mean the same thing and all need to land in the same field in the record.
-#
-# Treat this as a living document. Every time a payer sends a new cover sheet
-# template with a label variant you haven't seen, add it here.
+# ---------------------------------------------------------------------------
+# Retry configuration for Bedrock and Comprehend Medical clients.
+# ThrottlingException is expected at healthcare volume during peak hours.
+# "adaptive" mode implements exponential backoff with jitter, appropriate
+# for throttling scenarios. max_attempts=3 covers transient spikes without
+# compounding latency excessively.
+# ---------------------------------------------------------------------------
+# [EDITOR: review fix P1-4] Added retry config. Bedrock ThrottlingException is
+# a certainty at 500K submissions/year with burst patterns, not an edge case.
+# Both Bedrock runtime and Comprehend Medical clients need this.
+BOTO3_RETRY_CONFIG = Config(
+    retries={"max_attempts": 3, "mode": "adaptive"}
+)
 
+# ---------------------------------------------------------------------------
+# Model configuration
+# Use cross-region inference profile IDs, not direct model IDs.
+# Cross-region profiles route to the best available region automatically
+# and handle regional capacity differences for you.
+# ---------------------------------------------------------------------------
+CLASSIFICATION_MODEL_ID = "us.amazon.nova-lite-v1:0"
+CLINICAL_MODEL_ID = "us.anthropic.claude-sonnet-4-6-v1"
+
+# ---------------------------------------------------------------------------
+# Confidence thresholds
+# These are starting points. Tune them against your actual data.
+# ---------------------------------------------------------------------------
+CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.60   # below this → human review
+PAGE_CONFIDENCE_THRESHOLD = 75.0             # below this → flag page
+ICD10_CONFIDENCE_THRESHOLD = 0.70            # below this → flag code
+
+# ---------------------------------------------------------------------------
+# Cover sheet field map
+# Maps canonical field names to all the label variants we've seen.
+# "Service Requested Code" and "Dx Indication" are in here because those
+# are real labels used by real payers that would trip up a simple keyword list.
+# ---------------------------------------------------------------------------
 PA_COVER_FIELD_MAP = {
     "member_name": [
-        "member name", "patient name", "subscriber name", "insured name",
-        "beneficiary name",
+        "member name", "patient name", "subscriber name", "insured name"
     ],
     "member_id": [
-        "member id", "subscriber id", "member #", "id number",
-        "insurance id", "member number", "beneficiary id",
+        "member id", "subscriber id", "member #", "id number"
     ],
     "member_dob": [
-        "date of birth", "dob", "member dob", "patient dob",
-        "birth date", "birthdate",
+        "date of birth", "dob", "member dob", "patient dob"
     ],
     "requesting_provider": [
         "requesting provider", "ordering physician", "rendering provider",
-        "treating physician", "provider name", "ordering provider",
+        "treating physician", "provider name"
     ],
     "provider_npi": [
-        "npi", "provider npi", "npi number", "national provider",
-        "national provider identifier",
+        "npi", "provider npi", "npi number", "national provider"
     ],
     "requesting_facility": [
-        "facility", "practice name", "clinic name", "hospital",
-        "ordering facility", "place of service",
+        "facility", "practice name", "clinic name", "hospital"
     ],
     "requested_cpt": [
         "cpt code", "procedure code", "procedure", "service code",
-        "requested procedure", "requested service",
+        "requested procedure", "service requested code"
     ],
     "diagnosis_code": [
         "diagnosis code", "icd-10", "icd code", "dx", "icd-10-cm",
-        "diagnosis", "primary diagnosis",
+        "dx indication", "diagnosis indication"
     ],
     "date_of_service": [
-        "date of service", "dos", "requested date", "service date",
-        "anticipated date of service",
+        "date of service", "dos", "requested date", "service date"
     ],
     "urgency": [
-        "urgency", "urgent", "priority", "expedited", "stat",
-        "request type",
+        "urgency", "urgent", "priority", "expedited", "stat"
     ],
 }
 
-# LAB_COLUMN_MAP: canonical column name -> list of header label variants.
-#
-# Printed lab result reports vary widely in their column header labels.
-# Quest uses different headers than LabCorp, which uses different headers
-# than a hospital system's internal lab. This map normalizes them.
-
+# ---------------------------------------------------------------------------
+# Lab column map
+# Same pattern as the cover sheet field map, applied to lab results tables.
+# ---------------------------------------------------------------------------
 LAB_COLUMN_MAP = {
-    "test_name":       ["test", "test name", "analyte", "component", "description"],
-    "result":          ["result", "value", "result value", "your result"],
-    "units":           ["units", "unit"],
+    "test_name": ["test", "test name", "analyte", "component", "description"],
+    "result": ["result", "value", "result value", "your result"],
+    "units": ["units", "unit"],
     "reference_range": [
         "reference range", "normal range", "reference interval",
-        "normal values", "expected range",
+        "normal values", "expected range"
     ],
-    "flag":            ["flag", "abnormal flag", "indicator", "h/l"],
+    "flag": ["flag", "abnormal flag", "indicator", "h/l"],
 }
 
-# IMAGING_SECTION_HEADERS: section names to extract from imaging reports.
-# Keys are canonical section names; values are the header labels to look for.
+# ---------------------------------------------------------------------------
+# LLM prompts
+# These live here as constants so they're easy to find, version, and test.
+# In production, consider loading from Parameter Store or S3 so you can
+# update prompts without redeploying the Lambda.
+# ---------------------------------------------------------------------------
+CLASSIFICATION_SYSTEM_PROMPT = """
+You are a healthcare document classifier. Your job is to identify what type of document
+page you are reading from a prior authorization submission.
 
-IMAGING_SECTION_HEADERS = {
-    "findings":   ["findings", "report findings"],
-    "impression": ["impression", "conclusions", "summary"],
-    "indication": ["indication", "clinical history", "reason for exam"],
+Return ONLY a valid JSON object with these fields:
+{
+  "page_type": "<one of: cover_sheet, clinical_note, physician_letter, lab_results, imaging_report, other>",
+  "confidence": <0.0 to 1.0>,
+  "reasoning": "<one sentence explaining your classification>"
 }
 
-# DIAGNOSIS_SECTION_HEADERS: headers that signal diagnosis-rich text in clinical notes.
-# We run InferICD10CM on the text under these headers rather than on the full page,
-# which keeps the API call targeted and the results more relevant.
+Document types:
+- cover_sheet: administrative form with fields like member ID, provider NPI,
+  CPT code, date of service. Usually has checkboxes and form fields.
+- clinical_note: physician office note with sections like History of Present
+  Illness, Assessment, Plan. Written by a treating clinician.
+- physician_letter: letter written by a physician explaining medical necessity,
+  treatment history, or requesting authorization for a specific procedure.
+- lab_results: laboratory test results page with test names, numeric values,
+  units, and reference ranges. Usually presented as a table.
+- imaging_report: radiology or other imaging report with sections like Findings,
+  Impression, and Technique. Written by a radiologist.
+- other: anything that does not clearly fit the above categories.
 
-DIAGNOSIS_SECTION_HEADERS = [
-    "assessment", "assessment and plan", "diagnosis", "impression",
-    "diagnoses", "dx", "problems", "active problems",
-]
+Be conservative with confidence. Only return 0.9 or higher if the classification
+is unambiguous. Return 0.7-0.89 for likely classifications. Below 0.7 for uncertain cases.
+""".strip()
 
-# CLINICAL_SECTION_STARTERS: common section headers across any clinical note.
-# Used by extract_section_text to know when a section ends.
-# This list could be much longer in production; this covers the common ones.
+CLINICAL_EXTRACTION_SYSTEM_PROMPT = """
+You are a clinical documentation analyst reviewing pages from prior authorization submissions.
+Your job is to extract all clinically relevant information needed to evaluate a prior
+authorization request.
 
-CLINICAL_SECTION_STARTERS = [
-    "chief complaint", "hpi", "history of present illness", "past medical history",
-    "medications", "allergies", "social history", "family history",
-    "review of systems", "ros", "physical examination", "assessment",
-    "assessment and plan", "plan", "diagnosis", "diagnoses", "impression",
-    "problems", "active problems", "objective", "subjective",
-]
+Return ONLY a valid JSON object with this structure:
+{
+  "diagnosis_text": "<the primary diagnosis or diagnoses as written in this document>",
+  "conditions": ["<list of medical conditions, diseases, diagnoses mentioned>"],
+  "medications": ["<list of medications with dosages if present>"],
+  "procedures": ["<list of procedures, treatments, or tests mentioned>"],
+  "medical_necessity_evidence": "<free text: evidence supporting medical necessity, including clinical findings, severity indicators, and impact on function>",
+  "failed_treatments": ["<list of prior treatments that were tried and failed or were insufficient, with duration if mentioned>"],
+  "supporting_findings": "<relevant clinical findings, test results, or imaging findings mentioned in this document>",
+  "confidence": <0.0 to 1.0, your confidence in the extraction completeness>
+}
 
-# Confidence thresholds.
-#
-# FIELD_CONFIDENCE_THRESHOLD: Textract key-value pair confidence below this
-# means the extracted field value goes to the flagged list instead of the clean record.
-#
-# ICD10_CONFIDENCE_THRESHOLD: Comprehend Medical inference score below this
-# means the code goes to the flagged list for coder review.
-#
-# PAGE_REVIEW_THRESHOLD: overall page confidence below this flags the entire page
-# for human review. Lower than FIELD_CONFIDENCE_THRESHOLD because some page types
-# (handwritten physician letters, low-quality fax copies) legitimately produce
-# lower confidence and we don't want to flag every clinical note as suspicious.
-
-FIELD_CONFIDENCE_THRESHOLD = 85.0
-ICD10_CONFIDENCE_THRESHOLD = 0.70
-PAGE_REVIEW_THRESHOLD      = 75.0
-
-# Polling config for the development script.
-# In production, replace the polling loop with SNS-triggered Lambda invocations.
-POLL_INTERVAL_SECONDS = 5
-MAX_POLL_ATTEMPTS     = 20
-
-# DynamoDB table names.
-JOBS_TABLE_NAME     = "textract-jobs"         # tracks in-flight Textract jobs
-PA_RECORDS_TABLE    = "prior-auth-records"    # stores completed PA records
+Extract only what is explicitly stated in the document. Do not infer or add information
+not present in the text. If a field has no relevant content, use an empty list or
+empty string. The medical_necessity_evidence and failed_treatments fields are the
+most important for prior authorization decisions.
+""".strip()
 ```
 
 ---
 
-## Helper Functions
+## Step 1: Submit Textract Async Job
 
-A few small functions used across multiple steps. They live at the top rather than buried inside specific extractors.
-
-```python
-import boto3
-import datetime
-import json
-import time
-from datetime import timezone
-from decimal import Decimal  # DynamoDB requires Decimal for any numeric value
-
-
-# Module-level clients. Creating these once at module scope means they're
-# reused across invocations inside a warm Lambda container.
-textract_client          = boto3.client("textract")
-comprehend_medical_client = boto3.client("comprehendmedical")
-s3_client                = boto3.client("s3")
-dynamodb                 = boto3.resource("dynamodb")
-
-
-def get_text_from_block(block: dict, block_map: dict) -> str:
-    """
-    Assemble the full text of a block by following its CHILD WORD blocks.
-
-    Textract KEY and VALUE blocks don't store text directly. They have CHILD
-    relationships that point to individual WORD blocks. This helper follows
-    those links and concatenates the words. Used everywhere we need to read
-    text from a KEY_VALUE_SET or CELL block.
-    """
-    text = ""
-    if "Relationships" not in block:
-        return text
-
-    for relationship in block["Relationships"]:
-        if relationship["Type"] == "CHILD":
-            for child_id in relationship["Ids"]:
-                child_block = block_map.get(child_id, {})
-                if child_block.get("BlockType") == "WORD":
-                    text += child_block.get("Text", "") + " "
-
-    return text.strip()
-
-
-def get_page_text_from_blocks(page_blocks: list) -> str:
-    """
-    Assemble the full text of a page by concatenating its LINE blocks in order.
-
-    LINE blocks are Textract's view of a logical text line. They already have
-    their text in block["Text"], so this is simpler than get_text_from_block.
-    The result is what the page classifier and clinical NLP functions receive.
-    """
-    lines = [
-        block.get("Text", "")
-        for block in page_blocks
-        if block.get("BlockType") == "LINE"
-    ]
-    return "\n".join(lines)
-
-
-def extract_section_text(page_text: str, target_headers: list) -> str:
-    """
-    Find a specific named section in a clinical document and return its text.
-
-    Clinical pages have headers like "ASSESSMENT AND PLAN" or "FINDINGS"
-    followed by the content of that section. This function locates the first
-    matching header, then collects the text that follows it until the next
-    section header appears (or the page ends).
-
-    Args:
-        page_text:       full text of the page
-        target_headers:  list of header label variants to look for
-
-    Returns:
-        The text content of the matching section, or an empty string if not found.
-    """
-    lines             = page_text.split("\n")
-    in_target_section = False
-    section_lines     = []
-
-    for line in lines:
-        line_lower = line.lower().strip()
-
-        # Check if this line is one of the target section headers
-        if any(header in line_lower for header in target_headers):
-            in_target_section = True
-            continue   # skip the header line itself
-
-        # Check if this line starts a new, different section
-        if in_target_section:
-            is_new_section = any(
-                starter in line_lower
-                for starter in CLINICAL_SECTION_STARTERS
-                if not any(header in line_lower for header in target_headers)
-            )
-            if is_new_section and line_lower:
-                break  # stop accumulating at the next section boundary
-
-        if in_target_section:
-            section_lines.append(line)
-
-    return "\n".join(section_lines).strip()
-
-
-def parse_tables_from_blocks(page_blocks: list, block_map: dict) -> list:
-    """
-    Extract TABLE blocks from a page and convert them to row-by-row text lists.
-
-    Textract TABLE blocks contain CELL children, each with a RowIndex and
-    ColumnIndex. This function collects those cells, arranges them by position,
-    and returns a list of tables: each table is a list of rows, each row is a
-    list of strings. The first row is assumed to be column headers.
-
-    Args:
-        page_blocks:  all blocks for this page
-        block_map:    full block ID -> block lookup dict
-
-    Returns:
-        A list of tables. Each table is a list of rows.
-        Each row is a list of cell text strings.
-    """
-    tables = []
-
-    for block in page_blocks:
-        if block.get("BlockType") != "TABLE":
-            continue
-
-        # Collect cells from this TABLE's CHILD relationships
-        cells = {}  # (row_index, col_index) -> cell text
-
-        for relationship in block.get("Relationships", []):
-            if relationship["Type"] != "CHILD":
-                continue
-            for cell_id in relationship["Ids"]:
-                cell_block = block_map.get(cell_id, {})
-                if cell_block.get("BlockType") != "CELL":
-                    continue
-                row_idx  = cell_block.get("RowIndex", 0)
-                col_idx  = cell_block.get("ColumnIndex", 0)
-                cell_text = get_text_from_block(cell_block, block_map)
-                cells[(row_idx, col_idx)] = cell_text
-
-        if not cells:
-            continue
-
-        max_row = max(r for r, c in cells)
-        max_col = max(c for r, c in cells)
-
-        table_rows = []
-        for row_idx in range(1, max_row + 1):
-            row = [
-                cells.get((row_idx, col_idx), "")
-                for col_idx in range(1, max_col + 1)
-            ]
-            table_rows.append(row)
-
-        tables.append(table_rows)
-
-    return tables
-```
-
----
-
-## Steps 1 and 2: Async Textract Extraction and Result Retrieval
-
-Steps 1 and 2 follow the Recipe 1.2 pattern with one meaningful addition: include `LAYOUT` in the `FeatureTypes` list. LAYOUT blocks capture the structural organization of each page (headers, body paragraphs, key-value regions, figure captions) and those structural signals feed directly into the page classifier in Step 4.
-
-> **Note on botocore version:** The `LAYOUT` FeatureType requires botocore 1.31.0 or later. If you're running an older version (check with `python3 -c "import botocore; print(botocore.__version__)"`), you'll get a `ParamValidationError`. Upgrade with `pip install --upgrade boto3 botocore`.
-
-In a production deployment, `pa-start` submits the job and exits. `pa-retrieve` fires on the SNS completion notification, retrieves all result pages, writes the raw blocks to S3 (to stay under Step Functions payload limits), and starts the state machine. The script version here does all of this in sequence with a polling loop instead.
+This matches the async Textract pattern from Recipe 1.2. LAYOUT is the addition here; it gives us structural signals about each page that feed into the LLM classification prompt.
 
 ```python
-def submit_extraction_job(
-    bucket: str,
-    key: str,
+def start_textract_job(
+    s3_bucket: str,
+    s3_key: str,
     sns_topic_arn: str,
-    textract_role_arn: str,
+    sns_role_arn: str,
+    region: str = "us-east-1"
 ) -> str:
     """
-    Submit a prior auth PDF from S3 to Textract for async multi-page analysis.
-
-    This is what the pa-start Lambda runs when the S3 upload event fires.
-    The call returns immediately with a job ID. Actual extraction happens
-    in the background. Everything else waits for the SNS completion notification.
-
-    The key difference from Recipe 1.2: we add LAYOUT to the FeatureTypes list.
-    LAYOUT blocks capture the structural organization of each page and that
-    structural information is what the page classifier uses in Step 4.
-
-    Args:
-        bucket:             S3 bucket where the faxed PA submission PDF lives
-        key:                S3 object key (path to the PDF)
-        sns_topic_arn:      ARN of the SNS topic for job completion notifications
-        textract_role_arn:  ARN of the IAM role Textract can assume to publish to SNS
-
-    Returns:
-        The Textract job ID.
+    Submit a prior auth PDF to Textract for async analysis.
+    Returns the Textract job ID. The Lambda that calls this can exit
+    immediately; the SNS notification will trigger the next Lambda when done.
     """
-    response = textract_client.start_document_analysis(
+    textract = boto3.client("textract", region_name=region)
+
+    response = textract.start_document_analysis(
         DocumentLocation={
             "S3Object": {
-                "Bucket": bucket,
-                "Name":   key,
+                "Bucket": s3_bucket,
+                "Name": s3_key,
             }
         },
-        # FORMS:  key-value pairs (cover sheet fields, checkboxes)
-        # TABLES: structured grids (lab results tables)
-        # LAYOUT: structural page organization (headers, body text, key-value regions)
-        #         LAYOUT is what makes page classification practical.
-        #         Without it, you're classifying on keywords alone.
+        # FORMS: key-value pairs (cover sheet fields)
+        # TABLES: tabular data (lab results)
+        # LAYOUT: high-level page structure (helps the LLM classification prompt)
         FeatureTypes=["FORMS", "TABLES", "LAYOUT"],
         NotificationChannel={
             "SNSTopicArn": sns_topic_arn,
-            "RoleArn":     textract_role_arn,
+            "RoleArn": sns_role_arn,
+        },
+        # Store raw Textract output in S3 alongside the source document.
+        # This is useful for debugging and avoids the 256KB Step Functions payload limit.
+        OutputConfig={
+            "S3Bucket": s3_bucket,
+            "S3Prefix": "textract-outputs/",
         },
     )
 
     job_id = response["JobId"]
-
-    # Record job context in DynamoDB so pa-retrieve can look up the source
-    # document when the SNS notification arrives. The SNS message contains
-    # only the job ID, not the original S3 path.
-    jobs_table = dynamodb.Table(JOBS_TABLE_NAME)
-    jobs_table.put_item(
-        Item={
-            "job_id":       job_id,
-            "bucket":       bucket,
-            "key":          key,
-            "submitted_at": datetime.datetime.now(timezone.utc).isoformat(),
-            "status":       "PENDING",
-        }
-    )
-
-    print(f"Submitted Textract job {job_id} for s3://{bucket}/{key}")
+    logger.info(f"Started Textract job {job_id} for {s3_key}")
     return job_id
-
-
-def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
-    """
-    Wait for a Textract async job to complete and retrieve all extracted blocks.
-
-    Textract paginates results for multi-page documents in pages of up to 1,000
-    blocks each. A 15-page prior auth submission can produce thousands of blocks
-    across multiple result pages. We collect everything before any parsing begins.
-
-    In production, skip the polling loop. Call this only after the SNS notification
-    confirms the job succeeded.
-
-    Args:
-        job_id: Textract job ID from submit_extraction_job
-
-    Returns:
-        A tuple of (all_blocks, block_map):
-        - all_blocks: flat list of every block Textract extracted
-        - block_map:  dict of block ID -> block, for O(1) lookups by ID
-    """
-    # Poll until the job completes (for development scripts without SNS).
-    job_status = "IN_PROGRESS"
-    attempts   = 0
-
-    while job_status == "IN_PROGRESS" and attempts < MAX_POLL_ATTEMPTS:
-        attempts  += 1
-        response   = textract_client.get_document_analysis(JobId=job_id)
-        job_status = response["JobStatus"]
-
-        if job_status == "IN_PROGRESS":
-            print(f"  Job {job_id} still running (attempt {attempts}/{MAX_POLL_ATTEMPTS})...")
-            time.sleep(POLL_INTERVAL_SECONDS)
-        elif job_status == "FAILED":
-            raise RuntimeError(
-                f"Textract job {job_id} failed. "
-                f"StatusMessage: {response.get('StatusMessage', 'no message')}"
-            )
-
-    if job_status != "SUCCEEDED":
-        raise TimeoutError(
-            f"Textract job {job_id} did not complete in time. "
-            f"Last status: {job_status}"
-        )
-
-    # Collect all result pages via the pagination cursor.
-    all_blocks = []
-    next_token = None
-
-    while True:
-        params = {"JobId": job_id}
-        if next_token is not None:
-            params["NextToken"] = next_token
-
-        response   = textract_client.get_document_analysis(**params)
-        all_blocks.extend(response.get("Blocks", []))
-
-        next_token = response.get("NextToken")
-        if next_token is None:
-            break
-
-    print(f"  Retrieved {len(all_blocks)} total blocks")
-
-    # Build the lookup index. Parsing follows cross-references between blocks
-    # by ID constantly. Dict lookup is much faster than scanning the flat list.
-    block_map = {block["Id"]: block for block in all_blocks}
-
-    return all_blocks, block_map
 ```
 
 ---
 
-## Step 3: Group Textract Blocks by Page
+## Step 2: Retrieve Textract Results
 
-The Textract result is a flat list of blocks for the entire document. Every block has a `Page` attribute indicating which page it belongs to. This step groups those blocks so each page can be classified and extracted independently.
-
-It also pre-computes the structural features the classifier needs: whether the page has form fields, whether it has tables, and the full text assembled from LINE blocks.
+Fires on the SNS completion notification. Retrieves all result pages via paginated `GetDocumentAnalysis`.
 
 ```python
-def group_blocks_by_page(all_blocks: list) -> dict:
+def retrieve_textract_blocks(
+    job_id: str,
+    region: str = "us-east-1"
+) -> list[dict]:
     """
-    Group Textract blocks by page number and pre-compute structural features.
+    Retrieve all Textract blocks for a completed job.
+    GetDocumentAnalysis is paginated; most multi-page documents produce multiple
+    pages of results. This loops until NextToken is absent, collecting all blocks.
+    """
+    # [EDITOR: Removed em dash from docstring. Original: "is paginated — most
+    # multi-page documents have multiple pages of results." Changed to semicolon.]
+    textract = boto3.client("textract", region_name=region)
+    all_blocks = []
+    next_token = None
 
-    This step prepares the per-page data structures that the classifier and
-    extractors consume. By pre-computing has_tables, has_forms, and the full
-    page text here, we avoid repeating that logic inside every extractor.
+    while True:
+        kwargs = {"JobId": job_id}
+        if next_token:
+            kwargs["NextToken"] = next_token
 
-    Args:
-        all_blocks: flat block list from retrieve_all_blocks
+        response = textract.get_document_analysis(**kwargs)
 
-    Returns:
-        A dict of page_number (int) -> page_data dict containing:
-        - blocks:        all blocks on this page
-        - text:          full page text assembled from LINE blocks
-        - has_tables:    True if any TABLE block is on this page
-        - has_forms:     True if any KEY_VALUE_SET block is on this page
-        - layout_blocks: LAYOUT_* blocks for structural classification signals
+        # Verify the job actually succeeded before processing
+        job_status = response["JobStatus"]
+        if job_status == "FAILED":
+            error_message = response.get("StatusMessage", "Unknown error")
+            raise RuntimeError(f"Textract job {job_id} failed: {error_message}")
+        if job_status != "SUCCEEDED":
+            raise RuntimeError(
+                f"Textract job {job_id} has unexpected status: {job_status}"
+            )
+
+        all_blocks.extend(response.get("Blocks", []))
+
+        next_token = response.get("NextToken")
+        if not next_token:
+            break
+
+    logger.info(f"Retrieved {len(all_blocks)} blocks from Textract job {job_id}")
+    return all_blocks
+```
+
+---
+
+## Step 3: Group Blocks by Page
+
+Takes the flat list of Textract blocks and organizes them by page number. Also extracts structural signals per page (has_tables, has_forms) for the classification prompt.
+
+```python
+def group_blocks_by_page(all_blocks: list[dict]) -> dict[int, dict]:
+    """
+    Group Textract blocks by page number and extract page-level signals.
+
+    Returns a dict of page_num -> {
+        blocks: list of all blocks on this page,
+        text: concatenated LINE block text (full page text for LLM),
+        has_tables: bool (TABLE blocks present),
+        has_forms: bool (KEY_VALUE_SET blocks present),
+        layout_blocks: list of LAYOUT_* blocks,
+        line_confidences: list of per-LINE confidence scores
+    }
     """
     pages = {}
 
@@ -575,665 +315,706 @@ def group_blocks_by_page(all_blocks: list) -> dict:
 
         if page_num not in pages:
             pages[page_num] = {
-                "blocks":        [],
-                "text":          "",
-                "has_tables":    False,
-                "has_forms":     False,
+                "blocks": [],
+                "text": "",
+                "has_tables": False,
+                "has_forms": False,
                 "layout_blocks": [],
+                "line_confidences": [],
             }
 
         pages[page_num]["blocks"].append(block)
+        block_type = block.get("BlockType", "")
 
-        # Assemble page text from LINE blocks.
-        # LINE blocks are Textract's view of logical text lines. They have
-        # their text in block["Text"] directly, no child traversal needed.
-        if block.get("BlockType") == "LINE":
+        if block_type == "LINE":
+            # Accumulate the full page text for the LLM.
+            # LINE blocks give us clean, reading-order text without the noise
+            # of individual WORD blocks.
             pages[page_num]["text"] += block.get("Text", "") + "\n"
+            confidence = block.get("Confidence", 0.0)
+            pages[page_num]["line_confidences"].append(confidence)
 
-        # Note structural features for the classifier.
-        if block.get("BlockType") == "TABLE":
+        elif block_type == "TABLE":
             pages[page_num]["has_tables"] = True
 
-        if block.get("BlockType") == "KEY_VALUE_SET":
+        elif block_type == "KEY_VALUE_SET":
             pages[page_num]["has_forms"] = True
 
-        # Collect LAYOUT blocks. These signal structural organization:
-        # LAYOUT_TITLE, LAYOUT_HEADER, LAYOUT_TEXT, LAYOUT_TABLE,
-        # LAYOUT_FIGURE, LAYOUT_KEY_VALUE, LAYOUT_PAGE_NUMBER, etc.
-        if block.get("BlockType", "").startswith("LAYOUT_"):
+        elif block_type.startswith("LAYOUT_"):
             pages[page_num]["layout_blocks"].append(block)
 
-    print(f"  Grouped blocks across {len(pages)} pages")
     return pages
 ```
 
 ---
 
-## Step 4: Classify Each Page
+## Step 4: Classify Pages with Nova Lite
 
-This is the step that makes the whole pipeline work. For each page, we score it against the keyword and structure signatures defined in PAGE_SIGNATURES, then assign the highest-scoring type. A page that doesn't hit the minimum threshold for any type gets labeled "other."
-
-The classifier deliberately uses a low minimum match threshold. Faxed pages often have sparse text because of scanning quality. Two or three distinctive phrases, combined with structural signals from Textract's LAYOUT and TABLE blocks, is enough to make a reliable call on the vast majority of pages.
+The LLM replaces the keyword classifier. Note the structural metadata in the user message: including whether the page has form fields and tables helps the model on ambiguous pages.
 
 ```python
-def classify_page(page_text: str, has_tables: bool, has_forms: bool) -> str:
+def classify_page(
+    page_text: str,
+    has_tables: bool,
+    has_forms: bool,
+    model_id: str = CLASSIFICATION_MODEL_ID,
+    region: str = "us-east-1"
+) -> dict:
     """
-    Classify a single page using keyword heuristics and structural signals.
+    Classify a single page using a foundation model via the Bedrock Converse API.
 
-    The scoring logic:
-    1. Count how many keywords from each page type's signature appear in the text.
-    2. If keyword hits reach the minimum match threshold, score this type.
-    3. Apply structure bonuses: a page with form fields scores higher as a
-       cover_sheet, a page with tables scores higher as a lab_results page.
-    4. Return the highest-scoring type, or "other" if nothing matched.
+    Uses Nova Lite by default: it's the cheapest multimodal model and handles
+    classification tasks reliably. Temperature=0 for near-deterministic output.
 
-    This classifier achieves roughly 85-92% accuracy on real prior auth
-    submissions without any trained ML model. See the "Honest Take" section
-    of Recipe 1.4 for where it falls short and what to do about it.
-
-    Args:
-        page_text:  full text of the page (from group_blocks_by_page)
-        has_tables: True if the page contains TABLE blocks
-        has_forms:  True if the page contains KEY_VALUE_SET blocks
-
-    Returns:
-        A page type string: one of the keys in PAGE_SIGNATURES, or "other".
+    Returns a dict with page_type, confidence (0.0-1.0), and reasoning.
     """
-    text_lower = page_text.lower()
-    scores     = {}
+    # [EDITOR: Removed em dash from docstring. Original: "by default — it's the
+    # cheapest multimodal model". Changed to colon.]
+    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config to prevent ThrottlingException failures
 
-    for page_type, sig in PAGE_SIGNATURES.items():
-        keyword_hits = sum(
-            1 for keyword in sig["keywords"]
-            if keyword in text_lower
+    # Build structural context to include alongside the page text.
+    # This helps the model on pages where text alone is ambiguous.
+    structural_parts = []
+    if has_forms:
+        structural_parts.append("This page contains form fields (key-value pairs).")
+    if has_tables:
+        structural_parts.append("This page contains one or more tables.")
+    if not has_forms and not has_tables:
+        structural_parts.append(
+            "This page is primarily flowing text with no form fields or tables."
         )
 
-        if keyword_hits < sig["min_matches"]:
-            continue  # didn't hit the minimum threshold; skip this type
+    structural_context = " ".join(structural_parts)
+    user_message = f"{structural_context}\n\nPage text:\n{page_text}"
 
-        score = keyword_hits
+    # Truncate very long pages to avoid hitting token limits.
+    # Most clinical pages are well under 4000 chars; very long pages are unusual.
+    # If you're seeing truncation frequently, your pages may need chunking.
+    if len(user_message) > 4000:
+        user_message = user_message[:4000] + "\n\n[Page truncated for classification]"
 
-        if has_tables and sig.get("table_bonus", 0) > 0:
-            score += sig["table_bonus"]
+    try:
+        response = bedrock.converse(
+            modelId=model_id,
+            system=[{"text": CLASSIFICATION_SYSTEM_PROMPT}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": [{"text": user_message}],
+                }
+            ],
+            inferenceConfig={
+                "maxTokens": 256,   # Classification JSON is small
+                "temperature": 0,   # Near-deterministic output
+            },
+        )
 
-        if has_forms and sig.get("form_bonus", 0) > 0:
-            score += sig["form_bonus"]
+        response_text = response["output"]["message"]["content"][0]["text"]
 
-        scores[page_type] = score
+        # The model should return a JSON object. Strip any markdown code fences
+        # in case the model wraps it; some models do this despite being told not to.
+        # [EDITOR: Removed em dash from inline comment. Original: "wraps it —
+        # some models do this". Changed to semicolon.]
+        cleaned = response_text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```")[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
 
-    if not scores:
-        return "other"
+        result = json.loads(cleaned)
 
-    # Return the page type with the highest score.
-    return max(scores, key=lambda t: scores[t])
+        # Validate required fields are present
+        page_type = result.get("page_type", "other")
+        confidence = float(result.get("confidence", 0.0))
+        reasoning = result.get("reasoning", "")
+
+        # Clamp confidence to [0, 1] in case the model returns something odd
+        confidence = max(0.0, min(1.0, confidence))
+
+        logger.info(
+            f"Classified page as {page_type} "
+            f"(confidence {confidence:.2f}): {reasoning}"
+        )
+
+        return {
+            "page_type": page_type,
+            "confidence": confidence,
+            "reasoning": reasoning,
+        }
+
+    except json.JSONDecodeError as e:
+        # If JSON parsing fails, log it and return a low-confidence "other" result.
+        # This routes the page to human review rather than crashing the pipeline.
+        # [EDITOR: review fix P1-5] Removed response_text[:200] from log message.
+        # LLM output may contain PHI echoed from the input document. Log only
+        # structural metadata (response length, error type) — never log model output.
+        logger.warning(
+            f"Classification response was not valid JSON: {e}. "
+            f"Response length: {len(response_text)} chars. "
+            f"[LLM response content omitted from logs to prevent PHI exposure]"
+        )
+        return {
+            "page_type": "other",
+            "confidence": 0.0,
+            "reasoning": "Classification failed: model returned non-JSON response",
+        }
+    except Exception as e:
+        logger.error(f"Classification failed: {e}")
+        return {
+            "page_type": "other",
+            "confidence": 0.0,
+            "reasoning": f"Classification failed: {str(e)}",
+        }
 
 
-def classify_all_pages(pages: dict) -> dict:
+def classify_all_pages(
+    pages: dict[int, dict],
+    model_id: str = CLASSIFICATION_MODEL_ID,
+    region: str = "us-east-1"
+) -> dict[int, dict]:
     """
-    Classify every page in the submission and return a page_num -> type map.
-
-    Args:
-        pages: dict from group_blocks_by_page
-
-    Returns:
-        A dict of page_number -> page_type string.
+    Classify all pages in the document.
+    In production, Step Functions Map state runs these in parallel.
+    This sequential version is appropriate for single-Lambda implementations.
     """
     classifications = {}
 
-    for page_num, page_data in sorted(pages.items()):
-        page_type = classify_page(
-            page_data["text"],
-            page_data["has_tables"],
-            page_data["has_forms"],
+    for page_num in sorted(pages.keys()):
+        page_data = pages[page_num]
+        result = classify_page(
+            page_text=page_data["text"],
+            has_tables=page_data["has_tables"],
+            has_forms=page_data["has_forms"],
+            model_id=model_id,
+            region=region,
         )
-        classifications[page_num] = page_type
-        print(f"  Page {page_num}: classified as '{page_type}'")
+        classifications[page_num] = result
 
     return classifications
 ```
 
 ---
 
-## Step 5: Fan-Out Extractors
+## Step 5a: Cover Sheet Extractor (Textract FORMS)
 
-Each page type goes to a different extraction function. The cover sheet uses key-value forms parsing (Recipe 1.1 pattern). Clinical notes and physician letters go through Comprehend Medical (Recipe 1.3 pattern). Lab results use table parsing (Recipe 1.2 pattern). Imaging reports use entity extraction from narrative prose.
-
-In production, Step Functions runs these as parallel branches. Here, we call them sequentially. The logic inside each extractor is identical either way.
+Cover sheets are structured forms. Textract handles them better and cheaper than an LLM would.
 
 ```python
-# ------------------------------------------------------------------
-# Cover Sheet Extractor
-# ------------------------------------------------------------------
-# Builds on Recipe 1.1's key-value parsing and field normalization pattern.
-# The main additions: a prior auth specific FIELD_MAP and urgency detection.
-# ------------------------------------------------------------------
-
-def parse_key_value_pairs_for_page(page_blocks: list, block_map: dict) -> dict:
+def parse_key_value_pairs(blocks: list[dict], block_map: dict) -> list[dict]:
     """
-    Extract key-value text pairs from a page's KEY_VALUE_SET blocks.
-
-    This is the same logic as Recipe 1.1's forms parser, restricted to
-    blocks on a single page rather than the full document.
-
-    Returns:
-        A dict of label_text -> {"value": str, "confidence": float}.
+    Extract key-value pairs from Textract KEY_VALUE_SET blocks.
+    Returns a list of {key, value, key_confidence, value_confidence} dicts.
     """
-    key_value_pairs = {}
+    kvs = []
 
-    for block in page_blocks:
+    for block in blocks:
         if block.get("BlockType") != "KEY_VALUE_SET":
             continue
+        entity_types = block.get("EntityTypes", [])
+        if "KEY" not in entity_types:
+            continue  # Only process KEY blocks; VALUE blocks are linked from KEYs
 
-        if "KEY" not in block.get("EntityTypes", []):
-            continue   # skip VALUE blocks; we'll reach them via the KEY
+        key_text = ""
+        key_confidence = 0.0
+        value_text = ""
+        value_confidence = 0.0
 
-        key_text = get_text_from_block(block, block_map)
-        if not key_text:
-            continue
-
-        # Follow the VALUE relationship to find the paired VALUE block
-        value_block = None
+        # Build key text from child WORD blocks
         for rel in block.get("Relationships", []):
-            if rel["Type"] == "VALUE":
-                value_id    = rel["Ids"][0]
-                value_block = block_map.get(value_id)
+            if rel["Type"] == "CHILD":
+                for child_id in rel["Ids"]:
+                    child = block_map.get(child_id, {})
+                    if child.get("BlockType") == "WORD":
+                        key_text += child.get("Text", "") + " "
+                        key_confidence = max(
+                            key_confidence, child.get("Confidence", 0.0)
+                        )
+
+            elif rel["Type"] == "VALUE":
+                # Follow VALUE relationship to get the value block
+                for value_id in rel["Ids"]:
+                    value_block = block_map.get(value_id, {})
+                    for value_rel in value_block.get("Relationships", []):
+                        if value_rel["Type"] == "CHILD":
+                            for word_id in value_rel["Ids"]:
+                                word = block_map.get(word_id, {})
+                                if word.get("BlockType") == "WORD":
+                                    value_text += word.get("Text", "") + " "
+                                    value_confidence = max(
+                                        value_confidence,
+                                        word.get("Confidence", 0.0),
+                                    )
+
+        key_text = key_text.strip().lower()
+        value_text = value_text.strip()
+
+        if key_text:
+            kvs.append({
+                "key": key_text,
+                "value": value_text,
+                "key_confidence": key_confidence,
+                "value_confidence": value_confidence,
+            })
+
+    return kvs
+
+
+def normalize_cover_fields(raw_kvs: list[dict]) -> tuple[dict, list[str]]:
+    """
+    Map raw key-value pairs to canonical field names using PA_COVER_FIELD_MAP.
+    Returns (normalized_fields, flagged_fields).
+
+    Flagged fields are ones where confidence fell below the threshold.
+    """
+    normalized = {}
+    flagged = []
+
+    for kv in raw_kvs:
+        key = kv["key"].lower().strip()
+        value = kv["value"]
+        confidence = kv.get("value_confidence", 100.0)
+
+        # Find the canonical name for this key label
+        canonical = None
+        for canonical_name, variants in PA_COVER_FIELD_MAP.items():
+            if key in variants:
+                canonical = canonical_name
                 break
 
-        if value_block is None:
-            continue
+        if canonical:
+            # Keep the highest-confidence value if the same field appears twice
+            if canonical not in normalized or confidence > normalized[canonical]["confidence"]:
+                normalized[canonical] = {
+                    "value": value,
+                    "confidence": confidence,
+                }
 
-        value_text = get_text_from_block(value_block, block_map)
+            if confidence < 85.0:
+                flagged.append(f"{canonical}:low_confidence:{confidence:.1f}")
 
-        # Use the lower of key confidence and value confidence as the pair score.
-        # A low-confidence key label or value read means we should flag the field.
-        key_confidence   = block.get("Confidence", 0.0)
-        value_confidence = value_block.get("Confidence", 0.0)
-        confidence       = min(key_confidence, value_confidence)
-
-        key_value_pairs[key_text] = {
-            "value":      value_text,
-            "confidence": confidence,
-        }
-
-    return key_value_pairs
+    # Flatten to {field: value} for the assembled record
+    result = {k: v["value"] for k, v in normalized.items()}
+    return result, flagged
 
 
-def normalize_cover_fields(
-    raw_kv: dict,
-    field_map: dict,
-) -> tuple[dict, list]:
+def extract_cover_sheet(page_data: dict, block_map: dict, _model_id: str) -> dict:
     """
-    Map raw Textract label variants to canonical cover sheet field names.
-
-    Walks the field_map. For each canonical name, looks for a matching
-    label in the raw key-value pairs. Fields above FIELD_CONFIDENCE_THRESHOLD
-    go into the clean output. Fields below it go to the flagged list.
-
-    Returns:
-        A tuple of (clean_fields, flagged_fields).
+    Extract cover sheet fields using Textract key-value pairs.
+    model_id is unused here; cover sheets don't need LLM reasoning.
     """
-    clean_fields   = {}
-    flagged_fields = []
+    # [EDITOR: Removed em dash from docstring. Original: "unused here —
+    # cover sheets don't need LLM reasoning." Changed to semicolon.]
+    raw_kvs = parse_key_value_pairs(page_data["blocks"], block_map)
+    fields, flagged = normalize_cover_fields(raw_kvs)
 
-    for canonical_name, variants in field_map.items():
-        for raw_label, data in raw_kv.items():
-            if raw_label.lower().strip() in variants:
-                if data["confidence"] >= FIELD_CONFIDENCE_THRESHOLD:
-                    clean_fields[canonical_name] = data["value"].strip()
-                else:
-                    flagged_fields.append({
-                        "field":           canonical_name,
-                        "extracted_value": data["value"].strip(),
-                        # Decimal wrapping is required: DynamoDB won't accept
-                        # raw Python floats in put_item calls.
-                        "confidence": Decimal(str(round(data["confidence"], 2))),
-                    })
-                break   # stop at the first matching label variant
-
-    return clean_fields, flagged_fields
-
-
-def extract_cover_sheet(page_data: dict, block_map: dict) -> dict:
-    """
-    Extract administrative fields from a prior auth cover sheet page.
-
-    Uses key-value pair parsing and field normalization from the Recipe 1.1
-    pattern, with a PA-specific field map. Returns clean fields, flagged
-    low-confidence fields, and the average confidence for this page.
-
-    Args:
-        page_data:  page dict from group_blocks_by_page
-        block_map:  full block ID -> block lookup dict
-
-    Returns:
-        An extraction result dict with: confidence, data, flagged.
-    """
-    raw_kv = parse_key_value_pairs_for_page(page_data["blocks"], block_map)
-
-    clean_fields, flagged_fields = normalize_cover_fields(raw_kv, PA_COVER_FIELD_MAP)
-
-    # Average confidence across all key-value pairs on this page.
-    # If no pairs found, use a low default that will trigger review.
-    if raw_kv:
-        avg_confidence = sum(d["confidence"] for d in raw_kv.values()) / len(raw_kv)
-    else:
-        avg_confidence = 0.0
+    # Page confidence: average of all KEY_VALUE confidence scores
+    confidences = [
+        kv.get("value_confidence", 0.0) for kv in raw_kvs if kv.get("value")
+    ]
+    avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
 
     return {
-        "confidence": round(avg_confidence, 1),
-        "data":       clean_fields,
-        "flagged":    flagged_fields,
+        "confidence": avg_confidence,
+        "data": fields,
+        "flagged": flagged,
     }
+```
 
+---
 
-# ------------------------------------------------------------------
-# Clinical Page Extractor
-# ------------------------------------------------------------------
-# Used for both clinical_note and physician_letter page types.
-# Runs InferICD10CM on the diagnosis-dense section and
-# DetectEntitiesV2 on the full page text.
-# Builds on Recipe 1.3's clinical NLP pattern.
-# ------------------------------------------------------------------
+## Step 5b: Clinical Page Extractor (Bedrock Sonnet 4.6 + Comprehend Medical)
 
-def infer_icd10_codes(diagnosis_text: str) -> tuple[list, list]:
+Clinical notes, physician letters, and imaging reports go through Sonnet 4.6 for reasoning, then Comprehend Medical for ICD-10 code validation.
+
+```python
+def infer_icd10_codes(
+    diagnosis_text: str,
+    confidence_threshold: float = ICD10_CONFIDENCE_THRESHOLD,
+    region: str = "us-east-1"
+) -> tuple[list[dict], list[dict]]:
     """
-    Use Comprehend Medical to map diagnosis text to ICD-10-CM codes.
+    Use Comprehend Medical InferICD10CM to map clinical text to ICD-10 codes.
+    Returns (accepted, flagged) where flagged = codes below the confidence threshold.
 
-    Same function as Recipe 1.3 Step 5. InferICD10CM returns ranked
-    code candidates for each clinical entity it detects. We split at
-    ICD10_CONFIDENCE_THRESHOLD: codes above it go into accepted, codes
-    below it go to flagged for coder review.
-
-    Args:
-        diagnosis_text: clinical text to infer codes from
-
-    Returns:
-        A tuple of (accepted, flagged) code lists.
+    Important: InferICD10CM expects natural language ("severe osteoarthritis right knee"),
+    NOT code strings ("M17.11"). If the LLM extracted a raw code string, this will
+    produce poor results. The LLM should always extract the clinical concept text.
     """
-    if not diagnosis_text.strip():
-        return [], []
+    comprehend_medical = boto3.client("comprehendmedical", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config; Comprehend Medical also throttles at volume
 
-    response = comprehend_medical_client.infer_icd10_cm(Text=diagnosis_text)
+    # Comprehend Medical has a 20,000 character input limit.
+    # Truncate if needed; the diagnosis text from LLM extraction is usually short.
+    truncated_text = diagnosis_text[:20000]
+
+    response = comprehend_medical.infer_icd10_cm(Text=truncated_text)
+
     accepted = []
-    flagged  = []
+    flagged = []
 
     for entity in response.get("Entities", []):
-        evidence_text = entity.get("Text", "")
-        concepts      = entity.get("ICD10CMConcepts", [])
-        if not concepts:
+        # Each entity may have multiple candidate ICD-10 codes.
+        # Concepts are sorted by score descending; take the top match.
+        # [EDITOR: Removed em dash from comment. Original: "score descending —
+        # take the top match". Changed to semicolon.]
+        icd10_concepts = entity.get("ICD10CMConcepts", [])
+        if not icd10_concepts:
             continue
 
-        top = concepts[0]
-        score = top.get("Score", 0.0)
+        best = icd10_concepts[0]
+        entry = {
+            "text": entity.get("Text", ""),
+            "icd10_code": best.get("Code", ""),
+            "description": best.get("Description", ""),
+            "confidence": round(best.get("Score", 0.0), 4),
+        }
 
-        if score >= ICD10_CONFIDENCE_THRESHOLD:
-            accepted.append({
-                "text":        evidence_text,
-                "icd10_code":  top["Code"],
-                "description": top["Description"],
-                "confidence":  Decimal(str(round(score, 3))),
-            })
+        if best.get("Score", 0.0) >= confidence_threshold:
+            accepted.append(entry)
         else:
-            flagged.append({
-                "text":          evidence_text,
-                "top_candidate": {
-                    "icd10_code":  top["Code"],
-                    "description": top["Description"],
-                    "confidence":  Decimal(str(round(score, 3))),
-                },
-            })
+            flagged.append(entry)
 
     return accepted, flagged
 
 
-def detect_clinical_entities(text: str) -> dict:
+def extract_clinical_page(
+    page_data: dict,
+    block_map: dict,
+    clinical_model_id: str = CLINICAL_MODEL_ID,
+    region: str = "us-east-1"
+) -> dict:
     """
-    Extract clinical entities from text using Comprehend Medical DetectEntitiesV2.
+    Extract clinical evidence from a narrative page using Bedrock Sonnet 4.6.
 
-    Same function as Recipe 1.3 Step 6. Returns a dict of
-    category -> list of entity records. Includes semantic traits
-    (NEGATION, PERTAINS_TO_FAMILY, PAST_HISTORY) on each entity.
+    This replaces the Comprehend Medical DetectEntitiesV2 approach with a single
+    LLM call that extracts structured clinical evidence including:
+    - Medical necessity evidence (free text narrative)
+    - Failed prior treatments (crucial for authorization decisions)
+    - Supporting clinical findings
 
-    Args:
-        text: clinical text up to 20,000 characters
-
-    Returns:
-        Dict of category -> list of entity dicts. Empty dict if text is empty.
+    After LLM extraction, Comprehend Medical validates the ICD-10 codes.
     """
-    if not text.strip():
-        return {}
-
-    # DetectEntitiesV2 accepts up to 20,000 characters per request.
-    # Clip well below that to avoid silent truncation. In production,
-    # split at sentence boundaries and merge results for long pages.
-    text = text[:19500]
-
-    response = comprehend_medical_client.detect_entities_v2(Text=text)
-    entities_by_category = {}
-
-    for entity in response.get("Entities", []):
-        category = entity.get("Category", "UNKNOWN")
-        record   = {
-            "text":       entity.get("Text", ""),
-            "type":       entity.get("Type", ""),
-            "confidence": round(entity.get("Score", 0.0), 3),
-            # Keep traits with high enough confidence to trust.
-            # NEGATION and PERTAINS_TO_FAMILY at low confidence are noisy.
-            "traits": [
-                t["Name"]
-                for t in entity.get("Traits", [])
-                if t.get("Score", 0.0) >= 0.75
-            ],
-        }
-        entities_by_category.setdefault(category, []).append(record)
-
-    return entities_by_category
-
-
-def get_average_line_confidence(page_blocks: list) -> float:
-    """
-    Calculate the average OCR confidence across LINE blocks on this page.
-
-    This is used as the Textract-side confidence estimate for narrative pages.
-    Low line confidence means the OCR quality was poor, which in turn means
-    the Comprehend Medical inputs are unreliable even if the NLP score looks good.
-    """
-    line_confidences = [
-        block.get("Confidence", 0.0)
-        for block in page_blocks
-        if block.get("BlockType") == "LINE"
-    ]
-    if not line_confidences:
-        return 0.0
-    return sum(line_confidences) / len(line_confidences)
-
-
-def extract_clinical_page(page_data: dict, block_map: dict) -> dict:
-    """
-    Extract clinical evidence from a clinical note or physician letter page.
-
-    The steps:
-    1. Find the diagnosis-dense section (assessment, plan, impression) and
-       run InferICD10CM on it. Using targeted text keeps costs down and
-       keeps code inference results relevant.
-    2. Run DetectEntitiesV2 on the full page text to capture conditions,
-       medications, procedures, and semantic traits.
-    3. Calculate page confidence as the minimum of Textract line confidence
-       and the average NLP entity confidence (normalized to 0-100).
-       OCR quality directly affects NLP accuracy: bad OCR means bad NLP input,
-       so we don't let a high NLP score mask a low OCR score.
-
-    Args:
-        page_data:  page dict from group_blocks_by_page
-        block_map:  full block ID -> block lookup dict
-
-    Returns:
-        An extraction result dict with: confidence, data, flagged.
-    """
+    bedrock = boto3.client("bedrock-runtime", region_name=region, config=BOTO3_RETRY_CONFIG)  # [EDITOR: review fix P1-4] Added retry config for Bedrock throttling
     page_text = page_data["text"]
 
-    # Find the diagnosis-rich section for ICD-10 inference.
-    # Fall back to the first 5,000 characters of the full page text if
-    # no recognizable section header was found.
-    diagnosis_text = extract_section_text(page_text, DIAGNOSIS_SECTION_HEADERS)
-    if len(diagnosis_text.strip()) < 20:
-        # Section was empty or too short; use the beginning of the page.
-        diagnosis_text = page_text[:5000]
+    if not page_text.strip():
+        return {
+            "confidence": 0.0,
+            "data": {
+                "diagnosis_text": "",
+                "conditions": [],
+                "medications": [],
+                "procedures": [],
+                "medical_necessity_evidence": "",
+                "failed_treatments": [],
+                "supporting_findings": "",
+                "icd10_codes": [],
+            },
+            "flagged": {"reason": "empty_page_text"},
+        }
 
-    # Limit: InferICD10CM accepts up to 10,000 characters.
-    if len(diagnosis_text) > 9800:
-        diagnosis_text = diagnosis_text[:9800]
-
-    icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
-
-    # DetectEntitiesV2 on the full page for conditions, medications, procedures.
-    clinical_entities = detect_clinical_entities(page_text)
-
-    # Composite confidence: min of Textract OCR confidence and NLP confidence.
-    # NLP confidence is on a 0-1 scale; multiply by 100 to normalize.
-    textract_confidence = get_average_line_confidence(page_data["blocks"])
-    if icd10_accepted:
-        # Average the confidence values (convert from Decimal back to float for math)
-        nlp_confidence = sum(float(c["confidence"]) for c in icd10_accepted) / len(icd10_accepted)
-    else:
-        nlp_confidence = 1.0   # no inferences doesn't mean poor quality; use neutral value
-
-    page_confidence = min(textract_confidence, nlp_confidence * 100)
-
-    print(
-        f"    Clinical page: {len(icd10_accepted)} ICD-10 codes accepted, "
-        f"{len(icd10_flagged)} flagged. "
-        f"Confidence: {page_confidence:.1f}"
+    user_content = (
+        "Extract clinical information from this document page:\n\n" + page_text
     )
 
+    llm_extraction = None
+    response_text = ""
+
+    try:
+        response = bedrock.converse(
+            modelId=clinical_model_id,
+            system=[{"text": CLINICAL_EXTRACTION_SYSTEM_PROMPT}],
+            messages=[
+                {
+                    "role": "user",
+                    "content": [{"text": user_content}],
+                }
+            ],
+            inferenceConfig={
+                "maxTokens": 1024,  # More than classification; clinical notes are dense
+                "temperature": 0,
+            },
+        )
+        # [EDITOR: Removed em dash from inline comment. Original:
+        # "More than classification — clinical notes are dense". Changed to semicolon.]
+
+        response_text = response["output"]["message"]["content"][0]["text"]
+
+        # Strip markdown code fences if present
+        cleaned = response_text.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```")[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
+
+        llm_extraction = json.loads(cleaned)
+
+    except json.JSONDecodeError as e:
+        # [EDITOR: review fix P1-5] Removed response_text[:200] from log message.
+        # The first 200 chars of a clinical extraction response can contain patient
+        # names, diagnoses, or other PHI echoed from the input. Log only structural
+        # metadata (response length, error type) — never log raw model output.
+        logger.warning(
+            f"Clinical extraction response was not valid JSON: {e}. "
+            f"Response length: {len(response_text)} chars. "
+            f"[LLM response content omitted from logs to prevent PHI exposure]"
+        )
+        # Return empty extraction rather than crashing; this page goes to review
+        return {
+            "confidence": 0.0,
+            "data": {
+                "diagnosis_text": "",
+                "conditions": [],
+                "medications": [],
+                "procedures": [],
+                "medical_necessity_evidence": "",
+                "failed_treatments": [],
+                "supporting_findings": "",
+                "icd10_codes": [],
+            },
+            "flagged": {"reason": "llm_json_parse_error"},
+        }
+    except Exception as e:
+        logger.error(f"Clinical extraction failed: {e}")
+        raise
+
+    # ICD-10 code validation via Comprehend Medical.
+    # The LLM extracted the clinical concept text; Comprehend maps it to codes.
+    # This hybrid gets us contextual extraction AND authoritative code lookup.
+    icd10_accepted = []
+    icd10_flagged = []
+
+    diagnosis_text = llm_extraction.get("diagnosis_text", "")
+    if diagnosis_text:
+        try:
+            icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text, region=region)
+        except Exception as e:
+            logger.warning(f"ICD-10 inference failed: {e}. Continuing without codes.")
+            icd10_flagged = [{"reason": f"comprehend_medical_error: {str(e)}"}]
+
+    # Effective page confidence: LLM's self-reported confidence, capped by OCR quality.
+    # A high-confidence LLM extraction on a low-quality OCR page isn't reliable.
+    line_confidences = page_data.get("line_confidences", [])
+    if line_confidences:
+        textract_avg = sum(line_confidences) / len(line_confidences)
+    else:
+        textract_avg = 100.0  # No LINE blocks = structural page, not a problem
+
+    llm_confidence = float(llm_extraction.get("confidence", 0.0))
+    effective_confidence = min(llm_confidence, textract_avg / 100.0) * 100.0
+
     return {
-        "confidence": round(page_confidence, 1),
+        "confidence": effective_confidence,
         "data": {
-            "icd10_accepted":   icd10_accepted,
-            "clinical_entities": clinical_entities,
+            "diagnosis_text": llm_extraction.get("diagnosis_text", ""),
+            "conditions": llm_extraction.get("conditions", []),
+            "medications": llm_extraction.get("medications", []),
+            "procedures": llm_extraction.get("procedures", []),
+            "medical_necessity_evidence": llm_extraction.get(
+                "medical_necessity_evidence", ""
+            ),
+            "failed_treatments": llm_extraction.get("failed_treatments", []),
+            "supporting_findings": llm_extraction.get("supporting_findings", ""),
+            "icd10_codes": icd10_accepted,
         },
         "flagged": {
-            "icd10_flagged": icd10_flagged,
+            "icd10_uncertain": icd10_flagged,
         },
     }
+```
 
+---
 
-# ------------------------------------------------------------------
-# Lab Results Extractor
-# ------------------------------------------------------------------
-# Parses Textract TABLE blocks from the page into structured lab value rows.
-# Builds on the table parsing pattern from Recipe 1.2.
-# ------------------------------------------------------------------
+## Step 5c: Lab Results Extractor (Textract TABLES)
 
-def normalize_lab_columns(header_row: list, column_map: dict) -> dict:
+Lab results pages are structured tables. Textract handles these better and cheaper than an LLM would. No need to bring Bedrock into this path.
+
+<!-- [EDITOR: Removed em dash from section intro. Original: "...than an LLM would — no need to bring Bedrock into this path." Restructured to two sentences.] -->
+
+```python
+def normalize_lab_columns(headers: list[str]) -> dict[int, str]:
     """
-    Map header row labels to canonical column names using LAB_COLUMN_MAP.
-
-    Returns:
-        A dict of column_index (0-based) -> canonical_name.
-        Only columns whose headers matched are included.
+    Map column header text to canonical lab field names using LAB_COLUMN_MAP.
+    Returns {col_index: canonical_name} for matched columns.
     """
-    col_mapping = {}
-    for col_idx, header_text in enumerate(header_row):
-        header_lower = header_text.lower().strip()
-        for canonical_name, variants in column_map.items():
+    mapping = {}
+    for col_idx, header in enumerate(headers):
+        header_lower = header.lower().strip()
+        for canonical_name, variants in LAB_COLUMN_MAP.items():
             if header_lower in variants:
-                col_mapping[col_idx] = canonical_name
+                mapping[col_idx] = canonical_name
                 break
-    return col_mapping
+    return mapping
 
 
-def extract_lab_page(page_data: dict, block_map: dict) -> dict:
+def parse_tables_from_blocks(
+    blocks: list[dict],
+    block_map: dict
+) -> list[list[list[str]]]:
     """
-    Extract lab result rows from a lab results page.
-
-    Finds TABLE blocks on the page, identifies the header row, normalizes
-    column names against LAB_COLUMN_MAP, and extracts each data row as a
-    structured dict. Rows missing both test_name and result are skipped.
-
-    Args:
-        page_data:  page dict from group_blocks_by_page
-        block_map:  full block ID -> block lookup dict
-
-    Returns:
-        An extraction result dict with: confidence, data, flagged.
+    Extract tables from Textract TABLE blocks.
+    Returns a list of tables, where each table is a list of rows,
+    and each row is a list of cell text strings.
     """
-    tables     = parse_tables_from_blocks(page_data["blocks"], block_map)
+    tables = []
+
+    for block in blocks:
+        if block.get("BlockType") != "TABLE":
+            continue
+
+        # Find the max row and column count
+        cells = []
+        for rel in block.get("Relationships", []):
+            if rel["Type"] == "CHILD":
+                for cell_id in rel["Ids"]:
+                    cell_block = block_map.get(cell_id, {})
+                    if cell_block.get("BlockType") == "CELL":
+                        row_idx = cell_block.get("RowIndex", 1) - 1
+                        col_idx = cell_block.get("ColumnIndex", 1) - 1
+
+                        # Get cell text from child WORD blocks
+                        cell_text = ""
+                        for cell_rel in cell_block.get("Relationships", []):
+                            if cell_rel["Type"] == "CHILD":
+                                for word_id in cell_rel["Ids"]:
+                                    word = block_map.get(word_id, {})
+                                    if word.get("BlockType") == "WORD":
+                                        cell_text += word.get("Text", "") + " "
+
+                        cells.append((row_idx, col_idx, cell_text.strip()))
+
+        if not cells:
+            continue
+
+        # Build the 2D grid
+        max_row = max(r for r, _, _ in cells) + 1
+        max_col = max(c for _, c, _ in cells) + 1
+        grid = [[""] * max_col for _ in range(max_row)]
+        for row_idx, col_idx, text in cells:
+            grid[row_idx][col_idx] = text
+
+        tables.append(grid)
+
+    return tables
+
+
+def extract_lab_page(
+    page_data: dict,
+    block_map: dict,
+    _model_id: str  # Unused; lab pages don't need LLM
+) -> dict:
+    """
+    Extract lab results from Textract TABLE blocks.
+    """
+    tables = parse_tables_from_blocks(page_data["blocks"], block_map)
     lab_values = []
 
     for table in tables:
         if len(table) < 2:
-            # A table with only a header row (or no rows) isn't lab results.
-            continue
+            continue  # Header-only or empty table; skip
 
-        header_row  = table[0]
-        col_mapping = normalize_lab_columns(header_row, LAB_COLUMN_MAP)
+        headers = table[0]
+        col_mapping = normalize_lab_columns(headers)
 
-        if not col_mapping:
-            # We couldn't recognize any column headers. Skip this table.
-            # In production, log this for table header vocabulary expansion.
-            continue
-
-        for row in table[1:]:   # skip the header row
-            lab_entry = {}
+        for row in table[1:]:
+            entry = {}
             for col_idx, canonical_name in col_mapping.items():
                 if col_idx < len(row):
-                    cell_value = row[col_idx].strip()
-                    if cell_value:
-                        lab_entry[canonical_name] = cell_value
+                    entry[canonical_name] = row[col_idx].strip()
 
-            # Only keep rows with at minimum a test name and a result value.
-            if "test_name" in lab_entry and "result" in lab_entry:
-                lab_values.append(lab_entry)
+            # Only include rows that have at least a test name and result
+            if "test_name" in entry and "result" in entry:
+                lab_values.append(entry)
 
-    # Page confidence for lab pages: average TABLE CELL confidence.
-    # (CELL blocks have their own confidence scores from Textract.)
-    cell_confidences = [
+    # Table cell confidence: average TABLE block confidence from Textract
+    table_confidences = [
         block.get("Confidence", 0.0)
         for block in page_data["blocks"]
-        if block.get("BlockType") == "CELL"
+        if block.get("BlockType") == "TABLE"
     ]
-    if cell_confidences:
-        avg_confidence = sum(cell_confidences) / len(cell_confidences)
-    else:
-        avg_confidence = get_average_line_confidence(page_data["blocks"])
-
-    print(f"    Lab page: {len(lab_values)} result rows extracted")
-
-    return {
-        "confidence": round(avg_confidence, 1),
-        "data":       {"lab_values": lab_values},
-        "flagged":    [],
-    }
-
-
-# ------------------------------------------------------------------
-# Imaging Report Extractor
-# ------------------------------------------------------------------
-# Extracts named sections (findings, impression, indication) from imaging
-# report prose, then runs DetectEntitiesV2 on those sections.
-# ------------------------------------------------------------------
-
-def extract_imaging_page(page_data: dict, block_map: dict) -> dict:
-    """
-    Extract sections and clinical entities from an imaging report page.
-
-    Imaging reports are narrative prose organized into recognizable sections.
-    We extract those sections by name (findings, impression, indication) and
-    run entity detection on the combined text to surface clinical findings.
-    The raw section text is also stored so downstream systems can display it.
-
-    Args:
-        page_data:  page dict from group_blocks_by_page
-        block_map:  full block ID -> block lookup dict (unused but kept consistent)
-
-    Returns:
-        An extraction result dict with: confidence, data, flagged.
-    """
-    page_text = page_data["text"]
-    sections  = {}
-
-    for section_name, headers in IMAGING_SECTION_HEADERS.items():
-        section_text = extract_section_text(page_text, headers)
-        if section_text.strip():
-            sections[section_name] = section_text
-
-    # Run entity detection on the sections where clinical findings live.
-    # If no sections were found, fall back to the full page text.
-    if sections:
-        relevant_text = "\n\n".join(sections.values())
-    else:
-        relevant_text = page_text[:5000]
-
-    clinical_entities = detect_clinical_entities(relevant_text)
-
-    textract_confidence = get_average_line_confidence(page_data["blocks"])
-
-    print(
-        f"    Imaging page: {len(sections)} sections extracted, "
-        f"confidence: {textract_confidence:.1f}"
+    avg_confidence = (
+        sum(table_confidences) / len(table_confidences)
+        if table_confidences
+        else 75.0  # Default if no TABLE blocks
     )
 
     return {
-        "confidence": round(textract_confidence, 1),
-        "data": {
-            "sections":          sections,
-            "clinical_entities": clinical_entities,
-        },
+        "confidence": avg_confidence,
+        "data": {"lab_values": lab_values},
         "flagged": [],
     }
+```
 
+---
 
-# ------------------------------------------------------------------
-# Other Page Handler
-# ------------------------------------------------------------------
-# Pages that didn't match any known type. We store their raw text only.
-# No semantic extraction is attempted: running NLP on an unknown page type
-# produces noisy results, not useful data.
-# ------------------------------------------------------------------
+## Step 5d: Route and Extract
 
-def extract_other_page(page_data: dict, block_map: dict) -> dict:
-    """
-    Return raw text only for pages that didn't match a known type.
+Dispatches each page to the right extractor based on classification results.
 
-    Used for "other" classified pages. Raw text is preserved for human
-    review. No Comprehend Medical calls are made: running NLP on pages
-    of unknown type produces noise, not signal.
-    """
-    textract_confidence = get_average_line_confidence(page_data["blocks"])
-
-    return {
-        "confidence": round(textract_confidence, 1),
-        "data":       {"raw_text": page_data["text"]},
-        "flagged":    [],
-    }
-
-
-# ------------------------------------------------------------------
-# Routing Function
-# ------------------------------------------------------------------
-
-# Dispatch table: page type string -> extractor function
+```python
+# The routing table. Each extractor has the same signature:
+# (page_data, block_map, model_id) -> {confidence, data, flagged}
 EXTRACTION_ROUTER = {
-    "cover_sheet":      extract_cover_sheet,
-    "clinical_note":    extract_clinical_page,
-    "physician_letter": extract_clinical_page,   # same extractor as clinical_note
-    "lab_results":      extract_lab_page,
-    "imaging_report":   extract_imaging_page,
-    "other":            extract_other_page,
+    "cover_sheet": extract_cover_sheet,
+    "clinical_note": extract_clinical_page,
+    "physician_letter": extract_clinical_page,
+    "imaging_report": extract_clinical_page,
+    "lab_results": extract_lab_page,
+    "other": None,  # Pass-through; raw text only
 }
 
 
 def route_and_extract(
     page_num: int,
-    page_type: str,
+    classification: dict,
     page_data: dict,
     block_map: dict,
+    clinical_model_id: str = CLINICAL_MODEL_ID,
+    region: str = "us-east-1",
 ) -> dict:
     """
-    Route a classified page to its extraction function and return the result.
+    Route a page to the appropriate extractor and return the result.
 
-    The result always includes page_num, page_type, confidence, data, and flagged.
-    These consistent keys are what the assembler in Step 6 expects.
-
-    Args:
-        page_num:   page number (1-indexed)
-        page_type:  classification string from classify_all_pages
-        page_data:  page dict from group_blocks_by_page
-        block_map:  full block ID -> block lookup dict
-
-    Returns:
-        An extraction result dict.
+    Low-confidence classifications go straight to human review rather than
+    extraction. A wrong classification followed by wrong extraction is worse
+    than sending the page to review directly.
     """
-    extractor = EXTRACTION_ROUTER.get(page_type, extract_other_page)
-    result    = extractor(page_data, block_map)
+    # [EDITOR: Removed em dash from docstring. Original: "rather than extraction —
+    # a wrong classification followed by wrong extraction is worse". Restructured
+    # to two sentences.]
+    confidence = classification["confidence"]
+    page_type = classification["page_type"]
+
+    if confidence < CLASSIFICATION_CONFIDENCE_THRESHOLD:
+        return {
+            "page_num": page_num,
+            "page_type": "uncertain",
+            "confidence": confidence * 100,
+            "data": {"raw_text": page_data["text"]},
+            "flagged": ["low_classification_confidence"],
+        }
+
+    extractor = EXTRACTION_ROUTER.get(page_type)
+
+    if extractor is None:
+        # "other" pages: preserve raw text and flag for review
+        return {
+            "page_num": page_num,
+            "page_type": "other",
+            "confidence": confidence * 100,
+            "data": {"raw_text": page_data["text"]},
+            "flagged": ["unrecognized_page_type"],
+        }
+
+    result = extractor(page_data, block_map, clinical_model_id)
 
     return {
-        "page_num":   page_num,
-        "page_type":  page_type,
+        "page_num": page_num,
+        "page_type": page_type,
         "confidence": result["confidence"],
-        "data":       result["data"],
-        "flagged":    result["flagged"],
+        "data": result["data"],
+        "flagged": result.get("flagged", []),
     }
 ```
 
@@ -1241,555 +1022,375 @@ def route_and_extract(
 
 ## Step 6: Assemble the Structured Prior Auth Record
 
-The assembler collects extraction results from all pages and merges them into a single prior auth record. The interesting problems here are deduplication (the same ICD-10 code might be extracted from three different pages), confidence aggregation, and handling absent page types gracefully.
+Merges all page extraction results into a single coherent record.
 
 ```python
 def assemble_prior_auth_record(
     document_key: str,
     page_count: int,
-    page_extractions: dict,
+    page_extractions: dict[int, dict],
 ) -> dict:
     """
-    Merge per-page extraction results into a single structured prior auth record.
+    Assemble extraction results from all pages into a structured prior auth record.
 
-    The deduplication logic deserves attention. The same ICD-10 code might
-    appear on the cover sheet (as a printed code), in a clinical note (inferred
-    from diagnosis text), and in a physician letter (inferred again). We want
-    one canonical entry per code, keeping the highest-confidence instance.
-    The same principle applies to clinical entities.
-
-    After deduplication, the assembler sets needs_review=True if any page was
-    low-confidence, any field was flagged, or essential administrative fields
-    (member ID or CPT code) are missing. Those conditions mean a human needs
-    to verify the record before it drives a downstream decision.
-
-    Args:
-        document_key:     S3 key of the source PDF
-        page_count:       total number of pages in the submission
-        page_extractions: dict of page_num -> extraction result dict
-
-    Returns:
-        The assembled prior auth record (not yet stored to DynamoDB).
+    The medical_necessity_evidence and failed_treatments fields are accumulated
+    across all clinical pages because different pages may contribute different
+    pieces of the clinical argument.
     """
     record = {
         "document_key": document_key,
-        "extracted_at": datetime.datetime.now(timezone.utc).isoformat(),
-        "page_count":   page_count,
+        "extracted_at": datetime.now(timezone.utc).isoformat(),
+        "page_count": page_count,
         "needs_review": False,
-
-        # page_num (str) -> page_type, for audit and downstream consumption
         "page_classifications": {},
-
         "demographics": {
             "member_name": None,
-            "member_id":   None,
-            "member_dob":  None,
+            "member_id": None,
+            "member_dob": None,
         },
         "requested_service": {
-            "cpt_code":        None,
-            "procedure":       None,
+            "cpt_code": None,
+            "procedure": None,
             "date_of_service": None,
-            "urgency":         "routine",
+            "urgency": "routine",
         },
         "requesting_provider": {
-            "name":     None,
-            "npi":      None,
+            "name": None,
+            "npi": None,
             "facility": None,
         },
         "clinical_evidence": {
-            "icd10_codes":        [],   # deduplicated; highest confidence per code
-            "conditions":         [],
-            "medications":        [],
-            "procedures":         [],
-            "lab_values":         [],
-            "imaging_sections":   {},
+            "icd10_codes": [],
+            "conditions": [],
+            "medications": [],
+            "procedures": [],
+            "medical_necessity_evidence": "",
+            "failed_treatments": [],
+            "supporting_findings": "",
+            "lab_values": [],
         },
-
-        # Confidence and review metadata
-        "page_confidence": {},      # page_num -> confidence score
-        "flagged_pages":   [],      # pages below PAGE_REVIEW_THRESHOLD
-        "flagged_fields":  {},      # page_num -> flagged field list
+        "page_confidence": {},
+        "flagged_pages": [],
+        "flagged_fields": {},
     }
 
     # Deduplication trackers
-    seen_icd10    = {}   # code string -> best entry dict (we keep highest confidence)
-    seen_conditions  = set()
+    seen_icd10_codes = {}   # code -> entry (keep highest confidence)
+    seen_conditions = set()
     seen_medications = set()
-    seen_procedures  = set()
+    seen_procedures = set()
 
-    for page_num, extraction in sorted(page_extractions.items()):
-        page_type  = extraction["page_type"]
+    for page_num in sorted(page_extractions.keys()):
+        extraction = page_extractions[page_num]
+        page_type = extraction["page_type"]
         confidence = extraction["confidence"]
-        page_key   = str(page_num)   # JSON keys are strings; be consistent
+        data = extraction["data"]
 
-        # Track classification and confidence
-        record["page_classifications"][page_key] = page_type
-        record["page_confidence"][page_key]      = confidence
+        record["page_classifications"][str(page_num)] = page_type
+        record["page_confidence"][str(page_num)] = round(confidence, 1)
 
-        # Flag pages below the review confidence threshold
-        if confidence < PAGE_REVIEW_THRESHOLD:
+        if confidence < PAGE_CONFIDENCE_THRESHOLD:
             record["flagged_pages"].append(page_num)
             record["needs_review"] = True
 
-        # Track flagged fields from within the page's extraction
-        flagged = extraction.get("flagged", {})
+        flagged = extraction.get("flagged", [])
         if flagged:
-            # flagged can be a list (cover sheet) or a dict (clinical page)
-            # Normalize both to the same structure in the record
-            if isinstance(flagged, list) and len(flagged) > 0:
-                record["flagged_fields"][page_key] = flagged
-                record["needs_review"] = True
-            elif isinstance(flagged, dict):
-                # Clinical pages return {"icd10_flagged": [...]}
-                icd_flagged = flagged.get("icd10_flagged", [])
-                if icd_flagged:
-                    record["flagged_fields"][page_key] = icd_flagged
-                    record["needs_review"] = True
+            record["flagged_fields"][str(page_num)] = flagged
+            record["needs_review"] = True
 
-        data = extraction.get("data", {})
-
-        # --- Cover sheet ---
         if page_type == "cover_sheet":
-            # First cover sheet wins for most fields.
-            # (Two-page cover sheets: if the first page left a field null,
-            # we'd want to fill it from the second. That case is noted in
-            # the Gap to Production section.)
-            if record["demographics"]["member_name"] is None:
+            # Use the first cover sheet for administrative fields.
+            # Some submissions include a second cover sheet (duplicate); skip it.
+            if record["demographics"]["member_id"] is None:
                 record["demographics"]["member_name"] = data.get("member_name")
-                record["demographics"]["member_id"]   = data.get("member_id")
-                record["demographics"]["member_dob"]  = data.get("member_dob")
+                record["demographics"]["member_id"] = data.get("member_id")
+                record["demographics"]["member_dob"] = data.get("member_dob")
 
             if record["requested_service"]["cpt_code"] is None:
-                record["requested_service"]["cpt_code"]        = data.get("requested_cpt")
-                record["requested_service"]["procedure"]       = data.get("requested_cpt")
-                record["requested_service"]["date_of_service"] = data.get("date_of_service")
-
-                urgency_text = (data.get("urgency") or "").lower()
-                if "urgent" in urgency_text or "stat" in urgency_text or "expedited" in urgency_text:
+                record["requested_service"]["cpt_code"] = data.get("requested_cpt")
+                record["requested_service"]["date_of_service"] = data.get(
+                    "date_of_service"
+                )
+                urgency_val = (data.get("urgency") or "").lower()
+                if "urgent" in urgency_val or "stat" in urgency_val:
                     record["requested_service"]["urgency"] = "urgent"
 
             if record["requesting_provider"]["npi"] is None:
-                record["requesting_provider"]["name"]     = data.get("requesting_provider")
-                record["requesting_provider"]["npi"]      = data.get("provider_npi")
-                record["requesting_provider"]["facility"] = data.get("requesting_facility")
+                record["requesting_provider"]["name"] = data.get("requesting_provider")
+                record["requesting_provider"]["npi"] = data.get("provider_npi")
+                record["requesting_provider"]["facility"] = data.get(
+                    "requesting_facility"
+                )
 
-        # --- Clinical note and physician letter ---
-        elif page_type in ("clinical_note", "physician_letter"):
-            # Deduplicate ICD-10 codes: keep the highest-confidence entry per code.
-            for code_entry in data.get("icd10_accepted", []):
-                code = code_entry["icd10_code"]
-                existing = seen_icd10.get(code)
-                if existing is None or float(code_entry["confidence"]) > float(existing["confidence"]):
-                    seen_icd10[code] = code_entry
+        elif page_type in ("clinical_note", "physician_letter", "imaging_report"):
+            # ICD-10 deduplication: keep highest confidence per code
+            for code_entry in data.get("icd10_codes", []):
+                code = code_entry.get("icd10_code", "")
+                if not code:
+                    continue
+                existing = seen_icd10_codes.get(code)
+                if existing is None or code_entry["confidence"] > existing["confidence"]:
+                    seen_icd10_codes[code] = code_entry
 
-            # Deduplicate clinical entities by normalized text.
-            ce = data.get("clinical_entities", {})
+            # Clinical entity deduplication
+            for item in data.get("conditions", []):
+                key = item.lower().strip()
+                if key not in seen_conditions:
+                    seen_conditions.add(key)
+                    record["clinical_evidence"]["conditions"].append(item)
 
-            for entity in ce.get("MEDICAL_CONDITION", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_conditions:
-                    seen_conditions.add(normalized)
-                    record["clinical_evidence"]["conditions"].append(entity)
+            for item in data.get("medications", []):
+                key = item.lower().strip()
+                if key not in seen_medications:
+                    seen_medications.add(key)
+                    record["clinical_evidence"]["medications"].append(item)
 
-            for entity in ce.get("MEDICATION", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_medications:
-                    seen_medications.add(normalized)
-                    record["clinical_evidence"]["medications"].append(entity)
+            for item in data.get("procedures", []):
+                key = item.lower().strip()
+                if key not in seen_procedures:
+                    seen_procedures.add(key)
+                    record["clinical_evidence"]["procedures"].append(item)
 
-            for entity in ce.get("TEST_TREATMENT_PROCEDURE", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_procedures:
-                    seen_procedures.add(normalized)
-                    record["clinical_evidence"]["procedures"].append(entity)
+            # Accumulate failed treatments; different pages may add different episodes
+            for treatment in data.get("failed_treatments", []):
+                if treatment not in record["clinical_evidence"]["failed_treatments"]:
+                    record["clinical_evidence"]["failed_treatments"].append(treatment)
 
-        # --- Imaging report ---
-        elif page_type == "imaging_report":
-            # Imaging reports contribute section text and clinical entities.
-            for section_name, section_text in data.get("sections", {}).items():
-                if section_name not in record["clinical_evidence"]["imaging_sections"]:
-                    record["clinical_evidence"]["imaging_sections"][section_name] = section_text
+            # Concatenate medical necessity evidence across pages
+            mne = data.get("medical_necessity_evidence", "")
+            if mne:
+                existing_mne = record["clinical_evidence"]["medical_necessity_evidence"]
+                if existing_mne:
+                    record["clinical_evidence"]["medical_necessity_evidence"] = (
+                        existing_mne + "\n\n" + mne
+                    )
+                else:
+                    record["clinical_evidence"]["medical_necessity_evidence"] = mne
 
-            # Also merge any clinical entities found in the imaging report.
-            # Imaging reports can mention medications (contrast agents, current meds)
-            # and procedures (prior surgeries noted in history sections).
-            ce = data.get("clinical_entities", {})
-            for entity in ce.get("MEDICAL_CONDITION", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_conditions:
-                    seen_conditions.add(normalized)
-                    record["clinical_evidence"]["conditions"].append(entity)
-            for entity in ce.get("MEDICATION", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_medications:
-                    seen_medications.add(normalized)
-                    record["clinical_evidence"]["medications"].append(entity)
-            for entity in ce.get("TEST_TREATMENT_PROCEDURE", []):
-                normalized = entity["text"].lower().strip()
-                if normalized not in seen_procedures:
-                    seen_procedures.add(normalized)
-                    record["clinical_evidence"]["procedures"].append(entity)
+            sf = data.get("supporting_findings", "")
+            if sf:
+                existing_sf = record["clinical_evidence"]["supporting_findings"]
+                if existing_sf:
+                    record["clinical_evidence"]["supporting_findings"] = (
+                        existing_sf + "\n\n" + sf
+                    )
+                else:
+                    record["clinical_evidence"]["supporting_findings"] = sf
 
-        # --- Lab results ---
         elif page_type == "lab_results":
-            # Lab values are additive: different pages may be different test runs.
-            # No deduplication here by design.
             record["clinical_evidence"]["lab_values"].extend(
                 data.get("lab_values", [])
             )
 
-    # Finalize the deduplicated ICD-10 code list, sorted by confidence descending.
+    # Sort ICD-10 codes by confidence descending
     record["clinical_evidence"]["icd10_codes"] = sorted(
-        seen_icd10.values(),
-        key=lambda e: float(e["confidence"]),
+        seen_icd10_codes.values(),
+        key=lambda x: x["confidence"],
         reverse=True,
     )
 
-    # Flag if essential fields are missing.
-    # A record without member ID or CPT code cannot drive a downstream decision.
-    if record["demographics"]["member_id"] is None:
+    # Flag submissions missing the minimum required fields for downstream processing
+    if (
+        record["demographics"]["member_id"] is None
+        or record["requested_service"]["cpt_code"] is None
+    ):
         record["needs_review"] = True
-        print("  WARNING: member_id not found. Flagging for review.")
-
-    if record["requested_service"]["cpt_code"] is None:
-        record["needs_review"] = True
-        print("  WARNING: requested CPT code not found. Flagging for review.")
-
-    return record
-
-
-def store_prior_auth_record(record: dict) -> dict:
-    """
-    Write the assembled prior auth record to DynamoDB.
-
-    Uses the document_key as the primary key. Conditional write prevents
-    overwriting a record that already exists (idempotency: S3 events and SNS
-    are both at-least-once; the same submission can trigger this function twice).
-
-    If the record doesn't need human review, this is also where you'd publish
-    to the event bus to trigger clinical criteria matching (Recipe 2.4).
-
-    Args:
-        record: assembled prior auth record from assemble_prior_auth_record
-
-    Returns:
-        The record that was written.
-    """
-    pa_table = dynamodb.Table(PA_RECORDS_TABLE)
-
-    # Decimal conversion for all numeric fields.
-    # DynamoDB does not accept Python floats in put_item calls.
-    # Any float-valued field added later must get this treatment.
-    def to_decimal(value) -> Decimal:
-        if isinstance(value, Decimal):
-            return value
-        return Decimal(str(round(float(value), 3)))
-
-    def convert_numerics(obj):
-        """Recursively convert floats to Decimal for DynamoDB."""
-        if isinstance(obj, dict):
-            return {k: convert_numerics(v) for k, v in obj.items()}
-        if isinstance(obj, list):
-            return [convert_numerics(item) for item in obj]
-        if isinstance(obj, float):
-            return to_decimal(obj)
-        return obj
-
-    record_for_db = convert_numerics(record)
-
-    # Conditional write: only write if this document_key doesn't already exist.
-    # This prevents duplicate records from at-least-once delivery.
-    try:
-        pa_table.put_item(
-            Item=record_for_db,
-            ConditionExpression="attribute_not_exists(document_key)",
-        )
-        print(f"  Stored record for {record['document_key']}")
-    except pa_table.meta.client.exceptions.ConditionalCheckFailedException:
-        print(f"  Record for {record['document_key']} already exists. Skipping.")
-
-    # If no human review needed, this is where you'd publish to the event bus
-    # to trigger downstream clinical criteria matching (Recipe 2.4).
-    # In production:
-    #   if not record["needs_review"]:
-    #       events_client.put_events(Entries=[{
-    #           "Source":       "pa-pipeline",
-    #           "DetailType":   "prior_auth_extracted",
-    #           "Detail":       json.dumps({"document_key": record["document_key"]}),
-    #           "EventBusName": os.environ["EVENT_BUS_NAME"],
-    #       }])
 
     return record
 ```
 
 ---
 
-## Putting It All Together
+## Step 7: Store to DynamoDB
 
-Here's the full pipeline assembled into a single callable function. This is the sequential, polling-based version for development scripts and learning. In production, Steps 1-2 live in `pa-start` and `pa-retrieve` Lambdas, and Step 5's fan-out runs as parallel branches inside an AWS Step Functions Express Workflow.
+```python
+def store_prior_auth_record(
+    record: dict,
+    table_name: str = "prior-auth-records",
+    region: str = "us-east-1"
+) -> None:
+    """
+    Write the assembled prior auth record to DynamoDB.
+
+    DynamoDB gotcha: it doesn't accept Python float values. All floating-point
+    numbers must be converted to Decimal. The helper below handles this recursively.
+    This is a known boto3 limitation; you'll hit it the first time you try to
+    store a record with confidence scores.
+    """
+    # [EDITOR: Removed em dash from docstring. Original: "known boto3 limitation —
+    # you'll hit it the first time...". Changed to semicolon.]
+    dynamodb = boto3.resource("dynamodb", region_name=region)
+    table = dynamodb.Table(table_name)
+
+    def floats_to_decimal(obj):
+        """Recursively convert floats to Decimal for DynamoDB compatibility."""
+        if isinstance(obj, float):
+            return Decimal(str(obj))
+        elif isinstance(obj, dict):
+            return {k: floats_to_decimal(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [floats_to_decimal(i) for i in obj]
+        return obj
+
+    record_for_dynamo = floats_to_decimal(record)
+
+    table.put_item(
+        Item=record_for_dynamo,
+        # Conditional write: only insert if this document_key doesn't already exist.
+        # This is the idempotency guard: S3 events and SNS both have at-least-once
+        # delivery semantics, so the pipeline may be triggered more than once for
+        # the same document.
+        # [EDITOR: Removed em dash from comment. Original: "idempotency guard —
+        # S3 events and SNS both have at-least-once delivery semantics". Changed
+        # to colon.]
+        ConditionExpression="attribute_not_exists(document_key)",
+    )
+
+    logger.info(
+        f"Stored prior auth record for {record['document_key']} "
+        f"(needs_review={record['needs_review']})"
+    )
+```
+
+---
+
+## Full Pipeline Function
+
+Assembles all steps into a single callable function. The print statements let you trace execution when running locally.
 
 ```python
 def process_prior_auth_submission(
-    bucket: str,
-    key: str,
-    sns_topic_arn: str,
-    textract_role_arn: str,
+    s3_bucket: str,
+    document_key: str,
+    textract_job_id: str,
+    dynamodb_table_name: str = "prior-auth-records",
+    classification_model_id: str = CLASSIFICATION_MODEL_ID,
+    clinical_model_id: str = CLINICAL_MODEL_ID,
+    region: str = "us-east-1",
 ) -> dict:
     """
-    Run the full prior auth extraction pipeline for one faxed multi-page PDF.
+    Process a prior auth submission from Textract output to structured DynamoDB record.
 
-    Covers all six steps from the Recipe 1.4 pseudocode:
-      1+2. Submit async Textract job (FORMS + TABLES + LAYOUT) and retrieve blocks
-      3.   Group blocks by page
-      4.   Classify each page using keyword heuristics and structural signals
-      5.   Fan out to specialized extractors per page type (sequential here;
-           parallel branches in the Step Functions version)
-      6.   Assemble deduplicated prior auth record and store to DynamoDB
+    This function is called by the Step Functions pa-retrieve Lambda after the
+    Textract job completes. The textract_job_id and document_key come from the
+    SNS notification payload.
 
-    Args:
-        bucket:             S3 bucket containing the prior auth PDF
-        key:                S3 object key (path to the PDF)
-        sns_topic_arn:      SNS topic ARN for Textract completion notifications
-        textract_role_arn:  IAM role ARN Textract can assume to publish to SNS
-
-    Returns:
-        The assembled prior auth record.
+    In production, the Textract retrieval and Step Functions handoff are separate
+    Lambda functions. This single function version is useful for local testing.
     """
+    print(f"\n{'='*60}")
+    print(f"Processing: {document_key}")
+    print(f"Textract job: {textract_job_id}")
+    print(f"{'='*60}\n")
 
-    # Steps 1 and 2: Submit the Textract job and retrieve all blocks.
-    # LAYOUT is included in FeatureTypes alongside FORMS and TABLES.
-    print(f"Steps 1-2: Submitting Textract job for s3://{bucket}/{key}")
-    job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"  Job ID: {job_id}")
+    # Step 2: Retrieve Textract results
+    print("[1/5] Retrieving Textract results...")
+    all_blocks = retrieve_textract_blocks(textract_job_id, region=region)
+    print(f"      Retrieved {len(all_blocks)} blocks")
 
-    print("  Waiting for job completion and retrieving all blocks...")
-    all_blocks, block_map = retrieve_all_blocks(job_id)
+    # Build a block ID lookup map for O(1) access during KV and table parsing
+    block_map = {block["Id"]: block for block in all_blocks}
 
-    # Step 3: Group blocks by page. Pre-compute structural features.
-    print("Step 3: Grouping blocks by page...")
+    # Step 3: Group blocks by page
+    print("[2/5] Grouping blocks by page...")
     pages = group_blocks_by_page(all_blocks)
     page_count = len(pages)
-    print(f"  {page_count} pages in submission")
+    print(f"      Found {page_count} pages")
 
-    # Step 4: Classify each page using keyword heuristics.
-    print("Step 4: Classifying pages...")
-    classifications = classify_all_pages(pages)
+    # Step 4: Classify pages with Nova Lite
+    print("[3/5] Classifying pages...")
+    classifications = classify_all_pages(
+        pages,
+        model_id=classification_model_id,
+        region=region,
+    )
+    for page_num, cls in sorted(classifications.items()):
+        print(
+            f"      Page {page_num}: {cls['page_type']} "
+            f"(confidence {cls['confidence']:.2f})"
+        )
 
-    # Summarize the classification distribution for tracing.
-    from collections import Counter
-    type_counts = Counter(classifications.values())
-    print(f"  Classification summary: {dict(type_counts)}")
-
-    # Step 5: Fan out to specialized extractors per page type.
-    # In production, Step Functions runs these in parallel branches.
-    # Here, we run them sequentially and collect results in a dict.
-    print("Step 5: Extracting data from each page...")
+    # Step 5: Fan out to extractors
+    print("[4/5] Extracting content from each page...")
     page_extractions = {}
 
     for page_num in sorted(pages.keys()):
-        page_type = classifications[page_num]
         page_data = pages[page_num]
+        classification = classifications[page_num]
 
-        print(f"  Page {page_num} ({page_type})...")
-        extraction = route_and_extract(page_num, page_type, page_data, block_map)
+        print(f"      Extracting page {page_num} ({classification['page_type']})...")
+
+        extraction = route_and_extract(
+            page_num=page_num,
+            classification=classification,
+            page_data=page_data,
+            block_map=block_map,
+            clinical_model_id=clinical_model_id,
+            region=region,
+        )
         page_extractions[page_num] = extraction
 
-    # Step 6: Assemble the structured record from all page extractions.
-    print("Step 6: Assembling prior auth record...")
+    # Step 6: Assemble
+    print("[5/5] Assembling record...")
     record = assemble_prior_auth_record(
-        document_key=key,
+        document_key=document_key,
         page_count=page_count,
         page_extractions=page_extractions,
     )
 
-    # Store to DynamoDB.
-    stored_record = store_prior_auth_record(record)
+    # Store to DynamoDB
+    store_prior_auth_record(record, table_name=dynamodb_table_name, region=region)
 
-    # Summary output.
-    icd10_count   = len(record["clinical_evidence"]["icd10_codes"])
-    flagged_pages = record["flagged_pages"]
+    print(f"\nDone. needs_review={record['needs_review']}")
+    if record["flagged_pages"]:
+        print(f"Flagged pages: {record['flagged_pages']}")
+    print(f"ICD-10 codes found: {len(record['clinical_evidence']['icd10_codes'])}")
     print(
-        f"\nDone. pages={page_count}, ICD-10 codes={icd10_count}, "
-        f"needs_review={record['needs_review']}, "
-        f"flagged_pages={flagged_pages}"
+        f"Medical necessity evidence: "
+        f"{'present' if record['clinical_evidence']['medical_necessity_evidence'] else 'absent'}"
+    )
+    print(
+        f"Failed treatments documented: "
+        f"{len(record['clinical_evidence']['failed_treatments'])}"
     )
 
-    return stored_record
-
-
-# Example: run the pipeline directly against a test prior auth PDF.
-if __name__ == "__main__":
-    import json
-
-    result = process_prior_auth_submission(
-        bucket="my-prior-auth-inbox",
-        key="prior-auth-inbox/2026/03/01/fax-00847.pdf",
-        sns_topic_arn="arn:aws:sns:us-east-1:123456789012:textract-jobs",
-        textract_role_arn="arn:aws:iam::123456789012:role/TextractServiceRole",
-    )
-
-    # DynamoDB Decimal values are not JSON-serializable by default.
-    # This encoder converts them to float for display purposes only.
-    class DecimalEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, Decimal):
-                return float(obj)
-            return super().default(obj)
-
-    print(json.dumps(result, indent=2, cls=DecimalEncoder))
+    return record
 ```
 
 ---
 
-## Lambda Handler Versions
+## Gap to Production
 
-In a production deployment, the pipeline splits across multiple Lambda functions. The pa-start Lambda fires on the S3 upload event. The pa-retrieve Lambda fires on the SNS notification from Textract, then hands off to Step Functions for the classify-extract-assemble stages. The extraction functions themselves run as separate Lambdas inside a Step Functions Express Workflow.
+This example demonstrates the patterns, but there's meaningful distance between this and something you'd deploy. Here's what you'd need to add:
 
-For brevity, the handlers below show the entry point logic. The extraction functions are unchanged from above.
+**Error handling and retries.** The Bedrock runtime and Comprehend Medical clients in this example are configured with `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})`. This covers the most common production failure mode: `ThrottlingException` during burst submission periods. `adaptive` mode implements exponential backoff with jitter automatically. For more granular retry control (per-operation retry policies, custom delay functions), consider the `tenacity` library as a supplement.
 
-```python
-import json
-import os
+**PHI in log messages.** This example logs only structural metadata (response length, error type) from Bedrock API calls. Never log raw model output, extracted text, or exception strings that may echo clinical content. LLM responses to clinical extraction prompts can contain patient names, diagnoses, and medication lists drawn from the input document. Additionally: configure CloudWatch log groups for all Lambda functions with KMS encryption using a customer-managed key. Lambda does not encrypt log groups by default. Scope CloudWatch log group access to authorized personnel only. <!-- [EDITOR: review fix P1-5] Added PHI logging guidance to Gap to Production. response_text[:200] was removed from error handlers above; this note explains the principle for future code changes. -->
 
+**LLM output validation.** The JSON parsing above handles the common failure mode (model returns markdown-wrapped JSON or whitespace). But a model can also return structurally valid JSON that's semantically wrong: `confidence` outside [0, 1], `page_type` not in the expected enum, missing required fields. Add a proper validation step before trusting any LLM output. `pydantic` works well for this.
 
-def lambda_handler_pa_start(event: dict, context) -> None:
-    """
-    pa-start Lambda: triggered by S3 upload events.
+**Prompt injection hardening.** Submitted documents are untrusted input. Sanitize extracted page text before passing it to Bedrock: strip null bytes, Unicode control characters, and anything in the Private Use Area. Add Bedrock Guardrails to the Converse API calls for an additional layer of protection. Treat any LLM response that deviates structurally from the expected schema as potentially adversarial.
 
-    One job: submit the Textract analysis job and record the context.
-    Everything downstream waits for the SNS completion notification.
-    """
-    record = event["Records"][0]
-    bucket = record["s3"]["bucket"]["name"]
-    key    = record["s3"]["object"]["key"]
+**Model version pinning.** The model IDs above reference specific versions (`claude-sonnet-4-6-v1`). When AWS releases a new version, don't automatically switch. Run your labeled test set against any new model version before deploying. Put model IDs in environment variables or Parameter Store, not hard-coded constants.
 
-    sns_topic_arn     = os.environ["TEXTRACT_SNS_TOPIC_ARN"]
-    textract_role_arn = os.environ["TEXTRACT_ROLE_ARN"]
+**Input validation.** Validate that `s3_bucket`, `document_key`, and `textract_job_id` are non-empty before calling anything. Validate that the Textract job is for the correct document (compare the S3 key in the job output against `document_key`). Healthcare pipelines are high-stakes; failing loudly on bad inputs is better than silently processing garbage.
 
-    job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"Submitted job {job_id} for s3://{bucket}/{key}")
+**Structured logging.** Replace `print()` calls with a structured logger (e.g., `structlog` or the standard `logging` module with JSON formatter). Lambda log output goes to CloudWatch; structured logs let you query across runs. Log the model ID used for each page, token counts from the Bedrock response, and Textract confidence distributions. These are the signals you'll need for cost monitoring and accuracy tracking.
 
+**IAM least-privilege.** The IAM permissions in the Prerequisites section list the minimum required. In practice, scope `bedrock:InvokeModel` to the specific model ARNs, not `*`. Scope S3 permissions to the specific bucket and key prefixes. Use separate execution roles for each Lambda function rather than one shared role.
 
-def lambda_handler_pa_retrieve(event: dict, context) -> None:
-    """
-    pa-retrieve Lambda: triggered by SNS notifications from Textract.
+**VPC and VPC endpoints.** Production Lambdas should run in a VPC with no internet gateway. Add VPC endpoints for every AWS service this code calls: S3 (gateway endpoint), Textract, DynamoDB, CloudWatch Logs, KMS, Comprehend Medical, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (for Converse API calls, which is what this code uses) and `com.amazonaws.REGION.bedrock` (for model management). A VPC with only the management endpoint will silently fail on every `bedrock.converse()` call. <!-- [EDITOR: review fix P0-2] Added both Bedrock endpoint names to VPC guidance. Missing bedrock-runtime causes silent failures in no-egress HIPAA VPCs. --> This keeps all PHI traffic on the AWS private network.
 
-    Retrieves all blocks, writes them to S3 (to stay under Step Functions'
-    256 KB payload limit), then starts the Step Functions state machine with
-    the S3 location of the blocks rather than the blocks themselves.
-    """
-    sns_message = json.loads(event["Records"][0]["Sns"]["Message"])
-    job_id      = sns_message["JobId"]
-    job_status  = sns_message["Status"]
+**KMS encryption.** The DynamoDB writes and S3 puts above don't specify KMS keys. In production, configure your S3 bucket with SSE-KMS using a customer-managed key (CMK), and DynamoDB with AWS-managed or customer-managed encryption. Pass the KMS key ARN through environment variables.
 
-    if job_status != "SUCCEEDED":
-        print(f"Job {job_id} finished with status {job_status}. Skipping.")
-        # Production: move the source PDF to failed-documents/, fire a CloudWatch alarm.
-        return
+**DynamoDB Decimal gotcha.** This example handles the float-to-Decimal conversion in `store_prior_auth_record`. If you add new numeric fields to the record structure later, make sure they go through `floats_to_decimal` too. A `float` that sneaks through will cause a `TypeError` at write time. This is a known, longstanding boto3 limitation.
 
-    # Look up the original S3 path from the jobs tracking table.
-    jobs_table = dynamodb.Table(JOBS_TABLE_NAME)
-    response   = jobs_table.get_item(Key={"job_id": job_id})
-    job_item   = response.get("Item", {})
-    bucket     = job_item.get("bucket")
-    key        = job_item.get("key")
+**Idempotency at the pipeline level.** The DynamoDB conditional write handles duplicate events at the storage layer. You also want Step Functions execution deduplication at the orchestration layer: use the `document_key` as the Step Functions execution name (with appropriate sanitization for allowed characters). If the same document triggers two pipeline executions, the second one will fail at Step Functions start rather than running a duplicate extraction.
 
-    if not bucket or not key:
-        print(f"No job context for job_id={job_id}. Cannot process.")
-        return
+**Textract and Bedrock quota limits.** Textract async has a default limit of 2 concurrent jobs per account (adjustable). Bedrock has TPM limits per model. At high submission volume, implement SQS buffering between the inbound S3 event and the Textract submission Lambda. Monitor queue depth and active job count via CloudWatch; alert before you hit the limits rather than after.
 
-    # Retrieve all Textract blocks.
-    all_blocks, block_map = retrieve_all_blocks(job_id)
-
-    # Write blocks to S3 rather than passing them through Step Functions.
-    # A 15-page submission can produce thousands of blocks, easily exceeding
-    # Step Functions' 256 KB input/output size limit.
-    textract_output_key = f"textract-outputs/{job_id}/blocks.json"
-    s3_client.put_object(
-        Bucket=bucket,
-        Key=textract_output_key,
-        Body=json.dumps(all_blocks),
-        ContentType="application/json",
-    )
-
-    # Start the Step Functions state machine.
-    # The state machine reads from S3 rather than receiving raw blocks.
-    state_machine_arn = os.environ["STATE_MACHINE_ARN"]
-    sfn_client        = boto3.client("stepfunctions")
-
-    sfn_client.start_execution(
-        stateMachineArn=state_machine_arn,
-        input=json.dumps({
-            "document_key":        key,
-            "bucket":              bucket,
-            "textract_output_key": textract_output_key,
-            "textract_job_id":     job_id,
-        }),
-    )
-    print(f"Started Step Functions execution for {key}")
-
-
-def lambda_handler_pa_assembler(event: dict, context) -> dict:
-    """
-    pa-assembler Lambda: the final stage inside the Step Functions workflow.
-
-    Receives the map of per-page extraction results from the parallel fan-out
-    branches, assembles the prior auth record, and stores it.
-
-    In Step Functions, this Lambda receives the combined output of the parallel
-    extraction branches as its input.
-    """
-    document_key     = event["document_key"]
-    page_count       = event["page_count"]
-    # In the Step Functions version, page_extractions is assembled from the
-    # parallel branch outputs before this Lambda is invoked.
-    page_extractions = event["page_extractions"]
-
-    record = assemble_prior_auth_record(document_key, page_count, page_extractions)
-    stored = store_prior_auth_record(record)
-
-    print(f"Assembled and stored record for {document_key}. needs_review={record['needs_review']}")
-
-    # If the record needs human review, the Step Functions workflow would route
-    # to an SNS publish or SQS send to enqueue it for Recipe 1.6.
-    return {
-        "document_key": document_key,
-        "needs_review": record["needs_review"],
-    }
-```
+**Cost monitoring.** The model tiering here keeps costs manageable, but you want to verify this in production. Enable Bedrock usage logging (CloudTrail captures model ID and token counts per invocation). Create CloudWatch metrics for total input tokens and total output tokens per model, and alarm if the per-submission cost significantly exceeds the expected range. A misconfiguration that routes all pages through Sonnet instead of Nova Lite would roughly quadruple the LLM line item.
 
 ---
 
-## The Gap Between This and Production
-
-This example demonstrates the full classify-fan-out-assemble pipeline. Run it against a real prior auth PDF and it will produce a structured record with classified pages, extracted administrative fields, deduplicated ICD-10 codes, clinical entities, lab values, and imaging sections. The distance from that to something you'd deploy in a payer UM environment is significant. Here's where it lives.
-
-**Step Functions payload size limits.** Step Functions caps state input and output at 256 KB. A 20-page document's Textract blocks can easily exceed that. The production pattern is to write blocks to S3 from `pa-retrieve` and pass the S3 key rather than the raw block list through the state machine. Every downstream Lambda reads from S3. This adds an S3 read to each extraction step and requires cleanup of intermediate objects after the pipeline completes. The `lambda_handler_pa_retrieve` example above already implements this pattern.
-
-**Concurrent Textract job limits.** Textract async jobs run against account-level concurrency limits (default: 2 concurrent jobs per account in most regions, adjustable via service quota increase). A burst of incoming faxes will queue behind each other once that limit is reached. The `pa-start` Lambda should check a DynamoDB counter for in-flight job count before submitting a new Textract job, implementing backpressure rather than letting submissions queue silently.
-
-**Page classification is a heuristic, not a guarantee.** This classifier misclassifies 8 to 15% of pages in practice. Most failures are safe: a clinical note routed to the lab results extractor finds no tables and returns an empty result. But some produce confident-looking bad output. Build a mechanism to record classifications alongside extraction results, and use human reviewer corrections to track accuracy over time. When a reviewer corrects a misclassified page, that correction adds a labeled example to your training dataset. The path to a trained classifier (which pushes accuracy to 93-97%) runs through exactly this feedback loop.
-
-**Cover sheets that span two pages.** Many payer cover sheet templates are two pages long. The assembler's "first cover sheet wins" logic leaves the second page on the floor if the first page already populated those fields. A production implementation checks whether a second cover_sheet page contains fields that were null after the first and merges the non-null values.
-
-**ICD-10 codes written as codes, not as text.** `InferICD10CM` expects natural language input: "severe osteoarthritis, right knee" not "M17.11." When a clinical note has "Dx: M17.11" written directly, the inference step returns nothing useful. A production implementation detects ICD-10 code format via regex (one letter + 2 digits + optional decimal + 2-4 alphanumeric characters), extracts those directly, and skips the NLP inference for those entries.
-
-**ICD-10 code specificity.** `InferICD10CM` tends toward the least-specific valid code: E11.9 rather than E11.65, even when the clinical text supports the more specific form. Some payer medical policies require the specific code to support coverage. A production system captures the full ranked candidate list (not just `concepts[0]`), compares specificity against payer policy requirements, and routes low-specificity results to coder review when the downstream policy demands it.
-
-**Dead Letter Queues on all Lambda functions.** Every Lambda in this pipeline receives asynchronous invocations. Configure an SQS DLQ on each, with CloudWatch alarms on queue depth. A prior auth submission that disappears into a failed Lambda invocation is a patient care delay waiting to happen. The Step Functions workflow catches state-level errors, but the DLQ catches Lambda invocation failures before the state machine ever sees the result.
-
-**Step Functions per-state error handling.** Express Workflows catch failures at the state machine level by default. Configure per-state error handling so that a failure in the lab results extractor doesn't abort the clinical note extractor. The assembler should handle partial extraction results: a submission where lab extraction failed still produces a useful record with the lab section empty and needs_review set.
-
-**Idempotency on the assembler.** S3 event notifications and SNS from Textract are both at-least-once. The `pa-retrieve` Lambda can be invoked twice for the same submission. The conditional DynamoDB write in `store_prior_auth_record` prevents duplicate records on the primary key, but the Step Functions execution itself may also be started twice. Use an idempotency token derived from the document key when calling `start_execution` to prevent duplicate workflow runs.
-
-**Negation and family history traits in clinical entities.** `detect_clinical_entities` captures semantic traits like NEGATION and PERTAINS_TO_FAMILY on each entity. This example stores them in the record but doesn't use them to filter ICD-10 inferences. In production, if `InferICD10CM` returns a condition that `detect_entities_v2` flagged with NEGATION (the text said "denies chest pain"), that's a signal to route the ICD-10 code to coder review rather than accepting it automatically. Wiring those two steps together requires cross-referencing entities by text span, which is non-trivial but catches a meaningful class of coding errors.
-
-**DynamoDB Decimal requirement.** Every numeric value in the record uses `Decimal` wrapping. The `convert_numerics` function in `store_prior_auth_record` handles this recursively. Any new numeric field you add must go through the same treatment. A raw Python float in a `put_item` call raises `TypeError` at runtime with a less-than-helpful error message.
-
-**VPC and encryption.** This example makes API calls without VPC configuration. A production Lambda handling prior auth submissions runs inside a VPC with private subnets and VPC endpoints for S3, Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, KMS, and CloudWatch Logs. Prior auth submissions contain dense PHI: diagnoses, treatment history, procedure requests, member demographics. S3 SSE-KMS with a customer-managed key. DynamoDB encryption at rest. Step Functions execution history encrypted with SSE. All API calls over TLS.
-
-**Testing.** There are no tests here. A production pipeline has unit tests for each extractor with mocked Textract and Comprehend Medical responses, integration tests against real API calls with synthetic submissions, and a fixture library covering the cover sheet templates you actually receive. CMS publishes the CMS-1500 form and sample ICD-10-CM data. Build test fixtures from those. Never use real patient submissions in any non-production environment.
-
----
-
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 1.4: Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) for the full architectural walkthrough, pseudocode, performance benchmarks, and the honest take on where this gets hard in practice.*
+*← [Recipe 1.4: Prior Auth Document Processing](chapter01.04-prior-auth-v2) · [Python Example](chapter01.04-prior-auth-python-v2)*
