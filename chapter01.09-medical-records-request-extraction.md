@@ -900,6 +900,8 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 
 **Duplicate requests.** The same request often arrives via multiple fax transmissions. The conditional DynamoDB write prevents duplicate records for the same document key, but "same document, different fax" creates two different S3 keys. Near-duplicate detection comparing patient ID, requestor fax, and records description before writing would catch most re-submissions. This is a straightforward addition but is outside this recipe's scope.
 
+**Service Unavailability.** Medical records requests have regulatory response windows (typically 30 days under HIPAA, shorter under some state laws). While more forgiving than prior auth deadlines, a sustained Bedrock outage during a high-volume period can create a backlog that cascades into compliance violations. Production deployments need: (1) a DLQ with CloudWatch alarms for failed submissions, (2) a periodic scan for requests older than a configurable SLA window in processing state, and (3) monitoring that tracks requests approaching their regulatory response deadline so they can be escalated to manual processing before expiry.
+
 ---
 
 ## The Honest Take

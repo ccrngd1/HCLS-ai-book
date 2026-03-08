@@ -194,11 +194,16 @@ import boto3
 import datetime
 from datetime import timezone
 from decimal import Decimal  # DynamoDB requires Decimal for any numeric value
+from botocore.config import Config
+
+# Textract and other AWS services throttle under sustained load. Adaptive retry mode
+# uses exponential backoff with jitter, which handles burst throttling gracefully.
+BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 # Module-level clients. Creating these once at module scope means they're
 # reused across invocations inside a warm Lambda container.
-textract_client = boto3.client("textract")
-comprehend_medical_client = boto3.client("comprehendmedical")
+textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
+comprehend_medical_client = boto3.client("comprehendmedical", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb")
 
 

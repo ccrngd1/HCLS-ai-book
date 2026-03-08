@@ -124,7 +124,7 @@ flowchart LR
 | **AWS Services** | Amazon Textract, Amazon S3, AWS Lambda, Amazon DynamoDB |
 | **IAM Permissions** | `textract:AnalyzeDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem` |
 | **BAA** | AWS BAA signed (required: insurance cards contain PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); all API calls over TLS |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs can contain extracted field values); all API calls over TLS |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Textract, DynamoDB |
 | **CloudTrail** | Enabled: log all Textract and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic insurance card images. CMS provides [sample Medicare cards](https://www.cms.gov/medicare/new-medicare-card) for layout reference. Never use real member cards in dev. |
@@ -284,6 +284,10 @@ FUNCTION flag_low_confidence(fields):
     // Return both sets so the caller knows what's ready to use and what needs review.
     RETURN clean, flagged
 ```
+
+> **Human Review Infrastructure**
+>
+> This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a BAA, corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.
 
 **Step 5: Store results.** The final step writes everything to the database: the high-confidence fields ready for immediate use, the flagged fields awaiting human verification, and a timestamp for the audit trail. Every record includes a `needs_review` flag so downstream systems and review queues can instantly identify cards that require attention. In healthcare, every system touching PHI needs an auditable record: what was processed, when, and what came out. This step creates that record. It also enables reprocessing: if Textract releases a new model version with improved accuracy, you can identify historical scans with low-confidence fields and run them through again.
 

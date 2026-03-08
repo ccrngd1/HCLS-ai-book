@@ -44,8 +44,8 @@ from botocore.config import Config  # [EDITOR: review fix P1-6] Added for retry 
 # -------------------------------------------------------------------------
 BOUNDARY_DETECTION_MODEL  = "us.amazon.nova-lite-v1:0"           # Tier 1: cheap, binary question
 CLASSIFICATION_MODEL      = "us.amazon.nova-lite-v1:0"           # Tier 1: structured document context
-CLINICAL_EXTRACTION_MODEL = "us.anthropic.claude-sonnet-4-6-v1"  # Tier 3: clinical reasoning
-CLAIM_MATCHING_MODEL      = "us.anthropic.claude-sonnet-4-6-v1"  # Tier 3: CPT code reasoning
+CLINICAL_EXTRACTION_MODEL = "us.anthropic.claude-sonnet-4-6-v1:0"  # Tier 3: clinical reasoning
+CLAIM_MATCHING_MODEL      = "us.anthropic.claude-sonnet-4-6-v1:0"  # Tier 3: CPT code reasoning
 
 # -------------------------------------------------------------------------
 # Retry configuration
@@ -1168,7 +1168,7 @@ This example demonstrates the core concepts. Here's the distance between this co
 
 **Prompt injection hardening.** Claims attachments are untrusted external documents. Apply Bedrock Guardrails to all Converse calls (`guardrailIdentifier`, `guardrailVersion` parameters). Strip control characters and unusual Unicode from page text before sending it to the model. Validate that extraction outputs look like clinical data, not instructions.
 
-**Model version pinning.** Pin to specific model ARN versions, not aliases. When `us.anthropic.claude-sonnet-4-6-v1` is updated or deprecated, its behavior on your prompts may shift. Build a regression test suite on labeled packages. Run it before deploying any model version change.
+**Model version pinning.** Pin to specific model ARN versions, not aliases. When `us.anthropic.claude-sonnet-4-6-v1:0` is updated or deprecated, its behavior on your prompts may shift. Build a regression test suite on labeled packages. Run it before deploying any model version change.
 
 **Step Functions integration.** The monolithic function above is illustrative. In production, each major step is its own Lambda: `claim-start`, `claim-retrieve`, `doc-segmenter`, `doc-classifier`, `extract-clinical`, `extract-financial`, `claim-matcher`, `claim-assembler`. Step Functions orchestrates them with a parallel state for the per-segment extraction, a merge state for the assembler, and error handlers per branch. Pass S3 references through Step Functions, not raw data: the 256 KB payload limit is easy to exceed.
 

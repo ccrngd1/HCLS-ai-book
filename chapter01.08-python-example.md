@@ -58,6 +58,14 @@ EOB_REVIEW_QUEUE    = "https://sqs.us-east-1.amazonaws.com/123456789012/eob-revi
 TEXTRACT_ROLE_ARN   = "arn:aws:iam::123456789012:role/TextractSNSPublishRole"
 SNS_TOPIC_ARN       = "arn:aws:sns:us-east-1:123456789012:textract-jobs"
 
+# ⚠️ REPLACE BEFORE DEPLOYING: The constants above use AWS documentation example
+# values (account 123456789012). These must be replaced with your actual AWS
+# account ID, queue URLs, and role ARNs before deployment.
+assert "123456789012" not in EOB_REVIEW_QUEUE, \
+    "Deploy-time constant not replaced: EOB_REVIEW_QUEUE still uses example account ID"
+assert "123456789012" not in TEXTRACT_ROLE_ARN, \
+    "Deploy-time constant not replaced: TEXTRACT_ROLE_ARN still uses example account ID"
+
 # --- Bedrock Model ---
 # Nova Pro is the right tier for structured schema mapping: good accuracy at $0.80/MTok input.
 # Claude Haiku 4.5 is an equally valid choice at $1.00/MTok input with slightly different

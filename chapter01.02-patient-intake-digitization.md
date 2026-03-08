@@ -141,7 +141,7 @@ flowchart LR
 | **IAM Permissions** | `textract:StartDocumentAnalysis`, `textract:GetDocumentAnalysis`, `s3:GetObject`, `s3:PutObject`, `sns:Publish`, `sns:Subscribe`, `dynamodb:PutItem`, `iam:PassRole` (to allow Lambda to pass the Textract service role) |
 | **Textract Service Role** | A dedicated IAM role that Textract can assume to publish job completion notifications to your SNS topic. Textract requires this; it cannot use the Lambda execution role. |
 | **BAA** | AWS BAA signed. Intake forms contain extensive PHI: demographics, SSNs, medical history, medications, insurance details. This is not optional. |
-| **Encryption** | S3: SSE-KMS with a customer-managed key. DynamoDB: encryption at rest enabled (default). All API calls over TLS. |
+| **Encryption** | S3: SSE-KMS with a customer-managed key. DynamoDB: encryption at rest enabled (default). Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; intake form logs can contain demographics and medical history). All API calls over TLS. |
 | **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3, Textract, DynamoDB, and SNS. No traffic to these services should cross the public internet. |
 | **CloudTrail** | Enabled for all Textract, S3, and DynamoDB API calls. Intake forms are HIPAA-covered documents; the audit trail is a compliance requirement. |
 | **Sample Data** | Blank form templates from EHR vendors, filled with synthetic patient data. CMS publishes the [CMS-1500](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) form for layout reference. Never use real PHI in development. |
@@ -378,6 +378,10 @@ FUNCTION normalize_and_gate(raw_kv, checkbox_fields, tables):
 
     RETURN clean_fields, clean_checkboxes, tables, flagged
 ```
+
+> **Human Review Infrastructure**
+>
+> This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a BAA, corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.
 
 **Step 6: Assemble the record and store it.** The final step combines clean fields, checkbox results, and table data into a unified structured record, then writes it to DynamoDB. The `needs_review` flag is set any time the flagged list is non-empty, making it trivial for downstream systems to identify records awaiting human attention. The SSN is stored only as last-four digits even if the form captured the full number: storing a full SSN in an operational database when last-four is sufficient for patient matching is an unnecessary liability. The `page_count` field is worth tracking explicitly; it's useful for quality monitoring (a three-page form that produced only two pages of blocks probably had a scan failure).
 

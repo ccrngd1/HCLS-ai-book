@@ -82,10 +82,15 @@ CONFIDENCE_THRESHOLD = 90.0
 
 ```python
 import boto3
+from botocore.config import Config
+
+# Textract and other AWS services throttle under sustained load. Adaptive retry mode
+# uses exponential backoff with jitter, which handles burst throttling gracefully.
+BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 # Create a Textract client. boto3 will use whatever credentials and region
 # are configured in your environment.
-textract_client = boto3.client("textract")
+textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
 
 
 def extract_card(bucket: str, key: str) -> dict:

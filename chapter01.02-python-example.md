@@ -115,10 +115,15 @@ RESULTS_TABLE_NAME = "intake-extractions"  # stores completed extraction records
 import boto3
 import datetime
 from datetime import timezone
+from botocore.config import Config
+
+# Textract and other AWS services throttle under sustained load. Adaptive retry mode
+# uses exponential backoff with jitter, which handles burst throttling gracefully.
+BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 # boto3 clients. These are module-level so they're reused across invocations
 # inside a warm Lambda container rather than re-created on every call.
-textract_client = boto3.client("textract")
+textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb")
 
 

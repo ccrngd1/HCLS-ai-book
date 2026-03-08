@@ -247,7 +247,7 @@ The fan-out collapses from four specialized extractors to two main paths. The cl
 
 **Amazon Bedrock with the Converse API for page classification.** The Converse API provides a unified interface for text-to-text calls across all Bedrock models. You send the page text with a classification prompt; the model returns a structured classification response. Using Amazon Nova Lite (`us.amazon.nova-lite-v1:0`) for classification: it's the cheapest multimodal model in the Nova family, more than capable for a well-defined classification task, and at $0.06 per million input tokens the cost is negligible at any submission volume. Temperature=0 for near-deterministic output.
 
-**Amazon Bedrock with the Converse API for clinical reasoning.** The same Converse API, different model. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1`) for clinical notes, physician letters, and imaging reports. Sonnet handles the contextual understanding these pages require: reading a physician letter and extracting not just the diagnosis but the documented evidence of medical necessity, failed prior treatments, and clinical rationale. A single Bedrock call per page replaces what was previously a separate Comprehend Medical DetectEntitiesV2 call plus manual section-targeting logic.
+**Amazon Bedrock with the Converse API for clinical reasoning.** The same Converse API, different model. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) for clinical notes, physician letters, and imaging reports. Sonnet handles the contextual understanding these pages require: reading a physician letter and extracting not just the diagnosis but the documented evidence of medical necessity, failed prior treatments, and clinical rationale. A single Bedrock call per page replaces what was previously a separate Comprehend Medical DetectEntitiesV2 call plus manual section-targeting logic.
 
 **Amazon Comprehend Medical for ICD-10 code validation.** `InferICD10CM` stays, but its role narrows. Instead of processing raw page text and extracting codes from scratch, it now validates the clinical concepts that the LLM extracted. The LLM extracts "severe osteoarthritis of the right knee with complete joint space loss." Comprehend Medical maps that phrase to ICD-10 codes with confidence scores. This hybrid uses each service where it's strongest: LLM for contextual extraction, purpose-built service for authoritative code mapping.
 
@@ -295,7 +295,7 @@ flowchart TB
 |-------------|---------|
 | **AWS Services** | Everything from Recipes 1.2 and 1.3 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical), plus Step Functions and Amazon Bedrock |
 | **IAM Permissions** | All permissions from Recipes 1.2 and 1.3, plus: `states:StartExecution`, `states:DescribeExecution` (Step Functions); `bedrock:InvokeModel` on the specific model ARNs for Nova Lite and Claude Sonnet 4.6. Lambda execution roles for the extraction functions need `bedrock:InvokeModel` scoped to the specific model ARNs used. |
-| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in your Bedrock console before first use. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1`) route to the best available region automatically. Enable both in Bedrock Model Access before deploying. **Cross-region inference profiles and VPC endpoints:** when your Lambda calls the `bedrock-runtime` VPC interface endpoint in your region, AWS routes the request to the appropriate backend region (us-east-1, us-east-2, or us-west-2) internally. PHI does not traverse the public internet; the VPC endpoint keeps API traffic on the AWS private network regardless of which backend region processes the request. For organizations that must document data flows for HIPAA compliance, note that inference may occur in any of those three US regions. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate whether direct single-region model IDs (without the `us.` prefix) are required. <!-- [EDITOR: review fix P1-6] Added cross-region inference + VPC interaction explanation. Security teams reviewing HIPAA deployments ask whether PHI leaves the VPC when using cross-region profiles. Added clear answer: PHI stays on AWS private network; inference backend is internal routing only. --> |
+| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in your Bedrock console before first use. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) route to the best available region automatically. Enable both in Bedrock Model Access before deploying. **Cross-region inference profiles and VPC endpoints:** when your Lambda calls the `bedrock-runtime` VPC interface endpoint in your region, AWS routes the request to the appropriate backend region (us-east-1, us-east-2, or us-west-2) internally. PHI does not traverse the public internet; the VPC endpoint keeps API traffic on the AWS private network regardless of which backend region processes the request. For organizations that must document data flows for HIPAA compliance, note that inference may occur in any of those three US regions. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate whether direct single-region model IDs (without the `us.` prefix) are required. <!-- [EDITOR: review fix P1-6] Added cross-region inference + VPC interaction explanation. Security teams reviewing HIPAA deployments ask whether PHI leaves the VPC when using cross-region profiles. Added clear answer: PHI stays on AWS private network; inference backend is internal routing only. --> |
 | **Textract Features** | FORMS + TABLES + LAYOUT in the `FeatureTypes` list. LAYOUT adds approximately $5.00 per 1,000 pages ($0.005/page) on top of the base async pricing. <!-- [EDITOR: review fix P0-1] Corrected LAYOUT pricing from $1.50 to $5.00 per 1,000 pages. Research file specifies $0.005/page = $5.00/1,000 pages. Original figure underestimated this cost by 3.3x. --> |
 | **BAA** | AWS BAA signed. Bedrock is a HIPAA-eligible service. PHI can be sent to Bedrock models under the BAA. Models do not retain or train on customer data sent via Bedrock APIs. Same BAA covers Textract, Comprehend Medical, and Bedrock. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. All API calls over TLS. Text sent to Bedrock and Comprehend Medical is not retained by AWS. Step Functions execution history encrypted at rest via SSE. |
@@ -436,6 +436,12 @@ is unambiguous. Return 0.7-0.89 for likely classifications. Below 0.7 for uncert
 """
 
 FUNCTION classify_page_with_llm(page_text, has_tables, has_forms, model_id):
+    // Sanitize OCR text before passing to LLM. External documents (provider submissions)
+    // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
+    // sequences that could be used for prompt injection.
+    sanitized_text = strip_control_characters(page_text)
+    sanitized_text = remove_null_bytes(sanitized_text)
+
     // Build the user message: page text plus structural metadata.
     // The structural context helps the model on ambiguous pages where
     // text alone doesn't clearly signal the document type.
@@ -447,7 +453,7 @@ FUNCTION classify_page_with_llm(page_text, has_tables, has_forms, model_id):
     IF not has_forms and not has_tables:
         structural_context += "This page is primarily flowing text with no form fields or tables. "
 
-    user_message = structural_context + "\n\nPage text:\n" + page_text
+    user_message = structural_context + "\n\nPage text:\n" + sanitized_text
 
     // Call the Bedrock Converse API.
     // maxTokens=256 is more than sufficient for a JSON classification response.
@@ -612,7 +618,7 @@ FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
     // maxTokens=1024 because clinical notes can be dense; classification needed 256.
     // Temperature=0 for consistency; extraction should be as deterministic as possible.
     response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // e.g., "us.anthropic.claude-sonnet-4-6-v1"
+        modelId         = clinical_model_id  // e.g., "us.anthropic.claude-sonnet-4-6-v1:0"
         system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
         messages        = [{
             role:    "user",
@@ -970,9 +976,22 @@ Notice what the LLM extraction produces that the previous keyword classifier plu
 
 ## Why This Isn't Production-Ready
 
+> **⚠️ Regulatory Caution: Clinical Review Requirements**
+>
+> This pipeline produces structured data that *supports* clinical review decisions; it does not replace the clinical review requirement. The CMS Interoperability and Prior Authorization Final Rule (CMS-0057-F) requires that prior authorization decisions be based on appropriate clinical review. A pipeline where LLM-extracted `medical_necessity_evidence` feeds an automated criteria-matching engine does not by itself satisfy this requirement.
+>
+> Before deploying automated prior auth workflows based on this pipeline's output:
+> - Confirm with legal counsel whether your automated approval path requires a licensed clinical reviewer to validate LLM-extracted evidence before a determination issues
+> - Review against your state's prior authorization reform requirements (many states have enacted legislation beyond CMS-0057-F)
+> - For Medicare Advantage and fully-insured lines of business, verify that the automated path meets applicable clinical review standards
+>
+> High-confidence LLM extraction reduces clinical reviewer workload by pre-structuring the evidence. It does not eliminate the reviewer from the decision loop.
+
+**Service Unavailability and Regulatory Deadlines.** Prior authorization has regulatory response windows: 72 hours for standard requests, 24 hours for expedited. A multi-hour Textract or Bedrock outage during peak hours is not a "retry and it'll be fine" scenario. Production deployments need: (1) an SNS subscription dead letter queue with alarms for missed Textract job completions, (2) a CloudWatch Events rule that scans DynamoDB for submissions older than N hours in `status: "processing"` and re-queues them, and (3) a fallback path that routes to the human review queue if the pipeline has not completed within 8 hours (configurable), regardless of extraction status. The regulatory deadline does not pause for AWS service incidents.
+
 **Prompt injection risks.** A prior auth submission is an untrusted document. A provider could include text designed to manipulate the classification or extraction model. This isn't a theoretical concern in a system where document content directly influences downstream decisions. Apply Bedrock Guardrails to detect and block injection attempts. Sanitize extracted page text before passing it to the model by removing control characters and unusual Unicode. Consider a second-pass validation for any Bedrock output that looks structurally inconsistent with the expected schema.
 
-**Model versioning and behavior drift.** Model versions change. `us.anthropic.claude-sonnet-4-6-v1` will eventually be superseded. When a model is updated or deprecated, its behavior on your specific prompts may shift in subtle ways. Pin to specific model version ARNs in production rather than using aliases like "latest." Establish a regression test suite on a representative set of labeled prior auth pages. Run it against any model version change before deploying. If classification accuracy drops on your test set, don't deploy.
+**Model versioning and behavior drift.** Model versions change. `us.anthropic.claude-sonnet-4-6-v1:0` will eventually be superseded. When a model is updated or deprecated, its behavior on your specific prompts may shift in subtle ways. Pin to specific model version ARNs in production rather than using aliases like "latest." Establish a regression test suite on a representative set of labeled prior auth pages. Run it against any model version change before deploying. If classification accuracy drops on your test set, don't deploy.
 
 **LLM output validation.** The pseudocode above parses JSON from the model's text response. Language models don't guarantee valid JSON, especially on edge cases. Wrap every JSON parse in exception handling. If the model returns malformed output, retry once with an explicit "you must return only valid JSON" suffix added to the prompt. If it fails again, route the page to human review rather than crashing the pipeline.
 

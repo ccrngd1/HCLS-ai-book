@@ -193,11 +193,16 @@ RX_FIELD_MAP = {
 
 ```python
 import boto3
+from botocore.config import Config
+
+# AWS services throttle under sustained load. Adaptive retry mode uses exponential
+# backoff with jitter, which handles burst throttling gracefully.
+BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 # Create the service clients we'll use throughout the pipeline.
 # boto3 uses whatever credentials and region are configured in your environment.
-textract_client = boto3.client("textract")
-comprehend_medical_client = boto3.client("comprehendmedical")
+textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
+comprehend_medical_client = boto3.client("comprehendmedical", config=BOTO3_RETRY_CONFIG)
 
 def extract_label(bucket: str, key: str) -> dict:
     """

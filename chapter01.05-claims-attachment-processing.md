@@ -170,7 +170,7 @@ This is the architectural breakthrough in this recipe versus the rule-based appr
 
 **Amazon Bedrock (Nova Lite) for boundary detection and classification.** The Converse API introduced in Recipe 1.4 makes it easy to call any Bedrock model with the same code. Nova Lite (`us.amazon.nova-lite-v1:0`) is the right model for boundary detection: it's a well-defined binary question per page pair, and Nova Lite handles it reliably at $0.06 per million input tokens. At a 30-page package generating 29 page pair comparisons, the boundary detection cost is roughly three cents of tokens. The same model handles document classification, where it evaluates full document text against the taxonomy.
 
-**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners.
+**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners.
 
 <!-- [EDITOR: Added "4.6" to "Claude Sonnet" throughout the AWS Implementation section per task requirement: "Model names should include version numbers in pricing/capability contexts."] -->
 
@@ -226,7 +226,7 @@ flowchart TB
 |-------------|---------|
 | **AWS Services** | Everything from Recipes 1.2, 1.3, and 1.4 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical, Step Functions, Bedrock), plus S3 Object Lock for retention compliance |
 | **IAM Permissions** | All permissions from Recipe 1.4, plus: `s3:PutObjectLegalHold` and `s3:PutObjectRetention` for S3 Object Lock on the claims records bucket. The assembler Lambda needs these to lock records after writing them. `bedrock:InvokeModel` on both Nova Lite and Claude Sonnet 4.6 model ARNs. |
-| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in the Bedrock console. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1`) route to the best available region automatically. Enable both before deploying. |
+| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in the Bedrock console. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) route to the best available region automatically. Enable both before deploying. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate using direct single-region model ARNs (without the `us.` prefix) rather than cross-region inference profiles. |
 | **Step Functions** | Standard Workflows (not Express). Execution history retention is a claims processing compliance requirement. Visual execution graph is essential for debugging boundary detection failures on complex packages. |
 | **BAA** | AWS BAA signed. Claims attachments contain some of the most sensitive PHI categories: surgical operative notes, pathology results with cancer diagnoses, full-episode discharge summaries, and financial responsibility data. Bedrock, Textract, and Comprehend Medical are all HIPAA-eligible under the same BAA. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. S3 Object Lock in compliance mode on the claims-attachment-records bucket. DynamoDB: encryption at rest. All API calls over TLS. Step Functions execution history: SSE. Bedrock and Comprehend Medical do not retain or train on customer data sent via their APIs. |
@@ -353,15 +353,23 @@ extraction errors. A false boundary causes a document to be split, which is less
 """
 
 FUNCTION detect_boundary_at_page_pair(page_n, page_n_plus_1, model_id):
+    // Sanitize OCR text before passing to LLM. External documents (provider submissions)
+    // are untrusted input. Strip control characters, null bytes, and anomalous Unicode
+    // sequences that could be used for prompt injection.
+    page_n_text   = strip_control_characters(page_n.text)
+    page_n_text   = remove_null_bytes(page_n_text)
+    page_np1_text = strip_control_characters(page_n_plus_1.text)
+    page_np1_text = remove_null_bytes(page_np1_text)
+
     // Build the user message with both pages' content.
     // Include header text separately because it's the strongest boundary signal.
     user_message = "Page " + page_n.page_num + ":\n"
     user_message += "Header: " + (page_n.header_text if page_n.header_text else "(none)") + "\n"
-    user_message += "Text:\n" + first_1500_characters(page_n.text) + "\n\n"
+    user_message += "Text:\n" + first_1500_characters(page_n_text) + "\n\n"
     user_message += "---\n\n"
     user_message += "Page " + page_n_plus_1.page_num + ":\n"
     user_message += "Header: " + (page_n_plus_1.header_text if page_n_plus_1.header_text else "(none)") + "\n"
-    user_message += "Text:\n" + first_1500_characters(page_n_plus_1.text) + "\n\n"
+    user_message += "Text:\n" + first_1500_characters(page_np1_text) + "\n\n"
     user_message += "Do these two pages belong to the same document?"
 
     response = call Bedrock Converse API with:
@@ -426,6 +434,8 @@ FUNCTION detect_all_boundaries(pages, boundary_model_id):
 ```
 
 A few notes on the design. We use 1,500 characters of each page's text (not the full page) to keep token costs low. The first 1,500 characters of a page almost always contain the signals that distinguish a new document from a continuation: title lines, headers, page numbers, and the opening sentence that establishes the document type. We ask the model to be conservative toward `same_document: true`. A missed boundary (two documents merged into one segment) causes extraction errors downstream, but those errors are detectable. A false boundary (one document split into two) causes the segment to classify and extract as a partial document, which is less harmful and usually still produces useful output.
+
+> **Safe default for boundary detection failures:** If a page pair comparison fails after retries, the safe default is `same_document: true` (treat the pages as part of the same document and continue). A missed boundary causes the downstream classifier to receive a larger-than-expected segment, which it can still process. A false boundary splits a document, which causes extraction to miss cross-page context. The conservative choice (same_document on failure) is less harmful than the aggressive choice (new_document on failure).
 
 **Step 5: LLM document classification.** After boundary detection, we have a list of logical document segments. Each segment gets classified as a unit by sending its full aggregated text to Nova Lite.
 
@@ -561,7 +571,7 @@ FUNCTION extract_clinical_document(segment, all_pages, clinical_model_id):
     segment_text = aggregate text from segment.start_page to segment.end_page in all_pages
 
     response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1"
+        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1:0"
         system          = [{ text: CLINICAL_EXTRACTION_SYSTEM_PROMPT }]
         messages        = [{
             role:    "user",
@@ -687,7 +697,7 @@ FUNCTION match_clinical_document_to_claim_lines(
                  + "\n\nFor each claim line, assess whether this document supports it."
 
     response = call Bedrock Converse API with:
-        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1"
+        modelId         = clinical_model_id  // "us.anthropic.claude-sonnet-4-6-v1:0"
         system          = [{ text: CLAIM_MATCHING_SYSTEM_PROMPT }]
         messages        = [{ role: "user", content: [{ text: user_message }] }]
         inferenceConfig = { maxTokens: 1024, temperature: 0 }
@@ -1028,6 +1038,19 @@ The 78–90% overall pipeline accuracy looks similar to the upper end of what ru
 
 ## Why This Isn't Production-Ready
 
+> **⚠️ Regulatory Caution: Claims Adjudication Requirements**
+>
+> The `final_status: "supported"` determination from claim line matching is a documentation adequacy signal, not an adjudication decision. CMS and state insurance regulations require that claims determinations be made by qualified personnel. An LLM assessment of whether an operative report supports a CPT code is a structured input to the adjudication process, not a substitute for it.
+>
+> Before deploying automated claim line support determinations:
+> - The claims adjudication system must apply its own business rules independently of LLM output
+> - State DOI examiners may challenge automated adjudication decisions based solely on LLM reasoning
+> - Human review paths must exist for all claim lines, not just low-confidence ones
+>
+> This pipeline accelerates claims processing by pre-matching documentation to claim lines. The adjudication decision remains with the claims organization.
+
+**Service Unavailability.** This recipe makes approximately 40 Bedrock calls per 30-page package. A sustained Bedrock outage or throttling event will stall the entire package. Production deployments need: (1) Step Functions state-level timeouts on each processing stage (separate from Lambda timeouts), with Catch blocks routing to human review on timeout, (2) a DLQ on the submission queue with alarms, and (3) a periodic scan for packages older than a configurable SLA window in `status: "processing"` to re-queue or escalate them.
+
 The LLM-powered architecture and pseudocode above get you to a working claims attachment pipeline. Production requires addressing the gaps that will find you in month two.
 
 **Retry logic on every Bedrock and Comprehend Medical client.** This pipeline makes approximately 40 Bedrock calls per package. At that volume, `ThrottlingException` is not a theoretical failure; it happens during burst processing. Configure `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on every boto3 client initialization. `adaptive` mode implements exponential backoff with jitter automatically. Apply this to the `bedrock-runtime`, `comprehendmedical`, and any other clients. The Python companion shows the pattern. <!-- [EDITOR: review fix P1-6] Added retry logic paragraph. Missing retry config is a silent failure mode at burst processing volumes. ~40 calls/package means throttling is expected, not exceptional. -->
@@ -1040,7 +1063,7 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 
 **Build the boundary detection feedback loop from day one.** When a claims examiner corrects a segmentation error, that correction should be logged with the two page pairs involved and what the correct answer was. Over time, you want to know: which document type transitions cause the most missed boundaries? (Answer: therapy notes followed immediately by billing statements, because both can look like continuous text.) Are there specific payer workflows that produce systematic failures? Log the model's reasoning alongside the correction; it helps you understand why it made the wrong call.
 
-**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points.
+**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points.
 
 <!-- [EDITOR: Updated "Model versioning" sentence from bare model ID strings to "Claude Sonnet 4.6 (model-id) and Nova Lite (model-id)" pattern, consistent with version-number guidance.] -->
 

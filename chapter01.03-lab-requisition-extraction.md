@@ -141,7 +141,7 @@ flowchart LR
 | **AWS Services** | Everything from Recipe 1.2 (Textract, S3, Lambda ×2, SNS, DynamoDB, KMS), plus Amazon Comprehend Medical |
 | **IAM Permissions** | All permissions from Recipe 1.2, plus: `comprehend:DetectEntitiesV2`, `comprehend:InferICD10CM` |
 | **BAA** | AWS BAA signed. Comprehend Medical is a HIPAA-eligible service under the same account-level BAA as Textract. No additional BAA action required beyond the account-level agreement already in place. |
-| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled (default). All API calls over TLS. Clinical text sent to Comprehend Medical is not retained by AWS. |
+| **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled (default). Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs may contain clinical text fragments). All API calls over TLS. Clinical text sent to Comprehend Medical is not retained by AWS. |
 | **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. |
 | **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, and DynamoDB API calls. Lab requisitions are PHI-containing clinical documents; the full audit trail is a compliance requirement. |
 | **Sample Data** | Quest Diagnostics and LabCorp publish sample requisition forms on their provider portals. Create synthetic versions with realistic patient names, DOBs, and ICD-10 codes. CMS provides ICD-10-CM code lookup tools at [ICD10Data.com](https://www.icd10data.com/) for reference. Never use real PHI in development. |
@@ -423,6 +423,10 @@ FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
 
     RETURN flags
 ```
+
+> **Human Review Infrastructure**
+>
+> This recipe flags low-confidence fields for human review but does not implement the review workflow itself. The full human review infrastructure, including Amazon A2I integration with a private HIPAA-trained workforce, reviewer interface configuration, correction audit trails, and feedback loops, is built in Recipe 1.6. For production deployments, apply Recipe 1.6's A2I pattern to the flagged fields from this recipe. Key requirements: reviewers must be HIPAA-trained staff operating under a BAA, corrections must be traceable in the audit record, and the review queue message format should be consistent across recipes to enable a unified review interface.
 
 **Step 8: Assemble the final record and store it.** The last step combines the output of all previous steps into a single structured record and writes it to DynamoDB. Every composite confidence score from both Textract and Comprehend Medical travels with the record. The `needs_review` flag is set if any field was flagged by either system. The `icd10_flagged` list captures low-confidence code inferences separately from low-confidence text extractions, because the two types of uncertainty have different implications for downstream reviewers.
 

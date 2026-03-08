@@ -173,40 +173,64 @@ def _validate_example_is_synthetic(example: dict) -> bool:
     Gate function: confirm a prompt example candidate uses a synthetic
     de-identified image before it is eligible for the active prompt library.
 
+    FAILURE BEHAVIOR: This function MUST raise an exception (not log a warning,
+    not return False silently) if it cannot positively confirm the example is
+    synthetic. Returning False or logging a warning allows a caller to ignore
+    the result and proceed. An exception forces the issue: the caller cannot
+    continue without explicitly handling it. Any deployment path that catches
+    this exception and promotes the example anyway is non-compliant.
+
+    "Positively confirm" means one of:
+      (a) a metadata tag set only by a designated de-identification workflow,
+      (b) a hash check against an approved synthetic image registry, or
+      (c) a cryptographic signature from the de-identification pipeline.
+
     This is a stub. In production, implement the validation logic appropriate
-    for your de-identification workflow. Options include:
-      - Check a 'deidentified' flag set by your de-identification pipeline
-      - Verify the image_key is in a designated synthetic-images S3 prefix
-      - Check a DynamoDB or metadata store record confirming de-id completion
-      - Require a manual approval record from the prompt engineer's workflow
+    for your de-identification workflow and raise ValueError (or a custom
+    exception type) with a descriptive message if validation fails.
 
     Returns True only if the example has been confirmed de-identified.
-    Never promote an example that returns False to the active system prompt.
+    Never promote an example that does not pass this check to the active
+    system prompt.
 
-    [EDITOR: review fix] Added _validate_example_is_synthetic() stub. The
-    feedback loop captures real patient document images as correction candidates.
-    Before any candidate is embedded in EXTRACTION_SYSTEM_PROMPT, the source image
-    MUST be replaced with a synthetic de-identified equivalent. Using a real patient
-    image as a few-shot example sends that patient's PHI to Bedrock during every
-    other patient's extraction call: a HIPAA disclosure. This stub enforces the
-    de-identification gate programmatically.
+    [EDITOR: review fix] Updated _validate_example_is_synthetic() to document
+    the hard-failure requirement. The stub previously returned False on failure,
+    which a caller could silently ignore. This function MUST raise an exception
+    on failure so the validation gate is non-bypassable. The prompt library
+    bucket should use a separate S3 prefix (prompt-library/synthetic/) with IAM
+    PutObject access restricted to the designated prompt engineer role only.
+    Run this function on all embedded images as a required CI/CD step before
+    any prompt deployment. Fail the deployment if any image fails validation.
     """
     # Check the explicit de-identification flag set during capture.
     if not example.get("deidentified", False):
-        return False
+        raise ValueError(
+            f"Example validation failed: 'deidentified' flag is not True. "
+            f"image_key={example.get('image_key', 'unknown')}. "
+            "The source image must be replaced with a synthetic de-identified "
+            "equivalent before this example is eligible for the prompt library. "
+            "This is not optional."
+        )
 
     # Additional check: synthetic images should live in a designated prefix,
     # never in the original enhanced-images bucket path.
     image_key = example.get("image_key", "")
     if image_key.startswith("notes-enhanced/") and not image_key.startswith("notes-enhanced/synthetic/"):
         # Image is from the live enhanced-images path, not the synthetic prefix.
-        # This is a real patient image. Do not promote.
-        return False
+        # This is a real patient image. Raise hard to prevent promotion.
+        raise ValueError(
+            f"Example validation failed: image_key '{image_key}' is in the live "
+            "enhanced-images path, not the designated synthetic prefix "
+            "(notes-enhanced/synthetic/). Real patient images must not enter "
+            "the prompt library. Replace with a synthetic de-identified equivalent."
+        )
 
     # TODO: add your organization-specific de-identification verification here.
     # For example: query a de-identification audit table, check for an
     # approval record from the prompt engineer's review tool, or verify the
     # image hash against a registry of approved synthetic examples.
+    # This check MUST raise ValueError (not return False) if it cannot
+    # positively confirm the example is synthetic.
 
     return True
 ```

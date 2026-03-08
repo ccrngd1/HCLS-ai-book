@@ -1021,6 +1021,8 @@ FUNCTION validate_codes_with_comprehend_medical(extractions: dict) -> dict:
 
 The FHIR mapping step takes validated extraction results and generates structured FHIR R4 resources. This is where LLMs genuinely shine compared to rule-based mappers: the model understands clinical context well enough to make appropriate choices about resource type, status, and completeness. The FHIR generation runs as another batch inference job (Tier 3: Sonnet).
 
+> **Mandatory Code Validation.** Any ICD-10, RxNorm, or CPT code emitted by the LLM FHIR mapping stage must be validated against an authoritative code reference before HealthLake ingestion. Use Comprehend Medical `InferICD10CM` for ICD-10 codes. For CPT codes, validate against the AMA CPT code file or an equivalent reference. For RxNorm, use Comprehend Medical `DetectEntitiesV2`. A hallucinated medical code (e.g., `M17.1` vs. `M17.11`, or a plausible-sounding but nonexistent code) that lands in HealthLake will corrupt the longitudinal record silently. This validation step is not optional.
+
 ```
 FHIR_MAPPING_SYSTEM = """
 You are generating FHIR R4 resources from extracted historical medical record data.
@@ -1145,6 +1147,13 @@ FUNCTION assemble_fhir_bundle(chart_id: string,
             resources = [generate_fallback_document_reference(chart_id, member_id, result)]
 
         all_resources.extend(resources)
+
+    // MANDATORY: Validate all medical codes in LLM-generated FHIR resources
+    // before HealthLake ingestion. LLMs hallucinate plausible medical codes.
+    FOR EACH fhir_resource IN all_resources:
+        validated_codes = validate_medical_codes(fhir_resource)
+        IF any code fails validation:
+            flag_resource_for_review(fhir_resource, invalid_codes)
 
     // De-duplicate: same ICD-10 code from multiple pages produces one Condition
     all_resources = deduplicate_conditions(all_resources,
@@ -1317,6 +1326,7 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
     "charts_completed": 9891,
     "charts_in_progress": 0,
     "charts_failed": 67,
+    "charts_skipped_duplicates": 42,
     "charts_flagged_for_manual_review": 218,
     "total_pages_processed": 1503000,
     "avg_pages_per_chart": 150,
@@ -1359,6 +1369,12 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
   }
 }
 ```
+
+> 42 charts were identified as duplicates during manifest generation (same patient MRN and chart date appearing multiple times in the source system) and excluded from processing.
+
+> HealthLake import cost is based on data volume ingested (GB), not per-resource pricing. The 1,131,100 FHIR resources at an average of ~1.2 KB per resource total approximately 1.3 GB ingested at the HealthLake data ingestion rate.
+
+> **Note on cost table vs. pilot figures:** The per-page cost estimates in the table above are simplified blended averages based on input tokens only. The pilot figures reflect actual token counts including output tokens, cache miss overhead during the initial prompt caching warm-up period, and per-request baseline charges. For budgeting purposes, use the pilot figures as the more accurate reference. The per-page table is useful for back-of-envelope comparisons between tiers, not for precise cost projection.
 
 **Per-chart sample output:**
 
@@ -1429,6 +1445,8 @@ The pseudocode captures the core logic. A production chart migration program req
 **Model version pinning.** The cross-region inference profile IDs used in this recipe (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-20260217-v1:0`) are AWS-managed mappings that can be updated to new underlying model versions. For a migration program where consistent extraction behavior matters across six to twelve months of processing, pin to explicit model version ARNs (e.g., `arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6-20240229-v1:0`). Test your extraction quality after any model update before continuing bulk processing.
 
 **Vision JSONL file sizes.** Embedding base64-encoded page images in batch JSONL creates very large files: a 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB per request line after base64 encoding. A wave of 10,000 vision-path pages produces an input JSONL of 13 to 40 GB. Split vision batches into smaller JSONL files before submission (2,000 to 3,000 pages per file is a manageable chunk). Use S3 multipart upload for files larger than 5 GB (boto3's `TransferConfig` handles this automatically when configured). Validate that each individual request line stays within Bedrock's current per-request payload limit for your region. Consider downsampling very high-resolution source images from 600 DPI to 300 DPI before embedding -- 300 DPI is sufficient for vision model performance per Recipe 1.6's benchmarks and cuts file sizes by approximately 75%. <!-- [EDITOR: review fix - P1 vision JSONL file sizes. Added production guidance on size, splitting, and multipart upload requirements.] -->
+
+**Service Unavailability During Long-Running Migration.** A 6-12 month migration program will encounter AWS service incidents. Bedrock batch inference jobs that fail mid-execution need automatic retry with checkpoint resumption (do not reprocess successfully extracted charts). Production deployments need: (1) per-batch checkpoint tracking in DynamoDB so failed batches resume from the last successful chart, (2) CloudWatch alarms on batch job failure rates with automatic pause if the failure rate exceeds a threshold (preventing wasted spend on a degraded service), and (3) a model version governance process: lock model IDs at program start, document them in a migration configuration file, and require re-processing validation on a sample of previously processed charts before any mid-program model version change.
 
 ---
 

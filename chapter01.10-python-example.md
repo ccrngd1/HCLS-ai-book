@@ -31,7 +31,11 @@ healthlake:DescribeFHIRImportJob
 s3:GetObject
 s3:PutObject
 s3:CopyObject
-s3:DeleteObject
+# s3:DeleteObject scoped ONLY to the batch inference working directory.
+# Never grant delete permissions over the source charts bucket.
+# For a pipeline processing irreplaceable historical PHI, deletion risk
+# over source data is unnecessary and dangerous.
+s3:DeleteObject  # scope to: arn:aws:s3:::batch-inference-bucket/batch-input/* only
 dynamodb:GetItem
 dynamodb:PutItem
 dynamodb:UpdateItem

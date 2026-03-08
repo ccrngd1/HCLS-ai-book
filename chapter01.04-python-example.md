@@ -19,7 +19,7 @@ pip install boto3 python-dotenv
 You'll need AWS credentials with the following permissions:
 - `textract:StartDocumentAnalysis`, `textract:GetDocumentAnalysis`
 - `s3:GetObject`, `s3:PutObject`
-- `bedrock:InvokeModel` on `us.amazon.nova-lite-v1:0` and `us.anthropic.claude-sonnet-4-6-v1`
+- `bedrock:InvokeModel` on `us.amazon.nova-lite-v1:0` and `us.anthropic.claude-sonnet-4-6-v1:0`
 - `comprehendmedical:InferICD10CM`
 - `dynamodb:PutItem`
 - `sns:Publish` (for Textract job notifications)
@@ -65,7 +65,7 @@ BOTO3_RETRY_CONFIG = Config(
 # and handle regional capacity differences for you.
 # ---------------------------------------------------------------------------
 CLASSIFICATION_MODEL_ID = "us.amazon.nova-lite-v1:0"
-CLINICAL_MODEL_ID = "us.anthropic.claude-sonnet-4-6-v1"
+CLINICAL_MODEL_ID = "us.anthropic.claude-sonnet-4-6-v1:0"
 
 # ---------------------------------------------------------------------------
 # Confidence thresholds
@@ -1371,7 +1371,7 @@ This example demonstrates the patterns, but there's meaningful distance between 
 
 **Prompt injection hardening.** Submitted documents are untrusted input. Sanitize extracted page text before passing it to Bedrock: strip null bytes, Unicode control characters, and anything in the Private Use Area. Add Bedrock Guardrails to the Converse API calls for an additional layer of protection. Treat any LLM response that deviates structurally from the expected schema as potentially adversarial.
 
-**Model version pinning.** The model IDs above reference specific versions (`claude-sonnet-4-6-v1`). When AWS releases a new version, don't automatically switch. Run your labeled test set against any new model version before deploying. Put model IDs in environment variables or Parameter Store, not hard-coded constants.
+**Model version pinning.** The model IDs above reference specific versions (`claude-sonnet-4-6-v1:0`). When AWS releases a new version, don't automatically switch. Run your labeled test set against any new model version before deploying. Put model IDs in environment variables or Parameter Store, not hard-coded constants.
 
 **Input validation.** Validate that `s3_bucket`, `document_key`, and `textract_job_id` are non-empty before calling anything. Validate that the Textract job is for the correct document (compare the S3 key in the job output against `document_key`). Healthcare pipelines are high-stakes; failing loudly on bad inputs is better than silently processing garbage.
 
