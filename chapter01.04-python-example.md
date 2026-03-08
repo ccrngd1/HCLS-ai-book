@@ -781,7 +781,7 @@ def extract_clinical_page(
 
     # ICD-10 code validation via Comprehend Medical.
     # The LLM extracted the clinical concept text; Comprehend maps it to codes.
-    # This hybrid gets us contextual extraction AND authoritative code lookup.
+    # This hybrid gets us contextual extraction AND purpose-built code lookup.
     icd10_accepted = []
     icd10_flagged = []
 

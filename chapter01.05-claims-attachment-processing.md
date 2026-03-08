@@ -1,4 +1,4 @@
-# Recipe 1.5: Claims Attachment Processing 🔴
+# Recipe 1.5: Claims Attachment Processing 🔶
 
 **Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20–2.40 per 30-page claims package
 
@@ -174,7 +174,7 @@ This is the architectural breakthrough in this recipe versus the rule-based appr
 
 <!-- [EDITOR: Added "4.6" to "Claude Sonnet" throughout the AWS Implementation section per task requirement: "Model names should include version numbers in pricing/capability contexts."] -->
 
-**Amazon Comprehend Medical for ICD-10 code validation on clinical documents.** The same hybrid approach as Recipe 1.4: the LLM extracts clinical concepts from operative reports, pathology reports, and discharge summaries. Comprehend Medical maps those concepts to authoritative ICD-10 codes. LLMs are good at extracting clinical meaning. They're less reliable for producing exact, consistent medical codes. Keep `InferICD10CM` in the pipeline for code validation.
+**Amazon Comprehend Medical for ICD-10 code validation on clinical documents.** The same hybrid approach as Recipe 1.4: the LLM extracts clinical concepts from operative reports, pathology reports, and discharge summaries. Comprehend Medical maps those concepts to high-confidence ICD-10 codes. LLMs are good at extracting clinical meaning. They're less reliable for producing exact, consistent medical codes. Keep `InferICD10CM` in the pipeline for code validation.
 
 **AWS Step Functions (Standard Workflows).** The pipeline has more branches than Recipe 1.4. Boundary detection introduces conditional logic, and the claim line matching step needs results from all the type-specific extractors before it can run. Step Functions handles parallel extraction branches, waits for all of them, then runs the assembly and matching step. Standard Workflows over Express because the execution history in the console is how you debug a misclassified 38-page package. The audit trail is also a claims processing compliance requirement.
 
@@ -240,10 +240,10 @@ flowchart TB
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Textract** | Full document extraction on the entire PDF: FORMS, TABLES, and LAYOUT blocks across all pages |
+| **Amazon Textract** | Full document extraction on the entire PDF: FORMS, TABLES, and LAYOUT blocks across all pages. The default Textract `StartDocumentAnalysis` concurrent job quota is 25 in most regions. File an AWS Support quota increase request before go-live for high-volume deployments. |
 | **Amazon Bedrock (Nova Lite)** | Document boundary detection (binary page-pair comparison) and document-level classification |
 | **Amazon Bedrock (Claude Sonnet 4.6)** | Clinical document content extraction and claim line item reasoning |
-| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code validation on LLM-extracted clinical concepts from operative reports and discharge summaries |
+| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code validation on LLM-extracted clinical concepts from operative reports and discharge summaries. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before selecting your deployment region. |
 | **AWS Step Functions (Standard Workflows)** | Orchestrates the segment → classify → extract → match → assemble pipeline |
 | **Amazon S3** | Stores incoming attachment PDFs, intermediate Textract output, per-document extraction results, and final attachment records |
 | **S3 Object Lock** | Compliance-mode retention lock on final claims records to meet CMS and state retention mandates |
@@ -587,7 +587,7 @@ FUNCTION extract_clinical_document(segment, all_pages, clinical_model_id):
     llm_extraction = parse JSON from response_text
 
     // Validate ICD-10 codes on the extracted diagnoses
-    // LLMs extract the concept; Comprehend Medical maps the authoritative code.
+    // LLMs extract the concept; Comprehend Medical maps the high-confidence code.
     icd10_accepted = empty list
     icd10_flagged  = empty list
     IF llm_extraction.diagnoses is not empty:

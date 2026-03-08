@@ -190,11 +190,18 @@ RESULTS_TABLE_NAME = "lab-orders"       # stores completed lab order records
 *The pseudocode notes that Steps 1 and 2 are identical to Recipe 1.2. They're included here for completeness so this file stands on its own. If you've already worked through Recipe 1.2, this is familiar ground.*
 
 ```python
+import logging
 import boto3
 import datetime
 from datetime import timezone
 from decimal import Decimal  # DynamoDB requires Decimal for any numeric value
 from botocore.config import Config
+
+# Configure structured logging for Lambda. In production, use JSON-formatted
+# log output for CloudWatch Logs Insights queries. Never log PHI field values.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# PHI Safety: Never log extracted field values, diagnosis text, or patient identifiers.
 
 # Textract and other AWS services throttle under sustained load. Adaptive retry mode
 # uses exponential backoff with jitter, which handles burst throttling gracefully.
@@ -272,7 +279,7 @@ def submit_extraction_job(
         }
     )
 
-    print(f"Submitted Textract job {job_id} for s3://{bucket}/{key}")
+    logger.info("Submitted Textract job %s for s3://%s/%s", job_id, bucket, key)
     return job_id
 ```
 
@@ -315,7 +322,7 @@ def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
         job_status = status_response["JobStatus"]
 
         if job_status == "IN_PROGRESS":
-            print(f"  Job {job_id} still running (attempt {attempts}/{MAX_POLL_ATTEMPTS})...")
+            logger.info("  Job %s still running (attempt %d/%d)...", job_id, attempts, MAX_POLL_ATTEMPTS)
             time.sleep(POLL_INTERVAL_SECONDS)
         elif job_status == "FAILED":
             raise RuntimeError(
@@ -342,7 +349,7 @@ def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
         if next_token is None:
             break
 
-    print(f"  Retrieved {len(all_blocks)} total blocks")
+    logger.info("  Retrieved %d total blocks", len(all_blocks))
 
     # Build a lookup index. Parsing depends heavily on following cross-references
     # between blocks by ID. O(1) dict lookup beats scanning the flat list.
@@ -477,7 +484,7 @@ def parse_forms_and_checkboxes(
                 "confidence": confidence,
             }
 
-    print(f"  Found {len(text_key_values)} text fields, {len(ordered_tests)} selected tests")
+    logger.info("  Found %d text fields, %d selected tests", len(text_key_values), len(ordered_tests))
     return text_key_values, ordered_tests
 ```
 
@@ -627,7 +634,7 @@ def infer_icd10_codes(diagnosis_text: str | None) -> tuple[list, list]:
                 },
             })
 
-    print(f"  ICD-10 inference: {len(accepted)} accepted, {len(flagged)} flagged")
+    logger.info("  ICD-10 inference: %d accepted, %d flagged", len(accepted), len(flagged))
     return accepted, flagged
 ```
 
@@ -699,7 +706,7 @@ def detect_clinical_entities(text: str | None) -> dict:
     # Log how much we found. Useful for debugging forms where the
     # diagnosis field was blank or Textract misread the field label.
     total = sum(len(v) for v in entities_by_category.values())
-    print(f"  Detected {total} clinical entities across {len(entities_by_category)} categories")
+    logger.info("  Detected %d clinical entities across %d categories", total, len(entities_by_category))
 
     return entities_by_category
 ```
@@ -760,9 +767,9 @@ def check_medical_necessity(icd10_codes: list, ordered_tests: list) -> list:
             })
 
     if flags:
-        print(f"  Medical necessity: {len(flags)} test(s) flagged for review")
+        logger.info("  Medical necessity: %d test(s) flagged for review", len(flags))
     else:
-        print("  Medical necessity: all mapped tests have supporting diagnoses")
+        logger.info("  Medical necessity: all mapped tests have supporting diagnoses")
 
     return flags
 ```
@@ -987,44 +994,44 @@ def process_lab_requisition(
     """
 
     # Step 1: Submit the async Textract job and record the context.
-    print(f"Step 1: Submitting Textract job for s3://{bucket}/{key}")
+    logger.info("Step 1: Submitting Textract job for s3://%s/%s", bucket, key)
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"  Job ID: {job_id}")
+    logger.info("  Job ID: %s", job_id)
 
     # Step 2: Wait for completion and collect all extracted blocks.
     # In production, the second Lambda is triggered by SNS instead of this loop.
-    print("Step 2: Waiting for job completion and retrieving all blocks...")
+    logger.info("Step 2: Waiting for job completion and retrieving all blocks...")
     all_blocks, block_map = retrieve_all_blocks(job_id)
 
     # Step 3: Parse text fields and checkboxes. Checked tests get CPT lookup.
-    print("Step 3: Parsing forms and checkboxes...")
+    logger.info("Step 3: Parsing forms and checkboxes...")
     text_key_values, ordered_tests = parse_forms_and_checkboxes(all_blocks, block_map)
 
     # Step 4: Locate the diagnosis field and extract the clinical text for NLP.
-    print("Step 4: Extracting diagnosis and clinical notes text...")
+    logger.info("Step 4: Extracting diagnosis and clinical notes text...")
     diagnosis_text, notes_text, combined_text = extract_clinical_text(text_key_values)
     if diagnosis_text:
-        print(f"  Diagnosis field extracted, length={len(diagnosis_text)}")
+        logger.info("  Diagnosis field extracted, length=%d", len(diagnosis_text))
     else:
-        print("  No diagnosis field found on this form")
+        logger.info("  No diagnosis field found on this form")
 
     # Step 5: Map diagnosis text to ICD-10-CM codes via Comprehend Medical.
-    print("Step 5: Running ICD-10 inference with Comprehend Medical...")
+    logger.info("Step 5: Running ICD-10 inference with Comprehend Medical...")
     icd10_accepted, icd10_flagged = infer_icd10_codes(diagnosis_text)
 
     # Step 6: Extract broader clinical entities from combined text.
     # DetectEntitiesV2 catches medications, procedures, and semantic traits
     # (negations, family history, etc.) that InferICD10CM doesn't surface.
-    print("Step 6: Detecting clinical entities with Comprehend Medical...")
+    logger.info("Step 6: Detecting clinical entities with Comprehend Medical...")
     clinical_entities = detect_clinical_entities(combined_text)
 
     # Step 7: Cross-reference ordered tests against accepted diagnoses.
     # Flag tests with no supporting diagnosis code for review.
-    print("Step 7: Checking medical necessity...")
+    logger.info("Step 7: Checking medical necessity...")
     necessity_flags = check_medical_necessity(icd10_accepted, ordered_tests)
 
     # Step 8: Normalize field names, gate by confidence, assemble, and store.
-    print("Step 8: Normalizing fields and storing record...")
+    logger.info("Step 8: Normalizing fields and storing record...")
     patient_fields, provider_fields, text_flagged = normalize_fields(text_key_values)
 
     result = assemble_and_store(
@@ -1044,7 +1051,7 @@ def process_lab_requisition(
         + len(result["diagnoses"]["flagged"])
         + len(result["medical_necessity_flags"])
     )
-    print(f"Done. needs_review={result['needs_review']}, total flags={flagged_total}")
+    logger.info("Done. needs_review=%s, total flags=%d", result['needs_review'], flagged_total)
     return result
 
 
@@ -1098,7 +1105,7 @@ def lambda_handler_start(event: dict, context) -> None:
     textract_role_arn = os.environ["TEXTRACT_ROLE_ARN"]
 
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"Submitted job {job_id} for s3://{bucket}/{key}")
+    logger.info("Submitted job %s for s3://%s/%s", job_id, bucket, key)
 
 
 def lambda_handler_process(event: dict, context) -> None:
@@ -1118,7 +1125,7 @@ def lambda_handler_process(event: dict, context) -> None:
         # A FAILED status means Textract couldn't process the document.
         # Log it and move on. In production, move the source PDF to a
         # failed-documents/ prefix and fire a CloudWatch alarm.
-        print(f"Job {job_id} finished with status {job_status}. Skipping processing.")
+        logger.warning("Job %s finished with status %s. Skipping processing.", job_id, job_status)
         return
 
     # Look up the original document path from the jobs tracking table.
@@ -1130,10 +1137,10 @@ def lambda_handler_process(event: dict, context) -> None:
     key    = job_item.get("key")
 
     if not bucket or not key:
-        print(f"No job context found for job_id={job_id}. Cannot process.")
+        logger.warning("No job context found for job_id=%s. Cannot process.", job_id)
         return
 
-    print(f"Processing completed job {job_id} for s3://{bucket}/{key}")
+    logger.info("Processing completed job %s for s3://%s/%s", job_id, bucket, key)
 
     # Steps 2 through 8: retrieve, parse, analyze, and store.
     all_blocks, block_map = retrieve_all_blocks(job_id)
@@ -1162,7 +1169,7 @@ def lambda_handler_process(event: dict, context) -> None:
         text_flagged=text_flagged,
     )
 
-    print(f"Stored record for {key}. needs_review={result['needs_review']}")
+    logger.info("Stored record for %s. needs_review=%s", key, result['needs_review'])
 
     # Production next step: forward flagged records to the review queue.
     # if result["needs_review"]:

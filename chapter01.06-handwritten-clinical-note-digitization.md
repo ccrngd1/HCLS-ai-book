@@ -985,6 +985,8 @@ FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
 
 **Pre-signed URL expiry for A2I review.** Review queues that back up overnight produce stale pre-signed URLs. A 4-hour expiry means a reviewer who opens a task the next morning gets a broken image. Use 48-hour expiry for routine documents, or build a Lambda proxy that validates the reviewer's Cognito session and regenerates the URL on demand.
 
+> From a security perspective, shorter URL expiry (15-30 minutes) reduces the PHI exposure window if a URL is inadvertently forwarded or intercepted. The tradeoff is operational: reviewers who open tasks after a delay see broken images. The recommended approach is a Lambda proxy that validates the reviewer's Cognito session and regenerates the URL on demand, giving you both short TTLs and operational resilience.
+
 **XSS in the A2I worker template.** Vision model output injected into HTML template variables without escaping is an XSS vector. An unusual medication name or clinical abbreviation containing HTML special characters would render as markup. Always use `| escape` on any template variable that comes from model output or document content. The template in Step 6 already does this.
 
 **Bedrock VPC endpoint required.** Bedrock Runtime API calls that include image data (PHI in the form of page images) must route through the `com.amazonaws.{region}.bedrock-runtime` VPC endpoint to stay off the public internet. This endpoint is separate from the standard `com.amazonaws.{region}.bedrock` management endpoint and must be explicitly provisioned.

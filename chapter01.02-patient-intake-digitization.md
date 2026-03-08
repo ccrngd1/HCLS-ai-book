@@ -112,6 +112,8 @@ That's the pattern. The async job-based shape is the key conceptual shift from R
 
 **Amazon S3 for document storage.** Same pattern as Recipe 1.1, with one addition: intake forms contain substantially more PHI than an insurance card. Demographics, Social Security Numbers (last four, at minimum), medical history, medications, allergies, insurance details. The encryption and access control posture needs to be correspondingly tighter. S3 with SSE-KMS, strict bucket policies, and VPC endpoint access only is the right default for documents of this sensitivity.
 
+> **Getting documents to S3 from on-premises systems.** This recipe assumes documents arrive in S3 via upload or event trigger. Many healthcare organizations operate hybrid architectures with on-premises fax servers, EHR document export jobs, or legacy scanning infrastructure. For sustained document pipelines, AWS Direct Connect provides sub-10ms dedicated connectivity. For moderate volumes, Site-to-Site VPN over the internet is adequate. For bulk historical uploads, AWS DataSync handles the transfer. The processing pipeline in this recipe is the same regardless of how documents arrive in S3.
+
 **Amazon DynamoDB for results.** The structured output of a patient intake form is a richer object than an insurance card record, but the access patterns are similar: write once at extraction time, look up later by patient or document key. DynamoDB's flexible schema handles the variable structure well, since not every form has every section filled, and the presence or absence of tables varies by specialty.
 
 ### Architecture Diagram
@@ -142,10 +144,11 @@ flowchart LR
 | **Textract Service Role** | A dedicated IAM role that Textract can assume to publish job completion notifications to your SNS topic. Textract requires this; it cannot use the Lambda execution role. |
 | **BAA** | AWS BAA signed. Intake forms contain extensive PHI: demographics, SSNs, medical history, medications, insurance details. This is not optional. |
 | **Encryption** | S3: SSE-KMS with a customer-managed key. DynamoDB: encryption at rest enabled (default). Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; intake form logs can contain demographics and medical history). All API calls over TLS. |
-| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3, Textract, DynamoDB, and SNS. No traffic to these services should cross the public internet. |
+| **DynamoDB PITR** | Enable DynamoDB Point-in-Time Recovery (PITR) for PHI tables; it provides continuous backup and supports disaster recovery and incident response. |
+| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3, Textract, DynamoDB, SNS, and CloudWatch Logs. The Logs endpoint is easy to forget: without it, Lambda silently drops all log output. No traffic to these services should cross the public internet. Enable VPC Flow Logs for network-level audit trail (CloudTrail covers API calls; Flow Logs cover network traffic, completing the HIPAA audit picture). |
 | **CloudTrail** | Enabled for all Textract, S3, and DynamoDB API calls. Intake forms are HIPAA-covered documents; the audit trail is a compliance requirement. |
 | **Sample Data** | Blank form templates from EHR vendors, filled with synthetic patient data. CMS publishes the [CMS-1500](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) form for layout reference. Never use real PHI in development. |
-| **Cost Estimate** | Textract async analysis (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables). A 3-page intake form costs about $0.20. Lambda and DynamoDB costs are negligible at this scale. |
+| **Cost Estimate** | Textract async analysis (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables). A 3-page intake form costs about $0.20. Lambda and DynamoDB costs are negligible at this scale. The default Textract `StartDocumentAnalysis` concurrent job quota is 25 in most regions; file an AWS Support quota increase request before go-live for high-volume deployments. |
 
 ### Ingredients
 
@@ -508,8 +511,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **Textract job failure handling.** The SNS notification from Textract includes a `Status` field. It will be `SUCCEEDED` or `FAILED`. The pseudocode calls `GetDocumentAnalysis` without checking. If the document is corrupted, exceeds Textract's limits, or hits an internal error, the job status will be `FAILED` and the API call will return an error, not results. Check the status first. On failure: log the error, move the document to a `failed-documents/` S3 prefix, update the job record in DynamoDB, and fire a CloudWatch alarm.
 
 **Full SSN in flagged fields.** The `assemble_and_store` step truncates SSN to last-four digits on the clean path. But if the SSN extraction falls below the confidence threshold, the full value lands in `flagged_fields.extracted_value` and gets written to DynamoDB verbatim. Add a redaction step for known PII fields (SSN, date of birth) before writing flagged records, regardless of which path they took.
-
-**CloudWatch Logs VPC endpoint.** The prerequisites list VPC endpoints for S3, Textract, DynamoDB, and SNS. Missing: `com.amazonaws.region.logs`. A Lambda in a private subnet with no internet gateway and no CloudWatch Logs endpoint silently drops all log output. Your audit trail vanishes. Add it.
 
 **Table-to-section mapping.** The `assemble_and_store` step assigns `tables[0]` as medications and `tables[1]` as allergies based on position. Not all intake forms have the same table order. A production implementation must classify tables by header content (look for column headers like "Medication Name" or "Allergy"), not by position. Positional assignment will silently produce wrong data on forms with a different layout.
 

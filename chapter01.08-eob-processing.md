@@ -185,7 +185,7 @@ flowchart LR
 
 | AWS Service | Role |
 |-------------|------|
-| **Amazon Textract** | Async multi-page extraction: FORMS for claim header fields, TABLES for line item grids |
+| **Amazon Textract** | Async multi-page extraction: FORMS for claim header fields, TABLES for line item grids. The default Textract `StartDocumentAnalysis` concurrent job quota is 25 in most regions. File an AWS Support quota increase request before go-live for high-volume deployments. |
 | **Amazon Bedrock** | LLM schema mapping: receives raw extracted column headers from Textract, returns canonical EOB field mapping |
 | **Amazon Nova Pro / Claude Haiku 4.5** | The models backing the Bedrock schema mapping call; mid-tier capability is sufficient for this structured mapping task |
 | **Amazon S3** | Stores incoming EOB PDFs; encrypted at rest with KMS; prefix-organized by date (and optionally by payer for the high-volume shortcut) |

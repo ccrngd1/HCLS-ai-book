@@ -4,6 +4,8 @@
 
 ---
 
+After the vision-model, dual-path, A2I architecture of Recipe 1.6, this recipe is deliberately focused. Prescription labels are highly structured, printed, single-page documents where the OCR-plus-NLP pipeline is the optimal choice. The goal here is to introduce medication ontology mapping (RxNorm, NDC) before the complexity returns for EOB processing in Recipe 1.8.
+
 ## The Problem
 
 Someone just got out of the hospital. They're home, they're managing a new medication, and their care coordinator needs to know exactly what they're taking. The member opens their health plan's app and sees a prompt: "Upload a photo of your prescription label." They point their phone at the pill bottle, take a picture, and tap submit.
@@ -65,7 +67,7 @@ Here is what you will encounter:
 
 | Abbreviation | Latin Origin | Meaning |
 |---|---|---|
-| QD or QDay | quaque die | once daily |
+| QD or QDay* | quaque die | once daily |
 | BID | bis in die | twice daily |
 | TID | ter in die | three times daily |
 | QID | quater in die | four times daily |
@@ -80,6 +82,8 @@ Here is what you will encounter:
 | CAP | capsula | capsule |
 | GTT | gutta | drop |
 | UD | ut dictum | as directed |
+
+> *ISMP recommends against using "QD" in clinical documentation because it is frequently misread as "QID" (four times daily), a potentially dangerous dosing error. Included here because it still appears on older labels and in legacy pharmacy systems. When building patient-facing output, use "daily" instead of "QD."
 
 A line like "Take 1 TAB PO BID x 14d PRN pain" is perfectly clear to a pharmacist and completely opaque to any downstream system that doesn't know the codebook. Parsing these abbreviations into human-readable, machine-processable text is a necessary step.
 
@@ -140,6 +144,8 @@ The pipeline for prescription label OCR looks like this:
 
 **AWS Lambda for orchestration.** The extraction pipeline is a short-lived sequence of API calls: fetch the image from S3, call Textract, parse the response, normalize fields, decode SIG, call Comprehend Medical, assemble the structured record, write to DynamoDB. Lambda fits this workload exactly: stateless, event-driven, scales with request volume, and you pay only for execution time. For member-facing synchronous use (upload image, get structured record back immediately), put API Gateway in front.
 
+> **API Security.** The API Gateway endpoint accepting label uploads must require authentication (Cognito User Pools or IAM SigV4). Add a usage plan with rate limits and configure WAF rules to block oversized requests and malformed content types. A public API accepting prescription label images without authentication is a PHI ingest endpoint that could be abused for data exfiltration or denial-of-service attacks.
+
 **Amazon DynamoDB for medication record storage.** The access patterns for medication records are point lookups: find all records for this member, find this specific Rx number, find all records with a given NDC. DynamoDB's key-value model handles these well. It's fully managed, encrypts at rest by default, and is on the AWS HIPAA eligible services list.
 
 ### Architecture Diagram
@@ -179,7 +185,7 @@ flowchart LR
 | AWS Service | Role |
 |---|---|
 | **Amazon Textract** | Extracts key-value pairs from the label image using FORMS mode |
-| **Amazon Comprehend Medical** | Identifies MEDICATION entities and returns RxNorm concept IDs via DetectEntitiesV2 |
+| **Amazon Comprehend Medical** | Identifies MEDICATION entities and returns RxNorm concept IDs via DetectEntitiesV2. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before selecting your deployment region. |
 | **Amazon S3** | Stores incoming label images; encrypted at rest with KMS |
 | **AWS Lambda** | Orchestrates the full pipeline: Textract extraction, field normalization, SIG parsing, RxNorm mapping |
 | **Amazon DynamoDB** | Stores structured medication records for downstream lookup |

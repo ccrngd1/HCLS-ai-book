@@ -81,8 +81,15 @@ CONFIDENCE_THRESHOLD = 90.0
 *The pseudocode calls this `extract_card(bucket, key)`. It sends the image to Amazon Textract and requests FORMS extraction, which returns structured key-value pairs rather than raw text.*
 
 ```python
+import logging
 import boto3
 from botocore.config import Config
+
+# Configure structured logging for Lambda. In production, use JSON-formatted
+# log output for CloudWatch Logs Insights queries. Never log PHI field values.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# PHI Safety: Never log extracted field values, diagnosis text, or patient identifiers.
 
 # Textract and other AWS services throttle under sustained load. Adaptive retry mode
 # uses exponential backoff with jitter, which handles burst throttling gracefully.
@@ -447,33 +454,33 @@ def process_card(bucket: str, key: str) -> dict:
     """
 
     # Step 1: Send the image to Textract and get the raw analysis back.
-    print(f"Step 1: Calling Textract on s3://{bucket}/{key}")
+    logger.info("Step 1: Calling Textract on s3://%s/%s", bucket, key)
     textract_response = extract_card(bucket, key)
 
     # Step 2: Walk the Textract response structure and assemble matched
     # label-value pairs with confidence scores.
-    print("Step 2: Parsing key-value pairs from Textract response")
+    logger.info("Step 2: Parsing key-value pairs from Textract response")
     raw_kv = parse_key_value_pairs(textract_response)
-    print(f"  Found {len(raw_kv)} raw key-value pairs")
+    logger.info("  Found %d raw key-value pairs", len(raw_kv))
 
     # Step 3: Map the raw label text to canonical field names.
     # "Member ID", "Mem ID", "Subscriber #" all become "member_id".
-    print("Step 3: Normalizing field names")
+    logger.info("Step 3: Normalizing field names")
     normalized = normalize_fields(raw_kv)
-    print(f"  Matched {len(normalized)} canonical fields")
+    logger.info("  Matched %d canonical fields", len(normalized))
 
     # Step 4: Split fields by confidence. High-confidence fields go straight
     # to the database. Low-confidence fields go to the human review queue.
-    print("Step 4: Applying confidence gate")
+    logger.info("Step 4: Applying confidence gate")
     clean_fields, flagged_fields = flag_low_confidence(normalized)
-    print(f"  Clean: {len(clean_fields)} fields, Flagged: {len(flagged_fields)} fields")
+    logger.info("  Clean: %d fields, Flagged: %d fields", len(clean_fields), len(flagged_fields))
 
     # Step 5: Write the record to DynamoDB with all extracted data,
     # flagged fields, and a needs_review indicator.
-    print("Step 5: Storing result in DynamoDB")
+    logger.info("Step 5: Storing result in DynamoDB")
     result = store_result(key, clean_fields, flagged_fields)
 
-    print(f"Done. needs_review={result['needs_review']}")
+    logger.info("Done. needs_review=%s", result['needs_review'])
     return result
 
 

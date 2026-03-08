@@ -106,7 +106,7 @@ In a pure Comprehend Medical pipeline, a clinical note produces a list of entiti
 
 An LLM reads the page the way a clinical reviewer would. It extracts not just the entities but the evidence structure: what condition is being treated, what was tried, why it wasn't sufficient, what findings support the requested intervention. It produces a clinical summary that a downstream criteria-matching system can actually reason against.
 
-This is the shift: Textract is still the best tool for extracting structure from documents. Comprehend Medical is still the best tool for authoritative ICD-10 and RxNorm code mapping. But the LLM becomes the brain that sits on top of extraction, reading what Textract extracted and producing the clinical reasoning that makes those raw entities useful.
+This is the shift: Textract is still the best tool for extracting structure from documents. Comprehend Medical is still the best tool for high-confidence ICD-10 and RxNorm code mapping. But the LLM becomes the brain that sits on top of extraction, reading what Textract extracted and producing the clinical reasoning that makes those raw entities useful.
 
 ### The Model Tiering Concept
 
@@ -159,7 +159,7 @@ This is the architecture the rest of this recipe implements:
 
 **Comprehend Medical for code validation.** LLMs are good at extracting clinical concepts ("severe osteoarthritis of the right knee," "failed conservative management"). They're less reliable for mapping those concepts to exact ICD-10 or RxNorm codes required for downstream processing. A model might produce "M17.11" from one run and "M17.1" from another, depending on how the text was phrased.
 
-Comprehend Medical, by contrast, is purpose-built for this mapping. Run `InferICD10CM` on the diagnosis text the LLM extracted, and you get authoritative code inferences with confidence scores. This hybrid approach gets you the LLM's contextual understanding for extraction and Comprehend Medical's precision for coding. Each service does what it was designed for.
+Comprehend Medical, by contrast, is purpose-built for this mapping. Run `InferICD10CM` on the diagnosis text the LLM extracted, and you get high-confidence code inferences with confidence scores. This hybrid approach gets you the LLM's contextual understanding for extraction and Comprehend Medical's precision for coding. Each service does what it was designed for.
 
 ### Cost vs. Capability: The Real Numbers
 
@@ -249,7 +249,7 @@ The fan-out collapses from four specialized extractors to two main paths. The cl
 
 **Amazon Bedrock with the Converse API for clinical reasoning.** The same Converse API, different model. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) for clinical notes, physician letters, and imaging reports. Sonnet handles the contextual understanding these pages require: reading a physician letter and extracting not just the diagnosis but the documented evidence of medical necessity, failed prior treatments, and clinical rationale. A single Bedrock call per page replaces what was previously a separate Comprehend Medical DetectEntitiesV2 call plus manual section-targeting logic.
 
-**Amazon Comprehend Medical for ICD-10 code validation.** `InferICD10CM` stays, but its role narrows. Instead of processing raw page text and extracting codes from scratch, it now validates the clinical concepts that the LLM extracted. The LLM extracts "severe osteoarthritis of the right knee with complete joint space loss." Comprehend Medical maps that phrase to ICD-10 codes with confidence scores. This hybrid uses each service where it's strongest: LLM for contextual extraction, purpose-built service for authoritative code mapping.
+**Amazon Comprehend Medical for ICD-10 code validation.** `InferICD10CM` stays, but its role narrows. Instead of processing raw page text and extracting codes from scratch, it now validates the clinical concepts that the LLM extracted. The LLM extracts "severe osteoarthritis of the right knee with complete joint space loss." Comprehend Medical maps that phrase to ICD-10 codes with confidence scores. This hybrid uses each service where it's strongest: LLM for contextual extraction, purpose-built service for high-confidence code mapping.
 
 **AWS Step Functions for pipeline orchestration.** The fan-out structure is simpler now (two paths instead of four to six), but Step Functions still earns its place. Parallel branches for cover sheets and narrative pages, per-branch error handling, and a visual execution graph for debugging production failures. Standard Workflows over Express Workflows for the same reason as before: production support teams need execution history when a 15-page submission fails on page 9.
 
@@ -312,7 +312,7 @@ flowchart TB
 | **Amazon Textract** | Full multi-page document analysis: FORMS, TABLES, and LAYOUT blocks for all pages; OCR foundation for the entire pipeline |
 | **Amazon Bedrock (Nova Lite)** | Page classification via Converse API; cheap, fast, near-deterministic at temperature=0 |
 | **Amazon Bedrock (Claude Sonnet 4.6)** | Clinical reasoning and extraction from narrative pages: clinical notes, physician letters, imaging reports |
-| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code validation on LLM-extracted clinical concepts; authoritative code mapping |
+| **Amazon Comprehend Medical (InferICD10CM)** | ICD-10 code validation on LLM-extracted clinical concepts; high-confidence code mapping. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before selecting your deployment region. |
 | **AWS Step Functions (Standard Workflows)** | Orchestrates the classify → fan-out → assemble pipeline with parallel branches and error handling |
 | **Amazon S3** | Stores incoming prior auth PDFs and Textract output artifacts; encrypted at rest with KMS |
 | **AWS Lambda** | Extraction functions: pa-start, pa-retrieve, pa-classify, pa-extract-cover, pa-extract-clinical, pa-assembler |
@@ -574,7 +574,7 @@ FUNCTION extract_cover_sheet(page_data, block_map, _model_id):
 
 The **clinical page extractor** is where the architecture changes most significantly. Instead of routing page text through Comprehend Medical's entity extraction APIs, a single Bedrock Converse call extracts all clinically relevant information in one shot. The model reads the page as a clinician would: understanding context, recognizing the significance of failed prior treatments, extracting the physician's reasoning, identifying the relevant diagnosis with its clinical basis.
 
-After LLM extraction, we run `InferICD10CM` on the extracted diagnosis text. This is the validation step: the LLM gives us the clinical concepts in natural language, and Comprehend Medical maps them to authoritative ICD-10 codes.
+After LLM extraction, we run `InferICD10CM` on the extracted diagnosis text. This is the validation step: the LLM gives us the clinical concepts in natural language, and Comprehend Medical maps them to high-confidence ICD-10 codes.
 
 ```
 // System prompt for clinical evidence extraction.
@@ -630,10 +630,10 @@ FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
     llm_extraction = parse JSON from response_text
 
     // Use Comprehend Medical InferICD10CM to validate and map the LLM-extracted
-    // diagnosis text to authoritative ICD-10 codes with confidence scores.
+    // diagnosis text to high-confidence ICD-10 codes with confidence scores.
     // This is the code validation step: LLM extracts the concept, Comprehend maps the code.
     // We do this because LLMs can produce inconsistent code strings across runs;
-    // Comprehend Medical is purpose-built for reliable, authoritative code lookup.
+    // Comprehend Medical is purpose-built for reliable, high-confidence code lookup.
     icd10_accepted = empty list
     icd10_flagged  = empty list
 

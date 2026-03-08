@@ -112,10 +112,17 @@ RESULTS_TABLE_NAME = "intake-extractions"  # stores completed extraction records
 *The pseudocode calls this `submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)`. This is the entry point for the first Lambda: an intake form PDF lands in S3, and we submit it to Textract for multi-page analysis. The call returns immediately with a job ID. The actual extraction work happens in the background.*
 
 ```python
+import logging
 import boto3
 import datetime
 from datetime import timezone
 from botocore.config import Config
+
+# Configure structured logging for Lambda. In production, use JSON-formatted
+# log output for CloudWatch Logs Insights queries. Never log PHI field values.
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# PHI Safety: Never log extracted field values, diagnosis text, or patient identifiers.
 
 # Textract and other AWS services throttle under sustained load. Adaptive retry mode
 # uses exponential backoff with jitter, which handles burst throttling gracefully.
@@ -203,7 +210,7 @@ def submit_extraction_job(
         }
     )
 
-    print(f"Submitted Textract job {job_id} for s3://{bucket}/{key}")
+    logger.info("Submitted Textract job %s for s3://%s/%s", job_id, bucket, key)
     return job_id
 ```
 
@@ -250,7 +257,7 @@ def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
         job_status = status_response["JobStatus"]
 
         if job_status == "IN_PROGRESS":
-            print(f"  Job {job_id} still running (attempt {attempts}/{MAX_POLL_ATTEMPTS})...")
+            logger.info("  Job %s still running (attempt %d/%d)...", job_id, attempts, MAX_POLL_ATTEMPTS)
             time.sleep(POLL_INTERVAL_SECONDS)
         elif job_status == "FAILED":
             # Textract couldn't process the document. Common causes: corrupted PDF,
@@ -286,7 +293,7 @@ def retrieve_all_blocks(job_id: str) -> tuple[list, dict]:
         if next_token is None:
             break    # we have everything; exit the loop
 
-    print(f"  Retrieved {len(all_blocks)} total blocks across all result pages")
+    logger.info("  Retrieved %d total blocks across all result pages", len(all_blocks))
 
     # Build a lookup index: block ID -> block data.
     # Nearly every operation in the parsing steps below needs to follow
@@ -529,7 +536,7 @@ def parse_tables(all_blocks: list, block_map: dict) -> list[list[list[str]]]:
 
         tables.append(table_rows)
 
-    print(f"  Extracted {len(tables)} table(s)")
+    logger.info("  Extracted %d table(s)", len(tables))
     return tables
 ```
 
@@ -773,38 +780,38 @@ def process_intake_form(
 
     # Step 1: Submit the async Textract job.
     # The call returns immediately with a job ID. The work happens in the background.
-    print(f"Step 1: Submitting Textract job for s3://{bucket}/{key}")
+    logger.info("Step 1: Submitting Textract job for s3://%s/%s", bucket, key)
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"  Job ID: {job_id}")
+    logger.info("  Job ID: %s", job_id)
 
     # Step 2: Wait for completion (polling) and retrieve all result pages.
     # In production, your second Lambda is triggered by SNS instead of this loop.
-    print("Step 2: Waiting for job completion and retrieving all blocks...")
+    logger.info("Step 2: Waiting for job completion and retrieving all blocks...")
     all_blocks, block_map = retrieve_all_blocks(job_id)
 
     # Determine page count from the PAGE blocks in the response.
     page_count = sum(1 for b in all_blocks if b.get("BlockType") == "PAGE")
-    print(f"  Document had {page_count} page(s)")
+    logger.info("  Document had %d page(s)", page_count)
 
     # Step 3: Parse key-value pairs and checkbox selection elements.
-    print("Step 3: Parsing forms (key-value pairs and checkboxes)...")
+    logger.info("Step 3: Parsing forms (key-value pairs and checkboxes)...")
     text_kv, checkbox_fields = parse_forms(all_blocks, block_map)
-    print(f"  Found {len(text_kv)} text fields, {len(checkbox_fields)} checkbox fields")
+    logger.info("  Found %d text fields, %d checkbox fields", len(text_kv), len(checkbox_fields))
 
     # Step 4: Parse tables (medication lists, allergy grids, procedure history).
-    print("Step 4: Parsing tables...")
+    logger.info("Step 4: Parsing tables...")
     tables = parse_tables(all_blocks, block_map)
 
     # Step 5: Normalize field names and apply confidence gating.
     # Fields below the threshold go to flagged_fields, not into the record.
-    print("Step 5: Normalizing fields and applying confidence gate...")
+    logger.info("Step 5: Normalizing fields and applying confidence gate...")
     clean_fields, clean_checkboxes, tables, flagged = normalize_and_gate(
         text_kv, checkbox_fields, tables
     )
-    print(f"  Clean fields: {len(clean_fields)}, Flagged: {len(flagged)}")
+    logger.info("  Clean fields: %d, Flagged: %d", len(clean_fields), len(flagged))
 
     # Step 6: Assemble the structured record and write it to DynamoDB.
-    print("Step 6: Assembling and storing record...")
+    logger.info("Step 6: Assembling and storing record...")
     result = assemble_and_store(
         document_key=key,
         page_count=page_count,
@@ -814,7 +821,7 @@ def process_intake_form(
         flagged=flagged,
     )
 
-    print(f"Done. needs_review={result['needs_review']}, flagged_fields={len(result['flagged_fields'])}")
+    logger.info("Done. needs_review=%s, flagged_fields=%d", result['needs_review'], len(result['flagged_fields']))
     return result
 
 
@@ -869,7 +876,7 @@ def lambda_handler_start(event: dict, context) -> None:
     textract_role_arn = os.environ["TEXTRACT_ROLE_ARN"]
 
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
-    print(f"Submitted job {job_id} for s3://{bucket}/{key}")
+    logger.info("Submitted job %s for s3://%s/%s", job_id, bucket, key)
 
 
 def lambda_handler_process(event: dict, context) -> None:
@@ -887,7 +894,7 @@ def lambda_handler_process(event: dict, context) -> None:
     job_status = sns_message["Status"]   # "SUCCEEDED" or "FAILED"
 
     if job_status != "SUCCEEDED":
-        print(f"Job {job_id} finished with status {job_status}. Skipping processing.")
+        logger.warning("Job %s finished with status %s. Skipping processing.", job_id, job_status)
         return
 
     # Look up the original document path from the jobs tracking table.
@@ -899,11 +906,11 @@ def lambda_handler_process(event: dict, context) -> None:
     key = job_item.get("key")
 
     if not bucket or not key:
-        print(f"No job context found for job_id={job_id}. Cannot process.")
+        logger.warning("No job context found for job_id=%s. Cannot process.", job_id)
         return
 
     # Run steps 2 through 6. Step 1 already happened in the first Lambda.
-    print(f"Processing completed job {job_id} for s3://{bucket}/{key}")
+    logger.info("Processing completed job %s for s3://%s/%s", job_id, bucket, key)
 
     all_blocks, block_map = retrieve_all_blocks(job_id)
     page_count = sum(1 for b in all_blocks if b.get("BlockType") == "PAGE")
@@ -922,7 +929,7 @@ def lambda_handler_process(event: dict, context) -> None:
         flagged=flagged,
     )
 
-    print(f"Stored record for {key}. needs_review={result['needs_review']}")
+    logger.info("Stored record for %s. needs_review=%s", key, result['needs_review'])
     # Production next step: if result["needs_review"], send the document_key
     # to your SQS review queue for Recipe 1.6 to pick up.
 ```

@@ -240,7 +240,7 @@ flowchart TB
 | AWS Service | Role |
 |------------|------|
 | **Amazon Textract (AnalyzeDocument)** | Synchronous form field extraction (FORMS) and signature detection (SIGNATURES) |
-| **Amazon S3** | Stores incoming request PDFs encrypted at rest with KMS; source for Lambda trigger |
+| **Amazon S3** | Stores incoming request PDFs encrypted at rest with KMS; source for Lambda trigger. Medical records authorization documents are subject to HIPAA 6-year retention requirements (longer under some state laws). Configure S3 Object Lock on the authorizations bucket with an appropriate retention period. See Recipe 1.5 for the full Object Lock implementation pattern. |
 | **Amazon Bedrock (Claude Sonnet)** | HIPAA authorization consistency checking: reads full authorization text, flags date conflicts, ambiguous scope, and missing elements not captured in structured fields |
 | **Amazon Bedrock (Nova Pro)** | Request type classification: reads request narrative, determines routing category, handles free-text requests that keyword matching fails on |
 | **AWS Lambda (rr-extract)** | Calls Textract, parses KEY_VALUE_SET blocks, extracts SIGNATURE blocks, returns normalized fields and signature data |

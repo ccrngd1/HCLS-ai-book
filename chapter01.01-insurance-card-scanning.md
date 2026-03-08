@@ -125,7 +125,8 @@ flowchart LR
 | **IAM Permissions** | `textract:AnalyzeDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem` |
 | **BAA** | AWS BAA signed (required: insurance cards contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs can contain extracted field values); all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Textract, DynamoDB |
+| **DynamoDB PITR** | Enable DynamoDB Point-in-Time Recovery (PITR) for PHI tables; it provides continuous backup and supports disaster recovery and incident response. |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Textract, DynamoDB, and CloudWatch Logs. The Logs endpoint is easy to forget: a Lambda in a private subnet without it silently drops all log output. Enable VPC Flow Logs for network-level audit trail (CloudTrail covers API calls; Flow Logs cover network traffic, completing the HIPAA audit picture). |
 | **CloudTrail** | Enabled: log all Textract and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic insurance card images. CMS provides [sample Medicare cards](https://www.cms.gov/medicare/new-medicare-card) for layout reference. Never use real member cards in dev. |
 | **Cost Estimate** | Textract AnalyzeDocument (FORMS): $0.05 per page. At one page per card, that's $0.05/card. Lambda and DynamoDB costs are negligible at this scale. |
@@ -348,8 +349,6 @@ FUNCTION store_result(image_key, fields, flagged):
 The pseudocode and architecture above demonstrate the pattern. Deploying this to a clinic requires addressing several gaps that are intentionally outside the scope of a cookbook recipe. These are the ones that will bite you:
 
 **Dead Letter Queue.** Lambda invocations from S3 events are asynchronous. If the function fails (Textract outage, DynamoDB unavailable, uncaught exception), the event retries up to three times and then silently disappears. In a healthcare intake pipeline, a silently lost document means a patient record gap with no visible signal. Configure an SQS dead letter queue on each Lambda and set a CloudWatch alarm on the queue depth.
-
-**CloudWatch Logs VPC endpoint.** The prerequisites recommend VPC endpoints for S3, Textract, and DynamoDB. Missing from that list: `com.amazonaws.region.logs`. A Lambda running in a private subnet with no internet gateway and no CloudWatch Logs endpoint cannot write any log output. Your audit trail, error visibility, and debugging information all silently vanish. Add it.
 
 **IAM resource scoping.** The prerequisites list the right API actions, but most readers will scope them to `*` (all resources). Don't. Restrict `s3:GetObject` to `arn:aws:s3:::cards-inbox/*`, `dynamodb:PutItem` to your specific table ARN, and `kms:Decrypt` to your specific key ARN. Least privilege means least privilege, not "least actions."
 

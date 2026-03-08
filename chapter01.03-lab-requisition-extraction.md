@@ -142,7 +142,7 @@ flowchart LR
 | **IAM Permissions** | All permissions from Recipe 1.2, plus: `comprehend:DetectEntitiesV2`, `comprehend:InferICD10CM` |
 | **BAA** | AWS BAA signed. Comprehend Medical is a HIPAA-eligible service under the same account-level BAA as Textract. No additional BAA action required beyond the account-level agreement already in place. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled (default). Lambda CloudWatch log groups: configure KMS encryption (Lambda does not do this automatically; logs may contain clinical text fragments). All API calls over TLS. Clinical text sent to Comprehend Medical is not retained by AWS. |
-| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. |
+| **VPC** | Production: both Lambdas in a VPC with VPC endpoints for S3 (gateway endpoint, free), Textract, DynamoDB, SNS, Comprehend Medical, CloudWatch Logs, and KMS. The KMS endpoint is required because S3 objects encrypted with SSE-KMS need a KMS call to decrypt; without it, Lambda in a private subnet fails with an opaque AccessDeniedException on the first document read. Enable VPC Flow Logs for network-level audit trail. CloudTrail covers API calls; Flow Logs cover network traffic, completing the HIPAA audit picture. |
 | **CloudTrail** | Enabled for all Textract, Comprehend Medical, S3, and DynamoDB API calls. Lab requisitions are PHI-containing clinical documents; the full audit trail is a compliance requirement. |
 | **Sample Data** | Quest Diagnostics and LabCorp publish sample requisition forms on their provider portals. Create synthetic versions with realistic patient names, DOBs, and ICD-10 codes. CMS provides ICD-10-CM code lookup tools at [ICD10Data.com](https://www.icd10data.com/) for reference. Never use real PHI in development. |
 | **Cost Estimate** | Textract async (FORMS + TABLES): $0.065 per page ($0.05 forms + $0.015 tables), roughly $0.065 for a one-page lab req. Comprehend Medical InferICD10CM: $0.01 per 100 characters, so a 200-character diagnosis field costs ~$0.02. DetectEntitiesV2: $0.01 per 100 characters, similar range. Total per form: approximately $0.10-0.15 depending on text length. |
@@ -152,13 +152,13 @@ flowchart LR
 | AWS Service | Role |
 |------------|------|
 | **Amazon Textract** | Async multi-page document analysis: extracts key-value pairs (patient/provider fields), tables, and checkbox selections (ordered tests) |
-| **Amazon Comprehend Medical (InferICD10CM)** | Takes diagnosis free text and returns ranked ICD-10-CM code candidates with confidence scores |
+| **Amazon Comprehend Medical (InferICD10CM)** | Takes diagnosis free text and returns ranked ICD-10-CM code candidates with confidence scores. Comprehend Medical is available in a subset of AWS regions. Verify your target region supports it before committing to this architecture. See the Comprehend Medical endpoints documentation for current availability. |
 | **Amazon Comprehend Medical (DetectEntitiesV2)** | Extracts clinical entities (medications, diagnoses, procedures, providers) from any free-text field on the form |
-| **Amazon S3** | Stores incoming faxed lab requisitions (PDF); encrypted at rest with KMS |
+| **Amazon S3** | Stores incoming faxed lab requisitions (PDF); encrypted at rest with KMS. Lab requisition records may be subject to HIPAA 6-year documentation retention and payer-specific claims substantiation requirements. For production deployments, configure S3 Object Lock (governance mode for development, compliance mode for production) on the requisitions bucket with an appropriate retention period. See Recipe 1.5 for the full Object Lock implementation pattern. |
 | **AWS Lambda (lab-req-start)** | Triggered by S3 upload; submits the Textract async job and exits |
 | **AWS Lambda (lab-req-process)** | Triggered by SNS notification; retrieves Textract results, calls Comprehend Medical, assembles structured record |
 | **Amazon SNS** | Receives Textract job completion signals; triggers the processing Lambda |
-| **Amazon DynamoDB** | Stores structured lab order records; PHI encrypted at rest |
+| **Amazon DynamoDB** | Stores structured lab order records; PHI encrypted at rest. Enable DynamoDB Point-in-Time Recovery (PITR) for tables storing PHI. PITR provides continuous backup and supports disaster recovery and incident response requirements under HIPAA. |
 | **AWS KMS** | Customer-managed encryption keys for S3 and DynamoDB |
 | **Amazon CloudWatch** | Logs, metrics, and alarms for job failures, Comprehend Medical errors, and confidence distributions |
 

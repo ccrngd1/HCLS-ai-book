@@ -47,6 +47,69 @@ Before diving into these recipes, make sure you have:
 
 ---
 
+## Chapter Architecture
+
+How the 10 recipes relate to each other and where PHI flows between them:
+
+```
+                            Chapter 1: Document Intelligence
+                            ================================
+
+    SIMPLE                     MODERATE                        COMPLEX
+    (Textract core)            (+ LLM reasoning)               (multi-stage pipelines)
+
+    ┌─────────────┐
+    │  1.1 Ins.   │─ confidence gating ─┐
+    │  Card Scan  │                     │
+    └─────────────┘                     │
+    ┌─────────────┐                     │    ┌──────────────────┐
+    │  1.2 Patient│─ confidence gating ─┼───>│  1.6 Handwritten │
+    │  Intake     │  (async Textract)   │    │  Notes (A2I      │
+    └─────────────┘                     │    │  human review)   │
+    ┌─────────────┐                     │    └──────────────────┘
+    │  1.3 Lab    │─ Comprehend Medical ┘              │
+    │  Requisition│  (ICD-10 codes)          ┌─────────┘
+    └─────────────┘                          │  (shared patterns)
+           │                                 v
+           │ (code validation        ┌──────────────────┐
+           │  pattern reused)        │  1.4 Prior Auth  │──> Ch.2 Clinical
+           │                         │  (LLM + tiering) │    Criteria
+           └────────────────────────>└──────────────────┘
+                                             │
+    ┌─────────────┐                          │ (fan-out pattern)
+    │  1.7 Rx     │                          v
+    │  Label OCR  │              ┌──────────────────────┐
+    │  (RxNorm)   │              │  1.5 Claims          │──> Ch.3 Claims
+    └─────────────┘              │  Attachment (boundary │    Adjudication
+           │                     │  detect + matching)   │
+           │                     └──────────────────────┘
+           │
+           │ (medication         ┌──────────────────┐
+           │  reconciliation)    │  1.8 EOB         │──> Ch.4 Payment
+           └────────────────────>│  Processing      │    Integrity
+                                 │  (payer profiles)│
+                                 └──────────────────┘
+                                 ┌──────────────────┐
+                                 │  1.9 Med Records │──> Ch.5 Member
+                                 │  Request (HIPAA  │    Access
+                                 │  auth validation)│
+                                 └──────────────────┘
+                                 ┌──────────────────────┐
+                                 │  1.10 Chart Migration │
+                                 │  (batch inference,    │──> HealthLake
+                                 │  FHIR R4, capstone)   │
+                                 └──────────────────────┘
+
+    Shared infrastructure across all recipes:
+    S3 (SSE-KMS) + DynamoDB + CloudTrail + VPC endpoints + Lambda
+
+    Technology progression:
+    Textract only ──> + Comprehend Medical ──> + Bedrock LLM ──> + Vision models
+       (1.1-1.2)         (1.3, 1.7)              (1.4-1.5)        (1.6, 1.10)
+```
+
+Each recipe's "Related Recipes" section identifies specific dependencies. Recipes 1.1 and 1.2 establish foundational patterns (confidence gating, async processing, HIPAA infrastructure) that every subsequent recipe builds on.
+
 ## Recipes
 
 | # | Recipe | Complexity | Phase |
