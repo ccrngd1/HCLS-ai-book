@@ -1,2037 +1,1463 @@
-# Recipe 1.10: Python Implementation Example
+# Recipe 1.10: Python Example: Historical Chart Migration
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 1.10. It shows how you could translate those concepts into working Python using boto3. It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire into a live migration program on Monday morning. A starting point, not a destination.
+> **This is an illustrative sample, not a production-ready implementation.**
 >
-> This is the capstone companion file for Chapter 1. Every pattern from Recipes 1.1 through 1.6 shows up here in some form. The image preprocessing is from Recipe 1.6. The boundary detection and document segmentation code extends Recipe 1.5. The handwriting confidence tiering and A2I submission follows Recipe 1.6 exactly. If you haven't read those companions yet, start there; especially Recipe 1.5 for segmentation and Recipe 1.6 for the A2I plumbing. This file builds directly on top of them.
->
-> What is new in this recipe is the outer-loop orchestration (AWS Batch manifest and job submission), the extended chart document taxonomy, the quality scoring framework that runs after extraction, the FHIR R4 resource mapping, and the HealthLake bulk import step. Those are the additions. Everything else is a pattern you have already seen assembled in a new configuration.
->
-> In production, the outer loop is an AWS Batch array job distributing millions of charts across a Spot instance fleet. The inner loop is a Step Functions Standard Workflow for each chart. This script runs all ten steps sequentially in a single process so you can trace the logic from manifest generation through S3 archival without standing up any of that infrastructure first. The logic is the same; only the execution model differs.
+> The code below demonstrates the patterns from Recipe 1.10 using boto3. It walks through
+> Bedrock batch inference setup, prompt caching, vision model calls, FHIR bundle assembly,
+> and HealthLake import. Use it to understand the API surface and data structures. Treat it
+> as a starting point, not a destination. The "Gap to Production" section at the end lists
+> what you'd need to add before deploying this in a real migration program.
 
 ---
 
 ## Setup
 
-You will need the AWS SDK for Python and a handful of supporting libraries:
-
 ```bash
-pip install boto3 Pillow
-
-> **Python version note:** This code uses union type syntax (`str | None`) and lowercase generics (`list[str]`) that require Python 3.10+. Amazon Linux 2 Lambda runtimes ship Python 3.8. Use the `python3.12` Lambda runtime, or replace union syntax with `Optional[str]` from `typing` if you need 3.8/3.9 compatibility.
+pip install boto3 botocore pillow pypdf2 python-dateutil
 ```
 
-For production-quality image deskewing, also install:
-
-```bash
-pip install deskew opencv-python-headless
+**IAM permissions needed (Lambda execution role or Batch job role):**
 ```
-
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `textract:StartDocumentAnalysis`
-- `textract:GetDocumentAnalysis`
-- `comprehendmedical:DetectEntitiesV2`
-- `comprehendmedical:InferICD10CM`
-- `comprehendmedical:InferRxNorm`
-- `sagemaker:StartHumanLoop`
-- `sagemaker:DescribeHumanLoop`
-- `batch:SubmitJob`
-- `batch:DescribeJobs`
-- `healthlake:StartFHIRImportJob`
-- `healthlake:DescribeFHIRImportJob`
-- `s3:GetObject`
-- `s3:PutObject`
-- `s3:PutObjectTagging`
-- `dynamodb:PutItem`
-- `dynamodb:GetItem`
-- `dynamodb:UpdateItem`
-- `dynamodb:Query`
-- `dynamodb:BatchWriteItem`
-- `states:StartExecution`
-- `sns:Publish`
-
-The A2I runtime client uses the `sagemaker-a2i-runtime` service endpoint, not the main `sagemaker` endpoint. Two different boto3 clients. Easy to miss.
+bedrock:InvokeModel
+bedrock:CreateModelInvocationJob
+bedrock:GetModelInvocationJob
+bedrock:ListModelInvocationJobs
+textract:StartDocumentTextDetection
+textract:GetDocumentTextDetection
+comprehendmedical:InferICD10CM
+comprehendmedical:InferRxNorm
+healthlake:StartFHIRImportJob
+healthlake:DescribeFHIRImportJob
+s3:GetObject
+s3:PutObject
+s3:CopyObject
+s3:DeleteObject
+dynamodb:GetItem
+dynamodb:PutItem
+dynamodb:UpdateItem
+dynamodb:Query
+```
 
 ---
 
 ## Configuration and Constants
 
-Everything that is really configuration rather than logic lives at the top. The document taxonomy, keyword signatures, quality weights, and FHIR mappings are living documents. They grow as you encounter new chart formats and new scanning vendor outputs. Keeping them here rather than buried inside functions makes them easy to update without touching logic.
-
 ```python
 import boto3
-from botocore.exceptions import ClientError
-import csv
-import datetime
-import io
 import json
+import base64
 import re
 import time
 import uuid
-from datetime import timezone
+import logging
 from decimal import Decimal
+from datetime import datetime, timezone
+from typing import Optional
+from botocore.config import Config
 
-from PIL import Image, ImageOps, ImageFilter
+# ---------------------------------------------------------------------------------
+# Logging setup: structured, PHI-safe
+# CRITICAL: Never log extracted text, LLM response content, or reasoning strings.
+# Lambda stdout goes to CloudWatch Logs. If CloudWatch log groups are not encrypted
+# with KMS (Lambda does not do this automatically), any clinical content in logs
+# is uncontrolled PHI. Log only structural metadata.
+# ---------------------------------------------------------------------------------
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-# -----------------------------------------------------------------------
-# S3 bucket names
-# -----------------------------------------------------------------------
-CHARTS_RAW_BUCKET       = "charts-raw"         # scanning vendor drops source PDFs here
-CHARTS_PROCESSED_BUCKET = "charts-processed"   # pre-processed PDFs written here
-TEXTRACT_OUTPUT_BUCKET  = "textract-output"     # raw Textract block JSON lives here
-FHIR_OUTPUT_BUCKET      = "fhir-output"         # FHIR NDJSON bundles and HL import manifests
+# ---------------------------------------------------------------------------------
+# Model IDs: cross-region inference profiles for capacity routing
+#
+# The "us." prefix routes across us-east-1, us-east-2, and us-west-2 automatically.
+# AWS routes your API call through the VPC endpoint in your region; PHI does not
+# traverse the public internet even when the backend processes in another region.
+#
+# PRODUCTION NOTE: Cross-region inference profile IDs can be updated by AWS to
+# point to new underlying model versions. For a migration program running over
+# months, pin to explicit foundation model ARNs for consistent behavior:
+#   arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0
+# Check the Bedrock Model IDs documentation for your region's ARN format.
+# ---------------------------------------------------------------------------------
+MODEL_TIER1_CLASSIFY = "us.amazon.nova-lite-v1:0"
+MODEL_TIER2_EXTRACT  = "us.amazon.nova-pro-v1:0"
+MODEL_TIER3_SONNET   = "us.anthropic.claude-sonnet-4-6-v1"
+MODEL_TIER4_OPUS     = "us.anthropic.claude-opus-4-6-v1"
 
-# -----------------------------------------------------------------------
-# DynamoDB table names
-# -----------------------------------------------------------------------
-MIGRATION_TABLE = "migration-tracking"   # per-chart state, quality scores, job IDs
+# Confidence thresholds for tier routing
+TEXTRACT_VISION_THRESHOLD = 0.65   # below this, route to vision model
+TEXTRACT_OPUS_THRESHOLD   = 0.45   # below this, escalate to Tier 4 Opus
 
-# -----------------------------------------------------------------------
-# A2I and FHIR configuration
-# -----------------------------------------------------------------------
-A2I_FLOW_ARN              = "arn:aws:sagemaker:us-east-1:ACCOUNT:flow-definition/chart-review"
-HEALTHLAKE_DATASTORE_ID   = ""    # set from your HealthLake data store
+# S3 buckets
+BUCKET_CHARTS_RAW     = "charts-raw"
+BUCKET_CHARTS_PROCESSED = "charts-processed"
+BUCKET_TEXTRACT_OUTPUT = "textract-output"
+BUCKET_BATCH_INFERENCE = "batch-inference"
+BUCKET_FHIR_OUTPUT     = "fhir-output"
+BUCKET_FHIR_STAGING    = "fhir-import-staging"
+
+# DynamoDB
+TABLE_MIGRATION = "migration-tracking"
+
+# ARNs (replace with your actual values)
+KMS_KEY_ARN             = "arn:aws:kms:us-east-1:ACCOUNT:key/KEY-ID"
+BEDROCK_BATCH_ROLE_ARN  = "arn:aws:iam::ACCOUNT:role/bedrock-batch-inference-role"
 HEALTHLAKE_IMPORT_ROLE_ARN = "arn:aws:iam::ACCOUNT:role/healthlake-import-role"
-KMS_KEY_ARN               = "arn:aws:kms:us-east-1:ACCOUNT:key/YOUR-KEY-ID"
-
-# -----------------------------------------------------------------------
-# AWS Batch configuration
-# -----------------------------------------------------------------------
-BATCH_JOB_QUEUE      = "chart-migration-queue"
-BATCH_JOB_DEFINITION = "chart-migration-job-def"
-
-# -----------------------------------------------------------------------
-# Handwriting confidence thresholds (from Recipe 1.6)
-# Calibrate these after your first 500-chart sample run.
-# These are starting points.
-# -----------------------------------------------------------------------
-HIGH_CONFIDENCE_THRESHOLD   = 0.85   # auto-accept; no A2I review needed
-LOW_CONFIDENCE_THRESHOLD    = 0.60   # below this: send to A2I for human review
-# Pages between 0.60 and 0.85: extract but mark as unconfirmed
-
-# -----------------------------------------------------------------------
-# Comprehend Medical limits
-# -----------------------------------------------------------------------
-COMPREHEND_MAX_CHARS = 18000   # stay well below the 20,000 char API limit
-ICD10_MIN_CONFIDENCE = 0.80    # ICD-10 codes below this go to the flagged list
-
-# -----------------------------------------------------------------------
-# Quality scoring weights (must sum to 1.0)
-# -----------------------------------------------------------------------
-QUALITY_WEIGHTS = {
-    "ocr_confidence":         0.30,
-    "class_confidence":       0.25,
-    "extraction_completeness": 0.25,
-    "handwriting_review_rate": 0.20,
-}
-
-# -----------------------------------------------------------------------
-# Minimum content expected per document type for completeness scoring
-# -----------------------------------------------------------------------
-EXPECTED_CONTENT = {
-    "progress_note":       ["entities", "document_date"],
-    "lab_result":          ["entities", "document_date"],
-    "radiology_report":    ["entities", "document_date"],
-    "discharge_summary":   ["icd10_accepted", "document_date"],
-    "operative_report":    ["icd10_accepted", "document_date"],
-    "medication_list":     ["entities"],
-    "immunization_record": ["entities", "document_date"],
-}
-
-# -----------------------------------------------------------------------
-# Document boundary detection: title line patterns
-# Extends the pattern list from Recipe 1.5 with chart-specific document types.
-# When you encounter a new document type that the segmenter consistently
-# misses, add its title variants here first. That is usually all it takes.
-# -----------------------------------------------------------------------
-CHART_DOCUMENT_TITLE_PATTERNS = [
-    # Clinical notes
-    "progress note",        "office visit",          "follow-up visit",
-    "return visit",         "new patient visit",     "annual exam",
-    "history and physical", "h&p",
-    # Reports
-    "operative report",     "operative note",        "op report",
-    "pathology report",     "histology report",
-    "radiology report",     "x-ray report",          "mri report",
-    "ct report",            "ultrasound report",
-    "ecg report",           "ekg report",            "echocardiogram",
-    # Hospital-based documents
-    "discharge summary",    "discharge instructions",
-    "hospital admission",   "inpatient note",
-    "emergency department", "er visit",              "urgent care",
-    # Specialty notes
-    "referral letter",      "consultation report",   "consultant report",
-    "physical therapy",     "occupational therapy",  "speech therapy",
-    # Lists and summaries
-    "problem list",         "medication list",       "active medications",
-    "allergy list",         "drug allergies",
-    "immunization record",  "vaccination record",    "vaccine history",
-]
-
-# -----------------------------------------------------------------------
-# Document type classification signatures
-# Each entry: keywords to match against the full segment text, and the
-# minimum number of matches required to accept the classification.
-# -----------------------------------------------------------------------
-CHART_DOC_TYPE_SIGNATURES = {
-    "progress_note": {
-        "keywords": [
-            "progress note", "office visit", "follow-up", "soap",
-            "subjective", "objective", "assessment", "plan",
-            "chief complaint", "history of present illness",
-            "review of systems", "physical examination",
-            "impression", "return in",
-        ],
-        "min_matches": 3,
-        "table_bonus": 0,
-    },
-    "history_and_physical": {
-        "keywords": [
-            "history and physical", "h&p", "chief complaint",
-            "past medical history", "surgical history", "family history",
-            "social history", "medications", "allergies",
-            "review of systems", "physical exam", "assessment and plan",
-        ],
-        "min_matches": 4,
-        "table_bonus": 0,
-    },
-    "lab_result": {
-        "keywords": [
-            "laboratory", "lab results", "specimen", "collected",
-            "reference range", "result", "units", "flag",
-            "complete blood count", "metabolic panel", "urinalysis",
-            "culture", "sensitivity", "normal range",
-        ],
-        "min_matches": 3,
-        "table_bonus": 2,   # lab results are almost always table-heavy
-    },
-    "radiology_report": {
-        "keywords": [
-            "radiology", "radiologist", "imaging", "impression",
-            "findings", "technique", "clinical history",
-            "x-ray", "mri", "ct scan", "ultrasound",
-            "views", "comparison",
-        ],
-        "min_matches": 3,
-        "table_bonus": 0,
-    },
-    "discharge_summary": {
-        "keywords": [
-            "discharge summary", "admitting diagnosis",
-            "discharge diagnosis", "hospital course",
-            "discharge medications", "follow-up instructions",
-            "length of stay", "attending physician",
-            "discharge condition",
-        ],
-        "min_matches": 4,
-        "table_bonus": 0,
-    },
-    "operative_report": {
-        "keywords": [
-            "operative report", "preoperative diagnosis",
-            "postoperative diagnosis", "procedure performed",
-            "anesthesia", "estimated blood loss",
-            "operative technique", "findings", "specimen",
-        ],
-        "min_matches": 3,
-        "table_bonus": 0,
-    },
-    "consultation_report": {
-        "keywords": [
-            "consultation", "consultant", "referred by",
-            "reason for consultation", "clinical summary",
-            "recommendations", "thank you for referring",
-            "your patient",
-        ],
-        "min_matches": 3,
-        "table_bonus": 0,
-    },
-    "immunization_record": {
-        "keywords": [
-            "immunization", "vaccine", "vaccination",
-            "administered", "lot number", "manufacturer",
-            "injection site", "influenza", "tetanus", "mmr",
-        ],
-        "min_matches": 2,
-        "table_bonus": 1,
-    },
-    "problem_list": {
-        "keywords": [
-            "problem list", "active problems", "medical problems",
-            "chronic conditions", "diagnosis list",
-            "onset date", "resolved", "active",
-        ],
-        "min_matches": 2,
-        "table_bonus": 0,
-    },
-    "medication_list": {
-        "keywords": [
-            "medication list", "current medications", "active medications",
-            "prescription", "dose", "frequency", "refills",
-            "sig:", "dispense", "pharmacy",
-        ],
-        "min_matches": 3,
-        "table_bonus": 0,
-    },
-}
-
-# -----------------------------------------------------------------------
-# FHIR LOINC codes for DocumentReference type by document category
-# -----------------------------------------------------------------------
-LOINC_BY_DOC_TYPE = {
-    "progress_note":       ("11506-3", "Progress note"),
-    "history_and_physical": ("34117-2", "History and physical note"),
-    "lab_result":          ("11502-2", "Laboratory report"),
-    "radiology_report":    ("18748-4", "Diagnostic imaging study"),
-    "discharge_summary":   ("18842-5", "Discharge summary"),
-    "operative_report":    ("11504-8", "Surgical operation note"),
-    "consultation_report": ("11488-4", "Consult note"),
-    "immunization_record": ("11369-6", "Immunization activity"),
-    "problem_list":        ("11450-4", "Problem list"),
-    "medication_list":     ("29549-3", "Medication administered"),
-    "unclassified":        ("34133-9", "Summarization of episode note"),
-}
-
-# -----------------------------------------------------------------------
-# CVX codes for common vaccines (subset for illustration)
-# Expand from the CDC CVX code table for production use.
-# -----------------------------------------------------------------------
-CVX_LOOKUP = {
-    "influenza":  "141",
-    "flu":        "141",
-    "tetanus":    "115",
-    "tdap":       "115",
-    "mmr":        "03",
-    "varicella":  "21",
-    "chickenpox": "21",
-    "hepatitis b": "08",
-    "hep b":      "08",
-    "pneumococcal": "33",
-    "pneumovax":  "33",
-    "covid":      "212",
-    "covid-19":   "212",
-}
-
-# -----------------------------------------------------------------------
-# AWS clients (module-level for Lambda warm container reuse)
-# -----------------------------------------------------------------------
-textract_client    = boto3.client("textract")
-comprehend_client  = boto3.client("comprehendmedical")
-s3_client          = boto3.client("s3")
-dynamodb           = boto3.resource("dynamodb")
-batch_client       = boto3.client("batch")
-sfn_client         = boto3.client("stepfunctions")
-healthlake_client  = boto3.client("healthlake")
-a2i_client         = boto3.client("sagemaker-a2i-runtime")
-```
-
----
-
-## Helper Functions
-
-Shared utilities used across multiple steps. The boundary detection helpers (`extract_header_region`, `compute_jaccard_similarity`, `extract_primary_date_from_text`) are carried forward from Recipe 1.5 and are reproduced here for completeness.
-
-```python
-# Date format patterns (in preference order: more specific first)
-_DATE_FORMATS = [
-    "%m/%d/%Y",
-    "%m/%d/%y",
-    "%Y-%m-%d",
-    "%B %d, %Y",
-    "%b %d, %Y",
-    "%B %d %Y",
-    "%b %d %Y",
-]
-
-_DATE_PATTERNS = [
-    r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b",
-    r"\b(\d{4}-\d{2}-\d{2})\b",
-    r"\b((?:January|February|March|April|May|June|July|August|"
-        r"September|October|November|December)"
-        r"\s+\d{1,2},?\s+\d{4})\b",
-    r"\b((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
-        r"\.?\s+\d{1,2},?\s+\d{4})\b",
-]
+HEALTHLAKE_DATASTORE_ID = "DATASTORE-ID"
+TEXTRACT_SNS_TOPIC_ARN  = "arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs"
+TEXTRACT_SNS_ROLE_ARN   = "arn:aws:iam::ACCOUNT:role/textract-sns-role"
 
 
-def extract_primary_date_from_text(text: str) -> datetime.date | None:
+# ---------------------------------------------------------------------------------
+# Boto3 client factory with retry configuration
+#
+# ALWAYS configure retries on clients that call Bedrock or Comprehend Medical.
+# ThrottlingException is not an edge case at healthcare volume. It is expected.
+# "adaptive" mode implements exponential backoff with jitter and is the right
+# default for any Bedrock-calling Lambda or Batch container.
+# ---------------------------------------------------------------------------------
+_retry_config = Config(
+    retries={"max_attempts": 3, "mode": "adaptive"}
+)
+
+def get_bedrock_client(region: str = "us-east-1"):
+    return boto3.client("bedrock-runtime", region_name=region, config=_retry_config)
+
+def get_bedrock_control_client(region: str = "us-east-1"):
+    # For CreateModelInvocationJob (batch inference control plane)
+    return boto3.client("bedrock", region_name=region, config=_retry_config)
+
+def get_textract_client(region: str = "us-east-1"):
+    return boto3.client("textract", region_name=region, config=_retry_config)
+
+def get_comprehend_medical_client(region: str = "us-east-1"):
+    # IMPORTANT: Comprehend Medical is not available in all regions.
+    # Verify availability before selecting your deployment region:
+    # https://docs.aws.amazon.com/general/latest/gr/comprehend-medical.html
+    return boto3.client("comprehendmedical", region_name=region, config=_retry_config)
+
+def get_healthlake_client(region: str = "us-east-1"):
+    return boto3.client("healthlake", region_name=region, config=_retry_config)
+
+def get_s3_client():
+    return boto3.client("s3", config=_retry_config)
+
+def get_dynamodb_resource():
+    return boto3.resource("dynamodb", config=_retry_config)
+
+
+# ---------------------------------------------------------------------------------
+# S3 lifecycle configuration for the batch-inference bucket
+#
+# CALL THIS ONCE during infrastructure setup, not on every run.
+# The recipe promises 30-day expiry for batch JSONL files as a data governance
+# control. Without this lifecycle policy, PHI-containing JSONL files accumulate
+# indefinitely in S3 Standard storage.
+#
+# batch-input/  contains classification requests with OCR-extracted page text (PHI)
+# batch-output/ contains classification/extraction results with clinical content (PHI)
+#
+# Both paths expire after 30 days. The FHIR output bucket and DynamoDB are the
+# durable stores; batch JSONL is ephemeral staging data.
+# [EDITOR: review fix - P1 S3 lifecycle. The recipe promised 30-day JSONL expiry but
+#  provided no implementation. This function fulfills that governance control.]
+# ---------------------------------------------------------------------------------
+def configure_batch_inference_bucket_lifecycle(region: str = "us-east-1") -> None:
     """
-    Find the first parseable date in a text string and return it as a date object.
-    Returns None if no date is found. Used in boundary detection and FHIR mapping.
+    Apply a 30-day expiry lifecycle policy to the batch-inference S3 bucket.
+    Run once during initial infrastructure setup.
+
+    Also configures the policy so the Bedrock batch service role can access
+    the bucket without a VPC endpoint condition (see note in function body).
     """
-    if not text:
-        return None
+    s3 = get_s3_client()
 
-    for pattern in _DATE_PATTERNS:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if not match:
-            continue
-        date_string = match.group(1).strip().rstrip(",")
-        for fmt in _DATE_FORMATS:
-            try:
-                return datetime.datetime.strptime(date_string, fmt).date()
-            except ValueError:
-                continue
-
-    return None
-
-
-def extract_header_region(page_blocks: list) -> str:
-    """
-    Extract text from the top 15% of a page (bounding box Top < 0.15).
-    This is where document titles, facility names, and date stamps live.
-    Used by boundary detection to compare adjacent page headers.
-    """
-    header_lines = []
-    for block in page_blocks:
-        if block.get("BlockType") != "LINE":
-            continue
-        top = block.get("Geometry", {}).get("BoundingBox", {}).get("Top", 1.0)
-        if top < 0.15:
-            text = block.get("Text", "").strip()
-            if text:
-                header_lines.append(text)
-    return "\n".join(header_lines).strip()
-
-
-def compute_jaccard_similarity(text_a: str, text_b: str) -> float:
-    """
-    Compute word-level Jaccard similarity between two text strings.
-    Returns 1.0 for identical texts, 0.0 for completely disjoint texts.
-    Used in boundary detection to catch document type transitions via header changes.
-    """
-    words_a = set(text_a.lower().split())
-    words_b = set(text_b.lower().split())
-    if not words_a and not words_b:
-        return 1.0
-    if not words_a or not words_b:
-        return 0.0
-    return len(words_a & words_b) / len(words_a | words_b)
-
-
-def split_text_with_overlap(text: str, max_chars: int = 18000, overlap: int = 500) -> list[str]:
-    """
-    Split a long text string into chunks with character overlap between them.
-    The overlap prevents Comprehend Medical from dropping entities that fall
-    at a chunk boundary. Returns a list of text strings.
-    """
-    if len(text) <= max_chars:
-        return [text]
-
-    chunks = []
-    start  = 0
-    while start < len(text):
-        end = start + max_chars
-        chunks.append(text[start:end])
-        start = end - overlap
-
-    return chunks
-```
-
----
-
-## Step 1: Manifest Generation and Batch Job Submission
-
-Before any chart gets processed, we need an inventory. The manifest is a CSV file with one row per chart. AWS Batch reads it to distribute work across the fleet. We also initialize a DynamoDB tracking record for each chart here, which becomes the idempotency guard: charts with `status = completed` are skipped.
-
-```python
-def generate_migration_manifest(
-    s3_prefix: str,
-    manifest_output_key: str,
-) -> tuple[int, str]:
-    """
-    List all chart PDFs under s3_prefix, write a CSV manifest, and initialize
-    DynamoDB tracking records for any charts not already completed.
-
-    The manifest format (one row per chart) is what AWS Batch uses to assign
-    work to individual array job children. Each child uses its array index to
-    select its row from the manifest.
-
-    Args:
-        s3_prefix:           S3 key prefix for the batch of charts to process.
-                             Example: "charts-raw/2024/batch-001/"
-        manifest_output_key: S3 key where the CSV manifest should be written.
-                             Example: "manifests/batch-001.csv"
-
-    Returns:
-        A tuple of (chart_count, manifest_s3_key) for use in the Batch submission.
-    """
-    migration_table = dynamodb.Table(MIGRATION_TABLE)
-
-    # List all objects under the given prefix.
-    paginator    = s3_client.get_paginator("list_objects_v2")
-    chart_objects = []
-
-    for page in paginator.paginate(Bucket=CHARTS_RAW_BUCKET, Prefix=s3_prefix):
-        for obj in page.get("Contents", []):
-            if obj["Key"].endswith(".pdf"):
-                chart_objects.append(obj)
-
-    manifest_rows  = []
-    dynamo_batch   = []
-    skipped        = 0
-
-    for obj in chart_objects:
-        key      = obj["Key"]
-        # Convention: the scanning vendor encodes the chart ID in the filename.
-        # Example key: charts-raw/2024/batch-001/CHT-2024-000421.pdf
-        # Agree on this naming convention before scanning starts.
-        chart_id = obj["Key"].split("/")[-1].replace(".pdf", "")
-
-        # Idempotency check: skip charts that already completed.
-        response  = migration_table.get_item(Key={"chart_id": chart_id})
-        existing  = response.get("Item")
-        if existing and existing.get("status") == "completed":
-            skipped += 1
-            continue
-
-        manifest_rows.append({
-            "bucket":   CHARTS_RAW_BUCKET,
-            "key":      key,
-            "chart_id": chart_id,
-        })
-
-        dynamo_batch.append({
-            "PutRequest": {
-                "Item": {
-                    "chart_id":   chart_id,
-                    "s3_key":     key,
-                    "status":     "pending",
-                    "created_at": datetime.datetime.now(timezone.utc).isoformat(),
-                    "page_count": None,
-                    "doc_count":  None,
-                    "quality_score": None,
-                }
+    lifecycle_policy = {
+        "Rules": [
+            {
+                "ID":     "expire-batch-input-files",
+                "Status": "Enabled",
+                "Filter": {"Prefix": "batch-input/"},
+                "Expiration": {"Days": 30}
+            },
+            {
+                "ID":     "expire-batch-output-results",
+                "Status": "Enabled",
+                "Filter": {"Prefix": "batch-output/"},
+                "Expiration": {"Days": 30}
             }
-        })
-
-    print(
-        f"Manifest: {len(manifest_rows)} charts to process, "
-        f"{skipped} already completed and skipped."
-    )
-
-    if not manifest_rows:
-        return 0, ""
-
-    # Write the CSV manifest to S3.
-    csv_buffer = io.StringIO()
-    writer     = csv.DictWriter(csv_buffer, fieldnames=["bucket", "key", "chart_id"])
-    writer.writeheader()
-    writer.writerows(manifest_rows)
-
-    s3_client.put_object(
-        Bucket=CHARTS_RAW_BUCKET,
-        Key=manifest_output_key,
-        Body=csv_buffer.getvalue().encode("utf-8"),
-        ContentType="text/csv",
-    )
-
-    # Batch-write DynamoDB records (25 items per batch_write_item call).
-    for i in range(0, len(dynamo_batch), 25):
-        chunk = dynamo_batch[i:i + 25]
-        dynamodb.batch_write_item(RequestItems={MIGRATION_TABLE: chunk})
-
-    print(f"Manifest written to s3://{CHARTS_RAW_BUCKET}/{manifest_output_key}")
-    return len(manifest_rows), manifest_output_key
-
-
-def submit_batch_migration_job(manifest_key: str, chart_count: int) -> str:
-    """
-    Submit an AWS Batch array job to process all charts in the manifest.
-
-    An array job runs N identical copies of the same job definition. Each copy
-    receives a unique AWS_BATCH_JOB_ARRAY_INDEX environment variable (0 to N-1)
-    that the job handler uses to select its row from the manifest CSV.
-
-    Args:
-        manifest_key: S3 key of the manifest CSV (in CHARTS_RAW_BUCKET)
-        chart_count:  number of charts in the manifest (sets the array size)
-
-    Returns:
-        The Batch array job ID.
-    """
-    response = batch_client.submit_job(
-        jobName=f"chart-migration-{datetime.datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')}",
-        jobQueue=BATCH_JOB_QUEUE,
-        jobDefinition=BATCH_JOB_DEFINITION,
-        arrayProperties={"size": chart_count},
-        parameters={"manifest_key": manifest_key},
-    )
-
-    job_id = response["jobId"]
-    print(f"Submitted Batch array job {job_id} with {chart_count} child jobs.")
-    return job_id
-```
-
----
-
-## Step 2: Image Quality Pre-Processing
-
-Each page needs quality assessment and correction before Textract sees it. The fixes here are cheap. Discovering bad OCR output after paying for Textract on a 200-page chart and then paying to re-process it is not cheap. Fix the image first.
-
-```python
-def preprocess_chart(chart_pdf_key: str) -> tuple[str, dict]:
-    """
-    Download a chart PDF from S3, apply per-page quality corrections,
-    reassemble, and write the processed PDF to the charts-processed bucket.
-
-    Three operations per page: blank page detection (skip), rotation correction,
-    and contrast enhancement. Deskew is noted but requires the deskew library
-    for reliable angle estimation; see the Gap to Production section.
-
-    Args:
-        chart_pdf_key: S3 key of the source chart PDF in CHARTS_RAW_BUCKET
-
-    Returns:
-        A tuple of (processed_key, quality_report_dict).
-        The processed key points to the enhanced PDF in CHARTS_PROCESSED_BUCKET.
-    """
-    # For a real deployment, use a PDF library (PyMuPDF or pdf2image) to
-    # split the PDF into pages and convert to images. This stub illustrates
-    # the per-page processing logic; replace load_pdf_pages with your PDF library.
-    #
-    # import fitz   # PyMuPDF
-    # pdf_doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    # pages = [(i+1, pdf_doc[i].get_pixmap(dpi=300)) for i in range(len(pdf_doc))]
-
-    response  = s3_client.get_object(Bucket=CHARTS_RAW_BUCKET, Key=chart_pdf_key)
-    pdf_bytes = response["Body"].read()
-
-    quality_report = {
-        "total_pages":          0,
-        "blank_pages_skipped":  0,
-        "rotations_corrected":  0,
-        "deskews_applied":      0,
-        "low_dpi_warnings":     0,
+        ]
     }
 
-    # Stub: in real code, split the PDF into PIL Images here.
-    # processed_pages is a list of PIL Image objects after correction.
+    s3.put_bucket_lifecycle_configuration(
+        Bucket=BUCKET_BATCH_INFERENCE,
+        LifecycleConfiguration=lifecycle_policy
+    )
+
+    logger.info(
+        "Batch-inference bucket lifecycle configured: 30-day expiry on input and output prefixes",
+        extra={"bucket": BUCKET_BATCH_INFERENCE}
+    )
+
+    # NOTE on bucket policy for Bedrock batch inference access:
+    # Bedrock batch inference reads input JSONL and writes output JSONL using
+    # BEDROCK_BATCH_ROLE_ARN on AWS's internal network -- NOT through your VPC's
+    # S3 gateway endpoint. If your bucket policy includes an aws:SourceVpc or
+    # aws:SourceVpcEndpoint condition, the batch service S3 access will be denied
+    # and batch jobs will fail with S3 access errors.
+    #
+    # Ensure your bucket policy has an explicit allow for BEDROCK_BATCH_ROLE_ARN
+    # that is NOT subject to a VPC endpoint condition. Your Lambda's JSONL uploads
+    # can continue using VPC endpoint access; only the Bedrock service role needs
+    # the exemption. Example bucket policy statement to add:
+    #
+    # {
+    #   "Effect": "Allow",
+    #   "Principal": {"AWS": BEDROCK_BATCH_ROLE_ARN},
+    #   "Action": ["s3:GetObject", "s3:PutObject"],
+    #   "Resource": f"arn:aws:s3:::{BUCKET_BATCH_INFERENCE}/*"
+    #   # No aws:SourceVpc condition on this statement.
+    # }
+    # [EDITOR: review fix - P1 VPC/S3. Added bucket policy note for Bedrock batch role.]
+```
+
+---
+
+## Step 1: Manifest Generation and DynamoDB Initialization
+
+```python
+def generate_migration_manifest(s3_prefix: str, output_key: str) -> tuple[int, str]:
+    """
+    List all chart PDFs under s3_prefix, build a CSV manifest for AWS Batch,
+    and initialize DynamoDB tracking records for each chart.
+
+    Idempotency guard: charts already marked 'completed' or 'import_submitted'
+    in DynamoDB are skipped. This makes it safe to re-run manifest generation
+    if a wave fails partway through.
+    """
+    s3  = get_s3_client()
+    ddb = get_dynamodb_resource().Table(TABLE_MIGRATION)
+
+    # List all chart objects under the prefix
+    paginator = s3.get_paginator("list_objects_v2")
+    pages     = paginator.paginate(Bucket=BUCKET_CHARTS_RAW, Prefix=s3_prefix)
+
+    manifest_rows    = []
+    dynamodb_records = []
+
+    for page in pages:
+        for obj in page.get("Contents", []):
+            if not obj["Key"].endswith(".pdf"):
+                continue
+
+            chart_id = extract_chart_id_from_key(obj["Key"])
+
+            # Check idempotency
+            existing = ddb.get_item(Key={"chart_id": chart_id}).get("Item")
+            if existing and existing.get("status") in ["completed", "import_submitted"]:
+                # Safe to log the chart_id (not PHI) but not any clinical content
+                logger.info("Skipping already-processed chart", extra={"chart_id": chart_id})
+                continue
+
+            manifest_rows.append({
+                "bucket":   BUCKET_CHARTS_RAW,
+                "key":      obj["Key"],
+                "chart_id": chart_id
+            })
+
+            dynamodb_records.append({
+                "chart_id":    chart_id,
+                "s3_key":      obj["Key"],
+                "status":      "pending",
+                "created_at":  datetime.now(timezone.utc).isoformat(),
+                # Initialize tier counters as Decimals (boto3 requires Decimal for numerics)
+                "tier1_pages": Decimal("0"),
+                "tier2_pages": Decimal("0"),
+                "tier3_pages": Decimal("0"),
+                "tier4_pages": Decimal("0")
+            })
+
+    # Write manifest CSV to S3
+    manifest_csv = "bucket,key,chart_id\n" + "\n".join(
+        f"{r['bucket']},{r['key']},{r['chart_id']}" for r in manifest_rows
+    )
+    s3.put_object(
+        Bucket="manifests",
+        Key=output_key,
+        Body=manifest_csv.encode("utf-8"),
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
+    )
+
+    # Batch-write DynamoDB records (25 per call, as required by batch_writer)
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
+    with table.batch_writer() as batch:
+        for record in dynamodb_records:
+            batch.put_item(Item=record)
+
+    logger.info(
+        "Manifest generated",
+        extra={"chart_count": len(manifest_rows), "manifest_key": output_key}
+    )
+    return len(manifest_rows), output_key
+
+
+def extract_chart_id_from_key(s3_key: str) -> str:
+    """
+    Extract the chart ID from the S3 object key.
+    Convention: 'charts-raw/YYYY/MM/CHARTID.pdf'
+    Agree on this naming convention with your scanning vendor before scanning starts.
+    """
+    filename = s3_key.rsplit("/", 1)[-1]
+    return filename.replace(".pdf", "")
+```
+
+---
+
+## Step 2: Image Pre-Processing
+
+```python
+def preprocess_chart(chart_pdf_key: str, chart_id: str) -> tuple[str, dict]:
+    """
+    Download the chart PDF, detect and correct rotation, deskew pages,
+    filter blank pages, and upload the processed version to charts-processed/.
+
+    Also stores individual page PNG images in page-images/ for the vision path.
+    """
+    s3 = get_s3_client()
+
+    # Download the source PDF
+    response   = s3.get_object(Bucket=BUCKET_CHARTS_RAW, Key=chart_pdf_key)
+    pdf_bytes  = response["Body"].read()
+
+    # In production: use a library like PyMuPDF (fitz) or pypdf for splitting.
+    # This example uses pseudo-functions for clarity.
+    pages = split_pdf_into_page_images(pdf_bytes)   # returns list of (page_num, PIL.Image)
+
+    quality_report = {
+        "total_pages":         len(pages),
+        "blank_pages_skipped": 0,
+        "rotations_corrected": 0,
+        "low_dpi_warnings":    0
+    }
+
     processed_pages = []
 
-    # The actual per-page logic is shown below as a function you would call
-    # inside your page iteration loop.
-    processed_key = "charts-processed/" + chart_pdf_key.replace("charts-raw/", "")
+    for page_num, img in pages:
+        # Blank page detection: skip pages with > 98% white pixels
+        if is_blank_page(img, white_threshold=0.98):
+            quality_report["blank_pages_skipped"] += 1
+            continue
 
-    # After processing all pages and reassembling the PDF, upload to S3.
-    # s3_client.put_object(
-    #     Bucket=CHARTS_PROCESSED_BUCKET,
-    #     Key=processed_key,
-    #     Body=reassembled_pdf_bytes,
-    # )
+        # Orientation correction
+        # (use a library like pytesseract OSD or a vision model for orientation detection)
+        orientation = detect_orientation(img)
+        if orientation != 0:
+            img = img.rotate(-orientation, expand=True)
+            quality_report["rotations_corrected"] += 1
 
+        # DPI check: log metric only, never log page content
+        dpi = getattr(img, "info", {}).get("dpi", (0, 0))[0]
+        if dpi and dpi < 200:
+            quality_report["low_dpi_warnings"] += 1
+            # Emit a CloudWatch custom metric, not a log message with page data
+            emit_cloudwatch_metric("low_dpi_page_count", 1,
+                                   dimensions=[{"Name": "chart_id", "Value": chart_id}])
+
+        processed_pages.append((page_num, img))
+
+        # Store individual page PNG for the vision extraction path
+        page_png_bytes = image_to_png_bytes(img)
+        page_image_key = f"page-images/{chart_id}/page-{page_num}.png"
+        s3.put_object(
+            Bucket=BUCKET_CHARTS_PROCESSED,
+            Key=page_image_key,
+            Body=page_png_bytes,
+            ContentType="image/png",
+            ServerSideEncryption="aws:kms",
+            SSEKMSKeyId=KMS_KEY_ARN
+        )
+
+    # Reassemble processed pages as a PDF
+    processed_pdf_bytes = assemble_pdf_from_images(processed_pages)
+    processed_key       = f"processed/{chart_id}/chart.pdf"
+    s3.put_object(
+        Bucket=BUCKET_CHARTS_PROCESSED,
+        Key=processed_key,
+        Body=processed_pdf_bytes,
+        ContentType="application/pdf",
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
+    )
+
+    logger.info(
+        "Pre-processing complete",
+        extra={
+            "chart_id":    chart_id,
+            "total_pages": quality_report["total_pages"],
+            "blank_skipped": quality_report["blank_pages_skipped"],
+            "rotations":   quality_report["rotations_corrected"]
+            # Do NOT include any page text, OCR output, or image content here
+        }
+    )
     return processed_key, quality_report
 
 
-def is_blank_page(img: Image.Image, white_threshold: float = 0.98) -> bool:
+def is_blank_page(img, white_threshold: float = 0.98) -> bool:
     """
-    Return True if more than white_threshold fraction of pixels are near-white.
-    Catches blank pages and pure-white separator sheets. Works on grayscale
-    and color images. Threshold of 0.98 allows for scanner noise at the edges.
+    Returns True if more than white_threshold fraction of pixels are near-white.
+    Handles both grayscale and color images.
     """
-    grayscale    = img.convert("L")
-    pixels       = list(grayscale.getdata())
-    white_count  = sum(1 for p in pixels if p > 240)
-    return (white_count / len(pixels)) > white_threshold
+    import numpy as np
+    from PIL import Image
 
-
-def enhance_page(img: Image.Image) -> Image.Image:
-    """
-    Apply contrast enhancement and noise reduction to a single page image.
-    This is the Pillow-based version. See Gap to Production for the deskew upgrade.
-    """
-    # Convert to grayscale for consistent processing.
-    img = img.convert("L")
-
-    # Autocontrast: stretch the histogram so the darkest ink becomes black
-    # and the background becomes white. The cutoff=1 ignores the extreme 1%
-    # of pixels so a single dark smudge doesn't collapse the correction.
-    img = ImageOps.autocontrast(img, cutoff=1)
-
-    # Median filter: removes scanner noise and compression artifacts while
-    # preserving the edges of handwritten letter strokes. Size=3 is conservative.
-    img = img.filter(ImageFilter.MedianFilter(size=3))
-
-    return img
+    gray = img.convert("L")
+    arr  = np.array(gray)
+    white_pixels = np.sum(arr > 240)
+    total_pixels = arr.size
+    return (white_pixels / total_pixels) > white_threshold
 ```
 
 ---
 
-## Step 3: Async Textract Extraction
-
-Same async pattern as Recipe 1.2, with LAYOUT added to the feature types. LAYOUT is what gives us the title blocks that drive boundary detection in Step 4. We also store the Textract job ID in DynamoDB for debugging: when a 300-page chart produces unexpected output, you want to be able to pull up the raw blocks without re-running the job.
+## Step 3: Textract Base OCR
 
 ```python
-def start_chart_extraction(processed_chart_key: str, chart_id: str) -> str:
+def start_textract_ocr(processed_chart_key: str, chart_id: str) -> str:
     """
-    Submit a processed chart PDF to Textract for async analysis.
+    Start async Textract text detection on the processed chart PDF.
+    Returns the Textract job ID.
 
-    FORMS extracts key-value pairs from any structured form fields.
-    TABLES extracts grid-structured lab results and medication tables.
-    LAYOUT provides title blocks, headers, and paragraph markers used
-    in document segmentation (Step 4). Including LAYOUT is what makes
-    boundary detection reliable on charts with multiple document types.
-
-    Args:
-        processed_chart_key: S3 key in CHARTS_PROCESSED_BUCKET
-        chart_id:            chart identifier for tracking
-
-    Returns:
-        The Textract job ID.
+    We use StartDocumentTextDetection (not StartDocumentAnalysis) for the initial
+    pass because it is 44x cheaper ($0.0015 vs $0.065/page). We only need raw text
+    and word-level confidence scores at this stage. If Nova Lite classifies a page
+    as structured (lab results, forms), we run a second AnalyzeDocument call on
+    just those pages.
     """
-    response = textract_client.start_document_analysis(
+    textract = get_textract_client()
+
+    response = textract.start_document_text_detection(
         DocumentLocation={
             "S3Object": {
-                "Bucket": CHARTS_PROCESSED_BUCKET,
-                "Name":   processed_chart_key,
+                "Bucket": BUCKET_CHARTS_PROCESSED,
+                "Name":   processed_chart_key
             }
         },
-        FeatureTypes=["FORMS", "TABLES", "LAYOUT"],
         NotificationChannel={
-            "SNSTopicArn": "arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs",
-            "RoleArn":     "arn:aws:iam::ACCOUNT:role/textract-sns-role",
+            "SNSTopicArn": TEXTRACT_SNS_TOPIC_ARN,
+            "RoleArn":     TEXTRACT_SNS_ROLE_ARN
         },
-        JobTag=chart_id,
+        JobTag=chart_id  # ties the SNS notification back to this chart
     )
 
     job_id = response["JobId"]
 
-    # Store the Textract job ID in DynamoDB for traceability and debugging.
-    migration_table = dynamodb.Table(MIGRATION_TABLE)
-    migration_table.update_item(
+    # Record the job ID in DynamoDB for debugging and status tracking
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
+    table.update_item(
         Key={"chart_id": chart_id},
         UpdateExpression="SET textract_job_id = :jid, #s = :status",
         ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={
-            ":jid":    job_id,
-            ":status": "extracting",
-        },
+        ExpressionAttributeValues={":jid": job_id, ":status": "ocr_in_progress"}
     )
 
-    print(f"Started Textract job {job_id} for chart {chart_id}")
+    logger.info("Textract job started", extra={"chart_id": chart_id, "job_id": job_id})
     return job_id
 
 
-def retrieve_textract_blocks(job_id: str, chart_id: str) -> tuple[list, dict]:
+def retrieve_ocr_results(job_id: str, chart_id: str) -> str:
     """
-    Wait for a Textract async job to complete and retrieve all result blocks.
+    Retrieve all Textract blocks (paginated) and compute per-page quality signals.
+    Writes raw blocks and quality signals to S3.
 
-    Textract paginates results. A 200-page chart can produce 50,000+ blocks
-    across many result pages. We collect everything before any parsing begins.
-
-    In production, do not poll here. Call this only after the SNS notification
-    confirms the job succeeded. The polling loop is here for development only.
-
-    Args:
-        job_id:   Textract job ID from start_chart_extraction
-        chart_id: chart identifier for tracking updates
-
-    Returns:
-        A tuple of (all_blocks, block_map) where block_map is a dict of
-        block ID -> block for O(1) lookups during segmentation and extraction.
+    Returns the S3 key for the quality signals JSON file.
     """
-    job_status = "IN_PROGRESS"
-    attempts   = 0
-    max_polls  = 120   # 120 * 5s = 10 minutes; large charts can take 5-8 minutes
+    textract = get_textract_client()
+    s3       = get_s3_client()
 
-    while job_status == "IN_PROGRESS" and attempts < max_polls:
-        attempts  += 1
-        response   = textract_client.get_document_analysis(JobId=job_id)
-        job_status = response["JobStatus"]
-
-        if job_status == "IN_PROGRESS":
-            print(f"  Job {job_id} still running (attempt {attempts}/{max_polls})...")
-            time.sleep(5)
-        elif job_status == "FAILED":
-            raise RuntimeError(
-                f"Textract job {job_id} failed: "
-                f"{response.get('StatusMessage', 'no message')}"
-            )
-
-    if job_status != "SUCCEEDED":
-        raise TimeoutError(
-            f"Textract job {job_id} did not complete after {max_polls} attempts."
-        )
-
+    # Retrieve all blocks via paginated API
     all_blocks = []
     next_token = None
 
     while True:
-        params = {"JobId": job_id}
+        kwargs = {"JobId": job_id}
         if next_token:
-            params["NextToken"] = next_token
+            kwargs["NextToken"] = next_token
 
-        response   = textract_client.get_document_analysis(**params)
+        response = textract.get_document_text_detection(**kwargs)
         all_blocks.extend(response.get("Blocks", []))
-        next_token = response.get("NextToken")
 
+        next_token = response.get("NextToken")
         if not next_token:
             break
 
-    block_map  = {block["Id"]: block for block in all_blocks}
-    page_count = max(
-        (block.get("Page", 1) for block in all_blocks),
-        default=0,
+    # Compute per-page quality signals
+    pages_data = {}
+    for block in all_blocks:
+        page_num = block.get("Page")
+        if page_num is None:
+            continue
+
+        if page_num not in pages_data:
+            pages_data[page_num] = {"words": [], "text_parts": []}
+
+        if block["BlockType"] == "WORD":
+            pages_data[page_num]["words"].append({
+                "text":       block.get("Text", ""),
+                "confidence": block.get("Confidence", 0.0) / 100.0,
+                "text_type":  block.get("TextType", "PRINTED")
+            })
+
+    page_quality = {}
+    for page_num, data in pages_data.items():
+        words = data["words"]
+        if not words:
+            page_quality[page_num] = {
+                "avg_confidence":  None,
+                "handwriting_pct": 0.0,
+                "word_count":      0,
+                "page_text":       "",
+                "is_blank":        True
+            }
+            continue
+
+        confidences    = [w["confidence"] for w in words]
+        avg_confidence = sum(confidences) / len(confidences)
+        hw_count       = sum(1 for w in words if w["text_type"] == "HANDWRITING")
+        page_text      = " ".join(w["text"] for w in words)
+
+        page_quality[page_num] = {
+            "avg_confidence":  round(avg_confidence, 3),
+            "handwriting_pct": round(hw_count / len(words), 3),
+            "word_count":      len(words),
+            "page_text":       page_text,   # stored in S3, not logged
+            "is_blank":        False
+        }
+
+    # Write to S3. These files contain PHI and are covered by SSE-KMS.
+    quality_key = f"textract-output/{chart_id}/page-quality.json"
+    s3.put_object(
+        Bucket=BUCKET_TEXTRACT_OUTPUT,
+        Key=quality_key,
+        Body=json.dumps(page_quality).encode("utf-8"),
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
     )
 
-    # Write raw blocks to S3. At 50,000+ blocks per chart, keeping them
-    # in S3 rather than passing through Lambda memory is the right call.
-    blocks_key = f"textract-output/{chart_id}/blocks.json"
-    s3_client.put_object(
-        Bucket=TEXTRACT_OUTPUT_BUCKET,
-        Key=blocks_key,
-        Body=json.dumps(all_blocks),
-        ContentType="application/json",
+    # Update DynamoDB with page count (not page text, just the count)
+    page_count = max(page_quality.keys()) if page_quality else 0
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
+    table.update_item(
+        Key={"chart_id": chart_id},
+        UpdateExpression="SET page_count = :pc, #s = :status",
+        ExpressionAttributeNames={"#s": "status"},
+        ExpressionAttributeValues={
+            ":pc":     Decimal(str(page_count)),
+            ":status": "classifying"
+        }
     )
 
-    # Update DynamoDB with page count and blocks key.
-    dynamodb.Table(MIGRATION_TABLE).update_item(
+    logger.info(
+        "OCR results retrieved",
+        extra={"chart_id": chart_id, "page_count": page_count}
+    )
+    return quality_key
+```
+
+---
+
+## Step 4: Nova Lite Classification Batch Job
+
+```python
+# ---------------------------------------------------------------------------------
+# Classification system prompt: cached across all batch inference requests.
+# With a 1-hour TTL cache, and 10% cost for cache reads, this prompt is effectively
+# free after the first call. At 3 billion pages with the same classification schema,
+# prompt caching on this system prompt saves hundreds of thousands of dollars.
+# ---------------------------------------------------------------------------------
+CLASSIFICATION_SYSTEM_PROMPT = """You are a healthcare document classifier. You are reading text extracted from
+scanned historical medical charts spanning 1970-2010. Your task is to classify
+each page as one of the following document types and assess its quality.
+
+Document types:
+- progress_note: Clinical progress note or office visit note (SOAP format or similar)
+- history_and_physical: History and physical examination
+- discharge_summary: Hospital discharge summary
+- operative_report: Surgical or operative report
+- consultation_report: Specialist consultation letter or report
+- lab_result: Laboratory results or pathology report
+- radiology_report: Imaging report (X-ray, MRI, CT, ultrasound)
+- medication_list: Medication list or prescription record
+- immunization_record: Immunization or vaccination record
+- problem_list: Problem list or diagnosis summary
+- other_clinical: Other clinical document type
+- administrative: Administrative forms, authorizations, demographic pages
+- blank_or_artifact: Blank page, fax cover sheet, scanner separator
+
+Return a JSON object with:
+{
+  "doc_type": "<one of the types above>",
+  "confidence": <0.0-1.0>,
+  "handwriting_heavy": <true if >50% of content appears handwritten>,
+  "structured_content": <true if the page contains tables or form fields>,
+  "extraction_tier": <2, 3, or 4>
+}
+
+Tier guidance:
+- Tier 2 (nova-pro): clean typed clinical text, printed lab results, typed forms
+- Tier 3 (sonnet): handwritten pages with avg OCR confidence >0.65, complex narrative
+- Tier 4 (opus): severely degraded images with avg OCR confidence <0.45
+
+Return ONLY valid JSON. No explanation. No markdown."""
+
+
+def sanitize_page_text(text: str) -> str:
+    """
+    Strip content that could be used for prompt injection before including
+    OCR-extracted page text in an LLM request.
+
+    Strips:
+    - Null bytes and C0/C1 control characters (except newline, tab, carriage return)
+    - Unicode Private Use Area code points (U+E000-U+F8FF)
+    - Patterns that look like instruction overrides
+
+    This is a first-line defense. Bedrock Guardrails (configured via guardrailConfig
+    in the Converse call) provides a second line of defense.
+    """
+    if not text:
+        return ""
+
+    # Strip null bytes and dangerous control characters
+    text = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", text)
+
+    # Strip Unicode Private Use Area
+    text = re.sub(r"[\uE000-\uF8FF]", "", text)
+
+    # Strip common injection trigger patterns (case-insensitive)
+    injection_patterns = [
+        r"(?i)\bIGNORE\s+(PREVIOUS|ALL|ABOVE)\b",
+        r"(?i)\bSYSTEM\s*:",
+        r"(?i)\bassistant\s*:",
+        r"(?i)\b(OVERRIDE|BYPASS|DISREGARD)\s+(INSTRUCTIONS|RULES|PROMPT)\b"
+    ]
+    for pattern in injection_patterns:
+        text = re.sub(pattern, "[FILTERED]", text)
+
+    return text
+
+
+def generate_classification_batch_jsonl(
+    chart_id: str,
+    quality_key: str
+) -> str:
+    """
+    Generate a JSONL file for Nova Lite classification batch inference.
+    One line per non-blank page. Each line includes the page's OCR text and
+    quality signals. The system prompt is marked for caching.
+
+    Returns the S3 key of the generated JSONL file.
+    """
+    s3 = get_s3_client()
+
+    # Load page quality data
+    response     = s3.get_object(Bucket=BUCKET_TEXTRACT_OUTPUT, Key=quality_key)
+    page_quality = json.loads(response["Body"].read())
+
+    requests = []
+
+    for page_num_str, quality in page_quality.items():
+        page_num = int(page_num_str)
+
+        if quality.get("is_blank") or quality.get("word_count", 0) == 0:
+            continue  # Skip blank pages
+
+        # Sanitize the page text before including in the LLM request
+        clean_text = sanitize_page_text(quality.get("page_text", ""))
+
+        request = {
+            "recordId": f"{chart_id}-page-{page_num}",
+            "modelInput": {
+                "schemaVersion": "messages-v1",
+                "system": [
+                    {
+                        "text": CLASSIFICATION_SYSTEM_PROMPT,
+                        "cachePoint": {
+                            "type": "default"
+                            # "default" = 5-minute TTL cache.
+                            # For a batch job running over many hours against the same
+                            # classification schema, use an explicit long-TTL cache
+                            # by setting type to "ephemeral" with a 1-hour TTL.
+                            # Check the Bedrock Prompt Caching docs for the current
+                            # long-TTL syntax as the API evolves.
+                        }
+                    }
+                ],
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "text": (
+                                    f"Chart: {chart_id} | Page: {page_num}\n"
+                                    f"OCR confidence: {quality.get('avg_confidence', 'unknown')}\n"
+                                    f"Handwriting detected: {quality.get('handwriting_pct', 0):.1%}\n\n"
+                                    f"Page text:\n{clean_text[:4000]}"
+                                    # Truncate to avoid exceeding Nova Lite's context.
+                                    # Pages > 4000 chars are unusual for single pages.
+                                )
+                            }
+                        ]
+                    }
+                ],
+                "inferenceConfig": {
+                    "maxTokens":   256,
+                    "temperature": 0   # Deterministic output for classification
+                }
+                # ---- PRODUCTION: Add Guardrails config here ----
+                # "guardrailConfig": {
+                #     "guardrailIdentifier": "GUARDRAIL-ID",
+                #     "guardrailVersion":    "DRAFT",
+                #     "trace":               "disabled"
+                # }
+            }
+        }
+        requests.append(json.dumps(request))
+
+    # Write JSONL to S3
+    jsonl_key = f"batch-input/{chart_id}/classify.jsonl"
+    jsonl_content = "\n".join(requests) + "\n"
+    s3.put_object(
+        Bucket=BUCKET_BATCH_INFERENCE,
+        Key=jsonl_key,
+        Body=jsonl_content.encode("utf-8"),
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
+    )
+
+    logger.info(
+        "Classification JSONL generated",
+        extra={"chart_id": chart_id, "request_count": len(requests)}
+    )
+    return jsonl_key
+
+
+def submit_bedrock_batch_job(
+    input_s3_prefix: str,
+    output_s3_prefix: str,
+    model_id: str,
+    job_name: str
+) -> str:
+    """
+    Submit a Bedrock batch inference job.
+
+    The batch pricing is 50% of on-demand rates. For chart migration at scale,
+    this is the most important cost lever after model tiering.
+
+    Returns the job ARN.
+    """
+    bedrock_control = get_bedrock_control_client()
+
+    response = bedrock_control.create_model_invocation_job(
+        jobName=job_name,
+        modelId=model_id,
+        inputDataConfig={
+            "s3InputDataConfig": {
+                "s3Uri":         f"s3://{BUCKET_BATCH_INFERENCE}/{input_s3_prefix}",
+                "s3InputFormat": "JSONLines"
+                # s3BucketOwner: omit for same-account buckets. Include only if
+                # [EDITOR: Removed explicit None values for s3BucketOwner. Passing None
+                # includes the key with a null value in the API call, which can cause
+                # unexpected validation behavior. Omitting the key entirely is correct
+                # for same-account buckets.]
+                # the S3 bucket is owned by a different AWS account.
+            }
+        },
+        outputDataConfig={
+            "s3OutputDataConfig": {
+                "s3Uri":    f"s3://{BUCKET_BATCH_INFERENCE}/{output_s3_prefix}",
+                "kmsKeyId": KMS_KEY_ARN
+                # s3BucketOwner: omit for same-account buckets (see above)
+            }
+        },
+        roleArn=BEDROCK_BATCH_ROLE_ARN
+        # The role needs: bedrock:InvokeModel, s3:GetObject (input), s3:PutObject (output)
+    )
+
+    job_arn = response["jobArn"]
+    logger.info("Batch inference job submitted", extra={"job_arn": job_arn, "model": model_id})
+    return job_arn
+
+
+def wait_for_batch_job(job_arn: str, poll_interval_seconds: int = 300) -> str:
+    """
+    Poll for batch inference job completion.
+    Returns "Completed" or "Failed".
+
+    Batch jobs complete within 24 hours typically. For production, use
+    EventBridge scheduled rules to check job status rather than polling
+    in a loop. This function is for illustrative purposes and testing.
+    """
+    bedrock_control = get_bedrock_control_client()
+
+    while True:
+        response = bedrock_control.get_model_invocation_job(jobIdentifier=job_arn)
+        status   = response["status"]
+
+        logger.info("Batch job status", extra={"job_arn": job_arn, "status": status})
+
+        if status in ("Completed", "Failed", "Stopped"):
+            return status
+
+        time.sleep(poll_interval_seconds)
+```
+
+---
+
+## Step 5: Route Pages by Tier
+
+```python
+def process_classification_results(
+    results_s3_prefix: str,
+    chart_id: str
+) -> dict:
+    """
+    Parse Nova Lite classification results and route each page to its extraction tier.
+
+    Returns a dict with keys: "tier2_nova", "tier3_sonnet_text",
+    "tier3_sonnet_vision", "tier4_opus_vision", "tier1_skip"
+    """
+    s3 = get_s3_client()
+
+    # Load the quality signals to override tier based on Textract confidence
+    quality_key      = f"textract-output/{chart_id}/page-quality.json"
+    quality_response = s3.get_object(Bucket=BUCKET_TEXTRACT_OUTPUT, Key=quality_key)
+    page_quality     = json.loads(quality_response["Body"].read())
+
+    # Load batch inference results (one JSONL result file per job)
+    result_obj = s3.get_object(
+        Bucket=BUCKET_BATCH_INFERENCE,
+        Key=f"{results_s3_prefix}/{chart_id}/classify.jsonl.out"
+        # Actual output path format varies; check Bedrock batch output docs
+    )
+    result_lines = result_obj["Body"].read().decode("utf-8").strip().split("\n")
+
+    routing = {
+        "tier1_skip":           [],
+        "tier2_nova":           [],
+        "tier3_sonnet_text":    [],
+        "tier3_sonnet_vision":  [],
+        "tier4_opus_vision":    []
+    }
+
+    for line in result_lines:
+        if not line.strip():
+            continue
+
+        result = json.loads(line)
+        record_id = result["recordId"]
+
+        # Parse: "{chart_id}-page-{page_num}"
+        page_num = int(record_id.rsplit("-page-", 1)[-1])
+
+        # Parse the LLM output safely
+        try:
+            output_text    = result["modelOutput"]["output"]["message"]["content"][0]["text"]
+            classification = json.loads(output_text)
+        except (KeyError, json.JSONDecodeError, IndexError):
+            # Malformed output: escalate to Tier 3 for a second attempt
+            # IMPORTANT: Do NOT log the output_text. It may contain clinical content.
+            logger.warning(
+                "Classification parse error, escalating to Tier 3",
+                extra={"chart_id": chart_id, "page_num": page_num}
+            )
+            routing["tier3_sonnet_text"].append({"page_num": page_num, "doc_type": "unknown"})
+            continue
+
+        # Get Textract quality signal for this page
+        quality    = page_quality.get(str(page_num), {})
+        avg_conf   = quality.get("avg_confidence") or 1.0  # Default to high if missing
+
+        # Determine final tier (LLM suggestion + Textract override)
+        llm_tier   = classification.get("extraction_tier", 2)
+        doc_type   = classification.get("doc_type", "unknown")
+        class_conf = classification.get("confidence", 0.5)
+
+        # Textract confidence overrides: escalate if image quality is low
+        if avg_conf < TEXTRACT_OPUS_THRESHOLD:
+            assigned_tier   = 4
+            use_vision      = True
+        elif avg_conf < TEXTRACT_VISION_THRESHOLD:
+            assigned_tier   = max(llm_tier, 3)
+            use_vision      = True
+        else:
+            assigned_tier   = llm_tier
+            use_vision      = False
+
+        entry = {
+            "page_num":   page_num,
+            "doc_type":   doc_type,
+            "class_conf": class_conf,
+            "avg_conf":   avg_conf
+        }
+
+        if doc_type in ("blank_or_artifact", "administrative") and class_conf >= 0.85:
+            routing["tier1_skip"].append(entry)
+        elif assigned_tier == 4 and use_vision:
+            routing["tier4_opus_vision"].append(entry)
+        elif assigned_tier >= 3 and use_vision:
+            routing["tier3_sonnet_vision"].append(entry)
+        elif assigned_tier >= 3:
+            routing["tier3_sonnet_text"].append(entry)
+        else:
+            routing["tier2_nova"].append(entry)
+
+    # Update DynamoDB tier counts (use Decimal for all numerics)
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
+    table.update_item(
         Key={"chart_id": chart_id},
         UpdateExpression=(
-            "SET page_count = :pc, blocks_key = :bk, #s = :status"
+            "SET tier1_pages = :t1, tier2_pages = :t2, "
+            "tier3_pages = :t3, tier4_pages = :t4, #s = :status"
         ),
         ExpressionAttributeNames={"#s": "status"},
         ExpressionAttributeValues={
-            ":pc":     page_count,
-            ":bk":     blocks_key,
-            ":status": "segmenting",
-        },
-    )
-
-    print(f"  Retrieved {len(all_blocks)} blocks across {page_count} pages.")
-    return all_blocks, block_map
-
-
-def group_blocks_by_page(all_blocks: list) -> dict:
-    """
-    Group Textract blocks by page number and extract per-page features.
-
-    Adds header_text (top 15% of page) to each page entry, which the
-    boundary detection step uses for Jaccard similarity comparison.
-    Same structure as Recipe 1.5 with the header_text addition.
-
-    Returns a dict of page_number -> page_data dict.
-    """
-    pages = {}
-
-    for block in all_blocks:
-        page_num = block.get("Page", 1)
-
-        if page_num not in pages:
-            pages[page_num] = {
-                "blocks":        [],
-                "text":          "",
-                "header_text":   "",
-                "has_tables":    False,
-                "has_forms":     False,
-                "layout_blocks": [],
-                "word_confidences": [],
-                "handwritten_word_count": 0,
-                "total_word_count": 0,
-            }
-
-        pages[page_num]["blocks"].append(block)
-
-        if block.get("BlockType") == "LINE":
-            pages[page_num]["text"] += block.get("Text", "") + "\n"
-
-        if block.get("BlockType") == "TABLE":
-            pages[page_num]["has_tables"] = True
-
-        if block.get("BlockType") == "KEY_VALUE_SET":
-            pages[page_num]["has_forms"] = True
-
-        if block.get("BlockType", "").startswith("LAYOUT_"):
-            pages[page_num]["layout_blocks"].append(block)
-
-        # Track word-level confidence and handwriting counts for quality scoring.
-        if block.get("BlockType") == "WORD":
-            conf = block.get("Confidence", 0.0) / 100.0
-            pages[page_num]["word_confidences"].append(conf)
-            pages[page_num]["total_word_count"] += 1
-            if block.get("TextType") == "HANDWRITING":
-                pages[page_num]["handwritten_word_count"] += 1
-
-    # Extract header region for each page after all blocks are grouped.
-    for page_data in pages.values():
-        page_data["header_text"] = extract_header_region(page_data["blocks"])
-
-    return pages
-```
-
----
-
-## Step 4: Document Segmentation
-
-Same boundary detection algorithm as Recipe 1.5: four signals fire in priority order (title line, header discontinuity, page restart, date discontinuity). Extended here with the full chart document title pattern list. Review Recipe 1.5 for the detailed explanation of each signal.
-
-```python
-# Boundary detection thresholds (same as Recipe 1.5)
-HEADER_SIMILARITY_THRESHOLD = 0.40
-DATE_BOUNDARY_DAYS          = 30
-
-
-def detect_document_boundaries(pages: dict) -> list:
-    """
-    Scan the page stream and find logical document boundaries.
-
-    Returns a list of segment dicts, each with start_page, end_page,
-    boundary_signal, and primary_date. These segments are the units
-    the classifier and extractors operate on in Steps 5 and 6.
-
-    This function is the same algorithm as Recipe 1.5 with the extended
-    CHART_DOCUMENT_TITLE_PATTERNS list. See Recipe 1.5's companion for
-    the detailed explanation of each boundary signal.
-    """
-    sorted_page_nums = sorted(pages.keys())
-    if not sorted_page_nums:
-        return []
-
-    segments    = []
-    seg_start   = sorted_page_nums[0]
-    prev_header = None
-    prev_date   = None
-
-    for page_num in sorted_page_nums:
-        page        = pages[page_num]
-        header      = page["header_text"]
-        text        = page["text"]
-        first_lines = "\n".join(text.split("\n")[:5]).lower()
-
-        is_boundary     = False
-        boundary_signal = None
-
-        # Signal 1: Document title line
-        for pattern in CHART_DOCUMENT_TITLE_PATTERNS:
-            if pattern in first_lines and page_num > seg_start:
-                is_boundary     = True
-                boundary_signal = "document_title"
-                break
-
-        # Signal 2: Header region discontinuity
-        if not is_boundary and prev_header is not None and header.strip():
-            similarity = compute_jaccard_similarity(header, prev_header)
-            if similarity < HEADER_SIMILARITY_THRESHOLD:
-                is_boundary     = True
-                boundary_signal = "header_discontinuity"
-
-        # Signal 3: Page number restart
-        if not is_boundary and page_num > sorted_page_nums[0]:
-            if re.search(r"\bpage\s+1\s+of\s+\d+\b|\b1\s+of\s+\d+\b", first_lines):
-                is_boundary     = True
-                boundary_signal = "page_restart"
-
-        # Signal 4: Date discontinuity
-        page_date = extract_primary_date_from_text(first_lines + "\n" + header)
-        if not is_boundary and page_date is not None and prev_date is not None:
-            if abs((page_date - prev_date).days) > DATE_BOUNDARY_DAYS:
-                is_boundary     = True
-                boundary_signal = "date_discontinuity"
-
-        # Close current segment and start a new one.
-        if is_boundary and page_num > seg_start:
-            segments.append({
-                "start_page":      seg_start,
-                "end_page":        page_num - 1,
-                "boundary_signal": boundary_signal,
-                "primary_date":    prev_date,
-            })
-            seg_start = page_num
-
-        if header.strip():
-            prev_header = header
-        if page_date is not None:
-            prev_date = page_date
-
-    # Close the final segment.
-    segments.append({
-        "start_page":      seg_start,
-        "end_page":        sorted_page_nums[-1],
-        "boundary_signal": "end_of_document",
-        "primary_date":    prev_date,
-    })
-
-    print(f"  Boundary detection: {len(sorted_page_nums)} pages -> {len(segments)} segments")
-    return segments
-```
-
----
-
-## Step 5: Document Classification and Content Routing
-
-Each segment gets classified as a unit using the same keyword matching approach as Recipe 1.5, extended to the full chart document taxonomy. After classification, each segment is assigned an extraction path based on its document type and handwriting ratio.
-
-```python
-def classify_segment(segment: dict, pages: dict) -> tuple[str, int, float]:
-    """
-    Classify a document segment and compute its handwriting ratio.
-
-    Aggregates text and structural features from all pages in the segment,
-    runs keyword matching against CHART_DOC_TYPE_SIGNATURES, and computes
-    the fraction of words that are handwritten (used for extraction routing).
-
-    Returns:
-        A tuple of (doc_type, class_score, handwriting_ratio).
-        doc_type is "unclassified" if nothing met the minimum match threshold.
-    """
-    segment_text    = ""
-    has_tables      = False
-    total_words     = 0
-    handwritten     = 0
-
-    for page_num in range(segment["start_page"], segment["end_page"] + 1):
-        if page_num not in pages:
-            continue
-        page         = pages[page_num]
-        segment_text += page["text"] + "\n"
-        if page["has_tables"]:
-            has_tables = True
-        total_words  += page["total_word_count"]
-        handwritten  += page["handwritten_word_count"]
-
-    handwriting_ratio  = (handwritten / total_words) if total_words > 0 else 0.0
-    segment_text_lower = segment_text.lower()
-    scores             = {}
-
-    for doc_type, sig in CHART_DOC_TYPE_SIGNATURES.items():
-        hits = sum(1 for kw in sig["keywords"] if kw in segment_text_lower)
-        if hits < sig["min_matches"]:
-            continue
-        score = hits
-        if has_tables and sig.get("table_bonus", 0) > 0:
-            score += sig["table_bonus"]
-        scores[doc_type] = score
-
-    if not scores:
-        return "unclassified", 0, handwriting_ratio
-
-    best_type  = max(scores, key=lambda t: scores[t])
-    best_score = scores[best_type]
-    return best_type, best_score, handwriting_ratio
-
-
-def classify_and_route_segments(segments: list, pages: dict) -> list:
-    """
-    Classify all segments and determine the extraction path for each.
-
-    Extraction paths:
-    - "handwriting_pipeline": segment is more than 50% handwritten words.
-                              Follows Recipe 1.6 confidence tiering and A2I.
-    - "table_extractor":      lab results or heavily table-structured segments.
-    - "clinical_nlp":         typed clinical documents (Comprehend Medical).
-    - "generic_text":         other typed text without a specific NLP path.
-    - "unclassified_review":  no keyword match; route to human review queue.
-
-    Returns the segments list with doc_type, class_score, handwriting_ratio,
-    and extraction_path added to each entry.
-    """
-    classified = []
-
-    for segment in segments:
-        doc_type, class_score, hw_ratio = classify_segment(segment, pages)
-
-        if hw_ratio > 0.50:
-            extraction_path = "handwriting_pipeline"
-        elif doc_type == "lab_result" or pages.get(segment["start_page"], {}).get("has_tables"):
-            extraction_path = "table_extractor"
-        elif doc_type in [
-            "progress_note", "history_and_physical", "discharge_summary",
-            "operative_report", "consultation_report", "radiology_report",
-        ]:
-            extraction_path = "clinical_nlp"
-        elif doc_type == "unclassified":
-            extraction_path = "unclassified_review"
-        else:
-            extraction_path = "generic_text"
-
-        classified.append({
-            **segment,
-            "doc_type":         doc_type,
-            "class_score":      class_score,
-            "handwriting_ratio": hw_ratio,
-            "extraction_path":  extraction_path,
-        })
-
-        print(
-            f"  Pages {segment['start_page']}-{segment['end_page']}: "
-            f"{doc_type} (score: {class_score}, hw_ratio: {hw_ratio:.2f}) "
-            f"-> {extraction_path}"
-        )
-
-    return classified
-```
-
----
-
-## Step 6: Type-Specific Extraction with Handwriting Tiering
-
-Clinical documents go to Comprehend Medical. Handwriting-dominant documents go through Recipe 1.6's confidence tiering with A2I for low-confidence pages. Lab results go to the table extractor. Each path returns a consistent result structure that the quality scorer and FHIR mapper can consume without caring which path was taken.
-
-```python
-def extract_clinical_document(classified_doc: dict, pages: dict) -> dict:
-    """
-    Extract clinical entities from a typed clinical document using Comprehend Medical.
-
-    Runs DetectEntitiesV2 for clinical entities, InferICD10CM for diagnosis codes,
-    and InferRxNorm for medications (where appropriate to the document type).
-    Long documents are chunked with 500-character overlap to avoid entity loss at
-    chunk boundaries.
-
-    Args:
-        classified_doc: segment dict from classify_and_route_segments
-        pages:          full pages dict from group_blocks_by_page
-
-    Returns:
-        Extraction result dict with entities, ICD-10 codes, and document metadata.
-    """
-    doc_type = classified_doc["doc_type"]
-
-    # Aggregate segment text.
-    segment_text = ""
-    for page_num in range(classified_doc["start_page"], classified_doc["end_page"] + 1):
-        if page_num in pages:
-            segment_text += pages[page_num]["text"] + "\n"
-
-    text_chunks  = split_text_with_overlap(segment_text, max_chars=COMPREHEND_MAX_CHARS)
-    all_entities = []
-    all_icd10    = []
-
-    for chunk in text_chunks:
-        if not chunk.strip():
-            continue
-
-        # Clinical entity extraction
-        ent_response = comprehend_client.detect_entities_v2(Text=chunk)
-        all_entities.extend(ent_response.get("Entities", []))
-
-        # ICD-10 inference for diagnosis-rich document types
-        if doc_type in [
-            "progress_note", "history_and_physical", "discharge_summary",
-            "operative_report", "consultation_report",
-        ]:
-            icd_response = comprehend_client.infer_icd10_cm(Text=chunk)
-            all_icd10.extend(icd_response.get("Entities", []))
-
-        # RxNorm inference for medication-heavy document types
-        if doc_type in ["medication_list", "progress_note", "history_and_physical"]:
-            rxn_response = comprehend_client.infer_rxnorm(Text=chunk)
-            for med in rxn_response.get("Entities", []):
-                concepts = med.get("RxNormConcepts", [])
-                if concepts:
-                    all_entities.append({
-                        "Text":     med["Text"],
-                        "Category": "MEDICATION",
-                        "Type":     "GENERIC_NAME",
-                        "Score":    concepts[0].get("Score", 0.0),
-                        "Traits":   [],
-                        "RxNorm":   concepts[0].get("Code", ""),
-                    })
-
-    # Split ICD-10 codes by confidence.
-    icd10_accepted = [
-        e for e in all_icd10
-        if e.get("ICD10CMConcepts") and
-        e["ICD10CMConcepts"][0].get("Score", 0.0) >= ICD10_MIN_CONFIDENCE
-    ]
-    icd10_flagged = [
-        e for e in all_icd10
-        if not e.get("ICD10CMConcepts") or
-        e["ICD10CMConcepts"][0].get("Score", 0.0) < ICD10_MIN_CONFIDENCE
-    ]
-
-    document_date = extract_primary_date_from_text(
-        "\n".join(segment_text.split("\n")[:10])
-    )
-
-    print(
-        f"  Clinical NLP on pages {classified_doc['start_page']}-"
-        f"{classified_doc['end_page']}: "
-        f"{len(all_entities)} entities, {len(icd10_accepted)} ICD-10 accepted"
-    )
-
-    return {
-        "doc_type":        doc_type,
-        "start_page":      classified_doc["start_page"],
-        "end_page":        classified_doc["end_page"],
-        "document_date":   document_date.isoformat() if document_date else None,
-        "entities":        all_entities,
-        "icd10_accepted":  icd10_accepted,
-        "icd10_flagged":   icd10_flagged,
-        "raw_text":        segment_text,
-        "confidence_path": "clinical_nlp",
-        "pending_review":  False,
-        "review_task_ids": [],
-    }
-
-
-def extract_table_document(classified_doc: dict, pages: dict, block_map: dict) -> dict:
-    """
-    Extract structured data from table-heavy documents (primarily lab results).
-
-    Parses TABLE blocks to extract row-by-row values. Returns both the table
-    data and any clinical entities found via Comprehend Medical on the surrounding
-    narrative text.
-
-    Args:
-        classified_doc: segment dict with doc_type, start_page, end_page
-        pages:          full pages dict
-        block_map:      block ID -> block dict for relationship traversal
-    """
-    def get_cell_text(cell_block: dict) -> str:
-        text = ""
-        for rel in cell_block.get("Relationships", []):
-            if rel["Type"] == "CHILD":
-                for cid in rel["Ids"]:
-                    child = block_map.get(cid, {})
-                    if child.get("BlockType") == "WORD":
-                        text += child.get("Text", "") + " "
-        return text.strip()
-
-    segment_text = ""
-    all_tables   = []
-
-    for page_num in range(classified_doc["start_page"], classified_doc["end_page"] + 1):
-        if page_num not in pages:
-            continue
-
-        page         = pages[page_num]
-        segment_text += page["text"] + "\n"
-
-        for block in page["blocks"]:
-            if block.get("BlockType") != "TABLE":
-                continue
-
-            cells = {}
-            for rel in block.get("Relationships", []):
-                if rel["Type"] != "CHILD":
-                    continue
-                for cid in rel["Ids"]:
-                    cell_block = block_map.get(cid, {})
-                    if cell_block.get("BlockType") != "CELL":
-                        continue
-                    row = cell_block.get("RowIndex", 0)
-                    col = cell_block.get("ColumnIndex", 0)
-                    cells[(row, col)] = get_cell_text(cell_block)
-
-            if not cells:
-                continue
-
-            max_row = max(r for r, c in cells)
-            max_col = max(c for r, c in cells)
-            table_rows = [
-                [cells.get((r, c), "") for c in range(1, max_col + 1)]
-                for r in range(1, max_row + 1)
-            ]
-            all_tables.append(table_rows)
-
-    # Run Comprehend Medical on the text portion for any inline entity mentions.
-    # Use chunked processing (same as extract_clinical_document) to avoid silently
-    # losing entities from longer table documents.
-    entities     = []
-    icd10_accepted = []
-
-    if segment_text.strip():
-        text_chunks = split_text_with_overlap(segment_text, max_chars=COMPREHEND_MAX_CHARS)
-        for chunk in text_chunks:
-            ent_response = comprehend_client.detect_entities_v2(Text=chunk)
-            entities.extend(ent_response.get("Entities", []))
-
-    document_date = extract_primary_date_from_text(
-        "\n".join(segment_text.split("\n")[:10])
-    )
-
-    print(
-        f"  Table extraction on pages {classified_doc['start_page']}-"
-        f"{classified_doc['end_page']}: {len(all_tables)} table(s)"
-    )
-
-    return {
-        "doc_type":        classified_doc["doc_type"],
-        "start_page":      classified_doc["start_page"],
-        "end_page":        classified_doc["end_page"],
-        "document_date":   document_date.isoformat() if document_date else None,
-        "entities":        entities,
-        "icd10_accepted":  icd10_accepted,
-        "icd10_flagged":   [],
-        "tables":          all_tables,
-        "raw_text":        segment_text,
-        "confidence_path": "table_extractor",
-        "pending_review":  False,
-        "review_task_ids": [],
-    }
-
-
-def extract_handwritten_document(
-    classified_doc: dict,
-    pages: dict,
-    chart_id: str,
-) -> dict:
-    """
-    Apply Recipe 1.6 confidence tiering to handwriting-dominant documents.
-
-    Pages above HIGH_CONFIDENCE_THRESHOLD: extract text directly.
-    Pages between thresholds: extract but mark as unconfirmed.
-    Pages below LOW_CONFIDENCE_THRESHOLD: send to A2I for human review.
-
-    A2I review is asynchronous. This function submits the review tasks and
-    returns immediately with pending_review=True. The pipeline continues
-    processing other documents while reviewers work through the queue.
-
-    Args:
-        classified_doc: segment dict from classify_and_route_segments
-        pages:          full pages dict
-        chart_id:       chart identifier (used to construct A2I loop names)
-
-    Returns:
-        Extraction result dict. If pending_review is True, review_task_ids
-        is populated and the extracted text is incomplete until Step 7 resolves.
-    """
-    high_pages        = []
-    review_pages      = []
-    unconfirmed_pages = []
-
-    for page_num in range(classified_doc["start_page"], classified_doc["end_page"] + 1):
-        if page_num not in pages:
-            continue
-
-        page          = pages[page_num]
-        word_confs    = page["word_confidences"]
-
-        if not word_confs:
-            continue
-
-        avg_conf  = sum(word_confs) / len(word_confs)
-        page_text = page["text"]
-
-        if avg_conf >= HIGH_CONFIDENCE_THRESHOLD:
-            high_pages.append({"page_num": page_num, "text": page_text, "confidence": avg_conf})
-        elif avg_conf < LOW_CONFIDENCE_THRESHOLD:
-            image_key = f"charts-processed/{chart_id}/page-{page_num}.png"
-            review_pages.append({
-                "page_num":   page_num,
-                "text":       page_text,
-                "confidence": avg_conf,
-                "image_key":  image_key,
-            })
-        else:
-            unconfirmed_pages.append({"page_num": page_num, "text": page_text, "confidence": avg_conf})
-
-    # Submit low-confidence pages to A2I.
-    # A2I is async; we record the task IDs and return immediately.
-    # A downstream step checks for completion and applies corrections.
-    review_task_ids = []
-
-    for page_info in review_pages:
-        loop_name = f"chart-{chart_id}-page-{page_info['page_num']}"[:63]
-
-        try:
-            a2i_client.start_human_loop(
-                HumanLoopName=loop_name,
-                FlowDefinitionArn=A2I_FLOW_ARN,
-                HumanLoopInput={
-                    "InputContent": json.dumps({
-                        "image_s3_key": page_info["image_key"],
-                        "ocr_text":     page_info["text"],
-                        "chart_id":     chart_id,
-                        "page_num":     page_info["page_num"],
-                    })
-                },
-            )
-            review_task_ids.append(loop_name)
-        except ClientError as e:
-            print(
-                f"  WARNING: Could not start A2I loop {loop_name}: "
-                f"{e.response['Error']['Code']}"
-            )
-
-    # Assemble the direct-path text from high and unconfirmed pages.
-    direct_pages = sorted(high_pages + unconfirmed_pages, key=lambda p: p["page_num"])
-    direct_text  = "\n".join(p["text"] for p in direct_pages)
-
-    # Run Comprehend Medical with chunked processing to avoid silently losing
-    # entities from longer handwritten documents.
-    entities    = []
-    icd10_accepted = []
-
-    if direct_text.strip():
-        text_chunks = split_text_with_overlap(direct_text, max_chars=COMPREHEND_MAX_CHARS)
-        for chunk in text_chunks:
-            ent_response = comprehend_client.detect_entities_v2(Text=chunk)
-            entities.extend(ent_response.get("Entities", []))
-        ent_response = comprehend_client.detect_entities_v2(Text=chunk)
-        entities     = ent_response.get("Entities", [])
-
-    document_date = extract_primary_date_from_text(
-        "\n".join(direct_text.split("\n")[:10])
-    )
-
-    pending = len(review_task_ids) > 0
-    print(
-        f"  Handwriting extraction pages {classified_doc['start_page']}-"
-        f"{classified_doc['end_page']}: "
-        f"{len(high_pages)} direct, {len(unconfirmed_pages)} unconfirmed, "
-        f"{len(review_pages)} sent to A2I"
-    )
-
-    return {
-        "doc_type":          classified_doc["doc_type"],
-        "start_page":        classified_doc["start_page"],
-        "end_page":          classified_doc["end_page"],
-        "document_date":     document_date.isoformat() if document_date else None,
-        "entities":          entities,
-        "icd10_accepted":    icd10_accepted,
-        "icd10_flagged":     [],
-        "raw_text":          direct_text,
-        "confidence_path":   "handwriting_pipeline",
-        "pending_review":    pending,
-        "review_task_ids":   review_task_ids,
-        "unconfirmed_page_count": len(unconfirmed_pages),
-        "review_page_count": len(review_pages),
-    }
-
-
-def route_and_extract(classified_doc: dict, pages: dict, block_map: dict, chart_id: str) -> dict:
-    """
-    Route a classified document to its appropriate extraction function.
-    Returns a consistent result structure regardless of which path was taken.
-    """
-    path = classified_doc["extraction_path"]
-
-    if path == "handwriting_pipeline":
-        return extract_handwritten_document(classified_doc, pages, chart_id)
-    elif path == "table_extractor":
-        return extract_table_document(classified_doc, pages, block_map)
-    elif path in ("clinical_nlp", "generic_text"):
-        return extract_clinical_document(classified_doc, pages)
-    else:
-        # Unclassified: store the raw text preview for human triage.
-        segment_text = ""
-        for pn in range(classified_doc["start_page"], classified_doc["end_page"] + 1):
-            if pn in pages:
-                segment_text += pages[pn]["text"] + "\n"
-
-        return {
-            "doc_type":        "unclassified",
-            "start_page":      classified_doc["start_page"],
-            "end_page":        classified_doc["end_page"],
-            "document_date":   None,
-            "entities":        [],
-            "icd10_accepted":  [],
-            "icd10_flagged":   [],
-            "raw_text":        segment_text[:500],
-            "confidence_path": "unclassified_review",
-            "pending_review":  False,
-            "review_task_ids": [],
+            ":t1":     Decimal(str(len(routing["tier1_skip"]))),
+            ":t2":     Decimal(str(len(routing["tier2_nova"]))),
+            ":t3":     Decimal(str(
+                len(routing["tier3_sonnet_text"]) + len(routing["tier3_sonnet_vision"])
+            )),
+            ":t4":     Decimal(str(len(routing["tier4_opus_vision"]))),
+            ":status": "extracting"
         }
+    )
+
+    return routing
 ```
 
 ---
 
-## Step 7: Quality Scoring Per Extracted Document
-
-After extraction completes, every logical document gets a quality score. The composite score combines OCR confidence, classification confidence, extraction completeness, and handwriting review rate into a single 0.0-1.0 signal. This score determines whether the chart gets auto-promoted to FHIR loading or flagged for priority human review sampling.
+## Step 6: Vision Extraction (Tier 3 and Tier 4)
 
 ```python
-def score_extracted_document(
-    extraction: dict,
-    classified_doc: dict,
-    pages: dict,
+def generate_vision_extraction_jsonl(
+    vision_pages: list,
+    model_tier: int,
+    chart_id: str
+) -> str:
+    """
+    Generate a JSONL file for vision extraction batch inference.
+    Sends the raw page PNG image to Sonnet or Opus, which reads
+    the handwriting or degraded content directly from the image.
+
+    This is significantly more expensive per page than text-based extraction
+    (~10-20x more tokens for the image), so it's reserved for pages where
+    Textract confidence signals that the OCR output is unreliable.
+
+    File size warning: each base64-encoded page image adds 1.3-4 MB per request
+    line. A wave of 10,000 vision-path pages produces a 13-40 GB JSONL file.
+    Before submitting large vision batches:
+      - Split into multiple JSONL files (2,000-3,000 pages each).
+      - Use S3 multipart upload for files >5 GB (boto3 TransferConfig handles this
+        automatically when multipart_threshold is set).
+      - Verify each request line stays within Bedrock's per-request payload limit.
+      - Consider downsampling 600 DPI images to 300 DPI before embedding (75% size
+        reduction with negligible accuracy impact per Recipe 1.6 benchmarks).
+    [EDITOR: review fix - P1 vision JSONL file sizes. Added size guidance to docstring.]
+    """
+    s3 = get_s3_client()
+
+    model_id   = MODEL_TIER3_SONNET if model_tier == 3 else MODEL_TIER4_OPUS
+    tier_label = f"tier{model_tier}"
+
+    VISION_PROMPT = """Read this handwritten or degraded medical record page. Extract all clinical information visible.
+
+The page is from a historical paper medical chart. Focus on:
+- Diagnoses, conditions, or problems mentioned
+- Medications and doses
+- Dates (visit date, document date, any dates mentioned in context)
+- Lab values, vital signs, or test results
+- Procedures or treatments mentioned
+
+Return JSON:
+{
+  "document_date": "<YYYY-MM-DD or null>",
+  "doc_type_confirmed": "<document type>",
+  "diagnoses": [{"description": "...", "icd_concept": "...", "date": "..."}],
+  "medications": [{"name": "...", "dose": "...", "frequency": "..."}],
+  "procedures": [{"description": "...", "date": "..."}],
+  "lab_values": [{"test": "...", "value": "...", "unit": "...", "ref_range": "..."}],
+  "allergies": ["..."],
+  "vital_signs": [{"type": "...", "value": "...", "unit": "...", "date": "..."}],
+  "legibility": <0.0-1.0>,
+  "extraction_notes": "<anything unclear, partially legible, or uncertain>"
+}
+
+Return ONLY valid JSON."""
+
+    requests = []
+
+    for page_info in vision_pages:
+        page_num  = page_info["page_num"]
+        image_key = f"page-images/{chart_id}/page-{page_num}.png"
+
+        # Load the page image
+        img_response = s3.get_object(Bucket=BUCKET_CHARTS_PROCESSED, Key=image_key)
+        image_bytes  = img_response["Body"].read()
+
+        # IMPORTANT: batch inference JSONL requires base64-encoded strings for image bytes.
+        # Unlike the synchronous Converse API (where boto3 handles encoding transparently),
+        # batch JSONL is raw JSON -- you must encode manually.
+        # list(image_bytes) produces a JSON integer array the Bedrock service cannot
+        # deserialize, causing silent failures for every vision-tier batch request.
+        # [EDITOR: review fix - P0 image encoding. Fixed base64 encoding. list(image_bytes)
+        #  serializes as a JSON integer array and silently fails. base64.b64encode(image_bytes)
+        #  .decode("utf-8") produces the base64 string Bedrock batch inference requires.]
+        image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+        # Vision JSONL file size note: each base64-encoded page image adds 1.3-4MB
+        # to the JSONL. A 10,000-page vision wave produces a 13-40GB file.
+        # See generate_vision_extraction_jsonl docstring for splitting guidance.
+        # [EDITOR: review fix - P1 vision JSONL file sizes. Added inline size note.]
+
+        request = {
+            "recordId": f"{chart_id}-{tier_label}-page-{page_num}",
+            "modelInput": {
+                "schemaVersion": "messages-v1",
+                "system": [
+                    {
+                        "text": VISION_PROMPT,
+                        "cachePoint": {"type": "default"}
+                    }
+                ],
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "image": {
+                                    "format": "png",
+                                    "source": {
+                                        "bytes": image_b64
+                                        # base64-encoded string as required for batch JSONL.
+                                    }
+                                }
+                            },
+                            {
+                                "text": f"Chart: {chart_id} | Page: {page_num}"
+                                # Do NOT include OCR text here. The whole point of
+                                # the vision path is that the OCR text was unreliable.
+                                # Give the model only the image and structural metadata.
+                            }
+                        ]
+                    }
+                ],
+                "inferenceConfig": {
+                    "maxTokens":   1024,
+                    "temperature": 0
+                }
+            }
+        }
+        requests.append(json.dumps(request))
+
+    jsonl_key = f"batch-input/{chart_id}/{tier_label}-vision.jsonl"
+    s3.put_object(
+        Bucket=BUCKET_BATCH_INFERENCE,
+        Key=jsonl_key,
+        Body=("\n".join(requests) + "\n").encode("utf-8"),
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
+    )
+
+    logger.info(
+        "Vision extraction JSONL generated",
+        extra={
+            "chart_id":    chart_id,
+            "tier":        tier_label,
+            "page_count":  len(vision_pages)
+        }
+    )
+    return jsonl_key
+```
+
+---
+
+## Step 7: Code Validation with Comprehend Medical
+
+```python
+def validate_codes_comprehend_medical(
+    diagnoses: list[dict],
+    medications: list[dict],
+    region: str = "us-east-1"
 ) -> dict:
     """
-    Compute a quality score for one extracted logical document.
+    Validate ICD-10-CM codes for diagnoses and RxNorm CUIs for medications.
 
-    Four dimensions, each normalized to 0.0-1.0, combined as a weighted average.
-
-    OCR confidence: average word-level Textract confidence across the segment pages.
-    Classification confidence: normalized keyword match score from Step 5.
-    Extraction completeness: fraction of expected content fields that are populated.
-    Handwriting review rate: inverted fraction of handwritten pages sent to A2I.
-
-    Args:
-        extraction:      result dict from route_and_extract (Step 6)
-        classified_doc:  segment dict from classify_and_route_segments (Step 5)
-        pages:           full pages dict from group_blocks_by_page (Step 3)
+    LLMs understand clinical language but should not be trusted for exact code
+    generation. Comprehend Medical maps extracted text descriptions to validated
+    codes from authoritative reference data.
 
     Returns:
-        A quality score dict with composite score, tier, and per-dimension breakdown.
+        {
+            "diagnoses_coded":   [{"description": ..., "icd10_code": ..., "score": ...}],
+            "medications_coded": [{"name": ..., "rxnorm_cui": ..., "score": ...}]
+        }
     """
-    scores = {}
+    cm      = get_comprehend_medical_client(region=region)
+    results = {"diagnoses_coded": [], "medications_coded": []}
 
-    # OCR confidence: average word confidence across all pages in the segment.
-    all_confs = []
-    for page_num in range(classified_doc["start_page"], classified_doc["end_page"] + 1):
-        if page_num in pages:
-            all_confs.extend(pages[page_num]["word_confidences"])
+    # ICD-10-CM inference
+    if diagnoses:
+        # Join all diagnosis descriptions for a single API call (up to 20,000 chars)
+        diagnosis_text = "\n".join(
+            d.get("description", "") for d in diagnoses if d.get("description")
+        )[:20000]
 
-    scores["ocr_confidence"] = (sum(all_confs) / len(all_confs)) if all_confs else 0.5
+        if diagnosis_text:
+            response = cm.infer_icd10_cm(Text=diagnosis_text)
+            for entity in response.get("Entities", []):
+                concepts = entity.get("ICD10CMConcepts", [])
+                if concepts and concepts[0].get("Score", 0) >= 0.80:
+                    results["diagnoses_coded"].append({
+                        "description":   entity.get("Text"),
+                        "icd10_code":    concepts[0]["Code"],
+                        "icd10_display": concepts[0]["Description"],
+                        "score":         concepts[0]["Score"]
+                    })
 
-    # Classification confidence: normalize keyword match score.
-    # A score of 8 or more matches is treated as maximum confidence.
-    class_score_raw = classified_doc.get("class_score", 0)
-    scores["class_confidence"] = min(class_score_raw / 8.0, 1.0)
+    # RxNorm inference
+    if medications:
+        medication_text = "\n".join(
+            m.get("name", "") for m in medications if m.get("name")
+        )[:20000]
 
-    # Extraction completeness: what fraction of expected fields are populated?
-    doc_type         = extraction.get("doc_type", "unclassified")
-    expected_fields  = EXPECTED_CONTENT.get(doc_type, ["entities"])
-    populated_count  = 0
+        if medication_text:
+            response = cm.infer_rxnorm(Text=medication_text)
+            for entity in response.get("Entities", []):
+                concepts = entity.get("RxNormConcepts", [])
+                if concepts and concepts[0].get("Score", 0) >= 0.80:
+                    results["medications_coded"].append({
+                        "name":         entity.get("Text"),
+                        "rxnorm_cui":   concepts[0]["Code"],
+                        "rxnorm_name":  concepts[0]["Description"],
+                        "score":        concepts[0]["Score"]
+                    })
 
-    for field in expected_fields:
-        value = extraction.get(field)
-        if value:
-            populated_count += 1
-
-    scores["extraction_completeness"] = (
-        populated_count / len(expected_fields) if expected_fields else 0.5
-    )
-
-    # Handwriting review rate (inverted).
-    # A segment with no handwriting scores 1.0 here (no penalty).
-    # A segment where 100% of handwritten pages went to A2I scores 0.0.
-    if classified_doc.get("extraction_path") == "handwriting_pipeline":
-        # Denominator is handwritten page count, not total segment pages.
-        # A 5-page segment with 2 HW pages where 1 went to A2I = 50% review rate.
-        # Using total pages would undercount review rate for mixed segments.
-        total_hw_pages  = max(
-            extraction.get("handwritten_page_count", 0), 1
-        )
-        review_pages    = extraction.get("review_page_count", 0)
-        review_rate     = review_pages / total_hw_pages
-        scores["handwriting_review_rate"] = 1.0 - review_rate
-    else:
-        scores["handwriting_review_rate"] = 1.0
-
-    # Composite weighted score.
-    composite = sum(
-        QUALITY_WEIGHTS[dim] * scores[dim]
-        for dim in QUALITY_WEIGHTS
-    )
-
-    if composite >= 0.80:
-        tier = "high"
-    elif composite >= 0.60:
-        tier = "medium"
-    else:
-        tier = "low"
-
-    return {
-        "composite": round(composite, 3),
-        "tier":      tier,
-        "flagged":   (tier == "low"),
-        "breakdown": {k: round(v, 3) for k, v in scores.items()},
-    }
-
-
-def compute_chart_quality_summary(document_scores: list, chart_id: str) -> dict:
-    """
-    Aggregate per-document quality scores into a chart-level summary.
-    Updates the DynamoDB tracking record with the chart composite score.
-    """
-    if not document_scores:
-        return {"chart_composite": 0.0, "tier": "low", "needs_review": True}
-
-    composites   = [s["composite"] for s in document_scores]
-    chart_comp   = sum(composites) / len(composites)
-
-    tier_counts  = {"high": 0, "medium": 0, "low": 0}
-    for s in document_scores:
-        tier_counts[s["tier"]] += 1
-
-    needs_review = tier_counts["low"] > 0 or chart_comp < 0.70
-
-    summary = {
-        "chart_composite": round(chart_comp, 3),
-        "document_count":  len(document_scores),
-        "high_count":      tier_counts["high"],
-        "medium_count":    tier_counts["medium"],
-        "low_count":       tier_counts["low"],
-        "needs_review":    needs_review,
-    }
-
-    # Update DynamoDB.
-    dynamodb.Table(MIGRATION_TABLE).update_item(
-        Key={"chart_id": chart_id},
-        UpdateExpression=(
-            "SET quality_score = :qs, quality_tier = :qt, "
-            "doc_count = :dc, needs_review = :nr"
-        ),
-        ExpressionAttributeValues={
-            ":qs": Decimal(str(round(chart_comp, 3))),
-            ":qt": "high" if chart_comp >= 0.80 else ("medium" if chart_comp >= 0.60 else "low"),
-            ":dc": len(document_scores),
-            ":nr": needs_review,
-        },
-    )
-
-    return summary
+    return results
 ```
 
 ---
 
-## Step 8: FHIR R4 Resource Mapping
-
-This is where extracted data becomes useful. Every document produces at least one `DocumentReference` (the provenance record: "this document was digitized"). Clinical documents produce additional FHIR resources from their extracted entities and ICD-10 codes. Every migrated resource carries quality metadata and a provenance note so downstream systems know exactly where the data came from and how much to trust it.
+## Step 8 and 9: FHIR Resource Assembly and HealthLake Import
 
 ```python
-def loinc_for_doc_type(doc_type: str) -> tuple[str, str]:
-    """Return the LOINC code and display text for a document type."""
-    return LOINC_BY_DOC_TYPE.get(doc_type, ("34133-9", "Summarization of episode note"))
-
-
-def lookup_cvx_code(vaccine_text: str) -> str | None:
-    """Return a CVX code for a vaccine name, or None if not found."""
-    lower = vaccine_text.lower()
-    for keyword, cvx in CVX_LOOKUP.items():
-        if keyword in lower:
-            return cvx
-    return None
-
-
-def map_document_to_fhir(
+def generate_fallback_document_reference(
     chart_id: str,
     member_id: str,
-    extraction: dict,
-    quality_score: dict,
-) -> list:
+    result: dict
+) -> dict:
     """
-    Map one extracted logical document to a list of FHIR R4 resources.
+    Generate a minimal valid FHIR DocumentReference when structured FHIR mapping fails.
 
-    Every document produces a DocumentReference. Clinical documents produce
-    additional Condition, Observation, MedicationStatement, or Immunization
-    resources based on their extracted entities and ICD-10 codes.
+    Called in assemble_fhir_bundle when the LLM FHIR mapping output is malformed or
+    unparseable. Without this function, the fallback call raises a NameError, turning
+    a graceful degradation into an unhandled exception.
 
-    All migrated resources use conservative FHIR status values (unconfirmed,
-    unknown) because we cannot verify clinical facts from paper chart OCR.
-    The provenance note on every resource documents the source, page range,
-    and OCR confidence so downstream systems can apply appropriate skepticism.
-
-    Args:
-        chart_id:      chart identifier (used to construct source URIs)
-        member_id:     FHIR Patient resource ID for this member
-        extraction:    result dict from route_and_extract (Step 6)
-        quality_score: result dict from score_extracted_document (Step 7)
-
-    Returns:
-        A list of FHIR R4 resource dicts (valid FHIR R4 JSON structures).
+    The generated resource records that the chart segment was digitized (the "we have
+    this document" record) and flags it for manual review. It does NOT drop the chart.
+    A non-zero fallback rate in CloudWatch is a signal worth investigating.
+    [EDITOR: review fix - P1 undefined function. generate_fallback_document_reference
+     was called in assemble_fhir_bundle but never defined. NameError here turned graceful
+     fallback into an unhandled exception. Implemented with minimal valid FHIR output.]
     """
-    resources     = []
-    doc_type      = extraction.get("doc_type", "unclassified")
-    start_page    = extraction.get("start_page", 0)
-    end_page      = extraction.get("end_page", 0)
-    doc_date      = extraction.get("document_date")
-    source_uri    = (
-        f"s3://charts-archive/{chart_id}/"
-        f"pages-{start_page}-{end_page}.pdf"
-    )
-
-    loinc_code, loinc_display = loinc_for_doc_type(doc_type)
-    provenance_note = (
-        f"Migrated from paper chart. "
-        f"Chart: {chart_id}. "
-        f"Pages {start_page}-{end_page}. "
-        f"OCR confidence: {quality_score['breakdown'].get('ocr_confidence', 0):.3f}. "
-        f"Quality tier: {quality_score['tier']}."
-    )
-
-    # ---- DocumentReference (always created) ----
-    doc_ref = {
+    segment_id = result.get("recordId", "unknown-segment")
+    return {
         "resourceType": "DocumentReference",
         "status":       "current",
         "subject":      {"reference": f"Patient/{member_id}"},
         "type": {
             "coding": [{
                 "system":  "http://loinc.org",
-                "code":    loinc_code,
-                "display": loinc_display,
-            }],
-            "text": doc_type,
+                "code":    "34133-9",
+                "display": "Summary of episode note"
+            }]
         },
-        "content": [{
-            "attachment": {
-                "contentType": "application/pdf",
-                "url":         source_uri,
-            }
-        }],
-        "extension": [{
-            "url":          "https://example.org/fhir/ext/migration-quality-score",
-            "valueDecimal": quality_score["composite"],
-        }],
-        "note": [{"text": provenance_note}],
+        "note": [{
+            "text": (
+                f"FHIR mapping failed for chart {chart_id}, segment {segment_id}. "
+                f"DocumentReference generated as fallback. Manual review recommended. "
+                f"Original chart content preserved in S3 at "
+                f"s3://{BUCKET_CHARTS_PROCESSED}/{chart_id}/chart.pdf."
+            )
+        }]
     }
-    if doc_date:
-        doc_ref["date"] = doc_date
-
-    resources.append(doc_ref)
-
-    # ---- Condition resources (from clinical notes) ----
-    if doc_type in [
-        "progress_note", "history_and_physical", "discharge_summary",
-        "operative_report", "consultation_report",
-    ]:
-        for icd_entity in extraction.get("icd10_accepted", []):
-            concepts = icd_entity.get("ICD10CMConcepts", [])
-            if not concepts:
-                continue
-
-            condition = {
-                "resourceType": "Condition",
-                # clinicalStatus intentionally omitted. FHIR R4 does not require it,
-                # and the condition-clinical ValueSet has no "unknown" code. HealthLake
-                # will reject resources with invalid coded values. We cannot reliably
-                # determine active vs. resolved from historical paper chart OCR, so
-                # omitting is more correct than guessing.
-                "verificationStatus": {
-                    "coding": [{
-                        "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
-                        "code":   "unconfirmed",
-                    }]
-                    # Migrated from paper with OCR; not clinician-verified in this system.
-                    # Do not promote to "confirmed" without clinical review.
-                },
-                "subject": {"reference": f"Patient/{member_id}"},
-                "code": {
-                    "coding": [{
-                        "system":  "http://hl7.org/fhir/sid/icd-10-cm",
-                        "code":    concepts[0].get("Code", ""),
-                        "display": concepts[0].get("Description", ""),
-                    }],
-                    "text": icd_entity.get("Text", ""),
-                },
-                "note": [{"text": provenance_note}],
-            }
-            if doc_date:
-                condition["recordedDate"] = doc_date
-
-            resources.append(condition)
-
-    # ---- Observation resources (from lab results) ----
-    if doc_type == "lab_result":
-        # Parse lab values from table data when available.
-        # A real implementation would apply column normalization (see Recipe 1.5)
-        # to extract test name, result, unit, and reference range.
-        for table in extraction.get("tables", []):
-            if len(table) < 2:
-                continue
-
-            # Heuristic: treat the first row as a header and subsequent rows as data.
-            header_row  = [cell.lower().strip() for cell in table[0]]
-            name_col    = next((i for i, h in enumerate(header_row) if "test" in h or "name" in h), 0)
-            result_col  = next((i for i, h in enumerate(header_row) if "result" in h or "value" in h), 1)
-            unit_col    = next((i for i, h in enumerate(header_row) if "unit" in h), None)
-            ref_col     = next((i for i, h in enumerate(header_row) if "range" in h or "ref" in h), None)
-
-            for row in table[1:]:
-                if not row or not row[name_col].strip():
-                    continue
-
-                observation = {
-                    "resourceType": "Observation",
-                    "status":       "final",
-                    "subject":      {"reference": f"Patient/{member_id}"},
-                    "code":         {"text": row[name_col] if name_col < len(row) else ""},
-                    "note":         [{"text": provenance_note}],
-                }
-
-                if doc_date:
-                    observation["effectiveDateTime"] = doc_date
-                    observation["issued"]            = doc_date
-
-                result_text = row[result_col].strip() if result_col < len(row) else ""
-                if result_text:
-                    # Try to parse a numeric result; fall back to string.
-                    try:
-                        num_val = float(result_text.replace(",", ""))
-                        observation["valueQuantity"] = {
-                            "value":  num_val,
-                            "unit":   row[unit_col] if unit_col and unit_col < len(row) else "",
-                            "system": "http://unitsofmeasure.org",
-                        }
-                    except ValueError:
-                        observation["valueString"] = result_text
-
-                if ref_col and ref_col < len(row) and row[ref_col].strip():
-                    observation["referenceRange"] = [{"text": row[ref_col]}]
-
-                resources.append(observation)
-
-    # ---- MedicationStatement resources ----
-    if doc_type in ["medication_list", "progress_note", "history_and_physical"]:
-        seen_meds = set()
-        for entity in extraction.get("entities", []):
-            if entity.get("Category") != "MEDICATION":
-                continue
-            med_text = entity.get("Text", "").strip()
-            if not med_text or med_text.lower() in seen_meds:
-                continue
-            seen_meds.add(med_text.lower())
-
-            med_statement = {
-                "resourceType": "MedicationStatement",
-                "status":       "unknown",
-                # Historical chart; cannot determine whether still current.
-                "subject":      {"reference": f"Patient/{member_id}"},
-                "medicationCodeableConcept": {"text": med_text},
-                "note":         [{"text": provenance_note}],
-            }
-
-            # Add RxNorm code if available.
-            rxnorm = entity.get("RxNorm", "")
-            if rxnorm:
-                med_statement["medicationCodeableConcept"]["coding"] = [{
-                    "system":  "http://www.nlm.nih.gov/research/umls/rxnorm",
-                    "code":    rxnorm,
-                    "display": med_text,
-                }]
-
-            if doc_date:
-                med_statement["effectiveDateTime"] = doc_date
-
-            resources.append(med_statement)
-
-    # ---- Immunization resources ----
-    if doc_type == "immunization_record":
-        for entity in extraction.get("entities", []):
-            if entity.get("Category") not in ("TEST_TREATMENT_PROCEDURE", "MEDICATION"):
-                continue
-            vaccine_text = entity.get("Text", "").strip()
-            if not vaccine_text:
-                continue
-
-            immunization = {
-                "resourceType": "Immunization",
-                "status":       "completed",
-                "patient":      {"reference": f"Patient/{member_id}"},
-                "vaccineCode":  {"text": vaccine_text},
-                "note":         [{"text": provenance_note}],
-            }
-
-            cvx_code = lookup_cvx_code(vaccine_text)
-            if cvx_code:
-                immunization["vaccineCode"]["coding"] = [{
-                    "system":  "http://hl7.org/fhir/sid/cvx",
-                    "code":    cvx_code,
-                    "display": vaccine_text,
-                }]
-
-            if doc_date:
-                immunization["occurrenceDateTime"] = doc_date
-
-            resources.append(immunization)
-
-    return resources
-```
-
----
-
-## Step 9: FHIR Bundle Assembly and HealthLake Import
-
-HealthLake's bulk FHIR import reads NDJSON files from S3 (one FHIR resource per line, no commas between objects). For large migration programs, we batch the import: accumulate completed chart bundles and submit one HealthLake import job per group of charts rather than one job per chart. Import jobs have setup overhead; batching amortizes that cost.
-
-```python
-def deduplicate_conditions(resources: list) -> list:
-    """
-    Remove duplicate Condition resources that share the same patient and ICD-10 code.
-    When the same diagnosis appears in multiple documents within one chart,
-    keep the resource with the most recent recordedDate.
-    """
-    seen = {}   # key: (member_id, icd10_code) -> best resource
-
-    non_conditions = [r for r in resources if r.get("resourceType") != "Condition"]
-    conditions     = [r for r in resources if r.get("resourceType") == "Condition"]
-
-    for cond in conditions:
-        subject  = cond.get("subject", {}).get("reference", "")
-        codings  = cond.get("code", {}).get("coding", [])
-        icd_code = codings[0].get("code", "") if codings else ""
-        dedup_key = (subject, icd_code)
-
-        existing = seen.get(dedup_key)
-        if existing is None:
-            seen[dedup_key] = cond
-        else:
-            # Keep the one with the more recent (or any) recordedDate.
-            new_date = cond.get("recordedDate", "")
-            old_date = existing.get("recordedDate", "")
-            if new_date > old_date:
-                seen[dedup_key] = cond
-
-    return non_conditions + list(seen.values())
 
 
 def assemble_fhir_bundle(
     chart_id: str,
     member_id: str,
-    all_document_resources: list,
-    quality_summary: dict,
-) -> tuple[str, int]:
+    extraction_results: list[dict]
+) -> dict:
     """
-    Flatten all per-document FHIR resources into a single chart bundle,
-    deduplicate Condition and MedicationStatement resources, and write
-    the bundle as NDJSON to S3.
+    Assemble a FHIR R4 bundle from extraction results across all pages/tiers.
 
-    Also updates the DynamoDB tracking record with resource counts and
-    quality summary, and sets the chart status to "fhir_ready".
-
-    Args:
-        chart_id:               chart identifier
-        member_id:              FHIR Patient resource ID
-        all_document_resources: list of per-document resource lists from Step 8
-        quality_summary:        chart-level quality summary from Step 7
-
-    Returns:
-        A tuple of (bundle_s3_key, total_resource_count).
+    Key FHIR rules for migrated records:
+    1. verificationStatus = "unconfirmed" on all Condition resources (always)
+    2. clinicalStatus is OMITTED entirely (no "unknown" code in condition-clinical ValueSet)
+    3. MedicationStatement.status = "unknown" (historical, can't determine active/inactive)
+    4. Every resource includes a note with provenance: chart ID, page range, OCR confidence
+    5. Deduplicate: same ICD-10 code from multiple pages -> one Condition resource
     """
-    # Flatten all resource lists.
-    all_resources = [r for doc_resources in all_document_resources for r in doc_resources]
+    all_resources = []
 
-    # Deduplicate Conditions (same ICD-10 code appearing in multiple documents).
-    all_resources = deduplicate_conditions(all_resources)
+    # Always generate a DocumentReference for each document segment
+    # This is the "we digitized this" record, even if structured extraction failed
+    for seg in extraction_results:
+        doc_ref = {
+            "resourceType": "DocumentReference",
+            "status":       "current",
+            "subject":      {"reference": f"Patient/{member_id}"},
+            "type": {
+                "coding": [{"system": "http://loinc.org", "code": "34133-9",
+                             "display": "Summary of episode note"}],
+                "text": seg.get("doc_type", "clinical document")
+            },
+            "date": seg.get("document_date"),
+            "content": [{
+                "attachment": {
+                    "contentType": "application/pdf",
+                    "url": f"s3://{BUCKET_CHARTS_PROCESSED}/{chart_id}/chart.pdf"
+                }
+            }],
+            "note": [{
+                "text": (
+                    f"Migrated from paper chart. Chart: {chart_id}. "
+                    f"Pages {seg.get('start_page', '?')}-{seg.get('end_page', '?')}. "
+                    f"OCR confidence: {seg.get('avg_confidence', 'unknown')}. "
+                    f"Extraction tier: {seg.get('model_tier', 'unknown')}."
+                )
+            }]
+        }
+        all_resources.append(doc_ref)
 
-    # Deduplicate MedicationStatements (same medication text appearing multiple times).
-    seen_meds     = set()
-    unique_meds   = []
-    for r in all_resources:
-        if r.get("resourceType") == "MedicationStatement":
-            med_text = r.get("medicationCodeableConcept", {}).get("text", "").lower()
-            subject  = r.get("subject", {}).get("reference", "")
-            key      = (subject, med_text)
-            if key not in seen_meds:
-                seen_meds.add(key)
-                unique_meds.append(r)
-        else:
-            unique_meds.append(r)
-    all_resources = unique_meds
+        # Generate Condition resources for validated diagnoses
+        for dx in seg.get("validated_codes", {}).get("diagnoses_coded", []):
+            condition = {
+                "resourceType": "Condition",
+                # clinicalStatus intentionally omitted.
+                # FHIR R4 does not require it, and the condition-clinical ValueSet
+                # has no "unknown" code. HealthLake validates this and will reject
+                # resources with invalid clinicalStatus values. Omitting is correct.
+                "verificationStatus": {
+                    "coding": [{
+                        "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+                        "code":   "unconfirmed",
+                        "display": "Unconfirmed"
+                    }]
+                    # verificationStatus = unconfirmed for all OCR-derived records.
+                    # Do NOT use "confirmed". These are historical OCR extractions,
+                    # not clinician-verified entries.
+                },
+                "subject":      {"reference": f"Patient/{member_id}"},
+                "code": {
+                    "coding": [{
+                        "system":  "http://hl7.org/fhir/sid/icd-10-cm",
+                        "code":    dx["icd10_code"],
+                        "display": dx["icd10_display"]
+                    }],
+                    "text": dx["description"]
+                },
+                "recordedDate": seg.get("document_date"),
+                "note": [{
+                    "text": (
+                        f"Migrated from paper chart {chart_id}, "
+                        f"pages {seg.get('start_page', '?')}-{seg.get('end_page', '?')}. "
+                        f"ICD-10 mapping confidence: {dx.get('score', 'unknown'):.2f}."
+                    )
+                }]
+            }
+            all_resources.append(condition)
 
-    # Write FHIR NDJSON to S3. One resource per line, no trailing commas.
-    ndjson_content = "\n".join(json.dumps(r) for r in all_resources)
+        # Generate MedicationStatement resources for validated medications
+        for med in seg.get("validated_codes", {}).get("medications_coded", []):
+            med_statement = {
+                "resourceType": "MedicationStatement",
+                "status":       "unknown",  # Historical record; cannot determine current status
+                "subject":      {"reference": f"Patient/{member_id}"},
+                "medicationCodeableConcept": {
+                    "coding": [{
+                        "system":  "http://www.nlm.nih.gov/research/umls/rxnorm",
+                        "code":    med["rxnorm_cui"],
+                        "display": med["rxnorm_name"]
+                    }],
+                    "text": med["name"]
+                },
+                "effectiveDateTime": seg.get("document_date"),
+                "note": [{"text": f"Migrated from paper chart {chart_id}."}]
+            }
+            all_resources.append(med_statement)
+
+    # Deduplicate Conditions: same ICD-10 code for the same member -> keep one
+    seen_conditions = {}
+    deduplicated    = []
+    for resource in all_resources:
+        if resource["resourceType"] != "Condition":
+            deduplicated.append(resource)
+            continue
+        coding = resource.get("code", {}).get("coding", [{}])[0]
+        key    = (member_id, coding.get("code", ""))
+        if key not in seen_conditions:
+            seen_conditions[key] = True
+            deduplicated.append(resource)
+
+    resource_counts = {}
+    for r in deduplicated:
+        rtype = r["resourceType"]
+        resource_counts[rtype] = resource_counts.get(rtype, 0) + 1
+
+    return {
+        "resources":       deduplicated,
+        "resource_counts": resource_counts,
+        "total":           len(deduplicated)
+    }
+
+
+def write_fhir_bundle_and_update_dynamo(
+    chart_id: str,
+    bundle: dict
+) -> str:
+    """
+    Write the FHIR bundle as NDJSON to S3 and update DynamoDB.
+    Uses Decimal for all numeric DynamoDB values (boto3 requires this;
+    Python float values will raise a TypeError on DynamoDB writes).
+    """
+    s3    = get_s3_client()
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
+
+    # Write FHIR NDJSON (one resource per line, no trailing comma, no array brackets)
+    ndjson_content = "\n".join(json.dumps(r) for r in bundle["resources"]) + "\n"
     bundle_key     = f"fhir-bundles/{chart_id}/bundle.ndjson"
 
-    s3_client.put_object(
-        Bucket=FHIR_OUTPUT_BUCKET,
+    s3.put_object(
+        Bucket=BUCKET_FHIR_OUTPUT,
         Key=bundle_key,
         Body=ndjson_content.encode("utf-8"),
-        ContentType="application/x-ndjson",
+        ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=KMS_KEY_ARN
     )
 
-    # Count resources by type for the DynamoDB record.
-    type_counts = {}
-    for r in all_resources:
-        rt = r.get("resourceType", "Unknown")
-        type_counts[rt] = type_counts.get(rt, 0) + 1
-
-    # Update DynamoDB.
-    dynamodb.Table(MIGRATION_TABLE).update_item(
+    # Update DynamoDB. ALL numeric values must be Decimal, never float.
+    counts = bundle["resource_counts"]
+    table.update_item(
         Key={"chart_id": chart_id},
         UpdateExpression=(
-            "SET #s = :status, fhir_bundle_key = :bk, "
-            "fhir_resource_count = :rc, "
-            "conditions_count = :cc, observations_count = :oc, "
-            "med_statements_count = :mc, doc_references_count = :dc"
+            "SET #s = :status, fhir_bundle_key = :key, "
+            "fhir_total = :total, conditions_count = :cond, "
+            "obs_count = :obs, med_count = :med, docref_count = :docref"
         ),
         ExpressionAttributeNames={"#s": "status"},
         ExpressionAttributeValues={
             ":status": "fhir_ready",
-            ":bk":     bundle_key,
-            ":rc":     len(all_resources),
-            ":cc":     type_counts.get("Condition", 0),
-            ":oc":     type_counts.get("Observation", 0),
-            ":mc":     type_counts.get("MedicationStatement", 0),
-            ":dc":     type_counts.get("DocumentReference", 0),
-        },
+            ":key":    bundle_key,
+            ":total":  Decimal(str(bundle["total"])),
+            ":cond":   Decimal(str(counts.get("Condition", 0))),
+            ":obs":    Decimal(str(counts.get("Observation", 0))),
+            ":med":    Decimal(str(counts.get("MedicationStatement", 0))),
+            ":docref": Decimal(str(counts.get("DocumentReference", 0)))
+        }
     )
 
-    print(
-        f"  FHIR bundle for {chart_id}: {len(all_resources)} resources "
-        f"({type_counts})"
+    logger.info(
+        "FHIR bundle written",
+        extra={
+            "chart_id":    chart_id,
+            "total":       bundle["total"],
+            "conditions":  counts.get("Condition", 0),
+            "medications": counts.get("MedicationStatement", 0)
+            # Resource counts are not PHI; safe to log
+        }
     )
-    return bundle_key, len(all_resources)
+    return bundle_key
 
 
 def submit_healthlake_import_batch(
-    datastore_id: str,
-    batch_size: int = 1000,
-) -> str | None:
+    batch_size: int = 2000,
+    datastore_id: str = HEALTHLAKE_DATASTORE_ID
+) -> Optional[str]:
     """
-    Find charts with status "fhir_ready" and submit a HealthLake bulk import job.
+    Aggregate fhir_ready charts and submit a HealthLake bulk FHIR import job.
 
-    This function is called on a schedule (e.g., every hour via EventBridge),
-    not per-chart. Batching reduces HealthLake import job overhead at scale.
-    One job per 1,000 charts is a reasonable cadence for a large program.
+    Strategy: copy all FHIR NDJSON files for the batch to a timestamped import
+    prefix, then submit StartFHIRImportJob pointing to that prefix.
 
-    Scans DynamoDB for ready charts, writes an NDJSON manifest pointing to their
-    bundle files, submits the HealthLake import job, and marks the charts as
-    "import_submitted".
-
-    Args:
-        datastore_id: HealthLake data store ID
-        batch_size:   maximum number of charts per import job
-
-    Returns:
-        The HealthLake import job ID, or None if no charts are ready.
+    HealthLake's StartFHIRImportJob takes an S3 URI pointing to a prefix or file
+    of FHIR NDJSON resources, not a manifest listing other manifests. This is a
+    common confusion. The input is the FHIR data itself, not a list of S3 keys.
     """
-    migration_table = dynamodb.Table(MIGRATION_TABLE)
+    s3    = get_s3_client()
+    ddb   = get_dynamodb_resource().Table(TABLE_MIGRATION)
+    hlake = get_healthlake_client()
 
-    # In production, use a DynamoDB GSI on status to avoid a scan.
-    # For illustration, this scan works but is expensive at scale.
-    response    = migration_table.scan(
-        FilterExpression="attribute_exists(fhir_bundle_key) AND #s = :ready",
+    # Find charts ready for import
+    response   = ddb.scan(
+        FilterExpression="attribute_exists(chart_id) AND #s = :status",
         ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={":ready": "fhir_ready"},
-        Limit=batch_size,
+        ExpressionAttributeValues={":status": "fhir_ready"},
+        Limit=batch_size
     )
-    ready_items = response.get("Items", [])
+    ready_charts = response.get("Items", [])
 
-    if not ready_items:
-        print("  No charts in fhir_ready status. Skipping import batch.")
+    if not ready_charts:
+        logger.info("No charts ready for HealthLake import")
         return None
 
-    # Copy all FHIR bundle NDJSON files to a shared import prefix.
-    # HealthLake StartFHIRImportJob requires S3Uri to point to a prefix (or specific
-    # NDJSON file) containing the actual FHIR resources -- not a manifest listing other
-    # files. Each chart's bundle NDJSON is copied to a timestamped import prefix.
-    timestamp    = datetime.datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    import_prefix = f"healthlake-imports/{timestamp}/"
+    # Stage FHIR NDJSON files in an import-specific prefix
+    timestamp      = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    import_prefix  = f"fhir-imports/{timestamp}/"
 
-    for item in ready_items:
-        source_key = item["fhir_bundle_key"]
-        dest_key   = import_prefix + source_key.split("/")[-1]
-        s3_client.copy_object(
-            Bucket=FHIR_OUTPUT_BUCKET,
-            CopySource={"Bucket": FHIR_OUTPUT_BUCKET, "Key": source_key},
-            Key=dest_key,
+    for chart in ready_charts:
+        chart_id   = chart["chart_id"]
+        bundle_key = chart.get("fhir_bundle_key")
+        if not bundle_key:
+            continue
+
+        dest_key = f"{import_prefix}{chart_id}.ndjson"
+        s3.copy_object(
+            CopySource={"Bucket": BUCKET_FHIR_OUTPUT, "Key": bundle_key},
+            Bucket=BUCKET_FHIR_STAGING,
+            Key=dest_key,  # [EDITOR: Fixed boto3 bug. "Destination" is not a valid copy_object parameter; the correct kwarg is "Key". Using "Destination" raises a TypeError at runtime.]
+            ServerSideEncryption="aws:kms",
+            SSEKMSKeyId=KMS_KEY_ARN
         )
 
-    # Submit the HealthLake FHIR import job pointing at the prefix containing NDJSON.
-    response = healthlake_client.start_fhir_import_job(
+    # Submit HealthLake import job
+    response = hlake.start_fhir_import_job(
         InputDataConfig={
-            "S3Uri": f"s3://{FHIR_OUTPUT_BUCKET}/{import_prefix}",
+            "S3Uri": f"s3://{BUCKET_FHIR_STAGING}/{import_prefix}"
         },
         JobOutputDataConfig={
             "S3Configuration": {
-                "S3Uri":    f"s3://{FHIR_OUTPUT_BUCKET}/import-results/{timestamp}/",
-                "KmsKeyId": KMS_KEY_ARN,
+                "S3Uri":    f"s3://{BUCKET_FHIR_OUTPUT}/import-results/{timestamp}/",
+                "KmsKeyId": KMS_KEY_ARN
             }
         },
         DatastoreId=datastore_id,
-        DataAccessRoleArn=HEALTHLAKE_IMPORT_ROLE_ARN,
+        DataAccessRoleArn=HEALTHLAKE_IMPORT_ROLE_ARN
     )
 
     import_job_id = response["JobId"]
 
-    # Mark charts as import_submitted.
-    for item in ready_items:
-        migration_table.update_item(
-            Key={"chart_id": item["chart_id"]},
-            UpdateExpression="SET #s = :status, healthlake_job_id = :jid",
-            ExpressionAttributeNames={"#s": "status"},
-            ExpressionAttributeValues={
-                ":status": "import_submitted",
-                ":jid":    import_job_id,
-            },
-        )
+    # Mark charts as import_submitted
+    with ddb.batch_writer() as writer:
+        for chart in ready_charts:
+            writer.put_item(Item={
+                **chart,
+                "status":            "import_submitted",
+                "healthlake_job_id": import_job_id
+            })
 
-    print(
-        f"  Submitted HealthLake import job {import_job_id} "
-        f"for {len(ready_items)} charts."
+    logger.info(
+        "HealthLake import submitted",
+        extra={"job_id": import_job_id, "chart_count": len(ready_charts)}
     )
     return import_job_id
 ```
@@ -2040,344 +1466,202 @@ def submit_healthlake_import_batch(
 
 ## Step 10: Source Chart Archival
 
-Once a chart confirms successful import into HealthLake, the source PDF transitions to S3 Glacier. This is handled by an S3 Lifecycle policy rather than explicit API calls per chart: we tag the S3 object with `migration-status=completed`, and the lifecycle rule takes it from there.
-
 ```python
-def mark_chart_archived(chart_id: str, source_s3_key: str) -> None:
+def mark_chart_archived(chart_id: str, s3_key: str) -> None:
     """
-    Tag the source chart S3 object to trigger the Glacier lifecycle transition,
-    and update the DynamoDB record to final completed status.
+    Tag the source chart S3 object to trigger the S3 Lifecycle rule that
+    transitions it to Glacier Instant Retrieval after 30 days.
 
-    The S3 Lifecycle policy on the charts-raw bucket watches for the tag
-    "migration-status=completed" and transitions matching objects to
-    S3 Glacier Instant Retrieval after 30 days. No per-chart API call
-    to Glacier is needed; the tag is the trigger.
-
-    Args:
-        chart_id:      chart identifier
-        source_s3_key: S3 key of the source PDF in CHARTS_RAW_BUCKET
+    The lifecycle rule (configured once at bucket creation) moves tagged objects
+    to Glacier IR after 30 days and expires them after 10 years (3,653 days).
+    This is automated. No per-chart API calls to Glacier are needed.
     """
-    # Set the S3 tag that triggers the lifecycle rule.
-    try:
-        s3_client.put_object_tagging(
-            Bucket=CHARTS_RAW_BUCKET,
-            Key=source_s3_key,
-            Tagging={
-                "TagSet": [
-                    {
-                        "Key":   "migration-status",
-                        "Value": "completed",
-                    }
-                ]
-            },
-        )
-        print(f"  Tagged s3://{CHARTS_RAW_BUCKET}/{source_s3_key} for Glacier archival.")
-    except ClientError as e:
-        print(
-            f"  WARNING: Could not tag {source_s3_key} for archival: "
-            f"{e.response['Error']['Code']}"
-        )
+    s3    = get_s3_client()
+    table = get_dynamodb_resource().Table(TABLE_MIGRATION)
 
-    # Update DynamoDB to the terminal "completed" status.
-    dynamodb.Table(MIGRATION_TABLE).update_item(
+    # Tag the S3 object to trigger the lifecycle transition
+    s3.put_object_tagging(
+        Bucket=BUCKET_CHARTS_RAW,
+        Key=s3_key,
+        Tagging={
+            "TagSet": [
+                {"Key": "migration-status", "Value": "completed"}
+            ]
+        }
+    )
+
+    # Update DynamoDB to final status
+    table.update_item(
         Key={"chart_id": chart_id},
-        UpdateExpression="SET #s = :status, completed_at = :ca",
+        UpdateExpression="SET #s = :status, completed_at = :ts",
         ExpressionAttributeNames={"#s": "status"},
         ExpressionAttributeValues={
             ":status": "completed",
-            ":ca":     datetime.datetime.now(timezone.utc).isoformat(),
-        },
+            ":ts":     datetime.now(timezone.utc).isoformat()
+        }
     )
 
-    print(f"  Chart {chart_id} marked completed.")
-
-
-# -----------------------------------------------------------------------
-# The S3 Lifecycle policy that makes archival automatic.
-# Apply this to the charts-raw bucket once at bucket creation.
-# The policy is shown here as a reference; deploy via the AWS console or CLI:
-#   aws s3api put-bucket-lifecycle-configuration \
-#     --bucket charts-raw \
-#     --lifecycle-configuration file://lifecycle.json
-# -----------------------------------------------------------------------
-LIFECYCLE_POLICY_REFERENCE = {
-    "Rules": [
-        {
-            "ID":     "archive-completed-charts",
-            "Status": "Enabled",
-            "Filter": {
-                # Transitions only objects with this tag.
-                "Tag": {"Key": "migration-status", "Value": "completed"}
-            },
-            "Transitions": [
-                {
-                    "Days":         30,
-                    "StorageClass": "GLACIER_IR",
-                    # Glacier Instant Retrieval: millisecond retrieval for legal
-                    # discovery and member record requests. Costs more than
-                    # Deep Archive but avoids the 12-hour retrieval wait.
-                }
-            ],
-            # CMS requires 10-year retention for Medicare claims records.
-            # Adjust for your member population and state requirements.
-            "Expiration": {
-                "Days": 3653   # 10 years plus 3 leap year days
-            },
-        }
-    ]
-}
+    logger.info("Chart archived", extra={"chart_id": chart_id})
 ```
 
 ---
 
-## Putting It All Together
-
-The full per-chart pipeline as a single callable function. In production, this logic runs inside an AWS Batch container job that receives a chart assignment from the manifest. In development, you can run it directly against a single chart PDF.
+## Full Pipeline Orchestration
 
 ```python
-def process_single_chart(
-    chart_pdf_key: str,
-    chart_id: str,
-    member_id: str,
+def run_chart_migration_wave(
+    s3_prefix:   str,
+    wave_label:  str,
+    region:      str = "us-east-1"
 ) -> dict:
     """
-    Run the full 10-step migration pipeline for one chart.
+    Run a complete migration wave for all charts under s3_prefix.
 
-    This function demonstrates the complete per-chart inner loop:
-    from raw PDF in S3 through quality scoring, FHIR resource generation,
-    and S3 archival tagging. In production, this logic runs inside an
-    AWS Batch job container that selects its chart from the manifest CSV
-    using the AWS_BATCH_JOB_ARRAY_INDEX environment variable.
+    A "wave" is a batch of charts processed together. In production, you run
+    many waves over the course of the migration program. Each wave:
+    1. Generates a manifest and initializes DynamoDB records
+    2. Starts Textract OCR on all charts (async, returns quickly)
+    3. Waits for OCR completion, then generates classification JSONL
+    4. Submits Nova Lite classification batch job
+    5. Waits for classification results, routes pages to tiers
+    6. Generates extraction JSONL for all tiers
+    7. Submits extraction batch jobs (Tier 2, Tier 3 vision, Tier 4 vision)
+    8. Waits for extraction results, runs Comprehend Medical code validation
+    9. Assembles FHIR bundles, writes to S3
+    10. Submits HealthLake import batch
+    11. Tags source charts for Glacier archival
 
-    Step 9 (HealthLake import) is intentionally excluded here because
-    it is a batched operation that runs on a schedule across many charts,
-    not per-chart. See submit_healthlake_import_batch.
-
-    Args:
-        chart_pdf_key: S3 key in CHARTS_RAW_BUCKET
-        chart_id:      chart identifier matching the DynamoDB record
-        member_id:     FHIR Patient ID for the member
-
-    Returns:
-        A summary dict with quality metrics and FHIR resource counts.
+    Note: in production this orchestration lives in AWS Step Functions, not a
+    single Python function. Each step is a Lambda or ECS task. The Step Functions
+    execution history is how you debug failures across a multi-month program.
+    This function is for illustrative/testing purposes.
     """
+    print(f"\n=== Starting migration wave: {wave_label} ===")
 
-    print(f"\n{'='*60}")
-    print(f"Processing chart {chart_id} ({chart_pdf_key})")
-    print(f"{'='*60}")
+    # Step 1: Manifest
+    manifest_key_output = f"manifests/{wave_label}.csv"
+    chart_count, manifest_key = generate_migration_manifest(s3_prefix, manifest_key_output)
+    print(f"Manifest generated: {chart_count} charts")
 
-    # Step 2: Image quality pre-processing
-    print("\nStep 2: Image quality pre-processing...")
-    processed_key, quality_report = preprocess_chart(chart_pdf_key)
-    print(f"  Quality report: {quality_report}")
+    if chart_count == 0:
+        print("No new charts to process. Wave complete.")
+        return {"wave_label": wave_label, "charts": 0}
 
-    # Step 3: Async Textract extraction
-    print("\nStep 3: Submitting Textract async job...")
-    job_id = start_chart_extraction(processed_key, chart_id)
-    print(f"  Textract job ID: {job_id}")
+    # Step 2+3: Pre-process and OCR (per chart, in parallel via AWS Batch in production)
+    # For illustration: process the first chart synchronously
+    s3 = get_s3_client()
+    response = s3.get_object(Bucket="manifests", Key=manifest_key)
+    csv_lines = response["Body"].read().decode("utf-8").strip().split("\n")
 
-    print("  Retrieving Textract blocks (waiting for job completion)...")
-    all_blocks, block_map = retrieve_textract_blocks(job_id, chart_id)
+    for line in csv_lines[1:2]:  # Process just the first chart for illustration
+        _, chart_key, chart_id = line.split(",")
 
-    print("\n  Grouping blocks by page...")
-    pages = group_blocks_by_page(all_blocks)
-    print(f"  {len(pages)} pages total")
+        print(f"\nProcessing chart: {chart_id}")
 
-    # Step 4: Document segmentation
-    print("\nStep 4: Detecting document boundaries...")
-    segments = detect_document_boundaries(pages)
-    print(f"  Found {len(segments)} logical document segment(s)")
+        # Pre-process
+        processed_key, preprocess_report = preprocess_chart(chart_key, chart_id)
+        print(f"  Pre-processed: {preprocess_report['total_pages']} pages, "
+              f"{preprocess_report['blank_pages_skipped']} blank skipped")
 
-    # Step 5: Classification and routing
-    print("\nStep 5: Classifying document segments...")
-    classified_docs = classify_and_route_segments(segments, pages)
+        # OCR
+        textract_job_id = start_textract_ocr(processed_key, chart_id)
+        print(f"  Textract job started: {textract_job_id}")
+        print("  [In production: wait for SNS notification, then proceed]")
+        print("  [This example assumes OCR is complete and quality data exists in S3]")
 
-    from collections import Counter
-    type_dist = Counter(d["doc_type"] for d in classified_docs)
-    print(f"  Document type distribution: {dict(type_dist)}")
+        # Assume OCR results exist for illustration
+        quality_key = f"textract-output/{chart_id}/page-quality.json"
 
-    # Step 6: Type-specific extraction
-    print("\nStep 6: Extracting data from each segment...")
-    extraction_results = []
+        # Classification JSONL generation
+        classify_jsonl_key = generate_classification_batch_jsonl(chart_id, quality_key)
+        print(f"  Classification JSONL: {classify_jsonl_key}")
 
-    for classified_doc in classified_docs:
-        print(
-            f"  Extracting {classified_doc['doc_type']} "
-            f"(pages {classified_doc['start_page']}-{classified_doc['end_page']}, "
-            f"path: {classified_doc['extraction_path']})..."
+        # Submit classification batch job
+        classify_job_arn = submit_bedrock_batch_job(
+            input_s3_prefix=f"batch-input/{chart_id}/",
+            output_s3_prefix=f"batch-output/{chart_id}/classify/",
+            model_id=MODEL_TIER1_CLASSIFY,
+            job_name=f"classify-{chart_id}-{wave_label}"
         )
-        extraction = route_and_extract(classified_doc, pages, block_map, chart_id)
-        extraction_results.append(extraction)
+        print(f"  Classification job: {classify_job_arn}")
+        print("  [In production: await EventBridge event for job completion]")
+        print("  [Batch jobs complete within 24h at 50% of on-demand pricing]")
 
-    pending_reviews = sum(1 for e in extraction_results if e.get("pending_review"))
-    if pending_reviews > 0:
-        print(
-            f"  {pending_reviews} document(s) have pages in A2I review queue. "
-            f"Pipeline continues; review is async."
-        )
+        # In production, the Step Functions state machine pauses here and resumes
+        # when the batch job completion event fires. For illustration, we skip
+        # forward to the extraction steps.
+        print("\n  [Skipping to extraction illustration. See recipe for full flow.]")
 
-    # Step 7: Quality scoring
-    print("\nStep 7: Computing quality scores...")
-    document_scores = []
-
-    for classified_doc, extraction in zip(classified_docs, extraction_results):
-        score = score_extracted_document(extraction, classified_doc, pages)
-        document_scores.append(score)
-        print(
-            f"  Pages {classified_doc['start_page']}-{classified_doc['end_page']}: "
-            f"quality={score['composite']:.3f} ({score['tier']})"
-        )
-
-    chart_quality = compute_chart_quality_summary(document_scores, chart_id)
-    print(
-        f"  Chart quality: {chart_quality['chart_composite']:.3f} "
-        f"| needs_review: {chart_quality['needs_review']}"
-    )
-
-    # Step 8: FHIR R4 resource mapping
-    print("\nStep 8: Mapping extracted data to FHIR R4 resources...")
-    all_document_resources = []
-
-    for extraction, score in zip(extraction_results, document_scores):
-        doc_resources = map_document_to_fhir(chart_id, member_id, extraction, score)
-        all_document_resources.append(doc_resources)
-        print(
-            f"  Pages {extraction['start_page']}-{extraction['end_page']}: "
-            f"{len(doc_resources)} FHIR resource(s)"
-        )
-
-    # Step 9 (partial): Assemble and write the FHIR bundle for this chart.
-    # The HealthLake import job submission happens separately via
-    # submit_healthlake_import_batch(), which batches across many charts.
-    print("\nStep 9: Assembling FHIR bundle...")
-    bundle_key, resource_count = assemble_fhir_bundle(
-        chart_id,
-        member_id,
-        all_document_resources,
-        chart_quality,
-    )
-    print(f"  Bundle written: {bundle_key} ({resource_count} resources)")
-
-    # Step 10: Tag the source chart for Glacier archival.
-    print("\nStep 10: Tagging source chart for archival...")
-    mark_chart_archived(chart_id, chart_pdf_key)
-
-    summary = {
-        "chart_id":          chart_id,
-        "member_id":         member_id,
-        "pages":             len(pages),
-        "documents_found":   len(segments),
-        "quality_composite": chart_quality["chart_composite"],
-        "needs_review":      chart_quality["needs_review"],
-        "fhir_resources":    resource_count,
-        "bundle_key":        bundle_key,
-        "pending_a2i":       pending_reviews,
+    return {
+        "wave_label":   wave_label,
+        "charts":       chart_count,
+        "manifest_key": manifest_key
     }
-
-    print(f"\nChart {chart_id} complete: {summary}")
-    return summary
-
-
-# -----------------------------------------------------------------------
-# AWS Batch job handler
-# When running inside an AWS Batch array job, this is the entry point.
-# The handler reads its chart assignment from the manifest using
-# AWS_BATCH_JOB_ARRAY_INDEX.
-# -----------------------------------------------------------------------
-
-def batch_job_handler() -> None:
-    """
-    AWS Batch job handler for a single chart in an array job.
-
-    Each array job child reads this environment variable to select its row:
-    AWS_BATCH_JOB_ARRAY_INDEX (0-indexed integer).
-
-    Reads the manifest from S3, selects the row at the array index, and
-    calls process_single_chart for that chart. In a production deployment,
-    the job definition passes the manifest S3 key as a parameter.
-    """
-    import os
-
-    array_index  = int(os.environ.get("AWS_BATCH_JOB_ARRAY_INDEX", "0"))
-    manifest_key = os.environ.get("MANIFEST_KEY", "manifests/batch.csv")
-
-    # Read the manifest from S3.
-    response      = s3_client.get_object(
-        Bucket=CHARTS_RAW_BUCKET,
-        Key=manifest_key,
-    )
-    manifest_data = response["Body"].read().decode("utf-8")
-    reader        = csv.DictReader(io.StringIO(manifest_data))
-    rows          = list(reader)
-
-    if array_index >= len(rows):
-        print(
-            f"Array index {array_index} out of range "
-            f"(manifest has {len(rows)} rows). Exiting."
-        )
-        return
-
-    row       = rows[array_index]
-    chart_id  = row["chart_id"]
-    chart_key = row["key"]
-
-    # Member ID lookup: in production, map chart_id to member_id
-    # via your member directory or a DynamoDB lookup table.
-    # Here we use a placeholder.
-    member_id = os.environ.get("DEFAULT_MEMBER_ID", f"member-{chart_id}")
-
-    process_single_chart(
-        chart_pdf_key=chart_key,
-        chart_id=chart_id,
-        member_id=member_id,
-    )
 
 
 if __name__ == "__main__":
-    # Example: run the development pipeline against a single test chart.
-    result = process_single_chart(
-        chart_pdf_key="charts-raw/test/CHT-TEST-000001.pdf",
-        chart_id="CHT-TEST-000001",
-        member_id="MEMBER-12345",
+    # Example usage: process charts from a specific scanning vendor batch
+    result = run_chart_migration_wave(
+        s3_prefix="2026/03/scanning-vendor-batch-001/",
+        wave_label="march-2026-wave-001"
     )
-
-    class DecimalEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, Decimal):
-                return float(obj)
-            return super().default(obj)
-
-    print(json.dumps(result, indent=2, cls=DecimalEncoder))
+    print(f"\nWave complete: {result}")
 ```
 
 ---
 
-## The Gap Between This and Production
+## Gap to Production
 
-This file demonstrates every step in the Recipe 1.10 pipeline: manifest generation through Glacier archival tagging. Run it against a real chart PDF and you will see the shape of each transformation clearly. The distance from that to something you would run against three million charts is significant. Here is where it lives.
+This example demonstrates the API patterns and data structures. A production chart migration program needs everything below.
 
-**PDF splitting and image conversion are not implemented.** The `preprocess_chart` function above comments out the PDF-to-image conversion step because it requires a real PDF library. Install `PyMuPDF` (`pip install pymupdf`) and use `fitz.open()` to split the PDF into per-page images. Alternatively, `pdf2image` (`pip install pdf2image`) wraps `poppler` and is simpler to use. Neither is included here to avoid native library dependencies in the example, but both are well-maintained and handle the edge cases you will encounter in real charts (password-protected PDFs, corrupt page streams, mixed orientation within a single document).
+**Retry configuration.** Every boto3 client must use `Config(retries={"max_attempts": 3, "mode": "adaptive"})`. This is already shown in the factory functions above. Make sure it is not removed in production refactoring. Throttling from Bedrock and Comprehend Medical is expected under load, not an edge case.
 
-**Deskew requires the deskew library, not just Pillow.** The `enhance_page` function in Step 2 comments out the angle detection call. For reliable deskewing on production charts, add `pip install deskew` and call `determine_skew()` from the `deskew` package. It uses Hough line detection to measure the actual rotation angle. The difference between skipping deskew and applying it on moderately tilted pages can shift average OCR confidence by 5 to 8 points, which moves real pages across the A2I routing threshold.
+**Lambda timeouts.** Set all Lambda timeouts significantly above the default 3 seconds:
+- Functions calling Bedrock synchronously: 5 to 15 minutes
+- Functions loading Textract block output for large charts: 10 minutes minimum
+- Functions assembling FHIR bundles for large charts: 10 minutes minimum
+- Memory: 512MB minimum for functions loading Textract block data; 1GB for large charts
 
-**Textract quota increase is mandatory before you start.** The default `StartDocumentAnalysis` concurrency quota is 25 jobs in most regions. For a migration program running at any real scale, you need 100 to 500 concurrent jobs minimum. File the AWS Support quota increase request at least two to four weeks before the program start date. Include your expected peak concurrent job count and total job volume in the request. This is not a "file it and it happens immediately" process.
+**PHI-safe logging.** Every `print()` and `logger` call in this example uses structured metadata only (chart IDs, page counts, job ARNs, status codes). Never log `output_text`, `page_text`, extracted clinical content, or LLM reasoning strings. CloudWatch log groups for Lambda functions are not encrypted by default; configure KMS encryption on every log group that may receive any derivative of PHI.
 
-**Comprehend Medical chunking needs span-level deduplication in production.** The `split_text_with_overlap` function produces overlapping chunks, which means the same entity can appear in two adjacent chunks. The code above does not deduplicate entities across chunks. A production implementation uses the `BeginOffset` and `EndOffset` fields that Comprehend Medical returns with each entity to identify and drop duplicates. Without this, a medication mentioned at a chunk boundary appears twice in the entity list, which creates two MedicationStatement resources for the same reference.
+**Prompt injection sanitization.** The `sanitize_page_text()` function above is a starting point. Add Bedrock Guardrails with PII detection and content filtering via the `guardrailConfig` parameter in every Converse API call. The commented-out stub in `generate_classification_batch_jsonl()` shows where to wire it in.
 
-**FHIR status values need clinical governance.** Every Condition in this code uses `clinicalStatus = unknown` and `verificationStatus = unconfirmed`. That is the correct conservative default for OCR-derived data from paper charts. It is not a technical decision you can make unilaterally; it requires sign-off from clinical leadership and whoever is responsible for the accuracy of the downstream FHIR data store. Some organizations use `unconfirmed` for all migrated conditions. Others use a custom extension to encode migration provenance. Both approaches are defensible. The wrong approach is silently promoting migrated data to `confirmed` status, which misleads every downstream system that consumes it.
+**DynamoDB Decimal requirement.** All numeric values stored in DynamoDB must be `Decimal`, not Python `float`. This example uses `Decimal(str(value))` throughout. The `floats_to_decimal()` helper is a common pattern; implement it as a utility function and call it on any nested structure before DynamoDB writes. Floating-point DynamoDB writes raise `TypeError: Float types are not supported. Use Decimal types instead` at runtime.
 
-**The DynamoDB status query in submit_healthlake_import_batch is a scan.** Scanning DynamoDB at migration scale (millions of charts) is expensive and slow. Add a GSI on the `status` attribute before running the program: `aws dynamodb update-table --table-name migration-tracking --attribute-definitions AttributeName=status,AttributeType=S --global-secondary-indexes ...`. With the GSI, the query becomes an index lookup rather than a full table scan. A full table scan on a migration tracking table with five million items costs real money in read capacity units. Add the GSI on day one.
+**Bedrock batch inference JSONL format.** The exact JSONL schema for batch inference differs between Nova models (using `schemaVersion: "messages-v1"`) and the Converse API format. Check the Bedrock batch inference documentation for the current per-model input schema. The schemas are close but not identical, and mixing them causes silent job failures where all records return error status.
 
-**A2I review is async and the pipeline does not wait for it.** The `extract_handwritten_document` function submits A2I tasks and returns immediately with `pending_review=True`. The FHIR resources generated for those documents in Step 8 use whatever text was directly extractable from the high-confidence pages. The reviewed corrections are not automatically applied to the FHIR bundle after review completes. A production implementation has a separate Lambda that fires when A2I writes its output, reads the corrections, updates the extraction record, regenerates the affected FHIR resources, and updates the bundle. Wiring that loop is important for data quality on handwriting-heavy charts.
+**Batch inference result file streaming.** Result JSONL files for jobs with 100,000+ requests can be multi-gigabyte. Do not load them entirely into memory. Use `get_object` with streaming and process line by line:
+```python
+response = s3.get_object(Bucket=..., Key=...)
+for line in response["Body"].iter_lines():
+    result = json.loads(line)
+    # process one record at a time
+```
 
-**DynamoDB Decimal requirement.** Every numeric value written to DynamoDB is wrapped with `Decimal(str(value))`. Raw Python floats in `put_item` or `update_item` calls raise a `TypeError` at runtime. Any new numeric field you add to a DynamoDB write needs the same treatment. This is one of those errors that will bite you in production on a field you added at 11pm.
+**AWS Batch array job size limit.** Array jobs cap at 10,000 child jobs. For millions of charts, either submit multiple manifests in 10,000-chart chunks or switch to an SQS-based model where Batch workers pull chart IDs from a queue without relying on array indexing. The SQS model is more flexible for large programs but requires more orchestration infrastructure.
 
-**No VPC or KMS configuration in this example.** A production Lambda or Batch container handling chart migration data runs inside a VPC with private subnets and VPC endpoints for every service in the pipeline: S3, Textract, Comprehend Medical, DynamoDB, HealthLake, SageMaker A2I runtime, Step Functions, Batch, KMS, and CloudWatch Logs. Chart data is among the most sensitive PHI your organization holds: complete longitudinal clinical records going back decades. S3 SSE-KMS with customer-managed keys on every bucket. DynamoDB encryption at rest. HealthLake encryption at rest. All API calls over TLS. If you take one piece of guidance from the Gap section of this entire cookbook, let it be this: PHI does not leave your VPC boundary.
+**Model version pinning.** Replace cross-region inference profile IDs with explicit foundation model ARNs before production:
+```python
+# Development (cross-region, may update)
+MODEL_TIER1_CLASSIFY = "us.amazon.nova-lite-v1:0"
 
-**Testing.** There are no tests in this example. A production migration program has unit tests for `detect_document_boundaries` with fixture chart segments, unit tests for each FHIR mapping function with known-good entity inputs, integration tests against real API calls using synthetic chart PDFs, and end-to-end validation runs that compare FHIR output against manually reviewed ground-truth records for a sample of 200 to 500 charts. The Synthea open-source tool generates realistic synthetic patient records and clinical notes for building test fixtures. Never use real patient charts in any non-production environment.
+# Production (pinned version ARN, verify format in Bedrock docs for your region)
+MODEL_TIER1_CLASSIFY = "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-lite-v1:0"
+```
+Run a regression test on a sample of charts after any model update before continuing bulk processing.
 
-**Textract LAYOUT feature type is what makes segmentation work.** Without LAYOUT, the boundary detection algorithm relies entirely on text pattern matching. LAYOUT_TITLE blocks fire before any text pattern matching because they are structural, not lexical. Including LAYOUT in the FeatureTypes adds no per-page cost but meaningfully improves boundary detection precision on charts that do not consistently use recognizable title lines.
+**VPC endpoints.** All Lambda functions and Batch containers must be in a VPC with no public internet egress. Ensure you have both `com.amazonaws.REGION.bedrock-runtime` (for Converse API calls) and `com.amazonaws.REGION.bedrock` (for batch job control plane) as VPC interface endpoints. These are two separate endpoints; deploying only one will cause API calls to the other to fail in a no-egress VPC.
+
+**Bedrock batch inference and S3 bucket policies.** Bedrock batch inference reads input JSONL and writes output JSONL using `BEDROCK_BATCH_ROLE_ARN` on AWS's internal network, not through your VPC S3 gateway endpoint. If your `batch-inference` bucket policy restricts access to VPC traffic via `aws:SourceVpc` or `aws:SourceVpcEndpoint` conditions, batch jobs will fail with S3 access denied errors. Add an explicit bucket policy statement allowing `BEDROCK_BATCH_ROLE_ARN` without a VPC condition, or structure your bucket access control through IAM role policies rather than bucket VPC conditions for the `batch-inference` bucket. The `configure_batch_inference_bucket_lifecycle()` function includes a comment showing the required policy statement. <!-- [EDITOR: review fix - P1 VPC/S3. Added Gap to Production entry matching the prerequisite note in the recipe.] -->
+
+**Vision JSONL file sizes.** A 300 DPI PNG page runs 1 to 3 MB raw, which becomes 1.3 to 4 MB base64-encoded in the batch JSONL. For a wave with 10,000 vision-path pages, the input JSONL reaches 13 to 40 GB. Do not write the entire wave into one JSONL file. Split vision batches into files of 2,000 to 3,000 pages before submission. For files over 5 GB, configure boto3 `TransferConfig(multipart_threshold=5 * 1024**3, multipart_chunksize=500 * 1024**2)` on the `put_object` call. Consider downsampling 600 DPI source images to 300 DPI before embedding; this cuts base64 payload size by approximately 75% with negligible vision model accuracy impact. <!-- [EDITOR: review fix - P1 vision JSONL file sizes. Added Gap to Production entry with concrete boto3 guidance.] -->
+
+**Comprehend Medical regional availability.** Comprehend Medical is not available in all regions. If your target region is unsupported, implement a fallback using a Bedrock-based code extraction prompt. Note that LLMs are less reliable than Comprehend Medical for exact ICD-10/RxNorm code generation; add a code lookup validation step against an authoritative reference dataset.
+
+**FHIR resource validation before HealthLake import.** Run generated FHIR NDJSON through a FHIR validator (the `fhir.resources` Python library or the HAPI FHIR validator) before submitting to HealthLake. The two most common issues: Condition resources with `clinicalStatus` included (HealthLake validates against the condition-clinical ValueSet and rejects resources with codes not in the set, including any attempt to use "unknown") and MedicationStatement resources missing required fields. Validation failures produce silent import errors in HealthLake that can be difficult to diagnose after the fact.
+
+**Testing.** Use synthetic data (Synthea) or fully de-identified charts for all development and QA environments. Never use real PHI in any environment below production. Configure separate Bedrock models, DynamoDB tables, S3 buckets, and HealthLake data stores per environment. Use infrastructure-as-code (CDK or CloudFormation) to keep environments consistent.
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 1.10: Historical Chart Migration](chapter01.10-historical-chart-migration) for the full architectural walkthrough, pseudocode, performance benchmarks, and the honest take on where this program gets hard at scale.*
+*[← Recipe 1.9 Python Example](chapter01.09-medical-records-python-v1) · [↑ Recipe 1.10 Main](chapter01.10-chart-migration-v1) · [Chapter 1 Index →](chapter01-index)*

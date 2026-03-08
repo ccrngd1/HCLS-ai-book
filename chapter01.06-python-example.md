@@ -1,1278 +1,1233 @@
-# Recipe 1.6: Python Implementation Example
+# Recipe 1.6: Handwritten Clinical Note Digitization: Python Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 1.6. It is meant to show how these concepts translate into working Python code using boto3. It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire into a clinical records queue on Monday morning. Consider it a starting point, not a destination.
->
-> The pipeline in this recipe has a natural break in the middle. Steps 1 through 5 run synchronously: image preprocessing, OCR, clinical NLP, confidence tiering, and A2I task creation. Then the workflow suspends and waits while a human reviewer works through the flagged extractions. Steps 7 and 8 resume after that review completes. This file reflects that structure: two Lambda-style handler functions bracket the async gap, with a full pipeline function at the end that runs Steps 1 through 5 sequentially so you can trace the logic end-to-end in a single script.
->
-> The new AWS SDK work in this recipe is the Amazon A2I integration: `start_human_loop()`, `describe_human_loop()`, and the Step Functions `send_task_success()` callback that resumes the workflow when a reviewer submits their corrections. The Textract and Comprehend Medical calls will be familiar from earlier recipes. The new part is the confidence tiering logic and the composite scoring model that combines OCR and NLP confidence into a single signal for routing decisions.
+> **This is a simplified, illustrative implementation.** It is not production-ready. It demonstrates the patterns from Recipe 1.6 using boto3 and the Bedrock Converse API. Think of it as a working sketch: the right shape, the right API calls, the right logic flow. What you'd need to add for a real deployment is covered in the "Gap to Production" section at the end.
 
 ---
 
 ## Setup
 
-You will need the AWS SDK for Python and a few image processing libraries for the preprocessing step:
-
 ```bash
-pip install boto3 Pillow
+pip install boto3 pillow opencv-python-headless numpy
 ```
 
-For production-quality image deskewing, you will also want:
+You'll also need:
+- AWS credentials configured (`aws configure` or an instance/task role)
+- Bedrock model access granted in your AWS account for `anthropic.claude-haiku-4-5-v1:0` and `anthropic.claude-sonnet-4-6-v1:0`
+- IAM permissions: `textract:AnalyzeDocument`, `bedrock:InvokeModel`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `sagemaker:StartHumanLoop`
 
-```bash
-pip install deskew opencv-python-headless
-```
-
-The basic example below uses Pillow only. The deskew and OpenCV imports are noted as upgrades in the "Gap to Production" section.
-
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `textract:AnalyzeDocument`
-- `comprehendmedical:DetectEntitiesV2`
-- `sagemaker:StartHumanLoop`
-- `sagemaker:DescribeHumanLoop`
-- `s3:GetObject`
-- `s3:PutObject`
-- `dynamodb:PutItem`
-- `dynamodb:GetItem`
-- `dynamodb:Query`
-- `dynamodb:UpdateItem`
-- `states:SendTaskSuccess`
-- `states:SendTaskFailure`
-
-The A2I API is accessed through the `sagemaker-a2i-runtime` service endpoint, not the main `sagemaker` endpoint. These are two different boto3 clients. The IAM action namespace is `sagemaker:StartHumanLoop` and `sagemaker:DescribeHumanLoop` regardless.
+<!-- [EDITOR: review fix] Changed `sagemaker:CreateHumanLoop` to `sagemaker:StartHumanLoop`. The IAM action `sagemaker:CreateHumanLoop` does not exist. The A2I runtime API uses `StartHumanLoop`; a Lambda with only `CreateHumanLoop` in its policy receives `AccessDeniedException` at runtime. -->
 
 ---
 
-## Configuration and Constants
+## Configuration
 
-Everything that is really configuration rather than logic lives here. The confidence thresholds, bucket names, and table names belong in your version control history and your parameter store, not scattered through function bodies.
+These constants drive routing decisions and API calls. Tune the confidence thresholds against your actual document population before going live.
 
 ```python
-import boto3
-from boto3.dynamodb.conditions import Key  # for DynamoDB query expressions
-import datetime
-import io
 import json
 import uuid
-from datetime import timezone
-from decimal import Decimal  # DynamoDB requires Decimal for all numeric values
+import hashlib
+import io
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Optional
 
-from PIL import Image, ImageOps, ImageFilter
+import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
+import cv2
+import numpy as np
+from PIL import Image
 
+# -------------------------------------------------------------------
+# Routing thresholds
+# -------------------------------------------------------------------
+# Average Textract handwriting confidence thresholds for model tier selection.
+# >= TIER_1_THRESHOLD → Haiku (fast, cost-efficient)
+# [DIRECT_REVIEW_THRESHOLD, TIER_1_THRESHOLD) → Sonnet (handles hard cases)
+# < DIRECT_REVIEW_THRESHOLD → skip vision extraction, route directly to human review
+TIER_1_THRESHOLD = 70.0
+DIRECT_REVIEW_THRESHOLD = 40.0
 
-# -----------------------------------------------------------------------
-# Adaptive confidence thresholds
-#
-# These values reflect the fundamental difference between handwriting and
-# printed text OCR. Handwriting sits in a lower confidence band overall:
-# 85% from Textract on a handwritten word means something different (and
-# more reliable) than 85% on a printed word. Printed text at 85% is
-# a likely error. Handwriting at 85% is usually right.
-#
-# These are starting points, not universal truths. Calibrate them against
-# your own document population after the first 200-300 processed notes.
-# See the "Honest Take" section of Recipe 1.6 for how to do that.
-# -----------------------------------------------------------------------
-HIGH_CONFIDENCE_HANDWRITING   = 85.0   # auto-accept threshold for handwritten words
-HIGH_CONFIDENCE_PRINTED       = 92.0   # auto-accept threshold for printed words
-MEDIUM_CONFIDENCE_HANDWRITING = 60.0   # below this: human review required (handwriting)
-MEDIUM_CONFIDENCE_PRINTED     = 75.0   # below this: human review required (print)
+# -------------------------------------------------------------------
+# Composite confidence tiering thresholds
+# -------------------------------------------------------------------
+# Composite = min(OCR confidence, vision model confidence)
+# >= HIGH_ACCEPT_THRESHOLD → auto-accept
+# [MEDIUM_FLAG_THRESHOLD, HIGH_ACCEPT_THRESHOLD) → accept with flag
+# < MEDIUM_FLAG_THRESHOLD → human review required
+HIGH_ACCEPT_THRESHOLD = 80.0
+MEDIUM_FLAG_THRESHOLD = 60.0
 
-# -----------------------------------------------------------------------
-# S3 bucket names (replace with your actual bucket names or env vars)
-# -----------------------------------------------------------------------
-INTAKE_BUCKET   = "notes-intake"       # where uploaded handwritten notes land
-ENHANCED_BUCKET = "notes-enhanced"     # pre-processed images written here
-REVIEW_BUCKET   = "notes-review-output" # A2I writes completed review results here
-TRAINING_BUCKET = "notes-training-data" # labeled training pairs accumulate here
+# -------------------------------------------------------------------
+# Vision model confidence → numeric mapping
+# -------------------------------------------------------------------
+# The vision model returns HIGH/MEDIUM/LOW. Map these to numeric values
+# for composite score computation. These values are tuned to reflect
+# that vision model self-reported confidence is less precisely calibrated
+# than Textract's numeric scores.
+VISION_CONFIDENCE_MAP = {
+    "HIGH": 90.0,
+    "MEDIUM": 65.0,
+    "LOW": 35.0,
+}
 
-# -----------------------------------------------------------------------
+# -------------------------------------------------------------------
+# Bedrock model IDs
+# -------------------------------------------------------------------
+# Use the "us." cross-region prefix for global inference routing.
+# This provides automatic fallback across us-east-1, us-east-2, us-west-2.
+# Cross-region profiles may be updated by AWS over time. For strict version
+# pinning, use the full foundation model ARN for your target region and
+# check the Bedrock Model IDs documentation for the current ARN format.
+HAIKU_MODEL_ID = "us.anthropic.claude-haiku-4-5-v1:0"
+SONNET_MODEL_ID = "us.anthropic.claude-sonnet-4-6-v1:0"
+
+# -------------------------------------------------------------------
+# Boto3 retry configuration
+# -------------------------------------------------------------------
+# adaptive mode implements exponential backoff with jitter. This is the
+# right default for Bedrock: ThrottlingException and ServiceUnavailableException
+# are expected at any meaningful production volume.
+# Apply this Config to every boto3 client that makes calls carrying PHI.
+BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
+
+# [EDITOR: Added BOTO3_RETRY_CONFIG constant. This was a P0 finding in the 1.4 review:
+# no retry logic in pseudocode or Python for Bedrock throttling. Applied to all
+# AWS clients below. Do not retry at the Lambda invocation level for Bedrock errors:
+# that would generate a new task_token hash and risk an A2I HumanLoopName collision.]
+
+# -------------------------------------------------------------------
+# S3 buckets (substitute your actual bucket names)
+# -------------------------------------------------------------------
+INTAKE_BUCKET = "notes-intake"
+ENHANCED_BUCKET = "notes-enhanced"
+REVIEW_OUTPUT_BUCKET = "notes-review-output"
+PROMPT_LIBRARY_BUCKET = "notes-prompt-library"
+
+# -------------------------------------------------------------------
 # DynamoDB table names
-# -----------------------------------------------------------------------
-ENTITIES_TABLE   = "clinical-note-entities"    # per-entity records at each pipeline stage
-COMPLETED_TABLE  = "completed-extractions"     # final assembled records
+# -------------------------------------------------------------------
+ENTITIES_TABLE = "clinical-note-entities"
+COMPLETED_TABLE = "completed-extractions"
 
-# -----------------------------------------------------------------------
-# A2I flow definition ARN
-# Configure this in the AWS console or via CloudFormation.
-# This ARN identifies which workforce, task template, and review criteria
-# will be used when a human loop is started.
-# -----------------------------------------------------------------------
-FLOW_DEFINITION_ARN = "arn:aws:sagemaker:us-east-1:123456789012:flow-definition/clinical-note-review"
+# -------------------------------------------------------------------
+# The extraction system prompt
+# -------------------------------------------------------------------
+# This goes into the Bedrock Converse API 'system' parameter.
+# In production, the FEW-SHOT EXAMPLES section would contain 3-5 examples
+# from your prompt library. Prompt caching makes this affordable:
+# the first call writes the cache; subsequent calls read it at 10% cost.
+#
+# ⚠ PHI CROSS-CONTAMINATION WARNING:
+# Examples inserted in this prompt MUST use synthetic or de-identified images
+# ONLY. NEVER insert real patient document images here.
+# When this system prompt is sent to Bedrock for Patient B's note, everything
+# in it (including any embedded images) is part of that API call.
+# Using a real patient's note image as a few-shot example sends that patient's
+# PHI to Bedrock during every other patient's extraction call. This is a HIPAA
+# disclosure under the minimum-necessary standard.
+# All examples must pass _validate_example_is_synthetic() before entering this prompt.
+# [EDITOR: review fix] Added PHI cross-contamination warning to EXTRACTION_SYSTEM_PROMPT.
+EXTRACTION_SYSTEM_PROMPT = """
+You are a clinical document analysis assistant. You will receive a handwritten
+clinical note image and an OCR transcript. The OCR may contain transcription
+errors due to difficult handwriting. Use the image as your primary source.
+Use the OCR transcript only as a supplementary guide.
 
-# -----------------------------------------------------------------------
-# Presigned URL expiry for the reviewer interface.
-# 4 hours gives reviewers time to complete tasks without the image link
-# expiring mid-session. Match this to your A2I task timeout configuration.
-# -----------------------------------------------------------------------
-PRESIGNED_URL_EXPIRY_SECONDS = 4 * 3600
+Extract all clinical entities from the handwritten portions of the note.
+Return a JSON object in exactly this format:
 
+{
+  "entities": [
+    {
+      "text": "extracted text exactly as written in the note",
+      "normalized": "standardized clinical term if different from handwritten text",
+      "category": "MEDICATION | MEDICAL_CONDITION | DOSAGE | LAB_VALUE | PROCEDURE | OTHER",
+      "confidence": "HIGH | MEDIUM | LOW",
+      "confidence_reason": "brief explanation of your confidence level",
+      "is_handwritten": true
+    }
+  ],
+  "page_quality": "GOOD | FAIR | POOR",
+  "notes": "observations about unusual abbreviations, illegible sections, or ambiguities"
+}
 
-# -----------------------------------------------------------------------
-# AWS clients
-# Creating these at module scope means they are reused across invocations
-# inside a warm Lambda container, avoiding per-call connection overhead.
-# -----------------------------------------------------------------------
-textract_client   = boto3.client("textract")
-comprehend_client = boto3.client("comprehendmedical")
-s3_client         = boto3.client("s3")
-dynamodb          = boto3.resource("dynamodb")
-sfn_client        = boto3.client("stepfunctions")
+Confidence levels:
+- HIGH: You are certain about the extraction and its clinical meaning.
+- MEDIUM: You can read the text but are uncertain about clinical interpretation,
+          OR you are confident about the meaning but uncertain about an ambiguous letterform.
+- LOW: The handwriting is illegible or the clinical meaning is unclear.
 
-# The A2I runtime client is separate from the SageMaker client.
-# The service identifier is "sagemaker-a2i-runtime", not "sagemaker".
-a2i_client = boto3.client("sagemaker-a2i-runtime")
+Return only the JSON object. Do not include any explanation outside the JSON.
+"""
+```
+
+---
+
+## PHI Validation Stub
+
+```python
+def _validate_example_is_synthetic(example: dict) -> bool:
+    """
+    Gate function: confirm a prompt example candidate uses a synthetic
+    de-identified image before it is eligible for the active prompt library.
+
+    This is a stub. In production, implement the validation logic appropriate
+    for your de-identification workflow. Options include:
+      - Check a 'deidentified' flag set by your de-identification pipeline
+      - Verify the image_key is in a designated synthetic-images S3 prefix
+      - Check a DynamoDB or metadata store record confirming de-id completion
+      - Require a manual approval record from the prompt engineer's workflow
+
+    Returns True only if the example has been confirmed de-identified.
+    Never promote an example that returns False to the active system prompt.
+
+    [EDITOR: review fix] Added _validate_example_is_synthetic() stub. The
+    feedback loop captures real patient document images as correction candidates.
+    Before any candidate is embedded in EXTRACTION_SYSTEM_PROMPT, the source image
+    MUST be replaced with a synthetic de-identified equivalent. Using a real patient
+    image as a few-shot example sends that patient's PHI to Bedrock during every
+    other patient's extraction call: a HIPAA disclosure. This stub enforces the
+    de-identification gate programmatically.
+    """
+    # Check the explicit de-identification flag set during capture.
+    if not example.get("deidentified", False):
+        return False
+
+    # Additional check: synthetic images should live in a designated prefix,
+    # never in the original enhanced-images bucket path.
+    image_key = example.get("image_key", "")
+    if image_key.startswith("notes-enhanced/") and not image_key.startswith("notes-enhanced/synthetic/"):
+        # Image is from the live enhanced-images path, not the synthetic prefix.
+        # This is a real patient image. Do not promote.
+        return False
+
+    # TODO: add your organization-specific de-identification verification here.
+    # For example: query a de-identification audit table, check for an
+    # approval record from the prompt engineer's review tool, or verify the
+    # image hash against a registry of approved synthetic examples.
+
+    return True
 ```
 
 ---
 
 ## Step 1: Image Pre-Processing
 
-Before sending anything to OCR, improve the image. This step sounds optional. It is not. Handwritten clinical notes arrive at every level of quality: faxed twice, photographed with a phone, scanned slightly crooked, pencil on thermal paper. Each artifact degrades OCR confidence in ways that push more extractions into the human review queue unnecessarily. Fixing the image first means more auto-accepted extractions, less reviewer load, and better data quality overall.
-
 ```python
-def preprocess_image(bucket: str, source_key: str) -> str:
+def preprocess_image(input_s3_key: str) -> str:
     """
-    Retrieve a handwritten note image from S3, apply pre-processing, and
-    save the enhanced version to the notes-enhanced bucket.
+    Download a handwritten note image from S3, improve its quality,
+    and save the enhanced version back to S3.
 
-    The three operations here correspond directly to the three preprocessing
-    steps in the Recipe 1.6 pseudocode:
-      1. Deskew: correct slight rotations from scanning or photography
-      2. Contrast enhancement: make faded ink and pencil legible
-      3. Noise reduction: remove compression artifacts and paper grain
+    Returns the S3 key of the enhanced image.
 
-    The Pillow-based implementation here handles straightforward cases.
-    For more reliable deskewing on mixed-orientation batches, upgrade to
-    the deskew library (pip install deskew) or OpenCV. See "Gap to Production."
-
-    Args:
-        bucket:     S3 bucket containing the source image
-        source_key: S3 object key for the original handwritten note
-
-    Returns:
-        The S3 key of the enhanced image in the notes-enhanced bucket.
+    Why this matters: even though vision models are more tolerant of imperfect
+    input than OCR engines, better input still produces better output.
+    Deskewing, contrast enhancement, noise reduction, and size normalization
+    measurably improve Textract confidence scores and vision model accuracy on
+    marginal images. Size normalization also controls Bedrock image token costs:
+    a 4000px phone photograph uses ~3-4x the tokens of a normalized 1800px scan.
     """
-    # Retrieve the image bytes from S3.
-    response    = s3_client.get_object(Bucket=bucket, Key=source_key)
+    s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+
+    # Download the image from the intake bucket.
+    response = s3.get_object(Bucket=INTAKE_BUCKET, Key=input_s3_key)
     image_bytes = response["Body"].read()
 
-    # Load into Pillow.
-    image = Image.open(io.BytesIO(image_bytes)).convert("L")  # convert to grayscale
+    # Decode to OpenCV format (numpy array) for processing.
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # Step 1a: Deskew.
-    # Pillow does not have native deskew support. The basic approach is to use
-    # Pillow's getbbox() after threshold to estimate whether the image is rotated.
-    # For production, replace this block with the deskew library or OpenCV's
-    # minAreaRect approach on the binary image. Those give you the precise angle.
-    #
-    # Here we illustrate the intent: detect a skew angle and rotate to correct it.
-    # The angle variable would come from your deskew library in a real deployment.
-    #
-    # from deskew import determine_skew
-    # angle = determine_skew(image)
-    # if angle is not None and abs(angle) > 0.5:
-    #     image = image.rotate(angle, expand=True, fillcolor=255)
-    #
-    # Placeholder: no rotation applied in this basic example.
-    # Remove the comment above and add the deskew import for a real deployment.
+    # --- Deskew ---
+    # Estimate the rotation angle from horizontal text lines and correct it.
+    # Even a 2-3 degree tilt degrades OCR confidence measurably.
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_inv = cv2.bitwise_not(gray)
+    thresh = cv2.threshold(gray_inv, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
 
-    # Step 1b: Enhance contrast.
-    # ImageOps.autocontrast stretches the histogram so the darkest pixels in the
-    # image become black and the lightest become white. The cutoff=1 parameter
-    # ignores the top and bottom 1% of pixel values, which prevents a single
-    # bright reflection or dark shadow from collapsing the contrast adjustment.
-    # This reliably improves legibility of faded ink and light pencil marks.
-    image = ImageOps.autocontrast(image, cutoff=1)
+    coords = np.column_stack(np.where(thresh > 0))
+    angle = cv2.minAreaRect(coords)[-1]
+    # minAreaRect returns angles in [-90, 0); correct to [-45, 45) range.
+    if angle < -45:
+        angle = -(90 + angle)
+    else:
+        angle = -angle
 
-    # Step 1c: Reduce noise.
-    # A median filter removes isolated pixel noise (scanner dust, compression
-    # artifacts, paper grain) while preserving the edges of handwritten strokes.
-    # Size=3 is conservative: enough to remove sensor noise without blurring
-    # letter forms. Increase to 5 only for images with severe noise artifacts.
-    image = image.filter(ImageFilter.MedianFilter(size=3))
-
-    # Save the enhanced image to the notes-enhanced bucket.
-    # A2I reviewers will see this image in their review interface.
-    # Enhanced images are meaningfully easier for reviewers to read.
-    enhanced_buffer = io.BytesIO()
-    image.save(enhanced_buffer, format="JPEG", quality=95)
-    enhanced_buffer.seek(0)
-
-    # Preserve the original key structure under the new bucket.
-    # notes-intake/2026/03/01/note-00291.jpg
-    #   -> notes-enhanced/2026/03/01/note-00291.jpg
-    enhanced_key = source_key  # same key, different bucket
-
-    s3_client.put_object(
-        Bucket=ENHANCED_BUCKET,
-        Key=enhanced_key,
-        Body=enhanced_buffer.getvalue(),
-        ContentType="image/jpeg",
-        # ServerSideEncryption and SSEKMSKeyId belong here in production.
-        # See "Gap to Production" section.
+    (h, w) = image.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    image = cv2.warpAffine(
+        image, M, (w, h),
+        flags=cv2.INTER_CUBIC,
+        borderMode=cv2.BORDER_REPLICATE,
     )
 
-    print(f"  Pre-processing complete. Enhanced image at s3://{ENHANCED_BUCKET}/{enhanced_key}")
+    # --- Contrast enhancement with CLAHE ---
+    # Contrast Limited Adaptive Histogram Equalization handles uneven lighting
+    # (e.g., shadows across part of the page) better than global normalization.
+    lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    l_channel, a_channel, b_channel = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    l_channel = clahe.apply(l_channel)
+    image = cv2.merge((l_channel, a_channel, b_channel))
+    image = cv2.cvtColor(image, cv2.COLOR_LAB2BGR)
+
+    # --- Bilateral filter for noise reduction ---
+    # Removes high-frequency noise from compression artifacts and paper grain
+    # while preserving the fine edges of handwritten strokes.
+    # d=9 means a 9-pixel diameter neighborhood. Larger values slow processing.
+    image = cv2.bilateralFilter(image, d=9, sigmaColor=75, sigmaSpace=75)
+
+    # --- Size normalization ---
+    # Normalize to a maximum dimension of 1800px to control Bedrock image token costs.
+    # A 4000px phone photograph uses ~3-4x the tokens of a 1800px scan.
+    # Monitor per-call token usage in CloudWatch and adjust this target if costs spike.
+    max_dimension = 1800
+    (h, w) = image.shape[:2]
+    if max(h, w) > max_dimension:
+        scale = max_dimension / max(h, w)
+        image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
+    # Encode to PNG bytes for storage and API calls.
+    _, encoded_bytes = cv2.imencode(".png", image)
+    enhanced_key = input_s3_key.replace("notes-intake/", "notes-enhanced/", 1)
+
+    s3.put_object(
+        Bucket=ENHANCED_BUCKET,
+        Key=enhanced_key,
+        Body=encoded_bytes.tobytes(),
+        ContentType="image/png",
+        ServerSideEncryption="aws:kms",  # SSE-KMS required for PHI content
+    )
+
+    print(f"[preprocess] Enhanced image saved: s3://{ENHANCED_BUCKET}/{enhanced_key}")
     return enhanced_key
 ```
 
 ---
 
-## Step 2: Textract Handwriting OCR
-
-The OCR call itself is a single API call. The work is in what you do with the response. The key post-processing step is separating HANDWRITING and PRINTED word populations: they live in different confidence bands, and they need different thresholds downstream.
+## Step 2: Textract Quality Signal
 
 ```python
-def extract_text_with_confidence(enhanced_key: str) -> dict:
+def compute_quality_signal(enhanced_image_key: str) -> dict:
     """
-    Run Textract AnalyzeDocument on the pre-processed image and separate
-    the response into HANDWRITING and PRINTED word populations.
+    Run Textract AnalyzeDocument to generate a quality signal for routing.
 
-    Textract's AnalyzeDocument API handles handwriting natively. No special
-    feature flag or mode is needed. The `TextType` field on each WORD block
-    tells you whether it was printed or handwritten, so mixed documents
-    (printed form with handwritten fill-ins) are handled in a single call.
+    Textract's role in this pipeline is NOT primary extraction.
+    Its job is to tell us:
+      1. How legible is the handwriting on this page? (avg confidence)
+      2. Which words are handwritten vs. printed? (TextType flags)
+      3. What is the raw OCR text? (supplementary input for the vision model prompt)
 
-    FORMS is included in FeatureTypes to extract structured key-value pairs
-    from any form fields on the page. The bounding box on each word block is
-    preserved: it tells the A2I reviewer interface exactly where on the image
-    each extracted word appears.
-
-    Args:
-        enhanced_key: S3 key of the pre-processed image in ENHANCED_BUCKET
-
-    Returns:
-        A dict containing the full text, separated word lists, and confidence
-        summary metrics for monitoring and threshold calibration.
+    Returns a dict with routing signal and word-level data.
     """
-    response = textract_client.analyze_document(
-        Document={
-            "S3Object": {
-                "Bucket": ENHANCED_BUCKET,
-                "Name":   enhanced_key,
-            }
-        },
-        # FORMS: extract key-value pairs from any form structure on the page.
-        # Handwriting recognition is native; it does not require a separate flag.
-        FeatureTypes=["FORMS"],
+    textract = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
+    s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+
+    # Retrieve the enhanced image for the Textract call.
+    response_s3 = s3.get_object(Bucket=ENHANCED_BUCKET, Key=enhanced_image_key)
+    image_bytes = response_s3["Body"].read()
+
+    # AnalyzeDocument with FORMS and LAYOUT.
+    # FORMS: extracts key-value pairs from any structured form fields on the page.
+    # LAYOUT: provides reading-order metadata for text reconstruction.
+    response = textract.analyze_document(
+        Document={"Bytes": image_bytes},
+        FeatureTypes=["FORMS", "LAYOUT"],
     )
 
     handwritten_words = []
-    printed_words     = []
+    printed_words = []
+    lines = []
 
     for block in response["Blocks"]:
-        if block["BlockType"] != "WORD":
-            continue
+        if block["BlockType"] == "WORD":
+            word = {
+                "text": block["Text"],
+                "confidence": block["Confidence"],
+                "text_type": block.get("TextType", "PRINTED"),
+                # BoundingBox: Left, Top, Width, Height as fractions of page size
+                "bounding_box": block["Geometry"]["BoundingBox"],
+            }
+            if block.get("TextType") == "HANDWRITING":
+                handwritten_words.append(word)
+            else:
+                printed_words.append(word)
 
-        word = {
-            "text":         block["Text"],
-            "confidence":   block["Confidence"],
-            "text_type":    block.get("TextType", "PRINTED"),  # PRINTED or HANDWRITING
-            "bounding_box": block["Geometry"]["BoundingBox"],
-            # BoundingBox fields: Left, Top, Width, Height (all 0.0-1.0, relative to image)
-        }
+        elif block["BlockType"] == "LINE":
+            lines.append(block["Text"])
 
-        if block.get("TextType") == "HANDWRITING":
-            handwritten_words.append(word)
-        else:
-            printed_words.append(word)
+    # Compute average handwriting confidence. This is our routing signal.
+    if handwritten_words:
+        avg_hw_confidence = sum(w["confidence"] for w in handwritten_words) / len(handwritten_words)
+    else:
+        # No handwritten words: all printed. High-quality signal by default.
+        avg_hw_confidence = 100.0
 
-    # Reconstruct the full document text from LINE blocks.
-    # LINE blocks are Textract's assembly of WORD blocks into logical text lines.
-    # Using LINE gives you cleaner concatenation than joining WORD blocks manually,
-    # because Textract's line detection handles multi-word clinical abbreviations
-    # (q.i.d., b.i.d., PRN) and hyphenated values better than a naive join.
-    lines     = [b["Text"] for b in response["Blocks"] if b["BlockType"] == "LINE"]
-    full_text = "\n".join(lines)
+    # Determine routing tier based on average handwriting confidence.
+    if avg_hw_confidence >= TIER_1_THRESHOLD:
+        model_tier = "TIER_1"
+    elif avg_hw_confidence >= DIRECT_REVIEW_THRESHOLD:
+        model_tier = "TIER_2"
+    else:
+        model_tier = "DIRECT_REVIEW"
 
-    # Compute confidence summaries for monitoring dashboards and threshold calibration.
-    # These averages are what you track over time to see whether confidence is
-    # trending up (model improving on your document population) or down (data drift).
-    avg_hw_confidence = (
-        sum(w["confidence"] for w in handwritten_words) / len(handwritten_words)
-        if handwritten_words else 0.0
-    )
-    avg_pt_confidence = (
-        sum(w["confidence"] for w in printed_words) / len(printed_words)
-        if printed_words else 0.0
-    )
+    ocr_text = "\n".join(lines)
 
     print(
-        f"  OCR complete. {len(handwritten_words)} handwritten words "
-        f"(avg confidence: {avg_hw_confidence:.1f}), "
-        f"{len(printed_words)} printed words "
-        f"(avg confidence: {avg_pt_confidence:.1f})."
+        f"[quality_signal] Avg HW confidence: {avg_hw_confidence:.1f}% "
+        f"| HW words: {len(handwritten_words)} "
+        f"| Routed to: {model_tier}"
     )
 
     return {
-        "full_text":                full_text,
-        "handwritten_words":        handwritten_words,
-        "printed_words":            printed_words,
-        "avg_handwriting_confidence": avg_hw_confidence,
-        "avg_printed_confidence":     avg_pt_confidence,
+        "avg_hw_confidence": avg_hw_confidence,
+        "model_tier": model_tier,
+        "handwritten_words": handwritten_words,
+        "printed_words": printed_words,
+        "ocr_text": ocr_text,
+        "textract_response": response,
     }
 ```
 
 ---
 
-## Step 3: Clinical Entity Extraction with Composite Confidence
-
-With OCR text in hand, Comprehend Medical extracts structured clinical entities: medications, diagnoses, dosages, frequencies, lab values. The critical addition here is the composite confidence score that combines OCR confidence with NLP confidence into a single routing signal.
-
-The rule is simple: take the minimum of the two. An entity is only as trustworthy as its weakest link. A medication name the OCR struggled to read but the NLP identified confidently is still a risky extraction. A clearly scanned word that the NLP is uncertain about is equally suspect. Composite confidence catches both failure modes with a single threshold comparison downstream.
+## Step 3: Vision Model Extraction
 
 ```python
-def find_ocr_confidence_for_entity(
-    entity_text: str,
-    handwritten_words: list,
-) -> tuple[float, bool]:
+def extract_with_vision(
+    enhanced_image_key: str,
+    ocr_text: str,
+    model_tier: str,
+) -> dict:
     """
-    Find the Textract confidence for the words underlying a Comprehend Medical entity.
+    Send the page image to Bedrock for clinical entity extraction.
 
-    An entity might span multiple words ("Type 2 diabetes mellitus"). For
-    multi-word entities, we want the minimum confidence among all constituent
-    words: if any word in a medication name was read poorly, the whole name
-    is suspect.
+    This is the core of Recipe 1.6. The vision model reads the handwriting
+    in context: it sees the image and the surrounding text simultaneously,
+    which enables disambiguation that OCR + NLP pipelines cannot perform.
 
-    We check only against handwritten_words. If no handwritten words match the
-    entity text, the entity came from a printed region of the page and gets a
-    high default confidence (printed text is reliably read).
+    Model selection:
+      TIER_1 → Claude Haiku 4.5 (fast, ~$0.004/page, handles clean handwriting)
+      TIER_2 → Claude Sonnet 4.6 (accurate, ~$0.012/page, handles difficult cases)
 
-    Args:
-        entity_text:       the text string of the clinical entity
-        handwritten_words: list of handwritten word dicts from Step 2
-
-    Returns:
-        A tuple of (ocr_confidence, is_handwritten).
-        ocr_confidence: min confidence among matching words, or 90.0 for printed.
-        is_handwritten: True if any matching word was HANDWRITING type.
+    Returns parsed entity list plus metadata.
     """
-    entity_lower = entity_text.lower()
+    # Configure with adaptive retry mode. Bedrock ThrottlingException and
+    # ServiceUnavailableException are expected at production volume.
+    # Retry at the API call level here (not Lambda invocation level) to avoid
+    # generating a new task_token on each attempt, which would cause an A2I
+    # HumanLoopName collision if a review loop had already been created.
+    bedrock = boto3.client("bedrock-runtime", config=BOTO3_RETRY_CONFIG)
+    s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-    # Find handwritten words whose text appears in the entity string.
-    # Substring matching handles partial word matches (e.g., "Metformin" in
-    # "Metformin 500mg"). This is approximate but practical for clinical text.
-    matching_words = [
-        w for w in handwritten_words
-        if w["text"].lower() in entity_lower
+    # [EDITOR: Added BOTO3_RETRY_CONFIG to the Bedrock client. The v1 example had no retry
+    # logic, which is a P0 production failure mode. Bedrock vision calls can take 15+ seconds
+    # under load; throttling under burst traffic is expected at healthcare volume.]
+
+    # Select model based on tier routing from Step 2.
+    if model_tier == "TIER_1":
+        model_id = HAIKU_MODEL_ID
+    else:
+        model_id = SONNET_MODEL_ID
+
+    # Load the enhanced image for the Bedrock call.
+    response_s3 = s3.get_object(Bucket=ENHANCED_BUCKET, Key=enhanced_image_key)
+    image_bytes = response_s3["Body"].read()
+
+    # Build the Converse API message content.
+    # Content is a list: the image comes first, then the text prompt.
+    # Bedrock encodes image bytes directly; no base64 needed for the Converse API.
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    # Image block: send the page image directly to the vision model.
+                    # This is the key difference from Recipe 1.4 and 1.5:
+                    # we're not sending extracted text, we're sending the image itself.
+                    "image": {
+                        "format": "png",
+                        "source": {"bytes": image_bytes},
+                    }
+                },
+                {
+                    # Text block: include OCR as a supplementary signal.
+                    # The model is instructed to use the image as primary source.
+                    "text": (
+                        "OCR transcript (may contain errors due to difficult handwriting):\n\n"
+                        + ocr_text
+                        + "\n\nPlease extract clinical entities from the handwritten "
+                        "content in the image."
+                    )
+                },
+            ],
+        }
     ]
 
-    if not matching_words:
-        # No handwritten word matched: entity is from printed text.
-        # Printed text has a higher confidence baseline; use a safe default.
-        return 90.0, False
+    print(f"[vision_extract] Calling {model_id} for extraction...")
 
-    ocr_confidence = min(w["confidence"] for w in matching_words)
-    return ocr_confidence, True
-
-
-def extract_clinical_entities(ocr_result: dict) -> list:
-    """
-    Extract clinical entities from OCR text and compute composite confidence scores.
-
-    Calls Comprehend Medical DetectEntitiesV2 on the full text assembled in
-    Step 2. For each returned entity, cross-references the NLP confidence
-    with the OCR confidence of the underlying words to produce a composite score.
-
-    Composite confidence = min(ocr_confidence, nlp_confidence)
-
-    This is the signal the confidence tiering step uses to route extractions.
-    Using the minimum instead of an average ensures that a weak link in either
-    direction (bad OCR or uncertain NLP) results in a conservative routing
-    decision. Clinical entity routing errors are expensive; conservative is right.
-
-    Args:
-        ocr_result: the dict returned by extract_text_with_confidence (Step 2)
-
-    Returns:
-        A list of entity dicts, each with composite confidence and metadata.
-    """
-    full_text         = ocr_result["full_text"]
-    handwritten_words = ocr_result["handwritten_words"]
-
-    if not full_text.strip():
-        return []
-
-    # DetectEntitiesV2 accepts up to 20,000 characters per request.
-    # Clip well below that to avoid silent truncation on long notes.
-    # In production, split at sentence boundaries for notes exceeding this limit.
-    text_for_nlp = full_text[:19500]
-
-    response = comprehend_client.detect_entities_v2(Text=text_for_nlp)
-
-    enriched_entities = []
-
-    for entity in response["Entities"]:
-        entity_text    = entity["Text"]
-        # Comprehend Medical returns Score as 0.0-1.0; scale to 0-100 to
-        # match Textract's confidence range for consistent threshold comparisons.
-        nlp_confidence = entity["Score"] * 100.0
-
-        ocr_confidence, is_handwritten = find_ocr_confidence_for_entity(
-            entity_text, handwritten_words
-        )
-
-        # Composite confidence: the chain is only as strong as its weakest link.
-        composite_confidence = min(ocr_confidence, nlp_confidence)
-
-        enriched_entities.append({
-            "text":                entity_text,
-            "category":            entity["Category"],   # MEDICATION, MEDICAL_CONDITION, etc.
-            "entity_type":         entity["Type"],       # GENERIC_NAME, DX_NAME, etc.
-            "traits":              [t["Name"] for t in entity.get("Traits", [])],
-            "nlp_confidence":      round(nlp_confidence, 1),
-            "ocr_confidence":      round(ocr_confidence, 1),
-            "composite_confidence": round(composite_confidence, 1),
-            "is_handwritten":      is_handwritten,
-        })
-
-    print(
-        f"  Clinical NLP complete. {len(enriched_entities)} entities extracted. "
-        f"Composite confidence range: "
-        f"{min(e['composite_confidence'] for e in enriched_entities):.1f} - "
-        f"{max(e['composite_confidence'] for e in enriched_entities):.1f}"
-        if enriched_entities else "  Clinical NLP complete. No entities found."
+    # Converse API call.
+    # temperature=0 for maximum determinism in structured extraction output.
+    # maxTokens=2048 is sufficient for most clinical note extraction results.
+    response = bedrock.converse(
+        modelId=model_id,
+        system=[{"text": EXTRACTION_SYSTEM_PROMPT}],
+        messages=messages,
+        inferenceConfig={"maxTokens": 2048, "temperature": 0},
     )
 
-    return enriched_entities
-```
+    raw_output = response["output"]["message"]["content"][0]["text"]
 
----
+    # Parse the JSON response. The model is instructed to return only JSON,
+    # but validate defensively since model output is never guaranteed to parse.
+    try:
+        # Strip any markdown code fences the model might have added.
+        cleaned = raw_output.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```")[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+            cleaned = cleaned.strip()
 
-## Step 4: Confidence Tiering and Routing
+        parsed = json.loads(cleaned)
 
-Every entity gets assigned to exactly one of three buckets. The routing logic is a straight threshold comparison, but the thresholds are adaptive: handwritten entities go against the handwriting thresholds, printed entities against the printed thresholds. This is a subtle but important distinction that the pseudocode describes carefully, and it's worth understanding why before you implement it.
+        entities = parsed.get("entities", [])
+        page_quality = parsed.get("page_quality", "UNKNOWN")
+        notes = parsed.get("notes", "")
+        parse_error = False
 
-A handwritten medication name at 82% composite confidence is likely correct. A printed field label at 82% composite confidence has a meaningful chance of error. Applying the same threshold to both would either over-route reliable handwritten extractions to human review, or under-route risky printed extractions. Adaptive thresholds let each population be evaluated against its own accuracy baseline.
+    except json.JSONDecodeError as e:
+        # Parsing failure routes to human review; don't let bad output propagate.
+        # IMPORTANT: do NOT log raw_output here. The model response may echo
+        # clinical content from the input image (medication names, diagnoses,
+        # patient context). Log only structural metadata.
+        parse_error_detail = (
+            f"JSONDecodeError: {type(e).__name__}. "
+            f"Response length: {len(raw_output)} chars. "
+            "Raw content omitted from logs (may contain PHI)."
+        )
+        print(f"[vision_extract] Parse error. {parse_error_detail} Routing to human review.")
+        entities = []
+        page_quality = "UNKNOWN"
+        notes = parse_error_detail
+        parse_error = True
 
-```python
-def tier_entities(enriched_entities: list) -> dict:
-    """
-    Assign each clinical entity to a confidence tier using adaptive thresholds.
-
-    Three tiers:
-    - high:   composite confidence above the high threshold for this text type.
-              Automatically accepted. No human review needed.
-    - medium: composite confidence between medium and high thresholds.
-              Accepted and stored, but flagged for downstream verification.
-              Does not block the workflow.
-    - low:    composite confidence below the medium threshold.
-              Human review required before this value is used clinically.
-
-    Thresholds are selected based on whether the entity came from handwritten
-    or printed text. Handwriting and print have different accuracy baselines
-    and need different confidence cutoffs. See the constants section for
-    the starting threshold values and the calibration guidance in Recipe 1.6.
-
-    Args:
-        enriched_entities: list of entity dicts from extract_clinical_entities (Step 3)
-
-    Returns:
-        A dict with keys 'high', 'medium', 'low', each containing a list of entities.
-    """
-    high_confidence   = []
-    medium_confidence = []
-    low_confidence    = []
-
-    for entity in enriched_entities:
-        score = entity["composite_confidence"]
-
-        # Select the appropriate threshold pair for this entity's text type.
-        if entity["is_handwritten"]:
-            high_threshold   = HIGH_CONFIDENCE_HANDWRITING    # 85.0
-            medium_threshold = MEDIUM_CONFIDENCE_HANDWRITING  # 60.0
-        else:
-            high_threshold   = HIGH_CONFIDENCE_PRINTED        # 92.0
-            medium_threshold = MEDIUM_CONFIDENCE_PRINTED      # 75.0
-
-        if score >= high_threshold:
-            high_confidence.append(entity)
-        elif score >= medium_threshold:
-            medium_confidence.append(entity)
-        else:
-            low_confidence.append(entity)
+        # [EDITOR: Fixed PHI exposure in error logging. The v1 example logged
+        # raw_output[:200] in the JSONDecodeError handler, which could contain
+        # clinical entities echoed from the input image. Now logs only structural
+        # metadata (error type, response length). This was a P1 finding in the
+        # 1.4 review. Same fix applied to the notes field stored to DynamoDB.]
 
     print(
-        f"  Confidence tiering: {len(high_confidence)} auto-accept, "
-        f"{len(medium_confidence)} accept-with-flag, "
-        f"{len(low_confidence)} human review required."
+        f"[vision_extract] Extracted {len(entities)} entities "
+        f"| Page quality: {page_quality} "
+        f"| Model: {model_id}"
     )
 
     return {
-        "high":   high_confidence,
-        "medium": medium_confidence,
-        "low":    low_confidence,
+        "entities": entities,
+        "page_quality": page_quality,
+        "notes": notes,
+        "parse_error": parse_error,
+        "model_tier": model_tier,
+        "model_id": model_id,
     }
 ```
 
 ---
 
-## Step 5: Store Auto-Accepted Entities and Start Human Review
-
-High and medium confidence entities are written to DynamoDB immediately. They are available for downstream processing now. Low confidence entities are bundled into an A2I human loop. The Step Functions workflow suspends at this step using a task token: a unique callback identifier passed to A2I that A2I will return when the review completes.
-
-If there are no low-confidence entities, the task token is sent back immediately and the workflow continues without any human-paced wait.
+## Step 4: Composite Scoring and Tiering
 
 ```python
-def generate_entity_id() -> str:
-    """Generate a unique sortable ID for a DynamoDB entity record."""
-    return str(uuid.uuid4())
+def find_ocr_confidence_for_entity(entity_text: str, handwritten_words: list) -> float:
+    """
+    Find the Textract word-level confidence for the words that make up this entity.
+
+    This is an approximate text matching: we look for handwritten words whose
+    text matches tokens in the entity string. For multi-word entities
+    (e.g., "Type 2 diabetes mellitus"), we find all matching words and return
+    the minimum confidence. The minimum is intentional: if any word in a
+    medication name was read poorly, the whole name is suspect.
+
+    Returns a default of 80.0 if no match is found (entity likely came from
+    printed text, which has a higher confidence baseline).
+    """
+    entity_tokens = set(entity_text.lower().split())
+    matched_confidences = []
+
+    for word in handwritten_words:
+        if word["text"].lower() in entity_tokens:
+            matched_confidences.append(word["confidence"])
+
+    if matched_confidences:
+        return min(matched_confidences)
+    else:
+        return 80.0  # Conservative default when no handwritten match found
 
 
-def route_entities(
+def composite_score_and_tier(vision_result: dict, handwritten_words: list) -> dict:
+    """
+    Compute a composite confidence score for each extracted entity and
+    assign it to a routing tier.
+
+    Composite score = min(Textract OCR confidence, vision model confidence as numeric)
+
+    Tiering:
+      >= HIGH_ACCEPT_THRESHOLD (80): auto-accept
+      [MEDIUM_FLAG_THRESHOLD (60), 80): accept with flag
+      < 60: human review required
+    """
+    tiered = {"high": [], "medium": [], "low": []}
+
+    for entity in vision_result.get("entities", []):
+        # Map the vision model's confidence string to a numeric value.
+        vision_numeric = VISION_CONFIDENCE_MAP.get(
+            entity.get("confidence", "LOW").upper(), 35.0
+        )
+
+        # Get the Textract OCR confidence for this entity's text span.
+        ocr_confidence = find_ocr_confidence_for_entity(
+            entity.get("text", ""), handwritten_words
+        )
+
+        # Composite: minimum of both signals.
+        composite = min(ocr_confidence, vision_numeric)
+
+        enriched = {
+            "id": str(uuid.uuid4()),
+            "text": entity.get("text", ""),
+            "normalized": entity.get("normalized", entity.get("text", "")),
+            "category": entity.get("category", "OTHER"),
+            "is_handwritten": entity.get("is_handwritten", True),
+            "ocr_confidence": round(ocr_confidence, 1),
+            "vision_confidence": entity.get("confidence", "LOW"),
+            "vision_numeric": vision_numeric,
+            "composite_confidence": round(composite, 1),
+            "confidence_reason": entity.get("confidence_reason", ""),
+        }
+
+        if composite >= HIGH_ACCEPT_THRESHOLD:
+            tiered["high"].append(enriched)
+        elif composite >= MEDIUM_FLAG_THRESHOLD:
+            tiered["medium"].append(enriched)
+        else:
+            tiered["low"].append(enriched)
+
+    high_count = len(tiered["high"])
+    medium_count = len(tiered["medium"])
+    low_count = len(tiered["low"])
+    print(
+        f"[tiering] Auto-accept: {high_count} | Flagged: {medium_count} | Human review: {low_count}"
+    )
+
+    return tiered
+```
+
+---
+
+## Step 5: Store Auto-Accepted Entities
+
+```python
+def store_auto_accepted(document_key: str, tiered_entities: dict) -> None:
+    """
+    Write high and medium confidence entities to DynamoDB immediately.
+
+    High confidence: auto_accepted. Safe for downstream use.
+    Medium confidence: accepted_flagged. Usable but flagged for downstream review.
+
+    Note: DynamoDB requires float values to be stored as Decimal.
+    boto3 will throw a TypeError if you try to store a Python float directly.
+
+    Idempotency: the ConditionExpression="attribute_not_exists(sk)" ensures
+    that a Lambda retry does not create duplicate entity records. If the item
+    already exists (same sk), the write is skipped rather than overwriting.
+    The ConditionalCheckFailedException is caught and treated as a no-op.
+    """
+    # [EDITOR: review fix] Added ConditionExpression for idempotent writes.
+    # Previously, store_auto_accepted used put_item with no condition. If the
+    # Lambda was retried by Step Functions after a partial write, composite_score_and_tier
+    # would run again and generate new UUIDs, writing duplicate entity records.
+    # assemble_final_record queries by partition key and returns all items including
+    # duplicates, inflating final entity counts. The condition prevents this.
+    dynamodb = boto3.resource("dynamodb")
+    table = dynamodb.Table(ENTITIES_TABLE)
+
+    all_auto = tiered_entities.get("high", []) + tiered_entities.get("medium", [])
+
+    for entity in all_auto:
+        review_status = (
+            "auto_accepted" if entity in tiered_entities["high"] else "accepted_flagged"
+        )
+        try:
+            table.put_item(
+                Item={
+                    "pk": document_key,
+                    "sk": entity["id"],
+                    "entity_text": entity["text"],
+                    "normalized": entity["normalized"],
+                    "category": entity["category"],
+                    # DynamoDB gotcha: Decimal required for all float/int numeric values.
+                    "composite_confidence": Decimal(str(entity["composite_confidence"])),
+                    "ocr_confidence": Decimal(str(entity["ocr_confidence"])),
+                    "vision_confidence": entity["vision_confidence"],
+                    "review_status": review_status,
+                    "is_handwritten": entity["is_handwritten"],
+                    "stored_at": datetime.now(timezone.utc).isoformat(),
+                },
+                # Idempotent write: skip if this entity ID already exists.
+                # On Lambda retry, this prevents duplicate records without error.
+                ConditionExpression="attribute_not_exists(sk)",
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                # Entity already written on a previous attempt. This is expected
+                # on retry: the item exists and is correct. Skip silently.
+                print(f"[store_auto] Entity {entity['id']} already exists, skipping (idempotent retry).")
+            else:
+                raise
+
+    print(f"[store_auto] Wrote {len(all_auto)} auto-accepted entities to DynamoDB")
+```
+
+---
+
+## Step 6: Start A2I Human Review
+
+```python
+def start_human_review(
     document_key: str,
+    enhanced_image_key: str,
+    textract_ocr_text: str,
     tiered_entities: dict,
     task_token: str,
-) -> None:
+    flow_definition_arn: str,
+) -> bool:
     """
-    Write auto-accepted entities to DynamoDB and start an A2I human loop
-    for low-confidence entities.
+    Bundle low-confidence entities into an A2I human review task.
 
-    High and medium confidence entities are stored immediately with their
-    tier status. Medium entities carry a review_status of 'accepted_flagged'
-    to signal that downstream systems should treat them with some skepticism.
+    Full-page review case: if ALL tiers are empty (parse error or DIRECT_REVIEW
+    path), a sentinel entity is inserted to force A2I creation. These pages most
+    need human review. The reviewer sees the raw image and OCR text and performs
+    extraction from scratch.
 
-    Low confidence entities are bundled into an A2I StartHumanLoop call.
-    The task_token is embedded in the A2I input payload. When the reviewer
-    submits their corrections, a Lambda reads that token from the A2I output
-    and calls StepFunctions.SendTaskSuccess to resume the workflow.
+    If only high/medium confidence entities exist and low is empty, call
+    SendTaskSuccess immediately and return False (no review needed).
 
-    If there are no low-confidence entities, SendTaskSuccess is called directly
-    so the Step Functions execution does not suspend unnecessarily.
+    Otherwise, create the human loop and return True (Step Functions execution
+    is now suspended).
 
-    Args:
-        document_key:     S3 key of the source note (used as DynamoDB partition key)
-        tiered_entities:  dict of {high, medium, low} entity lists from Step 4
-        task_token:       Step Functions task token for the wait-for-callback state
+    [EDITOR: review fix] Previously, this function checked `if not low_confidence`
+    and called SendTaskSuccess immediately when tiered_entities had no "low" items.
+    This silently bypassed A2I for parse errors and DIRECT_REVIEW paths, which are the two
+    cases that most need human review. The sentinel entity logic below fixes this.
     """
-    entities_table = dynamodb.Table(ENTITIES_TABLE)
+    # [EDITOR: review fix] Full-page review detection: if ALL tiers are empty,
+    # vision extraction failed entirely (parse error) or Textract confidence
+    # was below DIRECT_REVIEW_THRESHOLD. Insert a sentinel entity to force A2I
+    # creation. The reviewer performs manual extraction from the page image.
+    all_empty = not any([
+        tiered_entities.get("high", []),
+        tiered_entities.get("medium", []),
+        tiered_entities.get("low", []),
+    ])
 
-    # Write auto-accepted entities (high and medium confidence) to DynamoDB.
-    for entity in tiered_entities["high"] + tiered_entities["medium"]:
-        review_status = (
-            "auto_accepted"
-            if entity in tiered_entities["high"]
-            else "accepted_flagged"
+    if all_empty:
+        # Force human review with a full-page sentinel entity.
+        tiered_entities = {
+            "high": [],
+            "medium": [],
+            "low": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": "[FULL PAGE REVIEW REQUIRED]",
+                    "category": "OTHER",
+                    "ocr_confidence": 0.0,
+                    "vision_confidence": "LOW",
+                    "confidence_reason": (
+                        "Vision extraction failed or handwriting quality is below the "
+                        "automated extraction threshold. Manual extraction from the "
+                        "page image is required."
+                    ),
+                }
+            ],
+        }
+        print(
+            "[a2i] Full-page review: vision extraction failed or DIRECT_REVIEW path. "
+            "Forcing A2I with sentinel entity. Reviewer will extract from scratch."
         )
-        entities_table.put_item(Item={
-            "pk":              document_key,
-            "sk":              generate_entity_id(),
-            "entity_text":     entity["text"],
-            "category":        entity["category"],
-            "entity_type":     entity["entity_type"],
-            "traits":          entity["traits"],
-            "confidence":      Decimal(str(entity["composite_confidence"])),
-            "ocr_confidence":  Decimal(str(entity["ocr_confidence"])),
-            "nlp_confidence":  Decimal(str(entity["nlp_confidence"])),
-            "review_status":   review_status,
-            "is_handwritten":  entity["is_handwritten"],
-            "created_at":      datetime.datetime.now(timezone.utc).isoformat(),
-        })
 
-    # If there are no low-confidence entities, no human review is needed.
-    # Return the task token immediately so Step Functions continues.
-    if not tiered_entities["low"]:
-        print("  No low-confidence entities. Sending task success immediately.")
-        sfn_client.send_task_success(
+    low_confidence = tiered_entities.get("low", [])
+
+    # If nothing needs review (only high/medium entities), resume immediately.
+    if not low_confidence:
+        stepfunctions = boto3.client("stepfunctions", config=BOTO3_RETRY_CONFIG)
+        stepfunctions.send_task_success(
             taskToken=task_token,
-            output=json.dumps({
-                "document_key":   document_key,
-                "reviewed_count": 0,
-                "corrections":    0,
-            }),
+            output=json.dumps({"document_key": document_key, "reviewed_count": 0}),
         )
-        return
+        print("[a2i] No low-confidence entities. Resumed Step Functions immediately.")
+        return False
 
-    # Generate a presigned URL so the A2I reviewer interface can display
-    # the original document image without requiring direct S3 access.
-    # The expiry should be long enough for the review to complete;
-    # 4 hours is a reasonable starting point for typical queue depths.
-    presigned_url = s3_client.generate_presigned_url(
+    # Generate a pre-signed URL for the reviewer to view the document image.
+    # 48-hour expiry handles queues that back up overnight.
+    # In production, consider a Lambda proxy that validates the reviewer's Cognito
+    # session and regenerates the URL on demand for longer-lived queues.
+    # Note: pre-signed URLs point to the public S3 endpoint. Reviewer browsers
+    # fetch the image over HTTPS from the public internet. For organizations
+    # requiring all PHI traffic to stay on internal networks, use a Lambda proxy
+    # behind API Gateway instead.
+    s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+    image_url = s3_client.generate_presigned_url(
         "get_object",
-        Params={"Bucket": ENHANCED_BUCKET, "Key": document_key},
-        ExpiresIn=PRESIGNED_URL_EXPIRY_SECONDS,
+        Params={"Bucket": ENHANCED_BUCKET, "Key": enhanced_image_key},
+        ExpiresIn=48 * 3600,
     )
 
-    # Bundle the low-confidence entities into the A2I task input.
-    # The bounding_box is included so the reviewer interface can highlight
-    # the relevant region on the document image for each entity being reviewed.
-    entities_for_review = []
-    for entity in tiered_entities["low"]:
-        entity_id = generate_entity_id()
-
-        # Write a placeholder record to DynamoDB so the merge step in Step 8
-        # can find all entity IDs for this document, including those pending review.
-        entities_table.put_item(Item={
-            "pk":              document_key,
-            "sk":              entity_id,
-            "entity_text":     entity["text"],   # will be updated after review
-            "original_ocr":    entity["text"],   # preserve original for training data
-            "category":        entity["category"],
-            "entity_type":     entity["entity_type"],
-            "traits":          entity["traits"],
-            "confidence":      Decimal(str(entity["composite_confidence"])),
-            "ocr_confidence":  Decimal(str(entity["ocr_confidence"])),
-            "nlp_confidence":  Decimal(str(entity["nlp_confidence"])),
-            "review_status":   "pending_review",
-            "is_handwritten":  entity["is_handwritten"],
-            "created_at":      datetime.datetime.now(timezone.utc).isoformat(),
-        })
-
-        entities_for_review.append({
-            "id":             entity_id,
-            "text":           entity["text"],
-            "category":       entity["category"],
-            "ocr_confidence": round(entity["ocr_confidence"], 1),
-            "nlp_confidence": round(entity["nlp_confidence"], 1),
-            # bounding_box is passed through to the task template, where it
-            # can be used to draw a highlight box over the relevant word.
-            "bounding_box":   entity.get("bounding_box", {}),
-        })
-
-    # The A2I task input is the payload that appears in the reviewer's interface.
-    # The task_token is embedded here so the completion Lambda can resume the
-    # Step Functions execution when the review is submitted.
-    review_task_input = {
-        "document_key":       document_key,
-        "document_image_uri": presigned_url,
-        "task_token":         task_token,
-        "entities_to_review": entities_for_review,
+    # Build the review task input.
+    task_input = {
+        "document_image_uri": image_url,
+        "textract_ocr_text": textract_ocr_text,
+        "document_key": document_key,
+        "task_token": task_token,
+        "entities_to_review": [
+            {
+                "id": entity["id"],
+                "vision_text": entity["text"],
+                "category": entity["category"],
+                "ocr_confidence": entity["ocr_confidence"],
+                "vision_confidence": entity["vision_confidence"],
+                "confidence_reason": entity["confidence_reason"],
+            }
+            for entity in low_confidence
+        ],
     }
 
-    # Start the A2I human loop.
-    # HumanLoopName must be unique per loop. Using a hash of the document key
-    # makes it deterministic and idempotent for the same document.
-    import hashlib
-    loop_name = "note-review-" + hashlib.md5(document_key.encode()).hexdigest()[:16]
+    # A2I InputContent is limited to 100KB. Check payload size before sending.
+    # Dense clinical notes with many low-confidence entities can approach this limit.
+    # If over limit, truncate OCR text (supplementary context, not primary source)
+    # to fit within the limit. Failing to check raises ValidationException from
+    # the A2I API, which propagates as an unhandled Lambda error.
+    # [EDITOR: review fix] Added A2I 100KB payload size check. Previously there was
+    # no guard; large payloads would raise ValidationException at runtime.
+    input_json = json.dumps(task_input)
+    if len(input_json.encode("utf-8")) > 90_000:  # 10KB safety margin under 100KB limit
+        task_input["textract_ocr_text"] = (
+            task_input["textract_ocr_text"][:2000]
+            + " [truncated: full OCR text available in S3 at enhanced image key]"
+        )
+        input_json = json.dumps(task_input)
+        print(
+            f"[a2i] Payload exceeded 90KB; OCR text truncated to fit A2I 100KB limit. "
+            f"Final payload: {len(input_json.encode('utf-8'))} bytes."
+        )
 
-    a2i_client.start_human_loop(
+    # Create the A2I human loop.
+    # HumanLoopName must be unique per loop. Including the task_token hash
+    # ensures retries on the same document generate distinct names,
+    # avoiding ConflictException from A2I.
+    loop_name = "note-review-" + hashlib.md5(
+        (document_key + task_token).encode()
+    ).hexdigest()[:16]
+
+    sagemaker = boto3.client("sagemaker-a2i-runtime", config=BOTO3_RETRY_CONFIG)
+    sagemaker.start_human_loop(
         HumanLoopName=loop_name,
-        FlowDefinitionArn=FLOW_DEFINITION_ARN,
-        HumanLoopInput={
-            # InputContent must be a JSON string, not a dict.
-            "InputContent": json.dumps(review_task_input)
-        },
+        FlowDefinitionArn=flow_definition_arn,
+        HumanLoopInput={"InputContent": input_json},
     )
+
+    # [EDITOR: Added BOTO3_RETRY_CONFIG to sagemaker-a2i-runtime client. Also removed
+    # the `import hashlib` that was inside the function body in v1 (it's now at the top
+    # of the module with the other imports).]
 
     print(
-        f"  A2I human loop started: {loop_name}. "
-        f"{len(tiered_entities['low'])} entities sent for review. "
-        f"Step Functions workflow is now suspended."
+        f"[a2i] Started human loop '{loop_name}' "
+        f"for {len(low_confidence)} low-confidence entities. "
+        f"Step Functions execution suspended."
     )
-    # The Step Functions execution stays paused here until the review Lambda
-    # calls sfn_client.send_task_success() with task_token. See Step 7.
+    return True
 ```
 
 ---
 
-## Step 6: The Reviewer Interface
-
-The worker task template is defined once in the AWS console or via CloudFormation as part of the A2I flow definition. It renders in the A2I worker portal. The template is HTML with Liquid-style template variables that A2I fills in from the `InputContent` passed in Step 5.
-
-The template is included in the main Recipe 1.6 walkthrough. The Python side of this step is just the `start_human_loop` call in Step 5. There is no additional Python code here. The template itself is reproduced below for reference so you can see how the `entities_to_review` list from Step 5 maps to the reviewer's view.
-
-```html
-<!-- Reference: A2I Worker Task Template for Recipe 1.6 -->
-<!-- Deploy this in the A2I console as the worker task template for your flow definition. -->
-<!-- This is the same template shown in the main recipe pseudocode. -->
-
-<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
-
-<crowd-form>
-  <h2>Handwritten Clinical Note Review</h2>
-  <p>
-    The system identified the following extractions as uncertain.
-    Compare each one against the document image and correct any errors.
-    Leave the text field unchanged if the OCR is correct.
-  </p>
-
-  <div style="border: 1px solid #ccc; padding: 8px; margin-bottom: 20px;">
-    <img src="{{ task.input.document_image_uri }}"
-         style="max-width: 100%; display: block;" />
-  </div>
-
-  {% for entity in task.input.entities_to_review %}
-  <div style="border: 1px solid #ddd; border-radius: 4px;
-              padding: 12px; margin-bottom: 12px; background: #fafafa;">
-    <p><strong>Category:</strong> {{ entity.category }}</p>
-    <p>
-      <strong>OCR extracted:</strong>
-      <code>{{ entity.text | escape }}</code>
-      &nbsp;&nbsp;
-      <span style="color: #888; font-size: 0.9em;">
-        (OCR confidence: {{ entity.ocr_confidence }}%,
-         NLP confidence: {{ entity.nlp_confidence }}%)
-      </span>
-    </p>
-    <crowd-input
-      name="corrected_text_{{ entity.id }}"
-      label="Correct text (edit if OCR is wrong)"
-      value="{{ entity.text | escape }}"
-      required>
-    </crowd-input>
-  </div>
-  {% endfor %}
-
-  <crowd-text-area
-    name="reviewer_notes"
-    label="Notes for QA team (optional)"
-    rows="2"
-    placeholder="Observations about document quality, unusual abbreviations, etc.">
-  </crowd-text-area>
-</crowd-form>
-```
-
----
-
-## Step 7: Process Review Results and Resume Workflow
-
-This function is triggered by an S3 event when A2I writes the completed review output. It reads the reviewer's corrections, updates the DynamoDB entity records, and sends the task success to Step Functions to resume the workflow.
-
-The task token is the critical link. Calling `send_task_success()` with the original token is what wakes up the Step Functions execution. If this Lambda fails or is misconfigured, the Step Functions execution stays suspended indefinitely. Monitor this function's error rate and set a heartbeat timeout on the wait state so stuck executions surface as alarms rather than silent delays.
+## Step 7: Process Review Results (A2I Completion Lambda)
 
 ```python
-def process_review_completion(review_output_bucket: str, review_output_key: str) -> dict:
+def process_review_completion(review_output_s3_key: str) -> None:
     """
-    Process a completed A2I review and resume the Step Functions workflow.
+    Triggered by an S3 event when A2I writes the review output.
 
-    Triggered by the S3 event when A2I writes review output to REVIEW_BUCKET.
-    Reads the reviewer's corrections from the A2I output JSON, updates the
-    DynamoDB entity records with the corrected text, then calls
-    StepFunctions.SendTaskSuccess with the task token to resume the workflow.
+    Reads the reviewer's corrections, writes reviewed entities to DynamoDB,
+    and calls StepFunctions.SendTaskSuccess to resume the execution.
 
-    A2I writes one JSON file per completed human loop. The file structure is:
-    {
-      "flowDefinitionArn": "...",
-      "humanLoopName":     "...",
-      "inputContent": {
-        "document_key":       "...",
-        "task_token":         "...",
-        "entities_to_review": [{"id": "...", "text": "...", ...}, ...]
-      },
-      "humanAnswers": [
-        {
-          "answerContent": {
-            "corrected_text_<entity_id>": "<reviewer's text>",
-            ...
-            "reviewer_notes": "..."
-          },
-          "submissionTime": "...",
-          "workerId":       "..."
-        }
-      ]
-    }
-
-    Args:
-        review_output_bucket: S3 bucket where A2I wrote the review output
-        review_output_key:    S3 key of the A2I review output JSON file
-
-    Returns:
-        A summary dict for logging and Step Functions output.
+    This Lambda must have low error rates. If SendTaskSuccess fails, the
+    Step Functions execution stays suspended until the heartbeat timeout fires.
+    Monitor this function's error rate and set a DLQ.
     """
+    s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+    dynamodb = boto3.resource("dynamodb")
+    stepfunctions = boto3.client("stepfunctions", config=BOTO3_RETRY_CONFIG)
+    table = dynamodb.Table(ENTITIES_TABLE)
+
     # Load the A2I review output from S3.
-    response    = s3_client.get_object(Bucket=review_output_bucket, Key=review_output_key)
-    review_data = json.loads(response["Body"].read())
+    response = s3.get_object(Bucket=REVIEW_OUTPUT_BUCKET, Key=review_output_s3_key)
+    review_data = json.loads(response["Body"].read().decode("utf-8"))
 
-    # Pull the task token and document key from the embedded input content.
-    input_content = review_data["inputContent"]
-    task_token    = input_content["task_token"]
-    document_key  = input_content["document_key"]
+    # Extract metadata from the review input (passed through from Step 6).
+    input_content = json.loads(review_data["inputContent"])
+    task_token = input_content["task_token"]
+    document_key = input_content["document_key"]
+    entities_to_review = input_content["entities_to_review"]
 
-    # The first (and typically only) human answer contains the reviewer's responses.
-    # A2I flow definitions can require multiple reviewers; this example expects one.
-    # For consensus-based review (multiple reviewers, majority vote), you would
-    # iterate over all humanAnswers and reconcile. See "Gap to Production."
-    answer         = review_data["humanAnswers"][0]
-    answer_content = answer["answerContent"]
-    worker_id      = answer.get("workerId", "unknown")
-    reviewed_at    = answer.get("submissionTime", datetime.datetime.now(timezone.utc).isoformat())
+    # A2I writes multiple answers if you configure multiple reviewers per task.
+    # For a single-reviewer workflow, index [0] is the answer.
+    answers = review_data.get("humanAnswers", [{}])[0]
+    answer_content = answers.get("answerContent", {})
 
-    entities_table = dynamodb.Table(ENTITIES_TABLE)
+    reviewed_count = 0
     corrections_made = 0
-    reviewed_count   = 0
 
-    for entity_input in input_content["entities_to_review"]:
-        entity_id     = entity_input["id"]
-        original_text = entity_input["text"]
+    for entity_input in entities_to_review:
+        entity_id = entity_input["id"]
+        original_text = entity_input["vision_text"]
 
-        # Retrieve the reviewer's input for this specific entity.
-        # The crowd-input element in the task template submits with the key
-        # "corrected_text_<entity_id>". If the reviewer left it unchanged,
-        # the value equals the original OCR text.
-        answer_key     = f"corrected_text_{entity_id}"
-        corrected_text = answer_content.get(answer_key, original_text).strip()
-        was_corrected  = corrected_text != original_text
+        # The reviewer's corrected text for this entity.
+        # Key format matches the 'name' attribute in the crowd-input HTML template.
+        corrected_text = answer_content.get(f"corrected_text_{entity_id}", original_text)
+        was_corrected = corrected_text != original_text
 
         if was_corrected:
             corrections_made += 1
 
-        reviewed_count += 1
-
-        # Update the DynamoDB entity record with the reviewer's corrected text.
-        # The original_ocr field was set in Step 5 and is preserved here
-        # so the training data capture in Step 8 has both the OCR output
-        # and the ground-truth correction.
-        entities_table.update_item(
-            Key={
+        table.put_item(
+            Item={
                 "pk": document_key,
                 "sk": entity_id,
-            },
-            UpdateExpression=(
-                "SET entity_text   = :corrected, "
-                "    review_status = :status, "
-                "    was_corrected = :corrected_flag, "
-                "    reviewer_id   = :reviewer, "
-                "    reviewed_at   = :reviewed_at"
-            ),
-            ExpressionAttributeValues={
-                ":corrected":      corrected_text,
-                ":status":         "human_reviewed",
-                ":corrected_flag": was_corrected,
-                ":reviewer":       worker_id,   # A2I worker IDs are anonymized by default
-                ":reviewed_at":    reviewed_at,
-            },
+                "entity_text": corrected_text,
+                "original_text": original_text,      # preserve for prompt example capture
+                "category": entity_input["category"],
+                "review_status": "human_reviewed",
+                "was_corrected": was_corrected,
+                "reviewer_id": answers.get("workerId", "unknown"),
+                "reviewed_at": review_data.get("completionTime", datetime.now(timezone.utc).isoformat()),
+            }
         )
-
-    # Resume the Step Functions execution.
-    # This is the action that wakes up the workflow from the wait state it
-    # entered when start_human_loop was called in Step 5.
-    summary = {
-        "document_key":   document_key,
-        "reviewed_count": reviewed_count,
-        "corrections":    corrections_made,
-    }
-
-    sfn_client.send_task_success(
-        taskToken=task_token,
-        output=json.dumps(summary),
-    )
+        reviewed_count += 1
 
     print(
-        f"  Review complete for {document_key}. "
-        f"{reviewed_count} entities reviewed, {corrections_made} corrections. "
-        f"Step Functions workflow resumed."
+        f"[review_completion] Document: {document_key} "
+        f"| Reviewed: {reviewed_count} | Corrections: {corrections_made}"
     )
 
-    return summary
+    # Resume the Step Functions execution. This wakes up the workflow.
+    stepfunctions.send_task_success(
+        taskToken=task_token,
+        output=json.dumps({
+            "document_key": document_key,
+            "reviewed_count": reviewed_count,
+            "corrections_made": corrections_made,
+        }),
+    )
 ```
 
 ---
 
-## Step 8: Assemble the Final Record and Capture Training Data
-
-With all entities in DynamoDB (auto-accepted from Step 5 and human-reviewed from Step 7), this step assembles the complete extraction record and writes it to the completed-extractions table. Every reviewed extraction is also written to the training data bucket as a labeled example.
-
-Capturing the training data at this point costs essentially nothing: the reviewed records are already in DynamoDB. The alternative is reconstructing them later from logs, which is possible but tedious. Capture it now.
+## Step 8: Merge Final Record and Capture Prompt Examples
 
 ```python
-def assemble_final_record(document_key: str, execution_id: str) -> dict:
+def assemble_final_record(document_key: str, execution_id: str, enhanced_image_key: str) -> dict:
     """
-    Query all entity records for a document and assemble the final authoritative
-    extraction record.
+    Retrieve all entity records from DynamoDB (auto-accepted and human-reviewed),
+    assemble the final extraction record, and capture corrected extractions as
+    prompt improvement CANDIDATES.
 
-    Queries DynamoDB for every entity associated with this document key,
-    regardless of review status. Auto-accepted and human-reviewed entities
-    are merged into a single final record. Reviewed corrections replace the
-    original OCR text. Training data pairs (original OCR vs. corrected text)
-    are written to S3 for future model fine-tuning.
-
-    Args:
-        document_key:  S3 key of the source note (partition key in DynamoDB)
-        execution_id:  Step Functions execution ARN for audit trail linkage
-
-    Returns:
-        The assembled final record dict (also written to DynamoDB).
+    IMPORTANT: PHI cross-contamination risk:
+    The prompt_examples captured here reference real patient document images
+    (enhanced_image_key points to a photo of a real clinical note). These
+    candidates MUST NOT be embedded directly in EXTRACTION_SYSTEM_PROMPT.
+    Before any candidate is promoted to the active prompt library:
+      1. The source image must be replaced with a synthetic de-identified
+         equivalent that preserves handwriting characteristics but removes PHI.
+      2. The candidate must pass _validate_example_is_synthetic() → True.
+    Using a real patient image as a few-shot example sends that patient's PHI
+    to Bedrock during every other patient's extraction call: a HIPAA disclosure.
+    [EDITOR: review fix] Added de-identification requirement and _validate_example_is_synthetic()
+    call. Previously the only note was "store with SSE-KMS". That addressed storage
+    security but not the cross-patient contamination risk in the active prompt.
     """
-    entities_table   = dynamodb.Table(ENTITIES_TABLE)
-    completed_table  = dynamodb.Table(COMPLETED_TABLE)
+    dynamodb = boto3.resource("dynamodb")
+    s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
+    entities_table = dynamodb.Table(ENTITIES_TABLE)
+    completed_table = dynamodb.Table(COMPLETED_TABLE)
 
     # Query all entity records for this document.
-    # In production, add a GSI on pk to avoid a full table scan.
-    # This Query uses the partition key directly, which is efficient.
-    response    = entities_table.query(
-        KeyConditionExpression=Key("pk").eq(document_key)
+    # In production, use a GSI or pagination for documents with many entities.
+    response = entities_table.query(
+        KeyConditionExpression=boto3.dynamodb.conditions.Key("pk").eq(document_key)
     )
-    all_records = response["Items"]
+    all_records = response.get("Items", [])
 
-    final_entities  = []
-    training_pairs  = []
-    auto_accepted   = 0
-    human_reviewed  = 0
-    corrections     = 0
+    final_entities = []
+    prompt_candidates = []  # renamed from prompt_examples to emphasize these need curation
+    auto_accepted = 0
+    human_reviewed = 0
+    corrections = 0
 
     for record in all_records:
-        # Skip any entities still in pending_review status.
-        # In production this should not happen if the workflow is correctly
-        # sequenced: Step 8 runs only after the A2I callback in Step 7.
-        # Guard anyway to avoid storing incomplete records.
-        if record.get("review_status") == "pending_review":
-            print(f"  WARNING: entity {record['sk']} still pending. Skipping.")
-            continue
+        entity = {
+            "text": record.get("entity_text", ""),
+            "normalized": record.get("normalized", record.get("entity_text", "")),
+            "category": record.get("category", "OTHER"),
+            "review_status": record.get("review_status", "unknown"),
+        }
+        final_entities.append(entity)
 
-        # Build the final entity for the completed record.
-        # Use entity_text, which holds the corrected text for reviewed entities
-        # and the original OCR text for auto-accepted ones.
-        final_entities.append({
-            "text":          record["entity_text"],
-            "category":      record.get("category", ""),
-            "entity_type":   record.get("entity_type", ""),
-            "traits":        record.get("traits", []),
-            "review_status": record.get("review_status", ""),
-            "confidence":    record.get("confidence", Decimal("0")),  # keep as Decimal for DynamoDB
-        })
-
-        # Tally by review path.
-        if record["review_status"] in ("auto_accepted", "accepted_flagged"):
+        status = record.get("review_status", "")
+        if status in ("auto_accepted", "accepted_flagged"):
             auto_accepted += 1
-        elif record["review_status"] == "human_reviewed":
+        elif status == "human_reviewed":
             human_reviewed += 1
-            if record.get("was_corrected"):
+            if record.get("was_corrected", False):
                 corrections += 1
 
-            # Capture this reviewed pair as a training data example.
-            # Every correction teaches the model where it went wrong.
-            # Every confirmation teaches it where it was right.
-            # Both are valuable; both are captured here.
-            training_pairs.append({
-                "original_ocr":   record.get("original_ocr", record["entity_text"]),
-                "corrected_text": record["entity_text"],
-                "category":       record.get("category", ""),
-                "was_correction": record.get("was_corrected", False),
-                "document_key":   document_key,
-                "timestamp":      datetime.datetime.now(timezone.utc).isoformat(),
-            })
+                # Capture as a prompt improvement CANDIDATE.
+                # This is NOT ready for the active prompt.
+                # deidentified=False signals the curation workflow that this
+                # example must be de-identified before promotion.
+                # A prompt engineer must: replace enhanced_image_key with a
+                # synthetic equivalent, then flip deidentified=True and run
+                # _validate_example_is_synthetic() before adding to the prompt.
+                candidate = {
+                    "image_key": enhanced_image_key,   # PHI: real patient image, NOT for prompt
+                    "original_text": record.get("original_text", ""),
+                    "corrected_text": record.get("entity_text", ""),
+                    "category": record.get("category", "OTHER"),
+                    "document_key": document_key,
+                    "captured_at": datetime.now(timezone.utc).isoformat(),
+                    "deidentified": False,   # MUST be True before prompt library promotion
+                }
 
-    # Write the final authoritative extraction record to DynamoDB.
-    # This is the record downstream systems consume. It is the output of
-    # the pipeline and the source of truth for this document's extractions.
-    final_record = {
-        "document_key": document_key,
-        "execution_id": execution_id,
-        "completed_at": datetime.datetime.now(timezone.utc).isoformat(),
-        "entities":     final_entities,
-        "processing_summary": {
-            "total_entities": len(all_records),
-            "auto_accepted":  auto_accepted,
-            "human_reviewed": human_reviewed,
-            "corrections":    corrections,
-        },
-    }
+                # Validate before capturing. At this stage, deidentified is always
+                # False (just captured from a real document). This call will return
+                # False and we still store the candidate. The validation gate fires
+                # during the curation workflow when deidentified is flipped to True.
+                # The call here documents the required check point.
+                if _validate_example_is_synthetic(candidate):
+                    # This branch is not expected during normal capture.
+                    # If it fires, something set deidentified=True prematurely.
+                    print(
+                        f"[assemble] WARNING: candidate passed synthetic validation at capture time. "
+                        f"Verify de-identification workflow for document {document_key}."
+                    )
 
-    # Conditional write: prevent overwriting a record that already exists.
-    # S3 events are at-least-once, so this Lambda can fire twice for the same
-    # document. The conditional expression makes the write idempotent.
-    try:
-        completed_table.put_item(
-            Item=final_record,
-            ConditionExpression="attribute_not_exists(document_key)",
-        )
-        print(f"  Final record written for {document_key}.")
-    except completed_table.meta.client.exceptions.ConditionalCheckFailedException:
-        print(f"  Record for {document_key} already exists. Skipping duplicate write.")
+                prompt_candidates.append(candidate)
 
-    # Write training pairs to S3 for future model fine-tuning.
-    # Partitioned by date for efficient batch access during training jobs.
-    # If no entities were reviewed (all auto-accepted), training_pairs is empty
-    # and we skip the S3 write.
-    if training_pairs:
-        date_partition = datetime.datetime.now(timezone.utc).strftime("%Y/%m/%d")
-        training_key   = f"training-data/{date_partition}/{uuid.uuid4()}.json"
+    # Write the final completed record to DynamoDB.
+    completed_table.put_item(
+        Item={
+            "document_key": document_key,
+            "execution_id": execution_id,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "entities": final_entities,
+            "processing_summary": {
+                "total_entities": len(all_records),
+                "auto_accepted": auto_accepted,
+                "human_reviewed": human_reviewed,
+                "corrections": corrections,
+            },
+        }
+    )
 
-        s3_client.put_object(
-            Bucket=TRAINING_BUCKET,
-            Key=training_key,
-            Body=json.dumps(training_pairs, indent=2),
+    # Write prompt improvement candidates to S3.
+    # These are stored for curation review, NOT for direct prompt insertion.
+    # The curation workflow must de-identify images before promotion.
+    if prompt_candidates:
+        partition = datetime.now(timezone.utc).strftime("%Y/%m/%d")
+        candidate_key = f"candidates/{partition}/{uuid.uuid4()}.json"
+        s3.put_object(
+            Bucket=PROMPT_LIBRARY_BUCKET,
+            Key=candidate_key,
+            Body=json.dumps(prompt_candidates, indent=2).encode("utf-8"),
             ContentType="application/json",
-            # SSEKMSKeyId should be set in production. See "Gap to Production."
+            ServerSideEncryption="aws:kms",
         )
         print(
-            f"  {len(training_pairs)} training pairs written to "
-            f"s3://{TRAINING_BUCKET}/{training_key}"
+            f"[assemble] Wrote {len(prompt_candidates)} prompt candidates to S3. "
+            "These require de-identification before prompt library promotion."
         )
 
     print(
-        f"  Assembly complete. total={len(all_records)}, "
-        f"auto_accepted={auto_accepted}, "
-        f"human_reviewed={human_reviewed}, "
-        f"corrections={corrections}."
+        f"[assemble] Final record written. "
+        f"Total entities: {len(all_records)} "
+        f"| Auto: {auto_accepted} | Reviewed: {human_reviewed} | Corrections: {corrections}"
     )
-
-    return final_record
-```
-
----
-
-## Putting It All Together
-
-The full pipeline in one callable function. This is the sequential, single-process version for development and learning. In production, Steps 1 through 5 run inside a Step Functions Standard Workflow. Steps 7 and 8 run in separate Lambda functions triggered by the A2I completion event and the Step Functions callback respectively.
-
-This version simulates the async A2I step by polling `describe_human_loop()` until the review completes. In production, you replace that polling loop with the event-driven callback pattern described above.
-
-```python
-def digitize_handwritten_note(
-    bucket: str,
-    image_key: str,
-    task_token: str = "dev-simulation-token",
-) -> dict:
-    """
-    Run the full handwritten clinical note digitization pipeline for one image.
-
-    Covers all eight steps from the Recipe 1.6 pseudocode:
-      1. Pre-process the image (deskew, contrast, noise reduction)
-      2. Textract OCR (separate HANDWRITING and PRINTED word populations)
-      3. Comprehend Medical entity extraction with composite confidence scoring
-      4. Confidence tiering (adaptive thresholds by text type)
-      5. Store auto-accepted entities and start A2I human review
-      6. (A2I task template renders in the reviewer portal; no Python here)
-      7. Process review results and resume Step Functions workflow
-      8. Assemble the final record and capture training data
-
-    In production:
-    - Steps 1-5 run as the first half of a Step Functions Standard Workflow.
-    - The workflow suspends at Step 5 waiting for the A2I callback.
-    - Step 7 runs in a Lambda triggered by the S3 event when A2I writes output.
-    - Step 8 runs as the final state in the Step Functions workflow.
-
-    This function runs all eight steps sequentially and polls A2I for the
-    review result rather than waiting for an S3 event. Use it to trace
-    the full pipeline end-to-end in a development environment.
-
-    Args:
-        bucket:      S3 bucket containing the source handwritten note image
-        image_key:   S3 object key of the source image
-        task_token:  Step Functions task token (use a placeholder for dev runs)
-
-    Returns:
-        The final assembled extraction record.
-    """
-    import time
-
-    print(f"\nStep 1: Pre-processing image s3://{bucket}/{image_key}")
-    enhanced_key = preprocess_image(bucket, image_key)
-
-    print("\nStep 2: Running Textract handwriting OCR...")
-    ocr_result = extract_text_with_confidence(enhanced_key)
-
-    print("\nStep 3: Extracting clinical entities with composite confidence scoring...")
-    enriched_entities = extract_clinical_entities(ocr_result)
-
-    if not enriched_entities:
-        print("  No clinical entities found. Pipeline complete with empty record.")
-        return {"document_key": image_key, "entities": [], "processing_summary": {}}
-
-    print("\nStep 4: Tiering entities by confidence...")
-    tiered = tier_entities(enriched_entities)
-
-    print("\nStep 5: Storing auto-accepted entities and starting A2I human review...")
-    route_entities(image_key, tiered, task_token)
-
-    # In production, the Step Functions execution is now suspended and
-    # execution continues in Step 7 when A2I calls the resume Lambda.
-    #
-    # In this development script, we poll describe_human_loop() until the
-    # reviewer submits their corrections, then simulate the Step 7 Lambda
-    # by calling process_review_completion directly.
-    #
-    # Note: this polling approach is only appropriate for a development script.
-    # Running it in production would hold a Lambda open for the entire review
-    # duration, which can be hours. Use event-driven callbacks in production.
-
-    if tiered["low"]:
-        import hashlib
-        loop_name = "note-review-" + hashlib.md5(image_key.encode()).hexdigest()[:16]
-        print(
-            f"\nStep 6: Waiting for reviewer to complete the A2I task '{loop_name}'..."
-        )
-
-        # Poll until the human loop reaches a terminal status.
-        max_polls     = 120     # 10 minutes at 5-second intervals
-        poll_interval = 5
-        loop_status   = "IN_PROGRESS"
-        polls         = 0
-
-        while loop_status == "IN_PROGRESS" and polls < max_polls:
-            polls    += 1
-            response  = a2i_client.describe_human_loop(HumanLoopName=loop_name)
-            loop_status = response["HumanLoopStatus"]
-
-            if loop_status == "IN_PROGRESS":
-                print(f"  Review in progress (poll {polls}/{max_polls})...")
-                time.sleep(poll_interval)
-            elif loop_status == "COMPLETED":
-                print(f"  Review complete.")
-            else:
-                # FAILED or STOPPED
-                raise RuntimeError(f"A2I human loop ended with status: {loop_status}")
-
-        if loop_status != "COMPLETED":
-            raise TimeoutError(
-                f"A2I review did not complete within "
-                f"{max_polls * poll_interval} seconds."
-            )
-
-        # Find the review output in S3.
-        # A2I writes output to:
-        # s3://<bucket>/<flow-definition-name>/<loop-name>/output.json
-        # The exact path depends on your flow definition's output configuration.
-        # Check the FlowDefinition's HumanLoopActivationConditionsConfig for the
-        # output S3 path pattern, or look for the output key in describe_human_loop().
-        review_output_key = (
-            f"a2i-output/{loop_name}/output.json"
-        )
-
-        print("\nStep 7: Processing review results and resuming workflow...")
-        process_review_completion(REVIEW_BUCKET, review_output_key)
-
-    else:
-        print("\nStep 7: Skipped (no entities required human review).")
-
-    # Step 8: Assemble the final record.
-    # Use a placeholder execution ID for the development script.
-    execution_id = f"dev-run-{uuid.uuid4()}"
-    print("\nStep 8: Assembling final record and capturing training data...")
-    final_record = assemble_final_record(image_key, execution_id)
-
-    print(f"\nPipeline complete for {image_key}.")
-    print(json.dumps(final_record, indent=2, default=str))
-
-    return final_record
-
-
-# Lambda handler: Steps 1-5 (the first half of the Step Functions workflow)
-def lambda_handler_process_note(event: dict, context) -> dict:
-    """
-    Lambda handler for the note processing steps (1 through 5).
-
-    Triggered by an S3 upload event when a new handwritten note arrives in
-    the intake bucket. Runs pre-processing, OCR, NLP, confidence tiering,
-    and routes entities to DynamoDB or A2I.
-
-    The task_token is passed in from the Step Functions state machine input
-    using the wait-for-callback pattern ($$.Task.Token in the state definition).
-
-    Args:
-        event:   Step Functions state input. Must contain:
-                 - bucket:      S3 bucket of the source image
-                 - image_key:   S3 object key of the source image
-                 - task_token:  Step Functions task token for callback
-        context: Lambda context (unused)
-
-    Returns:
-        A summary dict (stored in Step Functions execution history).
-    """
-    bucket      = event["bucket"]
-    image_key   = event["image_key"]
-    task_token  = event["task_token"]  # injected by Step Functions
-
-    print(f"Processing {image_key} from {bucket}")
-
-    enhanced_key      = preprocess_image(bucket, image_key)
-    ocr_result        = extract_text_with_confidence(enhanced_key)
-    enriched_entities = extract_clinical_entities(ocr_result)
-    tiered            = tier_entities(enriched_entities) if enriched_entities else {"high": [], "medium": [], "low": []}
-
-    route_entities(image_key, tiered, task_token)
 
     return {
-        "image_key":     image_key,
-        "entity_count":  len(enriched_entities),
-        "review_needed": len(tiered["low"]) > 0,
+        "document_key": document_key,
+        "total_entities": len(all_records),
+        "entities": final_entities,
     }
-
-
-# Lambda handler: Step 7 (triggered by S3 event when A2I writes review output)
-def lambda_handler_review_complete(event: dict, context) -> None:
-    """
-    Lambda handler for review completion (Step 7).
-
-    Triggered by an S3 event notification when A2I writes the completed
-    review JSON to the review output bucket. Reads reviewer corrections,
-    updates DynamoDB, and sends the task success to resume Step Functions.
-
-    Args:
-        event:   S3 event notification. The Records[0].s3 fields contain
-                 the bucket name and object key of the A2I output file.
-        context: Lambda context (unused)
-    """
-    record = event["Records"][0]["s3"]
-    bucket = record["bucket"]["name"]
-    key    = record["object"]["key"]
-
-    print(f"Processing A2I review output: s3://{bucket}/{key}")
-    process_review_completion(bucket, key)
-
-
-# Lambda handler: Step 8 (the final state in the Step Functions workflow)
-def lambda_handler_finalize(event: dict, context) -> dict:
-    """
-    Lambda handler for final record assembly (Step 8).
-
-    Runs after the Step Functions workflow resumes from the A2I callback.
-    Queries all entity records for the document, assembles the final record,
-    and captures training data to S3.
-
-    Args:
-        event:   Step Functions state input. Must contain:
-                 - document_key:  S3 key of the source note
-                 - execution_id:  Step Functions execution ARN
-        context: Lambda context (unused)
-
-    Returns:
-        The assembled final record.
-    """
-    document_key = event["document_key"]
-    execution_id = event.get("execution_id", "unknown")
-
-    print(f"Assembling final record for {document_key}")
-    return assemble_final_record(document_key, execution_id)
-
-
-# Example: run the development pipeline against a test image.
-if __name__ == "__main__":
-    result = digitize_handwritten_note(
-        bucket="notes-intake",
-        image_key="notes-intake/2026/03/01/note-00291.jpg",
-    )
-
-    # DynamoDB Decimal values are not JSON-serializable by default.
-    # This encoder converts them to float for display purposes only.
-    class DecimalEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, Decimal):
-                return float(obj)
-            return super().default(obj)
-
-    print(json.dumps(result, indent=2, cls=DecimalEncoder))
 ```
 
 ---
 
-## The Gap Between This and Production
+## Full Pipeline
 
-This example demonstrates the full eight-step pipeline. Run it against a real handwritten note image and it will produce a structured record with confidence-tiered clinical entities, A2I review integration for low-confidence extractions, and training data capture. The distance from that to something you would deploy for a clinical records program is significant. Here is where it lives.
+```python
+def process_handwritten_note(
+    document_s3_key: str,
+    flow_definition_arn: str,
+    execution_id: str,
+    task_token: str,
+) -> dict:
+    """
+    Full pipeline for handwritten clinical note digitization.
 
-**Image preprocessing quality matters more than you expect.** The Pillow-based preprocessing here handles basic cases. For production-quality deskewing on a mixed batch of scanned notes and phone photographs, you want the `deskew` library (`pip install deskew`) and OpenCV. The `determine_skew()` function from deskew uses Hough line detection to measure the actual rotation angle, which is meaningfully more accurate than Pillow's inferred approach. On marginal images, the difference between a 2-degree rotation correction and a 4-degree one can move a page from 68% average OCR confidence to 79%, which changes how many entities end up in the human review queue.
+    In production, this logic is distributed across Step Functions states and
+    Lambda functions. Here it's assembled as a single callable function
+    to make the execution flow easy to trace.
 
-**Textract FORMS pricing.** The `AnalyzeDocument` call with `FeatureTypes=["FORMS"]` is priced at $0.05 per page. For a program processing 10,000 pages per month, that is $500 per month in Textract costs before Comprehend Medical. Factor this into your per-page cost estimates alongside the human review costs. If most of your pages are pure prose notes without form fields, you can drop FORMS from the FeatureTypes and fall back to plain text extraction, which is priced lower. The tradeoff is losing the key-value pair structure on pages that do have form elements.
+    Args:
+        document_s3_key:    S3 key of the intake image (in INTAKE_BUCKET)
+        flow_definition_arn: A2I flow definition ARN for human review routing
+        execution_id:       Step Functions execution ID for audit trail
+        task_token:         Step Functions callback task token for A2I resume
 
-**The A2I output S3 key path.** The `review_output_key` constructed in the development pipeline is a placeholder. A2I writes output to a path determined by the flow definition's output configuration and the human loop name. When you configure your flow definition in the console, you specify the S3 output path prefix. The actual key that A2I writes follows the pattern your flow definition specifies, not one you invent. In production, trigger the Step 7 Lambda via an S3 event notification on the review output bucket with a prefix filter matching your flow definition's output path pattern.
+    Returns:
+        Summary dict from the final record assembly.
+    """
+    document_key = document_s3_key  # use S3 key as the DynamoDB partition key
 
-**Consensus review for high-stakes extractions.** This example uses `humanAnswers[0]` and assumes a single reviewer per task. A2I flow definitions can require multiple reviewers and accept a voting threshold (majority, unanimous) before marking a loop complete. For medication names and dosages, requiring two independent reviewers and taking the answer only when both agree reduces the error rate significantly but increases cost and latency. The `humanAnswers` list contains one entry per reviewer. Implement a consensus check before trusting `humanAnswers[0]` if your flow definition routes tasks to multiple reviewers.
+    print(f"\n=== Processing: {document_key} ===")
 
-**Step Functions payload size limits.** Step Functions Standard Workflows cap state input and output at 256 KB. The enriched entity list for a note with many clinical entities can approach that limit. The production pattern is to write intermediate results to S3 after each Lambda stage and pass S3 keys through the state machine rather than passing the entity lists directly. This adds a small S3 read overhead at each step but keeps the state machine payload well within limits and makes the intermediate results inspectable for debugging.
+    # Step 1: Pre-process image
+    print("\n[Step 1] Pre-processing image...")
+    enhanced_key = preprocess_image(document_s3_key)
 
-**Heartbeat timeout on the A2I wait state.** The Step Functions wait state in Step 5 can suspend indefinitely if the resume Lambda in Step 7 fails. Configure a `HeartbeatSeconds` on the A2I wait state (something in the range of 8-24 hours, depending on your review SLA) so that stuck executions surface as `HeartbeatTimedOut` errors with CloudWatch alarms. Without this, a Lambda error in the review completion handler leaves the Step Functions execution waiting silently, and the document never gets a final record.
+    # Step 2: Textract quality signal
+    print("\n[Step 2] Computing Textract quality signal...")
+    quality = compute_quality_signal(enhanced_key)
 
-**DynamoDB Decimal requirement.** Every numeric value written to DynamoDB uses `Decimal` wrapping. Python floats in a `put_item` call raise a `TypeError` at runtime with a message that is less informative than you would like. The `Decimal(str(value))` pattern converts via string to avoid floating-point representation issues in the stored value. Any new numeric field you add to a DynamoDB item needs the same treatment.
+    # Handle direct-to-review case (very low handwriting confidence).
+    # start_human_review detects the empty tiered_entities and forces A2I creation
+    # with a sentinel entity. The reviewer performs extraction from scratch.
+    # [EDITOR: review fix] Previously returned "routed_to_human_review" while actually
+    # calling SendTaskSuccess and bypassing A2I. Now start_human_review handles the
+    # empty entity case and returns True (A2I started). Status reflects reality.
+    if quality["model_tier"] == "DIRECT_REVIEW":
+        print("\n[Step 2] Very low confidence. Routing directly to human review (full-page).")
+        start_human_review(
+            document_key=document_key,
+            enhanced_image_key=enhanced_key,
+            textract_ocr_text=quality["ocr_text"],
+            tiered_entities={"high": [], "medium": [], "low": []},
+            task_token=task_token,
+            flow_definition_arn=flow_definition_arn,
+        )
+        return {"document_key": document_key, "status": "full_page_review_required"}
 
-**OCR entity-to-word matching is approximate.** The `find_ocr_confidence_for_entity` function uses substring matching to find which Textract words underlie a Comprehend Medical entity. This works for most cases but fails on two classes of input. First, multi-word entities where the Comprehend Medical span does not exactly match any Textract word boundary (for example, "Metformin 500mg twice daily" where Textract treats "500mg" as one word and Comprehend Medical's span starts mid-word). Second, entities that span hyphenated terms or abbreviations with periods. A production implementation cross-references character offset ranges from both APIs rather than using text matching. Both Textract (via `SelectedData`) and Comprehend Medical (via `BeginOffset`, `EndOffset`) provide offset information that enables precise span alignment.
+    # Step 3: Vision model extraction
+    print(f"\n[Step 3] Vision extraction ({quality['model_tier']})...")
+    vision_result = extract_with_vision(
+        enhanced_image_key=enhanced_key,
+        ocr_text=quality["ocr_text"],
+        model_tier=quality["model_tier"],
+    )
 
-**Training data key management.** Training data is partitioned by date but not by document type, provider, or handwriting quality tier. When you eventually fine-tune a Textract custom adapter, you will want to filter training examples by document type and quality level. Adding those fields to the training pair records now (even if you do not use them immediately) makes that filtering straightforward later. Retrofitting schema onto months of accumulated training data is possible but annoying.
+    # Handle vision parsing failure.
+    # start_human_review detects empty tiered_entities and forces A2I creation.
+    # [EDITOR: review fix] Same fix as DIRECT_REVIEW path above. Previously this
+    # returned "routed_to_human_review" while SendTaskSuccess was called immediately,
+    # leaving the document with no review and an empty entity record.
+    if vision_result["parse_error"]:
+        print("\n[Step 3] Vision parse error. Routing to human review (full-page).")
+        start_human_review(
+            document_key=document_key,
+            enhanced_image_key=enhanced_key,
+            textract_ocr_text=quality["ocr_text"],
+            tiered_entities={"high": [], "medium": [], "low": []},
+            task_token=task_token,
+            flow_definition_arn=flow_definition_arn,
+        )
+        return {"document_key": document_key, "status": "full_page_review_required"}
 
-**VPC and encryption.** This example makes API calls without VPC configuration. A production Lambda handling handwritten clinical notes runs inside a VPC with private subnets and VPC endpoints for S3, Textract, Comprehend Medical, DynamoDB, SageMaker A2I runtime, Step Functions, KMS, and CloudWatch Logs. All S3 buckets use SSE-KMS with customer-managed keys. The training data bucket in particular should be treated as carefully as the intake documents: it contains OCR text from clinical notes, which is PHI regardless of the format.
+    # Step 4: Composite scoring and tiering
+    print("\n[Step 4] Composite scoring and tiering...")
+    tiered = composite_score_and_tier(
+        vision_result=vision_result,
+        handwritten_words=quality["handwritten_words"],
+    )
 
-**Testing.** There are no tests in this example. A production deployment has unit tests for each step with mocked Textract, Comprehend Medical, and A2I responses. It has integration tests using synthetic handwritten note images with known ground-truth transcriptions so you can measure the pipeline's accuracy on your specific document population before deploying. The IAB handwriting datasets and publicly available synthetic clinical note generators can produce realistic test fixtures. Never use real patient notes in any non-production environment.
+    # Step 5: Store auto-accepted entities
+    print("\n[Step 5] Storing auto-accepted entities...")
+    store_auto_accepted(document_key, tiered)
+
+    # Step 6: Route low-confidence entities to A2I (or resume immediately)
+    print("\n[Step 6] Routing low-confidence entities...")
+    needs_review = start_human_review(
+        document_key=document_key,
+        enhanced_image_key=enhanced_key,
+        textract_ocr_text=quality["ocr_text"],
+        tiered_entities=tiered,
+        task_token=task_token,
+        flow_definition_arn=flow_definition_arn,
+    )
+
+    if needs_review:
+        # Pipeline suspends here in production (Step Functions wait state).
+        # Steps 7 and 8 run after reviewer submits via process_review_completion().
+        print("\n[Step 6] Execution suspended pending A2I review.")
+        return {"document_key": document_key, "status": "awaiting_review"}
+
+    # If no review needed, proceed directly to final assembly.
+    print("\n[Step 8] Assembling final record...")
+    result = assemble_final_record(document_key, execution_id, enhanced_key)
+
+    print(f"\n=== Complete: {document_key} ===\n")
+    return result
+```
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 1.6: Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) for the full architectural walkthrough, pseudocode, performance benchmarks, and the honest take on where this gets hard in practice.*
+## Gap to Production
+
+This example demonstrates the patterns. Here is what stands between this code and something you'd deploy to process real clinical notes.
+
+**Retry logic.** This example now includes `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on all AWS clients. `adaptive` mode implements exponential backoff with jitter appropriate for throttling scenarios. That handles transient Bedrock `ThrottlingException` and `ServiceUnavailableException` automatically. What it does not handle: Bedrock TPM (tokens-per-minute) quota limits under sustained burst load. Monitor `bedrock:InvokeModel` throttle metrics in CloudWatch and file a service quota increase before go-live at healthcare volume. Also note: retry at the API call level (as done here), not the Lambda invocation level. Retrying the Lambda invocation after a review loop was already started would generate a new `task_token`, causing an A2I `HumanLoopName` collision.
+
+**Lambda timeouts.** Lambda's default 3-second timeout will fail on the first Bedrock vision API call. Configure each function with a timeout that comfortably exceeds worst-case execution including retry backoff: `preprocess-image` 2 min; `compute-quality-signal` 2 min; vision extraction Lambda 10 min (Bedrock vision calls take 5-15 seconds normally; under throttling with adaptive retry, budget more); `composite-score-and-tier` 1 min; `merge-and-finalize` 2 min; `process-review-completion` 2 min. Set a heartbeat timeout on the A2I wait state in Step Functions (2 hours is a reasonable starting point) to surface stuck executions.
+
+**PHI in error logs.** This example omits raw Bedrock response content from all log messages. The model may echo clinical content from the input image in its output; logging that to CloudWatch creates a PHI exposure. Log only structural metadata: response length, error type, model tier. In addition: configure Lambda CloudWatch log groups with KMS encryption. Lambda does not do this automatically. Any Lambda function in this pipeline that processes page images or model responses should have its log group encrypted.
+
+**PHI cross-contamination in the prompt library.** The `prompt_candidates` written in Step 8 contain PHI (the `image_key` points to a real patient's clinical note). They must not be inserted into `EXTRACTION_SYSTEM_PROMPT` without de-identification. The curation workflow must: replace each candidate image with a synthetic de-identified equivalent, flip `deidentified=True`, and pass `_validate_example_is_synthetic()` before promotion. Treat prompt curation as a PHI-handling workflow: HIPAA training required, HIPAA-covered tooling only (not personal laptops or email), CloudTrail logging for prompt library S3 access.
+
+**Idempotent writes.** `store_auto_accepted` now uses `ConditionExpression="attribute_not_exists(sk)"` to prevent duplicate entity records on Lambda retry. The `ConditionalCheckFailedException` is caught and treated as a no-op (item already exists from a prior attempt). This pattern matches Recipe 1.4's approach. Apply the same pattern to any other DynamoDB write function in this pipeline.
+
+**A2I payload size.** `start_human_review` now checks the serialized `InputContent` size before calling `start_human_loop`. If it exceeds 90KB, the OCR text is truncated. For notes with very many low-confidence entities, consider batching entities across multiple review loops as an alternative to truncation.
+
+**Structured logging.** Replace `print()` statements with structured JSON logging (`logging` module plus a JSON formatter, or `aws-lambda-powertools` Logger). Log document keys, processing times, model tier used, entity counts, and confidence distributions. CloudWatch metrics derived from structured logs let you alarm on unusual patterns: sudden drop in auto-accept rate, spike in A2I queue depth, unusual correction rate.
+
+**Input validation.** Validate S3 object existence and content type before processing. Check image dimensions and file size before calling Bedrock. Reject obviously corrupt images early rather than letting them propagate to the API calls. An invalid image sent to Bedrock returns an error response; validate before sending.
+
+**IAM least privilege.** Each Lambda function should have a specific role with exactly the permissions it needs. The extraction Lambda needs `bedrock:InvokeModel` and `s3:GetObject` on the enhanced bucket. The A2I completion Lambda needs `dynamodb:PutItem` on the entities table and `states:SendTaskSuccess`. Do not share roles across Lambda functions.
+
+**VPC and VPC endpoints.** Lambda functions should run in a VPC with no NAT gateway path to the internet. Provision VPC endpoints for: Bedrock Runtime (`com.amazonaws.{region}.bedrock-runtime` (the Converse API endpoint, distinct from `com.amazonaws.{region}.bedrock`), Textract, S3 (gateway endpoint, free), DynamoDB (gateway endpoint, free), SageMaker API (for A2I), Step Functions, KMS, and CloudWatch Logs. When using cross-region inference profiles (`us.` prefix): your Lambda calls the `bedrock-runtime` endpoint in your region; AWS routes to backend regions internally. PHI does not traverse the public internet through this path.
+
+**KMS CMK for all PHI storage.** Use a customer-managed KMS key (CMK) in the `put_object` calls: `SSEKMSKeyId=YOUR_KMS_KEY_ARN`. Apply the same CMK to DynamoDB tables and Lambda CloudWatch log groups. CMKs give you key rotation control, per-operation CloudTrail entries, and the ability to revoke access.
+
+**Bedrock PHI handling.** Amazon Bedrock is a HIPAA-eligible service under the AWS BAA. Model inference is transient: AWS does not retain customer data sent to Bedrock for training or logging under the BAA. Confirm your BAA covers Bedrock before sending real PHI. The page images you send via the Converse API are processed in memory and not persisted by the service.
+
+**DynamoDB Decimal requirement.** The code already handles this (see `store_auto_accepted`). boto3 does not automatically convert Python floats to DynamoDB Decimal, and passing a float raises `TypeError: Float types are not supported`. Always convert float values with `Decimal(str(value))` before writing.
+
+**Image size normalization.** The pre-processing step normalizes to 1800px on the long edge. Verify this is sufficient for your document population. High-resolution clinical photographs can be 4000-6000px and consume 3-4x the Bedrock image tokens of a normalized scan. Monitor per-call token usage in CloudWatch and adjust the normalization target if costs spike.
+
+**Prompt library management.** The `prompt_candidates` written in Step 8 are candidates, not final additions. Someone needs to review them periodically, de-identify the source images, validate with `_validate_example_is_synthetic()`, format passing examples as demonstrations in `EXTRACTION_SYSTEM_PROMPT`, and redeploy. Assign this task explicitly. If nobody owns it, the feedback loop closes. The de-identification step is non-negotiable before any example enters the production prompt.
+
+**Testing without real PHI.** Use synthetic handwritten notes during development. The IAM Handwriting Database and similar public datasets provide realistic samples. Generate test cases with known ground-truth extractions to measure extraction accuracy against a fixed benchmark. Never use real patient data in non-production environments.
+
+---
+
+*← [Recipe 1.6 Main](chapter01.06-handwritten-notes-v3) · [Chapter 1 Index](chapter01-index)*
