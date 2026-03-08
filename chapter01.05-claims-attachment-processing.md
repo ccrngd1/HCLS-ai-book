@@ -540,6 +540,8 @@ Clinical documents (operative reports, pathology reports, discharge summaries, t
 
 Financial documents (EOBs and billing statements) go through Textract table parsing. These are table-heavy financial records; an LLM adds no value over well-tuned table extraction. This is the "right tool for the job" principle from Recipe 1.4 applied again: don't route a table to an LLM when Textract is purpose-built for exactly this.
 
+> **Why not skip OCR and send everything to the LLM?** Vision LLMs handle document understanding well but struggle with faithful numerical extraction from tables. Industry testing consistently shows that LLMs silently replace missing table values with plausible guesses, transpose digits, and rename headers: errors that look correct on review but corrupt downstream calculations. For financial documents like EOBs and billing statements, where dollar amounts and procedure codes must be exact, purpose-built OCR remains more reliable. This recipe uses OCR for extraction and LLMs for intelligence: the same hybrid architecture that the document processing industry is converging on as best practice [1][2][3].
+
 ```
 CLINICAL_EXTRACTION_SYSTEM_PROMPT = """
 You are a clinical documentation analyst reviewing a claims attachment document.
@@ -1137,6 +1139,11 @@ The path from this recipe to production runs through measurement, feedback loops
 - [Amazon S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
 - [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
+
+**OCR vs LLM Extraction Research:**
+- [1] MLAI Digital, "Don't Use LLMs as OCR: Lessons from Complex Documents" (Jan 2026): https://www.mlaidigital.com/blogs/dont-use-llms-as-ocr-lessons-from-complex-documents
+- [2] Srivastava, "Why LLMs Should Not Be Your OCR: A Practical Lesson in Document AI" (Jan 2026): https://medium.com/@rsrivastava76/why-llms-should-not-be-your-ocr-a-practical-lesson-in-document-ai-2adbd6ef4436
+- [3] Vellum, "Document Data Extraction in 2026: LLMs vs OCRs": https://www.vellum.ai/blog/document-data-extraction-llms-vs-ocrs
 
 **Regulatory and Standards References:**
 - [CMS Claims Processing Manual](https://www.cms.gov/regulations-and-guidance/guidance/manuals/internet-only-manuals-ioms-items/cms018912): CMS guidance on claims attachment requirements and documentation standards
