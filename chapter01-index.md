@@ -1,6 +1,6 @@
 # Chapter 1: Document Intelligence
 
-> Healthcare runs on paper. Faxes remain the dominant interoperability mechanism for prior authorizations, referrals, and records requests. Every integration eventually hits a document extraction problem — whether it's scanned claims forms, handwritten physician notes, or multi-page attachments. This chapter covers extracting structured, actionable data from the unstructured documents that flow through payer operations daily. PHI is present in virtually every document, confidence scoring is non-negotiable for human-in-the-loop workflows, and multi-page mixed-format documents (tables, checkboxes, free text, handwriting) are the norm rather than the exception.
+> Healthcare runs on paper. Faxes remain the dominant interoperability mechanism for prior authorizations, referrals, and records requests. Every integration eventually hits a document extraction problem, whether it's scanned claims forms, handwritten physician notes, or multi-page attachments. This chapter covers extracting structured, actionable data from the unstructured documents that flow through payer operations daily. PHI is present in virtually every document, confidence scoring is non-negotiable for human-in-the-loop workflows, and multi-page mixed-format documents (tables, checkboxes, free text, handwriting) are the norm rather than the exception.
 
 **AWS Services Featured:** Amazon Textract, Amazon Comprehend Medical, AWS Lambda, Amazon S3, Amazon DynamoDB, Amazon A2I (Augmented AI)
 

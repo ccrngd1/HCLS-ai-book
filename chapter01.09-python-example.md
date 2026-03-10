@@ -1,20 +1,4 @@
-# Recipe 1.9: Medical Records Request Extraction: Python Example
-
-<!-- [EDITOR: v3 changes from v2:
-  1. Fixed PHI minimization comment in check_authorization_consistency_llm(). The v2 comment said "pass structural information rather than raw PHI where possible," which contradicts the code (full text is necessary for coherence analysis). Replaced with an accurate comment explaining why full-text transmission is required and that it is covered under the BAA. [EDITOR: review fix]
-  2. Added _sanitize_for_prompt() helper and regex patterns; called it on full_text before the Bedrock call in check_authorization_consistency_llm(). Authorization text is an untrusted free-text surface (patient/attorney-authored); sanitization moves from Gap to Production into the main code path, matching the pattern in Recipe 1.8 v3. [EDITOR: review fix]
-  3. Added REVIEW_QUEUE_URL constant; routed LLM-flagged authorizations to it instead of FULFILLMENT_QUEUES["general"]. The architecture diagram shows a dedicated rr-review queue; the code now matches. [EDITOR: review fix]
-  4. Added resolve_review() function stub: DynamoDB status update, audit trail write, and SQS routing for coordinator-approved authorizations. Addresses the audit trail gap for the human review resolution path. [EDITOR: review fix]
-  5. Added _validate_no_phi_in_concerns() stub: defense-in-depth check for PHI patterns in LLM concern descriptions before they are written to DynamoDB. [EDITOR: review fix]
-] -->
-
-<!-- [EDITOR: v2 changes from v1:
-  1. Added one-retry-on-JSON-parse-failure pattern to check_authorization_consistency_llm() and classify_request_type(). This closes the P1 gap flagged in all three prior recipe reviews (1.4, 1.5, 1.6): prose described retry; code did not implement it. The _safe_parse_json() helper is kept but now called inside a try/retry wrapper.
-  2. Replaced print() with logger.info() throughout process_records_request() and lambda_handler(). PHI-safe (all prints only logged status metadata) but logger is the right pattern for Lambda. Removed corresponding Gap item since it's now done.
-  3. Added explicit comment on overall_coherence="skipped" sentinel value for the deficient path, explaining why it differs from the LLM response schema values.
-  4. Added model_id storage in the DynamoDB record for audit reproducibility (mentioned in main recipe's Why This Isn't Production-Ready).
-  5. Updated Gap to Production to reflect what v2 now addresses vs. what still remains.
-] -->
+# Recipe 1.9: Medical Records Request Extraction: Python Example 
 
 > **This is an illustrative implementation, not a production-ready deployment.**
 > It demonstrates the patterns from the Recipe 1.9 pseudocode using boto3 and real

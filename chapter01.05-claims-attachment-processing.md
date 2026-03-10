@@ -1,8 +1,6 @@
 # Recipe 1.5: Claims Attachment Processing 🔶
 
-**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20–2.40 per 30-page claims package
-
-<!-- [EDITOR: Corrected header cost from "$2.50–4.00" to "$2.20–2.40" to match the detailed per-component breakdown in the Prerequisites cost estimate. The $4.00 figure reflects 50-page packages; the header should represent the typical 30-page case.] -->
+**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20–2.40 per 30-page claims package 
 
 ---
 
@@ -105,9 +103,7 @@ The claim line matching problem is fundamentally a reasoning task. "Does this op
 
 An LLM with clinical knowledge can do this. You show it the operative report text and the claim line, and ask: does this procedure description support this CPT code? The model reasons from its training on clinical documentation and medical coding to give you an assessment with supporting evidence. No lookup table needed. No edge cases for standard variant descriptions.
 
-### The General Architecture Pattern
-
-<!-- [EDITOR: Removed vendor-specific model names (Nova Lite, Claude Sonnet, Textract, Bedrock) from this section per RECIPE-GUIDE.md requirement: "No vendor names in this section. Concepts only. A reader using GCP, Azure, or on-premises should learn something valuable here." Vendor names re-enter in the AWS Implementation section.] -->
+### The General Architecture Pattern 
 
 The pipeline has four stages, building directly on Recipe 1.4's hybrid pattern.
 
@@ -156,9 +152,7 @@ The pipeline has four stages, building directly on Recipe 1.4's hybrid pattern.
 
 The model tiering is deliberate. Boundary detection is a binary question per page pair: is this a new document or not? A lightweight Tier 1 model handles it reliably and cheaply. Document classification gives the LLM a full document's worth of text; the Tier 1 model works here too. Claim line matching is where complex clinical reasoning happens: understanding what a CPT code means, reading a procedure description, and assessing equivalence across terminology variations. That's a Tier 3 task.
 
-This is the architectural breakthrough in this recipe versus the rule-based approach it replaces: boundary detection by LLM reasoning, classification by LLM reasoning, and claim matching by LLM reasoning. OCR still handles the text extraction. But the intelligence layer is now end-to-end LLM.
-
-<!-- [EDITOR: Changed "Textract still does the OCR" to "OCR still handles the text extraction": Textract is an AWS-specific name and this is the vendor-neutral Technology section. Also changed "Recipe 1.5 versus its predecessor" to "this recipe versus the rule-based approach it replaces" for clarity.] -->
+This is the architectural breakthrough in this recipe versus the rule-based approach it replaces: boundary detection by LLM reasoning, classification by LLM reasoning, and claim matching by LLM reasoning. OCR still handles the text extraction. But the intelligence layer is now end-to-end LLM. 
 
 ---
 
@@ -170,9 +164,7 @@ This is the architectural breakthrough in this recipe versus the rule-based appr
 
 **Amazon Bedrock (Nova Lite) for boundary detection and classification.** The Converse API introduced in Recipe 1.4 makes it easy to call any Bedrock model with the same code. Nova Lite (`us.amazon.nova-lite-v1:0`) is the right model for boundary detection: it's a well-defined binary question per page pair, and Nova Lite handles it reliably at $0.06 per million input tokens. At a 30-page package generating 29 page pair comparisons, the boundary detection cost is roughly three cents of tokens. The same model handles document classification, where it evaluates full document text against the taxonomy.
 
-**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners.
-
-<!-- [EDITOR: Added "4.6" to "Claude Sonnet" throughout the AWS Implementation section per task requirement: "Model names should include version numbers in pricing/capability contexts."] -->
+**Amazon Bedrock (Claude Sonnet 4.6) for claim line matching.** Claim line matching requires genuine clinical reasoning: understanding what a CPT code describes, reading a procedure narrative, and making a judgment about whether they match. This is a Tier 3 task. Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) handles it well and produces assessments with supporting evidence that the downstream assembler can surface to examiners. 
 
 **Amazon Comprehend Medical for ICD-10 code validation on clinical documents.** The same hybrid approach as Recipe 1.4: the LLM extracts clinical concepts from operative reports, pathology reports, and discharge summaries. Comprehend Medical maps those concepts to high-confidence ICD-10 codes. LLMs are good at extracting clinical meaning. They're less reliable for producing exact, consistent medical codes. Keep `InferICD10CM` in the pipeline for code validation.
 
@@ -230,8 +222,8 @@ flowchart TB
 | **Step Functions** | Standard Workflows (not Express). Execution history retention is a claims processing compliance requirement. Visual execution graph is essential for debugging boundary detection failures on complex packages. |
 | **BAA** | AWS BAA signed. Claims attachments contain some of the most sensitive PHI categories: surgical operative notes, pathology results with cancer diagnoses, full-episode discharge summaries, and financial responsibility data. Bedrock, Textract, and Comprehend Medical are all HIPAA-eligible under the same BAA. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. S3 Object Lock in compliance mode on the claims-attachment-records bucket. DynamoDB: encryption at rest. All API calls over TLS. Step Functions execution history: SSE. Bedrock and Comprehend Medical do not retain or train on customer data sent via their APIs. |
-| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, SQS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe) and `com.amazonaws.REGION.bedrock` (model management API, needed only if Lambda programmatically enables or lists models). A VPC with only `com.amazonaws.REGION.bedrock` will fail to route Converse API calls through the private endpoint; in a HIPAA-compliant VPC with no internet egress, this is deployment-breaking. For this recipe, `bedrock-runtime` is the required endpoint. Claims data should not traverse the public internet. <!-- [EDITOR: review fix P0-2] Separated `bedrock` and `bedrock-runtime` VPC endpoints. Same fix as Recipe 1.4 v3. Missing `bedrock-runtime` causes silent Converse API failures in no-egress HIPAA VPCs. --> |
-| **Lambda Timeouts** | Lambda's default 3-second timeout fails on the first Bedrock call. This recipe makes approximately 40 Bedrock calls per 30-page package (29 boundary pairs + 5 classifications + 3–4 clinical extractions + 3–4 claim matching calls), so timeout configuration matters more here than in Recipe 1.4. Minimum recommended timeouts per function: `doc-segmenter` 5–10 minutes (29 sequential Nova Lite calls at ~300ms each, plus retry margin), `doc-classifier` 3–5 minutes, `extract-clinical` 5 minutes (one Sonnet call per document, possible retry), `claim-matcher` 5 minutes per clinical document, `claim-assembler` 2 minutes. Step Functions also enforces a state-level timeout independently; configure both. Use provisioned concurrency for time-sensitive claims packages. <!-- [EDITOR: review fix P0-3] Added per-function Lambda timeout requirements. Default 3-second timeout fails on any LLM call. Per-function minimums reflect ~40 Bedrock calls per package, materially higher than Recipe 1.4. --> |
+| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, SQS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe) and `com.amazonaws.REGION.bedrock` (model management API, needed only if Lambda programmatically enables or lists models). A VPC with only `com.amazonaws.REGION.bedrock` will fail to route Converse API calls through the private endpoint; in a HIPAA-compliant VPC with no internet egress, this is deployment-breaking. For this recipe, `bedrock-runtime` is the required endpoint. Claims data should not traverse the public internet. |
+| **Lambda Timeouts** | Lambda's default 3-second timeout fails on the first Bedrock call. This recipe makes approximately 40 Bedrock calls per 30-page package (29 boundary pairs + 5 classifications + 3–4 clinical extractions + 3–4 claim matching calls), so timeout configuration matters more here than in Recipe 1.4. Minimum recommended timeouts per function: `doc-segmenter` 5–10 minutes (29 sequential Nova Lite calls at ~300ms each, plus retry margin), `doc-classifier` 3–5 minutes, `extract-clinical` 5 minutes (one Sonnet call per document, possible retry), `claim-matcher` 5 minutes per clinical document, `claim-assembler` 2 minutes. Step Functions also enforces a state-level timeout independently; configure both. Use provisioned concurrency for time-sensitive claims packages. |
 | **CloudTrail** | Enabled for all services including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Every extraction, every Bedrock call, and every DynamoDB write needs to be in the audit trail. |
 | **Sample Data** | CMS publishes [sample 837 transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets) for claim line item reference. Build synthetic multi-document PDFs by concatenating an operative report template, a pathology report, a discharge summary, a payer EOB printout, and therapy notes. Never use real PHI in development. |
 | **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT, 30 pages): ~$2.10. Nova Lite boundary detection (29 page pairs at ~500 tokens each): ~$0.003, negligible. Nova Lite document classification (5 documents at ~2,000 tokens each): ~$0.001, negligible. Claude Sonnet 4.6 claim matching (3 clinical documents × one call each with claim lines): ~$0.05–0.12. Comprehend Medical ICD-10 validation on extracted concepts: ~$0.02–0.08. Step Functions Standard Workflows: ~$0.002. Per-package total: roughly **$2.20–2.40 for a typical 30-page package**. At 300,000 packages per year: $660K–720K. At 500,000: $1.1M–1.2M. Compare to manual attachment review at 30–60 minutes per case at $35–55/hour loaded cost: at 500,000 packages, manual review runs $8.75M–27.5M per year. The LLM approach is actually *cheaper* than a comparable Comprehend Medical per-character billing pipeline while producing richer output. |
@@ -253,8 +245,6 @@ flowchart TB
 | **Amazon DynamoDB** | Stores structured claims attachment records indexed by claim ID; PHI encrypted at rest |
 | **AWS KMS** | Customer-managed encryption keys for S3, DynamoDB, and Step Functions execution history |
 | **Amazon CloudWatch** | Logs, metrics, and alarms for pipeline failures, Bedrock token usage, boundary detection accuracy, and cost per package |
-
-<!-- [EDITOR: Updated "Amazon Bedrock (Claude Sonnet)" to "Amazon Bedrock (Claude Sonnet 4.6)" in Ingredients table.] -->
 
 ### Code
 
@@ -650,14 +640,7 @@ Return ONLY a valid JSON object with this structure:
       "date_consistent": <true, false, or null if date not determinable>
     }
   ]
-}
-
-<!-- [EDITOR: review fix P1-4] Renamed supporting_evidence to match_reasoning and added
-evidence_type: "llm_synthesis". The matching LLM receives a summarized extraction, not
-the original OCR text. Any evidence it surfaces is LLM-reconstructed from the summary,
-not a verbatim quote from the document. Labeling it match_reasoning and setting
-evidence_type to "llm_synthesis" makes this explicit for downstream consumers and
-claims examiners auditing decisions. -->
+} 
 
 match_type values:
 - exact_cpt: the CPT code number appears explicitly in the document
@@ -784,7 +767,7 @@ FUNCTION match_all_documents_to_claim_lines(
     RETURN line_support
 ```
 
-Notice what changes compared to the lookup table approach. The LLM returns `match_reasoning` explaining its assessment: for example, it might describe a procedure as consistent with CPT 27447 because the document summary lists a right total knee arthroplasty with cemented components. That reasoning is what the claims examiner needs to see. The `evidence_type: "llm_synthesis"` field makes it explicit that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the original document. The matching step receives a structured extraction (diagnoses, procedures, dates), not raw page text; any evidence it surfaces is reconstructed from that summary. When the examiner reviews a "needs_review" line, they see the model's reasoning and can pull the original document if they need the source text. <!-- [EDITOR: review fix P1-4] Updated prose to reflect match_reasoning/evidence_type rename. Removed quotation marks around the evidence example; the claim matching LLM receives a summarized extraction, not raw OCR, so it cannot produce verbatim quotes. -->
+Notice what changes compared to the lookup table approach. The LLM returns `match_reasoning` explaining its assessment: for example, it might describe a procedure as consistent with CPT 27447 because the document summary lists a right total knee arthroplasty with cemented components. That reasoning is what the claims examiner needs to see. The `evidence_type: "llm_synthesis"` field makes it explicit that this is the matching model's interpretation of the extracted document summary, not a verbatim quote from the original document. The matching step receives a structured extraction (diagnoses, procedures, dates), not raw page text; any evidence it surfaces is reconstructed from that summary. When the examiner reviews a "needs_review" line, they see the model's reasoning and can pull the original document if they need the source text. 
 
 **Step 8: Assemble the unified claims attachment record.** The assembler collects all extraction results and the claim line matching output, deduplicates clinical entities across documents, and writes the final record.
 
@@ -910,9 +893,7 @@ FUNCTION store_attachment_record(record):
             attachment_key = record.attachment_key
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-claims-attachment-python-v2). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
-
-<!-- [EDITOR: Updated Python companion link from "python-v1" to "python-v2" to match the edited companion file.] -->
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-claims-attachment-python-v2). It walks through each step with inline comments and notes on what you'd need to change for a real deployment. 
 
 ### Expected Results
 
@@ -1055,9 +1036,9 @@ The 78–90% overall pipeline accuracy looks similar to the upper end of what ru
 
 The LLM-powered architecture and pseudocode above get you to a working claims attachment pipeline. Production requires addressing the gaps that will find you in month two.
 
-**Retry logic on every Bedrock and Comprehend Medical client.** This pipeline makes approximately 40 Bedrock calls per package. At that volume, `ThrottlingException` is not a theoretical failure; it happens during burst processing. Configure `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on every boto3 client initialization. `adaptive` mode implements exponential backoff with jitter automatically. Apply this to the `bedrock-runtime`, `comprehendmedical`, and any other clients. The Python companion shows the pattern. <!-- [EDITOR: review fix P1-6] Added retry logic paragraph. Missing retry config is a silent failure mode at burst processing volumes. ~40 calls/package means throttling is expected, not exceptional. -->
+**Retry logic on every Bedrock and Comprehend Medical client.** This pipeline makes approximately 40 Bedrock calls per package. At that volume, `ThrottlingException` is not a theoretical failure; it happens during burst processing. Configure `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})` on every boto3 client initialization. `adaptive` mode implements exponential backoff with jitter automatically. Apply this to the `bedrock-runtime`, `comprehendmedical`, and any other clients. The Python companion shows the pattern. 
 
-**PHI in logs.** The `reasoning` fields from Bedrock responses can contain clinical content drawn from the input page text. Do not log them. In Lambda, stdout goes to CloudWatch Logs, and CloudWatch Logs is not PHI-safe by default. Log structural metadata only: page numbers, doc type, confidence values, error types. Encrypt all Lambda CloudWatch log groups with a customer-managed KMS key; Lambda does not encrypt log groups by default. Never log `response_text`, `reasoning`, or any extracted clinical field directly. <!-- [EDITOR: review fix P1-5] Added PHI logging paragraph. reasoning fields and response_text can contain patient names, diagnoses, and medication lists. CloudWatch Logs requires explicit KMS encryption and access scoping to be HIPAA-compliant. -->
+**PHI in logs.** The `reasoning` fields from Bedrock responses can contain clinical content drawn from the input page text. Do not log them. In Lambda, stdout goes to CloudWatch Logs, and CloudWatch Logs is not PHI-safe by default. Log structural metadata only: page numbers, doc type, confidence values, error types. Encrypt all Lambda CloudWatch log groups with a customer-managed KMS key; Lambda does not encrypt log groups by default. Never log `response_text`, `reasoning`, or any extracted clinical field directly. 
 
 **LLM output validation everywhere.** Every Bedrock call in this pipeline returns structured JSON that we parse. Language models don't guarantee valid JSON. Wrap every JSON parse in exception handling. On parse failure, retry once with an explicit "you must return only valid JSON" suffix. On second failure, route the segment or page pair to human review. A malformed boundary detection response that crashes the segmenter takes down the entire package. Build defensive parsing from day one.
 
@@ -1065,9 +1046,7 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 
 **Build the boundary detection feedback loop from day one.** When a claims examiner corrects a segmentation error, that correction should be logged with the two page pairs involved and what the correct answer was. Over time, you want to know: which document type transitions cause the most missed boundaries? (Answer: therapy notes followed immediately by billing statements, because both can look like continuous text.) Are there specific payer workflows that produce systematic failures? Log the model's reasoning alongside the correction; it helps you understand why it made the wrong call.
 
-**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points.
-
-<!-- [EDITOR: Updated "Model versioning" sentence from bare model ID strings to "Claude Sonnet 4.6 (model-id) and Nova Lite (model-id)" pattern, consistent with version-number guidance.] -->
+**Model versioning.** Claude Sonnet 4.6 (`us.anthropic.claude-sonnet-4-6-v1:0`) and Nova Lite (`us.amazon.nova-lite-v1:0`) will be superseded. Pin to specific model version ARNs in production. Build a regression test suite on a set of labeled packages and run it against any model change before deploying. Claim line matching quality is particularly sensitive to model version; a subtle change in how the model handles clinical terminology can shift accuracy by several percentage points. 
 
 **Prompt injection risks.** Claims attachments are untrusted documents from external parties. A provider could include text designed to manipulate the classification or matching model. Apply Bedrock Guardrails to Converse API calls. Sanitize extracted page text before passing it to the model. Add output validation to flag structurally inconsistent responses (a boundary detection response that returns `supported: true` when the schema expects `same_document: boolean` tells you something went wrong).
 
@@ -1163,17 +1142,7 @@ The path from this recipe to production runs through measurement, feedback loops
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end claims automation architecture with AWS services
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Generative AI approaches for complex or ambiguous healthcare document extraction
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (Textract + LLM boundary detection + LLM classification + 3 extractors + basic claim matching, single Lambda) | 1–2 weeks |
-| **Production-ready** (Step Functions, all extractors, LLM claim matching with evidence, S3 Object Lock, DLQs, idempotency, LLM output validation, prompt injection hardening, VPC, KMS, CloudTrail, model version pinning, monitoring, feedback loop) | 4–6 weeks |
-| **With variations** (claim-value-based routing, BDA evaluation, claims workstation integration, duplicate document detection) | 8–12 weeks |
-
----
+--- 
 
 ## Tags
 

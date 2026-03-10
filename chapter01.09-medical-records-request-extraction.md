@@ -1,14 +1,4 @@
-# Recipe 1.9: Medical Records Request Extraction 🔶
-
-<!-- [EDITOR: v3 changes from v2:
-  1. Fixed PHI minimization comment in Step 5 pseudocode. The v2 comment said "pass structural information rather than raw PHI where possible," which contradicts both the code and the design intent. Full authorization text is necessary for coherence analysis; the comment now says so explicitly and notes BAA coverage. [EDITOR: review fix]
-  2. Added input sanitization step to Step 5 pseudocode before the Bedrock call. Authorization text is untrusted free-text (patient/attorney-authored); sanitization moves from Gap to Production into the main flow. [EDITOR: review fix]
-  3. Added REVIEW_QUEUE_URL to Step 7 pseudocode; routes LLM-flagged authorizations to it rather than FULFILLMENT_QUEUES["general"]. Matches the rr-review queue shown in the architecture diagram. [EDITOR: review fix]
-  4. Added "Coordinator Resolution" subsection to Why This Isn't Production-Ready: describes the DynamoDB update, audit trail write, and SQS routing for coordinator-approved authorizations. [EDITOR: review fix]
-  5. Added note about _validate_no_phi_in_concerns() and Bedrock Guardrails PII detection in Why This Isn't Production-Ready. [EDITOR: review fix]
-] -->
-
-<!-- [EDITOR: v1 was structurally strong and already incorporated most prior review checklist items (retry config, VPC endpoint specificity, Lambda timeouts, PHI-safe logging, Decimal conversion, idempotent writes). v2 targets: (1) precise "two API calls" language in Why These Services; (2) LLM output retry and model version storage notes in Why This Isn't Production-Ready; (3) minor voice polish. No em dashes found in v1. HIPAA tension framing and LLM output labeling were already well-handled; preserved intact.] -->
+# Recipe 1.9: Medical Records Request Extraction 🔶 
 
 **Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.12–0.18 per request form
 
@@ -95,9 +85,7 @@ This division of responsibility means:
 - The LLM adds a safety net above that layer, catching edge cases that are technically valid by the presence check but concerning in context.
 - Authorizations that pass both layers proceed with high confidence. Authorizations that pass rules but concern the LLM go to human review. Authorizations that fail rules go to the deficiency queue, period.
 
-One thing to be clear about: the LLM's observations in this recipe are the model's reasoning about the extracted content. They are not quotes from the document, and they are not statements of fact about the authorization. When you surface LLM concerns to a human reviewer, label them as such. "The LLM flagged a potential date inconsistency between the signing date and expiration date" is accurate and appropriately hedged. "The authorization contains a date inconsistency" presented as a factual finding is not, because the LLM may be wrong. The reviewer is the final decision-maker for anything the LLM flags.
-
-<!-- [EDITOR: Sharpened the LLM output labeling paragraph. v1 was close but slightly passive in the hedge. Now leads with the definition ("are the model's reasoning... not quotes from the document") before the implication ("label them as such"). Tightens the framing that the reviewer, not the model, is the decision-maker.] -->
+One thing to be clear about: the LLM's observations in this recipe are the model's reasoning about the extracted content. They are not quotes from the document, and they are not statements of fact about the authorization. When you surface LLM concerns to a human reviewer, label them as such. "The LLM flagged a potential date inconsistency between the signing date and expiration date" is accurate and appropriately hedged. "The authorization contains a date inconsistency" presented as a factual finding is not, because the LLM may be wrong. The reviewer is the final decision-maker for anything the LLM flags. 
 
 ### Request Classification: A Clearer LLM Win
 
@@ -115,9 +103,7 @@ Second, some requests span categories or use vocabulary that signals the wrong t
 
 The model choice for classification is different from HIPAA validation. Classification is a simpler reasoning task: read the request, pick the right bucket. You don't need the deep contextual reasoning required to evaluate legal language against regulatory requirements. A smaller, faster, cheaper model handles this well. Nova Pro or Claude Haiku 4.5 are the right choices here: capable enough for the task, cost-appropriate for a relatively high-volume operation.
 
-One practical note about classification results: present them with the model's reasoning to downstream fulfillment systems, not just the label. A routing record that says "classified as legal request: request mentions 'plaintiff's counsel' and 'civil litigation proceedings'" gives the receiving fulfillment specialist useful context. A routing record that just says "legal" gives them nothing. The reasoning is particularly valuable for ambiguous cases, where the fulfillment specialist may need to re-classify based on additional information. And always label the reasoning as LLM-generated inference in whatever interface surfaces it. The model got there by reading the request, not by verifying facts.
-
-<!-- [EDITOR: Added final sentence to classification section to reinforce LLM output labeling principle consistently with the validation section. The v1 addressed this well in the validation discussion but didn't connect it back here where classification reasoning is introduced.] -->
+One practical note about classification results: present them with the model's reasoning to downstream fulfillment systems, not just the label. A routing record that says "classified as legal request: request mentions 'plaintiff's counsel' and 'civil litigation proceedings'" gives the receiving fulfillment specialist useful context. A routing record that just says "legal" gives them nothing. The reasoning is particularly valuable for ambiguous cases, where the fulfillment specialist may need to re-classify based on additional information. And always label the reasoning as LLM-generated inference in whatever interface surfaces it. The model got there by reading the request, not by verifying facts. 
 
 ### The General Architecture Pattern
 
@@ -157,8 +143,6 @@ One practical note about classification results: present them with the model's r
                       Utilization Review | Patient Access | General)
 ```
 
-<!-- [EDITOR: Added "(Screening layer only. Cannot override rules.)" annotation to the LLM Authorization Consistency Check node. The layered authority distinction is central to this recipe's design; making it visible in the architecture diagram reinforces it.] -->
-
 The key architectural point: the rule-based check and the LLM check have different authorities. The rule-based check can create deficiencies. The LLM cannot. The LLM can only flag concerns that require human review before fulfillment proceeds. A human coordinator closes the loop on those flagged cases.
 
 ---
@@ -175,9 +159,7 @@ Medical records request forms are one to two pages, so the synchronous `AnalyzeD
 
 **Amazon Bedrock with Amazon Nova Pro or Claude Haiku for request classification.** Classification is a simpler task than regulatory consistency checking. Nova Pro (`us.amazon.nova-pro-v1:0`) offers strong document understanding at lower cost. Claude Haiku 4.5 (`us.anthropic.claude-haiku-4-5-v1:0`) is slightly more expensive but returns richer reasoning explanations that are useful for routing records. Cost per classification call: roughly $0.001 to $0.002. Either model works; the choice depends on whether you value reasoning detail over cost.
 
-**AWS Lambda with four functions.** The pipeline splits across four Lambda functions: extraction (rr-extract), validation (rr-validate), classification (rr-classify), and assembly and routing (rr-route). Keeping them separate makes it easier to update validation logic independently of extraction logic, which matters because HIPAA requirements do evolve. The validation Lambda requires a longer timeout than the extraction Lambda because it makes a Bedrock API call for the LLM consistency check (in addition to running the rule-based Python logic), and Bedrock calls can take 2 to 15 seconds depending on load and whether retry backoff kicks in.
-
-<!-- [EDITOR: Rewrote "two API calls" description in the Lambda section. The v1 said "it makes two API calls: one to Bedrock... and one internal call for the rule-based check." The rule-based check is Python logic, not an API call. This was technically imprecise and could mislead readers reasoning about timeout requirements. Now accurately describes: one Bedrock API call (with latency range) plus the Python rule logic.] -->
+**AWS Lambda with four functions.** The pipeline splits across four Lambda functions: extraction (rr-extract), validation (rr-validate), classification (rr-classify), and assembly and routing (rr-route). Keeping them separate makes it easier to update validation logic independently of extraction logic, which matters because HIPAA requirements do evolve. The validation Lambda requires a longer timeout than the extraction Lambda because it makes a Bedrock API call for the LLM consistency check (in addition to running the rule-based Python logic), and Bedrock calls can take 2 to 15 seconds depending on load and whether retry backoff kicks in. 
 
 **Amazon DynamoDB.** The structured request record lives in DynamoDB. The record captures the full lifecycle: extracted fields, rule-based validation result, LLM consistency findings, request type classification, routing decision, and status. DynamoDB's millisecond latency is appropriate for downstream fulfillment systems that query request status.
 
@@ -543,9 +525,7 @@ Describe structural and logical issues only.
         concerns:           llm_result.get("concerns", []),
         review_recommended: llm_result.get("review_recommended", false)
     }
-```
-
-<!-- [EDITOR: Added explicit retry comment to the JSON parse error handling in Step 5. The v1 pseudocode said "handle parse errors with safe fallback" without showing the retry pattern. Prior reviews (1.4, 1.5, 1.6) all flagged missing LLM output retry as a P1/P2 issue. The prose in "Why This Isn't Production-Ready" already described the pattern; the pseudocode now references it explicitly. The Python companion (v2) implements it.] -->
+``` 
 
 **Step 6: LLM request classification.** The classification step reads the full request text and the extracted fields together. It uses a smaller, faster model than the validation step because classification is a simpler reasoning task.
 
@@ -848,8 +828,6 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
 }
 ```
 
-<!-- [EDITOR: The "llm_reasoning" field in the sample output already carries a natural inference statement rather than a verbatim quote. This is correct; no change needed. The "note" field at the top of llm_consistency_findings reinforces the non-authoritative labeling consistently with the prose guidance.] -->
-
 **Performance benchmarks:**
 
 | Metric | Typical Value |
@@ -880,13 +858,9 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 
 **The LLM is a screening layer, not a compliance gate.** The LLM consistency check surfaces observations for human review. It does not override rule-based deficiency determinations, and it cannot make a deficient authorization valid. Frame this accurately when presenting the system to your legal and compliance teams. The right description: "The LLM identifies potential coherence issues for human review. It does not perform legal compliance determinations." Framing it as "the system validates HIPAA compliance" overstates what it does and creates liability exposure.
 
-**LLM behavior is not perfectly deterministic.** At temperature=0, Bedrock models are close to deterministic, but not perfectly so, and model updates can shift behavior. An authorization processed in March 2026 may get a slightly different LLM consistency assessment if reprocessed after a model update. This is not a problem for the rule-based layer, which is fully deterministic. It is a consideration for the LLM layer: if you need the ability to reproduce exact outputs for audit purposes, store the model ID and version used for each LLM call alongside the findings in the DynamoDB record. The Python companion shows where to add this.
+**LLM behavior is not perfectly deterministic.** At temperature=0, Bedrock models are close to deterministic, but not perfectly so, and model updates can shift behavior. An authorization processed in March 2026 may get a slightly different LLM consistency assessment if reprocessed after a model update. This is not a problem for the rule-based layer, which is fully deterministic. It is a consideration for the LLM layer: if you need the ability to reproduce exact outputs for audit purposes, store the model ID and version used for each LLM call alongside the findings in the DynamoDB record. The Python companion shows where to add this. 
 
-<!-- [EDITOR: Expanded the LLM non-determinism note with an explicit recommendation to store the model ID/version in DynamoDB alongside findings. This was already in the Python companion's Gap section but belongs here too, since audit reproducibility is a compliance concern that architects and compliance reviewers will ask about when reviewing the main recipe design.] -->
-
-**LLM output retry on JSON parse failure.** The consistency check and classification steps both call Bedrock and parse the response as JSON. When the model returns markdown fences or preamble text despite instructions, the parse fails. The recommended pattern: on first `JSONDecodeError`, append `"\n\nYou MUST return only valid JSON. No markdown, no explanation."` to the user message and retry the Bedrock call once. If the second attempt also fails, fall back to a safe default and log the failure (metadata only, no response content). This is about 15 lines of code and closes the most common model output failure mode. The Python companion implements this pattern.
-
-<!-- [EDITOR: Added LLM output retry as a production readiness item. This was a P1/P2 finding across all three prior recipe reviews (1.4, 1.5, 1.6) and was consistently flagged as missing from prose-to-code gap. The v1 pseudocode mentioned "handle parse errors with safe fallback" without showing the retry; the v1 Python companion had _safe_parse_json() but no retry. v2 Python companion now implements the full pattern.] -->
+**LLM output retry on JSON parse failure.** The consistency check and classification steps both call Bedrock and parse the response as JSON. When the model returns markdown fences or preamble text despite instructions, the parse fails. The recommended pattern: on first `JSONDecodeError`, append `"\n\nYou MUST return only valid JSON. No markdown, no explanation."` to the user message and retry the Bedrock call once. If the second attempt also fails, fall back to a safe default and log the failure (metadata only, no response content). This is about 15 lines of code and closes the most common model output failure mode. The Python companion implements this pattern. 
 
 **The signature confidence threshold is a policy decision.** 70% is a reasonable starting point for fax-quality documents, but the right threshold depends on your organization's risk tolerance. Too high and you generate deficiency letters for valid authorizations where fax degradation hurt the signature. Too low and you accept artifacts as valid signatures. Your compliance and legal teams should set this threshold. It should be configurable per environment, not hardcoded.
 
@@ -970,17 +944,7 @@ One operational lesson worth sharing: build the review queue carefully before yo
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Extends forms extraction with generative AI for complex healthcare fields. The hybrid Textract-plus-LLM pattern here mirrors this recipe's approach.
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end healthcare document processing with routing and compliance patterns.
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (Textract FORMS + SIGNATURES, rule-based validation only, keyword classification, single Lambda) | 4–6 hours |
-| **Production-ready** (LLM validation + classification, full multi-Lambda pipeline, DynamoDB, SQS routing, SNS notifications, human review queue, KMS, VPC, CloudTrail audit logging, retry logic, idempotency) | 4–6 days |
-| **With variations** (deficiency letter generation, expiration monitoring, prompt caching, A2I review workflow) | 2–3 weeks |
-
----
+--- 
 
 ## Tags
 

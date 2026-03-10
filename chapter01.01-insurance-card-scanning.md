@@ -405,17 +405,7 @@ The part that surprised me: front-of-card processing gets you maybe 70% of what 
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
 - [Automating Paper-to-Electronic Healthcare Claims Processing with AWS](https://aws.amazon.com/blogs/storage/automating-paper-to-electronic-healthcare-claims-processing-with-aws): End-to-end architecture for digitizing paper healthcare claims
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (Textract + Lambda + hardcoded field map) | 2–4 hours |
-| **Production-ready** (VPC, KMS, CloudTrail, error handling, monitoring) | 1–2 days |
-| **With variations** (mobile API, front+back, eligibility integration) | 3–5 days |
-
----
+--- 
 
 ## Tags
 

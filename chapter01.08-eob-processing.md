@@ -1,8 +1,6 @@
 # Recipe 1.8: Explanation of Benefits Processing 🔶
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13–0.22 per EOB
-
-<!-- [EDITOR: Changed "per EOB page" to "per EOB." The body's cost breakdown shows ~$0.131 total for a 2-page EOB (~$0.065 per physical page). The header metric is clearly tracking cost per document, not per page. "Per EOB page" would imply ~$0.065, which contradicts the explicit breakdown later and confuses readers budgeting a deployment.] -->
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13–0.22 per EOB 
 
 ---
 
@@ -12,9 +10,7 @@ Every time a health insurance claim settles, the payer sends an Explanation of B
 
 In practice, these documents are everywhere. Members stuff them in drawers and later pull them out to dispute a balance. Provider billing offices receive them as proof of payment and need to reconcile them against their accounts receivable. When a patient has two insurance plans, the secondary payer has to ingest the primary payer's EOB to figure out what's already been paid before it processes its portion of the claim. This last scenario has a name: coordination of benefits, or COB. And it is, without exaggeration, one of the messiest data problems in healthcare finance.
 
-Here's the core problem. The information on every EOB is essentially identical. Claim number. Service dates. Procedure codes. What was billed. What was allowed. What the plan paid. What the member owes. Every payer tracks these same fields. But every payer lays them out differently. A UnitedHealthcare EOB calls the plan payment "What Your Plan Paid." An Anthem EOB calls it "Plan Paid Amount." A Medicare Summary Notice calls it "Medicare Paid Provider." CMS uses a three-column layout with its own iconography. Cigna uses a tabbed format where line items appear on a different page from the summary. Some payers put claim-level summary data in a header section and line items in a table below. Others mix summary and line item data in a single table.
-
-<!-- [EDITOR: "Here is the core problem." → "Here's the core problem." CC uses contractions freely; the long-form reads stiff here.] -->
+Here's the core problem. The information on every EOB is essentially identical. Claim number. Service dates. Procedure codes. What was billed. What was allowed. What the plan paid. What the member owes. Every payer tracks these same fields. But every payer lays them out differently. A UnitedHealthcare EOB calls the plan payment "What Your Plan Paid." An Anthem EOB calls it "Plan Paid Amount." A Medicare Summary Notice calls it "Medicare Paid Provider." CMS uses a three-column layout with its own iconography. Cigna uses a tabbed format where line items appear on a different page from the summary. Some payers put claim-level summary data in a header section and line items in a table below. Others mix summary and line item data in a single table. 
 
 Your claims adjusters know how to read all of these. They've been staring at EOBs for years. But they're doing it one document at a time, manually keying data into your adjudication system. For a secondary payer processing coordination of benefits, that means a human reads the primary EOB, finds the "plan paid" field wherever it lives on that payer's format, enters the number, and the secondary claim can proceed. At scale, that is a lot of humans doing a lot of repetitive data entry.
 
@@ -82,9 +78,8 @@ In the static profile system, you need to identify who issued the EOB before you
 
 With the LLM, the mapping prompt doesn't need to know which payer issued the document. You send the column headers as they appear in the document, the canonical schema you want as output, and ask the model to map one to the other. The model uses the semantic meaning of the labels directly, without a payer identifier as an intermediate step.
 
-This is elegant. It also handles the cases the static system fails on: regional BCBS plans with unique layouts, Medicare Advantage plans that print their own branded EOBs, new payers entering your network. You don't need to recognize them; you just need to understand what their column headers mean. The LLM does that without per-payer configuration.
+This is elegant. It also handles the cases the static system fails on: regional BCBS plans with unique layouts, Medicare Advantage plans that print their own branded EOBs, new payers entering your network. You don't need to recognize them; you just need to understand what their column headers mean. The LLM does that without per-payer configuration. 
 
-<!-- [EDITOR: review fix: P1 #4 payer detection prose: updated to reflect what's actually implemented (S3 prefix routing only). Removed the phrase "or from a simple header check" which described unimplemented functionality. Added the keyword detection callout as a "if you need it" variation, consistent with the review's recommendation to update prose to match reality rather than invent a half-implemented fallback.] -->
 For the high-volume payer shortcut: payer detection fires when your S3 intake pipeline organizes EOBs into per-payer prefixes (for example, `eobs-inbox/unitedhealthcare/2026/03/...`). The Lambda extracts the payer name from the prefix segment and uses the static profile for those payers, skipping the Bedrock call entirely. **The static profile shortcut only fires when per-payer S3 prefixes are in place.** If your intake pipeline writes to flat date-partitioned prefixes, all documents arrive with `payer_hint = None` and route through Bedrock, including your top-10 payers. That's fine for correctness, but you're paying Bedrock costs for documents you could handle deterministically. If per-payer prefix organization isn't practical, add header keyword detection to `map_to_canonical_schema` before calling Bedrock: scan the raw header label keys for known payer name strings ("unitedhealthcare", "medicare", etc.) and use the static profile when a match is found. See the Variations section for a code sketch.
 
 ### Financial Validation: Why This Stays Rule-Based
@@ -95,9 +90,8 @@ LLMs should not perform this validation. Not because they can't do arithmetic (t
 
 Rule-based arithmetic validation gives you all of that. LLM-based financial checking gives you probabilistic output that varies with temperature settings and cannot be audited at the rule level. For math problems where the stakes are measured in dollars and the output feeds a compliance-sensitive workflow, determinism is not optional.
 
-The financial validation step in this recipe is unchanged from the original. Extract numbers. Apply arithmetic rules. Collect specific violations. Route based on violation presence. No LLM in the loop for this step.
+The financial validation step in this recipe is unchanged from the original. Extract numbers. Apply arithmetic rules. Collect specific violations. Route based on violation presence. No LLM in the loop for this step. 
 
-<!-- [EDITOR: review fix: P0 #1 trust boundary callout: added the following paragraph to explain the mapping completeness check and why it's architecturally necessary. The review identified a "trust boundary failure" between LLM mapping and rule-based validation. This paragraph makes that boundary explicit in the technology section so readers understand why the coverage assertion exists in the code.] -->
 **The mapping-to-validation trust boundary.** Financial validation is only as reliable as the fields it receives. If Bedrock fails to map the financial columns, the rule-based validation checks receive `None` for every financial field and silently skip. The record exits validation with no errors, writes to DynamoDB as `status: "valid"`, and looks identical to a record where all the math checked out. To close this gap, the pipeline includes a minimum coverage assertion between the mapping step and the validation step: before running any financial rules, it verifies that at least `billed_amount` and `plan_paid` are present in the assembled line items. If either is absent, the record routes to manual review with `status: "mapping_incomplete"` rather than passing silently. This check applies to both the Bedrock path (where the LLM may fail to map financial columns) and the static profile path (where a profile with missing entries produces the same gap).
 
 ### The General Architecture Pattern
@@ -175,7 +169,7 @@ flowchart LR
 | **Textract Service Role** | A separate IAM role that Textract assumes to publish completion notifications to SNS. This is not the Lambda execution role. Create it explicitly with a trust policy for `textract.amazonaws.com` and `sns:Publish` on your specific topic ARN. Pass it in the `StartDocumentAnalysis` call. The Lambda execution role needs `iam:PassRole` to pass this role to Textract. Missing this is a common first-time setup failure: jobs complete silently and the processing Lambda never fires. |
 | **BAA** | AWS BAA signed. EOBs contain member names, member IDs, service dates, provider names, and payment amounts. All constitute PHI under HIPAA. Amazon Bedrock is HIPAA-eligible under a BAA; models do not retain or train on data sent via Bedrock APIs. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. SQS: server-side encryption with KMS. Lambda CloudWatch log groups: configure KMS encryption on each log group; Lambda does not do this automatically, and logs may contain fragments of extracted document content. All API calls over TLS. |
-| **VPC** | Production: both Lambdas in a VPC with VPC interface endpoints for Textract, SNS, SQS, KMS, and CloudWatch Logs. S3 uses a gateway endpoint (free). DynamoDB can use either gateway or interface endpoint. For Bedrock: the runtime API your Lambda calls is `bedrock-runtime`, not `bedrock`; create `com.amazonaws.REGION.bedrock-runtime` as the interface endpoint. A VPC with only `com.amazonaws.REGION.bedrock` will not route Lambda's Converse API calls through the private endpoint. Most deployments only need `bedrock-runtime`; add `bedrock` separately only if managing model access programmatically. <!-- [EDITOR: review fix: P1 #7 cross-region inference + VPC callout: added the following sentence, which was present in Recipe 1.6 v3 but absent from this recipe. Healthcare security teams consistently ask whether cross-region inference sends PHI over the public internet; the answer is no, and it belongs here where teams provision their VPC.] --> When using cross-region inference profiles, your Lambda's API call goes to the `bedrock-runtime` VPC endpoint in your deployment region; AWS routes the request internally to the appropriate backend region for capacity. PHI does not traverse the public internet regardless of which backend region processes the request. For organizations documenting data flows for HIPAA, note that model inference may occur in a region other than your deployment region. |
+| **VPC** | Production: both Lambdas in a VPC with VPC interface endpoints for Textract, SNS, SQS, KMS, and CloudWatch Logs. S3 uses a gateway endpoint (free). DynamoDB can use either gateway or interface endpoint. For Bedrock: the runtime API your Lambda calls is `bedrock-runtime`, not `bedrock`; create `com.amazonaws.REGION.bedrock-runtime` as the interface endpoint. A VPC with only `com.amazonaws.REGION.bedrock` will not route Lambda's Converse API calls through the private endpoint. Most deployments only need `bedrock-runtime`; add `bedrock` separately only if managing model access programmatically. When using cross-region inference profiles, your Lambda's API call goes to the `bedrock-runtime` VPC endpoint in your deployment region; AWS routes the request internally to the appropriate backend region for capacity. PHI does not traverse the public internet regardless of which backend region processes the request. For organizations documenting data flows for HIPAA, note that model inference may occur in a region other than your deployment region. |
 | **Lambda Timeouts** | The default 3-second Lambda timeout is too low for this pipeline. eob-start (submits Textract job): 30 seconds. eob-process (retrieves paginated results, optionally calls Bedrock, runs financial validation, writes to DynamoDB): at minimum 60 seconds; set to 3 minutes and tune based on observed p99 for complex multi-page EOBs. |
 | **CloudTrail** | Enabled for all Textract, Bedrock, and S3 API calls. EOBs are PHI-bearing financial documents; the audit trail is a compliance requirement. |
 | **Sample Data** | Major payers publish sample EOB PDFs on their member portals and provider resource sites. CMS publishes the Medicare Summary Notice format at [medicare.gov](https://www.medicare.gov/basics/get-started-with-medicare/medicare-basics/reading-medicare-summary-notice). Fill in synthetic but realistic dollar amounts and claim numbers. Never use real PHI in development. |
@@ -327,9 +321,7 @@ FUNCTION extract_raw_content(all_blocks, block_map):
     RETURN raw_header, raw_tables
 ```
 
-**Step 4: Map the extracted data to the canonical EOB schema.** This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them.
-
-<!-- [EDITOR: review fix: P1 #5 idempotency check ordering: added the pre-Bedrock idempotency check to the map_to_canonical_schema function. The v2 recipe's "Why This Isn't Production-Ready" section correctly stated that the check should happen before the Bedrock call, but the pseudocode placed it in assemble_and_route (after the Bedrock call). Moved here so the pseudocode is consistent with the stated guidance. The check happens before any expensive LLM call.] -->
+**Step 4: Map the extracted data to the canonical EOB schema.** This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them. 
 
 ```
 // High-volume payer profiles: maintain these for your top 10-20 payers by volume.
@@ -579,15 +571,7 @@ FUNCTION assemble_line_items(raw_header, raw_tables, mapping):
             line_items.append(item)
 
     RETURN header_fields, line_items
-```
-
-<!-- [EDITOR: review fix: P0 #1 minimum coverage assertion: added as a named step between
-assemble_line_items and validate_eob_financials. This closes the trust boundary failure
-identified in the review: when Bedrock (or a static profile with gaps) fails to map
-financial columns, validation rules silently skip and the record exits as "valid" with no
-financial data. The coverage check enforces that at least billed_amount and plan_paid are
-present before any financial rule runs. Routes to "mapping_incomplete" instead of "valid"
-when the minimum is not met. Applies to both Bedrock and static profile paths.] -->
+``` 
 
 **Step 5a: Minimum coverage check.** Before financial validation runs, verify that the mapping produced at least the core financial fields. This is the enforcement point for the LLM-to-validation trust boundary.
 
@@ -756,9 +740,7 @@ FUNCTION assemble_and_route(
     RETURN record
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.08-eob-processing-python-v3). It walks through each step with inline comments and notes on what you'd change for a real deployment, including retry configuration for Bedrock throttling, the DynamoDB Decimal gotcha, and how to wire up the high-volume profile shortcut.
-
-<!-- [EDITOR: Updated Python companion link from v2 to v3 to match the output filename.] -->
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.08-python-example.md). It walks through each step with inline comments and notes on what you'd change for a real deployment, including retry configuration for Bedrock throttling, the DynamoDB Decimal gotcha, and how to wire up the high-volume profile shortcut. 
 
 ---
 
@@ -839,9 +821,7 @@ FUNCTION assemble_and_route(
     "validated_at": "2026-03-01T14:23:15Z"
   }
 }
-```
-
-<!-- [EDITOR: review fix: P0 #1: added mapping_incomplete sample output so readers understand the new status value and can distinguish it from "valid" or "flagged" in their downstream workflows.] -->
+``` 
 
 **Performance benchmarks:**
 
@@ -972,17 +952,7 @@ This is a simple string scan on the header label keys (not values). It runs befo
 **AWS Solutions and Blogs:**
 - [Building an End-to-End Intelligent Document Processing Solution Using AWS](https://aws.amazon.com/blogs/machine-learning/building-an-end-to-end-intelligent-document-processing-solution-using-aws/): Comprehensive walkthrough of multi-stage IDP pipelines with Textract and generative AI
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (async Textract, Bedrock schema mapping for all payers, basic financial validation) | 5–8 hours |
-| **Production-ready** (static profiles for top-10 payers, Bedrock fallback, full financial validation, coverage check, review queue, VPC, KMS, retry logic, idempotency) | 3–5 days |
-| **With variations** (mapping promotion pipeline, COB automation, member dispute triage) | 2–3 weeks |
-
----
+--- 
 
 ## Tags
 

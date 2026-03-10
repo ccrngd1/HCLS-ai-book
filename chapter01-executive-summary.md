@@ -37,19 +37,19 @@ For claims attachments, manual review runs 30 to 60 minutes per case at $35 to $
 ---
 
 ### Cost Impact Summary
+TODO - pull numbers from industry publications like https://www.caqh.org/hubfs/CAQH%20Insights_2023%20Index%20Report_Provider%20Specialty%20Issue%20Brief_Final.pdf
 
-Estimated annual costs for a mid-size payer processing 500,000 to 1,000,000 documents per year:
+Estimated annual costs for a mid-size payer processing 1,000,000 documents per year:
 
 | Document Type | Manual Cost (Annual) | Automated Cost (Annual) | Reduction |
 |---------------|---------------------|------------------------|-----------|
-| Prior auth submissions (500K/yr) | $6.25M to $18.75M | $375K to $450K | **93-98%** |
-| Claims attachment packages (500K/yr) | $8.75M to $27.5M | $1.1M to $1.2M | **87-96%** |
-| Insurance card processing (1M/yr) | $500K to $1M+ [1] | $50K | **90-95%** |
-| Patient intake forms (500K/yr) | $1.5M to $3M [1] | $100K | **93-97%** |
-| EOB processing (1M/yr) | $2M to $5M [1] | $130K to $220K | **94-96%** |
-| **Combined estimate** | **$19M to $55M** | **$1.8M to $2M** | **90-96%** |
-
-[1] Manual cost estimates based on industry benchmarks of 3 to 10 minutes per document at $25 to $45/hour loaded staff cost. Automated costs are calculated directly from the per-document pricing in each recipe.
+| Prior auth submissions (1M/yr) | XX | YY | %% |
+| Claims attachment packages (1M/yr) | XX | YY | %% |
+| Insurance card processing (1M/yr) | XX | YY | %% |
+| Patient intake forms (1M/yr) | XX | YY | %% |
+| EOB processing (1M/yr) | XX | YY | %% |
+| **Combined estimate** | XX | YY | %% |
+ 
 
 For historical chart migration programs (Recipe 1.10), the cost reduction is even more dramatic: a 20-million chart, 3-billion page migration drops from an estimated $495M+ with traditional approaches to approximately $22M with the tiered AI pipeline. This 20x reduction is what makes multi-year chart migration programs financially feasible.
 
@@ -75,26 +75,26 @@ Every recipe in the chapter is built for HIPAA-regulated environments:
 
 | Recipe | Effort | Business Impact |
 |--------|--------|-----------------|
-| 1.1 Insurance Card Scanning | 1 to 2 weeks | Immediate: eliminates manual card data entry at point of service |
-| 1.2 Patient Intake Digitization | 2 to 3 weeks | High: automates the highest-volume paper form in most clinics |
-| 1.4 Prior Auth Processing | 3 to 4 weeks | Critical: directly addresses CMS-0057-F timeline requirements |
+| 1.1 Insurance Card Scanning | low | Immediate: eliminates manual card data entry at point of service |
+| 1.2 Patient Intake Digitization | low | High: automates the highest-volume paper form in most clinics |
+| 1.4 Prior Auth Processing | medium | Critical: directly addresses CMS-0057-F timeline requirements |
 
 **Phase 2: Scale (Weeks 6 to 16)**
 
 | Recipe | Effort | Business Impact |
 |--------|--------|-----------------|
-| 1.3 Lab Requisition Extraction | 2 to 3 weeks | Reduces coding errors and medical necessity review delays |
-| 1.5 Claims Attachment Processing | 4 to 6 weeks | Highest dollar-value automation in the chapter |
-| 1.7 Prescription Label OCR | 1 to 2 weeks | Enables automated medication reconciliation |
-| 1.8 EOB Processing | 3 to 4 weeks | Unlocks coordination of benefits automation |
-| 1.9 Medical Records Requests | 2 to 3 weeks | Reduces HIPAA authorization processing time |
+| 1.3 Lab Requisition Extraction | medium | Reduces coding errors and medical necessity review delays |
+| 1.5 Claims Attachment Processing | high | Highest dollar-value automation in the chapter |
+| 1.7 Prescription Label OCR | low | Enables automated medication reconciliation |
+| 1.8 EOB Processing | high | Unlocks coordination of benefits automation |
+| 1.9 Medical Records Requests | medium | Reduces HIPAA authorization processing time |
 
 **Phase 3: Strategic (Months 4 to 12)**
 
 | Recipe | Effort | Business Impact |
 |--------|--------|-----------------|
-| 1.6 Handwritten Note Digitization | 4 to 6 weeks | Solves the hardest document type in healthcare |
-| 1.10 Historical Chart Migration | 6 to 12 months | Unlocks decades of clinical history for analytics and risk adjustment |
+| 1.6 Handwritten Note Digitization | high | Solves the hardest document type in healthcare |
+| 1.10 Historical Chart Migration | extremely high | Unlocks decades of clinical history for analytics and risk adjustment |
 
 **Team:** 2 to 3 engineers for Phase 1, expanding to 4 to 6 for Phase 2. One engineer should have cloud infrastructure experience; the others need Python and basic ML pipeline understanding. No data science team required.
 
@@ -109,9 +109,4 @@ Every recipe in the chapter is built for HIPAA-regulated environments:
 2. **The tiered model cost strategy.** Not every document needs the most expensive AI model. Simple classification tasks use lightweight models at fractions of a penny per document. Complex clinical reasoning uses more capable models only where needed. The capstone recipe (1.10) demonstrates this at scale: a four-tier model strategy reduces extraction cost from $495M to $22M on a three-billion page migration. The same principle applies at every scale.
 
 3. **Honest production gap analysis.** Every recipe includes a "Why This Isn't Production-Ready" section that documents exactly what the recipe does not do: prompt injection hardening, model version management, feedback loops, edge cases. Technical teams waste months discovering these gaps on their own. Having them documented from day one accelerates production deployment and builds trust with security and compliance reviewers.
-
----
-
-*Chapter 1 contains 10 complete recipes with working code, validated cost analysis, and HIPAA-compliant architecture. It is ready for technical team review and implementation planning.*
-
-*For questions: the full chapter is available at `books.home.arpa/hcls` with all recipes, Python code companions, and the detailed five-reviewer technical assessment.*
+ 

@@ -641,17 +641,7 @@ The CPT lookup table is honestly the most maintenance-intensive part of this pip
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end industry blog post on combining both services for claims automation
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (Textract async + Comprehend Medical, hardcoded CPT table, basic ICD-10 inference) | 1–2 days |
-| **Production-ready** (composite confidence scoring, expanded CPT table, medical necessity integration, VPC, KMS, CloudTrail, error handling, DLQ) | 4–6 days |
-| **With variations** (order routing, NPI validation, frequency checks, LIS integration) | 2–3 weeks |
-
----
+--- 
 
 ## Tags
 

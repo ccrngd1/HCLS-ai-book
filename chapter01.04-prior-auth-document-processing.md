@@ -114,9 +114,7 @@ Here's something worth pausing on, because it's a principle that carries through
 
 Not all classification and extraction tasks are equally hard. "What type of page is this?" is a relatively simple task. "Extract the clinical evidence supporting medical necessity for this procedure, including failed prior treatments, relevant diagnostic findings, and the physician's reasoning" is a complex reasoning task. Routing a simple task through a powerful, expensive model is wasteful. Routing a complex reasoning task through a cheap, limited model gets you wrong answers.
 
-The right approach is tiered: use the cheapest model that handles each task reliably.
-
-<!-- [EDITOR: Added version numbers (4.5, 4.6) to Claude model names throughout tiering section for precision. Research file confirms: Haiku 4.5 at $1.00/MTok, Sonnet 4.6 at $3.00/MTok, Opus 4.6 at $5.00/MTok.] -->
+The right approach is tiered: use the cheapest model that handles each task reliably. 
 
 **Tier 1 (cheap, fast):** Page classification, document triage, simple presence/absence judgments. Amazon Nova Lite at $0.06 per million input tokens is appropriate here. The classification question is well-defined. The page text gives you plenty of signal. You don't need a frontier model.
 
@@ -165,9 +163,7 @@ Comprehend Medical, by contrast, is purpose-built for this mapping. Run `InferIC
 
 Let's put real numbers on this, because "LLMs cost more" is too vague to act on.
 
-For a typical 10-page prior auth submission with 4 clinical pages:
-
-<!-- [EDITOR: Replaced em dashes used as empty-cell indicators in both "N/A" slots. Em dashes are prohibited per style guide; N/A is clearer in context. Also corrected Comprehend Medical per-page cost from $0.15-0.30 to $0.10-0.25 to align with research ($0.01/100 chars on dense clinical pages ≈ $0.10-0.25/page). Also added model version number to "Clinical reasoning (Sonnet 4.6)" row for consistency with tiering section.] -->
+For a typical 10-page prior auth submission with 4 clinical pages: 
 
 | Component | Old Approach | New Approach |
 |-----------|-------------|--------------|
@@ -184,7 +180,7 @@ Here's where the cost shock actually comes from. Suppose you're new to LLM prici
 
 Model tiering is the resolution. Apply Nova Lite to classification (10 pages) and Sonnet only to clinical pages (3–4 pages). Total LLM cost drops to roughly $0.05–$0.07 per submission. The Textract cost dominates the total, as it should.
 
-At 500,000 submissions per year: the LLM line item is $25,000–$35,000 annually. The Textract line item is roughly $280,000 (based on an 8-page average submission; for 10-page average, closer to $350,000). The whole pipeline runs for approximately $375,000–$450,000 per year, including Step Functions, Lambda, DynamoDB, and Comprehend Medical validation costs. <!-- [EDITOR: review fix P1-7] Updated total from "$350,000-$400,000" to "$375,000-$450,000" to reconcile with the Prerequisites table. Added the 8-page vs 10-page page-count nuance that explains the Textract component variance. --> That looks very different from the "AI is expensive" narrative once you've done the math.
+At 500,000 submissions per year: the LLM line item is $25,000–$35,000 annually. The Textract line item is roughly $280,000 (based on an 8-page average submission; for 10-page average, closer to $350,000). The whole pipeline runs for approximately $375,000–$450,000 per year, including Step Functions, Lambda, DynamoDB, and Comprehend Medical validation costs. That looks very different from the "AI is expensive" narrative once you've done the math.
 
 One more lever: prompt caching. When classifying thousands of pages with the same system prompt, Bedrock's prompt caching cuts input token costs by up to 90% on cache hits. At volume, that brings the LLM line item to under $10,000 per year.
 
@@ -295,15 +291,15 @@ flowchart TB
 |-------------|---------|
 | **AWS Services** | Everything from Recipes 1.2 and 1.3 (Textract, S3, Lambda, SNS, DynamoDB, KMS, Comprehend Medical), plus Step Functions and Amazon Bedrock |
 | **IAM Permissions** | All permissions from Recipes 1.2 and 1.3, plus: `states:StartExecution`, `states:DescribeExecution` (Step Functions); `bedrock:InvokeModel` on the specific model ARNs for Nova Lite and Claude Sonnet 4.6. Lambda execution roles for the extraction functions need `bedrock:InvokeModel` scoped to the specific model ARNs used. |
-| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in your Bedrock console before first use. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) route to the best available region automatically. Enable both in Bedrock Model Access before deploying. **Cross-region inference profiles and VPC endpoints:** when your Lambda calls the `bedrock-runtime` VPC interface endpoint in your region, AWS routes the request to the appropriate backend region (us-east-1, us-east-2, or us-west-2) internally. PHI does not traverse the public internet; the VPC endpoint keeps API traffic on the AWS private network regardless of which backend region processes the request. For organizations that must document data flows for HIPAA compliance, note that inference may occur in any of those three US regions. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate whether direct single-region model IDs (without the `us.` prefix) are required. <!-- [EDITOR: review fix P1-6] Added cross-region inference + VPC interaction explanation. Security teams reviewing HIPAA deployments ask whether PHI leaves the VPC when using cross-region profiles. Added clear answer: PHI stays on AWS private network; inference backend is internal routing only. --> |
-| **Textract Features** | FORMS + TABLES + LAYOUT in the `FeatureTypes` list. LAYOUT adds approximately $5.00 per 1,000 pages ($0.005/page) on top of the base async pricing. <!-- [EDITOR: review fix P0-1] Corrected LAYOUT pricing from $1.50 to $5.00 per 1,000 pages. Research file specifies $0.005/page = $5.00/1,000 pages. Original figure underestimated this cost by 3.3x. --> |
+| **Bedrock Model Access** | Nova Lite and Claude Sonnet 4.6 must be enabled in your Bedrock console before first use. Cross-region inference profiles (`us.amazon.nova-lite-v1:0`, `us.anthropic.claude-sonnet-4-6-v1:0`) route to the best available region automatically. Enable both in Bedrock Model Access before deploying. **Cross-region inference profiles and VPC endpoints:** when your Lambda calls the `bedrock-runtime` VPC interface endpoint in your region, AWS routes the request to the appropriate backend region (us-east-1, us-east-2, or us-west-2) internally. PHI does not traverse the public internet; the VPC endpoint keeps API traffic on the AWS private network regardless of which backend region processes the request. For organizations that must document data flows for HIPAA compliance, note that inference may occur in any of those three US regions. If your organization has state-level geographic data restrictions beyond HIPAA, evaluate whether direct single-region model IDs (without the `us.` prefix) are required. |
+| **Textract Features** | FORMS + TABLES + LAYOUT in the `FeatureTypes` list. LAYOUT adds approximately $5.00 per 1,000 pages ($0.005/page) on top of the base async pricing. |
 | **BAA** | AWS BAA signed. Bedrock is a HIPAA-eligible service. PHI can be sent to Bedrock models under the BAA. Models do not retain or train on customer data sent via Bedrock APIs. Same BAA covers Textract, Comprehend Medical, and Bedrock. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. All API calls over TLS. Text sent to Bedrock and Comprehend Medical is not retained by AWS. Step Functions execution history encrypted at rest via SSE. |
-| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, KMS, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock` (model management API) and `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe). A VPC with only `com.amazonaws.REGION.bedrock` will silently drop all Converse API calls in a no-egress HIPAA environment. Most deployments need only `bedrock-runtime`; include `bedrock` if you also manage model access programmatically. <!-- [EDITOR: review fix P0-2] Separated `bedrock` and `bedrock-runtime` VPC endpoints. These are distinct interface endpoints. Missing `bedrock-runtime` causes silent Converse API failures in no-egress HIPAA VPCs. --> |
-| **Lambda Timeouts** | Lambda's default 3-second timeout will fail on the first Bedrock Sonnet call (typical latency: 2–5 seconds under normal load, 10–15 seconds under high load). Configure minimum timeouts: `pa-classify` 3–5 minutes (classification averages 1–3 seconds per page; sequential processing of a 12-page submission needs margin), `pa-extract-clinical` 5–10 minutes (Sonnet calls can reach 15 seconds at peak; a 4-page sequential extraction with retries needs the full window), `pa-assembler` 2 minutes. Use provisioned concurrency to eliminate Lambda cold-start latency for time-sensitive expedited PA submissions. <!-- [EDITOR: review fix P0-3] Added Lambda timeout requirements. Default 3-second timeout fails on first Sonnet call. Added per-function minimum values for all three Lambda roles in this pipeline. --> |
+| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, KMS, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock` (model management API) and `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe). A VPC with only `com.amazonaws.REGION.bedrock` will silently drop all Converse API calls in a no-egress HIPAA environment. Most deployments need only `bedrock-runtime`; include `bedrock` if you also manage model access programmatically. |
+| **Lambda Timeouts** | Lambda's default 3-second timeout will fail on the first Bedrock Sonnet call (typical latency: 2–5 seconds under normal load, 10–15 seconds under high load). Configure minimum timeouts: `pa-classify` 3–5 minutes (classification averages 1–3 seconds per page; sequential processing of a 12-page submission needs margin), `pa-extract-clinical` 5–10 minutes (Sonnet calls can reach 15 seconds at peak; a 4-page sequential extraction with retries needs the full window), `pa-assembler` 2 minutes. Use provisioned concurrency to eliminate Lambda cold-start latency for time-sensitive expedited PA submissions. |
 | **CloudTrail** | Enabled for all API calls including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Prior auth submissions are clinical decision records; the complete audit trail is a regulatory requirement. |
 | **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1–2 clinical notes, a lab results page, and a physician letter. HL7 FHIR examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for test cases. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT): ~$0.07/page, or $0.70 for a 10-page submission. Bedrock Nova Lite classification: ~$0.0002/page, negligible. Bedrock Sonnet 4.6 clinical reasoning (4 clinical pages): ~$0.05–0.06. Comprehend Medical InferICD10CM on extracted concepts (shorter inputs): ~$0.02–0.05. Step Functions Standard Workflows: ~$0.002/submission. Per-submission total: ~$0.80–1.00. At 500,000 submissions/year, the end-to-end pipeline cost (Textract, Bedrock, Comprehend Medical, Step Functions, Lambda, DynamoDB) is approximately $375,000–$450,000 annually. See the Technology section for a per-component breakdown. Prompt caching on the classification system prompt can reduce Bedrock input costs by up to 90%, bringing the LLM line item to under $10,000/year at that volume. <!-- [EDITOR: review fix P1-7] Reconciled cost figure. Previous text said "$400,000-500,000 total" here and "$350,000-$400,000" in the Technology section for the same deployment. Unified to "$375,000-$450,000" with an explicit pointer to the Technology section for component breakdown. --> |
+| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT): ~$0.07/page, or $0.70 for a 10-page submission. Bedrock Nova Lite classification: ~$0.0002/page, negligible. Bedrock Sonnet 4.6 clinical reasoning (4 clinical pages): ~$0.05–0.06. Comprehend Medical InferICD10CM on extracted concepts (shorter inputs): ~$0.02–0.05. Step Functions Standard Workflows: ~$0.002/submission. Per-submission total: ~$0.80–1.00. At 500,000 submissions/year, the end-to-end pipeline cost (Textract, Bedrock, Comprehend Medical, Step Functions, Lambda, DynamoDB) is approximately $375,000–$450,000 annually. See the Technology section for a per-component breakdown. Prompt caching on the classification system prompt can reduce Bedrock input costs by up to 90%, bringing the LLM line item to under $10,000/year at that volume. |
 
 ### Ingredients
 
@@ -606,9 +602,7 @@ not present in the text. If a field has no relevant content, use an empty list o
 empty string. The medical_necessity_evidence and failed_treatments fields are the
 most important for prior authorization decisions. Be thorough on those.
 """
-```
-
-<!-- [EDITOR: Removed em dash from the system prompt. Original read "...prior authorization decisions — be thorough on those." Changed to two sentences: "...prior authorization decisions. Be thorough on those." The em dash was in a prompt literal that will be sent to the model; keeping it consistent with the no-em-dash rule throughout.] -->
+``` 
 
 ```
 FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
@@ -1086,17 +1080,7 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (Textract + Bedrock classification + Sonnet extraction + Comprehend Medical validation, single Lambda) | 3–5 days |
-| **Production-ready** (Step Functions, error handling, LLM output validation, prompt injection hardening, DLQ, VPC, KMS, CloudTrail, idempotency, model version pinning, monitoring) | 3–4 weeks |
-| **With variations** (parallel Map state, BDA evaluation, provider portal API, criteria pre-screening) | 5–8 weeks |
-
----
+--- 
 
 ## Tags
 

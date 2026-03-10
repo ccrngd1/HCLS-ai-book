@@ -577,17 +577,7 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing using foundation models
 - [Processing PDF Documents with a Human Loop Using Amazon Textract and Amazon A2I](https://aws.amazon.com/blogs/machine-learning/processing-pdf-documents-with-a-human-loop-using-amazon-textract-and-amazon-augmented-ai): Multi-page PDF processing with human review for low-confidence extractions
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|-------|------|
-| **Basic** (async Textract, forms + tables parsing, hardcoded field map) | 4–6 hours |
-| **Production-ready** (field normalization, confidence gating, SNS/Lambda wiring, VPC, KMS, CloudTrail, error handling) | 2–3 days |
-| **With variations** (multi-language, signature detection, FHIR integration) | 1–2 weeks |
-
----
+--- 
 
 ## Tags
 

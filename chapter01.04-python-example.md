@@ -1,6 +1,4 @@
-# Recipe 1.4: Prior Authorization Document Processing: Python Example
-
-<!-- [EDITOR: Removed em dash from title. Original: "...Document Processing — Python Example". Changed to a colon for clean separation.] -->
+# Recipe 1.4: Prior Authorization Document Processing: Python Example 
 
 > **Important:** This is an illustrative implementation, not a production-ready deployment. It demonstrates the patterns from the recipe pseudocode using real boto3 API calls, with inline comments explaining what each piece does and why. The "Gap to Production" section at the end describes what you'd need to add before running this in a real environment. Think of this as a detailed starting point, not a finished product.
 
@@ -11,8 +9,7 @@
 ```bash
 pip install boto3 python-dotenv
 ```
-
-<!-- [EDITOR: Added Python version note. Built-in generic type hints (list[dict], dict[int, dict]) require Python 3.9+. Lambda supports Python 3.9+ runtimes; this should not be a constraint in practice, but worth noting for local dev environments.] -->
+ 
 
 > **Python version note:** This example uses built-in generic type hints (`list[dict]`, `dict[int, dict]`) which require Python 3.9 or later. AWS Lambda supports Python 3.9, 3.10, 3.11, 3.12, and 3.13 runtimes. If you need Python 3.8 compatibility, replace these with `from typing import List, Dict` and use `List[dict]`, `Dict[int, dict]` instead.
 
@@ -828,9 +825,7 @@ def extract_clinical_page(
 
 ## Step 5c: Lab Results Extractor (Textract TABLES)
 
-Lab results pages are structured tables. Textract handles these better and cheaper than an LLM would. No need to bring Bedrock into this path.
-
-<!-- [EDITOR: Removed em dash from section intro. Original: "...than an LLM would — no need to bring Bedrock into this path." Restructured to two sentences.] -->
+Lab results pages are structured tables. Textract handles these better and cheaper than an LLM would. No need to bring Bedrock into this path. 
 
 ```python
 def normalize_lab_columns(headers: list[str]) -> dict[int, str]:
@@ -1365,7 +1360,7 @@ This example demonstrates the patterns, but there's meaningful distance between 
 
 **Error handling and retries.** The Bedrock runtime and Comprehend Medical clients in this example are configured with `botocore.config.Config(retries={"max_attempts": 3, "mode": "adaptive"})`. This covers the most common production failure mode: `ThrottlingException` during burst submission periods. `adaptive` mode implements exponential backoff with jitter automatically. For more granular retry control (per-operation retry policies, custom delay functions), consider the `tenacity` library as a supplement.
 
-**PHI in log messages.** This example logs only structural metadata (response length, error type) from Bedrock API calls. Never log raw model output, extracted text, or exception strings that may echo clinical content. LLM responses to clinical extraction prompts can contain patient names, diagnoses, and medication lists drawn from the input document. Additionally: configure CloudWatch log groups for all Lambda functions with KMS encryption using a customer-managed key. Lambda does not encrypt log groups by default. Scope CloudWatch log group access to authorized personnel only. <!-- [EDITOR: review fix P1-5] Added PHI logging guidance to Gap to Production. response_text[:200] was removed from error handlers above; this note explains the principle for future code changes. -->
+**PHI in log messages.** This example logs only structural metadata (response length, error type) from Bedrock API calls. Never log raw model output, extracted text, or exception strings that may echo clinical content. LLM responses to clinical extraction prompts can contain patient names, diagnoses, and medication lists drawn from the input document. Additionally: configure CloudWatch log groups for all Lambda functions with KMS encryption using a customer-managed key. Lambda does not encrypt log groups by default. Scope CloudWatch log group access to authorized personnel only. 
 
 **LLM output validation.** The JSON parsing above handles the common failure mode (model returns markdown-wrapped JSON or whitespace). But a model can also return structurally valid JSON that's semantically wrong: `confidence` outside [0, 1], `page_type` not in the expected enum, missing required fields. Add a proper validation step before trusting any LLM output. `pydantic` works well for this.
 
@@ -1379,7 +1374,7 @@ This example demonstrates the patterns, but there's meaningful distance between 
 
 **IAM least-privilege.** The IAM permissions in the Prerequisites section list the minimum required. In practice, scope `bedrock:InvokeModel` to the specific model ARNs, not `*`. Scope S3 permissions to the specific bucket and key prefixes. Use separate execution roles for each Lambda function rather than one shared role.
 
-**VPC and VPC endpoints.** Production Lambdas should run in a VPC with no internet gateway. Add VPC endpoints for every AWS service this code calls: S3 (gateway endpoint), Textract, DynamoDB, CloudWatch Logs, KMS, Comprehend Medical, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (for Converse API calls, which is what this code uses) and `com.amazonaws.REGION.bedrock` (for model management). A VPC with only the management endpoint will silently fail on every `bedrock.converse()` call. <!-- [EDITOR: review fix P0-2] Added both Bedrock endpoint names to VPC guidance. Missing bedrock-runtime causes silent failures in no-egress HIPAA VPCs. --> This keeps all PHI traffic on the AWS private network.
+**VPC and VPC endpoints.** Production Lambdas should run in a VPC with no internet gateway. Add VPC endpoints for every AWS service this code calls: S3 (gateway endpoint), Textract, DynamoDB, CloudWatch Logs, KMS, Comprehend Medical, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (for Converse API calls, which is what this code uses) and `com.amazonaws.REGION.bedrock` (for model management). A VPC with only the management endpoint will silently fail on every `bedrock.converse()` call. This keeps all PHI traffic on the AWS private network.
 
 **KMS encryption.** The DynamoDB writes and S3 puts above don't specify KMS keys. In production, configure your S3 bucket with SSE-KMS using a customer-managed key (CMK), and DynamoDB with AWS-managed or customer-managed encryption. Pass the KMS key ARN through environment variables.
 

@@ -1,6 +1,4 @@
-# Recipe 1.5: Claims Attachment Processing: Python Example
-
-<!-- [EDITOR: Replaced em dash (—) in title with colon. Em dashes are not permitted per style guide.] -->
+# Recipe 1.5: Claims Attachment Processing: Python Example 
 
 > **This is an illustrative implementation, not a production-ready deployment.**
 > It demonstrates the patterns from the pseudocode walkthrough using boto3.
@@ -20,9 +18,7 @@ You'll also need:
 - Nova Lite and Claude Sonnet 4.6 enabled in Bedrock Model Access (us-east-1)
 - A signed AWS BAA covering PHI processing
 - IAM permissions: `bedrock:InvokeModel`, `textract:StartDocumentAnalysis`, `textract:GetDocumentAnalysis`,
-  `comprehendmedical:InferICD10CM`, `dynamodb:PutItem`, `s3:GetObject`, `s3:PutObject`, `s3:PutObjectRetention`
-
-<!-- [EDITOR: "Claude Sonnet" → "Claude Sonnet 4.6" in setup requirements, consistent with version-number guidance.] -->
+  `comprehendmedical:InferICD10CM`, `dynamodb:PutItem`, `s3:GetObject`, `s3:PutObject`, `s3:PutObjectRetention` 
 
 ---
 
@@ -1176,20 +1172,18 @@ This example demonstrates the core concepts. Here's the distance between this co
 
 **Prompt caching for cost control.** All five system prompts in this code are reused across calls within a package and across packages. Bedrock prompt caching cuts input token costs by up to 90% on cache hits. At 300,000 packages per year, that's a meaningful line item. Enable caching on the system prompt content blocks by adding cache control hints in the Converse API request.
 
-**PHI in log messages.** This example logs only structural metadata from Bedrock API calls: page numbers, document type, confidence values, and error types. Never log raw model output (`response_text`), LLM reasoning fields, or extracted clinical text. LLM responses to clinical extraction prompts can contain patient names, diagnoses, and medication lists drawn from the input document. Additionally: configure CloudWatch log groups for all Lambda functions with KMS encryption using a customer-managed key. Lambda does not encrypt log groups by default. Scope CloudWatch log group access to authorized personnel only. <!-- [EDITOR: review fix P1-5] PHI logging guidance consolidated and updated. reasoning fields removed from print statements in detect_all_boundaries and classify_segment above. This note explains the principle for future code changes. -->
+**PHI in log messages.** This example logs only structural metadata from Bedrock API calls: page numbers, document type, confidence values, and error types. Never log raw model output (`response_text`), LLM reasoning fields, or extracted clinical text. LLM responses to clinical extraction prompts can contain patient names, diagnoses, and medication lists drawn from the input document. Additionally: configure CloudWatch log groups for all Lambda functions with KMS encryption using a customer-managed key. Lambda does not encrypt log groups by default. Scope CloudWatch log group access to authorized personnel only.  
 
-**DynamoDB Decimal requirement.** DynamoDB requires Python `Decimal` for floating-point numbers, not `float`. The `_to_decimal()` helper in this file now recurses into nested dicts and lists, so confidence values at any nesting depth are converted automatically. The most common trap is a nested `assessments` list inside `claim_line_support`: those `confidence` floats come directly from LLM JSON output and must be converted before `put_item`. If you extend the record schema with additional numeric fields, the recursive helper handles them as long as the top-level field is passed through it before writing to DynamoDB. <!-- [EDITOR: review fix P0-1] Updated to reference recursive _to_decimal() fix. -->
+**DynamoDB Decimal requirement.** DynamoDB requires Python `Decimal` for floating-point numbers, not `float`. The `_to_decimal()` helper in this file now recurses into nested dicts and lists, so confidence values at any nesting depth are converted automatically. The most common trap is a nested `assessments` list inside `claim_line_support`: those `confidence` floats come directly from LLM JSON output and must be converted before `put_item`. If you extend the record schema with additional numeric fields, the recursive helper handles them as long as the top-level field is passed through it before writing to DynamoDB. 
 
 **S3 Object Lock mode.** Use GOVERNANCE mode during development so you can delete test objects. COMPLIANCE mode is irrevocable: a retention lock set on a test object with the wrong date cannot be removed. Switch to COMPLIANCE mode only when deploying to production, only on the production bucket, only after confirming your retention configuration is correct.
 
 **Idempotency.** The Lambda trigger for this pipeline fires on S3 events, which are at-least-once. Use conditional DynamoDB writes (`ConditionExpression='attribute_not_exists(claim_id)'`) to prevent duplicate records if the same package triggers the pipeline twice. Use the attachment key as the Step Functions execution name to prevent duplicate state machine runs.
 
-**VPC and VPC endpoints.** All Lambdas in production should run in a VPC. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by every Lambda in this pipeline) and `com.amazonaws.REGION.bedrock` (model management API, only needed if Lambda programmatically lists or enables models). A VPC with only `com.amazonaws.REGION.bedrock` will silently fail to route Converse calls through the private endpoint; in a no-egress HIPAA VPC this is deployment-breaking. Also add endpoints for Textract, Comprehend Medical, S3, DynamoDB, Step Functions, SNS, and CloudWatch Logs. PHI should not traverse the public internet. <!-- [EDITOR: review fix P0-2] Separated bedrock-runtime and bedrock VPC endpoints. Same fix as Recipe 1.4 v3. -->
+**VPC and VPC endpoints.** All Lambdas in production should run in a VPC. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by every Lambda in this pipeline) and `com.amazonaws.REGION.bedrock` (model management API, only needed if Lambda programmatically lists or enables models). A VPC with only `com.amazonaws.REGION.bedrock` will silently fail to route Converse calls through the private endpoint; in a no-egress HIPAA VPC this is deployment-breaking. Also add endpoints for Textract, Comprehend Medical, S3, DynamoDB, Step Functions, SNS, and CloudWatch Logs. PHI should not traverse the public internet.  
 
 **IAM least-privilege.** The `bedrock:InvokeModel` permission in this example needs to be scoped to specific model ARNs, not `*`. The `comprehendmedical:InferICD10CM` permission should be similarly scoped. Each Lambda should have only the permissions it needs for its specific step.
 
 ---
 
-*← [Recipe 1.5 Main Recipe](chapter01.05-claims-attachment-v3) · [Chapter 1 Index](chapter01-index)*
-
-<!-- [EDITOR: Updated footer link from "chapter01.05-claims-attachment-v2" to "chapter01.05-claims-attachment-v3" to match the edited main recipe file.] -->
+*← [Recipe 1.5 Main Recipe](chapter01.05-claims-attachment-v3) · [Chapter 1 Index](chapter01-index)* 
