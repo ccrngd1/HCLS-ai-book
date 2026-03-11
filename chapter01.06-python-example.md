@@ -13,9 +13,7 @@ pip install boto3 pillow opencv-python-headless numpy
 You'll also need:
 - AWS credentials configured (`aws configure` or an instance/task role)
 - Bedrock model access granted in your AWS account for `anthropic.claude-haiku-4-5-v1:0` and `anthropic.claude-sonnet-4-6-v1:0`
-- IAM permissions: `textract:AnalyzeDocument`, `bedrock:InvokeModel`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `sagemaker:StartHumanLoop`
-
-<!-- [EDITOR: review fix] Changed `sagemaker:CreateHumanLoop` to `sagemaker:StartHumanLoop`. The IAM action `sagemaker:CreateHumanLoop` does not exist. The A2I runtime API uses `StartHumanLoop`; a Lambda with only `CreateHumanLoop` in its policy receives `AccessDeniedException` at runtime. -->
+- IAM permissions: `textract:AnalyzeDocument`, `bedrock:InvokeModel`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `sagemaker:StartHumanLoop` 
 
 ---
 

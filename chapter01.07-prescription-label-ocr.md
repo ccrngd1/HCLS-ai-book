@@ -589,17 +589,7 @@ The thing I didn't anticipate building the first version of this: days supply is
 - [NCPDP SCRIPT Standard](https://www.ncpdp.org/Standards-Development/Standards-Information/SCRIPT-standard): The industry standard for electronic prescribing, useful context for understanding what structured prescription data looks like downstream
 - [Pharmacy Abbreviations Reference (USP)](https://www.usp.org): United States Pharmacopeia maintains authoritative references on pharmaceutical abbreviations and nomenclature
 
----
-
-## Estimated Implementation Time
-
-| Scope | Time |
-|---|---|
-| **Basic** (Textract FORMS + field normalization + SIG decoding) | 3-5 hours |
-| **Production-ready** (RxNorm mapping, NDC validation, refill metrics, confidence gating, VPC, KMS, CloudTrail, DLQ) | 2-3 days |
-| **With variations** (drug interaction checking, formulary matching, multi-label reconciliation) | 1-2 weeks |
-
----
+--- 
 
 ## Tags
 
