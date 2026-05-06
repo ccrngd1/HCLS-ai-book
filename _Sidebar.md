@@ -38,6 +38,8 @@
 #### Ch 2: LLM / Generative AI
 
 * [Preface](chapter02-preface)
+* [2.1 — Patient Message Response Drafting](chapter02.01-patient-message-response-drafting)
+  * [Python Example](chapter02.01-python-example)
 
 ---
 
