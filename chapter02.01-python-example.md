@@ -55,6 +55,8 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # Configuration constants
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# If you get a ValidationException, your region may require a cross-region
+# inference profile ID instead (e.g., "us.anthropic.claude-3-haiku-20240307-v1:0").
 GUARDRAIL_ID = "your-guardrail-id-here"       # Replace with your Bedrock Guardrail ID
 GUARDRAIL_VERSION = "DRAFT"                     # Use "DRAFT" for testing, numbered version for prod
 PROMPT_BUCKET = "your-prompt-templates-bucket"  # S3 bucket holding prompt templates
@@ -252,6 +254,9 @@ def load_system_prompt(prompt_key: str = "prompts/system-prompt-v2.txt") -> str:
         return response["Body"].read().decode("utf-8")
     except Exception:
         # Fall back to default. In production, log this as a warning.
+        # Also: distinguish between "bucket doesn't exist" (configuration bug,
+        # should crash) and "transient network issue" (should fall back).
+        # Catch botocore.exceptions.ClientError and check the error code.
         logger.warning("Failed to load prompt from S3, using default")
         return DEFAULT_SYSTEM_PROMPT
 
@@ -266,6 +271,9 @@ def build_prompt(message_text: str, intent: str, context: dict) -> tuple[str, st
     The separation matters: the system prompt is stable across messages
     (same rules every time), while the user prompt changes per message
     (different patient, different question, different context).
+
+    Note: The pseudocode also accepts provider_preferences for tone tuning.
+    Omitted here for simplicity; see "Gap to Production" section.
 
     Args:
         message_text: The patient's original message.
