@@ -1,4 +1,4 @@
-<!-- Editorial pass v1 (TechEditor): minor clarity polish on final "What You'll Build" bullet; verified no em dashes, no voice drift, header hierarchy, vendor balance ~70/30 intact. Preserved all TechWriter TODO markers. -->
+<!-- Editorial pass v2 (TechEditor, resumed): v1 polished the final "What You'll Build" bullet. v2 re-ran full checklist after interruption: verified zero em dashes, header hierarchy (H1 + 9 H2s, no skips), active-voice prose, CC-style voice consistent, RAG/PHI/BAA usage consistent. Vendor balance ~95/5 general-to-AWS (appropriate for a preface; AWS specifics enter in recipes). Small readability polish: "for every one hour" → "for every hour" (removed redundant "one"). All TechWriter TODOs preserved (documentation ratio citation, prior-auth minute range). -->
 
 # Chapter 2 Preface: Teaching Machines to Write (Responsibly)
 
@@ -30,7 +30,7 @@ That last one, grounded generation, is the architectural pattern that makes heal
 
 ## Why Healthcare Is Both the Best and Worst Domain for LLMs
 
-Healthcare is the best domain for LLMs because the administrative writing burden is crushing. Physicians spend roughly two hours on documentation for every one hour of patient care. <!-- TODO: verify exact ratio and cite source; commonly attributed to Sinsky et al. 2016 (Annals of Internal Medicine) and AMA follow-up studies, but ratios vary by specialty and study methodology --> Prior authorization letters are formulaic but time-consuming. Patient communications follow predictable patterns. After-visit summaries require synthesizing encounter data into readable prose. These are all tasks where "generate a first draft for human review" provides enormous value.
+Healthcare is the best domain for LLMs because the administrative writing burden is crushing. Physicians spend roughly two hours on documentation for every hour of patient care. <!-- TODO: verify exact ratio and cite source; commonly attributed to Sinsky et al. 2016 (Annals of Internal Medicine) and AMA follow-up studies, but ratios vary by specialty and study methodology --> Prior authorization letters are formulaic but time-consuming. Patient communications follow predictable patterns. After-visit summaries require synthesizing encounter data into readable prose. These are all tasks where "generate a first draft for human review" provides enormous value.
 
 Healthcare is the worst domain for LLMs because the cost of errors is measured in human outcomes, not just dollars. A hallucinated drug interaction could lead to a missed contraindication. A summarization that drops a critical finding could delay treatment. A patient-facing message with incorrect dosing information could cause direct harm. The failure modes aren't theoretical; they're the reason every recipe in this chapter includes a human review step, confidence scoring, or grounding mechanism.
 
