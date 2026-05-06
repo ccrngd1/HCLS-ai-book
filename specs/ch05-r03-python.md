@@ -1,0 +1,17 @@
+---
+id: ch05-r03-python
+title: "Python Companion: Address Standardization and Household Linkage"
+target_persona: TechWriter
+tags: [chapter05, recipe, python]
+depends_on: [ch05-r03-draft]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter05.03-python-example.md]
+---
+
+## Objective
+Create the Python companion code for Address Standardization and Household Linkage.
+
+## Instructions
+Write a Python example demonstrating the core pattern for address standardization and household linkage. Include working code with comments explaining healthcare-specific considerations.

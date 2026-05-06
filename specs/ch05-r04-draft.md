@@ -1,0 +1,17 @@
+---
+id: ch05-r04-draft
+title: "Draft: Insurance Eligibility Matching"
+target_persona: TechWriter
+tags: [chapter05, recipe, draft]
+depends_on: [ch05-preface]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter05.04-insurance-eligibility-matching.md]
+---
+
+## Objective
+Draft the recipe for Insurance Eligibility Matching.
+
+## Instructions
+Write the full recipe covering architecture patterns for insurance eligibility matching in healthcare. Include use case description, architecture patterns, hidden challenges, and limitations.

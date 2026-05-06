@@ -1,0 +1,17 @@
+---
+id: ch04-r09-code-review
+title: "Code Review: Personalized Care Plan Generation"
+target_persona: TechCodeReviewer
+tags: [chapter04, recipe, code-review]
+depends_on: [ch04-r09-python]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [reviews/chapter04.09-code-review.md]
+---
+
+## Objective
+Review the Python companion code for Personalized Care Plan Generation.
+
+## Instructions
+Review the Python example for correctness, security, best practices, and clarity. Verify healthcare-specific requirements are properly handled.

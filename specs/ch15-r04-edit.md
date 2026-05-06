@@ -1,0 +1,17 @@
+﻿---
+id: ch15-r04-edit
+title: "Final Edit: Sepsis Treatment Optimization"
+target_persona: TechEditor
+tags: [chapter15, recipe, edit]
+depends_on: [ch15-r04-code-review, ch15-r04-expert-review]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter15.04-sepsis-treatment-optimization.md]
+---
+
+## Objective
+Produce the final edited version of the Sepsis Treatment Optimization recipe.
+
+## Instructions
+Incorporate feedback from both code review and expert review. Ensure technical accuracy, consistent formatting, clear prose, and that all review comments have been addressed. Produce the publication-ready version.

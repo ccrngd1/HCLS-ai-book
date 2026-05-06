@@ -35,4 +35,10 @@
 
 ---
 
+#### Ch 2: LLM / Generative AI
+
+* [Preface](chapter02-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)

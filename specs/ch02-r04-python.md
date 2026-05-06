@@ -1,0 +1,17 @@
+---
+id: ch02-r04-python
+title: "Python Companion: Prior Authorization Letter Generation"
+target_persona: TechWriter
+tags: [chapter02, recipe, python]
+depends_on: [ch02-r04-draft]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter02.04-python-example.md]
+---
+
+## Objective
+Create the Python companion code for Prior Authorization Letter Generation.
+
+## Instructions
+Write a Python example demonstrating the core pattern for prior authorization letter generation. Include working code with comments explaining healthcare-specific considerations.

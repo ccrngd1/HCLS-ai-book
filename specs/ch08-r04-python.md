@@ -1,0 +1,17 @@
+﻿---
+id: ch08-r04-python
+title: "Python Companion: Medication Extraction and Normalization"
+target_persona: TechWriter
+tags: [chapter08, recipe, python]
+depends_on: [ch08-r04-draft]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter08.04-python-example.md]
+---
+
+## Objective
+Create the Python companion for Medication Extraction and Normalization.
+
+## Instructions
+Write a Python example demonstrating the core technique for Medication Extraction and Normalization. Include synthetic healthcare data, implementation of the key algorithm, and interpretation of results.

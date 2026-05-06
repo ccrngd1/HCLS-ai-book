@@ -1,0 +1,17 @@
+﻿---
+id: ch08-r07-expert-review
+title: "Expert Review: Adverse Event Detection in Clinical Text"
+target_persona: TechExpertReviewer
+tags: [chapter08, recipe, expert-review]
+depends_on: [ch08-r07-draft]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [reviews/chapter08.07-expert-review.md]
+---
+
+## Objective
+Provide expert review of the Adverse Event Detection in Clinical Text recipe.
+
+## Instructions
+Review for clinical accuracy, architectural soundness, and completeness. Validate that the approach is appropriate for healthcare, limitations are acknowledged, and the recipe provides actionable guidance.

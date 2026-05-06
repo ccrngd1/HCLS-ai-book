@@ -1,0 +1,17 @@
+﻿---
+id: ch08-r10-code-review
+title: "Code Review: Phenotype Extraction for Research"
+target_persona: TechCodeReviewer
+tags: [chapter08, recipe, code-review]
+depends_on: [ch08-r10-python]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [reviews/chapter08.10-code-review.md]
+---
+
+## Objective
+Review the Python companion code for Phenotype Extraction for Research.
+
+## Instructions
+Evaluate code quality, correctness, and healthcare-specific considerations. Check for proper data handling, algorithm appropriateness, and production readiness.

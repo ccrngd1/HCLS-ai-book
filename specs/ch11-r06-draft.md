@@ -1,0 +1,17 @@
+---
+id: ch11-r06-draft
+title: "Draft: Symptom Checker Triage Bot"
+target_persona: TechWriter
+tags: [chapter11, recipe, draft]
+depends_on: [ch11-preface]
+validation:
+  - type: file_exists
+    name: output-file-exists
+    paths: [chapter11.06-symptom-checker-triage-bot.md]
+---
+
+## Objective
+Draft recipe 11.6 on Symptom Checker Triage Bot.
+
+## Instructions
+Write the full recipe covering symptom checker triage bot in healthcare. Include use case description, architecture patterns, hidden challenges, and limitations/assumptions.
