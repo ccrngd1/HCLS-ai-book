@@ -42,6 +42,8 @@
   * [Python Example](chapter02.01-python-example)
 * [2.2 — Medical Terminology Simplification](chapter02.02-medical-terminology-simplification)
   * [Python Example](chapter02.02-python-example)
+* [2.3 — Clinical Documentation Improvement](chapter02.03-clinical-documentation-improvement)
+  * [Python Example](chapter02.03-python-example)
 
 ---
 
