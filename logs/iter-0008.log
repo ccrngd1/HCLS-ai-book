@@ -47,3 +47,904 @@ Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-a
 
 [38;5;141m> [0mGood, the sidebar already has the entry for [38;5;10mchapter02.03-python-example[0m. Now I have everything I need. Let me write the Python companion file.[0m[0m
 [38;5;141m> [0mLet me split this into parts. I'll create the file with the first half, then append the rest.[0m[0m
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.03-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Create the first half of the Python companion for Recipe 2.3 (CDI Suggestions) covering setup, config, and steps 1-3
+
+[48;2;40;67;43m[39m+      1[0m:[39m[48;2;24;38;30m [38;2;143;161;179m#[38;2;192;197;206m [38;2;143;161;179mRecipe 2.3: Python Implementation Example[K
+[0m[48;2;40;67;43m[39m+      2[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      3[0m:[39m[48;2;24;38;30m [38;2;208;135;112m>[38;2;208;135;112m [38;2;235;203;139m**[38;2;235;203;139mHeads up:[38;2;235;203;139m**[38;2;208;135;112m This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.3. It shows one way you could translate those CDI concepts into working Python code using Amazon Bedrock. It is not production-ready. There's no EHR integration, no real-time streaming, no compliance-reviewed query templates. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a CDI workqueue on Monday morning. Consider it a starting point, not a destination.[K
+[0m[48;2;40;67;43m[39m+      4[0m:[39m[48;2;24;38;30m [38;2;208;135;112m>[K
+[0m[48;2;40;67;43m[39m+      5[0m:[39m[48;2;24;38;30m [38;2;208;135;112m>[38;2;208;135;112m The pipeline follows the six steps from the main recipe: receive a clinical note, extract clinical elements via LLM, retrieve coding guidelines from a knowledge base, generate CDI suggestions, prioritize and filter, then store results. Each step maps 1:1 to the pseudocode.[K
+[0m[48;2;40;67;43m[39m+      6[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      7[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+      8[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      9[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mSetup[K
+[0m[48;2;40;67;43m[39m+     10[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     11[0m:[39m[48;2;24;38;30m [38;2;192;197;206mYou'll need the AWS SDK for Python and a JSON parsing library:[K
+[0m[48;2;40;67;43m[39m+     12[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     13[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mbash[K
+[0m[48;2;40;67;43m[39m+     14[0m:[39m[48;2;24;38;30m [38;2;192;197;206mpip install boto3[K
+[0m[48;2;40;67;43m[39m+     15[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+     16[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     17[0m:[39m[48;2;24;38;30m [38;2;192;197;206mYour environment needs credentials configured (via environment variables, an instance profile, or [38;2;163;190;140m`[38;2;163;190;140m~/.aws/credentials[38;2;163;190;140m`[38;2;192;197;206m). The IAM role or user needs:[K
+[0m[48;2;40;67;43m[39m+     18[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mbedrock:InvokeModel[38;2;163;190;140m`[38;2;191;97;106m (for Claude model access)[K
+[0m[48;2;40;67;43m[39m+     19[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mbedrock:Retrieve[38;2;163;190;140m`[38;2;191;97;106m (for Knowledge Base queries)[K
+[0m[48;2;40;67;43m[39m+     20[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140ms3:GetObject[38;2;163;190;140m`[38;2;191;97;106m and [38;2;163;190;140m`[38;2;163;190;140ms3:PutObject[38;2;163;190;140m`[38;2;191;97;106m (note storage and audit trail)[K
+[0m[48;2;40;67;43m[39m+     21[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mdynamodb:PutItem[38;2;163;190;140m`[38;2;191;97;106m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:UpdateItem[38;2;163;190;140m`[38;2;191;97;106m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:Query[38;2;163;190;140m`[38;2;191;97;106m (suggestion lifecycle)[K
+[0m[48;2;40;67;43m[39m+     22[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mlogs:CreateLogGroup[38;2;163;190;140m`[38;2;191;97;106m, [38;2;163;190;140m`[38;2;163;190;140mlogs:CreateLogStream[38;2;163;190;140m`[38;2;191;97;106m, [38;2;163;190;140m`[38;2;163;190;140mlogs:PutLogEvents[38;2;163;190;140m`[38;2;191;97;106m (CloudWatch Logs)[K
+[0m[48;2;40;67;43m[39m+     23[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     24[0m:[39m[48;2;24;38;30m [38;2;192;197;206mYou also need model access enabled in the Bedrock console for your chosen Claude model. This is a one-time manual step per account per region.[K
+[0m[48;2;40;67;43m[39m+     25[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     26[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+     27[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     28[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mConfiguration and Constants[K
+[0m[48;2;40;67;43m[39m+     29[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     30[0m:[39m[48;2;24;38;30m [38;2;192;197;206mEverything that's configuration rather than logic lives here. The confidence thresholds and max suggestions per note are the knobs you'll tune most during pilot. Start conservative (high thresholds, low max) and loosen as you build physician trust.[K
+[0m[48;2;40;67;43m[39m+     31[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     32[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+     33[0m:[39m[48;2;24;38;30m [38;2;192;197;206mimport json[K
+[0m[48;2;40;67;43m[39m+     34[0m:[39m[48;2;24;38;30m [38;2;192;197;206mimport logging[K
+[0m[48;2;40;67;43m[39m+     35[0m:[39m[48;2;24;38;30m [38;2;192;197;206mimport uuid[K
+[0m[48;2;40;67;43m[39m+     36[0m:[39m[48;2;24;38;30m [38;2;192;197;206mimport datetime[K
+[0m[48;2;40;67;43m[39m+     37[0m:[39m[48;2;24;38;30m [38;2;192;197;206mfrom datetime import timezone[K
+[0m[48;2;40;67;43m[39m+     38[0m:[39m[48;2;24;38;30m [38;2;192;197;206mfrom decimal import Decimal[K
+[0m[48;2;40;67;43m[39m+     39[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     40[0m:[39m[48;2;24;38;30m [38;2;192;197;206mimport boto3[K
+[0m[48;2;40;67;43m[39m+     41[0m:[39m[48;2;24;38;30m [38;2;192;197;206mfrom botocore.config import Config[K
+[0m[48;2;40;67;43m[39m+     42[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     43[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Structured logging. In production, use JSON-formatted output for[K
+[0m[48;2;40;67;43m[39m+     44[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# CloudWatch Logs Insights queries. Never log PHI (note content,[K
+[0m[48;2;40;67;43m[39m+     45[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# patient identifiers, diagnosis text).[K
+[0m[48;2;40;67;43m[39m+     46[0m:[39m[48;2;24;38;30m [38;2;192;197;206mlogger = logging.getLogger(__name__)[K
+[0m[48;2;40;67;43m[39m+     47[0m:[39m[48;2;24;38;30m [38;2;192;197;206mlogger.setLevel(logging.INFO)[K
+[0m[48;2;40;67;43m[39m+     48[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     49[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Adaptive retry handles Bedrock throttling during burst traffic.[K
+[0m[48;2;40;67;43m[39m+     50[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Bedrock has per-model, per-account token-per-minute limits.[K
+[0m[48;2;40;67;43m[39m+     51[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Adaptive mode uses exponential backoff with jitter automatically.[K
+[0m[48;2;40;67;43m[39m+     52[0m:[39m[48;2;24;38;30m [38;2;192;197;206mBOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 5, "mode": "adaptive"})[K
+[0m[48;2;40;67;43m[39m+     53[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     54[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Module-level clients. Reused across Lambda invocations in warm containers.[K
+[0m[48;2;40;67;43m[39m+     55[0m:[39m[48;2;24;38;30m [38;2;192;197;206mbedrock_runtime = boto3.client("bedrock-runtime", config=BOTO3_RETRY_CONFIG)[K
+[0m[48;2;40;67;43m[39m+     56[0m:[39m[48;2;24;38;30m [38;2;192;197;206mbedrock_agent_runtime = boto3.client("bedrock-agent-runtime", config=BOTO3_RETRY_CONFIG)[K
+[0m[48;2;40;67;43m[39m+     57[0m:[39m[48;2;24;38;30m [38;2;192;197;206ms3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)[K
+[0m[48;2;40;67;43m[39m+     58[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)[K
+[0m[48;2;40;67;43m[39m+     59[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     60[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# --- Model Configuration ---[K
+[0m[48;2;40;67;43m[39m+     61[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Claude 3 Sonnet balances speed and accuracy well for CDI analysis.[K
+[0m[48;2;40;67;43m[39m+     62[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Claude 3 Haiku is faster and cheaper but less accurate on nuanced clinical reasoning.[K
+[0m[48;2;40;67;43m[39m+     63[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Claude 3 Opus is more accurate but slower and more expensive per token.[K
+[0m[48;2;40;67;43m[39m+     64[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# For CDI, Sonnet is the sweet spot: fast enough for near-real-time, smart enough[K
+[0m[48;2;40;67;43m[39m+     65[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# for clinical reasoning about specificity gaps.[K
+[0m[48;2;40;67;43m[39m+     66[0m:[39m[48;2;24;38;30m [38;2;192;197;206mMODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"[K
+[0m[48;2;40;67;43m[39m+     67[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     68[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# --- Knowledge Base Configuration ---[K
+[0m[48;2;40;67;43m[39m+     69[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# This is the Bedrock Knowledge Base ID containing your ICD-10-CM guidelines,[K
+[0m[48;2;40;67;43m[39m+     70[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# organizational CDI query templates, and payer-specific documentation requirements.[K
+[0m[48;2;40;67;43m[39m+     71[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Create this via the Bedrock console or CloudFormation. The knowledge base should[K
+[0m[48;2;40;67;43m[39m+     72[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# be populated with current-year ICD-10-CM Official Guidelines (updated each October).[K
+[0m[48;2;40;67;43m[39m+     73[0m:[39m[48;2;24;38;30m [38;2;192;197;206mKNOWLEDGE_BASE_ID = "YOUR_KNOWLEDGE_BASE_ID"  # Replace with your actual KB ID[K
+[0m[48;2;40;67;43m[39m+     74[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     75[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# --- Suggestion Thresholds ---[K
+[0m[48;2;40;67;43m[39m+     76[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Maximum suggestions per note. More than this causes alert fatigue.[K
+[0m[48;2;40;67;43m[39m+     77[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Start at 3 during pilot, increase to 5 once physicians trust the system.[K
+[0m[48;2;40;67;43m[39m+     78[0m:[39m[48;2;24;38;30m [38;2;192;197;206mMAX_SUGGESTIONS_PER_NOTE = 3[K
+[0m[48;2;40;67;43m[39m+     79[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     80[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Minimum confidence level to surface a suggestion.[K
+[0m[48;2;40;67;43m[39m+     81[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# "high" = only high-confidence suggestions (conservative, fewer false positives)[K
+[0m[48;2;40;67;43m[39m+     82[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# "medium" = medium and high (balanced)[K
+[0m[48;2;40;67;43m[39m+     83[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# "low" = everything (aggressive, more noise)[K
+[0m[48;2;40;67;43m[39m+     84[0m:[39m[48;2;24;38;30m [38;2;192;197;206mCONFIDENCE_THRESHOLD = "medium"[K
+[0m[48;2;40;67;43m[39m+     85[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     86[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Confidence level ordering for comparison and sorting.[K
+[0m[48;2;40;67;43m[39m+     87[0m:[39m[48;2;24;38;30m [38;2;192;197;206mCONFIDENCE_LEVELS = {"high": 3, "medium": 2, "low": 1}[K
+[0m[48;2;40;67;43m[39m+     88[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     89[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Impact level ordering for prioritization.[K
+[0m[48;2;40;67;43m[39m+     90[0m:[39m[48;2;24;38;30m [38;2;192;197;206mIMPACT_LEVELS = {"high": 3, "medium": 2, "low": 1}[K
+[0m[48;2;40;67;43m[39m+     91[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     92[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# Suggestion expiration: hours after which an unacted suggestion expires.[K
+[0m[48;2;40;67;43m[39m+     93[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# 72 hours is typical for inpatient CDI. Outpatient might be shorter (48h)[K
+[0m[48;2;40;67;43m[39m+     94[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# because the coding window is tighter.[K
+[0m[48;2;40;67;43m[39m+     95[0m:[39m[48;2;24;38;30m [38;2;192;197;206mSUGGESTION_EXPIRY_HOURS = 72[K
+[0m[48;2;40;67;43m[39m+     96[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     97[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# --- Storage Configuration ---[K
+[0m[48;2;40;67;43m[39m+     98[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# S3 bucket for clinical notes and audit trail.[K
+[0m[48;2;40;67;43m[39m+     99[0m:[39m[48;2;24;38;30m [38;2;192;197;206mNOTES_BUCKET = "your-cdi-notes-bucket"  # Replace with your bucket name[K
+[0m[48;2;40;67;43m[39m+    100[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    101[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# DynamoDB table for suggestion lifecycle tracking.[K
+[0m[48;2;40;67;43m[39m+    102[0m:[39m[48;2;24;38;30m [38;2;192;197;206mSUGGESTIONS_TABLE = "cdi-suggestions"  # Replace with your table name[K
+[0m[48;2;40;67;43m[39m+    103[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    104[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    105[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    106[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    107[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 1: Receive and Parse the Clinical Note[K
+[0m[48;2;40;67;43m[39m+    108[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    109[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mreceive_note(note_content, metadata)[38;2;163;190;140m`[38;2;180;142;173m. In production, notes arrive via EHR integration (HL7 FHIR, ADT feeds, or direct API). For this example, we accept the note as a string and store it in S3 for audit trail before processing.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    110[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    111[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    112[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef receive_note(note_content: str, metadata: dict) -> str:[K
+[0m[48;2;40;67;43m[39m+    113[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    114[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Store a clinical note in S3 and return the storage key for downstream processing.[K
+[0m[48;2;40;67;43m[39m+    115[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    116[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Every note that enters the CDI pipeline gets stored before analysis begins.[K
+[0m[48;2;40;67;43m[39m+    117[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    This serves two purposes: (1) audit trail showing exactly what the system[K
+[0m[48;2;40;67;43m[39m+    118[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    analyzed, and (2) reprocessing capability if you update your model or guidelines[K
+[0m[48;2;40;67;43m[39m+    119[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    and want to re-run historical notes.[K
+[0m[48;2;40;67;43m[39m+    120[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    121[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    122[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        note_content: The full text of the clinical note.[K
+[0m[48;2;40;67;43m[39m+    123[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        metadata:     Context about the note. Expected keys:[K
+[0m[48;2;40;67;43m[39m+    124[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                      - encounter_id: unique encounter identifier[K
+[0m[48;2;40;67;43m[39m+    125[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                      - provider_id:  who wrote the note[K
+[0m[48;2;40;67;43m[39m+    126[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                      - note_type:    "progress_note", "h_and_p", "discharge_summary", etc.[K
+[0m[48;2;40;67;43m[39m+    127[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                      - timestamp:    when the note was authored (ISO format)[K
+[0m[48;2;40;67;43m[39m+    128[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    129[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    130[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        The S3 object key where the note was stored.[K
+[0m[48;2;40;67;43m[39m+    131[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    132[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    encounter_id = metadata.get("encounter_id", "unknown")[K
+[0m[48;2;40;67;43m[39m+    133[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    note_type = metadata.get("note_type", "clinical_note")[K
+[0m[48;2;40;67;43m[39m+    134[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    timestamp = metadata.get("timestamp", datetime.datetime.now(timezone.utc).isoformat())[K
+[0m[48;2;40;67;43m[39m+    135[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    136[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Build a predictable key structure for easy retrieval and lifecycle policies.[K
+[0m[48;2;40;67;43m[39m+    137[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Pattern: notes-inbox/{encounter_id}/{timestamp}-{note_type}.txt[K
+[0m[48;2;40;67;43m[39m+    138[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    note_key = f"notes-inbox/{encounter_id}/{timestamp}-{note_type}.txt"[K
+[0m[48;2;40;67;43m[39m+    139[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    140[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    s3_client.put_object([K
+[0m[48;2;40;67;43m[39m+    141[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        Bucket=NOTES_BUCKET,[K
+[0m[48;2;40;67;43m[39m+    142[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        Key=note_key,[K
+[0m[48;2;40;67;43m[39m+    143[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        Body=note_content.encode("utf-8"),[K
+[0m[48;2;40;67;43m[39m+    144[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        ContentType="text/plain",[K
+[0m[48;2;40;67;43m[39m+    145[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # ServerSideEncryption with KMS is configured at the bucket level via[K
+[0m[48;2;40;67;43m[39m+    146[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # bucket default encryption. If your bucket doesn't have this, add:[K
+[0m[48;2;40;67;43m[39m+    147[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # ServerSideEncryption="aws:kms",[K
+[0m[48;2;40;67;43m[39m+    148[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # SSEKMSKeyId="your-kms-key-id",[K
+[0m[48;2;40;67;43m[39m+    149[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        Metadata={[K
+[0m[48;2;40;67;43m[39m+    150[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "encounter_id": encounter_id,[K
+[0m[48;2;40;67;43m[39m+    151[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "provider_id": metadata.get("provider_id", "unknown"),[K
+[0m[48;2;40;67;43m[39m+    152[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "note_type": note_type,[K
+[0m[48;2;40;67;43m[39m+    153[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        },[K
+[0m[48;2;40;67;43m[39m+    154[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    155[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    156[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info([K
+[0m[48;2;40;67;43m[39m+    157[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "Stored note for encounter %s, type=%s, length=%d chars",[K
+[0m[48;2;40;67;43m[39m+    158[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        encounter_id, note_type, len(note_content),[K
+[0m[48;2;40;67;43m[39m+    159[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    160[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return note_key[K
+[0m[48;2;40;67;43m[39m+    161[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    162[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    163[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    164[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    165[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 2: Extract Clinical Elements[K
+[0m[48;2;40;67;43m[39m+    166[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    167[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mextract_clinical_elements(note_content)[38;2;163;190;140m`[38;2;180;142;173m. This step uses the LLM to identify what the note actually contains: diagnoses, medications, lab values, and procedures. The output becomes the "what's documented" baseline that we compare against coding requirements in Step 4.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    168[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    169[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    170[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef extract_clinical_elements(note_content: str) -> dict:[K
+[0m[48;2;40;67;43m[39m+    171[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    172[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Use Bedrock (Claude) to extract structured clinical elements from a note.[K
+[0m[48;2;40;67;43m[39m+    173[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    174[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    This is a structured extraction task: we want JSON output, not prose.[K
+[0m[48;2;40;67;43m[39m+    175[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Low temperature (0.1) keeps the model factual and deterministic.[K
+[0m[48;2;40;67;43m[39m+    176[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    The model identifies diagnoses, medications, labs, and procedures,[K
+[0m[48;2;40;67;43m[39m+    177[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    along with any specificity qualifiers already present in the documentation.[K
+[0m[48;2;40;67;43m[39m+    178[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    179[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    180[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        note_content: The full text of the clinical note.[K
+[0m[48;2;40;67;43m[39m+    181[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    182[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    183[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        A dict with keys: diagnoses, medications, lab_values, procedures.[K
+[0m[48;2;40;67;43m[39m+    184[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        Each contains a list of extracted elements with their context.[K
+[0m[48;2;40;67;43m[39m+    185[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    186[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # The system prompt establishes the extraction task and output format.[K
+[0m[48;2;40;67;43m[39m+    187[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # We explicitly tell the model to note what qualifiers ARE present[K
+[0m[48;2;40;67;43m[39m+    188[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # and what common qualifiers are MISSING. This pre-work makes Step 4 easier.[K
+[0m[48;2;40;67;43m[39m+    189[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    extraction_prompt = """You are a clinical documentation analyst. Extract structured clinical elements from the following note.[K
+[0m[48;2;40;67;43m[39m+    190[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    191[0m:[39m[48;2;24;38;30m [38;2;192;197;206mFor each diagnosis found, note:[K
+[0m[48;2;40;67;43m[39m+    192[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- The diagnosis name as documented[K
+[0m[48;2;40;67;43m[39m+    193[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- Any specificity qualifiers already present (type, acuity, laterality, causative organism, stage)[K
+[0m[48;2;40;67;43m[39m+    194[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- Common ICD-10-CM qualifiers that are NOT documented but typically required[K
+[0m[48;2;40;67;43m[39m+    195[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    196[0m:[39m[48;2;24;38;30m [38;2;192;197;206mFor medications, note the drug name, dose (if stated), and route (if stated).[K
+[0m[48;2;40;67;43m[39m+    197[0m:[39m[48;2;24;38;30m [38;2;192;197;206mFor lab values, note the test name and result (if stated).[K
+[0m[48;2;40;67;43m[39m+    198[0m:[39m[48;2;24;38;30m [38;2;192;197;206mFor procedures, note the procedure name and any relevant details.[K
+[0m[48;2;40;67;43m[39m+    199[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    200[0m:[39m[48;2;24;38;30m [38;2;192;197;206mReturn ONLY valid JSON in this exact structure:[K
+[0m[48;2;40;67;43m[39m+    201[0m:[39m[48;2;24;38;30m [38;2;192;197;206m{[K
+[0m[48;2;40;67;43m[39m+    202[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  "diagnoses": [[K
+[0m[48;2;40;67;43m[39m+    203[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    {[K
+[0m[48;2;40;67;43m[39m+    204[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      "name": "diagnosis as documented",[K
+[0m[48;2;40;67;43m[39m+    205[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      "qualifiers_present": ["list of specificity qualifiers found"],[K
+[0m[48;2;40;67;43m[39m+    206[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      "qualifiers_missing": ["common qualifiers not documented"],[K
+[0m[48;2;40;67;43m[39m+    207[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      "supporting_context": "relevant text from the note that relates to this diagnosis"[K
+[0m[48;2;40;67;43m[39m+    208[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    }[K
+[0m[48;2;40;67;43m[39m+    209[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  ],[K
+[0m[48;2;40;67;43m[39m+    210[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  "medications": [[K
+[0m[48;2;40;67;43m[39m+    211[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    {"name": "drug name", "dose": "dose if stated", "route": "route if stated"}[K
+[0m[48;2;40;67;43m[39m+    212[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  ],[K
+[0m[48;2;40;67;43m[39m+    213[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  "lab_values": [[K
+[0m[48;2;40;67;43m[39m+    214[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    {"test": "test name", "result": "value if stated", "interpretation": "normal/abnormal if clear"}[K
+[0m[48;2;40;67;43m[39m+    215[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  ],[K
+[0m[48;2;40;67;43m[39m+    216[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  "procedures": [[K
+[0m[48;2;40;67;43m[39m+    217[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    {"name": "procedure name", "details": "relevant details"}[K
+[0m[48;2;40;67;43m[39m+    218[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  ][K
+[0m[48;2;40;67;43m[39m+    219[0m:[39m[48;2;24;38;30m [38;2;192;197;206m}"""[K
+[0m[48;2;40;67;43m[39m+    220[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    221[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Build the Bedrock request body for Claude's Messages API.[K
+[0m[48;2;40;67;43m[39m+    222[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    request_body = json.dumps({[K
+[0m[48;2;40;67;43m[39m+    223[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "anthropic_version": "bedrock-2023-05-31",[K
+[0m[48;2;40;67;43m[39m+    224[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "max_tokens": 4096,[K
+[0m[48;2;40;67;43m[39m+    225[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "temperature": 0.1,  # Low temperature for factual extraction[K
+[0m[48;2;40;67;43m[39m+    226[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "system": extraction_prompt,[K
+[0m[48;2;40;67;43m[39m+    227[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "messages": [[K
+[0m[48;2;40;67;43m[39m+    228[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            {[K
+[0m[48;2;40;67;43m[39m+    229[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "role": "user",[K
+[0m[48;2;40;67;43m[39m+    230[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "content": f"Extract clinical elements from this note:\n\n{note_content}",[K
+[0m[48;2;40;67;43m[39m+    231[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            }[K
+[0m[48;2;40;67;43m[39m+    232[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        ],[K
+[0m[48;2;40;67;43m[39m+    233[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    })[K
+[0m[48;2;40;67;43m[39m+    234[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    235[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    response = bedrock_runtime.invoke_model([K
+[0m[48;2;40;67;43m[39m+    236[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        modelId=MODEL_ID,[K
+[0m[48;2;40;67;43m[39m+    237[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        contentType="application/json",[K
+[0m[48;2;40;67;43m[39m+    238[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        accept="application/json",[K
+[0m[48;2;40;67;43m[39m+    239[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        body=request_body,[K
+[0m[48;2;40;67;43m[39m+    240[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    241[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    242[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    response_body = json.loads(response["body"].read())[K
+[0m[48;2;40;67;43m[39m+    243[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    244[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Claude's response is in content[0].text for the Messages API.[K
+[0m[48;2;40;67;43m[39m+    245[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    raw_text = response_body["content"][0]["text"][K
+[0m[48;2;40;67;43m[39m+    246[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    247[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Parse the JSON from the model's response.[K
+[0m[48;2;40;67;43m[39m+    248[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # The model sometimes wraps JSON in markdown code fences. Strip those.[K
+[0m[48;2;40;67;43m[39m+    249[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    cleaned = raw_text.strip()[K
+[0m[48;2;40;67;43m[39m+    250[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.startswith("```json"):[K
+[0m[48;2;40;67;43m[39m+    251[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[7:][K
+[0m[48;2;40;67;43m[39m+    252[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.startswith("```"):[K
+[0m[48;2;40;67;43m[39m+    253[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[3:][K
+[0m[48;2;40;67;43m[39m+    254[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.endswith("```"):[K
+[0m[48;2;40;67;43m[39m+    255[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[:-3][K
+[0m[48;2;40;67;43m[39m+    256[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    cleaned = cleaned.strip()[K
+[0m[48;2;40;67;43m[39m+    257[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    258[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    clinical_elements = json.loads(cleaned)[K
+[0m[48;2;40;67;43m[39m+    259[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    260[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    diagnosis_count = len(clinical_elements.get("diagnoses", []))[K
+[0m[48;2;40;67;43m[39m+    261[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    med_count = len(clinical_elements.get("medications", []))[K
+[0m[48;2;40;67;43m[39m+    262[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info([K
+[0m[48;2;40;67;43m[39m+    263[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "Extracted %d diagnoses, %d medications from note",[K
+[0m[48;2;40;67;43m[39m+    264[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        diagnosis_count, med_count,[K
+[0m[48;2;40;67;43m[39m+    265[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    266[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    267[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return clinical_elements[K
+[0m[48;2;40;67;43m[39m+    268[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    269[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    270[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    271[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    272[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 3: Retrieve Relevant Coding Guidelines[K
+[0m[48;2;40;67;43m[39m+    273[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    274[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mretrieve_guidelines(diagnoses)[38;2;163;190;140m`[38;2;180;142;173m. This step queries the Bedrock Knowledge Base to pull ICD-10-CM guidelines and organizational query templates relevant to the diagnoses found in Step 2. This is the RAG piece: grounding the LLM's suggestions in authoritative, current coding rules rather than relying on potentially outdated training data.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    275[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    276[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    277[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef retrieve_guidelines(diagnoses: list) -> dict:[K
+[0m[48;2;40;67;43m[39m+    278[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    279[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Query the Bedrock Knowledge Base for coding guidelines relevant to each diagnosis.[K
+[0m[48;2;40;67;43m[39m+    280[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    281[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    For each diagnosis extracted in Step 2, we retrieve:[K
+[0m[48;2;40;67;43m[39m+    282[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - ICD-10-CM specificity requirements (what qualifiers are needed for a complete code)[K
+[0m[48;2;40;67;43m[39m+    283[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Organizational CDI query templates (approved phrasing for physician queries)[K
+[0m[48;2;40;67;43m[39m+    284[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Any payer-specific documentation requirements[K
+[0m[48;2;40;67;43m[39m+    285[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    286[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    The knowledge base should contain current-year ICD-10-CM Official Guidelines[K
+[0m[48;2;40;67;43m[39m+    287[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    (CMS publishes these annually each October) and your organization's approved[K
+[0m[48;2;40;67;43m[39m+    288[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    CDI query templates.[K
+[0m[48;2;40;67;43m[39m+    289[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    290[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    291[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        diagnoses: List of diagnosis dicts from extract_clinical_elements.[K
+[0m[48;2;40;67;43m[39m+    292[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                   Each has "name", "qualifiers_present", "qualifiers_missing".[K
+[0m[48;2;40;67;43m[39m+    293[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    294[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    295[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        A dict with:[K
+[0m[48;2;40;67;43m[39m+    296[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - coding_guidelines: list of retrieved guideline passages per diagnosis[K
+[0m[48;2;40;67;43m[39m+    297[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - query_templates: list of retrieved organizational query templates[K
+[0m[48;2;40;67;43m[39m+    298[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    299[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    all_guidelines = [][K
+[0m[48;2;40;67;43m[39m+    300[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    301[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    for diagnosis in diagnoses:[K
+[0m[48;2;40;67;43m[39m+    302[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        diagnosis_name = diagnosis.get("name", "")[K
+[0m[48;2;40;67;43m[39m+    303[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        missing_qualifiers = diagnosis.get("qualifiers_missing", [])[K
+[0m[48;2;40;67;43m[39m+    304[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    305[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        if not diagnosis_name:[K
+[0m[48;2;40;67;43m[39m+    306[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            continue[K
+[0m[48;2;40;67;43m[39m+    307[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    308[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # Build a retrieval query focused on this diagnosis and its coding requirements.[K
+[0m[48;2;40;67;43m[39m+    309[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # Including the missing qualifiers in the query helps the vector search find[K
+[0m[48;2;40;67;43m[39m+    310[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # the most relevant guideline sections.[K
+[0m[48;2;40;67;43m[39m+    311[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        query_text = ([K
+[0m[48;2;40;67;43m[39m+    312[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            f"ICD-10-CM coding guidelines and specificity requirements for "[K
+[0m[48;2;40;67;43m[39m+    313[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            f"{diagnosis_name}. Required qualifiers: {', '.join(missing_qualifiers)}"[K
+[0m[48;2;40;67;43m[39m+    314[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        )[K
+[0m[48;2;40;67;43m[39m+    315[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    316[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # Retrieve from the knowledge base using Bedrock Agent Runtime.[K
+[0m[48;2;40;67;43m[39m+    317[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        response = bedrock_agent_runtime.retrieve([K
+[0m[48;2;40;67;43m[39m+    318[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            knowledgeBaseId=KNOWLEDGE_BASE_ID,[K
+[0m[48;2;40;67;43m[39m+    319[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            retrievalQuery={"text": query_text},[K
+[0m[48;2;40;67;43m[39m+    320[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            retrievalConfiguration={[K
+[0m[48;2;40;67;43m[39m+    321[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "vectorSearchConfiguration": {[K
+[0m[48;2;40;67;43m[39m+    322[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                    "numberOfResults": 5,  # Top 5 most relevant passages[K
+[0m[48;2;40;67;43m[39m+    323[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                }[K
+[0m[48;2;40;67;43m[39m+    324[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            },[K
+[0m[48;2;40;67;43m[39m+    325[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        )[K
+[0m[48;2;40;67;43m[39m+    326[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    327[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # Extract the text content from retrieval results.[K
+[0m[48;2;40;67;43m[39m+    328[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        results = response.get("retrievalResults", [])[K
+[0m[48;2;40;67;43m[39m+    329[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        for result in results:[K
+[0m[48;2;40;67;43m[39m+    330[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            content = result.get("content", {}).get("text", "")[K
+[0m[48;2;40;67;43m[39m+    331[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            score = result.get("score", 0.0)[K
+[0m[48;2;40;67;43m[39m+    332[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            if content:[K
+[0m[48;2;40;67;43m[39m+    333[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                all_guidelines.append({[K
+[0m[48;2;40;67;43m[39m+    334[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                    "diagnosis": diagnosis_name,[K
+[0m[48;2;40;67;43m[39m+    335[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                    "guideline_text": content,[K
+[0m[48;2;40;67;43m[39m+    336[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                    "relevance_score": score,[K
+[0m[48;2;40;67;43m[39m+    337[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                })[K
+[0m[48;2;40;67;43m[39m+    338[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    339[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Also retrieve organizational query templates.[K
+[0m[48;2;40;67;43m[39m+    340[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # These are the pre-approved phrasings your compliance team has reviewed.[K
+[0m[48;2;40;67;43m[39m+    341[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    diagnosis_names = [d.get("name", "") for d in diagnoses if d.get("name")][K
+[0m[48;2;40;67;43m[39m+    342[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    template_query = ([K
+[0m[48;2;40;67;43m[39m+    343[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        f"CDI query templates for documentation improvement queries about: "[K
+[0m[48;2;40;67;43m[39m+    344[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        f"{', '.join(diagnosis_names)}"[K
+[0m[48;2;40;67;43m[39m+    345[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    346[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    347[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    template_response = bedrock_agent_runtime.retrieve([K
+[0m[48;2;40;67;43m[39m+    348[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        knowledgeBaseId=KNOWLEDGE_BASE_ID,[K
+[0m[48;2;40;67;43m[39m+    349[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        retrievalQuery={"text": template_query},[K
+[0m[48;2;40;67;43m[39m+    350[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        retrievalConfiguration={[K
+[0m[48;2;40;67;43m[39m+    351[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "vectorSearchConfiguration": {[K
+[0m[48;2;40;67;43m[39m+    352[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "numberOfResults": 10,[K
+[0m[48;2;40;67;43m[39m+    353[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            }[K
+[0m[48;2;40;67;43m[39m+    354[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        },[K
+[0m[48;2;40;67;43m[39m+    355[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    356[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    357[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    query_templates = [][K
+[0m[48;2;40;67;43m[39m+    358[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    for result in template_response.get("retrievalResults", []):[K
+[0m[48;2;40;67;43m[39m+    359[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        content = result.get("content", {}).get("text", "")[K
+[0m[48;2;40;67;43m[39m+    360[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        if content:[K
+[0m[48;2;40;67;43m[39m+    361[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            query_templates.append(content)[K
+[0m[48;2;40;67;43m[39m+    362[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    363[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info([K
+[0m[48;2;40;67;43m[39m+    364[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "Retrieved %d guideline passages and %d query templates",[K
+[0m[48;2;40;67;43m[39m+    365[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(all_guidelines), len(query_templates),[K
+[0m[48;2;40;67;43m[39m+    366[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    367[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    368[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return {[K
+[0m[48;2;40;67;43m[39m+    369[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "coding_guidelines": all_guidelines,[K
+[0m[48;2;40;67;43m[39m+    370[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "query_templates": query_templates,[K
+[0m[48;2;40;67;43m[39m+    371[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    }[K
+[0m[48;2;40;67;43m[39m+    372[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    373[0m:[39m[48;2;24;38;30m [K
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.03-python-example.md[0m
+[38;5;244m - Completed in 0.47s[0m
+
+I'll append content to file: [38;5;141mchapter02.03-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Append the second half of the Python companion: Steps 4-6, full pipeline, example usage, and gap to production
+
+[48;2;40;67;43m[39m+    374[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    375[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    376[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    377[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 4: Identify Specificity Gaps and Generate Suggestions[K
+[0m[48;2;40;67;43m[39m+    378[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    379[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mgenerate_cdi_suggestions(note_content, clinical_elements, guidelines)[38;2;163;190;140m`[38;2;180;142;173m. This is the core CDI step. The LLM receives the clinical note, the extracted elements from Step 2, and the retrieved coding guidelines from Step 3. It identifies where documentation falls short of coding specificity requirements and generates physician-friendly suggestions.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    380[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    381[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    382[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef generate_cdi_suggestions([K
+[0m[48;2;40;67;43m[39m+    383[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    note_content: str,[K
+[0m[48;2;40;67;43m[39m+    384[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    clinical_elements: dict,[K
+[0m[48;2;40;67;43m[39m+    385[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    guidelines: dict,[K
+[0m[48;2;40;67;43m[39m+    386[0m:[39m[48;2;24;38;30m [38;2;192;197;206m) -> list:[K
+[0m[48;2;40;67;43m[39m+    387[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    388[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Use the LLM to identify specificity gaps and generate CDI suggestions.[K
+[0m[48;2;40;67;43m[39m+    389[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    390[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    This is the heart of the pipeline. The model compares what's documented[K
+[0m[48;2;40;67;43m[39m+    391[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    (clinical_elements) against what's required (guidelines) and generates[K
+[0m[48;2;40;67;43m[39m+    392[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suggestions for each genuine gap. The key constraints:[K
+[0m[48;2;40;67;43m[39m+    393[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    394[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Suggestions must be phrased as questions, never assertions[K
+[0m[48;2;40;67;43m[39m+    395[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Only suggest clarifications supported by evidence IN the note[K
+[0m[48;2;40;67;43m[39m+    396[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Never assert clinical findings the physician didn't document[K
+[0m[48;2;40;67;43m[39m+    397[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - Include the clinical evidence supporting each suggestion[K
+[0m[48;2;40;67;43m[39m+    398[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    399[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    400[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        note_content:      The full clinical note text.[K
+[0m[48;2;40;67;43m[39m+    401[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        clinical_elements: Structured extraction from Step 2.[K
+[0m[48;2;40;67;43m[39m+    402[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        guidelines:        Retrieved coding guidelines and templates from Step 3.[K
+[0m[48;2;40;67;43m[39m+    403[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    404[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    405[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        A list of suggestion dicts, each containing:[K
+[0m[48;2;40;67;43m[39m+    406[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - diagnosis, current_documentation, gap_description[K
+[0m[48;2;40;67;43m[39m+    407[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - clinical_evidence, suggested_query[K
+[0m[48;2;40;67;43m[39m+    408[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - confidence (high/medium/low), estimated_impact (high/medium/low)[K
+[0m[48;2;40;67;43m[39m+    409[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - icd10_current, icd10_potential[K
+[0m[48;2;40;67;43m[39m+    410[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    411[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Format the guidelines into a readable block for the prompt.[K
+[0m[48;2;40;67;43m[39m+    412[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    guidelines_text = ""[K
+[0m[48;2;40;67;43m[39m+    413[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    for g in guidelines.get("coding_guidelines", []):[K
+[0m[48;2;40;67;43m[39m+    414[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        guidelines_text += f"\n[{g['diagnosis']}]: {g['guideline_text']}\n"[K
+[0m[48;2;40;67;43m[39m+    415[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    416[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    templates_text = "\n".join(guidelines.get("query_templates", []))[K
+[0m[48;2;40;67;43m[39m+    417[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    418[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # The CDI analysis prompt. This is where prompt engineering matters most.[K
+[0m[48;2;40;67;43m[39m+    419[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Physician acceptance rates correlate more with suggestion phrasing than[K
+[0m[48;2;40;67;43m[39m+    420[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # with gap detection accuracy. Invest time here.[K
+[0m[48;2;40;67;43m[39m+    421[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    cdi_prompt = """You are a Clinical Documentation Improvement (CDI) specialist with deep knowledge of ICD-10-CM coding guidelines. Analyze the clinical note below for documentation specificity gaps.[K
+[0m[48;2;40;67;43m[39m+    422[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    423[0m:[39m[48;2;24;38;30m [38;2;192;197;206mCRITICAL RULES:[K
+[0m[48;2;40;67;43m[39m+    424[0m:[39m[48;2;24;38;30m [38;2;192;197;206m1. Only suggest clarifications where coding guidelines REQUIRE more specificity[K
+[0m[48;2;40;67;43m[39m+    425[0m:[39m[48;2;24;38;30m [38;2;192;197;206m2. Only suggest clarifications supported by clinical evidence IN the note[K
+[0m[48;2;40;67;43m[39m+    426[0m:[39m[48;2;24;38;30m [38;2;192;197;206m3. NEVER assert clinical findings. Always phrase as questions to the physician.[K
+[0m[48;2;40;67;43m[39m+    427[0m:[39m[48;2;24;38;30m [38;2;192;197;206m4. Include the specific clinical evidence that supports each suggestion[K
+[0m[48;2;40;67;43m[39m+    428[0m:[39m[48;2;24;38;30m [38;2;192;197;206m5. Rate each suggestion's confidence (high/medium/low) and estimated impact (high/medium/low)[K
+[0m[48;2;40;67;43m[39m+    429[0m:[39m[48;2;24;38;30m [38;2;192;197;206m6. Do NOT suggest clarifications for information already documented elsewhere in the note[K
+[0m[48;2;40;67;43m[39m+    430[0m:[39m[48;2;24;38;30m [38;2;192;197;206m7. Be respectful and collegial in query phrasing. You are helping, not auditing.[K
+[0m[48;2;40;67;43m[39m+    431[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    432[0m:[39m[48;2;24;38;30m [38;2;192;197;206mCONFIDENCE DEFINITIONS:[K
+[0m[48;2;40;67;43m[39m+    433[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- high: Clear specificity gap with strong clinical evidence supporting clarification[K
+[0m[48;2;40;67;43m[39m+    434[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- medium: Likely gap, but clinical evidence is indirect or the guideline requirement is nuanced[K
+[0m[48;2;40;67;43m[39m+    435[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- low: Possible gap, but uncertain whether the physician intentionally left it unspecified[K
+[0m[48;2;40;67;43m[39m+    436[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    437[0m:[39m[48;2;24;38;30m [38;2;192;197;206mIMPACT DEFINITIONS:[K
+[0m[48;2;40;67;43m[39m+    438[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- high: Likely affects DRG assignment or significantly changes code specificity (e.g., unspecified to specific organism)[K
+[0m[48;2;40;67;43m[39m+    439[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- medium: Affects code specificity but unlikely to change DRG (e.g., adding laterality)[K
+[0m[48;2;40;67;43m[39m+    440[0m:[39m[48;2;24;38;30m [38;2;192;197;206m- low: Minor specificity improvement with minimal coding impact[K
+[0m[48;2;40;67;43m[39m+    441[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    442[0m:[39m[48;2;24;38;30m [38;2;192;197;206mReturn ONLY valid JSON as a list of suggestions:[K
+[0m[48;2;40;67;43m[39m+    443[0m:[39m[48;2;24;38;30m [38;2;192;197;206m[[K
+[0m[48;2;40;67;43m[39m+    444[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  {[K
+[0m[48;2;40;67;43m[39m+    445[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "diagnosis": "the condition lacking specificity",[K
+[0m[48;2;40;67;43m[39m+    446[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "current_documentation": "what the note currently says",[K
+[0m[48;2;40;67;43m[39m+    447[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "gap_description": "what specificity is missing per coding guidelines",[K
+[0m[48;2;40;67;43m[39m+    448[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "clinical_evidence": "what in the note supports a more specific diagnosis",[K
+[0m[48;2;40;67;43m[39m+    449[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "suggested_query": "physician-friendly question requesting clarification",[K
+[0m[48;2;40;67;43m[39m+    450[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "confidence": "high|medium|low",[K
+[0m[48;2;40;67;43m[39m+    451[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "estimated_impact": "high|medium|low",[K
+[0m[48;2;40;67;43m[39m+    452[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "icd10_current": "likely current code (e.g., J18.9)",[K
+[0m[48;2;40;67;43m[39m+    453[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    "icd10_potential": "likely code if clarified (e.g., J15.1)"[K
+[0m[48;2;40;67;43m[39m+    454[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  }[K
+[0m[48;2;40;67;43m[39m+    455[0m:[39m[48;2;24;38;30m [38;2;192;197;206m][K
+[0m[48;2;40;67;43m[39m+    456[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    457[0m:[39m[48;2;24;38;30m [38;2;192;197;206mIf no genuine specificity gaps exist, return an empty list: []"""[K
+[0m[48;2;40;67;43m[39m+    458[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    459[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Assemble the user message with all context.[K
+[0m[48;2;40;67;43m[39m+    460[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    user_message = f"""CLINICAL NOTE:[K
+[0m[48;2;40;67;43m[39m+    461[0m:[39m[48;2;24;38;30m [38;2;192;197;206m{note_content}[K
+[0m[48;2;40;67;43m[39m+    462[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    463[0m:[39m[48;2;24;38;30m [38;2;192;197;206mEXTRACTED CLINICAL ELEMENTS:[K
+[0m[48;2;40;67;43m[39m+    464[0m:[39m[48;2;24;38;30m [38;2;192;197;206m{json.dumps(clinical_elements, indent=2)}[K
+[0m[48;2;40;67;43m[39m+    465[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    466[0m:[39m[48;2;24;38;30m [38;2;192;197;206mRELEVANT CODING GUIDELINES:[K
+[0m[48;2;40;67;43m[39m+    467[0m:[39m[48;2;24;38;30m [38;2;192;197;206m{guidelines_text}[K
+[0m[48;2;40;67;43m[39m+    468[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    469[0m:[39m[48;2;24;38;30m [38;2;192;197;206mAPPROVED QUERY TEMPLATES:[K
+[0m[48;2;40;67;43m[39m+    470[0m:[39m[48;2;24;38;30m [38;2;192;197;206m{templates_text}[K
+[0m[48;2;40;67;43m[39m+    471[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    472[0m:[39m[48;2;24;38;30m [38;2;192;197;206mIdentify all documentation specificity gaps and generate CDI suggestions."""[K
+[0m[48;2;40;67;43m[39m+    473[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    474[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    request_body = json.dumps({[K
+[0m[48;2;40;67;43m[39m+    475[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "anthropic_version": "bedrock-2023-05-31",[K
+[0m[48;2;40;67;43m[39m+    476[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "max_tokens": 4096,[K
+[0m[48;2;40;67;43m[39m+    477[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "temperature": 0.2,  # Slightly higher than extraction for natural phrasing[K
+[0m[48;2;40;67;43m[39m+    478[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "system": cdi_prompt,[K
+[0m[48;2;40;67;43m[39m+    479[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "messages": [[K
+[0m[48;2;40;67;43m[39m+    480[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            {"role": "user", "content": user_message},[K
+[0m[48;2;40;67;43m[39m+    481[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        ],[K
+[0m[48;2;40;67;43m[39m+    482[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    })[K
+[0m[48;2;40;67;43m[39m+    483[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    484[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    response = bedrock_runtime.invoke_model([K
+[0m[48;2;40;67;43m[39m+    485[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        modelId=MODEL_ID,[K
+[0m[48;2;40;67;43m[39m+    486[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        contentType="application/json",[K
+[0m[48;2;40;67;43m[39m+    487[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        accept="application/json",[K
+[0m[48;2;40;67;43m[39m+    488[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        body=request_body,[K
+[0m[48;2;40;67;43m[39m+    489[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    490[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    491[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    response_body = json.loads(response["body"].read())[K
+[0m[48;2;40;67;43m[39m+    492[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    raw_text = response_body["content"][0]["text"][K
+[0m[48;2;40;67;43m[39m+    493[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    494[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Parse JSON from response, handling markdown code fences.[K
+[0m[48;2;40;67;43m[39m+    495[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    cleaned = raw_text.strip()[K
+[0m[48;2;40;67;43m[39m+    496[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.startswith("```json"):[K
+[0m[48;2;40;67;43m[39m+    497[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[7:][K
+[0m[48;2;40;67;43m[39m+    498[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.startswith("```"):[K
+[0m[48;2;40;67;43m[39m+    499[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[3:][K
+[0m[48;2;40;67;43m[39m+    500[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if cleaned.endswith("```"):[K
+[0m[48;2;40;67;43m[39m+    501[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        cleaned = cleaned[:-3][K
+[0m[48;2;40;67;43m[39m+    502[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    cleaned = cleaned.strip()[K
+[0m[48;2;40;67;43m[39m+    503[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    504[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suggestions = json.loads(cleaned)[K
+[0m[48;2;40;67;43m[39m+    505[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    506[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info("Generated %d raw CDI suggestions", len(suggestions))[K
+[0m[48;2;40;67;43m[39m+    507[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return suggestions[K
+[0m[48;2;40;67;43m[39m+    508[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    509[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    510[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    511[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    512[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 5: Prioritize and Filter Suggestions[K
+[0m[48;2;40;67;43m[39m+    513[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    514[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mprioritize_suggestions(suggestions)[38;2;163;190;140m`[38;2;180;142;173m. Not every gap is worth querying. This step applies confidence thresholds, sorts by impact, and caps the total to avoid alert fatigue. The thresholds are the most important tuning knobs in the system.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    515[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    516[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    517[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef prioritize_suggestions(suggestions: list) -> dict:[K
+[0m[48;2;40;67;43m[39m+    518[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    519[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Filter and rank CDI suggestions by confidence and impact.[K
+[0m[48;2;40;67;43m[39m+    520[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    521[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    The filtering logic:[K
+[0m[48;2;40;67;43m[39m+    522[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    1. Remove suggestions below CONFIDENCE_THRESHOLD[K
+[0m[48;2;40;67;43m[39m+    523[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    2. Sort remaining by impact (high first), then confidence (high first)[K
+[0m[48;2;40;67;43m[39m+    524[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    3. Cap at MAX_SUGGESTIONS_PER_NOTE[K
+[0m[48;2;40;67;43m[39m+    525[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    4. Track what was suppressed and why (for audit and threshold tuning)[K
+[0m[48;2;40;67;43m[39m+    526[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    527[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    528[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        suggestions: Raw suggestion list from generate_cdi_suggestions.[K
+[0m[48;2;40;67;43m[39m+    529[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    530[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    531[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        A dict with:[K
+[0m[48;2;40;67;43m[39m+    532[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - active_suggestions: the suggestions to surface to the CDI specialist/physician[K
+[0m[48;2;40;67;43m[39m+    533[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - suppressed: suggestions that were filtered out[K
+[0m[48;2;40;67;43m[39m+    534[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        - suppression_reasons: why each was suppressed[K
+[0m[48;2;40;67;43m[39m+    535[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    536[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    threshold_value = CONFIDENCE_LEVELS.get(CONFIDENCE_THRESHOLD, 2)[K
+[0m[48;2;40;67;43m[39m+    537[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    538[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Filter by confidence threshold.[K
+[0m[48;2;40;67;43m[39m+    539[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    filtered = [][K
+[0m[48;2;40;67;43m[39m+    540[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suppressed_low_confidence = [][K
+[0m[48;2;40;67;43m[39m+    541[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    542[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    for suggestion in suggestions:[K
+[0m[48;2;40;67;43m[39m+    543[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        suggestion_confidence = CONFIDENCE_LEVELS.get([K
+[0m[48;2;40;67;43m[39m+    544[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            suggestion.get("confidence", "low"), 1[K
+[0m[48;2;40;67;43m[39m+    545[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        )[K
+[0m[48;2;40;67;43m[39m+    546[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        if suggestion_confidence >= threshold_value:[K
+[0m[48;2;40;67;43m[39m+    547[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            filtered.append(suggestion)[K
+[0m[48;2;40;67;43m[39m+    548[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        else:[K
+[0m[48;2;40;67;43m[39m+    549[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            suppressed_low_confidence.append({[K
+[0m[48;2;40;67;43m[39m+    550[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "suggestion": suggestion,[K
+[0m[48;2;40;67;43m[39m+    551[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "reason": f"confidence '{suggestion.get('confidence')}' below threshold '{CONFIDENCE_THRESHOLD}'",[K
+[0m[48;2;40;67;43m[39m+    552[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            })[K
+[0m[48;2;40;67;43m[39m+    553[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    554[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Sort by impact (descending), then confidence (descending).[K
+[0m[48;2;40;67;43m[39m+    555[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    filtered.sort([K
+[0m[48;2;40;67;43m[39m+    556[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        key=lambda s: ([K
+[0m[48;2;40;67;43m[39m+    557[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            IMPACT_LEVELS.get(s.get("estimated_impact", "low"), 1),[K
+[0m[48;2;40;67;43m[39m+    558[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            CONFIDENCE_LEVELS.get(s.get("confidence", "low"), 1),[K
+[0m[48;2;40;67;43m[39m+    559[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        ),[K
+[0m[48;2;40;67;43m[39m+    560[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        reverse=True,[K
+[0m[48;2;40;67;43m[39m+    561[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    562[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    563[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Cap at maximum suggestions per note.[K
+[0m[48;2;40;67;43m[39m+    564[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    active = filtered[:MAX_SUGGESTIONS_PER_NOTE][K
+[0m[48;2;40;67;43m[39m+    565[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suppressed_over_limit = [][K
+[0m[48;2;40;67;43m[39m+    566[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    567[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if len(filtered) > MAX_SUGGESTIONS_PER_NOTE:[K
+[0m[48;2;40;67;43m[39m+    568[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        for s in filtered[MAX_SUGGESTIONS_PER_NOTE:]:[K
+[0m[48;2;40;67;43m[39m+    569[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            suppressed_over_limit.append({[K
+[0m[48;2;40;67;43m[39m+    570[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "suggestion": s,[K
+[0m[48;2;40;67;43m[39m+    571[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                "reason": f"exceeded max {MAX_SUGGESTIONS_PER_NOTE} suggestions per note",[K
+[0m[48;2;40;67;43m[39m+    572[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            })[K
+[0m[48;2;40;67;43m[39m+    573[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    574[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    all_suppressed = suppressed_low_confidence + suppressed_over_limit[K
+[0m[48;2;40;67;43m[39m+    575[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    576[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info([K
+[0m[48;2;40;67;43m[39m+    577[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "Prioritization: %d active, %d suppressed (%d low confidence, %d over limit)",[K
+[0m[48;2;40;67;43m[39m+    578[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(active),[K
+[0m[48;2;40;67;43m[39m+    579[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(all_suppressed),[K
+[0m[48;2;40;67;43m[39m+    580[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(suppressed_low_confidence),[K
+[0m[48;2;40;67;43m[39m+    581[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(suppressed_over_limit),[K
+[0m[48;2;40;67;43m[39m+    582[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    583[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    584[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return {[K
+[0m[48;2;40;67;43m[39m+    585[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "active_suggestions": active,[K
+[0m[48;2;40;67;43m[39m+    586[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "suppressed": all_suppressed,[K
+[0m[48;2;40;67;43m[39m+    587[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    }[K
+[0m[48;2;40;67;43m[39m+    588[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    589[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    590[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    591[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    592[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mStep 6: Store Results and Notify[K
+[0m[48;2;40;67;43m[39m+    593[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    594[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mThe pseudocode calls this [38;2;163;190;140m`[38;2;163;190;140mstore_and_notify(encounter_id, suggestions, suppressed)[38;2;163;190;140m`[38;2;180;142;173m. Each suggestion gets a unique ID and a lifecycle status in DynamoDB. Suppressed suggestions go to S3 for audit. In production, this step also triggers notification to the CDI specialist's workqueue or the physician's EHR inbox.[38;2;180;142;173m*[K
+[0m[48;2;40;67;43m[39m+    595[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    596[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    597[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef store_and_notify(encounter_id: str, prioritized: dict, note_key: str) -> list:[K
+[0m[48;2;40;67;43m[39m+    598[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    599[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Write suggestions to DynamoDB for lifecycle tracking and store audit trail in S3.[K
+[0m[48;2;40;67;43m[39m+    600[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    601[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Each suggestion becomes a separate DynamoDB item so it can be individually[K
+[0m[48;2;40;67;43m[39m+    602[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    accepted, rejected, or expired. The lifecycle states are:[K
+[0m[48;2;40;67;43m[39m+    603[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - GENERATED: suggestion created, not yet shown to anyone[K
+[0m[48;2;40;67;43m[39m+    604[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - PRESENTED: shown to CDI specialist or physician[K
+[0m[48;2;40;67;43m[39m+    605[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - ACCEPTED: physician agreed and updated documentation[K
+[0m[48;2;40;67;43m[39m+    606[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - REJECTED: physician declined (optionally with reason)[K
+[0m[48;2;40;67;43m[39m+    607[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    - EXPIRED: not acted on within SUGGESTION_EXPIRY_HOURS[K
+[0m[48;2;40;67;43m[39m+    608[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    609[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    610[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        encounter_id: The encounter this note belongs to.[K
+[0m[48;2;40;67;43m[39m+    611[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        prioritized:  Output from prioritize_suggestions (active + suppressed).[K
+[0m[48;2;40;67;43m[39m+    612[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        note_key:     S3 key of the stored note (for audit linkage).[K
+[0m[48;2;40;67;43m[39m+    613[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    614[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    615[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        List of suggestion IDs that were stored as active.[K
+[0m[48;2;40;67;43m[39m+    616[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    617[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suggestions_table = dynamodb.Table(SUGGESTIONS_TABLE)[K
+[0m[48;2;40;67;43m[39m+    618[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    now = datetime.datetime.now(timezone.utc)[K
+[0m[48;2;40;67;43m[39m+    619[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    expires_at = now + datetime.timedelta(hours=SUGGESTION_EXPIRY_HOURS)[K
+[0m[48;2;40;67;43m[39m+    620[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    621[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    stored_ids = [][K
+[0m[48;2;40;67;43m[39m+    622[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    623[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    for suggestion in prioritized["active_suggestions"]:[K
+[0m[48;2;40;67;43m[39m+    624[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        suggestion_id = str(uuid.uuid4())[K
+[0m[48;2;40;67;43m[39m+    625[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    626[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # DynamoDB requires Decimal for numeric values. Confidence and impact[K
+[0m[48;2;40;67;43m[39m+    627[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        # are strings here, but if you add numeric scores later, wrap them.[K
+[0m[48;2;40;67;43m[39m+    628[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        item = {[K
+[0m[48;2;40;67;43m[39m+    629[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "suggestion_id": suggestion_id,[K
+[0m[48;2;40;67;43m[39m+    630[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "encounter_id": encounter_id,[K
+[0m[48;2;40;67;43m[39m+    631[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "status": "GENERATED",[K
+[0m[48;2;40;67;43m[39m+    632[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "diagnosis": suggestion.get("diagnosis", ""),[K
+[0m[48;2;40;67;43m[39m+    633[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "current_documentation": suggestion.get("current_documentation", ""),[K
+[0m[48;2;40;67;43m[39m+    634[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "gap_description": suggestion.get("gap_description", ""),[K
+[0m[48;2;40;67;43m[39m+    635[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "clinical_evidence": suggestion.get("clinical_evidence", ""),[K
+[0m[48;2;40;67;43m[39m+    636[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "suggested_query": suggestion.get("suggested_query", ""),[K
+[0m[48;2;40;67;43m[39m+    637[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "confidence": suggestion.get("confidence", "unknown"),[K
+[0m[48;2;40;67;43m[39m+    638[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "estimated_impact": suggestion.get("estimated_impact", "unknown"),[K
+[0m[48;2;40;67;43m[39m+    639[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "icd10_current": suggestion.get("icd10_current", ""),[K
+[0m[48;2;40;67;43m[39m+    640[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "icd10_potential": suggestion.get("icd10_potential", ""),[K
+[0m[48;2;40;67;43m[39m+    641[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "source_note_key": note_key,[K
+[0m[48;2;40;67;43m[39m+    642[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "created_at": now.isoformat(),[K
+[0m[48;2;40;67;43m[39m+    643[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            "expires_at": expires_at.isoformat(),[K
+[0m[48;2;40;67;43m[39m+    644[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        }[K
+[0m[48;2;40;67;43m[39m+    645[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    646[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        suggestions_table.put_item(Item=item)[K
+[0m[48;2;40;67;43m[39m+    647[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        stored_ids.append(suggestion_id)[K
+[0m[48;2;40;67;43m[39m+    648[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    649[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Store suppressed suggestions in S3 for audit and threshold tuning.[K
+[0m[48;2;40;67;43m[39m+    650[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # These are not surfaced to users but are valuable for understanding[K
+[0m[48;2;40;67;43m[39m+    651[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # what the system is filtering out. If your acceptance rate is too low,[K
+[0m[48;2;40;67;43m[39m+    652[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # review suppressed suggestions to see if the threshold is too aggressive.[K
+[0m[48;2;40;67;43m[39m+    653[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    if prioritized["suppressed"]:[K
+[0m[48;2;40;67;43m[39m+    654[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        audit_key = f"cdi-audit/{encounter_id}/suppressed-{now.isoformat()}.json"[K
+[0m[48;2;40;67;43m[39m+    655[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        s3_client.put_object([K
+[0m[48;2;40;67;43m[39m+    656[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            Bucket=NOTES_BUCKET,[K
+[0m[48;2;40;67;43m[39m+    657[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            Key=audit_key,[K
+[0m[48;2;40;67;43m[39m+    658[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            Body=json.dumps(prioritized["suppressed"], indent=2).encode("utf-8"),[K
+[0m[48;2;40;67;43m[39m+    659[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            ContentType="application/json",[K
+[0m[48;2;40;67;43m[39m+    660[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        )[K
+[0m[48;2;40;67;43m[39m+    661[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    662[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    logger.info([K
+[0m[48;2;40;67;43m[39m+    663[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "Stored %d active suggestions for encounter %s. %d suppressed (audit stored).",[K
+[0m[48;2;40;67;43m[39m+    664[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        len(stored_ids), encounter_id, len(prioritized["suppressed"]),[K
+[0m[48;2;40;67;43m[39m+    665[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    )[K
+[0m[48;2;40;67;43m[39m+    666[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    667[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # In production, this is where you'd notify the CDI workqueue:[K
+[0m[48;2;40;67;43m[39m+    668[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # - SNS topic for CDI specialist notification[K
+[0m[48;2;40;67;43m[39m+    669[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # - SQS queue for batch processing[K
+[0m[48;2;40;67;43m[39m+    670[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # - Direct EHR API call for concurrent CDI (real-time physician alerts)[K
+[0m[48;2;40;67;43m[39m+    671[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #[K
+[0m[48;2;40;67;43m[39m+    672[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Example (uncomment and configure for your environment):[K
+[0m[48;2;40;67;43m[39m+    673[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # sns_client.publish([K
+[0m[48;2;40;67;43m[39m+    674[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #     TopicArn="arn:aws:sns:us-east-1:123456789012:cdi-notifications",[K
+[0m[48;2;40;67;43m[39m+    675[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #     Message=json.dumps({[K
+[0m[48;2;40;67;43m[39m+    676[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #         "encounter_id": encounter_id,[K
+[0m[48;2;40;67;43m[39m+    677[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #         "suggestion_count": len(stored_ids),[K
+[0m[48;2;40;67;43m[39m+    678[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #         "highest_impact": prioritized["active_suggestions"][0].get("estimated_impact")[K
+[0m[48;2;40;67;43m[39m+    679[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #             if prioritized["active_suggestions"] else "none",[K
+[0m[48;2;40;67;43m[39m+    680[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    #     }),[K
+[0m[48;2;40;67;43m[39m+    681[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # )[K
+[0m[48;2;40;67;43m[39m+    682[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    683[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return stored_ids[K
+[0m[48;2;40;67;43m[39m+    684[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    685[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    686[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    687[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    688[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mPutting It All Together[K
+[0m[48;2;40;67;43m[39m+    689[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    690[0m:[39m[48;2;24;38;30m [38;2;192;197;206mHere's the full CDI pipeline assembled into a single function. This runs all six steps sequentially for one clinical note.[K
+[0m[48;2;40;67;43m[39m+    691[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    692[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[38;2;208;135;112mpython[K
+[0m[48;2;40;67;43m[39m+    693[0m:[39m[48;2;24;38;30m [38;2;192;197;206mdef analyze_note_for_cdi(note_content: str, metadata: dict) -> dict:[K
+[0m[48;2;40;67;43m[39m+    694[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    695[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Run the full CDI analysis pipeline for one clinical note.[K
+[0m[48;2;40;67;43m[39m+    696[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    697[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Covers all six steps from the Recipe 2.3 pseudocode:[K
+[0m[48;2;40;67;43m[39m+    698[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      1. Receive and store the clinical note[K
+[0m[48;2;40;67;43m[39m+    699[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      2. Extract clinical elements (diagnoses, meds, labs, procedures)[K
+[0m[48;2;40;67;43m[39m+    700[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      3. Retrieve relevant coding guidelines from the knowledge base[K
+[0m[48;2;40;67;43m[39m+    701[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      4. Generate CDI suggestions using LLM with RAG context[K
+[0m[48;2;40;67;43m[39m+    702[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      5. Prioritize and filter suggestions[K
+[0m[48;2;40;67;43m[39m+    703[0m:[39m[48;2;24;38;30m [38;2;192;197;206m      6. Store results and notify[K
+[0m[48;2;40;67;43m[39m+    704[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    705[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Args:[K
+[0m[48;2;40;67;43m[39m+    706[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        note_content: The full text of the clinical note.[K
+[0m[48;2;40;67;43m[39m+    707[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        metadata:     Context dict with encounter_id, provider_id, note_type, timestamp.[K
+[0m[48;2;40;67;43m[39m+    708[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    709[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Returns:[K
+[0m[48;2;40;67;43m[39m+    710[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        A dict with the analysis results: suggestions, suppressed count, timing.[K
+[0m[48;2;40;67;43m[39m+    711[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    712[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    import time[K
+[0m[48;2;40;67;43m[39m+    713[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    start_time = time.time()[K
+[0m[48;2;40;67;43m[39m+    714[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    715[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    encounter_id = metadata.get("encounter_id", "unknown")[K
+[0m[48;2;40;67;43m[39m+    716[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    717[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 1: Store the note for audit trail.[K
+[0m[48;2;40;67;43m[39m+    718[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"Step 1: Storing note for encounter {encounter_id}...")[K
+[0m[48;2;40;67;43m[39m+    719[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    note_key = receive_note(note_content, metadata)[K
+[0m[48;2;40;67;43m[39m+    720[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Stored at: {note_key}")[K
+[0m[48;2;40;67;43m[39m+    721[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    722[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 2: Extract clinical elements from the note.[K
+[0m[48;2;40;67;43m[39m+    723[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("Step 2: Extracting clinical elements...")[K
+[0m[48;2;40;67;43m[39m+    724[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    clinical_elements = extract_clinical_elements(note_content)[K
+[0m[48;2;40;67;43m[39m+    725[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    diagnoses = clinical_elements.get("diagnoses", [])[K
+[0m[48;2;40;67;43m[39m+    726[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Found {len(diagnoses)} diagnoses, "[K
+[0m[48;2;40;67;43m[39m+    727[0m:[39m[48;2;24;38;30m [38;2;192;197;206m          f"{len(clinical_elements.get('medications', []))} medications")[K
+[0m[48;2;40;67;43m[39m+    728[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    729[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 3: Retrieve coding guidelines for the identified diagnoses.[K
+[0m[48;2;40;67;43m[39m+    730[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("Step 3: Retrieving coding guidelines from knowledge base...")[K
+[0m[48;2;40;67;43m[39m+    731[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    guidelines = retrieve_guidelines(diagnoses)[K
+[0m[48;2;40;67;43m[39m+    732[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Retrieved {len(guidelines['coding_guidelines'])} guideline passages, "[K
+[0m[48;2;40;67;43m[39m+    733[0m:[39m[48;2;24;38;30m [38;2;192;197;206m          f"{len(guidelines['query_templates'])} query templates")[K
+[0m[48;2;40;67;43m[39m+    734[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    735[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 4: Generate CDI suggestions.[K
+[0m[48;2;40;67;43m[39m+    736[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("Step 4: Generating CDI suggestions...")[K
+[0m[48;2;40;67;43m[39m+    737[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    raw_suggestions = generate_cdi_suggestions(note_content, clinical_elements, guidelines)[K
+[0m[48;2;40;67;43m[39m+    738[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Generated {len(raw_suggestions)} raw suggestions")[K
+[0m[48;2;40;67;43m[39m+    739[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    740[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 5: Prioritize and filter.[K
+[0m[48;2;40;67;43m[39m+    741[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("Step 5: Prioritizing and filtering...")[K
+[0m[48;2;40;67;43m[39m+    742[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    prioritized = prioritize_suggestions(raw_suggestions)[K
+[0m[48;2;40;67;43m[39m+    743[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Active: {len(prioritized['active_suggestions'])}, "[K
+[0m[48;2;40;67;43m[39m+    744[0m:[39m[48;2;24;38;30m [38;2;192;197;206m          f"Suppressed: {len(prioritized['suppressed'])}")[K
+[0m[48;2;40;67;43m[39m+    745[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    746[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # Step 6: Store and notify.[K
+[0m[48;2;40;67;43m[39m+    747[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("Step 6: Storing results...")[K
+[0m[48;2;40;67;43m[39m+    748[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    suggestion_ids = store_and_notify(encounter_id, prioritized, note_key)[K
+[0m[48;2;40;67;43m[39m+    749[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"  Stored {len(suggestion_ids)} suggestion(s)")[K
+[0m[48;2;40;67;43m[39m+    750[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    751[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    elapsed_ms = int((time.time() - start_time) * 1000)[K
+[0m[48;2;40;67;43m[39m+    752[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(f"\nDone. Processing time: {elapsed_ms}ms")[K
+[0m[48;2;40;67;43m[39m+    753[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    754[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    return {[K
+[0m[48;2;40;67;43m[39m+    755[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "encounter_id": encounter_id,[K
+[0m[48;2;40;67;43m[39m+    756[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "note_key": note_key,[K
+[0m[48;2;40;67;43m[39m+    757[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "suggestions": prioritized["active_suggestions"],[K
+[0m[48;2;40;67;43m[39m+    758[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "suggestion_ids": suggestion_ids,[K
+[0m[48;2;40;67;43m[39m+    759[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "suppressed_count": len(prioritized["suppressed"]),[K
+[0m[48;2;40;67;43m[39m+    760[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "processing_time_ms": elapsed_ms,[K
+[0m[48;2;40;67;43m[39m+    761[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    }[K
+[0m[48;2;40;67;43m[39m+    762[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    763[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    764[0m:[39m[48;2;24;38;30m [38;2;192;197;206m# --- Example usage ---[K
+[0m[48;2;40;67;43m[39m+    765[0m:[39m[48;2;24;38;30m [38;2;192;197;206mif __name__ == "__main__":[K
+[0m[48;2;40;67;43m[39m+    766[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # A synthetic clinical note with intentional specificity gaps.[K
+[0m[48;2;40;67;43m[39m+    767[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    # This is NOT a real patient note. Never use real PHI in development.[K
+[0m[48;2;40;67;43m[39m+    768[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    sample_note = """[K
+[0m[48;2;40;67;43m[39m+    769[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    PROGRESS NOTE - Day 3 of Admission[K
+[0m[48;2;40;67;43m[39m+    770[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    771[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Subjective: Patient reports improved breathing since yesterday. Still has[K
+[0m[48;2;40;67;43m[39m+    772[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    productive cough with yellow sputum. Denies chest pain. Reports mild nausea[K
+[0m[48;2;40;67;43m[39m+    773[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    with antibiotics.[K
+[0m[48;2;40;67;43m[39m+    774[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    775[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Objective:[K
+[0m[48;2;40;67;43m[39m+    776[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Vitals: T 99.2F, HR 88, BP 132/78, RR 18, SpO2 94% on 2L NC[K
+[0m[48;2;40;67;43m[39m+    777[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Lungs: Decreased breath sounds left lower lobe, scattered rhonchi bilaterally[K
+[0m[48;2;40;67;43m[39m+    778[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Heart: Regular rate and rhythm, no murmurs[K
+[0m[48;2;40;67;43m[39m+    779[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Ext: 1+ bilateral lower extremity edema[K
+[0m[48;2;40;67;43m[39m+    780[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    781[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Labs:[K
+[0m[48;2;40;67;43m[39m+    782[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    WBC 14.2 (down from 18.1 on admission)[K
+[0m[48;2;40;67;43m[39m+    783[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Sputum culture: growing Klebsiella pneumoniae[K
+[0m[48;2;40;67;43m[39m+    784[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    BNP: 1240[K
+[0m[48;2;40;67;43m[39m+    785[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Echo (yesterday): EF 30%, moderate mitral regurgitation[K
+[0m[48;2;40;67;43m[39m+    786[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    787[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    Assessment/Plan:[K
+[0m[48;2;40;67;43m[39m+    788[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    1. Pneumonia - improving on current antibiotics (Zosyn). Will continue[K
+[0m[48;2;40;67;43m[39m+    789[0m:[39m[48;2;24;38;30m [38;2;192;197;206m       current regimen. Repeat chest X-ray tomorrow.[K
+[0m[48;2;40;67;43m[39m+    790[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    2. Heart failure - continue diuresis with IV Lasix 40mg BID.[K
+[0m[48;2;40;67;43m[39m+    791[0m:[39m[48;2;24;38;30m [38;2;192;197;206m       Volume status improving based on I/Os.[K
+[0m[48;2;40;67;43m[39m+    792[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    3. Diabetes - continue home insulin regimen. A1c was 8.2 on admission.[K
+[0m[48;2;40;67;43m[39m+    793[0m:[39m[48;2;24;38;30m [38;2;192;197;206m       Will adjust basal dose if needed.[K
+[0m[48;2;40;67;43m[39m+    794[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    4. Hypertension - hold lisinopril given acute illness. Resume at discharge.[K
+[0m[48;2;40;67;43m[39m+    795[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    """[K
+[0m[48;2;40;67;43m[39m+    796[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    797[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    sample_metadata = {[K
+[0m[48;2;40;67;43m[39m+    798[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "encounter_id": "ENC-2026-05-06-00312",[K
+[0m[48;2;40;67;43m[39m+    799[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "provider_id": "PRV-00891",[K
+[0m[48;2;40;67;43m[39m+    800[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "note_type": "progress_note",[K
+[0m[48;2;40;67;43m[39m+    801[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        "timestamp": "2026-05-06T09:30:00-04:00",[K
+[0m[48;2;40;67;43m[39m+    802[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    }[K
+[0m[48;2;40;67;43m[39m+    803[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    804[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    result = analyze_note_for_cdi(sample_note, sample_metadata)[K
+[0m[48;2;40;67;43m[39m+    805[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("\n" + "=" * 60)[K
+[0m[48;2;40;67;43m[39m+    806[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("RESULTS:")[K
+[0m[48;2;40;67;43m[39m+    807[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print("=" * 60)[K
+[0m[48;2;40;67;43m[39m+    808[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    print(json.dumps(result, indent=2, default=str))[K
+[0m[48;2;40;67;43m[39m+    809[0m:[39m[48;2;24;38;30m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+    810[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    811[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    812[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    813[0m:[39m[48;2;24;38;30m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mThe Gap Between This and Production[K
+[0m[48;2;40;67;43m[39m+    814[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    815[0m:[39m[48;2;24;38;30m [38;2;192;197;206mThis example demonstrates the CDI pattern end to end. Run it against a synthetic note and it will extract clinical elements, retrieve guidelines, generate suggestions, and store them. The distance between this and a production CDI deployment is significant. Here's where it lives.[K
+[0m[48;2;40;67;43m[39m+    816[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    817[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mEHR integration is the hardest part of the entire project.[38;2;235;203;139m**[38;2;192;197;206m This example accepts a note as a string. In reality, getting clinical notes out of an EHR in real time requires HL7 FHIR subscriptions, ADT event feeds, or vendor-specific APIs (Epic's CDS Hooks, Oracle Health's Smart on FHIR). The integration layer is often more complex than the AI pipeline itself. Budget 40-60% of your implementation timeline for EHR integration alone.[K
+[0m[48;2;40;67;43m[39m+    818[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    819[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mKnowledge base population and maintenance.[38;2;235;203;139m**[38;2;192;197;206m The example assumes a populated Bedrock Knowledge Base. Building one requires: downloading the current ICD-10-CM Official Guidelines from CMS (updated every October), chunking them appropriately for vector search, writing organizational CDI query templates (compliance-reviewed), and adding payer-specific documentation requirements. This knowledge base needs annual maintenance at minimum, and more frequent updates when CMS publishes mid-year corrections.[K
+[0m[48;2;40;67;43m[39m+    820[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    821[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mContext window management for long notes.[38;2;235;203;139m**[38;2;192;197;206m Hospital notes can be long. A multi-day admission with daily progress notes, consult notes, and procedure notes can exceed 50,000 tokens. This example sends the full note to the model. A production system needs a strategy for notes that exceed the context window: summarize older notes, analyze the most recent note in full with references to prior notes, or chunk with overlap and deduplicate suggestions across chunks.[K
+[0m[48;2;40;67;43m[39m+    822[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    823[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mFeedback loop for continuous improvement.[38;2;235;203;139m**[38;2;192;197;206m When physicians accept or reject suggestions, that signal is gold. Accepted suggestions validate the model's reasoning. Rejected suggestions (especially with physician comments) are training data for prompt refinement. This example has no feedback mechanism. A production system tracks acceptance rates per suggestion type, per diagnosis category, and per physician, then uses that data to tune confidence thresholds and prompt phrasing.[K
+[0m[48;2;40;67;43m[39m+    824[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    825[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mCompliance review of generated queries.[38;2;235;203;139m**[38;2;192;197;206m Every CDI query phrasing should be reviewed by your compliance team before going live. The line between "asking for documentation clarification" and "telling physicians what to document for revenue" is one that OIG auditors care about. In production, you'd validate generated queries against a library of compliance-approved templates and flag any that deviate significantly for human review before surfacing them.[K
+[0m[48;2;40;67;43m[39m+    826[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    827[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mConcurrent vs. retrospective CDI.[38;2;235;203;139m**[38;2;192;197;206m This example is retrospective: the note is complete, then analyzed. Concurrent CDI (suggestions while the physician is still writing) has higher impact but requires streaming note content, incremental analysis, and tight EHR UI integration. The architecture changes significantly: you'd use WebSocket connections or server-sent events rather than S3 event triggers, and you'd need to handle partial notes gracefully.[K
+[0m[48;2;40;67;43m[39m+    828[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    829[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mHallucination detection.[38;2;235;203;139m**[38;2;192;197;206m The most dangerous failure mode is the model suggesting a specificity improvement based on clinical information that isn't in the chart. "Your labs suggest E. coli" when no culture results exist. A production system cross-references every piece of clinical evidence cited in a suggestion against the actual note content. If the evidence text doesn't appear in (or closely paraphrase) the source note, suppress the suggestion. This is a post-generation validation step that this example doesn't include.[K
+[0m[48;2;40;67;43m[39m+    830[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    831[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mRate limiting and cost management.[38;2;235;203;139m**[38;2;192;197;206m Each note requires two Bedrock invocations (extraction + suggestion generation) plus knowledge base retrieval calls. At scale (hundreds of notes per day for a mid-size hospital), you need to manage Bedrock token-per-minute limits, implement queuing for burst traffic, and monitor costs. The per-note cost ($0.02-0.08) is low, but at 500 notes/day that's $10-40/day in model costs alone. Set up CloudWatch billing alarms.[K
+[0m[48;2;40;67;43m[39m+    832[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    833[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mMulti-note context and deduplication.[38;2;235;203;139m**[38;2;192;197;206m A patient's encounter generates multiple notes (admission H[38;2;192;197;206m&[38;2;192;197;206mP, daily progress notes, consult notes, discharge summary). This example analyzes each note independently. A production system should track which gaps have already been queried for this encounter and avoid re-querying the same gap on subsequent notes. It should also recognize when a later note addresses a gap identified in an earlier note and auto-resolve the suggestion.[K
+[0m[48;2;40;67;43m[39m+    834[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    835[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mDynamoDB table design.[38;2;235;203;139m**[38;2;192;197;206m The example uses a simple single-table design with suggestion_id as the partition key. In production, you need efficient access patterns: query all suggestions for an encounter, query all open suggestions for a CDI specialist's workqueue, query acceptance rates by diagnosis category. Design your GSIs (Global Secondary Indexes) around these access patterns before you go live.[K
+[0m[48;2;40;67;43m[39m+    836[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    837[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mVPC and encryption.[38;2;235;203;139m**[38;2;192;197;206m This example makes API calls without VPC configuration. A production Lambda handling clinical notes runs inside a VPC with private subnets and VPC endpoints for S3, Bedrock, DynamoDB, and CloudWatch Logs. Clinical notes are PHI. S3 SSE-KMS with a customer-managed key. DynamoDB encryption at rest. All calls over TLS. Bedrock encrypts data in transit and at rest by default, but verify your BAA covers the specific models you're using.[K
+[0m[48;2;40;67;43m[39m+    838[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    839[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mTesting with synthetic notes.[38;2;235;203;139m**[38;2;192;197;206m There are no tests here. A production pipeline has: unit tests for the prioritization and filtering logic, integration tests against Bedrock with synthetic notes covering common diagnosis categories, regression tests ensuring known specificity gaps are consistently detected, and load tests validating throughput at expected note volumes. Generate synthetic notes covering your top 20 DRGs for test fixtures. Never use real patient notes in non-production environments.[K
+[0m[48;2;40;67;43m[39m+    840[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    841[0m:[39m[48;2;24;38;30m [38;2;192;197;206m---[K
+[0m[48;2;40;67;43m[39m+    842[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    843[0m:[39m[48;2;24;38;30m [38;2;180;142;173m*[38;2;180;142;173mPart of the Healthcare AI/ML Cookbook. See [38;2;208;135;112m[[38;2;208;135;112mRecipe 2.3: Clinical Documentation Improvement (CDI) Suggestions[38;2;208;135;112m][38;2;208;135;112m([38;2;208;135;112mchapter02.03-clinical-documentation-improvement[38;2;208;135;112m)[38;2;180;142;173m for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.[38;2;180;142;173m*[K
+[0m[K
+Appending to: [38;5;141mchapter02.03-python-example.md[0m
+[38;5;244m - Completed in 0.20s[0m
+
+[38;5;141m> [0mLet me verify the file was created correctly:[0m[0m
+[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.03-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m30[0m[38;5;244m (using tool: read)[0mSearching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.03-python-example.md[0m for pattern: [38;5;141m## step[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1901 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.03-python-example.md
+[38;5;244m - Completed in 0.1s[0m
+
+
+[38;5;10m ✓ [0mFound 6 matches for pattern '## Step' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.03-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me also verify the ending of the file:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.03-python-example.md[0m, from line [38;5;141m839[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m763 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.03-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe file is complete. Let me verify the sidebar already has the entry (it did from my earlier read, but let me confirm it's still correct):[0m[0m
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/_Sidebar.md[0m for pattern: [38;5;141m2.3[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern '2.3' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\_Sidebar.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mThe sidebar already has the correct entry for [38;5;10mchapter02.03-python-example[0m. The file is complete and properly linked.[0m[0m
+[0m[0m
+Here's what I created:[0m[0m
+[0m[0m
+[1m[38;5;10mchapter02.03-python-example.md[0m[22m - The Python companion for Recipe 2.3 (Clinical Documentation Improvement Suggestions). It includes:[0m[0m
+[0m[0m
+1. [1mOpening callout[22m framing this as illustrative, not production-ready[0m[0m
+2. [1mSetup[22m with pip install, IAM permissions, and Bedrock model access requirements[0m[0m
+3. [1mConfiguration and Constants[22m with model ID, knowledge base ID, confidence thresholds, and tuning knobs[0m[0m
+4. [1mStep 1: Receive and Parse[22m - stores the note in S3 for audit trail[0m[0m
+5. [1mStep 2: Extract Clinical Elements[22m - uses Claude via Bedrock to identify diagnoses, meds, labs, procedures with specificity qualifiers[0m[0m
+6. [1mStep 3: Retrieve Guidelines[22m - queries Bedrock Knowledge Bases for ICD-10-CM guidelines and org-specific query templates (the RAG piece)[0m[0m
+7. [1mStep 4: Generate CDI Suggestions[22m - the core LLM call that identifies specificity gaps and generates physician-friendly queries[0m[0m
+8. [1mStep 5: Prioritize and Filter[22m - confidence thresholds, impact sorting, alert fatigue cap[0m[0m
+9. [1mStep 6: Store and Notify[22m - DynamoDB lifecycle tracking, S3 audit trail for suppressed suggestions[0m[0m
+10. [1mFull pipeline function[22m with print statements for tracing execution[0m[0m
+11. [1mExample usage[22m with a synthetic progress note containing intentional specificity gaps (pneumonia without organism, heart failure without type, diabetes without complications)[0m[0m
+12. [1mGap to production[22m covering EHR integration, knowledge base maintenance, context window management, feedback loops, compliance review, hallucination detection, rate limiting, multi-note deduplication, DynamoDB design, VPC/encryption, and testing[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 2.64 • Time: 6m 7s
+
+All boto3 calls use correct API parameters for the current Bedrock Messages API. No em dashes. No fake URLs. No documentation-voice.[0m[1G[0m[0m[?25h
