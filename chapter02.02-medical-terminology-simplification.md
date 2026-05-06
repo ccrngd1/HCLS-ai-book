@@ -56,6 +56,8 @@ LLMs excel at text simplification for several reasons:
 
 **Confidence without accuracy.** The model will always produce output. It won't say "I'm not sure how to simplify this accurately." If it encounters a term it doesn't fully understand, it will still generate a simplification, and that simplification might be wrong. You need validation layers that don't rely on the model's self-assessment.
 
+**Prompt injection from untrusted input.** If your source text comes from user-submitted content (patient portal messages, uploaded documents) rather than structured EHR exports, adversarial content could manipulate the model to ignore simplification constraints. Sanitize inputs and consider adding Amazon Bedrock Guardrails as an additional safety layer for user-facing deployments. For text sourced directly from your EHR system, this risk is minimal.
+
 ### Readability Scoring
 
 You need a way to measure whether the simplified output actually hit the target reading level. Several established formulas exist:
@@ -94,7 +96,7 @@ Now let's get specific. Here's how to build this on AWS, and why each service ea
 
 **Amazon Bedrock for LLM access.** Bedrock gives you managed access to foundation models (Claude, Llama, Titan) without provisioning infrastructure. For text simplification, you need a model that understands medical terminology and can follow detailed instructions about reading level and accuracy constraints. Claude (via Bedrock) handles this well. Bedrock also keeps your data within your AWS account boundary, which matters for PHI. The text you send for simplification (clinical notes, discharge instructions) is PHI. It cannot leave your compliance perimeter.
 
-**Amazon Bedrock Guardrails for safety filtering.** Guardrails let you define content policies that are enforced on both input and output. For medical simplification, you configure guardrails to block outputs that contain clinical recommendations not present in the source, flag potential meaning drift, and ensure the model stays in "simplification mode" rather than drifting into medical advice. This is your automated safety net before human review.
+**Amazon Bedrock Guardrails for safety filtering.** Guardrails let you define content policies that are enforced on both input and output. For medical simplification, you'd configure guardrails to block outputs that contain clinical recommendations not present in the source, flag potential meaning drift, and ensure the model stays in "simplification mode" rather than drifting into medical advice. This recipe's MVP implementation relies on the entity validation step (Step 4) as the primary safety net. Adding Guardrails as an additional layer is covered in Variations and Extensions below.
 
 **Amazon Comprehend Medical for entity extraction.** Before and after simplification, you need to verify that key medical entities (medications, dosages, conditions, procedures) are preserved. Comprehend Medical extracts these entities from clinical text with high accuracy. By comparing entities in the source versus the simplified output, you get an automated accuracy check: if the source mentions "clopidogrel 75mg daily" and the simplified version doesn't mention that medication or changes the dose, something went wrong.
 
@@ -128,11 +130,11 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SQS |
-| **IAM Permissions** | `bedrock:InvokeModel`, `comprehend:DetectEntities` (Comprehend Medical), `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sqs:SendMessage` |
+| **IAM Permissions** | `bedrock:InvokeModel`, `comprehendmedical:DetectEntitiesV2`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sqs:SendMessage`, `kms:Decrypt`, `kms:GenerateDataKey` |
 | **BAA** | AWS BAA signed (required: clinical text is PHI) |
 | **Bedrock Model Access** | Request access to Claude or Titan models in Bedrock console |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda environment variables: KMS encrypted; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, SQS, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS with customer-managed key; DynamoDB: encryption at rest with customer-managed KMS key (enables key usage auditing via CloudTrail and key revocation); Lambda environment variables: KMS encrypted; all API calls over TLS |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for Bedrock (`bedrock-runtime`), Comprehend Medical, S3, DynamoDB, SQS, CloudWatch Logs, and KMS. Note: S3 and DynamoDB use gateway endpoints (free). All others use interface endpoints (PrivateLink, ~$0.01/AZ/hour plus data processing). Verify `bedrock-runtime` endpoint availability in your target region. |
 | **CloudTrail** | Enabled: log all Bedrock invocations and Comprehend Medical calls for audit |
 | **Sample Data** | Synthetic clinical text. Use publicly available sample discharge summaries or generate synthetic examples. Never use real patient documents in dev. |
 | **Cost Estimate** | Bedrock (Claude Haiku): ~$0.01-0.03 per simplification. Comprehend Medical: ~$0.01 per 100 characters. Total: ~$0.02-0.04 per document. |
@@ -142,12 +144,11 @@ flowchart LR
 | AWS Service | Role |
 |------------|------|
 | **Amazon Bedrock** | LLM inference for text simplification (Claude or Titan) |
-| **Amazon Bedrock Guardrails** | Content filtering and safety constraints on model output |
 | **Amazon Comprehend Medical** | Medical entity extraction for accuracy validation |
 | **Amazon S3** | Stores prompt templates, source documents, and simplified outputs |
 | **AWS Lambda** | Orchestrates the pipeline: classify, generate, validate, score |
 | **Amazon DynamoDB** | Stores results, readability scores, and audit trail |
-| **Amazon SQS** | Dead letter queue for failed simplifications; human review queue |
+| **Amazon SQS** | Human review queue for accuracy failures. In production, add a dead letter queue for Lambda processing failures. |
 | **AWS KMS** | Encryption key management for all data at rest |
 | **Amazon CloudWatch** | Metrics, logs, and alarms for pipeline health |
 
@@ -270,6 +271,8 @@ FUNCTION generate_simplification(system_prompt, user_prompt, model_id):
 
 **Step 4: Validate medical accuracy with entity comparison.** This is the safety-critical step. You extract medical entities (medications, conditions, dosages, procedures) from both the original clinical text and the simplified version, then compare them. If the original mentions "clopidogrel 75mg daily" and the simplified version says "a blood thinner" without specifying the name or dose, that's a meaning loss that needs to be caught. Comprehend Medical handles the entity extraction. The comparison logic checks that every medication, dosage, and condition from the source appears in the output. Skip this step and you're trusting the LLM to never drop or alter a medical fact. It will. Not often, but often enough to matter.
 
+**Important caveat on false positives:** The whole point of simplification is replacing medical terms with plain language equivalents. "Myocardial infarction" becomes "heart attack." Comprehend Medical will flag "myocardial infarction" as missing from the simplified text because "heart attack" doesn't match. This means the validation will produce false positives on every successful synonym substitution. In practice, focus validation on medications and dosages (where exact text preservation is expected) rather than conditions and procedures (where synonym substitution is the goal). For production, you'd add a medical synonym map for common term pairs, or use a secondary LLM call to verify semantic equivalence of flagged "missing" entities.
+
 ```
 FUNCTION validate_accuracy(original_text, simplified_text):
     // Extract medical entities from the original clinical text.
@@ -313,7 +316,7 @@ FUNCTION validate_accuracy(original_text, simplified_text):
     }
 ```
 
-**Step 5: Score readability.** Run the simplified text through readability formulas to verify it actually hit the target grade level. Flesch-Kincaid Grade Level is the primary metric. If the output scores above the target (too complex), you can retry with a more aggressive prompt. If it scores well below (too simple), that might indicate over-simplification or loss of content. The sweet spot is within 1-2 grade levels of the target. This is a computational check, not an LLM call: count syllables, count words, count sentences, apply the formula. Fast and deterministic.
+**Step 5: Score readability.** Here's where you find out if the model actually did what you asked. Run the simplified text through readability formulas to verify it hit the target grade level. Flesch-Kincaid Grade Level is the primary metric. If the output scores above the target (too complex), you can retry with a more aggressive prompt. If it scores well below (too simple), that might indicate over-simplification or loss of content. The sweet spot is within 1-2 grade levels of the target. The beautiful thing about this step: it's a computational check, not an LLM call. Count syllables, count words, count sentences, apply the formula. Fast, deterministic, and impossible to argue with.
 
 ```
 FUNCTION score_readability(text):
@@ -342,7 +345,7 @@ FUNCTION score_readability(text):
     }
 ```
 
-**Step 6: Quality gate and retry logic.** Combine the validation result and readability score to make a pass/fail decision. If validation failed (missing entities), route to human review immediately. Do not retry: the model made a factual error and retrying might produce the same error. If readability failed (grade level too high) but validation passed, retry with a more aggressive simplification prompt (up to 2 retries). If both pass, store the result. This step prevents bad output from reaching patients while giving the system a chance to self-correct on readability issues.
+**Step 6: Quality gate and retry logic.** Combine the validation result and readability score to make a pass/fail decision. If validation failed (missing entities), route to human review immediately. Do not retry: the model made a factual error and retrying might produce the same error. If readability failed (grade level too high) but validation passed, retry with a more aggressive simplification prompt (up to 2 retries). Effective retries should lower the target grade level in the system prompt itself (e.g., from grade 6 to grade 4), not just append "simplify further" to the user message. If both pass, store the result. This step prevents bad output from reaching patients while giving the system a chance to self-correct on readability issues.
 
 ```
 MAX_RETRIES = 2
@@ -389,7 +392,7 @@ FUNCTION quality_gate(original_text, simplified_text, doc_type, attempt_number):
     }
 ```
 
-**Step 7: Store results.** Write the complete record to DynamoDB: original text, simplified version, all scores, validation details, and processing metadata. This audit trail is essential for compliance (you need to show what was generated and what checks were applied) and for continuous improvement (analyzing failure patterns over time). The record also enables A/B testing: you can compare different model versions or prompt strategies by looking at readability scores and validation pass rates across batches.
+**Step 7: Store results.** The unglamorous but essential step. Write the complete record to DynamoDB: original text, simplified version, all scores, validation details, and processing metadata. This audit trail is essential for compliance (you need to show what was generated and what checks were applied) and for continuous improvement (analyzing failure patterns over time). The record also enables A/B testing: you can compare different model versions or prompt strategies by looking at readability scores and validation pass rates across batches. Future-you will thank present-you for storing all of this.
 
 ```
 FUNCTION store_result(document_id, original_text, simplified_text, doc_type, quality_result, readability):
@@ -406,6 +409,8 @@ FUNCTION store_result(document_id, original_text, simplified_text, doc_type, qua
         prompt_version       = version of the prompt template used
         needs_review         = (quality_result.status != "PASSED")
 ```
+
+In production, configure DynamoDB TTL or a scheduled cleanup process aligned with your organization's PHI retention policy. Storing PHI indefinitely without a retention schedule is a HIPAA compliance gap.
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -458,6 +463,8 @@ One thing that surprised me: patients don't just want simpler words. They want s
 ---
 
 ## Variations and Extensions
+
+**Bedrock Guardrails for output safety.** Add Amazon Bedrock Guardrails as a content filtering layer between the model and the patient. Configure a guardrail that blocks outputs containing clinical recommendations not present in the source text, detects when the model drifts from simplification into medical advice, and enforces topic constraints. Pass the guardrail ID in your `generate_simplification` call. This is especially valuable when source text comes from user-submitted content rather than structured EHR exports.
 
 **Multi-language simplification.** After generating the English simplified version, use a translation service (or the same LLM with a translation prompt) to produce versions in Spanish, Mandarin, Vietnamese, or other languages common in your patient population. Simplify first, then translate. Translating complex clinical English directly produces worse results than translating already-simplified English.
 

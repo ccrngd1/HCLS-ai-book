@@ -15,7 +15,7 @@ pip install boto3 textstat
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
 - `bedrock:InvokeModel` (for the foundation model)
-- `comprehend:DetectEntitiesV2` (for Comprehend Medical entity extraction)
+- `comprehendmedical:DetectEntitiesV2` (for Comprehend Medical entity extraction)
 - `dynamodb:PutItem` (for storing results)
 
 You also need model access enabled in the Bedrock console for your chosen model (this example uses Anthropic Claude 3 Haiku).
@@ -373,6 +373,9 @@ def validate_accuracy(original_text: str, simplified_text: str) -> dict:
                 if attr.get("Type") == "DOSAGE"
             ]
             # If original had a dosage but simplified doesn't, flag it.
+            # Note: Comprehend Medical may include dosage in the entity text
+            # itself rather than as a separate Attribute, which can cause
+            # false positives here. Production systems need fuzzy matching.
             if orig_dosages and not simplified_dosages:
                 altered_entities.append({
                     "medication": orig_med["Text"],

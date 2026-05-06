@@ -69,3 +69,334 @@ Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-a
 [38;5;141m> [0mLet me try a more concise approach:[0m[0m
 [38;5;141m> [0mLet me delegate this to a subagent that can handle writing the full file:[0m[0m
 [38;5;141m> [0mLet me try creating the file with a more focused approach, writing just the opening sections first:[0m[0m
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;141m> [0mI'll start by reading the current draft, the reviews, and the style/recipe guides to understand what needs to be edited.[0m[0m
+Reading directory: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(849 entries)[0m
+[38;5;244m - Completed in 0.44s[0m
+
+[38;5;141m> [0mNow let me read the main recipe draft, both reviews, the style guide, and the recipe guide in parallel:[0m[0m
+Batch fs_read operation with [38;5;141m5[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/reviews/chapter02.02-code-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/reviews/chapter02.02-expert-review.md[0m, all lines
+↱ Operation 4: Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/STYLE-GUIDE.md[0m, all lines
+↱ Operation 5: Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/RECIPE-GUIDE.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m39165 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m8971 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter02.02-code-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m21336 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter02.02-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\RECIPE-GUIDE.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 5 operations processed, 5 successful, 0 failed
+[38;5;244m - Completed in 0.6s[0m
+
+[38;5;141m> [0mNow let me also read the Python companion to check for the IAM permission issue flagged in the code review:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m50[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2168 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-python-example.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mGood. I can see the IAM permission issue on line 18. Now I have all the information I need. Let me apply the editorial fixes to both files. Let me start with the main recipe file.[0m[0m
+[0m[0m
+Based on my review, here are the edits needed:[0m[0m
+[0m[0m
+[1mFrom the code review:[22m[0m[0m
+1. Fix IAM permission name in the main recipe's Prerequisites table ([38;5;10mcomprehend:DetectEntities[0m → [38;5;10mcomprehendmedical:DetectEntitiesV2[0m)[0m[0m
+[0m[0m
+[1mFrom the expert review:[22m[0m[0m
+1. Add KMS to VPC endpoint list (HIGH - S1/N1)[0m[0m
+2. Move Bedrock Guardrails from Ingredients to Variations (HIGH - A1) or add acknowledgment[0m[0m
+3. Address entity validation false positives in Step 4 (HIGH - A2)[0m[0m
+4. Specify CMK for DynamoDB encryption (MEDIUM - S2)[0m[0m
+5. Add prompt injection note (MEDIUM - S3)[0m[0m
+6. Add interface vs. gateway endpoint distinction (MEDIUM - N2)[0m[0m
+7. Simplify SQS description or add DLQ to diagram (MEDIUM - A3)[0m[0m
+8. Add data retention note (LOW - S4)[0m[0m
+9. Add retry grade adjustment note (LOW - A4)[0m[0m
+10. Add Bedrock endpoint name clarification (LOW - N3)[0m[0m
+11. Inject more personality into Steps 5-7 (LOW - V3)[0m[0m
+[0m[0m
+[1mEditorial checklist items:[22m[0m[0m
+- Check for em dashes (none found)[0m[0m
+- Verify header hierarchy (correct: H1 title, H2 sections, H3 subsections)[0m[0m
+- Check voice consistency[0m[0m
+- Verify links are plausible[0m[0m
+[0m[0m
+Let me apply the fixes:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Fix IAM action namespace (comprehend → comprehendmedical) and add KMS permissions needed for SSE-KMS operations
+
+[48;2;79;40;40m[39m- 131     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mIAM Permissions[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m [38;2;163;190;140m`[38;2;163;190;140mbedrock:InvokeModel[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mcomprehend:DetectEntities[38;2;163;190;140m`[38;2;192;197;206m (Comprehend Medical), [38;2;163;190;140m`[38;2;163;190;140ms3:GetObject[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140ms3:PutObject[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:PutItem[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:GetItem[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140msqs:SendMessage[38;2;163;190;140m`[38;2;192;197;206m [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      131[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mIAM Permissions[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m [38;2;163;190;140m`[38;2;163;190;140mbedrock:InvokeModel[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mcomprehendmedical:DetectEntitiesV2[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140ms3:GetObject[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140ms3:PutObject[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:PutItem[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mdynamodb:GetItem[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140msqs:SendMessage[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mkms:Decrypt[38;2;163;190;140m`[38;2;192;197;206m, [38;2;163;190;140m`[38;2;163;190;140mkms:GenerateDataKey[38;2;163;190;140m`[38;2;192;197;206m [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.39s[0m
+
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Specify customer-managed KMS keys for DynamoDB PHI storage to match S3 encryption posture (expert review S2)
+
+[48;2;79;40;40m[39m- 134     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mEncryption[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda environment variables: KMS encrypted; all API calls over TLS [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      134[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mEncryption[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m S3: SSE-KMS with customer-managed key; DynamoDB: encryption at rest with customer-managed KMS key (enables key usage auditing via CloudTrail and key revocation); Lambda environment variables: KMS encrypted; all API calls over TLS [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.28s[0m
+
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add KMS VPC endpoint (HIGH fix S1/N1), clarify endpoint name (LOW N3), distinguish gateway vs interface endpoints (MEDIUM N2)
+
+[48;2;79;40;40m[39m- 135     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mVPC[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Production: Lambda in VPC with VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, SQS, and CloudWatch Logs [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      135[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mVPC[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Production: Lambda in VPC with VPC endpoints for Bedrock ([38;2;163;190;140m`[38;2;163;190;140mbedrock-runtime[38;2;163;190;140m`[38;2;192;197;206m), Comprehend Medical, S3, DynamoDB, SQS, CloudWatch Logs, and KMS. Note: S3 and DynamoDB use gateway endpoints (free). All others use interface endpoints (PrivateLink, ~$0.01/AZ/hour plus data processing). Verify [38;2;163;190;140m`[38;2;163;190;140mbedrock-runtime[38;2;163;190;140m`[38;2;192;197;206m endpoint availability in your target region. [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.12s[0m
+
+[38;5;141m> [0mNow let me address the Bedrock Guardrails issue. The expert review recommends moving it to Variations and Extensions since it's not actually implemented in the code. I'll remove it from the Ingredients table and the "Why These Services" section, and add it to Variations:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Clarify that Guardrails is a production enhancement, not part of the MVP implementation (expert review A1)
+
+[48;2;79;40;40m[39m- 97    [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mAmazon Bedrock Guardrails for safety filtering.[38;2;235;203;139m**[38;2;192;197;206m Guardrails let you define content policies that are enforced on both input and output. For medical simplification, you configure guardrails to block outputs that contain clinical recommendations not present in the source, flag potential meaning drift, and ensure the model stays in "simplification mode" rather than drifting into medical advice. This is your automated safety net before human review.[K
+[0m[48;2;40;67;43m[39m+     97[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mAmazon Bedrock Guardrails for safety filtering.[38;2;235;203;139m**[38;2;192;197;206m Guardrails let you define content policies that are enforced on both input and output. For medical simplification, you'd configure guardrails to block outputs that contain clinical recommendations not present in the source, flag potential meaning drift, and ensure the model stays in "simplification mode" rather than drifting into medical advice. This recipe's MVP implementation relies on the entity validation step (Step 4) as the primary safety net. Adding Guardrails as an additional layer is covered in Variations and Extensions below.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.36s[0m
+
+[38;5;141m> [0mNow update the Ingredients table to move Guardrails to a "production enhancement" note:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Remove Bedrock Guardrails from Ingredients table since it's not implemented in the MVP code (expert review A1)
+
+[48;2;43;48;59m[39m  144, 144[0m:[39m[48;2;43;48;59m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mAmazon Bedrock[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m LLM inference for text simplification (Claude or Titan) [38;2;192;197;206m|[K
+[0m[48;2;79;40;40m[39m- 145     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m **Amazon Bedrock Guardrails** [38;2;192;197;206m|[38;2;192;197;206m Content filtering and safety constraints on model output [38;2;192;197;206m|[K
+[0m[48;2;79;40;40m[39m- 146     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mAmazon Comprehend Medical[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Medical entity extraction for accuracy validation [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      145[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m **Amazon Comprehend Medical** [38;2;192;197;206m|[38;2;192;197;206m Medical entity extraction for accuracy validation [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.16s[0m
+
+[38;5;141m> [0mNow let me address the entity validation false positive issue (A2). I need to add acknowledgment in Step 4:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Address entity validation false positive blind spot with mitigation options (expert review A2)
+
+[48;2;43;48;59m[39m  270, 270[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mStep 4: Validate medical accuracy with entity comparison.[38;2;235;203;139m**[38;2;192;197;206m This is the safety-critical step. You extract medical entities (medications, conditions, dosages, procedures) from both the original clinical text and the simplified version, then compare them. If the original mentions "clopidogrel 75mg daily" and the simplified version says "a blood thinner" without specifying the name or dose, that's a meaning loss that needs to be caught. Comprehend Medical handles the entity extraction. The comparison logic checks that every medication, dosage, and condition from the source appears in the output. Skip this step and you're trusting the LLM to never drop or alter a medical fact. It will. Not often, but often enough to matter.[K
+[0m[48;2;40;67;43m[39m+      271[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      272[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mImportant caveat on false positives:[38;2;235;203;139m**[38;2;192;197;206m The whole point of simplification is replacing medical terms with plain language equivalents. "Myocardial infarction" becomes "heart attack." Comprehend Medical will flag "myocardial infarction" as missing from the simplified text because "heart attack" doesn't match. This means the validation will produce false positives on every successful synonym substitution. In practice, focus validation on medications and dosages (where exact text preservation is expected) rather than conditions and procedures (where synonym substitution is the goal). For production, you'd add a medical synonym map for common term pairs, or use a secondary LLM call to verify semantic equivalence of flagged "missing" entities.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.12s[0m
+
+[38;5;141m> [0mNow let me update the SQS description in the Ingredients table to match what's actually implemented (A3):[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Clarify SQS role to match what's actually implemented (expert review A3)
+
+[48;2;79;40;40m[39m- 149     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mAmazon SQS[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Dead letter queue for failed simplifications; human review queue [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      149[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mAmazon SQS[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Human review queue for accuracy failures. In production, add a dead letter queue for Lambda processing failures. [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.8s[0m
+
+[38;5;141m> [0mNow add a prompt injection note to the Failure Modes section (S3):[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add prompt injection risk note for user-submitted text sources (expert review S3)
+
+[48;2;43;48;59m[39m  57, 57[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mConfidence without accuracy.[38;2;235;203;139m**[38;2;192;197;206m The model will always produce output. It won't say "I'm not sure how to simplify this accurately." If it encounters a term it doesn't fully understand, it will still generate a simplification, and that simplification might be wrong. You need validation layers that don't rely on the model's self-assessment.[K
+[0m[48;2;40;67;43m[39m+     58[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     59[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mPrompt injection from untrusted input.[38;2;235;203;139m**[38;2;192;197;206m If your source text comes from user-submitted content (patient portal messages, uploaded documents) rather than structured EHR exports, adversarial content could manipulate the model to ignore simplification constraints. Sanitize inputs and consider adding Amazon Bedrock Guardrails as an additional safety layer for user-facing deployments. For text sourced directly from your EHR system, this risk is minimal.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mNow add a data retention note to Step 7 (S4):[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add data retention policy note for PHI stored in DynamoDB (expert review S4)
+
+[48;2;43;48;59m[39m  410, 410[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        needs_review         = (quality_result.status != "PASSED")[K
+[0m[48;2;43;48;59m[39m  411, 411[0m:[39m[48;2;43;48;59m [38;2;192;197;206m```[K
+[0m[48;2;40;67;43m[39m+      412[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      413[0m:[39m[48;2;24;38;30m [38;2;192;197;206mIn production, configure DynamoDB TTL or a scheduled cleanup process aligned with your organization's PHI retention policy. Storing PHI indefinitely without a retention schedule is a HIPAA compliance gap.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.13s[0m
+
+[38;5;141m> [0mNow add a note about retry grade adjustment (A4) in Step 6:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add note about adjusting target grade level in system prompt on retry (expert review A4)
+
+[48;2;79;40;40m[39m- 348     [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mStep 6: Quality gate and retry logic.[38;2;235;203;139m**[38;2;192;197;206m Combine the validation result and readability score to make a pass/fail decision. If validation failed (missing entities), route to human review immediately. Do not retry: the model made a factual error and retrying might produce the same error. If readability failed (grade level too high) but validation passed, retry with a more aggressive simplification prompt (up to 2 retries). If both pass, store the result. This step prevents bad output from reaching patients while giving the system a chance to self-correct on readability issues.[K
+[0m[48;2;40;67;43m[39m+      348[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mStep 6: Quality gate and retry logic.[38;2;235;203;139m**[38;2;192;197;206m Combine the validation result and readability score to make a pass/fail decision. If validation failed (missing entities), route to human review immediately. Do not retry: the model made a factual error and retrying might produce the same error. If readability failed (grade level too high) but validation passed, retry with a more aggressive simplification prompt (up to 2 retries). Effective retries should lower the target grade level in the system prompt itself (e.g., from grade 6 to grade 4), not just append "simplify further" to the user message. If both pass, store the result. This step prevents bad output from reaching patients while giving the system a chance to self-correct on readability issues.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.8s[0m
+
+[38;5;141m> [0mNow let me add more personality to Steps 5 and 7 introductions (V3). Let me read the current text:[0m[0m
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m for pattern: [38;5;141mstep 5: score readability[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Step 5: Score readability' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.5s[0m
+
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add personality to Step 5 introduction to match voice of earlier steps (expert review V3)
+
+[48;2;79;40;40m[39m- 319     [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mStep 5: Score readability.[38;2;235;203;139m**[38;2;192;197;206m Run the simplified text through readability formulas to verify it actually hit the target grade level. Flesch-Kincaid Grade Level is the primary metric. If the output scores above the target (too complex), you can retry with a more aggressive prompt. If it scores well below (too simple), that might indicate over-simplification or loss of content. The sweet spot is within 1-2 grade levels of the target. This is a computational check, not an LLM call: count syllables, count words, count sentences, apply the formula. Fast and deterministic.[K
+[0m[48;2;40;67;43m[39m+      319[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mStep 5: Score readability.[38;2;235;203;139m**[38;2;192;197;206m Here's where you find out if the model actually did what you asked. Run the simplified text through readability formulas to verify it hit the target grade level. Flesch-Kincaid Grade Level is the primary metric. If the output scores above the target (too complex), you can retry with a more aggressive prompt. If it scores well below (too simple), that might indicate over-simplification or loss of content. The sweet spot is within 1-2 grade levels of the target. The beautiful thing about this step: it's a computational check, not an LLM call. Count syllables, count words, count sentences, apply the formula. Fast, deterministic, and impossible to argue with.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.8s[0m
+
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m for pattern: [38;5;141mstep 7: store results[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'Step 7: Store results' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.3s[0m
+
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add personality to Step 7 introduction to match voice of earlier steps (expert review V3)
+
+[48;2;79;40;40m[39m- 395     [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mStep 7: Store results.[38;2;235;203;139m**[38;2;192;197;206m Write the complete record to DynamoDB: original text, simplified version, all scores, validation details, and processing metadata. This audit trail is essential for compliance (you need to show what was generated and what checks were applied) and for continuous improvement (analyzing failure patterns over time). The record also enables A/B testing: you can compare different model versions or prompt strategies by looking at readability scores and validation pass rates across batches.[K
+[0m[48;2;40;67;43m[39m+      395[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mStep 7: Store results.[38;2;235;203;139m**[38;2;192;197;206m The unglamorous but essential step. Write the complete record to DynamoDB: original text, simplified version, all scores, validation details, and processing metadata. This audit trail is essential for compliance (you need to show what was generated and what checks were applied) and for continuous improvement (analyzing failure patterns over time). The record also enables A/B testing: you can compare different model versions or prompt strategies by looking at readability scores and validation pass rates across batches. Future-you will thank present-you for storing all of this.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.13s[0m
+
+[38;5;141m> [0mNow let me add Bedrock Guardrails to the Variations and Extensions section:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add Bedrock Guardrails as first variation/extension since it was removed from core Ingredients (expert review A1)
+
+[48;2;43;48;59m[39m  465, 465[0m:[39m[48;2;43;48;59m [38;2;143;161;179m##[38;2;192;197;206m [38;2;143;161;179mVariations and Extensions[K
+[0m[48;2;43;48;59m[39m  466, 466[0m:[39m[48;2;43;48;59m [K
+[0m[48;2;40;67;43m[39m+      467[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mBedrock Guardrails for output safety.[38;2;235;203;139m**[38;2;192;197;206m Add Amazon Bedrock Guardrails as a content filtering layer between the model and the patient. Configure a guardrail that blocks outputs containing clinical recommendations not present in the source text, detects when the model drifts from simplification into medical advice, and enforces topic constraints. Pass the guardrail ID in your [38;2;163;190;140m`[38;2;163;190;140mgenerate_simplification[38;2;163;190;140m`[38;2;192;197;206m call. This is especially valuable when source text comes from user-submitted content rather than structured EHR exports.[K
+[0m[48;2;40;67;43m[39m+      468[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;43;48;59m[39m  467, 469[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mMulti-language simplification.[38;2;235;203;139m**[38;2;192;197;206m After generating the English simplified version, use a translation service (or the same LLM with a translation prompt) to produce versions in Spanish, Mandarin, Vietnamese, or other languages common in your patient population. Simplify first, then translate. Translating complex clinical English directly produces worse results than translating already-simplified English.[K
+[0m[K
+Updating: [38;5;141mchapter02.02-medical-terminology-simplification.md[0m
+[38;5;244m - Completed in 0.7s[0m
+
+[38;5;141m> [0mNow let me fix the IAM permission in the Python companion file:[0m[0m
+I'll modify the following file: [38;5;141mchapter02.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Fix IAM action namespace: comprehend → comprehendmedical (code review Issue 1)
+
+[48;2;79;40;40m[39m- 18    [0m:[39m[48;2;36;25;28m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mcomprehend:DetectEntitiesV2[38;2;163;190;140m`[38;2;191;97;106m (for Comprehend Medical entity extraction)[K
+[0m[48;2;40;67;43m[39m+     18[0m:[39m[48;2;24;38;30m [38;2;191;97;106m-[38;2;191;97;106m [38;2;163;190;140m`[38;2;163;190;140mcomprehendmedical:DetectEntitiesV2[38;2;163;190;140m`[38;2;191;97;106m (for Comprehend Medical entity extraction)[K
+[0m[K
+Updating: [38;5;141mchapter02.02-python-example.md[0m
+[38;5;244m - Completed in 0.11s[0m
+
+[38;5;141m> [0mNow let me add the inline comment about entity boundary variance that the code review suggested. Let me find the relevant section:[0m[0m
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-python-example.md[0m for pattern: [38;5;141msimplified_dosages[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 2 matches for pattern 'simplified_dosages' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-python-example.md
+[38;5;244m - Completed in 0.3s[0m
+
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-python-example.md[0m, from line [38;5;141m368[0m to [38;5;141m382[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m570 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-python-example.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter02.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline comment about entity boundary variance causing false positives (code review Issue 2)
+
+[48;2;43;48;59m[39m  370, 370[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        for match in matching_simplified:[K
+[0m[48;2;43;48;59m[39m  371, 371[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            simplified_dosages = [[K
+[0m[48;2;43;48;59m[39m  372, 372[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                attr["Text"] for attr in match.get("Attributes", [])[K
+[0m[48;2;43;48;59m[39m  373, 373[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                if attr.get("Type") == "DOSAGE"[K
+[0m[48;2;43;48;59m[39m  374, 374[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            ][K
+[0m[48;2;43;48;59m[39m  375, 375[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            # If original had a dosage but simplified doesn't, flag it.[K
+[0m[48;2;40;67;43m[39m+      376[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            # Note: Comprehend Medical may include dosage in the entity text[K
+[0m[48;2;40;67;43m[39m+      377[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            # itself rather than as a separate Attribute, which can cause[K
+[0m[48;2;40;67;43m[39m+      378[0m:[39m[48;2;24;38;30m [38;2;192;197;206m            # false positives here. Production systems need fuzzy matching.[K
+[0m[48;2;43;48;59m[39m  376, 379[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            if orig_dosages and not simplified_dosages:[K
+[0m[K
+Updating: [38;5;141mchapter02.02-python-example.md[0m
+[38;5;244m - Completed in 0.8s[0m
+
+[38;5;141m> [0mNow let me do a final check on the main recipe to verify the TODO comments are preserved and scan for any remaining issues:[0m[0m
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m for pattern: [38;5;141mtodo[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 2 matches for pattern 'TODO' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood, both TODO markers are preserved. Let me also check for em dashes:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under C:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNo em dashes. Let me do a final read of the key sections I modified to verify everything flows correctly:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m140[0m to [38;5;141m175[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2356 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.2s[0m
+
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m100[0m to [38;5;141m130[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2012 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m130[0m to [38;5;141m140[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1580 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me check the Variations section to make sure the Guardrails addition reads well:[0m[0m
+Searching: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m for pattern: [38;5;141mvariations and extensions[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 2 matches for pattern 'Variations and Extensions' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mEverything looks consistent. Let me verify the full Variations section:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m465[0m to [38;5;141m485[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2386 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Let me also verify the Step 4 entity validation section reads well with the new caveat:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m270[0m to [38;5;141m290[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2278 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mEverything looks good. Let me do one final scan of the complete file to check for any remaining issues I might have missed:[0m[0m
+Searching for: [38;5;141mThis recipe demonstrates[0m in [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mThis recipe demonstrates[0m under C:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.5s[0m
+
+Searching for: [38;5;141mwe need to talk[0m in [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244mwe need to talk[0m under C:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.2s[0m
+
+[38;5;141m> [0mNo documentation-voice or LinkedIn-influencer patterns. The recipe is clean. Let me verify the final line count and structure:[0m[0m
+Reading file: [38;5;141mC:/Users/lawsnic/OneDrive - amazon.com/Documents/HCLS-ai-book/chapter02.02-medical-terminology-simplification.md[0m, from line [38;5;141m518[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m455 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter02.02-medical-terminology-simplification.md
+[38;5;244m - Completed in 0.2s[0m
+
+[38;5;141m> [0mAll sections present and in correct order. The recipe is complete.[0m[0m
+[0m[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0m[0m
+[0m[0m
+[38;5;252m[1m## Edit Summary[0m[0m
+[0m[0m
+[1mChanges applied to [38;5;10mchapter02.02-medical-terminology-simplification.md[0m:[22m[0m[0m
+[0m[0m
+1. Fixed IAM permission namespace: [38;5;10mcomprehend:DetectEntities[0m → [38;5;10mcomprehendmedical:DetectEntitiesV2[0m; added [38;5;10mkms:Decrypt[0m and [38;5;10mkms:GenerateDataKey[0m[0m[0m
+2. Added KMS to VPC endpoint list (production-breaking gap)[0m[0m
+3. Specified [38;5;10mbedrock-runtime[0m endpoint name and distinguished gateway vs. interface endpoints with cost note[0m[0m
+[38;5;141m> [0mLet me try a much shorter initial file creation:[0m[0m
+4. Upgraded DynamoDB encryption from "default" to customer-managed KMS key for PHI parity with S3[0m[0m
+5. Moved Bedrock Guardrails from Ingredients table to Variations and Extensions (it was listed but never implemented in the code)[0m[0m
+6. Updated "Why These Services" Guardrails paragraph to clarify it's a production enhancement, not part of the MVP[0m[0m
+7. Added entity validation false-positive caveat in Step 4 with mitigation options[0m[0m
+8. Added prompt injection risk to Failure Modes section[0m[0m
+9. Clarified SQS role in Ingredients table to match actual implementation[0m[0m
+10. Added data retention policy note after Step 7[0m[0m
+11. Added retry grade-level adjustment guidance in Step 6[0m[0m
+12. Injected more personality into Steps 5 and 7 introductions to match voice of earlier steps[0m[0m
+[0m[0m
+[1mChanges applied to [38;5;10mchapter02.02-python-example.md[0m:[22m[0m[0m
+[0m[0m
+1. Fixed IAM permission: [38;5;10mcomprehend:DetectEntitiesV2[0m → [38;5;10mcomprehendmedical:DetectEntitiesV2[0m[0m[0m
+2. Added inline comment about Comprehend Medical entity boundary variance causing false positives[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 6.58 • Time: 4m 9s
+
+[1mPreserved:[22m All TODO markers, section order, structural hierarchy, and existing technical content.[0m[1G[0m[0m[?25h
