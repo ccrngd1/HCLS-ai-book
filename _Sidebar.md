@@ -55,4 +55,10 @@
 
 ---
 
+#### Ch 4: Personalization / Recommendation
+
+* [Preface](chapter04-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
