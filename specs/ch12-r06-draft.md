@@ -8,6 +8,11 @@ validation:
   - type: file_exists
     name: output-file-exists
     paths: [chapter12.06-revenue-cycle-cash-flow-forecasting.md]
+  - type: persona_review
+    name: quality-review
+    persona: TechEditor
+    pass_condition: >-
+      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
 ---
 
 ## Objective

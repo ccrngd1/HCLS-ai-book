@@ -8,6 +8,11 @@ validation:
   - type: file_exists
     name: output-file-exists
     paths: [reviews/chapter13.04-expert-review.md]
+  - type: persona_review
+    name: quality-review
+    persona: TechCodeReviewer
+    pass_condition: >-
+      Review covers clinical accuracy, architectural soundness, security considerations, and provides prioritized findings (HIGH/MEDIUM/LOW) with concrete remediation steps.
 ---
 
 ## Objective

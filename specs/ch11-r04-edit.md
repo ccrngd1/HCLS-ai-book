@@ -8,6 +8,11 @@ validation:
   - type: file_exists
     name: output-file-exists
     paths: [chapter11.04-pre-visit-intake-bot.md]
+  - type: persona_review
+    name: quality-review
+    persona: TechExpertReviewer
+    pass_condition: >-
+      Final version incorporates all HIGH and MEDIUM findings from code review and expert review, has no style guide violations, no em dashes, and is publication-ready.
 ---
 
 ## Objective

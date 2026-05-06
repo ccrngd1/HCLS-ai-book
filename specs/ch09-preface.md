@@ -8,6 +8,11 @@ validation:
   - type: file_exists
     name: output-file-exists
     paths: [chapter09-preface.md]
+  - type: persona_review
+    name: quality-review
+    persona: TechEditor
+    pass_condition: >-
+      Preface introduces chapter scope, covers progression from simple to complex use cases, addresses healthcare-specific challenges, and matches project voice with no em dashes or documentation tone.
 ---
 
 ## Objective

@@ -1,4 +1,4 @@
-# Chapter 2 Preface — Teaching Machines to Write (Responsibly)
+# Chapter 2 Preface: Teaching Machines to Write (Responsibly)
 
 Large language models are the most overhyped and simultaneously most underestimated technology in healthcare right now. That's not a contradiction. The hype is about what people *think* LLMs can do (replace doctors, automate clinical reasoning, solve healthcare). The underestimation is about what they *actually* can do today, right now, with proper guardrails: eliminate hours of administrative writing that burns out clinicians and delays patient care.
 
@@ -28,7 +28,7 @@ That last one, grounded generation, is the architectural pattern that makes heal
 
 ## Why Healthcare Is Both the Best and Worst Domain for LLMs
 
-Healthcare is the best domain for LLMs because the administrative writing burden is crushing. Physicians spend roughly two hours on documentation for every one hour of patient care. Prior authorization letters are formulaic but time-consuming. Patient communications follow predictable patterns. After-visit summaries require synthesizing encounter data into readable prose. These are all tasks where "generate a first draft for human review" provides enormous value.
+Healthcare is the best domain for LLMs because the administrative writing burden is crushing. Physicians spend roughly two hours on documentation for every one hour of patient care. <!-- TODO: verify exact ratio and cite source; commonly attributed to Sinsky et al. 2016 (Annals of Internal Medicine) and AMA follow-up studies, but ratios vary by specialty and study methodology --> Prior authorization letters are formulaic but time-consuming. Patient communications follow predictable patterns. After-visit summaries require synthesizing encounter data into readable prose. These are all tasks where "generate a first draft for human review" provides enormous value.
 
 Healthcare is the worst domain for LLMs because the cost of errors is measured in human outcomes, not just dollars. A hallucinated drug interaction could lead to a missed contraindication. A summarization that drops a critical finding could delay treatment. A patient-facing message with incorrect dosing information could cause direct harm. The failure modes aren't theoretical; they're the reason every recipe in this chapter includes a human review step, confidence scoring, or grounding mechanism.
 
@@ -112,7 +112,7 @@ By the end of this chapter, you'll have patterns for:
 - Drafting patient communications that save staff hours daily
 - Simplifying clinical language so patients actually understand their care
 - Generating documentation that improves coding accuracy and revenue capture
-- Automating prior authorization narratives that currently take 20-30 minutes each
+- Automating prior authorization narratives that currently take 20-30 minutes each <!-- TODO: verify range; figures commonly cited by AMA prior authorization surveys but vary substantially by payer and specialty -->
 - Summarizing clinical encounters and complex medical histories
 - Building RAG systems that ground LLM outputs in verified medical literature
 - Processing ambient clinical conversations into structured notes
@@ -124,4 +124,4 @@ Let's start writing.
 
 ---
 
-*→ [Recipe 2.1 — Patient Message Response Drafting](chapter02.01-patient-message-response-drafting)*
+*→ [Recipe 2.1: Patient Message Response Drafting](chapter02.01-patient-message-response-drafting)*
