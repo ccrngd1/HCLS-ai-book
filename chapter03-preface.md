@@ -1,3 +1,5 @@
+<!-- Editorial pass v1 (TechEditor): ran full checklist. Verified zero em dashes and zero en dashes. Header hierarchy clean (H1 + 8 H2 + 5 H3, no skipped levels). Vendor balance ~100/0 general-to-AWS (appropriate for a preface; AWS specifics enter in recipes). Fixes: (1) "models stale" → "models go stale" (stale is not a verb); (2) added non-restrictive comma before "which means" in the personal-baselines paragraph; (3) hyphenated "4 to 8 week projects" → "4- to 8-week projects" to match the "two- to four-month projects" pattern two lines later; (4) number agreement "Recipe 3.6 and 3.7" → "Recipes 3.6 and 3.7". All TechWriter TODOs preserved (LLM-assisted anomaly detection references). -->
+
 # Chapter 3 Preface: Finding the Weird Stuff
 
 Here's a thing nobody tells you when you start working on healthcare data: most of the interesting problems are anomaly detection problems wearing different outfits.
@@ -40,7 +42,7 @@ This is the alert fatigue problem, and it's the single biggest reason anomaly de
 
 "Compare against the average" is the classic anomaly detection heuristic and it falls apart fast in healthcare. The average heart rate across all patients is not a useful baseline for any specific patient. The average billing pattern across all providers is not a useful baseline for a pediatric oncologist. The average number of chart views per day is not a useful baseline for a nurse who just rotated onto a high-acuity unit.
 
-You need personal baselines (this patient, this provider, this user) which means you need enough historical data per entity to establish what their normal looks like. New patients don't have baselines. New providers don't have baselines. Staff who changed roles don't have reliable baselines yet. Your anomaly detection system has to handle the cold-start problem gracefully, usually by falling back to cohort-level baselines (patients like this one, providers with this specialty and practice size) while building individual baselines over time.
+You need personal baselines (this patient, this provider, this user), which means you need enough historical data per entity to establish what their normal looks like. New patients don't have baselines. New providers don't have baselines. Staff who changed roles don't have reliable baselines yet. Your anomaly detection system has to handle the cold-start problem gracefully, usually by falling back to cohort-level baselines (patients like this one, providers with this specialty and practice size) while building individual baselines over time.
 
 And those baselines drift. Patients get older. Providers change practice patterns. Organizations change billing rules. A baseline trained six months ago may not reflect current normal. Continuous retraining, drift detection, and baseline refresh become operational requirements, not nice-to-haves.
 
@@ -86,7 +88,7 @@ You don't need all of these. You do need to know roughly when each one applies a
 
 This chapter is ordered by a combination of stakes, data complexity, and architectural difficulty. Here's the shape of the journey:
 
-**Recipes 3.1 to 3.2 (Simple).** Well-defined problems with clear outcomes, low-stakes interventions, and abundant historical data. Duplicate claim detection and no-show pattern detection. The "did we catch it correctly?" question is easy to answer because the ground truth is observable (the claim really is or isn't a duplicate; the patient really did or didn't show up). These are your 4 to 8 week projects and a great place to demonstrate value before tackling harder problems. They're also excellent introductions to the operational patterns (review queues, feedback loops, threshold tuning) that you'll rely on for the complex recipes later.
+**Recipes 3.1 to 3.2 (Simple).** Well-defined problems with clear outcomes, low-stakes interventions, and abundant historical data. Duplicate claim detection and no-show pattern detection. The "did we catch it correctly?" question is easy to answer because the ground truth is observable (the claim really is or isn't a duplicate; the patient really did or didn't show up). These are your 4- to 8-week projects and a great place to demonstrate value before tackling harder problems. They're also excellent introductions to the operational patterns (review queues, feedback loops, threshold tuning) that you'll rely on for the complex recipes later.
 
 **Recipes 3.3 to 3.5 (Simple-Medium to Medium).** Baselines become personal: provider-specific billing patterns, patient-specific lab history, pharmacy context. The data gets higher-dimensional. The stakes rise (medication errors, missed critical values). Real-time alerting starts to enter the picture. These are your two- to four-month projects. Plan for an operational dashboard and a clinician or analyst who owns the alerts.
 
@@ -112,7 +114,7 @@ A few patterns come up across multiple recipes. Calling them out here saves redu
 
 **Explainability on every alert.** When a clinician, reviewer, or investigator looks at a flagged case, they need to know why the system flagged it. "The model said so" is not acceptable. SHAP values, feature contributions, similar cases, or natural-language explanations (sometimes LLM-generated) are all used in the chapter depending on the use case. Pick one, commit to it, and build it into the alert payload.
 
-**Drift detection and model refresh.** Baselines drift, models stale, distributions shift. Monitoring that tracks prediction distribution shifts, feature distribution shifts, and alert rate changes is part of the operational infrastructure, not a nice-to-have. Several recipes include specific metrics to monitor.
+**Drift detection and model refresh.** Baselines drift, models go stale, distributions shift. Monitoring that tracks prediction distribution shifts, feature distribution shifts, and alert rate changes is part of the operational infrastructure, not a nice-to-have. Several recipes include specific metrics to monitor.
 
 **Two-stage architectures.** Fast, cheap first-pass detection (statistical rules or lightweight models) to reduce the data volume, followed by a slower, more sophisticated second-stage model on the candidate set. Common for high-throughput problems like claims review and EHR access monitoring. Lets you balance compute cost against detection quality.
 
@@ -161,7 +163,7 @@ By the end of this chapter, you'll have patterns for:
 - Detecting EHR access patterns that suggest insider threats or credential compromise
 - Running syndromic surveillance for outbreak detection before official reporting catches up
 
-Each recipe is self-contained, but the operational patterns compound. Organizations that build Recipe 3.1 well find that their review queue tooling, feedback loops, and drift monitoring infrastructure are directly reusable for Recipe 3.6 and 3.7. Treat the early recipes as capability-building, not just use-case-solving.
+Each recipe is self-contained, but the operational patterns compound. Organizations that build Recipe 3.1 well find that their review queue tooling, feedback loops, and drift monitoring infrastructure are directly reusable for Recipes 3.6 and 3.7. Treat the early recipes as capability-building, not just use-case-solving.
 
 Alright. Let's go find the weird stuff.
 
