@@ -1,3 +1,5 @@
+<!-- Editorial pass v1 (TechEditor): minor clarity polish on final "What You'll Build" bullet; verified no em dashes, no voice drift, header hierarchy, vendor balance ~70/30 intact. Preserved all TechWriter TODO markers. -->
+
 # Chapter 2 Preface: Teaching Machines to Write (Responsibly)
 
 Large language models are the most overhyped and simultaneously most underestimated technology in healthcare right now. That's not a contradiction. The hype is about what people *think* LLMs can do (replace doctors, automate clinical reasoning, solve healthcare). The underestimation is about what they *actually* can do today, right now, with proper guardrails: eliminate hours of administrative writing that burns out clinicians and delays patient care.
@@ -117,7 +119,7 @@ By the end of this chapter, you'll have patterns for:
 - Building RAG systems that ground LLM outputs in verified medical literature
 - Processing ambient clinical conversations into structured notes
 - Synthesizing clinical decision support from multiple knowledge sources
-- Combining multi-modal clinical data (notes, labs, imaging findings, history) into reasoned differential diagnoses, with appropriate guardrails for the regulatory frontier this represents
+- Combining multi-modal clinical data (notes, labs, imaging findings, history) into reasoned differential diagnoses, with guardrails appropriate to the regulatory frontier this work sits on
 
 Each recipe stands alone, but they build on each other conceptually. Start with 2.1 or 2.2 to get comfortable with the patterns, then work forward as your use cases demand.
 
