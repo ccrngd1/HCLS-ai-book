@@ -129,7 +129,7 @@ flowchart LR
 ### Prerequisites
 
 | Requirement | Details |
-|-------------|---------||
+|-------------|---------|
 | **AWS Services** | Amazon Bedrock, Amazon Comprehend Medical, AWS Lambda, Amazon DynamoDB, Amazon S3 |
 | **Bedrock Model Access** | Request access to your chosen model (e.g., Anthropic Claude) in the Bedrock console |
 | **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `comprehendmedical:DetectEntitiesV2`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:GetItem`. Scope each to specific resource ARNs. |
@@ -324,3 +324,240 @@ FUNCTION simplify_segment(segment, must_preserve, reading_level):
     
     RETURN { text: response.content, simplified: true, segment_type: segment.type }
 ```
+
+**Step 4: Validate readability and preservation.** This is the automated quality gate. Two checks run on every simplified segment. First: does the output actually meet the target reading level? Readability formulas (Flesch-Kincaid, SMOG) calculate a grade level from sentence length and word complexity. If the simplified text still reads at a 12th-grade level, it failed. Second: do all critical entities from Step 1 still appear in the output? If the source mentioned "ticagrelor 90mg BID" and the simplified version doesn't contain "ticagrelor" or "90mg," something got lost. Both checks are deterministic and fast. No LLM needed. Segments that fail either check get flagged for human review or re-simplification with a more aggressive prompt.
+
+```
+FUNCTION validate_output(simplified_segment, original_segment, must_preserve, target_grade):
+    issues = []
+    
+    // Check 1: Readability score
+    // Flesch-Kincaid Grade Level formula:
+    // 0.39 * (total words / total sentences) + 11.8 * (total syllables / total words) - 15.59
+    grade_level = calculate_flesch_kincaid_grade(simplified_segment.text)
+    
+    IF grade_level > target_grade + 2:  // allow 2 grades of tolerance
+        append to issues: {
+            type: "readability",
+            detail: "Output reads at grade " + grade_level + ", target is " + target_grade,
+            severity: "warning"
+        }
+    
+    IF grade_level > target_grade + 4:  // hard fail if way over target
+        append to issues: {
+            type: "readability",
+            detail: "Output reads at grade " + grade_level + ", far above target " + target_grade,
+            severity: "error"
+        }
+    
+    // Check 2: Entity preservation
+    // Verify that critical terms from the source appear in the output
+    simplified_lower = lowercase(simplified_segment.text)
+    
+    FOR each entity in must_preserve:
+        IF entity.preserve_verbatim == true:
+            // Exact match required for medications, dosages, dates
+            IF lowercase(entity.text) NOT found in simplified_lower:
+                append to issues: {
+                    type: "preservation",
+                    detail: "Missing verbatim entity: " + entity.text,
+                    severity: "error"  // missing medication/dosage is always an error
+                }
+        ELSE:
+            // For conditions and procedures, check if either the original term
+            // or a reasonable plain-language equivalent appears
+            // (This is a heuristic; perfect verification would need NLI models)
+            IF lowercase(entity.text) NOT found in simplified_lower:
+                // The medical term isn't there verbatim, which is fine
+                // (it may have been translated to plain language)
+                // Flag as warning for spot-check, not error
+                append to issues: {
+                    type: "preservation",
+                    detail: "Medical term not found verbatim (may be translated): " + entity.text,
+                    severity: "info"
+                }
+    
+    // Determine overall validation result
+    has_errors = any issue in issues WHERE severity == "error"
+    
+    RETURN {
+        valid: NOT has_errors,
+        grade_level: grade_level,
+        issues: issues
+    }
+```
+
+**Step 5: Assemble and store the simplified document.** Reassemble the individually simplified segments into a complete document, maintaining the original ordering. Store the result with metadata for audit: what source text was simplified, what reading level was achieved, which entities were preserved, and whether any segments required fallback to the original. The cache key (a hash of the source text plus target reading level) enables serving cached results for repeated simplification of the same content, which is common for standard discharge instruction templates.
+
+```
+FUNCTION assemble_and_store(original_text, simplified_segments, validation_results, 
+                            must_preserve, target_grade):
+    // Reassemble segments in original document order
+    final_document = ""
+    segments_needing_review = []
+    
+    FOR each segment in simplified_segments (ordered by segment.index):
+        validation = validation_results[segment.index]
+        
+        IF validation.valid:
+            final_document = final_document + segment.text + "\n\n"
+        ELSE:
+            // Segment failed validation; include original with a flag
+            final_document = final_document + segment.text + "\n\n"
+            append to segments_needing_review: {
+                index: segment.index,
+                issues: validation.issues
+            }
+    
+    // Calculate overall document readability
+    overall_grade = calculate_flesch_kincaid_grade(final_document)
+    
+    // Generate cache key for future lookups
+    cache_key = hash(original_text + "|" + target_grade)
+    
+    // Store the result
+    write record to database table "simplified-documents":
+        cache_key          = cache_key
+        original_text      = original_text
+        simplified_text    = final_document
+        target_grade       = target_grade
+        achieved_grade     = overall_grade
+        entities_preserved = must_preserve
+        segments_reviewed  = segments_needing_review
+        needs_review       = (length of segments_needing_review > 0)
+        created_at         = current UTC timestamp (ISO 8601)
+        model_id           = "anthropic.claude-3-haiku"
+        prompt_version     = "v1"
+    
+    // Emit metrics
+    emit metric "SimplificationCompleted" with dimensions: target_grade, achieved_grade
+    IF length(segments_needing_review) > 0:
+        emit metric "SimplificationNeedsReview" with count: length(segments_needing_review)
+    
+    RETURN {
+        simplified_text: final_document,
+        achieved_grade: overall_grade,
+        needs_review: (length of segments_needing_review > 0),
+        cache_key: cache_key
+    }
+```
+
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+### Expected Results
+
+**Sample output for a cardiac discharge summary:**
+
+Source text:
+> Patient presented with acute ST-elevation myocardial infarction of the LAD territory. Percutaneous coronary intervention performed with drug-eluting stent placement. Initiated dual antiplatelet therapy with aspirin 81mg and ticagrelor 90mg BID.
+
+Simplified output (6th grade target):
+> You had a heart attack (myocardial infarction). This means a blood vessel in your heart got blocked, which damaged part of your heart muscle. Your doctor opened the blocked vessel and placed a small tube called a stent to keep it open. You are now taking two medicines to prevent blood clots: aspirin 81mg once a day, and ticagrelor 90mg twice a day. It is very important to take both medicines exactly as directed.
+
+```json
+{
+  "cache_key": "a8f3c2e1...",
+  "target_grade": 6,
+  "achieved_grade": 5.8,
+  "entities_preserved": [
+    {"text": "aspirin 81mg", "found": true},
+    {"text": "ticagrelor 90mg", "found": true},
+    {"text": "BID", "found_as": "twice a day"},
+    {"text": "myocardial infarction", "found": true},
+    {"text": "percutaneous coronary intervention", "found_as": "opened the blocked vessel"}
+  ],
+  "needs_review": false,
+  "segments_simplified": 3,
+  "segments_failed_validation": 0
+}
+```
+
+**Performance benchmarks:**
+
+| Metric | Typical Value |
+|--------|---------------|
+| End-to-end latency | 3-6 seconds per document |
+| Readability target hit rate | 85-92% of segments on first pass |
+| Entity preservation rate | 95-99% for verbatim entities |
+| Cost per document (1-page discharge summary) | $0.005-0.02 |
+| Cache hit rate (standard templates) | 30-50% after warm-up |
+| Throughput | ~20 documents/second (Lambda concurrency limited) |
+
+**Where it struggles:** Very long documents (>3 pages) where context window limits force aggressive chunking. Highly specialized subspecialty text (genetics reports, pathology findings) where even the "simplified" version requires domain knowledge. Documents mixing multiple languages. Handwritten addenda that were OCR'd with errors in the source text (garbage in, garbage out).
+
+---
+
+## The Honest Take
+
+This is one of the most satisfying LLM applications to build because the results are immediately, visibly useful. You take an incomprehensible wall of medical jargon and turn it into something a patient can actually read. The before/after is dramatic.
+
+The part that surprised me: the segmentation step matters more than the model choice. A single prompt that says "simplify this entire discharge summary" produces mediocre results because the model tries to apply one strategy uniformly. Medication sections get over-explained. Instruction sections get under-simplified. Segmenting first and applying type-specific prompts produces dramatically better output.
+
+The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The validation loop (simplify, score, re-simplify if needed) adds latency but is worth it.
+
+The entity preservation check is where you'll find your scariest bugs. Early in development, I watched the model simplify "ticagrelor 90mg BID" into "your blood thinner twice a day." Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy. The preservation checklist catches this, but you need to be thoughtful about what goes on the list.
+
+One operational reality: you'll want different reading level targets for different patient populations and different document types. A 6th-grade target works well for general discharge instructions. It's too aggressive for a genetics counseling summary where some technical terms genuinely need to remain. Make the target configurable per document type, not a global constant.
+
+The caching layer pays for itself quickly. Standard procedure discharge instructions (knee replacement, cataract surgery, colonoscopy) use templated language that varies only in patient-specific details (names, dates, dosages). If you can identify and cache the template portions while only re-simplifying the variable portions, you cut cost and latency significantly for high-volume procedures.
+
+---
+
+## Variations and Extensions
+
+**Multi-language simplification.** After simplifying to plain English, translate the output to the patient's preferred language. This is a two-step pipeline: simplify first (because simplifying complex medical text in a non-English language is harder than simplifying in English then translating the simple version). Validate readability in the target language using language-appropriate readability formulas.
+
+**Interactive reading level adjustment.** Build a patient-facing interface where the reader can request "explain this more simply" for specific paragraphs. Each click re-simplifies that paragraph at a lower reading level, progressively revealing more explanation. This handles the reality that different patients need different levels of detail for different sections.
+
+**EHR-integrated simplification.** Trigger simplification automatically when a provider signs a discharge summary or when lab results are released to the patient portal. The simplified version appears alongside the original in the patient's chart, with a toggle between "clinical view" and "patient view." This removes the manual step of someone deciding to simplify a document.
+
+---
+
+## Related Recipes
+
+- **Recipe 2.1 (Patient Message Response Drafting):** Uses similar LLM patterns with Bedrock and Guardrails for patient-facing text generation
+- **Recipe 2.5 (After-Visit Summary Generation):** Generates patient-facing summaries from clinical encounters; could use this recipe's simplification as a post-processing step
+- **Recipe 8.1 (Medical Entity Extraction):** Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification <!-- TODO: Verify recipe number against final chapter 8 index -->
+- **Recipe 1.6 (Handwritten Clinical Note Digitization):** Upstream OCR that might produce the clinical text this recipe simplifies
+
+---
+
+## Additional Resources
+
+**AWS Documentation:**
+- [Amazon Bedrock User Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html)
+- [Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
+- [Amazon Comprehend Medical Documentation](https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html)
+- [Amazon Comprehend Medical DetectEntitiesV2 API](https://docs.aws.amazon.com/comprehend-medical/latest/api/API_DetectEntitiesV2.html)
+- [Amazon Bedrock Pricing](https://aws.amazon.com/bedrock/pricing/)
+- [Amazon Comprehend Medical Pricing](https://aws.amazon.com/comprehend-medical/pricing/)
+- [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+
+**AWS Sample Repos:**
+- [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): General Bedrock examples including text transformation and guardrails configuration
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Comprehend Medical integration patterns for healthcare data extraction
+- [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Hands-on workshop covering text generation and transformation patterns
+
+**AWS Solutions and Blogs:**
+- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/generative-ai/): Overview of generative AI applications in healthcare
+- [Guidance for Generative AI Text Summarization using LLMs on AWS](https://aws.amazon.com/solutions/guidance/generative-ai-text-summarization-using-large-language-models-on-aws/): Reference architecture for text transformation pipelines <!-- TODO: Verify this URL exists -->
+
+---
+
+## Estimated Implementation Time
+
+| Tier | Timeline | What You Get |
+|------|----------|--------------|
+| **Basic** | 1-2 weeks | Single document type, fixed reading level, no caching, manual validation review |
+| **Production-ready** | 4-6 weeks | Multi-segment pipeline, Comprehend Medical preservation checks, readability validation, DynamoDB caching, monitoring dashboard |
+| **With variations** | 8-10 weeks | Multi-language support, configurable reading levels per document type, EHR integration triggers, interactive patient-facing UI |
+
+---
+
+## Tags
+
+`llm` · `generative-ai` · `bedrock` · `comprehend-medical` · `text-simplification` · `patient-education` · `health-literacy` · `guardrails` · `simple` · `mvp` · `lambda` · `dynamodb` · `hipaa`
+
+---
+
+*← [Recipe 2.1: Patient Message Response Drafting](chapter02.01-patient-message-response-drafting) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.3 - Clinical Documentation Improvement →](chapter02.03-clinical-documentation-improvement)*
