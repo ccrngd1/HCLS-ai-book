@@ -49,4 +49,10 @@
 
 ---
 
+#### Ch 3: Anomaly Detection
+
+* [Preface](chapter03-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
