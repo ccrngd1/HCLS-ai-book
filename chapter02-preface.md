@@ -117,6 +117,7 @@ By the end of this chapter, you'll have patterns for:
 - Building RAG systems that ground LLM outputs in verified medical literature
 - Processing ambient clinical conversations into structured notes
 - Synthesizing clinical decision support from multiple knowledge sources
+- Combining multi-modal clinical data (notes, labs, imaging findings, history) into reasoned differential diagnoses, with appropriate guardrails for the regulatory frontier this represents
 
 Each recipe stands alone, but they build on each other conceptually. Start with 2.1 or 2.2 to get comfortable with the patterns, then work forward as your use cases demand.
 
