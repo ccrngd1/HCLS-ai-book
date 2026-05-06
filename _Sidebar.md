@@ -40,6 +40,8 @@
 * [Preface](chapter02-preface)
 * [2.1 — Patient Message Response Drafting](chapter02.01-patient-message-response-drafting)
   * [Python Example](chapter02.01-python-example)
+* [2.2 — Medical Terminology Simplification](chapter02.02-medical-terminology-simplification)
+  * [Python Example](chapter02.02-python-example)
 
 ---
 
