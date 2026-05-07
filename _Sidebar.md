@@ -45,6 +45,7 @@
 * [2.3 — Clinical Documentation Improvement](chapter02.03-clinical-documentation-improvement)
   * [Python Example](chapter02.03-python-example)
 * [2.4 — Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation)
+  * [Python Example](chapter02.04-python-example)
 
 ---
 
