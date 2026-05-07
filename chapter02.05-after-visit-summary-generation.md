@@ -1,3 +1,23 @@
+<!--
+TechEditor pass (v1) - 2026-05-07
+
+Editorial changes applied:
+- Added inline TODO markers pointing to expert-review findings that need TechWriter attention.
+- Minor polish on a couple of sentences for active voice and parallelism.
+- No substantive rewrites (per editor scope). Original TODOs from TechWriter preserved.
+
+Open items flagged for TechWriter (see reviews/chapter02.05-expert-review.md and
+reviews/chapter02.05-code-review.md for full context):
+- CRITICAL S2: Clinical inconsistency between Problem narrative (warfarin) and Sample Output (apixaban).
+- CRITICAL S1: SMS delivery of clinical PHI lacks consent / content-minimization framework.
+- HIGH S3: IAM permissions not scoped to resource ARNs.
+- HIGH S4: Bedrock model-invocation-logging creates unaddressed PHI store.
+- HIGH N1: VPC endpoint list incomplete (kms, logs, states, events, sms-voice, email-smtp, translate, monitoring).
+- MEDIUM items on regeneration caps, Step Functions HITL, idempotency, Guardrails capability, provenance completeness, prompt PHI minimization, EHR connectivity, SES deliverability.
+- Python companion also has ERROR-level UTF-8 mojibake in non-English instruction strings and an
+  orchestrator fall-through that auto-delivers exhausted-retry summaries (see code review).
+-->
+
 # Recipe 2.5: After-Visit Summary Generation
 
 **Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.03-0.10 per summary
@@ -6,11 +26,19 @@
 
 ## The Problem
 
+<!-- TODO (EXPERT REVIEW - CRITICAL, Finding S2): The anticoagulation vignette below
+     is written for warfarin (greens interact, INR draw at 3 days) but the Sample Output
+     in "Expected Results" shows apixaban 5 mg with a CBC/kidney check at 3 days.
+     These clinical pictures are incompatible. Pick one drug and use it consistently
+     across the Problem narrative and the Sample Output. The reviewer recommends
+     keeping warfarin here (the specific details are strong teaching) and switching
+     the Sample Output to match. See reviews/chapter02.05-expert-review.md Finding S2. -->
+
 A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the EHR auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged since 2019), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
-Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly. <!-- TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated) --> The average American adult reads at roughly an 8th-grade level. The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
+Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly. <!-- TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated) --> The average American adult reads at roughly an 8th-grade level. <!-- TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing. -->  The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
 
 For the patient with atrial fibrillation, the consequences of that gap are concrete. They don't go for the INR draw because the paper didn't mention it. They continue their usual salad-heavy diet because nobody wrote down the dietary interaction. They show up to the follow-up appointment confused about why they're on a new medication, or they no-show because "follow up as needed" felt optional. Six weeks later they're in the ER with a bleed that could have been caught earlier, or a clot that could have been prevented. Their chart documents everything the physician did correctly. The communication layer is where it fell apart.
 
@@ -170,6 +198,16 @@ One note on the pipeline: the structured extraction step is doing a lot of work.
 
 **Amazon Bedrock Guardrails for safety constraints.** Guardrails give you a policy layer that runs on top of model invocations. For patient-facing output, you can configure denied topics (e.g., block generation of content that contradicts the source note), PII detection (catch accidental disclosure of other patients' information), and content filters. Guardrails aren't a substitute for the validation step, but they're a useful safety net.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A4): The parenthetical example above is
+     incorrect. "Denied topics" in Bedrock Guardrails are defined by natural-language
+     topic descriptions and blocklist phrases; they cannot detect content that
+     contradicts a source note. The feature to reference is Bedrock Guardrails'
+     "contextual grounding check," which compares model output against a reference
+     context provided at invocation time and rejects ungrounded or off-topic outputs
+     below configurable thresholds. Please rewrite the paragraph to distinguish
+     contextual grounding checks (the grounding tool), denied topics (blocking
+     off-policy content), PII detection, and content filters. See review Finding A4. -->
+
 **Amazon HealthLake (optional) for FHIR-based encounter retrieval.** If your clinical data lives in HealthLake or is replicated there, pulling encounter data is a straight FHIR query. For encounters that just ended, HealthLake gives you the Encounter resource, the related MedicationRequest, ServiceRequest, and Appointment resources, and the DocumentReference for the signed note. If you're pulling directly from an EHR via SMART on FHIR, the pattern is similar but the source is different.
 
 **Amazon Comprehend Medical for entity extraction (optional).** For the structured extraction step, Comprehend Medical can pull out medications, dosages, conditions, and procedures from free-text notes with high accuracy. You can use it as a pre-processing step before the LLM, or use the LLM alone. The hybrid approach (Comprehend Medical for drug/dose extraction, LLM for the remaining unstructured content) often produces the most reliable results for medication-related content, which is the highest-risk category.
@@ -182,11 +220,39 @@ One note on the pipeline: the structured extraction step is doing a lot of work.
 
 **AWS Step Functions for orchestration.** The pipeline has branching logic (clinician review or not, regeneration loop for readability failures, different delivery channels per patient preference). Step Functions makes the state machine explicit and observable. For operational teams, being able to see which step a given summary is stuck in is invaluable.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A2): For the clinician-review branch,
+     specify the Step Functions waitForTaskToken callback pattern. The Lambda that
+     completes generation hands off a task token when it routes to review; the review
+     UI calls SendTaskSuccess with the signed summary (or SendTaskFailure if rejected).
+     This avoids polling and supports extended review SLAs. See Finding A2. -->
+
 **Amazon EventBridge for note-signed events.** Triggering generation from the EHR's note-signed event (via an integration layer) is more reliable than polling. EventBridge routes the event to the pipeline's Step Functions workflow.
+
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A3 / LOW A6): EventBridge delivery is
+     at-least-once. Add idempotency guidance at Step 1 using a deterministic fingerprint
+     of (encounter_id, note_version_or_signed_at) and a DynamoDB conditional write
+     (attribute_not_exists) to prevent duplicate executions, duplicate summaries, and
+     duplicate patient deliveries. See Findings A3 and A6. -->
 
 **Amazon DynamoDB for summary state tracking.** One item per generated summary, tracking status through the pipeline: generating, awaiting review, ready for delivery, delivered, delivery confirmed. Also useful for patient preferences (language, literacy target, delivery channel) if you're not pulling those from the EHR at generation time.
 
 **Amazon Pinpoint or Amazon SES for delivery.** For SMS delivery, Pinpoint (or End User Messaging SMS). For secure email with PDF attachments, SES. Both require HIPAA-appropriate configuration (BAA, encryption, access controls). Delivery through the patient portal is typically an EHR integration rather than a direct AWS service.
+
+<!-- TODO (EXPERT REVIEW - CRITICAL, Finding S1): SMS of clinical content (medication
+     names, doses, warning signs, follow-up instructions) constitutes PHI transmission
+     over an unencrypted channel. HIPAA requires documented patient consent after
+     disclosure of security risks. Recommend pivoting the default SMS pattern to
+     "notification-plus-portal-link" (no clinical content in the SMS body). If
+     direct-to-SMS clinical content is retained as an option, add a consent gate and
+     a dedicated "SMS and PHI" subsection in "Why This Isn't Production-Ready" that
+     names the consent requirement, content-minimization practice, and jurisdiction-
+     specific overlays (California, Texas, Washington MHMDA). See Finding S1. -->
+
+<!-- TODO (EXPERT REVIEW - LOW, Finding N3): SES direct-to-personal-mailbox delivery of
+     PDF-attachment AVS is secure only if both mail servers enforce TLS (not guaranteed).
+     Production deployments typically use a HIPAA-grade secure email gateway or a
+     notification-plus-portal-link pattern. Add a one-line note here or in the SES
+     row of the Ingredients table. -->
 
 **AWS CloudTrail and Amazon CloudWatch for audit and monitoring.** Every Bedrock invocation, every S3 write, every delivery event is logged. Standard HIPAA audit posture. CloudWatch tracks operational metrics: summaries generated per hour, average time to delivery, regeneration rate, clinician override rate.
 
@@ -240,13 +306,13 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Amazon Bedrock Guardrails, Amazon S3, AWS Lambda, AWS Step Functions, Amazon EventBridge, Amazon DynamoDB, Amazon HealthLake (optional), Amazon Comprehend Medical (optional), Amazon Translate (optional), Amazon SES, Amazon Pinpoint, Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:UpdateItem`, `states:StartExecution`, `healthlake:SearchWithGet`, `comprehendmedical:DetectEntitiesV2`, `ses:SendRawEmail`, `mobiletargeting:SendMessages`, `events:PutEvents` |
+| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:UpdateItem`, `states:StartExecution`, `healthlake:SearchWithGet`, `comprehendmedical:DetectEntitiesV2`, `ses:SendRawEmail`, `mobiletargeting:SendMessages`, `events:PutEvents` <!-- TODO (EXPERT REVIEW - HIGH, Finding S3): Scope every action to specific resource ARNs (S3 bucket ARNs, DynamoDB table ARNs, specific foundation-model ARNs, Guardrail ARN, HealthLake datastore ARN, SES verified-identity ARNs). Add kms:Decrypt and kms:GenerateDataKey scoped to the PHI CMKs. Recurring Chapter 2 pattern (2.2, 2.3, 2.4, 2.5) - consider chapter-level appendix. See Finding S3. --> |
 | **BAA** | AWS BAA signed. Summaries contain PHI; every service in the pipeline must be HIPAA-eligible and covered. |
 | **Bedrock Model Access** | Request access to at least one capable generation model (Claude Sonnet or equivalent) and one smaller extraction model (Claude Haiku or Nova Lite). For non-English output, verify the model's quality in the target languages against a sample set before deploying. |
 | **EHR Integration** | Note-signed event publication (webhook, HL7 v2 message, or FHIR subscription). FHIR R4 read access to Encounter, MedicationRequest, ServiceRequest, DocumentReference, Appointment, Condition. Portal integration for delivery. |
 | **Patient Preferences** | Language, literacy-level target, delivery channel preference. Usually sourced from the EHR's patient registration fields; may need additions if your EHR doesn't capture reading-level or preferred-language with enough granularity. |
-| **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Bedrock: TLS in transit, encryption at rest. CloudWatch Logs: KMS encryption. |
-| **VPC** | Production: Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, HealthLake, Comprehend Medical. |
+| **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Bedrock: TLS in transit, encryption at rest. CloudWatch Logs: KMS encryption. <!-- TODO (EXPERT REVIEW - HIGH, Finding S4): If Bedrock model-invocation-logging is enabled for quality monitoring or drift detection, the logged prompts and responses contain PHI (structured clinical facts, patient identifiers, medication details). The log-destination S3 bucket or CloudWatch log group must be KMS-encrypted with the same CMK posture as other PHI stores, access-controlled equivalently, and retention-matched. Consider sampling rather than logging every invocation. See Finding S4. --> |
+| **VPC** | Production: Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, HealthLake, Comprehend Medical. <!-- TODO (EXPERT REVIEW - HIGH, Finding N1): Endpoint list is incomplete for the services this recipe uses. Add interface endpoints for kms, logs, states, events, monitoring, translate (if used), email-smtp (if SES used), and sms-voice (if SMS used). Keep S3 and DynamoDB as gateway endpoints. Without kms and logs endpoints, Lambda in a private subnet cannot decrypt or log. Without states endpoint, waitForTaskToken callbacks fail from within the VPC. Interface endpoints are ~$7-10/month per AZ; reflect this in the cost estimate. See Finding N1. --> |
 | **CloudTrail** | Enabled with data events: log all Bedrock invocations, S3 object access, DynamoDB reads and writes. |
 | **Sample Data** | Synthea synthetic FHIR data for testing. Synthetic patient scenarios with varied complexity (routine visit, new diagnosis, discharge summary) to cover the major generation patterns. |
 | **Cost Estimate** | Bedrock extraction (Haiku/Nova Lite): ~$0.005-0.02 per visit. Bedrock generation (Sonnet): ~$0.02-0.06 per visit. Comprehend Medical: ~$0.001-0.01 per visit if used. Storage, Lambda, Step Functions, DynamoDB: negligible at typical volumes. End-to-end: ~$0.03-0.10 per summary. At 1,000 visits per day, roughly $900-$3,000 per month. |
@@ -275,6 +341,14 @@ flowchart TB
 #### Walkthrough
 
 **Step 1: Receive the note-signed event and initialize the case.** When a clinician signs a visit note, the EHR publishes an event. Your pipeline listens for this event and kicks off the workflow. The event payload typically includes the encounter ID, the patient ID, the provider ID, and a timestamp. Everything else gets pulled from the EHR in subsequent steps.
+
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A3): EventBridge delivers at-least-once.
+     Add an idempotency check before starting the Step Functions execution: derive a
+     fingerprint from (encounter_id, note_version_or_signed_at), attempt a DynamoDB
+     conditional write with attribute_not_exists(fingerprint), and if the fingerprint
+     already exists return the existing summary_id and skip. Otherwise duplicate
+     note-signed events produce duplicate summaries, duplicate LLM charges, and
+     duplicate patient deliveries. See Finding A3. -->
 
 ```
 FUNCTION receive_note_signed_event(event):
@@ -350,6 +424,19 @@ FUNCTION pull_encounter_data(patient_id, encounter_id):
 
 **Step 3: Extract the structured summary object.** Turn the encounter data into a fielded object that drives generation. This is the step that converts unstructured clinical content into discrete facts that can be validated later. For medications specifically, Comprehend Medical adds value because it produces normalized drug and dose entities.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding S5): Apply the minimum-necessary principle
+     to prompts. The generation step needs diagnoses, medications, orders, and
+     follow-up details. It does not need the patient's MRN, DOB, address, phone
+     number, or insurance identifiers. Consider redacting non-clinical PHI from the
+     extracted object before the generation call (field allow-list, or Comprehend
+     Medical DetectPHI as a pre-flight). Keep the preferred name for salutation. -->
+
+<!-- TODO (CODE REVIEW - WARNING, Finding 4): Comprehend Medical's size limit is
+     enforced in bytes, not characters. If the pseudocode shows a character-based
+     slice like note_text[:20000], a multilingual note can exceed the byte limit.
+     Consider noting the byte-safe pattern (encode to utf-8, slice bytes, decode
+     errors=ignore) for multilingual use cases. See Finding 4 in the code review. -->
+
 ```
 FUNCTION extract_summary_object(encounter_data):
     // Start with what's already structured in the EHR.
@@ -387,7 +474,7 @@ FUNCTION extract_summary_object(encounter_data):
     """
     
     response = call Bedrock.InvokeModel with:
-        model_id    = "anthropic.claude-haiku-4"    // smaller model suffices for extraction
+        model_id    = "anthropic.claude-haiku-4"    // smaller model suffices for extraction. In production, use the fully-versioned model ID with the regional inference-profile prefix (e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0"). The Python companion shows a current working example.
         prompt      = extraction_prompt
         max_tokens  = 2048
         temperature = 0.0
@@ -492,6 +579,15 @@ FUNCTION generate_summary(summary_object, patient_prefs):
 
 **Step 5: Validate claims against the source.** Every specific claim in the summary must map to a field in the summary object. Medication doses, follow-up dates, warning signs, referral reasons: each of these has to trace back. Claims that don't map either trigger regeneration or route to clinician review depending on severity.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A1): Cap regeneration at 2-3 attempts.
+     Vary the strategy on each retry (first retry adds a stronger grounding
+     instruction naming the previously-unverified claims; second retry at
+     temperature=0 for determinism; third retry falls through to clinician review).
+     Track retry count in DynamoDB and emit a CloudWatch metric on exhaustion.
+     Never auto-deliver an exhausted-retry summary without clinician sign-off.
+     This pairs with CODE REVIEW Finding 3, where the Python orchestrator currently
+     auto-delivers when attempts are exhausted on non-high-risk visits. -->
+
 ```
 FUNCTION validate_summary(summary_text, provenance, summary_object):
     unverified = empty list
@@ -560,7 +656,26 @@ FUNCTION check_readability(summary_text, target_grade_level):
 
 If the readability check fails, the pipeline loops back to Step 4 with an extra instruction like "The previous draft read at grade 10. Rewrite at grade 6 with shorter sentences and simpler words." Typically one additional regeneration brings the text within target.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A1): Also cap the readability regeneration
+     loop (same 2-3 attempts rule as the validation loop in Step 5). Pathological
+     inputs can otherwise loop indefinitely at $0.03-$0.10 per attempt. -->
+
 **Step 7: Render and deliver.** Same content, different rendering. The generation step produces plain markdown. A rendering step converts it to HTML for the portal, PDF for print, or structured SMS messages for text delivery.
+
+<!-- TODO (EXPERT REVIEW - CRITICAL, Finding S1): The SMS branch below ships clinical
+     PHI (medication names, doses, warning signs, follow-up dates) over an
+     unencrypted channel with no consent gate. Recommended fix: change the SMS
+     pattern to notification-plus-portal-link, for example
+     rendered["sms_messages"] = [localize("Your after-visit summary is ready. Open it
+     in the patient portal: {portal_link}", patient_prefs.language)] -- no clinical
+     content in the SMS body. If direct-to-SMS clinical content is retained as an
+     option for practices that use it, add a consent check before dispatch:
+     IF "sms" in patient_prefs.delivery_channels AND
+        patient_prefs.sms_phi_consent != "granted":
+        fall back to notification-plus-link pattern.
+     Also add a section in "Why This Isn't Production-Ready" titled "SMS and PHI"
+     covering HIPAA consent, content-minimization best practice, lack of SMS
+     end-to-end encryption, and jurisdiction-specific overlays. See Finding S1. -->
 
 ```
 FUNCTION render_and_deliver(summary_id, summary_text, patient_prefs):
@@ -616,6 +731,27 @@ FUNCTION render_and_deliver(summary_id, summary_text, patient_prefs):
 ### Expected Results
 
 **Sample output for a routine cardiology follow-up with a new anticoagulation start:**
+
+<!-- TODO (EXPERT REVIEW - CRITICAL, Finding S2): This sample shows apixaban 5 mg
+     and a CBC/kidney-check lab, which is clinically correct for a DOAC. The Problem
+     section narrative describes warfarin counseling (greens interact, INR draw).
+     Either this sample or the Problem narrative must change so they are consistent.
+     Reviewer recommends changing this sample to a warfarin picture (e.g., warfarin
+     5 mg nightly, INR in 3 days, keep leafy-green intake steady, same bleeding
+     warning list) so the Problem section's concrete details map to the AVS. -->
+
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding A5): The factual_claims array below lists
+     only 5 claims, but the summary text contains 15-25 specific claims (warning
+     signs, lifestyle instructions, practice phone, hours, etc.). For a recipe
+     whose central teaching is "every specific claim must trace to source," the
+     sample should either enumerate the full set of claims with source paths, or
+     include a note that the array is abbreviated for readability and a production
+     validator tracks 15-30 per AVS. See Finding A5. -->
+
+<!-- TODO (EXPERT REVIEW - LOW, Finding S6): Label the sample as synthetic, e.g.,
+     add a one-line comment above the JSON: "All identifiers, dates, and provider
+     names below are synthetic. Never use real patient data in development or test
+     fixtures." -->
 
 ```json
 {
@@ -674,6 +810,15 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 
 **Portal integration is make-or-break for delivery.** Publishing the AVS to the patient portal requires integration with the EHR's portal APIs. Epic's MyChart, Cerner's HealtheLife, athenahealth's patient portal: each has its own integration pattern and document publishing API. You'll spend real engineering time here. Expect two to four weeks per portal integration, and more if the EHR requires certification for third-party content.
 
+<!-- TODO (EXPERT REVIEW - MEDIUM, Finding N2): Add a short paragraph here on
+     EHR-to-pipeline connectivity. For cloud EHRs, the note-signed event and FHIR
+     pull typically cross TLS-encrypted connections to vendor public endpoints with
+     egress controls and Secrets Manager-sourced credentials. For on-premises EHRs,
+     plan for Direct Connect or site-to-site VPN with the FHIR gateway reachable
+     over private IPs only. PHI in transit must never traverse the public internet
+     unencrypted; inbound traffic to your VPC should be scoped by source IP or
+     PrivateLink. See Finding N2. -->
+
 **Multi-language requires ongoing translation QA.** It's easy to ship Spanish generation and assume it works. Three months in, you notice the system is using formal Latin American Spanish conventions for a Cuban-American population that finds the register off-putting. Or regional dialect choices that miss. You need a sustainable translation QA process: bilingual community health workers or certified medical translators reviewing samples quarterly, feedback loops from patient-facing staff, and willingness to iterate on prompts per language population.
 
 **Legal review of auto-generated patient content.** Every health system's legal and compliance teams will have opinions on auto-generated content going to patients. Topics include: whether the document needs explicit clinician attribution, what disclaimers are required, what the audit requirements look like if a patient follows incorrect information, whether the summary can be considered part of the legal medical record. These conversations take months. Start them early.
@@ -711,6 +856,11 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 **Discharge summaries with structured handoff to home care.** Hospital discharge is a sharper version of the same problem. The content is richer (multiple new diagnoses, long medication lists, home equipment instructions, multiple follow-up appointments with different specialists). The risk of miscommunication is higher. And the downstream recipients are varied: the patient, the caregiver, the home health agency, the primary care provider. Extend the pipeline to produce multiple outputs from the same extracted structure: a patient-facing AVS, a caregiver-oriented version with more caregiver-specific content, a structured handoff document for the receiving clinician. Each output uses the same source but different prompts and rendering.
 
 **Video or audio summary for low-literacy patients.** For patients who struggle with written content, generate an audio version of the AVS. Amazon Polly converts the generated text to speech with natural-sounding voices in dozens of languages. The patient gets a portal link that opens either the written summary or a play-in-place audio version. For populations with very low literacy, audio may be the primary channel and the written version the reference.
+
+<!-- TODO (EXPERT REVIEW - LOW, Finding V4): Polly is HIPAA-eligible, but the
+     generated audio is PHI and must be stored with the same KMS encryption, access
+     controls, and retention as the text AVS archive. Add a one-line note to that
+     effect. -->
 
 **Proactive medication reconciliation reminders.** The AVS tells the patient about medication changes at visit time. Extend the pipeline to send reminders after the visit: three days later, "Are you taking your new medication?" One week later, "Any side effects or questions about [medication]?" Two weeks later, "Reminder: blood test needed before your next visit." These follow-ups piggyback on the structured extraction you already did. They're cheap and high-value.
 
