@@ -59,6 +59,7 @@
 
 * [Preface](chapter04-preface)
 * [4.1 — Appointment Reminder Channel Optimization](chapter04.01-appointment-reminder-channel-optimization)
+  * [Python Example](chapter04.01-python-example)
 
 ---
 
