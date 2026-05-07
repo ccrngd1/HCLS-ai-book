@@ -47,6 +47,7 @@
 * [2.4 — Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation)
   * [Python Example](chapter02.04-python-example)
 * [2.5 — After-Visit Summary Generation](chapter02.05-after-visit-summary-generation)
+  * [Python Example](chapter02.05-python-example)
 
 ---
 
