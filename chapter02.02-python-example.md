@@ -89,6 +89,9 @@ MAX_TOKENS_MULTIPLIER = 2
 # Segment type classification keywords. Order matters: first match wins
 # when a section could fit multiple types. Keep medications first so
 # medication-heavy sections get the strictest preservation rules.
+# TODO (TechWriter): The "aspirin" keyword under "medications" is fragile:
+# specific drug names won't generalize. Consider replacing with structural
+# markers (section headers, list patterns) or a small classifier model.
 SEGMENT_TYPES = {
     "medications": ["medication", "prescription", "drug", "dose", "mg", "tablet", "aspirin"],
     "diagnosis":   ["diagnosis", "assessment", "impression", "condition"],
@@ -406,7 +409,10 @@ def simplify_segment(segment: dict, must_preserve: list[dict], reading_level: in
 
 ## Step 4: Validate Readability and Preservation
 
-*The pseudocode calls this `validate_output(simplified_segment, original_segment, must_preserve, target_grade)`. This is the automated quality gate. Two checks: did the reading level actually come down, and did every must-preserve entity survive? Both are deterministic, fast, and run without another LLM call. Segments that fail get flagged for review.*
+*The pseudocode calls this `validate_output(simplified_segment, must_preserve, target_grade)`. This is the automated quality gate. Two checks: did the reading level actually come down, and did every must-preserve entity survive? Both are deterministic, fast, and run without another LLM call. Segments that fail get flagged for review.*
+
+<!-- TODO (TechWriter): Main recipe pseudocode shows `validate_output(simplified_segment, original_segment, must_preserve, target_grade)` with an `original_segment` parameter that isn't referenced in the pseudocode body. The Python companion drops it. Either add the unused parameter for strict pseudocode parity, or drop it from the main recipe to match this implementation. -->
+
 
 ```python
 def calculate_flesch_kincaid_grade(text: str) -> float:
@@ -739,7 +745,10 @@ This example works. Point it at a real Bedrock endpoint with a configured guardr
 
 **IAM least-privilege.** The Lambda role should have exactly: `bedrock:InvokeModel` scoped to your model ARN, `bedrock:ApplyGuardrail` scoped to your guardrail ARN, `comprehendmedical:DetectEntitiesV2`, and `dynamodb:PutItem` scoped to the table ARN. Not `bedrock:*`. Not `dynamodb:*`.
 
-**VPC and encryption.** In production, the Lambda runs in a VPC with private subnets. VPC endpoints for Bedrock, Comprehend Medical, DynamoDB, and CloudWatch Logs keep all traffic on the AWS backbone. Use KMS customer-managed keys with rotation enabled for the DynamoDB table and CloudWatch Logs. Clinical text is PHI and should never traverse the public internet.
+**VPC and encryption.** In production, the Lambda runs in a VPC with private subnets. VPC endpoints for Bedrock, Comprehend Medical, DynamoDB, CloudWatch Logs, and KMS keep all traffic on the AWS backbone. Use KMS customer-managed keys with rotation enabled for the DynamoDB table and CloudWatch Logs. Clinical text is PHI and should never traverse the public internet.
+
+<!-- TODO (TechWriter): The expert review of the main recipe flagged KMS VPC endpoint as missing. Added here for parity. Confirm that the main recipe's Prerequisites table VPC row includes KMS as well, since both documents should give the same production guidance. -->
+
 
 **Idempotency.** If the same document event fires twice (common with at-least-once delivery), you don't want duplicate simplifications. Add a `ConditionExpression` on the `put_item` call that checks for document_id non-existence, or use the cache_key lookup as a dedupe layer.
 
