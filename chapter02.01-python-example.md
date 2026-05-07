@@ -17,7 +17,7 @@ Your environment needs credentials configured (via environment variables, an ins
 - `bedrock:InvokeModel` (for the foundation model)
 - `bedrock:ApplyGuardrail` (for content safety filtering)
 - `s3:GetObject` (for prompt templates)
-- `dynamodb:PutItem` and `dynamodb:Query` (for draft storage)
+- `dynamodb:PutItem` (for draft storage)
 
 You also need model access enabled in the Bedrock console for your chosen model (this example uses Anthropic Claude 3 Haiku).
 
