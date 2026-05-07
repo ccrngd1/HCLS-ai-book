@@ -669,7 +669,10 @@ def store_and_notify(encounter_id: str, prioritized: dict, note_key: str) -> lis
     # - SQS queue for batch processing
     # - Direct EHR API call for concurrent CDI (real-time physician alerts)
     #
-    # Example (uncomment and configure for your environment):
+    # Example (uncomment and configure for your environment).
+    # Requires an SNS client at module scope:
+    #     sns_client = boto3.client("sns", config=BOTO3_RETRY_CONFIG)
+    #
     # sns_client.publish(
     #     TopicArn="arn:aws:sns:us-east-1:123456789012:cdi-notifications",
     #     Message=json.dumps({
