@@ -371,7 +371,6 @@ def retrieve_guidelines(diagnoses: list) -> dict:
     }
 ```
 
-
 ---
 
 ## Step 4: Identify Specificity Gaps and Generate Suggestions
@@ -815,7 +814,7 @@ if __name__ == "__main__":
 
 ## The Gap Between This and Production
 
-This example demonstrates the CDI pattern end to end. Run it against a synthetic note and it will extract clinical elements, retrieve guidelines, generate suggestions, and store them. The distance between this and a production CDI deployment is significant. Here's where it lives.
+Run this end to end against a synthetic note and you'll get the full CDI pattern in motion: clinical elements extracted, guidelines retrieved, suggestions generated, results stored. The distance between this and a production CDI deployment is significant. Here's where the gap lives.
 
 **EHR integration is the hardest part of the entire project.** This example accepts a note as a string. In reality, getting clinical notes out of an EHR in real time requires HL7 FHIR subscriptions, ADT event feeds, or vendor-specific APIs (Epic's CDS Hooks, Oracle Health's Smart on FHIR). The integration layer is often more complex than the AI pipeline itself. Budget 40-60% of your implementation timeline for EHR integration alone.
 
