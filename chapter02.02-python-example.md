@@ -735,11 +735,11 @@ This example works. Point it at a real Bedrock endpoint with a configured guardr
 
 **Prompt versioning and A/B testing.** Prompts live as Python constants here. Production stores them in S3 (versioned bucket), routes a percentage of traffic to new prompt versions, and tracks readability scores and validation pass rates per version. Promote prompts that improve scores; roll back prompts that degrade them. Store `prompt_version` in every record so you can correlate.
 
-**Caching layer.** The cache_key is computed but never checked. Production looks up the cache before calling Bedrock: if the exact source text at the exact target grade has been simplified before, serve the cached result. For standard discharge templates (knee replacement, cataract surgery) this alone can cut Bedrock spend significantly.
+**Caching layer.** The cache_key is computed but never checked. Production looks up the cache before calling Bedrock: if the exact source text at the exact target grade has been simplified before, serve the cached result. For standard discharge templates (knee replacement, cataract surgery), this alone can cut Bedrock spend significantly.
 
 **Multi-language support.** This produces simplified English only. For limited English proficient populations, chain Amazon Translate after simplification. Simplify first in English, then translate the simplified version. Translating raw clinical English produces worse output than translating already-simplified English.
 
-**Structured logging and metrics.** The `logger.info()` calls are a start. Production emits JSON logs with consistent fields (document_id, doc_type, segment_count, achieved_grade, validation_passed, latency_ms, token_count) and CloudWatch metrics for: end-to-end latency (p50/p95/p99), validation pass rate, guardrail intervention rate, and human review rate. Validation pass rate is your north star metric.
+**Structured logging and metrics.** The `logger.info()` calls are a start. Production emits JSON logs with consistent fields (document_id, doc_type, segment_count, achieved_grade, validation_passed, latency_ms, token_count) and CloudWatch metrics for end-to-end latency (p50/p95/p99), validation pass rate, guardrail intervention rate, and human review rate. Validation pass rate is your north star metric.
 
 **Human review workflow.** Segments that fail validation get flagged in the stored record, but this code doesn't implement the review queue. Production routes flagged documents to an SQS queue feeding a review UI where health literacy specialists can edit, approve, or reject. Track reviewer edit distance over time to identify systemic prompt weaknesses.
 
