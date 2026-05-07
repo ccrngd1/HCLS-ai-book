@@ -10,7 +10,7 @@ Two warnings are worth addressing before this goes to readers. One is a cross-pl
 
 ## Verdict: PASS
 
-Two WARNINGs, two NOTEs, no ERRORs. Below the FAIL threshold (more than 3 WARNINGs).
+Two WARNINGs, two NOTEs, no ERRORs. Below the FAIL threshold of more than 3 WARNINGs.
 
 ---
 
@@ -44,7 +44,7 @@ Two WARNINGs, two NOTEs, no ERRORs. Below the FAIL threshold (more than 3 WARNIN
 - **File:** `chapter04.01-python-example.md`
 - **Location:** `_send_sms` helper, the `MessageAttributes` block and its inline comment
 - **Description:** The comment asserts:
-  ```
+  ```python
   # MessageAttributes carry the reminder_id so delivery reports (enabled
   # via SNS SMS delivery logging configuration) can be joined to decisions.
   ```
