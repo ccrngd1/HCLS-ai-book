@@ -1,7 +1,7 @@
 # Expert Review: Recipe 2.2 - Medical Terminology Simplification
 
 **Reviewed by:** Technical Expert Panel (Security, Architecture, Networking, Voice)
-**Date:** 2026-05-06
+**Date:** 2026-05-07
 **Recipe file:** `chapter02.02-medical-terminology-simplification.md`
 
 ---
@@ -10,9 +10,9 @@
 
 **Verdict: PASS**
 
-This is a strong recipe. The problem statement is compelling and well-grounded in health literacy research. The technology section is genuinely educational, the architecture is sound for the stated complexity level (Simple/MVP), and the honest take section delivers on its promise. The entity validation pattern using Comprehend Medical is a smart safety layer that most simplification tutorials skip entirely.
+This recipe has meaningfully improved since the prior review pass. Bedrock Guardrails are now actually wired into the Step 3 pseudocode instead of being a phantom in the Ingredients table. Entity preservation logic is smarter: verbatim-required entities (medications, dosages, frequencies) get strict matching, while translatable entities (conditions, procedures) get a lower severity with an honest acknowledgment that "perfect verification would need NLI models." DynamoDB encryption now specifies customer-managed KMS keys, matching S3 parity. The problem statement (the cardiac discharge scenario) remains one of the stronger openings in the book, and the "transformation task, not generation task" framing does real work in setting safety expectations.
 
-That said, there are meaningful gaps: a missing KMS VPC endpoint that would break production deployments, an entity validation approach that has a significant blind spot the recipe doesn't fully acknowledge, and a Bedrock Guardrails service that appears in the Ingredients table but is never actually used in the architecture or code. No critical findings. Priority breakdown: 0 critical, 3 high, 4 medium, 3 low.
+That said, three gaps from the prior review were not closed and two new accuracy issues surfaced. The KMS VPC endpoint is still missing from the prerequisites (will break production). The Lambda timeout is still unspecified (the recipe itself cites 3-6 second end-to-end latency, which fails against Lambda's default 3-second timeout). The per-document cost estimate in the header and performance benchmark table is off by roughly an order of magnitude because it appears to omit Comprehend Medical from the total. Two TODO comments are still inline in the published prose, including one on an AWS Solutions URL that the style guide explicitly prohibits shipping unverified. The recipe's own "Honest Take" promises a retry loop that the pseudocode does not implement, and the caching behavior claimed in the Expected Results is not reflected in the Code walkthrough. Priority breakdown: 0 critical, 3 high, 6 medium, 5 low.
 
 ---
 
@@ -24,44 +24,62 @@ That said, there are meaningful gaps: a missing KMS VPC endpoint that would brea
 
 #### What's Done Well
 
-- BAA requirement is explicitly stated in the prerequisites. Good.
-- Encryption at rest (SSE-KMS for S3, DynamoDB encryption) and in transit (TLS) are specified.
+- BAA requirement is explicitly called out with the reason ("clinical text contains PHI"). Good.
+- DynamoDB encryption now specifies customer-managed KMS key, closing the prior parity gap with S3 SSE-KMS.
+- CloudWatch Logs KMS encryption is explicit.
+- IAM permissions are listed with specific actions (`bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `comprehendmedical:DetectEntitiesV2`, etc.) and the Prerequisites entry notes "Scope each to specific resource ARNs."
+- Bedrock Guardrails are now actually invoked in Step 3 (`guardrail_id = "terminology-simplification-guardrail"`), closing the prior phantom-service gap.
 - "Never use real patient documents in dev" is stated clearly.
-- CloudTrail logging for Bedrock invocations and Comprehend Medical calls is required.
-- The recipe correctly identifies that clinical text sent to Bedrock is PHI and must stay within the compliance perimeter.
-- IAM permissions are listed with specific actions, not wildcards.
+- CloudTrail logging for Bedrock and Comprehend Medical is required.
+- The `comprehendmedical:` (not `comprehend:`) IAM namespace is correct, matching the code reviewer's separate finding on the Python companion.
 
-#### Issue S1: Missing KMS VPC Endpoint in Prerequisites (HIGH)
+#### Issue S1: KMS VPC Endpoint Still Missing From Prerequisites (HIGH)
 
-**Location:** Prerequisites table, VPC row.
+**Location:** Prerequisites table, VPC row (line 139):
 
-**The problem:** The prerequisites list VPC endpoints for "Bedrock, Comprehend Medical, S3, DynamoDB, SQS, and CloudWatch Logs." KMS is not listed. When Lambda runs in a private subnet with no internet egress and S3 uses SSE-KMS, every S3 GetObject/PutObject requires a KMS API call to decrypt or generate the data key. Without a KMS VPC endpoint (`com.amazonaws.{region}.kms`), those calls have no route and the Lambda fails with an `AccessDeniedException` or timeout. This is the same issue identified in Recipe 1.3 and it applies identically here.
+> "Production: Lambda in VPC with VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, and CloudWatch Logs"
 
-**Suggested fix:** Add `KMS` to the VPC endpoint list: "Lambda in VPC with VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, SQS, CloudWatch Logs, and KMS."
+**The problem:** The Encryption row mandates SSE-KMS on S3, a customer-managed KMS key on DynamoDB, and KMS encryption on CloudWatch Logs. Every decryption of an S3 prompt template, every DynamoDB GetItem or PutItem, and every CloudWatch Logs write requires a KMS API call to generate or decrypt a data key. With Lambda in a private subnet and no internet egress (the correct production posture), those KMS calls have no route. Without a KMS interface endpoint (`com.amazonaws.{region}.kms`), the Lambda will fail with `AccessDeniedException` or a timeout on the first S3 GetObject for the prompt templates, before the pipeline can even call Bedrock.
 
-#### Issue S2: PHI Stored in DynamoDB Without Explicit Encryption Specification (MEDIUM)
+This is the same finding as the prior review. It was not addressed in the current revision, and is the single most likely thing that will break a reader's first production deployment.
 
-**Location:** Prerequisites table, Encryption row; Ingredients table, DynamoDB row.
+**Suggested fix:** Add KMS to the VPC endpoint list: "VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, KMS, and CloudWatch Logs." Also note that KMS is an interface endpoint (billed per AZ per hour) because some readers expect all four to be gateway endpoints.
 
-**The problem:** The Encryption row says "DynamoDB: encryption at rest (default)." AWS default DynamoDB encryption uses AWS-owned keys, not customer-managed keys. For PHI data under HIPAA, many compliance programs require customer-managed KMS keys (CMK) on all PHI stores for audit trail visibility and key revocation capability. The S3 configuration correctly specifies SSE-KMS, creating an inconsistency in the PHI encryption posture.
+#### Issue S2: Input-Side Prompt Injection Mitigation Not Discussed (MEDIUM)
 
-**Suggested fix:** Change to "DynamoDB: encryption at rest with customer-managed KMS key" to match the S3 approach. Add a brief note that CMK enables key usage auditing via CloudTrail and key revocation if needed.
+**Location:** Step 3 pseudocode (`simplify_segment`); "Failure Modes" subsection of "The Technology."
 
-#### Issue S3: Prompt Injection Risk Not Addressed (MEDIUM)
+**The problem:** The segment text is injected directly into the user message of the Bedrock call. Depending on the source, that text carries different trust levels. A clean EHR discharge summary is low-risk. But the recipe's upstream examples in Related Recipes include "Recipe 1.6 (Handwritten Clinical Note Digitization)," where OCR output can contain arbitrary reconstruction artifacts, and clinical text in the real world sometimes includes patient-supplied free text (intake forms, portal messages copy-pasted into an addendum). Adversarial content in that text could attempt to override simplification constraints, insert instructions to exfiltrate other patient data, or add fabricated clinical recommendations.
 
-**Location:** Step 2 (Build the Simplification Prompt), specifically the user_prompt construction.
+The recipe applies Bedrock Guardrails on the output (Step 3 passes `guardrail_id` to the Bedrock call, which filters the response), but does not mention configuring input-side filters. Bedrock Guardrails supports input filters (prompt-attack detection, denied-topic matching on user input) that are a defense-in-depth layer for exactly this scenario. This was flagged in the prior review as well.
 
-**The problem:** The clinical text is inserted directly into the user prompt between delimiter markers (`---`). If the clinical text contains adversarial content (unlikely from a legitimate EHR, but possible from user-submitted text in a patient portal), the model could be manipulated to ignore simplification constraints and produce harmful output. The recipe mentions Bedrock Guardrails in the Ingredients table but never shows how they're configured or applied. For a recipe that processes PHI and produces patient-facing output, the injection risk deserves at least a mention.
+**Suggested fix:** Add a sentence in the "Failure Modes" section or Step 3 narrative: "When the source text originates from untrusted channels (OCR of handwritten notes, patient-supplied free text, addenda entered through a portal), configure the Bedrock Guardrail with input-side prompt-attack filters in addition to the output filters. Input filtering catches injection attempts before the model sees the manipulated text. For clean EHR-sourced text this is less critical but is a low-cost layer to add."
 
-**Suggested fix:** Add a brief note in the "Failure Modes" section or "The Honest Take" acknowledging that input sanitization matters if the source text comes from user-submitted content (as opposed to structured EHR exports). Reference Bedrock Guardrails as the mitigation layer and either show its configuration or remove it from the Ingredients table if it's not actually part of this recipe's implementation.
+#### Issue S3: PHI Retention Policy Not Discussed for Cached Simplified Documents (MEDIUM)
 
-#### Issue S4: No Mention of Data Retention Policy (LOW)
+**Location:** Step 5 (`assemble_and_store`); Prerequisites table.
 
-**Location:** Step 7 (Store Results).
+**The problem:** Step 5 writes to a DynamoDB table named `simplified-documents` with `original_text`, `simplified_text`, `entities_preserved` (a list of medications, dosages, conditions), and `model_id`. Every field is PHI. The cache key is a hash of source text plus target grade, which means cache hits are served indefinitely by design. The Expected Results section claims "30-50% cache hit rate after warm-up," so this table is expected to grow and be retained.
 
-**The problem:** The recipe stores both original clinical text and simplified versions in DynamoDB indefinitely. For PHI, data retention policies are a HIPAA requirement. There's no mention of TTL, lifecycle policies, or retention period considerations.
+No TTL, archival path, or retention boundary is defined. Under HIPAA minimum-necessary principles, PHI stores need an explicit lifecycle. For simplified outputs that back a patient portal, you likely want hot retention for as long as the patient might re-request the document (months), then archive to a colder tier with appropriate controls, then delete per the organization's retention schedule. The recipe silently encourages perpetual accumulation.
 
-**Suggested fix:** Add a one-line note in Step 7 or the "Gap to Production" equivalent: "In production, configure DynamoDB TTL or a scheduled cleanup process aligned with your organization's PHI retention policy."
+**Suggested fix:** Add one or two sentences to Step 5 or a new row in Prerequisites: "The `simplified-documents` table stores PHI. Configure DynamoDB TTL aligned with your organization's PHI retention policy (a common pattern is hot retention for 6-12 months matching portal access windows, then archival to S3 Glacier with KMS encryption for longer-term audit retention). Separately, define a deletion path for patient-initiated data deletion requests under state privacy laws."
+
+#### Issue S4: Bedrock Model-Invocation-Logging and Prompt PHI Not Addressed (LOW)
+
+**Location:** Step 3 pseudocode; Prerequisites (CloudTrail row).
+
+**The problem:** The system prompt constructed in Step 3 embeds the `must_preserve` list, which contains medication names, dosages, and condition names from the source text. That system prompt is a PHI-carrying string that gets sent to Bedrock. If a reader enables Bedrock model-invocation-logging for quality monitoring or prompt-drift analysis (a reasonable and common production choice), the logged prompts and responses land in S3 or CloudWatch Logs, creating a new PHI store that needs encryption, access control, and retention parity with the primary data stores. Recipe 2.1 handles this nuance explicitly; Recipe 2.2 doesn't mention it.
+
+**Suggested fix:** Add one sentence near the Step 3 pseudocode or in the Prerequisites Encryption row: "If Bedrock model-invocation-logging is enabled for quality monitoring, the logged prompts will contain PHI (the embedded must-preserve list). The log destination bucket or log group must be KMS-encrypted, access-controlled, and subject to the same retention policy as other PHI stores."
+
+#### Issue S5: Guardrail Interventions Not Captured as Safety Events (LOW)
+
+**Location:** Step 3 pseudocode (`simplify_segment` returns `reason: response.guardrail_reason` but does not log it); Step 5 (metrics block).
+
+**The problem:** When the guardrail blocks a segment's simplification, the pseudocode returns `simplified: false, reason: response.guardrail_reason` and falls through. Step 5 emits a `SimplificationCompleted` metric and a `SimplificationNeedsReview` metric but does not emit a guardrail-specific metric. For a PHI-carrying pipeline, guardrail blocks are safety events; you want to know which segments triggered which policies at which rates, both for quality improvement (are we over-filtering?) and for compliance (can we demonstrate the safety layer is doing work?).
+
+**Suggested fix:** Add a brief mention in Step 3 or Step 5 that guardrail blocks should emit a distinct CloudWatch metric (e.g., `SegmentBlockedByGuardrail` with dimensions for segment type and triggered policy), and that the `guardrail_reason` string may itself echo PHI from the segment and should be handled accordingly (not logged verbatim into an un-encrypted channel).
 
 ---
 
@@ -69,46 +87,77 @@ That said, there are meaningful gaps: a missing KMS VPC endpoint that would brea
 
 #### What's Done Well
 
-- The pipeline is well-structured: classify, generate, validate, score, gate, store. Each step has a clear purpose.
-- The retry logic is sound: retry on readability failures (fixable), route to human on accuracy failures (not safely fixable by retry).
-- The content type classification driving prompt selection is a good pattern that avoids one-size-fits-all prompting.
-- The readability scoring as a computational check (not another LLM call) is the right choice for speed and determinism.
-- Cost estimates are reasonable for the stated architecture ($0.01-0.04 per document).
-- The "transformation task, not a generation task" framing is an important safety distinction that's well articulated.
+- Segmentation-before-simplification is the right design and is explained clearly. The insight in "The Honest Take" that "the segmentation step matters more than the model choice" is the kind of production wisdom this book promises.
+- Type-specific prompts (medications, diagnosis, instructions, results, narrative) give the model the right constraints per content type instead of a single generic prompt.
+- Readability validation as a deterministic, non-LLM check (Flesch-Kincaid) is correct for speed and cost.
+- The distinction between `preserve_verbatim: true` (medications, dosages, frequencies) requiring exact match and `preserve_verbatim: false` (conditions, procedures) allowing translation is a meaningful improvement over the prior version, and the self-aware parenthetical "(This is a heuristic; perfect verification would need NLI models)" is honest about the limits.
+- Cache key construction (`hash(original_text + "|" + target_grade)`) is correctly scoped so changes to target grade don't cause false cache hits.
+- Temperature of 0.2 for a constrained transformation task is appropriate.
+- The sample output and before/after discharge summary example make the recipe concrete.
 
-#### Issue A1: Bedrock Guardrails Listed but Never Used (HIGH)
+#### Issue A1: Lambda Timeout Not Specified; Default Will Fail (HIGH)
 
-**Location:** Ingredients table lists "Amazon Bedrock Guardrails" with role "Content filtering and safety constraints on model output." Architecture diagram does not show Guardrails. Code walkthrough does not reference Guardrails. "Why These Services" section describes Guardrails but the implementation never applies them.
+**Location:** Prerequisites table (no Lambda timeout row); Expected Results ("End-to-end latency | 3-6 seconds per document").
 
-**The problem:** A reader following this recipe will set up Bedrock, Comprehend Medical, Lambda, DynamoDB, and SQS. They will not set up Guardrails because there's no step that uses them. The Ingredients table creates an expectation that isn't fulfilled. Either Guardrails is part of this recipe or it isn't.
+**The problem:** The default Lambda timeout is 3 seconds. The recipe's own Expected Results table says typical end-to-end latency is 3-6 seconds per document, and the pipeline performs, in order: Comprehend Medical `DetectEntitiesV2` (200-800 ms), S3 GetObject for prompt templates (50-200 ms if not cached in memory), one Bedrock Converse call per segment with guardrail applied (1-4 seconds per segment, and a segmented document has 3-6 segments), readability scoring (negligible), and DynamoDB PutItem (50 ms). Realistic Lambda execution is 5-20 seconds on a good path, longer when segments retry or Bedrock throttles.
 
-**Suggested fix:** Either (a) add a Guardrails configuration step showing how to create a guardrail that blocks outputs containing clinical recommendations not in the source text, and reference the guardrail ID in the `generate_simplification` call, or (b) remove Bedrock Guardrails from the Ingredients table and "Why These Services" section, and instead mention it in "Variations and Extensions" as a production enhancement. Option (b) is simpler and more honest for an MVP-complexity recipe.
+A reader who deploys with Lambda defaults will see every single invocation fail with `Task timed out after 3.00 seconds`. This was flagged in the prior Recipe 2.1 review and not addressed here despite this recipe's longer per-document latency profile.
 
-#### Issue A2: Entity Validation Blind Spot Understated (HIGH)
+**Suggested fix:** Add a Lambda timeout row to the Prerequisites table: "Lambda timeout: 60 seconds minimum (multi-segment simplification with guardrail-applied Bedrock calls runs 3-6 seconds end-to-end and can spike higher under throttling). Lambda memory: 512 MB floor (the Bedrock SDK payload and segment reassembly work don't run well at 128 MB)." If multi-segment concurrency is a production concern, consider noting that Step Functions or parallel Lambda invocations per segment would trade cost for latency.
 
-**Location:** Step 4 (Validate Accuracy), "The Honest Take" section.
+#### Issue A2: Per-Document Cost Estimate Is Off By Roughly 10x (HIGH)
 
-**The problem:** The entity comparison approach has a fundamental limitation that the recipe acknowledges but underplays. Comprehend Medical extracts entities as text spans. The original says "myocardial infarction" and the simplified version says "heart attack." These are the same concept but different text. The pseudocode's `find_matching_entity` function is hand-waved without explaining how it handles synonyms. The Python companion uses substring matching, which will miss this case entirely.
+**Location:** Recipe header ("Estimated Cost: ~$0.005–0.02 per document"); Performance benchmarks table ("Cost per document (1-page discharge summary) | $0.005-0.02"); Prerequisites table (Cost Estimate row).
 
-The recipe says in "The Honest Take" that entity preservation is "a proxy for meaning preservation, not the same thing." True, but the bigger issue is that entity preservation itself doesn't work reliably when the whole point of the recipe is to replace medical terms with plain language equivalents. The validation step will flag "myocardial infarction" as missing from the simplified text because "heart attack" doesn't substring-match. This means the validation will produce false positives on every successful simplification of a medical term.
+**The problem:** The header and performance-benchmark table state a total per-document cost of $0.005-0.02. The Prerequisites Cost Estimate row, when read carefully, decomposes this differently: "Bedrock (Claude Haiku): ~$0.005-0.02 per document depending on length. Comprehend Medical: $0.01 per 100 characters." The Comprehend Medical rate quoted is correct per the current AWS pricing page (verified: $0.01 per 100-character unit for NERe in the first tier, with a 1-unit minimum charge per request).
 
-**Suggested fix:** Address this directly in Step 4. Acknowledge that the entity comparison will produce false positives when the model correctly replaces a medical term with its lay equivalent. Describe the mitigation: (1) maintain a medical synonym map for common term pairs, (2) use a secondary LLM call to verify semantic equivalence of flagged "missing" entities, or (3) focus validation on medications and dosages (where exact text preservation is expected) rather than conditions and procedures (where synonym substitution is the goal). The Python companion's "Gap to Production" section mentions this, but the main recipe's Step 4 should be upfront about it.
+The problem is the arithmetic on a 1-page discharge summary. The AWS pricing examples on the Comprehend Medical pricing page use 1,700 characters per page as their reference. At $0.01 per 100-character unit, one page is 17 units = $0.17 for a single `DetectEntitiesV2` call. Bedrock Claude Haiku at current rates adds roughly $0.002-0.01 for a simplification of that length. Total per-document cost is approximately $0.17-0.18, not $0.005-0.02. The recipe is approximately 10x optimistic on total cost.
 
-#### Issue A3: No Dead Letter Queue in Architecture Diagram (MEDIUM)
+This matters for three reasons. First, it's internally inconsistent: the Prerequisites line about Comprehend Medical rates contradicts the top-line cost estimate. Second, it affects build-vs-buy decisions and scale planning: at 35,000 documents per month (the scale from the AWS pricing page examples), the recipe implies $700/month; reality at first-tier NERe pricing is approximately $6,000/month. Third, the architecture diagram shows a second Comprehend Medical arrow (`H -->|Check Preservation| C`) that would double the Comprehend Medical cost if the pipeline actually re-extracts entities from the simplified text (Step 4's pseudocode uses string matching, not a second Comprehend Medical call, so either the diagram or the pseudocode is wrong; see Issue A3).
 
-**Location:** Architecture diagram, Ingredients table.
+**Suggested fix:** Correct the header and benchmark table. A realistic total per-document cost for a 1-page (1,700-char) discharge summary is approximately $0.18-0.25, dominated by Comprehend Medical. For multi-page documents (discharge summaries of 3-5 pages are common), the cost scales linearly with Comprehend Medical character count. The Prerequisites row should explicitly total the components rather than leaving the reader to add them. If the Expected Results cache hit rate of 30-50% is real, the effective amortized cost with caching is meaningful to report separately.
 
-**The problem:** SQS is listed in the Ingredients table with role "Dead letter queue for failed simplifications; human review queue." The architecture diagram shows a "Human Review Queue" node but no DLQ. The code walkthrough doesn't show DLQ configuration. For an MVP recipe this is acceptable, but the Ingredients table creates an expectation of DLQ handling that isn't delivered.
+#### Issue A3: Architecture Diagram and Pseudocode Disagree on Second Comprehend Medical Call (MEDIUM)
 
-**Suggested fix:** Either add a DLQ path to the architecture diagram (Lambda failure routes to SQS DLQ) or simplify the SQS description in the Ingredients table to just "Human review queue for accuracy failures" and mention DLQ in "Variations and Extensions."
+**Location:** Architecture Diagram (`H -->|Check Preservation| C` where C is Comprehend Medical); Step 4 pseudocode (`validate_output`).
 
-#### Issue A4: Readability Retry Prompt Doesn't Adjust System Prompt (LOW)
+**The problem:** The architecture diagram shows the validation step calling Comprehend Medical a second time to check preservation, with an arrow from the validate-and-assemble Lambda back to Comprehend Medical. The Step 4 pseudocode instead performs string matching (`IF lowercase(entity.text) NOT found in simplified_lower`) on the simplified text using the entity list extracted in Step 1. No second Comprehend Medical call happens in the pseudocode.
 
-**Location:** Step 6 (Quality Gate), retry logic description.
+This matters because the two implementations have different cost, correctness, and latency implications. A second Comprehend Medical call doubles the Comprehend Medical spend and adds 200-800 ms of latency, but it handles morphological variations better (e.g., "aspirin" vs "Aspirin" vs "aspirin tablets"). String matching is cheaper and faster but brittle around case, whitespace, and Unicode normalization. The recipe picks string matching in code but implies the other choice in the diagram.
 
-**The problem:** The recipe says "retry with a more aggressive simplification prompt" but doesn't specify what changes. The Python companion appends extra instructions to the user prompt on retry, but the system prompt (which defines the target grade level) stays the same. A more effective retry would lower the target grade in the system prompt itself (e.g., from grade 6 to grade 4) rather than just adding "simplify further" to the user message.
+**Suggested fix:** Either remove the `H -->|Check Preservation| C` arrow from the diagram (if string matching is the intended implementation, which is consistent with the pseudocode) or add a second Comprehend Medical extraction step to Step 4 (if re-extraction is the intended implementation, which is consistent with the diagram and would also affect Issue A2's cost estimate). The pseudocode is likely the correct intent; the diagram should be updated to show Step 4 consuming the `must_preserve` list from Step 1 rather than calling Comprehend Medical again.
 
-**Suggested fix:** Add a brief note that retry prompts should adjust the target grade level in the system prompt, not just append instructions. This is a minor point but affects retry effectiveness.
+#### Issue A4: "Honest Take" Claims a Retry Loop That the Pseudocode Doesn't Implement (MEDIUM)
+
+**Location:** "The Honest Take" paragraph 3: "The validation loop (simplify, score, re-simplify if needed) adds latency but is worth it." Also The Technology section: the "simplify, score, re-simplify if needed" cadence is implied throughout the narrative.
+
+**The problem:** The Step 4 `validate_output` function returns an `issues` list with severity levels, and Step 5 `assemble_and_store` handles validation failures by appending the original (un-simplified) segment to the final document with a `needs_review` flag. There is no re-simplification loop. A segment that fails readability validation once falls through to human review; it is never re-attempted at a lower target grade or with a more aggressive prompt, despite The Honest Take's claim.
+
+This also contradicts the benchmark claim: "Readability target hit rate | 85-92% of segments on first pass." The phrasing "on first pass" implies there's a second pass that isn't in the code.
+
+Either the retry loop should be added to the pseudocode (and the cost and latency estimates adjusted accordingly), or The Honest Take and the benchmark phrasing should be revised to match the "one pass, then human review" behavior actually implemented.
+
+**Suggested fix:** Option (a): add a retry loop in Step 5 that, on a readability-severity `error`, re-invokes Step 3 with a lower target grade (e.g., target - 1) up to a maximum retry count (typically 2). Update the narrative to describe this loop and note the latency and cost implications. Option (b): rewrite The Honest Take's claim to match the current behavior: "The validation step flags segments that missed the target grade for human review rather than retrying them. In practice, a retry loop with a stricter prompt can reclaim 50-70% of flagged segments, and is a reasonable first enhancement in production."
+
+#### Issue A5: Cache Lookup Not Integrated Into the Pipeline (MEDIUM)
+
+**Location:** Expected Results ("Cache hit rate (standard templates) | 30-50% after warm-up"); "Why These Services" ("Amazon DynamoDB for result storage and caching. Store simplified outputs keyed by a hash of the source text. If the same discharge instruction template gets simplified repeatedly ... serve the cached version instead of calling Bedrock again."); Code walkthrough (no cache-lookup step).
+
+**The problem:** The "Why These Services" section promises that repeat simplifications of the same source text are served from cache, saving cost and latency. The Expected Results table claims a 30-50% cache hit rate. Both claims materially affect cost and throughput numbers. But the pseudocode walkthrough has no cache-lookup step at the front of the pipeline. Step 1 goes straight to Comprehend Medical. Step 5 writes the result with a cache key but never shows a reader where that key is consulted on a subsequent invocation.
+
+A reader implementing this recipe exactly will get zero cache hits. The cost per document will also be closer to the uncached value (relevant to Issue A2).
+
+**Suggested fix:** Add a Step 0 before Step 1: "Check cache. Compute `cache_key = hash(original_text + '|' + target_grade)`. If a cached simplified document exists in the `simplified-documents` table, return it directly. Otherwise proceed to Step 1." Also note in the pseudocode narrative that templated content (standard discharge instructions with only name/date/dosage variations) benefits most from this, and that more sophisticated caching (hashing only the template portion while re-simplifying variable portions) is an MVP-follow-on described in Variations.
+
+#### Issue A6: Segment Classifier Has No Ambiguity or Confidence Handling (MEDIUM)
+
+**Location:** Step 2 pseudocode (`segment_document`); "The Honest Take" (which elevates segmentation as "more important than the model choice").
+
+**The problem:** The classifier iterates `SEGMENT_TYPES` and does first-match-wins substring search. A section with text like "Please take this medication and follow up in 2 weeks" matches both `medications` ("medication") and `instructions` ("follow up"). The iteration order of the dictionary determines which wins. A section that matches nothing silently falls through to `narrative`, which gets the most generic prompt. There's no tie-breaking, no match-count score, and no "route to manual review when ambiguous" escape hatch.
+
+The Honest Take correctly identifies segmentation as the most leveraged component, but the implementation shown doesn't treat it with the care that framing implies. This is a particularly acute concern because misclassification causes the wrong prompt to be applied, which changes what the model preserves verbatim. If a medication list is misclassified as `narrative`, the `preserve_verbatim` constraint on dosages isn't applied in the prompt.
+
+**Suggested fix:** Either (a) in Step 2 pseudocode, track how many keywords matched and for which types, and if more than one type matches meaningfully, run the segment through both prompts and pick the better-validating output, or log a warning and apply the stricter prompt (`medications` over `instructions` when both match), or (b) describe the upgrade path in The Honest Take or Variations as a small classifier (TF-IDF + logistic regression, or a distilled model fine-tuned on labeled segments). Option (a) is the minimum; option (b) is the better long-term framing.
 
 ---
 
@@ -116,29 +165,29 @@ The recipe says in "The Honest Take" that entity preservation is "a proxy for me
 
 #### What's Done Well
 
-- VPC endpoints are listed for all services that handle PHI.
+- VPC endpoints are explicitly listed for services that handle PHI (Bedrock, Comprehend Medical, S3, DynamoDB, CloudWatch Logs).
 - The recipe correctly identifies that clinical text is PHI and cannot leave the compliance perimeter.
-- CloudWatch Logs VPC endpoint is included (commonly missed).
+- CloudTrail logging is mandated for Bedrock and Comprehend Medical.
 
-#### Issue N1: Missing KMS VPC Endpoint (HIGH)
+#### Issue N1: KMS VPC Endpoint Still Missing (HIGH, cross-listed with S1)
 
-*Same as S1. See Security Expert Review. Cross-listed because it's both a security gap and a networking gap that will cause production failures.*
+Same finding as Security Expert S1. Cross-listed because it's both a security-posture gap and a networking-configuration gap that will cause silent production failure. The KMS endpoint is required for Lambda to decrypt S3 SSE-KMS objects, write to a KMS-encrypted DynamoDB table, and emit logs to a KMS-encrypted CloudWatch Logs group from within a private subnet.
 
 #### Issue N2: Interface vs. Gateway Endpoint Distinction Not Made (MEDIUM)
 
 **Location:** Prerequisites table, VPC row.
 
-**The problem:** The VPC row lists six services needing endpoints without distinguishing between gateway endpoints (S3, DynamoDB: free, route-table based) and interface endpoints (Bedrock, Comprehend Medical, SQS, CloudWatch Logs, KMS: billed per AZ per hour, require security groups). A reader setting up VPC endpoints for the first time will encounter different configuration screens and unexpected billing for interface endpoints.
+**The problem:** The VPC row lists endpoints without distinguishing between gateway endpoints (S3, DynamoDB: free, route-table-based) and interface endpoints (Bedrock, Comprehend Medical, KMS, CloudWatch Logs: billed per AZ per hour plus data processing, require security groups). A first-time VPC-endpoint configurator will hit two different configuration flows and see unexpected billing for the interface endpoints. The prior Recipe 2.2 review flagged this; the prior Recipe 2.1 review addressed it with a parenthetical. This recipe still omits it.
 
-**Suggested fix:** Add a parenthetical or footnote: "S3 and DynamoDB use gateway endpoints (free). Bedrock, Comprehend Medical, SQS, CloudWatch Logs, and KMS use interface endpoints (PrivateLink, ~$0.01/AZ/hour plus data processing)."
+**Suggested fix:** Add a parenthetical to the VPC row: "S3 and DynamoDB use gateway endpoints (free, route-table-based). Bedrock (`com.amazonaws.{region}.bedrock-runtime`), Comprehend Medical, KMS, and CloudWatch Logs use interface endpoints (PrivateLink, approximately $0.01/AZ/hour plus data processing charges; require a security group allowing HTTPS from the Lambda subnet)."
 
-#### Issue N3: Bedrock VPC Endpoint Availability (LOW)
+#### Issue N3: Bedrock Endpoint Name Not Specified (LOW)
 
 **Location:** Prerequisites table, VPC row.
 
-**The problem:** Amazon Bedrock runtime VPC endpoints (`com.amazonaws.{region}.bedrock-runtime`) are available in most regions but this is relatively new. A reader deploying in a less common region should verify availability. Additionally, the endpoint name is not obvious (it's `bedrock-runtime`, not `bedrock`).
+**The problem:** The recipe lists "Bedrock" as a VPC endpoint. The actual service endpoint name for the InvokeModel and ApplyGuardrail actions is `com.amazonaws.{region}.bedrock-runtime` (not `bedrock`). Recipe 2.1 correctly spells this out. A reader comparing the two recipes side by side will notice the inconsistency.
 
-**Suggested fix:** Add a note in the prerequisites or "Why These Services" section: "The Bedrock VPC endpoint is `com.amazonaws.{region}.bedrock-runtime` (not `bedrock`). Verify availability in your target region."
+**Suggested fix:** Spell the endpoint name out: "Bedrock (`com.amazonaws.{region}.bedrock-runtime`, which serves both InvokeModel and ApplyGuardrail; there is no separate `bedrock-guardrails` endpoint)."
 
 ---
 
@@ -146,27 +195,52 @@ The recipe says in "The Honest Take" that entity preservation is "a proxy for me
 
 #### What's Done Well
 
-- The opening problem statement is excellent. The cardiac discharge example is vivid and immediately relatable. The progression from specific example to systemic problem to health outcome data is well-paced.
-- The tone is consistently engineer-explaining-something-cool throughout. "What if you could take any piece of clinical text and automatically produce a patient-friendly version..." has the right energy.
-- The technology section is genuinely educational and vendor-agnostic. A reader on GCP or Azure learns the concepts before seeing any AWS service names.
-- "The Honest Take" delivers real self-deprecating expertise: "patients don't just want simpler words. They want structure."
-- No documentation-voice detected. No "this recipe demonstrates how to leverage..." patterns.
+- The opening cardiac-discharge paragraph is strong. The specific jargon-dense quote followed by "The patient nods, walks to their car, and has absolutely no idea what just happened to them" is the right voice: specific, vivid, low key devastating.
+- "Health literacy is not about intelligence. A PhD in literature still won't know what 'apical hypokinesis' means." This is the engineer-at-whiteboard register CC uses.
+- The Technology section earns its space. Three properties that make LLMs good at this task (contextual understanding, graduated simplification, structural preservation) are concrete, not hand-wavy.
+- The failure modes list (over-simplification, hallucinated explanations, inconsistent terminology, cultural assumptions, loss of actionable specifics) is the kind of teaching that makes this cookbook valuable. "Your blood thinner twice a day" as an example of an over-simplified dosage instruction is exactly the right kind of concrete failure.
+- The Honest Take delivers: "Early in development, I watched the model simplify 'ticagrelor 90mg BID' into 'your blood thinner twice a day.' Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy." That's CC voice.
+- Vendor balance is approximately 70/30. The Problem, The Technology, and General Architecture Pattern sections stay vendor-agnostic. AWS service names appear in "The AWS Implementation" and stay there.
 
-#### Issue V1: No Em Dashes Found
+#### Issue V1: No Em Dashes
 
-Confirmed: zero em dashes in the recipe. Clean.
+Confirmed: full-file scan for U+2014 returned zero matches. Clean.
 
-#### Issue V2: Vendor Balance Is Appropriate
+#### Issue V2: Inline TODO on AWS Solutions URL Must Not Ship (MEDIUM)
 
-The recipe is well-structured with clear vendor-agnostic sections (The Problem, The Technology, failure modes, readability scoring, general architecture pattern) followed by the AWS-specific implementation. Estimated split is approximately 65-70% vendor-agnostic, 30-35% AWS-specific. Within acceptable range.
+**Location:** Additional Resources, AWS Solutions and Blogs section (line 543):
 
-#### Issue V3: Minor Tone Inconsistency in Step Descriptions (LOW)
+> `[Guidance for Generative AI Text Summarization using LLMs on AWS](https://aws.amazon.com/solutions/guidance/generative-ai-text-summarization-using-large-language-models-on-aws/): Reference architecture for text transformation pipelines <!-- TODO: Verify this URL exists -->`
 
-**Location:** Code walkthrough, step introductions (bold paragraphs before each pseudocode block).
+**The problem:** The style guide is explicit: "Only real, verified URLs. Never make up GitHub repos or doc links." An inline TODO on a live URL reference means the author hasn't verified it, which is exactly the condition the rule prohibits. Either the URL exists and the TODO should be removed, or it doesn't exist and the entry should be replaced or removed. The recipe cannot ship with the TODO intact.
 
-**The problem:** The step descriptions oscillate between two voices. Some are conversational and opinionated ("This is where the magic happens," "Skip this step and you'll get generic simplifications"). Others are more neutral and instructional ("Combine the validation result and readability score to make a pass/fail decision"). The conversational ones are better and match the style guide. The neutral ones read slightly more like documentation.
+**Suggested fix:** Verify the URL now. If it resolves, delete the TODO comment. If it doesn't, replace with a verified alternative (candidates: an AWS ML blog post on text simplification or transformation with Bedrock, or the `amazon-bedrock-samples` repo that is already linked and does cover transformation patterns).
 
-**Suggested fix:** Review Steps 5, 6, and 7 introductions and add a touch more personality. Not a major issue; the overall voice is strong.
+#### Issue V3: Recipe 8.1 Cross-Reference TODO (LOW)
+
+**Location:** Related Recipes, third bullet (line 520):
+
+> `Recipe 8.1 (Medical Entity Extraction): Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification <!-- TODO: Verify recipe number against final chapter 8 index -->`
+
+**The problem:** Chapter 8 isn't written yet, so the recipe number can't be pinned. This is the same unavoidable situation as Recipe 2.1's reference to Recipe 11.1 and is acceptable on the same grounds (tracked in the book-wide cross-reference sweep before publication). Flagging for the editor.
+
+**Suggested fix:** No action in this recipe pass. Track for the editor's cross-reference sweep.
+
+#### Issue V4: "Let me map out" and Similar Mild Doc-Voice Creep in Step Narratives (LOW)
+
+**Location:** Step introductions in the Code walkthrough (bolded paragraphs before each pseudocode block).
+
+**The problem:** Most step narratives are in the right voice ("Skip this step and you have no way to automatically detect when simplification accidentally drops a medication or changes a dosage" in Step 1). A few are a beat more neutral than the surrounding prose ("This is the core transformation step. Each segment gets a tailored system prompt that tells the model exactly how to handle that content type" in Step 3). Not wrong; slightly cooler in register.
+
+**Suggested fix:** Optional touch-up in the editing pass. One or two of the Step 3 and Step 5 intros could absorb a little more personality.
+
+#### Issue V5: Cost Claim in the Header Sets an Expectation the Architecture Doesn't Meet (LOW, echoes A2)
+
+**Location:** Recipe header ("Estimated Cost: ~$0.005–0.02 per document").
+
+**The problem:** From a voice-and-expectations perspective, the header is the first impression of the recipe's economics, and it's inconsistent with the Prerequisites detail. A reader who reads the header, commits to the architecture, and later discovers the real per-document cost is closer to $0.18 will feel misled. The voice of the book is honest-engineer-explaining; that voice is compromised when the cost advertisement doesn't match the cost math.
+
+**Suggested fix:** Covered under Issue A2. Correcting the cost estimate resolves the voice concern.
 
 ---
 
@@ -174,15 +248,19 @@ The recipe is well-structured with clear vendor-agnostic sections (The Problem, 
 
 ### Overlapping Concerns
 
-1. **KMS VPC Endpoint (S1/N1):** Both Security and Networking experts independently flagged the missing KMS endpoint. This is the single most likely production-breaking gap in the recipe. A reader following the prerequisites exactly will have a non-functional pipeline if they use SSE-KMS on S3 (which the recipe tells them to do).
+**KMS endpoint (S1, N1):** Security and Networking independently flagged the same gap. This is the single most-likely-to-break-production finding in the recipe and was unaddressed from the prior review. One edit fixes both.
 
-2. **Bedrock Guardrails phantom (A1/S3):** The Architecture expert flags Guardrails as listed-but-unused. The Security expert flags prompt injection risk and notes Guardrails as the stated mitigation that's never implemented. These are the same gap from different angles. Resolution: either implement Guardrails or remove it and acknowledge the gap.
+**Cost accuracy and cache (A2, A5, V5):** Three findings trace to the same root issue: the recipe's cost and throughput claims don't match the architecture actually implemented. A2 finds the arithmetic error (Comprehend Medical is dominant and omitted from the top-line cost). A5 finds that the cache-lookup step needed to justify the lower effective cost isn't in the code. V5 notes the voice issue of a first-impression cost that the rest of the recipe doesn't support. Resolution: correct the header cost to reflect Comprehend Medical, add the cache-lookup step as Step 0, and then re-derive the amortized cost with the cache hit rate (which is reasonable if cached properly).
 
-3. **Entity validation false positives (A2):** This is the most architecturally significant finding. The validation step is designed to catch meaning loss, but it will also flag every successful synonym substitution as a "missing entity." This doesn't make the recipe wrong (the concept is sound), but the implementation guidance needs to be more honest about the false positive rate and how to handle it. Without this acknowledgment, a reader will deploy the pipeline, see 30-40% of simplifications flagged as "accuracy failures," and either (a) route everything to human review (defeating the purpose) or (b) disable validation (removing the safety net).
+**Pipeline behavior under failure (A1, A4, A6):** The Lambda timeout finding (A1) causes immediate deployment failure. The missing retry loop (A4) is a discrepancy between the narrative promise and the implementation, not a failure mode. The segment classifier ambiguity (A6) causes subtle misclassification failures that compound downstream (wrong prompt leads to wrong preservation rules). A1 is the highest priority because it's deterministic on day one. A4 is a fix to either the code or the prose so they match. A6 is a real architectural gap that merits a Variations note at minimum.
+
+**Diagram vs. pseudocode consistency (A3):** Separate from the above, the architecture diagram shows a second Comprehend Medical call that the pseudocode doesn't make. This contributes to the cost confusion (A2) and to reader uncertainty about what the pipeline actually does. One-line fix.
 
 ### Priority Resolution
 
-The KMS endpoint is the highest-priority fix because it causes silent production failure. The Guardrails/entity-validation issues are high priority because they affect whether the recipe's stated architecture actually works as described. The DynamoDB encryption and data retention issues are medium priority compliance gaps that won't break functionality but matter for audit.
+Three HIGH findings: KMS endpoint (S1/N1), Lambda timeout (A1), and cost estimate (A2). The threshold for FAIL is more than 3 HIGH findings; the recipe is at 3, which passes. However, the three HIGH findings are tightly coupled: all three are accuracy or correctness issues that will visibly fail or mislead a reader on first deployment. Every one of them is a one-to-three-line edit.
+
+No conflicts between experts. All four reviewers converged on the same theme: the recipe is well-conceived and well-written, but a handful of cross-cutting accuracy gaps were not closed in this revision and should be before publication.
 
 ---
 
@@ -190,7 +268,7 @@ The KMS endpoint is the highest-priority fix because it causes silent production
 
 ### Verdict: PASS
 
-No critical findings. Three high findings (threshold for FAIL is more than 3). The recipe is publishable with the fixes below applied.
+No critical findings. Three HIGH findings (threshold for FAIL is more than 3). The recipe is publishable with the fixes below applied. All three HIGH fixes are small, targeted edits to the Prerequisites table and the cost summary rows.
 
 ---
 
@@ -200,43 +278,49 @@ No critical findings. Three high findings (threshold for FAIL is more than 3). T
 
 | ID | Finding | Expert | Location | Fix |
 |----|---------|--------|----------|-----|
-| S1/N1 | Missing KMS VPC endpoint. Will break S3 SSE-KMS operations in private subnet Lambda. | Security + Networking | Prerequisites table, VPC row | Add KMS to the VPC endpoint list. |
-| A1 | Bedrock Guardrails listed in Ingredients and "Why These Services" but never used in architecture, diagram, or code. Creates false expectation. | Architecture | Ingredients table, "Why These Services" section | Either implement Guardrails in the pipeline (add to diagram and code) or move to "Variations and Extensions" as a production enhancement. Recommend the latter for MVP complexity. |
-| A2 | Entity validation will produce false positives on every successful medical term simplification (e.g., "myocardial infarction" replaced with "heart attack" flagged as missing). The recipe doesn't address this. | Architecture | Step 4 (Validate Accuracy) | Add explicit acknowledgment that synonym substitution causes false positives. Describe mitigation options: synonym map, secondary LLM verification, or scoping validation to medications/dosages only. |
+| S1/N1 | Missing KMS VPC endpoint will break S3 SSE-KMS, DynamoDB CMK, and CloudWatch Logs KMS operations from private-subnet Lambda. Same finding as prior review; not addressed. | Security + Networking | Prerequisites table, VPC row | Add KMS to the endpoint list, noting it is an interface endpoint. |
+| A1 | Lambda timeout not specified; default (3s) will fail every invocation against the recipe's own stated 3-6s latency. | Architecture | Prerequisites table | Add Lambda timeout row: 60s minimum. Also note memory sizing (512 MB floor). |
+| A2 | Per-document cost estimate ($0.005-0.02) excludes dominant Comprehend Medical cost. Real cost for 1-page discharge at $0.01/100-char × 17 units = $0.17 minimum. Header and benchmark contradict Prerequisites detail. | Architecture | Recipe header; Performance benchmarks table | Correct the total to approximately $0.18-0.25 per 1-page document. Break down by component in the Prerequisites row. Separately note amortized cost with caching once the cache lookup is actually in the pseudocode (see A5). |
 
 #### MEDIUM (Should Fix)
 
 | ID | Finding | Expert | Location | Fix |
 |----|---------|--------|----------|-----|
-| S2 | DynamoDB uses "default" encryption while S3 uses CMK. PHI parity requires CMK. | Security | Prerequisites table, Encryption row | Specify customer-managed KMS key for DynamoDB. |
-| S3 | Prompt injection risk unaddressed. Guardrails mentioned as mitigation but not implemented. | Security | Step 2, Failure Modes section | Add a note about input sanitization for user-submitted text sources. |
-| N2 | Interface vs. gateway endpoint distinction not explained. Readers will encounter different setup flows and unexpected billing. | Networking | Prerequisites table, VPC row | Add parenthetical distinguishing free gateway endpoints (S3, DynamoDB) from billed interface endpoints (all others). |
-| A3 | SQS DLQ listed in Ingredients but not shown in diagram or code. | Architecture | Ingredients table, Architecture diagram | Simplify Ingredients description to match what's actually implemented, or add DLQ to diagram. |
+| S2 | Input-side Guardrails not mentioned. Output-only filtering leaves a defense-in-depth gap for OCR or patient-sourced text. | Security | Step 3; Failure Modes | Add a sentence on input-side prompt-attack filters when the source text originates from untrusted channels. |
+| S3 | No PHI retention policy or TTL on the `simplified-documents` table. | Security | Step 5; Prerequisites | Add a retention-policy line: hot retention window, archival path, deletion path for data-subject requests. |
+| A3 | Architecture diagram shows second Comprehend Medical call (`H -->|Check Preservation| C`); Step 4 pseudocode uses string matching. | Architecture | Architecture Diagram; Step 4 | Remove the diagram arrow or add a second Comprehend Medical call to Step 4. Align diagram with pseudocode. |
+| A4 | "Honest Take" claims a validation retry loop that the pseudocode doesn't implement. | Architecture | Step 5; The Honest Take | Either add the retry loop in the pseudocode or revise the narrative claim to match the current single-pass-plus-flag behavior. |
+| A5 | Caching is claimed in Expected Results (30-50% hit rate) and "Why These Services" but no cache-lookup step exists in the pseudocode. | Architecture | Code walkthrough | Add a Step 0: compute cache key and return cached result if present. Update the narrative and cost discussion accordingly. |
+| A6 | Segment classifier is first-match-wins substring search with no tie-breaking or ambiguity handling. Misclassification changes which preservation constraints get applied. | Architecture | Step 2 | Track match counts, flag ambiguous segments, and either apply the stricter prompt or route to manual review. Describe the upgrade path to a learned classifier in Variations. |
+| N2 | Interface vs. gateway endpoint distinction not made. Readers face different setup flows and unexpected billing for interface endpoints. | Networking | Prerequisites, VPC row | Add parenthetical distinguishing free gateway endpoints (S3, DynamoDB) from billed interface endpoints (all others). |
+| V2 | `<!-- TODO: Verify this URL exists -->` inline on an AWS Solutions link. Style guide prohibits shipping with unverified URLs. | Voice | Additional Resources | Verify the URL; remove the TODO or replace the entry. Do not ship with the TODO intact. |
 
 #### LOW (Improvement Recommendations)
 
 | ID | Finding | Expert | Location | Fix |
 |----|---------|--------|----------|-----|
-| S4 | No data retention policy mentioned for PHI stored in DynamoDB. | Security | Step 7 | Add one-line note about TTL or retention policy alignment. |
-| A4 | Retry logic doesn't adjust system prompt target grade level. | Architecture | Step 6 | Note that effective retries should lower the target grade in the system prompt. |
-| N3 | Bedrock VPC endpoint name (`bedrock-runtime`) is non-obvious. | Networking | Prerequisites | Add endpoint name clarification. |
-| V3 | Steps 5-7 introductions slightly more neutral/doc-voice than Steps 1-3. | Voice | Code walkthrough, Steps 5-7 | Add personality to match the energy of earlier steps. |
+| S4 | Bedrock model-invocation-logging produces PHI-containing logs (the system prompt embeds the must-preserve list). Not discussed. | Security | Step 3; Prerequisites | One-line note that invocation logs are PHI if enabled and need KMS-encrypted destinations. |
+| S5 | Guardrail interventions should be surfaced as a distinct safety metric. | Security | Step 3 or Step 5 | Add a `SegmentBlockedByGuardrail` metric with segment-type and policy dimensions. Note that `guardrail_reason` may echo PHI. |
+| N3 | Bedrock endpoint name `bedrock-runtime` (not `bedrock`) not spelled out. Recipe 2.1 fixes this; Recipe 2.2 does not. | Networking | Prerequisites, VPC row | Spell out the endpoint name and note it serves both InvokeModel and ApplyGuardrail. |
+| V3 | Recipe 8.1 cross-reference TODO. | Voice | Related Recipes | Track in book-wide cross-reference sweep before publication. Acceptable for now. |
+| V4 | Minor register drift in Step 3 and Step 5 intros. | Voice | Code walkthrough | Optional touch-up in editing pass. |
 
 ---
 
 ## What This Recipe Does Well
 
-Worth preserving in final edits:
+Worth preserving through editing:
 
-- The opening problem statement is the best kind of healthcare AI motivation: specific, human, backed by data (the 2019 systematic review citation, the NIH reading level recommendation, the 50% readmission increase). It makes a VP of Patient Experience and an engineer both nod.
-- The "transformation task, not a generation task" distinction is an important safety framing that most LLM recipes skip. It correctly identifies why simplification is safer than open-ended generation and sets appropriate expectations.
-- The failure modes section is genuinely useful. "Meaning drift," "over-simplification," "under-simplification," and "confidence without accuracy" are the real failure modes, described with concrete examples. This section alone justifies the recipe's existence for a reader evaluating whether to build this.
-- The readability scoring explanation (Flesch-Kincaid, Flesch Reading Ease, SMOG) with the honest caveat that they measure surface complexity, not conceptual complexity, is exactly the right level of nuance.
-- The sample output (cardiac discharge summary, original vs. simplified) is convincing and demonstrates real value. The simplified version is genuinely better for a patient.
-- "The Honest Take" delivers a non-obvious insight: "patients don't just want simpler words. They want structure." This is the kind of production experience that makes the cookbook valuable.
-- The cost estimate ($0.02-0.04 per document) is reasonable and verifiable against current Bedrock and Comprehend Medical pricing.
-- The Python companion is well-structured, uses the correct Bedrock Converse API (not the older InvokeModel with raw JSON), handles DynamoDB Decimal conversion correctly, and has a thorough "Gap to Production" section.
+- The cardiac-discharge opening is specific, vivid, and immediately motivates the use case. "The patient nods, walks to their car, and has absolutely no idea what just happened to them" is exactly the register the book should hold. Keep it.
+- The Failure Modes subsection (over-simplification, hallucinated explanations, inconsistent terminology, cultural assumptions, loss of actionable specifics) is a reusable teaching unit. Subsequent LLM recipes in Chapter 2 can reference this rather than re-derive it.
+- The `preserve_verbatim: true/false` distinction in the entity preservation logic is a meaningful safety improvement and shows thoughtful handling of the synonym-substitution blind spot flagged in the prior review. The parenthetical "(This is a heuristic; perfect verification would need NLI models)" is honest in the right way.
+- The "transformation task, not a generation task" framing is the correct safety posture and is stated clearly enough that a reader won't misuse it.
+- The Honest Take delivers production insight: "the segmentation step matters more than the model choice" is non-obvious and true. The ticagrelor "your blood thinner twice a day" story is the exact texture this book trades in.
+- Type-specific prompts per segment (medications, diagnosis, instructions, results, narrative) with explicit preservation rules in each prompt are the right pattern for constrained transformation.
+- Bedrock Guardrails are actually integrated into the pipeline now, not just listed in Ingredients. This closes a significant prior-review gap.
+- Variations and Extensions are practical (multi-language, interactive re-simplification, EHR integration) rather than filler.
+- The AWS Sample Repos section lists repos that actually exist and are relevant (amazon-bedrock-samples, amazon-comprehend-medical-fhir-integration, amazon-bedrock-workshop).
 
 ---
 
-*Review completed 2026-05-06. Four expert perspectives: security, architecture, networking, voice.*
+*Review completed 2026-05-07. Four expert perspectives: security, architecture, networking, voice.*
