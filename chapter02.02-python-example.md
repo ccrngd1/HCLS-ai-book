@@ -1,6 +1,6 @@
 # Recipe 2.2: Python Implementation Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.2. It shows one way you could translate those concepts into working Python using boto3, Amazon Bedrock, and Amazon Comprehend Medical. It is not production-ready. There's no error handling beyond the basics, no retries on validation failures, no structured logging, and no integration with a real EHR system. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a patient portal on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.2. It shows one way you could translate those concepts into working Python using boto3, Amazon Bedrock, and Amazon Comprehend Medical. It is not production-ready. Error handling is minimal, there's no retry-on-validation-failure loop, and there's no real integration with an EHR or patient portal. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a discharge workflow on Monday morning. Consider it a starting point, not a destination.
 
 ---
 
@@ -15,18 +15,20 @@ pip install boto3 textstat
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
 - `bedrock:InvokeModel` (for the foundation model)
-- `comprehendmedical:DetectEntitiesV2` (for Comprehend Medical entity extraction)
-- `dynamodb:PutItem` (for storing results)
+- `bedrock:ApplyGuardrail` (for content safety filtering)
+- `comprehendmedical:DetectEntitiesV2` (for medical entity extraction)
+- `dynamodb:PutItem` (for storing simplified documents)
 
-You also need model access enabled in the Bedrock console for your chosen model (this example uses Anthropic Claude 3 Haiku).
+You also need model access enabled in the Bedrock console for your chosen model (this example uses Anthropic Claude 3 Haiku) and a configured Bedrock Guardrail for terminology simplification.
 
 ---
 
 ## Config and Constants
 
-Configuration lives at the top of the module. Document type definitions, readability targets, and thresholds are all here so they're easy to find and adjust as you learn what works for your patient population.
+The segment type keywords, type-specific prompts, and reading level targets all live at the top of the module. This mirrors the pseudocode structure: the data that drives behavior sits above the functions that use it, so it's easy to tune as you learn what works for your documents.
 
 ```python
+import hashlib
 import json
 import logging
 import datetime
@@ -38,568 +40,563 @@ import textstat
 from botocore.config import Config
 
 # Structured logging. In production, use JSON-formatted output for
-# CloudWatch Logs Insights queries. Never log PHI (patient text,
-# clinical notes, medication lists, etc.).
+# CloudWatch Logs Insights queries. Never log PHI (clinical text,
+# patient names, medication lists, etc.).
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # Retry config: adaptive mode uses exponential backoff with jitter.
-# Bedrock can throttle under sustained load.
+# Bedrock can throttle under sustained load; Comprehend Medical is
+# generally well-behaved but benefits from the same retry posture.
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
-# AWS clients. Module-level for reuse across Lambda invocations.
+# AWS clients. Module-level so they're reused across Lambda invocations.
 bedrock_client = boto3.client("bedrock-runtime", config=BOTO3_RETRY_CONFIG)
 comprehend_medical_client = boto3.client("comprehendmedical", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # Model configuration.
 MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
-# If you get a ValidationException about model access, your region may require
-# a cross-region inference profile ID instead:
+# If you get a ValidationException about model access, your region may
+# require a cross-region inference profile ID instead:
 # MODEL_ID = "us.anthropic.claude-3-haiku-20240307-v1:0"
 
-# DynamoDB table for storing simplification results.
+# Guardrail configuration. Replace with your actual guardrail.
+GUARDRAIL_ID = "your-guardrail-id-here"
+GUARDRAIL_VERSION = "DRAFT"  # Use "DRAFT" for testing, numbered version for prod
+
+# DynamoDB table for storing simplified documents.
 RESULTS_TABLE = "simplified-documents"
 
-# Temperature: low for consistency. Medical text simplification needs
-# deterministic, accurate output. Not creative writing.
-TEMPERATURE = 0.2
-MAX_TOKENS = 2048  # Simplified text can be longer than the original (explanations added).
+# Target reading level for simplified output (Flesch-Kincaid grade level).
+# 6th grade is a common target for patient-facing health materials because
+# the median US adult reading level sits around 8th grade and health
+# literacy research recommends aiming below the median.
+TARGET_GRADE = 6
 
-# Document type configurations.
-# Each type has indicator keywords, a target reading level, and style guidance.
-# The target_grade is the Flesch-Kincaid grade level we're aiming for.
-# The style string gets injected into the prompt to guide output structure.
-DOCUMENT_TYPES = {
-    "discharge_instructions": {
-        "indicators": ["discharge", "follow-up", "return to", "activity restrictions"],
-        "target_grade": 6,
-        "style": "action-oriented, numbered steps, clear timelines",
-    },
-    "lab_results": {
-        "indicators": ["result", "reference range", "normal", "abnormal", "specimen"],
-        "target_grade": 7,
-        "style": "numerical context, what-it-means explanations, when to worry",
-    },
-    "procedure_description": {
-        "indicators": ["procedure", "performed", "anesthesia", "incision", "catheter"],
-        "target_grade": 7,
-        "style": "what-happened narrative, anatomical explanations, recovery expectations",
-    },
-    "medication_instructions": {
-        "indicators": ["medication", "dosage", "take", "prescribe", "refill"],
-        "target_grade": 5,
-        "style": "simple directives, timing, what to avoid, side effects to watch for",
-    },
-}
-
-# Quality gate thresholds.
-# If the simplified text scores more than this many grade levels above target,
-# it fails readability and gets retried.
+# Allow simplified text to come in up to this many grades above target
+# before we flag it. Models drift upward; perfect grade-level targeting
+# is hard.
 GRADE_TOLERANCE = 2
 
-# Maximum retry attempts for readability failures.
-# Accuracy failures never retry (route to human immediately).
-MAX_RETRIES = 2
+# Low temperature keeps output consistent and factual. Not creative writing.
+TEMPERATURE = 0.2
+
+# Max tokens: simplified text can be longer than the source because
+# plain-language explanations get added. 2x source length is usually enough.
+MAX_TOKENS_MULTIPLIER = 2
+
+# Segment type classification keywords. Order matters: first match wins
+# when a section could fit multiple types. Keep medications first so
+# medication-heavy sections get the strictest preservation rules.
+SEGMENT_TYPES = {
+    "medications": ["medication", "prescription", "drug", "dose", "mg", "tablet", "aspirin"],
+    "diagnosis":   ["diagnosis", "assessment", "impression", "condition"],
+    "instructions": ["follow up", "follow-up", "return", "call if", "go to", "schedule"],
+    "results":     ["result", "lab", "level", "value", "range", "normal", "abnormal"],
+}
+
+# Type-specific system prompts. Each tells the model what to preserve
+# verbatim, what to translate, and what to avoid. These exist separately
+# because uniform simplification produces uniformly mediocre output.
+# See The Honest Take in the main recipe for why.
+SIMPLIFICATION_PROMPTS = {
+    "medications": (
+        "Rewrite this medication information for a patient reading at a {level} level.\n"
+        "RULES:\n"
+        "- Keep all medication names exactly as written (do not rename drugs)\n"
+        "- Keep all dosages exactly as written (do not change numbers or units)\n"
+        "- Keep all frequency instructions exactly as written\n"
+        "- Add a brief plain-language explanation of what each medication does\n"
+        "- Use short sentences\n"
+        "- Do not add warnings or side effects not mentioned in the source"
+    ),
+    "diagnosis": (
+        "Rewrite this diagnosis information for a patient reading at a {level} level.\n"
+        "RULES:\n"
+        "- Translate medical terms into everyday language\n"
+        "- After using a plain term, include the medical term in parentheses once\n"
+        "- Explain what the condition means for the patient in practical terms\n"
+        "- Do not add prognosis information not stated in the source\n"
+        "- Do not minimize or dramatize the condition\n"
+        "- Use short sentences"
+    ),
+    "instructions": (
+        "Rewrite these follow-up instructions for a patient reading at a {level} level.\n"
+        "RULES:\n"
+        "- Convert to clear action items (what to do, when to do it, who to contact)\n"
+        "- Keep all dates, times, and provider names exactly as written\n"
+        "- Keep all phone numbers exactly as written\n"
+        "- Use numbered steps where appropriate\n"
+        "- Highlight urgency cues (\"call immediately if...\") clearly\n"
+        "- Use short sentences"
+    ),
+    "results": (
+        "Rewrite these test results for a patient reading at a {level} level.\n"
+        "RULES:\n"
+        "- Keep all numbers and units exactly as written\n"
+        "- Explain what each test measures in plain language\n"
+        "- Explain whether results are normal, high, or low if stated in the source\n"
+        "- Do not interpret results beyond what the source states\n"
+        "- Use short sentences"
+    ),
+    "narrative": (
+        "Rewrite this clinical text for a patient reading at a {level} level.\n"
+        "RULES:\n"
+        "- Translate medical terms into everyday language\n"
+        "- Keep all names, dates, and numbers exactly as written\n"
+        "- Use short sentences\n"
+        "- Do not add information not in the source"
+    ),
+}
 ```
 
 ---
 
-## Step 1: Classify the Clinical Document Type
+## Step 1: Extract Critical Medical Entities
 
-*The pseudocode calls this `classify_document(clinical_text)`. Before simplifying, we need to know what kind of clinical text we're dealing with. Different document types need different simplification strategies: discharge instructions are action-oriented, lab results need numerical context, procedure descriptions need anatomical explanations.*
+*The pseudocode calls this `extract_critical_entities(clinical_text)`. Before we simplify anything, we need to know which clinical concepts must survive the transformation. Medication names, dosages, conditions, procedures: non-negotiable. This function calls Comprehend Medical and builds a preservation checklist that Step 4 will verify against the simplified output.*
 
 ```python
-def classify_document(clinical_text: str) -> str:
+def extract_critical_entities(clinical_text: str) -> list[dict]:
     """
-    Classify clinical text into a document type using keyword matching.
+    Extract medical entities from clinical text and build a preservation list.
 
-    This is deliberately simple. Clinical documents are structured enough
-    that keyword matching works well for categorization. You don't need
-    an LLM for this step. The indicators in DOCUMENT_TYPES are tuned for
-    common clinical document patterns.
+    Comprehend Medical returns structured entities with categories
+    (MEDICATION, MEDICAL_CONDITION, TEST_TREATMENT_PROCEDURE, etc.) and,
+    for medications, attributes like DOSAGE and FREQUENCY. We unpack these
+    into a flat "must preserve" list with a flag indicating whether the
+    term must appear verbatim in the simplified output (true for drug
+    names and dosages, false for conditions and procedures that can be
+    translated to plain language).
 
-    If a document doesn't match any type, it falls back to "general" which
-    uses a balanced simplification approach without type-specific styling.
+    Note: Comprehend Medical has a 20,000-character limit per request.
+    Longer documents need chunking at sentence boundaries before calling
+    this. Most discharge summaries fit comfortably below that limit.
 
     Args:
-        clinical_text: The raw clinical text to classify.
+        clinical_text: The source clinical text.
 
     Returns:
-        A document type string: "discharge_instructions", "lab_results",
-        "procedure_description", "medication_instructions", or "general".
+        A list of preservation entries, each with keys:
+          - text: the entity string
+          - category: MEDICATION, CONDITION, PROCEDURE, or DOSAGE_FREQ
+          - preserve_verbatim: bool; true means exact match required
     """
-    lower_text = clinical_text.lower()
-    scores = {}
+    response = comprehend_medical_client.detect_entities_v2(Text=clinical_text)
 
-    for doc_type, config in DOCUMENT_TYPES.items():
-        score = sum(1 for indicator in config["indicators"] if indicator in lower_text)
-        scores[doc_type] = score
+    must_preserve = []
 
-    # Return the type with the highest match count.
-    # If nothing matched at all, fall back to "general".
-    best_type = max(scores, key=scores.get)
-    if scores[best_type] == 0:
-        return "general"
-    return best_type
+    for entity in response["Entities"]:
+        category = entity["Category"]
+
+        if category == "MEDICATION":
+            # Medication names always verbatim: patients need to verify
+            # their prescription at the pharmacy, which requires the
+            # exact drug name.
+            must_preserve.append({
+                "text": entity["Text"],
+                "category": "MEDICATION",
+                "preserve_verbatim": True,
+            })
+
+            # Comprehend Medical returns dosage and frequency as attributes
+            # of medication entities, not separate top-level entities.
+            # Unpack them so Step 4 can check each one individually.
+            for attr in entity.get("Attributes", []):
+                attr_type = attr.get("Type", "")
+                if attr_type in ("DOSAGE", "FREQUENCY", "STRENGTH", "ROUTE_OR_MODE"):
+                    must_preserve.append({
+                        "text": attr["Text"],
+                        "category": "DOSAGE_FREQ",
+                        "preserve_verbatim": True,
+                    })
+
+        elif category == "MEDICAL_CONDITION":
+            # Conditions can be translated ("myocardial infarction" ->
+            # "heart attack"), but must be mentioned in some form.
+            must_preserve.append({
+                "text": entity["Text"],
+                "category": "CONDITION",
+                "preserve_verbatim": False,
+            })
+
+        elif category == "TEST_TREATMENT_PROCEDURE":
+            # Procedures can be explained in plain language, but must
+            # be referenced in the output.
+            must_preserve.append({
+                "text": entity["Text"],
+                "category": "PROCEDURE",
+                "preserve_verbatim": False,
+            })
+
+    logger.info("Extracted %d critical entities for preservation", len(must_preserve))
+    return must_preserve
 ```
 
 ---
 
-## Step 2: Build the Simplification Prompt
+## Step 2: Segment the Clinical Document
 
-*The pseudocode calls this `build_simplification_prompt(clinical_text, doc_type)`. The prompt is where the real work happens. It tells the model exactly what "simplification" means: target reading level, what to preserve, what to explain, what to avoid. A well-crafted prompt is the difference between genuinely useful patient-friendly text and slightly shorter clinical jargon.*
+*The pseudocode calls this `segment_document(clinical_text)`. Different parts of a clinical document need different simplification strategies. Medications need drug names preserved. Follow-up instructions need clear action items. Segmenting first lets us apply type-specific prompts in Step 3 instead of hoping one prompt handles everything. Without this step, you get uniformly mediocre output.*
 
 ```python
-def build_simplification_prompt(clinical_text: str, doc_type: str) -> tuple[str, str]:
+def segment_document(clinical_text: str) -> list[dict]:
     """
-    Assemble the system and user prompts for medical text simplification.
+    Split clinical text into logical sections and classify each one.
 
-    The system prompt defines the model's role and constraints. The user
-    prompt provides the specific clinical text and target parameters.
+    Segmentation here is deliberately simple: split on blank lines and
+    classify each chunk by keyword matching against SEGMENT_TYPES.
+    Clinical documents are structured enough that keyword matching works
+    well; upgrading to a classifier model rarely justifies the added
+    latency and cost.
 
-    The prompt is intentionally verbose about constraints. Every rule exists
-    because we saw the model violate it during testing. "Do NOT add medical
-    advice not present in the original" is there because the model will
-    helpfully suggest "talk to your doctor about..." if you don't tell it not to.
+    Sections that don't match any type fall back to "narrative", which
+    uses a balanced general-purpose prompt.
 
     Args:
-        clinical_text: The clinical text to simplify.
-        doc_type: The classified document type from Step 1.
+        clinical_text: The source clinical text.
 
     Returns:
-        A tuple of (system_prompt, user_prompt).
+        A list of segment dicts, each with:
+          - text: the segment content
+          - type: one of "medications", "diagnosis", "instructions",
+                  "results", or "narrative"
+          - index: 0-based position, used to reassemble in Step 5
     """
-    # Look up type-specific configuration. Fall back to sensible defaults
-    # for the "general" type.
-    if doc_type in DOCUMENT_TYPES:
-        config = DOCUMENT_TYPES[doc_type]
-        target_grade = config["target_grade"]
-        style = config["style"]
-    else:
-        target_grade = 6
-        style = "clear, structured, patient-friendly"
+    # Split on blank lines. Many clinical documents use double newlines
+    # between sections; single-paragraph documents become one segment.
+    raw_sections = [s.strip() for s in clinical_text.split("\n\n") if s.strip()]
 
-    system_prompt = (
-        "You are a health literacy specialist. Your job is to rewrite clinical text "
-        "into plain language that a patient can understand.\n\n"
-        "Rules:\n"
-        f"- Target reading level: grade {target_grade} (Flesch-Kincaid)\n"
-        "- Preserve ALL medical facts: medications, dosages, timelines, restrictions\n"
-        "- Explain medical terms in parentheses on first use, then use the plain version\n"
-        "- Use short sentences (under 20 words when possible)\n"
-        "- Use active voice (\"Take your medication\" not \"Medication should be taken\")\n"
-        "- Include all numbers, dates, and specific instructions exactly as stated\n"
-        "- Do NOT add medical advice not present in the original\n"
-        "- Do NOT remove any instructions or warnings from the original\n"
-        "- Do NOT use the phrase \"consult your doctor\" unless the original says it\n"
-        f"- Style: {style}\n\n"
-        "Format the output with clear headings and bullet points where appropriate.\n"
-        "If the original has numbered steps, keep them numbered."
+    # If the document has no blank-line breaks, treat the whole thing
+    # as one segment. It still gets classified and simplified.
+    if len(raw_sections) == 0:
+        raw_sections = [clinical_text.strip()]
+
+    segments = []
+
+    for index, section in enumerate(raw_sections):
+        section_lower = section.lower()
+        matched_type = "narrative"  # default fallback
+
+        # First match wins. Order in SEGMENT_TYPES reflects priority.
+        for seg_type, keywords in SEGMENT_TYPES.items():
+            if any(keyword in section_lower for keyword in keywords):
+                matched_type = seg_type
+                break
+
+        segments.append({
+            "text": section,
+            "type": matched_type,
+            "index": index,
+        })
+
+    logger.info(
+        "Segmented document into %d sections: %s",
+        len(segments),
+        [s["type"] for s in segments],
     )
-
-    user_prompt = (
-        "Simplify the following clinical text for a patient:\n\n"
-        "---\n"
-        f"{clinical_text}\n"
-        "---\n\n"
-        f"Rewrite this at a grade {target_grade} reading level while preserving "
-        "all medical facts, medication names, dosages, and specific instructions."
-    )
-
-    return system_prompt, user_prompt
+    return segments
 ```
 
 ---
 
-## Step 3: Generate the Simplified Version
+## Step 3: Simplify Each Segment with Type-Specific Constraints
 
-*The pseudocode calls this `generate_simplification(system_prompt, user_prompt, model_id)`. This calls Amazon Bedrock with a low temperature to keep output deterministic and factual. The model processes the clinical text, identifies technical terminology, and regenerates the content in plain language.*
+*The pseudocode calls this `simplify_segment(segment, must_preserve, reading_level)`. This is the core transformation. Each segment gets a prompt tailored to its content type, with the preserve-verbatim list appended so the model knows which strings are untouchable. Guardrails wrap the call to catch outputs that add clinical advice or drop safety information.*
 
 ```python
-def generate_simplification(system_prompt: str, user_prompt: str) -> str:
+def simplify_segment(segment: dict, must_preserve: list[dict], reading_level: int = TARGET_GRADE) -> dict:
     """
-    Call Amazon Bedrock to generate the simplified text.
+    Simplify a single segment using a type-specific prompt and Bedrock.
 
-    Uses the Converse API for a unified interface across model providers.
-    Low temperature (0.2) keeps output consistent and factual. Higher
-    temperatures introduce creativity, which is the opposite of what you
-    want when medical accuracy matters.
+    The prompt template is selected based on segment type. The preserve-
+    verbatim list (from Step 1) is appended so the model sees exactly
+    which drug names, dosages, dates, and frequencies must survive
+    unchanged. Temperature is low because this is transformation, not
+    creative writing.
+
+    If the guardrail intervenes, we return the source text unchanged
+    with a flag rather than silently using whatever the guardrail
+    produced. Downstream code decides whether to retry or flag for
+    human review.
 
     Args:
-        system_prompt: Behavior constraints and simplification rules.
-        user_prompt: The clinical text and target parameters.
+        segment: Dict from segment_document with text, type, index.
+        must_preserve: Preservation list from extract_critical_entities.
+        reading_level: Target Flesch-Kincaid grade level.
 
     Returns:
-        The simplified text string.
+        A dict with:
+          - text: simplified text (or source if guardrail blocked)
+          - type: segment type, passed through
+          - index: position, passed through
+          - simplified: bool, true if transformation happened
+          - reason: optional explanation when simplified=false
     """
-    response = bedrock_client.converse(
-        modelId=MODEL_ID,
-        messages=[
-            {
-                "role": "user",
-                "content": [{"text": user_prompt}],
-            }
-        ],
-        system=[{"text": system_prompt}],
-        inferenceConfig={
-            "maxTokens": MAX_TOKENS,
+    seg_type = segment["type"]
+    prompt_template = SIMPLIFICATION_PROMPTS.get(seg_type, SIMPLIFICATION_PROMPTS["narrative"])
+    system_prompt = prompt_template.format(level=f"{reading_level}th grade")
+
+    # Append the verbatim preservation list. This is the single most
+    # effective guardrail against the model "simplifying" "ticagrelor
+    # 90mg" to "your blood thinner." Give the model explicit targets
+    # it's not allowed to touch.
+    verbatim_terms = [e["text"] for e in must_preserve if e["preserve_verbatim"]]
+    if verbatim_terms:
+        system_prompt += (
+            "\n\nThe following terms MUST appear in your output exactly as written, "
+            "with identical spelling, numbers, and units: "
+            + ", ".join(verbatim_terms)
+        )
+
+    # Estimate max tokens: roughly 1.3 tokens per word, doubled to allow
+    # for added plain-language explanations.
+    approx_words = len(segment["text"].split())
+    max_tokens = max(300, int(approx_words * 1.3 * MAX_TOKENS_MULTIPLIER))
+
+    # Build the guardrail config only if a real guardrail ID is set.
+    # This lets the example run during development without a configured
+    # guardrail. In production, guardrails should always be on for
+    # patient-facing output.
+    converse_kwargs = {
+        "modelId": MODEL_ID,
+        "messages": [{"role": "user", "content": [{"text": segment["text"]}]}],
+        "system": [{"text": system_prompt}],
+        "inferenceConfig": {
+            "maxTokens": max_tokens,
             "temperature": TEMPERATURE,
             "topP": 0.9,
         },
-    )
-
-    # Extract the generated text from the Converse response.
-    output_message = response["output"]["message"]
-    simplified_text = output_message["content"][0]["text"]
-
-    return simplified_text
-```
-
----
-
-## Step 4: Validate Medical Accuracy with Entity Comparison
-
-*The pseudocode calls this `validate_accuracy(original_text, simplified_text)`. This is the safety-critical step. We extract medical entities from both the original and simplified text using Comprehend Medical, then compare them. If the original mentions "clopidogrel 75mg daily" and the simplified version drops the medication name or changes the dose, we catch it here.*
-
-```python
-def extract_medical_entities(text: str) -> list[dict]:
-    """
-    Extract medical entities from text using Amazon Comprehend Medical.
-
-    Comprehend Medical identifies medications, conditions, dosages,
-    procedures, and other clinical concepts. We use DetectEntitiesV2
-    which returns structured entity data with categories and attributes.
-
-    Note: Comprehend Medical has a 20,000 character limit per request.
-    For longer documents, you'd need to chunk the text. Most clinical
-    documents (discharge summaries, lab results) fit within this limit.
-
-    Args:
-        text: Clinical or simplified text to analyze.
-
-    Returns:
-        A list of entity dicts, each with "Text", "Category", "Type",
-        "Score", and "Attributes" fields.
-    """
-    response = comprehend_medical_client.detect_entities_v2(Text=text)
-    return response["Entities"]
-
-
-def validate_accuracy(original_text: str, simplified_text: str) -> dict:
-    """
-    Compare medical entities between original and simplified text.
-
-    The core idea: every critical medical entity in the original should
-    have a corresponding entity in the simplified version. "Critical"
-    means medications (with dosages), medical conditions, and procedures.
-    We allow different wording (that's the whole point of simplification)
-    but the underlying facts must be present.
-
-    This is a proxy for meaning preservation, not a guarantee. Entity
-    comparison catches gross errors (dropped medications, changed doses)
-    but won't catch subtle meaning drift. For production, supplement with
-    periodic human audits.
-
-    Args:
-        original_text: The source clinical text.
-        simplified_text: The LLM-generated simplified version.
-
-    Returns:
-        A dict with "passed" (bool), "missing_entities" (list),
-        "altered_entities" (list), and entity counts.
-    """
-    # Extract entities from both versions.
-    original_entities = extract_medical_entities(original_text)
-    simplified_entities = extract_medical_entities(simplified_text)
-
-    # Focus on critical categories: medications, conditions, procedures.
-    # Other categories (anatomy, time expressions) are less critical for
-    # accuracy validation.
-    critical_categories = {"MEDICATION", "MEDICAL_CONDITION", "TEST_TREATMENT_PROCEDURE"}
-
-    original_critical = [
-        e for e in original_entities if e["Category"] in critical_categories
-    ]
-    simplified_critical = [
-        e for e in simplified_entities if e["Category"] in critical_categories
-    ]
-
-    # Build a lookup of simplified entity texts (lowercased) for matching.
-    simplified_texts = {e["Text"].lower() for e in simplified_critical}
-
-    # Check each critical entity from the original.
-    missing_entities = []
-    for entity in original_critical:
-        entity_text = entity["Text"].lower()
-        # Check for exact match or substring match.
-        # Substring handles cases like "aspirin 81mg" matching "aspirin 81mg every day".
-        found = any(
-            entity_text in s_text or s_text in entity_text
-            for s_text in simplified_texts
-        )
-        if not found:
-            missing_entities.append({
-                "text": entity["Text"],
-                "category": entity["Category"],
-                "type": entity.get("Type", ""),
-            })
-
-    # For medications specifically, check that dosages are preserved.
-    # Comprehend Medical returns dosage as an attribute of medication entities.
-    altered_entities = []
-    original_meds = [e for e in original_critical if e["Category"] == "MEDICATION"]
-    simplified_meds = [e for e in simplified_critical if e["Category"] == "MEDICATION"]
-
-    for orig_med in original_meds:
-        # Get dosage attributes from the original medication entity.
-        orig_dosages = [
-            attr["Text"] for attr in orig_med.get("Attributes", [])
-            if attr.get("Type") == "DOSAGE"
-        ]
-        if not orig_dosages:
-            continue
-
-        # Find the matching medication in simplified text.
-        matching_simplified = [
-            s for s in simplified_meds
-            if orig_med["Text"].lower() in s["Text"].lower()
-            or s["Text"].lower() in orig_med["Text"].lower()
-        ]
-
-        for match in matching_simplified:
-            simplified_dosages = [
-                attr["Text"] for attr in match.get("Attributes", [])
-                if attr.get("Type") == "DOSAGE"
-            ]
-            # If original had a dosage but simplified doesn't, flag it.
-            # Note: Comprehend Medical may include dosage in the entity text
-            # itself rather than as a separate Attribute, which can cause
-            # false positives here. Production systems need fuzzy matching.
-            if orig_dosages and not simplified_dosages:
-                altered_entities.append({
-                    "medication": orig_med["Text"],
-                    "original_dosage": orig_dosages[0],
-                    "simplified_dosage": "NOT FOUND",
-                })
-
-    passed = len(missing_entities) == 0 and len(altered_entities) == 0
-
-    return {
-        "passed": passed,
-        "missing_entities": missing_entities,
-        "altered_entities": altered_entities,
-        "original_entity_count": len(original_critical),
-        "simplified_entity_count": len(simplified_critical),
     }
-```
-
----
-
-## Step 5: Score Readability
-
-*The pseudocode calls this `score_readability(text)`. We run the simplified text through established readability formulas to verify it actually hit the target grade level. This is a computational check, not an LLM call: fast and deterministic.*
-
-```python
-def score_readability(text: str) -> dict:
-    """
-    Calculate readability scores for the simplified text.
-
-    Uses the textstat library which implements Flesch-Kincaid, Flesch Reading
-    Ease, SMOG, and other standard readability formulas. These measure surface
-    complexity (word length, sentence length, syllable count) but not conceptual
-    complexity. Use them as a necessary-but-not-sufficient quality check.
-
-    Flesch-Kincaid Grade Level is the primary metric. A score of 6.0 means
-    a typical 6th grader could understand it. Most clinical text scores 12-16.
-    Your target is 5-8 depending on document type.
-
-    Args:
-        text: The simplified text to score.
-
-    Returns:
-        A dict with readability metrics: flesch_kincaid_grade,
-        flesch_reading_ease, smog_index, word_count, avg_sentence_length.
-    """
-    # textstat handles the syllable counting, sentence splitting, and formula
-    # application. It's not perfect (no syllable counter is), but it's the
-    # standard library used in health literacy research.
-    fk_grade = textstat.flesch_kincaid_grade(text)
-    fk_ease = textstat.flesch_reading_ease(text)
-    smog = textstat.smog_index(text)
-    word_count = textstat.lexicon_count(text, removepunct=True)
-    sentence_count = textstat.sentence_count(text)
-
-    avg_sentence_length = round(word_count / max(sentence_count, 1), 1)
-
-    return {
-        "flesch_kincaid_grade": round(fk_grade, 1),
-        "flesch_reading_ease": round(fk_ease, 1),
-        "smog_index": round(smog, 1),
-        "word_count": word_count,
-        "sentence_count": sentence_count,
-        "avg_sentence_length": avg_sentence_length,
-    }
-```
-
-
----
-
-## Step 6: Quality Gate and Retry Logic
-
-*The pseudocode calls this `quality_gate(original_text, simplified_text, doc_type, attempt_number)`. This combines the validation result and readability score to make a pass/fail decision. Accuracy failures route to human review immediately (no retry). Readability failures get retried with a more aggressive prompt.*
-
-```python
-def quality_gate(
-    original_text: str,
-    simplified_text: str,
-    doc_type: str,
-    attempt_number: int,
-) -> dict:
-    """
-    Evaluate whether the simplified text passes quality checks.
-
-    Two checks run in sequence:
-    1. Medical accuracy (entity comparison): Did we preserve all critical facts?
-    2. Readability (grade level): Did we actually simplify enough?
-
-    If accuracy fails, we route to human review immediately. The model made
-    a factual error and retrying might produce the same error. If readability
-    fails but accuracy passes, we retry with a more aggressive prompt (up to
-    MAX_RETRIES attempts).
-
-    Args:
-        original_text: The source clinical text.
-        simplified_text: The generated simplified version.
-        doc_type: Document type for target grade lookup.
-        attempt_number: Current attempt (0-indexed). Used to decide retry vs accept.
-
-    Returns:
-        A dict with "status" (PASSED, RETRY, FAILED_ACCURACY, ACCEPTED_WITH_FLAG),
-        plus relevant details for each status.
-    """
-    # Run accuracy validation.
-    validation = validate_accuracy(original_text, simplified_text)
-
-    # Run readability scoring.
-    readability = score_readability(simplified_text)
-
-    # Look up the target grade for this document type.
-    if doc_type in DOCUMENT_TYPES:
-        target_grade = DOCUMENT_TYPES[doc_type]["target_grade"]
-    else:
-        target_grade = 6
-
-    # Decision logic: accuracy first, then readability.
-    if not validation["passed"]:
-        # Medical accuracy failure. Do not retry. Route to human.
-        return {
-            "status": "FAILED_ACCURACY",
-            "route_to": "human_review",
-            "reason": "Missing or altered medical entities",
-            "validation": validation,
-            "readability": readability,
+    if GUARDRAIL_ID and GUARDRAIL_ID != "your-guardrail-id-here":
+        converse_kwargs["guardrailConfig"] = {
+            "guardrailIdentifier": GUARDRAIL_ID,
+            "guardrailVersion": GUARDRAIL_VERSION,
+            "trace": "enabled",
         }
 
-    if readability["flesch_kincaid_grade"] > (target_grade + GRADE_TOLERANCE):
-        # Too complex. Retry if we haven't exceeded max attempts.
-        if attempt_number < MAX_RETRIES:
-            return {
-                "status": "RETRY",
-                "reason": "Reading level too high",
-                "current_grade": readability["flesch_kincaid_grade"],
-                "target_grade": target_grade,
-                "readability": readability,
-            }
-        else:
-            # Max retries exceeded. Accept with a flag for review.
-            return {
-                "status": "ACCEPTED_WITH_FLAG",
-                "flag": "readability_above_target",
-                "readability": readability,
-                "validation": validation,
-            }
+    response = bedrock_client.converse(**converse_kwargs)
 
-    # Both checks passed.
+    # Check for guardrail intervention. When the guardrail blocks, we
+    # return the source segment unchanged and flag the segment for
+    # review. Do not use whatever truncated/redacted text the guardrail
+    # emitted; it's not safe to assume that output is a valid simplification.
+    if response.get("stopReason") == "guardrail_intervened":
+        logger.warning("Guardrail intervened on segment %d (type=%s)", segment["index"], seg_type)
+        return {
+            "text": segment["text"],
+            "type": seg_type,
+            "index": segment["index"],
+            "simplified": False,
+            "reason": "guardrail_intervened",
+        }
+
+    simplified_text = response["output"]["message"]["content"][0]["text"]
+
     return {
-        "status": "PASSED",
-        "readability": readability,
-        "validation": validation,
+        "text": simplified_text,
+        "type": seg_type,
+        "index": segment["index"],
+        "simplified": True,
     }
 ```
 
 ---
 
-## Step 7: Store Results
+## Step 4: Validate Readability and Preservation
 
-*The pseudocode calls this `store_result(...)`. Write the complete record to DynamoDB: original text, simplified version, all scores, validation details, and processing metadata. This audit trail is essential for compliance and continuous improvement.*
+*The pseudocode calls this `validate_output(simplified_segment, original_segment, must_preserve, target_grade)`. This is the automated quality gate. Two checks: did the reading level actually come down, and did every must-preserve entity survive? Both are deterministic, fast, and run without another LLM call. Segments that fail get flagged for review.*
 
 ```python
-def store_result(
-    document_id: str,
-    original_text: str,
-    simplified_text: str,
-    doc_type: str,
-    quality_result: dict,
-    readability: dict,
-) -> dict:
+def calculate_flesch_kincaid_grade(text: str) -> float:
     """
-    Write the simplification record to DynamoDB.
+    Compute Flesch-Kincaid grade level using textstat.
 
-    The record includes everything needed for audit, quality monitoring,
-    and continuous improvement: the original text, simplified version,
-    all quality scores, and processing metadata.
+    textstat handles syllable counting, sentence splitting, and the
+    formula itself. No syllable counter is perfect, but textstat is
+    the standard library used in health literacy research.
+    """
+    # Short text sometimes produces unreliable scores. Treat very short
+    # segments as automatically passing readability to avoid noise.
+    if len(text.split()) < 10:
+        return 0.0
+    return textstat.flesch_kincaid_grade(text)
 
-    Why store the original alongside the simplified version? Three reasons:
-    1. Audit trail: regulators can verify what was transformed
-    2. Quality review: humans can compare side-by-side
-    3. Reprocessing: if you improve your prompt, you can re-simplify old documents
+
+def validate_output(simplified_segment: dict, must_preserve: list[dict], target_grade: int = TARGET_GRADE) -> dict:
+    """
+    Check a simplified segment against readability and preservation rules.
+
+    Two checks run, independently:
+
+    1. Readability: is the Flesch-Kincaid grade level within tolerance
+       of the target? Too far above target = warning or error based
+       on how far.
+
+    2. Preservation: do the must-preserve entities appear in the output?
+       Verbatim entities (drug names, dosages) must match exactly,
+       case-insensitive. Non-verbatim entities (conditions, procedures)
+       are checked as informational only since they may have been
+       translated to plain language, which is the whole point.
 
     Args:
-        document_id: Unique identifier for this document.
-        original_text: The source clinical text.
-        simplified_text: The generated simplified version.
-        doc_type: Classified document type.
-        quality_result: Output from quality_gate.
-        readability: Readability scores dict.
+        simplified_segment: Output from simplify_segment.
+        must_preserve: Preservation list from extract_critical_entities.
+        target_grade: Target Flesch-Kincaid grade level.
 
     Returns:
-        The complete record written to DynamoDB.
+        A dict with:
+          - valid: bool, false if any error-severity issue
+          - grade_level: float, the computed Flesch-Kincaid grade
+          - issues: list of {type, detail, severity} dicts
     """
-    table = dynamodb.Table(RESULTS_TABLE)
+    issues = []
+    simplified_text = simplified_segment["text"]
+    simplified_lower = simplified_text.lower()
+
+    # --- Check 1: Readability ---
+    grade_level = calculate_flesch_kincaid_grade(simplified_text)
+
+    if grade_level > target_grade + GRADE_TOLERANCE * 2:
+        # Way over target: hard error. Likely not simplified at all.
+        issues.append({
+            "type": "readability",
+            "detail": f"Grade level {grade_level:.1f} far exceeds target {target_grade}",
+            "severity": "error",
+        })
+    elif grade_level > target_grade + GRADE_TOLERANCE:
+        # Moderately over: warning. Worth reviewing but probably usable.
+        issues.append({
+            "type": "readability",
+            "detail": f"Grade level {grade_level:.1f} exceeds target {target_grade} + tolerance",
+            "severity": "warning",
+        })
+
+    # --- Check 2: Entity preservation ---
+    for entity in must_preserve:
+        entity_lower = entity["text"].lower()
+        found = entity_lower in simplified_lower
+
+        if entity["preserve_verbatim"]:
+            # Drug names, dosages, frequencies: must be exact match.
+            # Missing one of these is always an error. The patient needs
+            # to be able to verify "ticagrelor 90mg" at the pharmacy.
+            if not found:
+                issues.append({
+                    "type": "preservation",
+                    "detail": f"Missing verbatim entity: {entity['text']}",
+                    "severity": "error",
+                })
+        else:
+            # Conditions and procedures: informational check only.
+            # A missing verbatim term here likely means it was translated,
+            # which is fine. We log it so humans can spot-check.
+            if not found:
+                issues.append({
+                    "type": "preservation",
+                    "detail": f"Medical term not verbatim (may be translated): {entity['text']}",
+                    "severity": "info",
+                })
+
+    has_errors = any(issue["severity"] == "error" for issue in issues)
+
+    return {
+        "valid": not has_errors,
+        "grade_level": grade_level,
+        "issues": issues,
+    }
+```
+
+---
+
+## Step 5: Assemble and Store the Simplified Document
+
+*The pseudocode calls this `assemble_and_store(...)`. Reassemble the simplified segments in original order, compute an overall readability score, generate a cache key, and write the result with full audit metadata. The cache key (hash of source + target grade) lets you serve cached results for repeated simplification of the same template.*
+
+```python
+def assemble_and_store(
+    document_id: str,
+    original_text: str,
+    simplified_segments: list[dict],
+    validation_results: dict,
+    must_preserve: list[dict],
+    target_grade: int = TARGET_GRADE,
+) -> dict:
+    """
+    Reassemble segments, compute overall metrics, and persist to DynamoDB.
+
+    The stored record includes everything a reviewer or auditor might
+    need: the original text, the simplified output, readability scores,
+    which entities were supposed to be preserved, and any segments that
+    failed validation. Cache key is a SHA-256 hash of (source text +
+    target grade) so the same template simplified at the same target
+    hits the cache on future calls.
+
+    Args:
+        document_id: Unique ID for this document.
+        original_text: The source clinical text.
+        simplified_segments: List of Step 3 output dicts, in order.
+        validation_results: Dict mapping segment index -> Step 4 result.
+        must_preserve: Preservation list from Step 1.
+        target_grade: Target Flesch-Kincaid grade level.
+
+    Returns:
+        The full record written to DynamoDB.
+    """
+    # Reassemble in original order. Segments are already sorted by index
+    # from Step 2, but sort defensively in case callers reorder.
+    ordered = sorted(simplified_segments, key=lambda s: s["index"])
+    final_document = "\n\n".join(s["text"] for s in ordered)
+
+    # Collect segments that failed validation for human review.
+    segments_needing_review = []
+    for seg in ordered:
+        validation = validation_results.get(seg["index"], {})
+        if not validation.get("valid", True):
+            segments_needing_review.append({
+                "index": seg["index"],
+                "type": seg["type"],
+                "issues": validation.get("issues", []),
+            })
+
+    # Overall readability of the reassembled document.
+    overall_grade = calculate_flesch_kincaid_grade(final_document)
+
+    # Cache key: SHA-256 of source + target grade. Stable across runs,
+    # safe to use as a DynamoDB sort key or secondary index.
+    cache_key = hashlib.sha256(
+        f"{original_text}|{target_grade}".encode("utf-8")
+    ).hexdigest()
 
     record = {
         "document_id": document_id,
-        "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
-        "doc_type": doc_type,
+        "cache_key": cache_key,
         "original_text": original_text,
-        "simplified_text": simplified_text,
-        "status": quality_result["status"],
-        "needs_review": quality_result["status"] != "PASSED",
-        "readability_scores": {
-            "flesch_kincaid_grade": Decimal(str(readability["flesch_kincaid_grade"])),
-            "flesch_reading_ease": Decimal(str(readability["flesch_reading_ease"])),
-            "smog_index": Decimal(str(readability["smog_index"])),
-            "word_count": readability["word_count"],
-            "avg_sentence_length": Decimal(str(readability["avg_sentence_length"])),
-        },
-        "validation_result": {
-            "passed": quality_result.get("validation", {}).get("passed", False),
-            "missing_entity_count": len(
-                quality_result.get("validation", {}).get("missing_entities", [])
-            ),
-            "altered_entity_count": len(
-                quality_result.get("validation", {}).get("altered_entities", [])
-            ),
-        },
+        "simplified_text": final_document,
+        "target_grade": target_grade,
+        # DynamoDB requires Decimal for numbers, not float. Convert
+        # every float you plan to store or you'll get serialization errors.
+        "achieved_grade": Decimal(str(round(overall_grade, 2))),
+        "entities_preserved": [
+            {
+                "text": e["text"],
+                "category": e["category"],
+                "preserve_verbatim": e["preserve_verbatim"],
+            }
+            for e in must_preserve
+        ],
+        "segments_needing_review": segments_needing_review,
+        "needs_review": len(segments_needing_review) > 0,
+        "segment_count": len(ordered),
+        "created_at": datetime.datetime.now(timezone.utc).isoformat(),
         "model_id": MODEL_ID,
-        "temperature": Decimal(str(TEMPERATURE)),
         "prompt_version": "v1",
     }
 
-    # DynamoDB put_item creates or replaces the item.
-    # In production, add a ConditionExpression if you need to protect
-    # existing records from accidental overwrites.
+    table = dynamodb.Table(RESULTS_TABLE)
+    # put_item creates or overwrites. In production, add a
+    # ConditionExpression if you need to protect existing records.
     table.put_item(Item=record)
 
     return record
@@ -609,118 +606,102 @@ def store_result(
 
 ## Putting It All Together
 
-Here's the full pipeline assembled into a single function with the retry loop for readability failures.
+Here's the full pipeline assembled into a single function. In a Lambda deployment, your handler would parse the incoming event (EHR webhook, S3 upload, API Gateway request), extract the clinical text and document ID, and call this function.
 
 ```python
-def simplify_clinical_text(document_id: str, clinical_text: str) -> dict:
+def simplify_clinical_document(document_id: str, clinical_text: str, target_grade: int = TARGET_GRADE) -> dict:
     """
     Run the full medical terminology simplification pipeline.
 
-    This is the main entry point. In a Lambda deployment, your handler
-    would parse the incoming event (from an EHR webhook, S3 upload, or
-    API Gateway request), extract the clinical text, and call this function.
-
-    The pipeline:
-    1. Classify the document type
-    2. Build the simplification prompt
-    3. Generate simplified text via Bedrock
-    4. Validate medical accuracy via Comprehend Medical
-    5. Score readability
-    6. Quality gate (retry if readability fails, flag if accuracy fails)
-    7. Store the result
+    Steps (each maps to the main recipe's pseudocode):
+      1. Extract critical medical entities for preservation
+      2. Segment the document by content type
+      3. Simplify each segment with type-specific prompts
+      4. Validate readability and entity preservation per segment
+      5. Assemble simplified segments and store the result
 
     Args:
         document_id: Unique identifier for this document.
         clinical_text: The raw clinical text to simplify.
+        target_grade: Target Flesch-Kincaid grade level.
 
     Returns:
         The stored result record.
     """
-    # Step 1: Classify the document type.
-    logger.info("Step 1: Classifying document type")
-    doc_type = classify_document(clinical_text)
-    logger.info("  Classified as: %s", doc_type)
+    # Step 1: Build the preservation checklist.
+    logger.info("Step 1: Extracting critical entities")
+    must_preserve = extract_critical_entities(clinical_text)
 
-    # Retry loop: we may need multiple attempts if readability is too high.
-    attempt = 0
-    simplified_text = None
-    quality_result = None
+    # Step 2: Segment the document.
+    logger.info("Step 2: Segmenting document")
+    segments = segment_document(clinical_text)
 
-    while attempt <= MAX_RETRIES:
-        # Step 2: Build the prompt.
-        # On retries, we add extra emphasis on simplification.
-        logger.info("Step 2: Building prompt (attempt %d)", attempt + 1)
-        system_prompt, user_prompt = build_simplification_prompt(clinical_text, doc_type)
+    # Step 3: Simplify each segment.
+    logger.info("Step 3: Simplifying %d segments", len(segments))
+    simplified_segments = []
+    for segment in segments:
+        result = simplify_segment(segment, must_preserve, target_grade)
+        simplified_segments.append(result)
+        logger.info(
+            "  Segment %d (type=%s): simplified=%s",
+            segment["index"],
+            segment["type"],
+            result["simplified"],
+        )
 
-        if attempt > 0:
-            # On retry, append extra instructions to push for simpler output.
-            user_prompt += (
-                "\n\nIMPORTANT: The previous attempt was too complex. "
-                "Use even shorter sentences. Replace ALL medical terms with "
-                "plain language equivalents. Target a 5th grade reading level. "
-                "Every sentence should be under 15 words."
-            )
+    # Step 4: Validate each simplified segment.
+    logger.info("Step 4: Validating segments")
+    validation_results = {}
+    for simplified in simplified_segments:
+        validation = validate_output(simplified, must_preserve, target_grade)
+        validation_results[simplified["index"]] = validation
+        logger.info(
+            "  Segment %d: valid=%s, grade=%.1f, issues=%d",
+            simplified["index"],
+            validation["valid"],
+            validation["grade_level"],
+            len(validation["issues"]),
+        )
 
-        # Step 3: Generate the simplified version.
-        logger.info("Step 3: Generating simplified text via Bedrock")
-        simplified_text = generate_simplification(system_prompt, user_prompt)
-        logger.info("  Generated %d characters", len(simplified_text))
-
-        # Steps 4-6: Quality gate (includes validation and readability scoring).
-        logger.info("Step 4-6: Running quality gate")
-        quality_result = quality_gate(clinical_text, simplified_text, doc_type, attempt)
-        logger.info("  Quality status: %s", quality_result["status"])
-
-        if quality_result["status"] == "RETRY":
-            logger.info(
-                "  Grade level %.1f exceeds target. Retrying...",
-                quality_result["current_grade"],
-            )
-            attempt += 1
-            continue
-        else:
-            # Either passed, failed accuracy, or accepted with flag. Stop retrying.
-            break
-
-    # Step 7: Store the result.
-    logger.info("Step 7: Storing result in DynamoDB")
-    readability = quality_result.get("readability", score_readability(simplified_text))
-    record = store_result(
+    # Step 5: Assemble and store.
+    logger.info("Step 5: Assembling and storing result")
+    record = assemble_and_store(
         document_id=document_id,
         original_text=clinical_text,
-        simplified_text=simplified_text,
-        doc_type=doc_type,
-        quality_result=quality_result,
-        readability=readability,
+        simplified_segments=simplified_segments,
+        validation_results=validation_results,
+        must_preserve=must_preserve,
+        target_grade=target_grade,
     )
 
     logger.info(
-        "Done. status=%s, grade_level=%.1f, needs_review=%s",
-        record["status"],
-        readability["flesch_kincaid_grade"],
+        "Done. achieved_grade=%s, needs_review=%s",
+        record["achieved_grade"],
         record["needs_review"],
     )
     return record
 
 
-# Example: run the pipeline against a sample discharge summary.
+# Example: simplify a cardiac discharge summary.
 if __name__ == "__main__":
     sample_clinical_text = (
-        "Patient experienced acute ST-elevation myocardial infarction with "
-        "subsequent percutaneous coronary intervention via drug-eluting stent "
-        "placement in the left anterior descending artery. Continue dual "
-        "antiplatelet therapy with aspirin 81mg and clopidogrel 75mg daily "
-        "for 12 months. Avoid NSAIDs. Follow up with cardiology in 2 weeks "
-        "for post-PCI assessment."
+        "Diagnosis: Patient presented with acute ST-elevation myocardial "
+        "infarction of the LAD territory.\n\n"
+        "Procedure: Percutaneous coronary intervention performed with "
+        "drug-eluting stent placement.\n\n"
+        "Medications: Initiated dual antiplatelet therapy with aspirin 81mg "
+        "daily and ticagrelor 90mg twice daily. Continue lisinopril 10mg daily.\n\n"
+        "Follow up: Return to cardiology clinic in 2 weeks for reassessment "
+        "of ventricular function. Call 555-0100 immediately if chest pain recurs."
     )
 
-    result = simplify_clinical_text(
+    result = simplify_clinical_document(
         document_id="doc-2026-05-01-discharge-00482",
         clinical_text=sample_clinical_text,
     )
 
-    # Pretty-print the result. DynamoDB Decimal objects aren't JSON-serializable
-    # by default, so we convert them to float for display.
+    # Pretty-print. DynamoDB Decimal objects aren't JSON-serializable by
+    # default, so convert them to float for display only.
     class DecimalEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, Decimal):
@@ -734,33 +715,35 @@ if __name__ == "__main__":
 
 ## The Gap Between This and Production
 
-This example works. Point it at a real Bedrock endpoint and Comprehend Medical, feed it clinical text, and it will produce a simplified version with readability scores and entity validation. But the distance between "works as a script" and "runs at a health system simplifying thousands of documents per day" is significant. Here's where that gap lives.
+This example works. Point it at a real Bedrock endpoint with a configured guardrail and Comprehend Medical, feed it clinical text, and it will produce a simplified version with readability scores and entity preservation checks. But the distance between "runs as a script" and "runs at a health system simplifying thousands of documents per day" is substantial. Here's where that gap lives.
 
-**Error handling.** Every external call here can fail. Bedrock can throttle under load. Comprehend Medical has a 20,000 character limit per request (longer documents need chunking). DynamoDB can reject items over 400KB. A production system wraps each call in try/except with specific handling for `ThrottlingException`, `ValidationException`, and `ServiceUnavailableException`. Failed documents go to a dead-letter queue, not into the void.
+**Error handling.** Every external call here can fail. Bedrock throttles under load and returns `ThrottlingException`. Comprehend Medical rejects requests over 20,000 UTF-8 characters with `InvalidRequestException`. DynamoDB rejects items over 400KB. A production system wraps each call in try/except with specific handling, routes failed documents to a dead-letter queue, and alerts when error rates spike.
 
-**Comprehend Medical character limits.** The `detect_entities_v2` API accepts a maximum of 20,000 UTF-8 characters per request. Most discharge summaries and lab results fit within this, but long hospital course summaries or multi-page documents will exceed it. A production system chunks text at sentence boundaries, processes each chunk separately, and merges the entity lists. Splitting mid-sentence can cause entity detection failures at chunk boundaries.
+**Long-document chunking.** `extract_critical_entities` will fail on long hospital course summaries that exceed Comprehend Medical's 20,000-character limit. Production code chunks text at sentence boundaries, calls the API per chunk, and merges the entity lists while deduplicating across chunk boundaries. The simplify step has a similar constraint (Bedrock token limits) and needs the same treatment.
 
-**Entity matching sophistication.** The `validate_accuracy` function uses simple substring matching to compare entities. This works for exact matches ("aspirin" in both texts) but misses semantic equivalents. The original might say "myocardial infarction" while the simplified version says "heart attack." Both refer to the same condition, but substring matching won't connect them. A production system needs a medical synonym map or a secondary LLM call to verify semantic equivalence.
+**Readability retry loop.** This implementation runs validation but doesn't retry. When a segment fails the readability check, production systems re-prompt with more aggressive simplification instructions ("Use even shorter sentences. Replace ALL medical terms.") up to a retry limit, then flag for human review. The main recipe's Honest Take calls this out specifically as the loop you'll want.
 
-**Readability scoring limitations.** The `textstat` library measures surface complexity (syllable count, sentence length) but not conceptual complexity. A sentence using only short words can still be confusing if the concept is abstract. "Your blood does not clot well" scores as grade 4 but might confuse a patient who doesn't know what clotting means. Use readability scores as a floor, not a ceiling. Supplement with periodic human evaluation.
+**Entity matching sophistication.** `validate_output` uses simple substring matching. This works for exact preservation ("ticagrelor 90mg") but produces false positives when a plain-language translation happens to contain the medical term, or false negatives when punctuation differs. Production adds tokenization, fuzzy matching with a small edit-distance threshold, and an allowlist of known translations (e.g., "myocardial infarction" -> "heart attack") so non-verbatim preservation checks can recognize valid translations.
 
-**Prompt versioning.** This example uses a hardcoded prompt. A production system stores prompts in S3 (versioned bucket), routes a percentage of traffic to new prompt versions for A/B testing, and tracks readability scores and validation pass rates per prompt version. When a new prompt improves scores, promote it. When it degrades, roll back.
+**Readability formula limitations.** Flesch-Kincaid measures surface complexity (syllables, sentence length) but not conceptual complexity. A sentence using only short words can still confuse a patient if the concept is abstract. Use the score as a floor, not a ceiling. Supplement with periodic human evaluation and tracking of patient-reported comprehension over time.
 
-**Batch processing.** This example processes one document at a time. A health system generating hundreds of discharge summaries per day needs batch processing: an SQS queue feeding Lambda invocations, with concurrency limits to avoid Bedrock throttling. Consider Bedrock batch inference for high-volume, non-real-time workloads.
+**Prompt versioning and A/B testing.** Prompts live as Python constants here. Production stores them in S3 (versioned bucket), routes a percentage of traffic to new prompt versions, and tracks readability scores and validation pass rates per version. Promote prompts that improve scores; roll back prompts that degrade them. Store `prompt_version` in every record so you can correlate.
 
-**Caching.** Many clinical documents contain repeated phrases and standard language. "Follow up in 2 weeks" appears in thousands of discharge summaries. A production system can cache simplifications of common phrases to reduce Bedrock calls and improve latency. Use a TTL-based cache (ElastiCache or DynamoDB) keyed on a hash of the input text.
+**Caching layer.** The cache_key is computed but never checked. Production looks up the cache before calling Bedrock: if the exact source text at the exact target grade has been simplified before, serve the cached result. For standard discharge templates (knee replacement, cataract surgery) this alone can cut Bedrock spend significantly.
 
-**Multi-language support.** This example produces English simplified text only. For patient populations with limited English proficiency, you'd add a translation step after simplification. Simplify first (in English), then translate. Translating complex clinical English directly produces worse results than translating already-simplified English. Amazon Translate handles the translation step.
+**Multi-language support.** This produces simplified English only. For limited English proficient populations, chain Amazon Translate after simplification. Simplify first in English, then translate the simplified version. Translating raw clinical English produces worse output than translating already-simplified English.
 
-**VPC and network isolation.** In production, this Lambda runs in a VPC with private subnets. VPC endpoints for Bedrock, Comprehend Medical, DynamoDB, and CloudWatch keep all traffic on the AWS backbone. Clinical text is PHI. It should never traverse the public internet.
+**Structured logging and metrics.** The `logger.info()` calls are a start. Production emits JSON logs with consistent fields (document_id, doc_type, segment_count, achieved_grade, validation_passed, latency_ms, token_count) and CloudWatch metrics for: end-to-end latency (p50/p95/p99), validation pass rate, guardrail intervention rate, and human review rate. Validation pass rate is your north star metric.
 
-**Encryption.** This example relies on default encryption. Production uses KMS customer-managed keys for the DynamoDB table and CloudWatch Logs. Enable key rotation. Log every key usage via CloudTrail.
+**Human review workflow.** Segments that fail validation get flagged in the stored record, but this code doesn't implement the review queue. Production routes flagged documents to an SQS queue feeding a review UI where health literacy specialists can edit, approve, or reject. Track reviewer edit distance over time to identify systemic prompt weaknesses.
 
-**Structured logging and metrics.** The `logger.info()` calls here are a start. Production needs structured JSON logs with consistent fields: document_id, doc_type, model_id, attempt_count, latency_ms, readability_grade, validation_passed. Emit CloudWatch metrics for: simplification latency (p50, p95), readability score distribution, validation pass rate, retry rate, and human review rate. The validation pass rate is your north star metric.
+**IAM least-privilege.** The Lambda role should have exactly: `bedrock:InvokeModel` scoped to your model ARN, `bedrock:ApplyGuardrail` scoped to your guardrail ARN, `comprehendmedical:DetectEntitiesV2`, and `dynamodb:PutItem` scoped to the table ARN. Not `bedrock:*`. Not `dynamodb:*`.
 
-**Human review workflow.** Documents that fail accuracy validation route to "human review," but this example doesn't implement the review queue. In production, failed documents go to an SQS queue that feeds a review UI where health literacy specialists can edit the simplified text, approve it, or flag the original as too complex for automated simplification.
+**VPC and encryption.** In production, the Lambda runs in a VPC with private subnets. VPC endpoints for Bedrock, Comprehend Medical, DynamoDB, and CloudWatch Logs keep all traffic on the AWS backbone. Use KMS customer-managed keys with rotation enabled for the DynamoDB table and CloudWatch Logs. Clinical text is PHI and should never traverse the public internet.
 
-**Testing.** There are no tests here. A production pipeline has: unit tests for `classify_document` with edge cases, integration tests against Bedrock with known clinical text samples, validation tests confirming that intentionally degraded simplifications (dropped medications, changed doses) are caught by `validate_accuracy`, and readability regression tests ensuring prompt changes don't degrade grade level scores. Never use real patient documents in test fixtures. Use synthetic clinical text.
+**Idempotency.** If the same document event fires twice (common with at-least-once delivery), you don't want duplicate simplifications. Add a `ConditionExpression` on the `put_item` call that checks for document_id non-existence, or use the cache_key lookup as a dedupe layer.
+
+**Testing.** There are no tests here. A production pipeline has: unit tests for `segment_document` and `validate_output` with edge cases (empty text, very short segments, Unicode), integration tests against Bedrock and Comprehend Medical with known clinical text samples, and regression tests confirming that degraded simplifications (intentionally dropped medications, altered doses) are caught by `validate_output`. Never use real patient documents in test fixtures. Synthesize clinical text instead.
 
 ---
 
