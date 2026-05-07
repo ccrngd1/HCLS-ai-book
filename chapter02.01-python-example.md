@@ -579,4 +579,4 @@ This example works. Point it at a real Bedrock endpoint with a configured guardr
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 2.1](chapter02.01-patient-message-response-drafting) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 2.1: Patient Message Response Drafting](chapter02.01-patient-message-response-drafting) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
