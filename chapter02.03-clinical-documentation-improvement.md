@@ -42,7 +42,7 @@ LLMs change this equation because they can read and reason about clinical text t
 
 **They can reason about specificity.** You can instruct an LLM: "Given this note, identify any diagnoses that could be documented more specifically per ICD-10-CM guidelines." The model understands what "more specifically" means in a coding context because it has seen thousands of examples of specific vs. unspecific documentation.
 
-**They handle context across the full note.** A rule-based system might flag "heart failure" as lacking specificity in the assessment section, missing that the physician documented "systolic dysfunction, EF 30%" in the cardiac exam three paragraphs earlier. An LLM reads the entire note and understands that the specificity exists, just in a different section. This dramatically reduces false-positive queries.
+**They handle context across the full note.** A rule-based system might flag "heart failure" as lacking specificity in the assessment section, missing that the physician documented "systolic dysfunction, EF 30%" in the cardiac exam three paragraphs earlier. An LLM reads the entire note and understands that the specificity exists, just in a different section. This cuts false-positive queries substantially.
 
 **They generate natural-language suggestions.** Instead of firing a cryptic alert ("HF: specify type"), an LLM can generate a physician-friendly query: "Your note mentions heart failure. The echocardiogram documents EF 30%, which suggests systolic heart failure (HFrEF). Would you like to specify this in your assessment?" This is closer to how a human CDI specialist would phrase the question.
 
