@@ -257,6 +257,13 @@ def _shift_if_quiet_hours(send_time_utc: datetime.datetime,
     For simplicity, this function shifts the send time for all channels.
     A more sophisticated implementation would pass the channel through and
     only shift for SMS/voice, letting email fire overnight.
+
+    Edge case (NOTE for TechWriter, code review Finding 3): for tight
+    offsets like T-2h, a shift of up to 11 hours could push the send time
+    past the appointment itself. The current offsets (-168, -72, -24) are
+    safe, but if you add T-2h, cap the shift against appt_time_utc in the
+    caller (return None and skip when the shifted time is no longer
+    strictly before the appointment).
     """
     local_time = send_time_utc.astimezone(patient_tz)
     local_hour = local_time.hour
@@ -576,8 +583,14 @@ def _send_sms(phone: str, content: dict, reminder_id: str) -> None:
     )
 
     # SNS.Publish to a phone number directly (transactional SMS).
-    # MessageAttributes carry the reminder_id so delivery reports (enabled
-    # via SNS SMS delivery logging configuration) can be joined to decisions.
+    # Note: SNS SMS delivery-status logs (CloudWatch Logs records emitted
+    # when you configure a delivery-status role) reference the SNS-generated
+    # MessageId, not custom MessageAttributes. Custom attributes do NOT
+    # propagate to delivery receipts. For production event joining,
+    # capture response["MessageId"] from publish() and persist it on the
+    # decision record, then join delivery logs to decisions on MessageId.
+    # (SES behaves differently: the Tags parameter below does propagate to
+    # SES engagement events via the configuration set.)
     sns_client.publish(
         PhoneNumber=phone,
         Message=message_body,
@@ -585,10 +598,6 @@ def _send_sms(phone: str, content: dict, reminder_id: str) -> None:
             "AWS.SNS.SMS.SMSType": {
                 "DataType": "String",
                 "StringValue": "Transactional",  # Not "Promotional"; this is a reminder
-            },
-            "reminder_id": {
-                "DataType": "String",
-                "StringValue": reminder_id,
             },
         },
     )
@@ -633,8 +642,11 @@ def _format_local_time(iso_string: str, tz_name: str) -> str:
     """Format an ISO timestamp as a patient-friendly local time string."""
     dt = datetime.datetime.fromisoformat(iso_string)
     local_dt = dt.astimezone(ZoneInfo(tz_name))
-    # Example output: "Friday, May 15 at 2:30 PM EDT"
-    return local_dt.strftime("%A, %B %-d at %-I:%M %p %Z")
+    # Example output: "Friday, May 15 at 02:30 PM EDT"
+    # Note: %-d / %-I (no-pad) are POSIX extensions that work on Linux
+    # (Lambda runtime) and macOS but raise ValueError on Windows. Use
+    # zero-padded %d / %I for cross-platform portability.
+    return local_dt.strftime("%A, %B %d at %I:%M %p %Z")
 ```
 
 ---
