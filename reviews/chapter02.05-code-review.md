@@ -7,273 +7,150 @@
 - `chapter02.05-python-example.md` (Python companion)
 
 **Validation performed:**
-- Seven-step pseudocode mapped against Python functions
-- boto3 Bedrock Runtime `invoke_model` parameters, Anthropic messages body, and response parsing verified
-- boto3 Bedrock Guardrails parameters on `invoke_model` (`guardrailIdentifier`, `guardrailVersion`) verified
-- boto3 Comprehend Medical `detect_entities_v2` method name, parameter, and response structure verified
-- boto3 Comprehend Medical exceptions namespace checked
-- boto3 S3 `put_object` and DynamoDB `put_item` / `get_item` / `update_item` usage verified
-- DynamoDB Decimal handling checked for both reads (reading_level Decimal-to-int) and writes (no floats reach DynamoDB)
+- Seven-step pseudocode walked against Python functions, one-to-one
+- boto3 Bedrock Runtime `invoke_model` parameters, Anthropic Messages API body shape, and response traversal verified against the current SDK
+- boto3 Comprehend Medical `detect_entities_v2` method name, `Text` parameter casing, and response structure verified (method exists; entity `Category`/`Attributes` fields match)
+- `client.exceptions.ClientError` is a valid attribute on modern boto3 clients (verified locally against `comprehendmedical`), so that try/except pattern works
+- boto3 S3 `put_object` and DynamoDB `put_item` / `update_item` / `get_item` calls verified
 - S3 keys checked for leading slashes (none present)
-- `status` reserved-word handling with `ExpressionAttributeNames` confirmed
-- Regeneration loop semantics (`for/else`) and retry cap behavior confirmed
-- Readability formula (Flesch-Kincaid) arithmetic verified
-- Healthcare-specific concerns (PHI logging, synthetic data labeling, encryption, BAA, minimum necessary, multilingual QA gap, minor/caregiver routing, audit retention) reviewed
+- DynamoDB reserved-word `status` correctly aliased with `ExpressionAttributeNames`
+- All DynamoDB writes inspected for Python-float writes (none; see Finding 2)
+- Raw bytes inspected for the `language_instruction` dict values to verify encoding
+- Healthcare concerns reviewed: PHI logging, BAA, encryption hints, synthetic data labeling, minimum-necessary, retention, provenance/validation, guardrails
 
 ---
 
-## Verdict: PASS
+## Verdict: FAIL
 
-Zero ERROR findings. One WARNING finding (Comprehend Medical exception handler will not catch as intended). Five NOTE findings, all pedagogical polish.
+One ERROR (mojibake in non-English instruction strings) and three WARNINGs. The ERROR alone is an automatic FAIL per the review rubric.
 
 ---
 
 ## Summary
 
-The Python companion faithfully implements the seven-step pseudocode. All boto3 calls use correct method names, parameter names, and response parsing for the current SDK. The Anthropic messages body is correctly structured for Bedrock, and the Bedrock Guardrails parameters on `invoke_model` are correct. S3 keys are clean (no leading slashes, consistent prefix structure). DynamoDB writes use only strings and lists, so the Decimal trap doesn't apply here; the one Decimal concern that does apply (reading_level read from DynamoDB before being substituted into a prompt) is handled correctly with a `Decimal → int` conversion.
+The seven-step pseudocode maps cleanly to seven Python functions, and the orchestrator at the bottom of the file walks them in order. Boto3 API calls are correct: `invoke_model` uses the right parameters and Anthropic Messages API body shape, `detect_entities_v2` is spelled and parameterized correctly, `put_object` uses relative keys, and `update_item` aliases the reserved `status` word. DynamoDB Decimal handling in Step 2 (the read path) is handled correctly, converting `Decimal` to `int` before the value flows into a prompt.
 
-Healthcare-specific concerns are handled well: synthetic data is explicitly labeled, the logger setup comment forbids PHI in logs, encryption and BAA are surfaced, HIPAA retention is called out, and the validation step (claim-to-source traceability) is real safety logic rather than theater. The "Gap to Production" section is substantial and honest about EHR integration, portal delivery, multilingual QA, minor/caregiver routing, and per-language readability validators.
-
-There is one real bug: the Comprehend Medical error handler catches `comprehend_medical.exceptions.ClientError`, which is not an attribute of the client's generated exceptions namespace. Under an actual Comprehend Medical failure, the except clause evaluation itself will raise `AttributeError` and the original exception will propagate chained. The "log and continue" fallback therefore does not work as the comment claims. This teaches a subtly wrong exception-handling pattern and should be corrected to use `botocore.exceptions.ClientError`.
+The code falls short in three places that matter for a teaching example. First, the language-specific instruction strings for Spanish, Chinese, and Vietnamese are double-encoded UTF-8 mojibake. A reader who runs the example with a non-English patient will ship garbled bytes to Bedrock. Second, the final step of the orchestrator doesn't catch the case where all generation attempts produced `REQUIRES_REGENERATION`; in that failure mode the summary can be auto-delivered to the patient unless the visit type happens to be on the high-risk list. Third, the "Gap to Production" prose claims the example code writes `validation_rate` to DynamoDB with `Decimal(str(round(...)))`, but the example never writes `validation_rate` to DynamoDB at all.
 
 ---
 
 ## Findings
 
-### Finding 1: `comprehend_medical.exceptions.ClientError` is not a valid attribute
+### Finding 1: Non-English instruction strings are double-encoded UTF-8 mojibake
+
+- **Severity:** ERROR
+- **Location:** `chapter02.05-python-example.md`, Step 4 (`generate_summary`), the `language_instruction` dict, lines covering `"es"`, `"zh"`, and `"vi"` values
+- **Description:** The source file stores the Spanish, Chinese, and Vietnamese instruction strings as double-encoded UTF-8. For the Spanish "español" value, the raw bytes on disk include `\xc3\x83\xc2\xb1` where correct UTF-8 for "ñ" is `\xc3\xb1`. The Chinese and Vietnamese values are similarly mangled across every non-ASCII character. When this file is imported and the string is sent to Bedrock, the model receives garbled text. The most likely outcome is that the model ignores the garbled instruction and falls back to writing in English, defeating the language personalization that the recipe's prose treats as a central feature. A secondary risk is that the model attempts to imitate the garbled characters in its output, producing a visibly broken summary.
+- **How to fix:** Rewrite the three strings with correct UTF-8 characters, save the file explicitly as UTF-8 (no BOM), and verify with a hex dump that "español" is `\x65\x73\x70\x61\xc3\xb1\x6f\x6c`, not the doubled sequence. For a quick sanity check, a reader should be able to run `python -c "print('español')"` from the Python file and see it render correctly. While fixing, also consider adding a comment noting that these instruction strings must be saved as UTF-8 because mojibake in prompts is a silent failure mode, not an obvious crash.
+
+---
+
+### Finding 2: Prose claims code handles DynamoDB Decimal for `validation_rate`, but code doesn't write `validation_rate` to DynamoDB at all
 
 - **Severity:** WARNING
-- **Location:** `chapter02.05-python-example.md`, Step 3 (`extract_summary_object`), within the Comprehend Medical try/except block
-- **Description:** The code uses `except comprehend_medical.exceptions.ClientError as exc:`. boto3 client `exceptions` namespaces only contain service-modeled exceptions (e.g., `InvalidRequestException`, `TextSizeLimitExceededException`, `TooManyRequestsException`, `ValidationException`). The generic `ClientError` from `botocore.exceptions` is not exposed on `client.exceptions`. When Comprehend Medical raises a ClientError subclass in production, Python attempts to evaluate the except expression, which raises `AttributeError: 'ComprehendMedical.Client.exceptions' object has no attribute 'ClientError'`, and the original exception propagates chained. The comment says "Log and continue; the structured EHR data is still the source of truth for medication facts," but the fallback does not actually run. This teaches a misleading pattern that a reader may carry into production.
-- **Suggested fix:** Import `ClientError` from botocore and use that directly. Two-line change:
+- **Location:** `chapter02.05-python-example.md`, "Gap to Production" section, `DynamoDB Decimal gotcha` paragraph
+- **Description:** The prose says "The validation_rate in Step 5 gets stored as a Decimal when written to DynamoDB, because DynamoDB doesn't accept Python floats. The example code handles this correctly (`Decimal(str(round(validation_rate, 4)))`), but it's a common trap on the first deployment." The claim is false for this example. Searching the file, `validation_rate` appears only in the validator's return value, in a print statement, and in the final result dict returned by `generate_after_visit_summary`. It is never passed to `put_item` or `update_item`. The only DynamoDB writes (Step 1's initial record and Step 7's `update_item`) carry only strings and a string list; no Python float is stored, so no `Decimal` wrapping is necessary or present.
+- **How to fix:** Either (a) update the prose to say "DynamoDB requires Decimal for any float you store; the example code above does not persist `validation_rate`, but if you extend it to do so, wrap it with `Decimal(str(round(validation_rate, 4)))` to avoid the binary-precision pitfall of `Decimal(float_value)`," or (b) actually extend Step 7's `update_item` to persist `validation_rate` so the prose is accurate. Option (a) is less work and keeps the teaching point intact.
+
+---
+
+### Finding 3: Orchestrator auto-delivers to patient when all generation attempts fail validation
+
+- **Severity:** WARNING
+- **Location:** `chapter02.05-python-example.md`, `generate_after_visit_summary` orchestrator, the `requires_review` expression near the end and the for/else loop
+- **Description:** If validation returns `REQUIRES_REGENERATION` on every attempt, the loop does `continue` without running readability, exits via the `else:` branch, and `readability` stays `None`. The final gate is:
   ```python
-  from botocore.exceptions import ClientError
-  ...
-  except ClientError as exc:
-      logger.warning("Comprehend Medical call failed: %s", exc)
+  requires_review = (
+      visit_type in HIGH_RISK_VISIT_TYPES
+      or (validation and validation["status"] == "NEEDS_CLINICIAN_REVIEW")
+      or (readability and not readability["pass"])
+  )
   ```
-  Alternatively, catch a narrower set of service-modeled exceptions (e.g., `comprehend_medical.exceptions.TextSizeLimitExceededException`, `comprehend_medical.exceptions.InvalidRequestException`), though the broader `ClientError` is what the comment's intent implies.
+  This check does not include `validation["status"] == "REQUIRES_REGENERATION"`. So if a non-high-risk visit exhausts all `MAX_GENERATION_ATTEMPTS` with HIGH-severity validation failures on each attempt, `requires_review` is `False`, and `render_and_deliver` is called with `requires_clinician_review=False`, which means `final_status = "DELIVERED"` and the unvalidated summary is routed to the patient portal. For a teaching example whose central safety claim is "every specific claim must trace to a source," this is the exact wrong default. A reader copying this pattern into production would ship a system that quietly delivers hallucinated summaries on the pathological cases the safety rails were designed to catch.
+- **How to fix:** Include `REQUIRES_REGENERATION` in the review check, e.g.:
+  ```python
+  requires_review = (
+      visit_type in HIGH_RISK_VISIT_TYPES
+      or (validation and validation["status"] in ("NEEDS_CLINICIAN_REVIEW", "REQUIRES_REGENERATION"))
+      or (readability and not readability["pass"])
+      or readability is None  # loop exhausted before a readability pass
+  )
+  ```
+  Or, cleaner: flip the default so that anything short of a fully-VALIDATED summary with a passing readability check requires review. Either way, add a comment saying that "exhausted attempts" is a reason to route to a human, not a reason to deliver to the patient anyway.
 
 ---
 
-### Finding 2: `math` module imported but unused
+### Finding 4: Comprehend Medical truncation uses character count, not byte count
+
+- **Severity:** WARNING
+- **Location:** `chapter02.05-python-example.md`, Step 3 (`extract_summary_object`), the `comprehend_medical.detect_entities_v2(Text=note_text[:20000])` call
+- **Description:** Comprehend Medical's `DetectEntitiesV2` enforces its size limit in bytes, not characters. The slice `note_text[:20000]` slices by Python characters. For an ASCII English note this is equivalent, so the example runs. For Spanish, Portuguese, French, Mandarin, or any note that contains non-ASCII characters, 20,000 Python characters can be significantly more than 20,000 bytes once encoded as UTF-8. A reader who uses this pattern on a Spanish note and hits a `TextSizeLimitExceededException` will be confused because the number of characters they passed was under the limit they were told to respect. This matters in a recipe whose prose explicitly highlights non-English generation as a first-class use case.
+- **How to fix:** Encode once, slice in bytes, decode back (ignoring a potential trailing partial character), or use a lower character ceiling. A concise pattern:
+  ```python
+  MAX_CM_BYTES = 20000
+  encoded = note_text.encode("utf-8")[:MAX_CM_BYTES]
+  # Drop partial trailing multi-byte char if any
+  safe_text = encoded.decode("utf-8", errors="ignore")
+  cm_response = comprehend_medical.detect_entities_v2(Text=safe_text)
+  ```
+  And add a comment that the limit is byte-based, not character-based. One-line fix; big teaching value given the multilingual framing of the recipe.
+
+---
+
+### Finding 5: Pseudocode status name `VALIDATION_FAILED` versus Python `REQUIRES_REGENERATION`
 
 - **Severity:** NOTE
-- **Location:** `chapter02.05-python-example.md`, Configuration and Constants section (imports)
-- **Description:** `import math` is at the top of the imports block but no `math.` reference appears anywhere in the code. The Flesch-Kincaid arithmetic uses only floor division and multiplication on built-in numerics; the syllable approximation uses only iteration and comparison. Linters will flag this as unused.
-- **Suggested fix:** Remove the `import math` line. One-line change.
+- **Location:** Pseudocode Step 5 in `chapter02.05-after-visit-summary-generation.md` (`status = "VALIDATION_FAILED"`) vs Python Step 5 in `chapter02.05-python-example.md` (`status = "REQUIRES_REGENERATION"`)
+- **Description:** Same state, different string constants. The Python name is arguably more descriptive (it says what to do next), but a learner bouncing between the two files will wonder whether they are the same concept.
+- **How to fix:** Align the two, or add a single comment in the Python noting the pseudocode's `VALIDATION_FAILED` is called `REQUIRES_REGENERATION` here because the status drives a retry loop.
 
 ---
 
-### Finding 3: `_parse_json_response` helper defined inside Step 3 code block
+### Finding 6: Validator uses substring matching where pseudocode specifies semantic similarity
 
 - **Severity:** NOTE
-- **Location:** `chapter02.05-python-example.md`, end of Step 3 code block; referenced from Step 3 and Step 4
-- **Description:** The helper is defined at the bottom of Step 3 and used in Steps 3 and 4. A learner copying only the Step 4 code block to experiment in isolation will hit `NameError`. Running the full file in order works fine. Same pedagogical layout issue noted in prior chapter reviews.
-- **Suggested fix:** Either move the helper to a "Shared Helpers" section before Step 3, or add an inline comment at its Step 4 usage: `# _parse_json_response defined in Step 3`.
+- **Location:** Pseudocode Step 5 (`similarity = semantic_similarity(claim.text, str(source_value))` with MEDIUM severity for paraphrase drift) vs Python Step 5 (bidirectional substring match; all mismatches classified HIGH)
+- **Description:** The code comment inside `validate_summary` acknowledges the simplification ("Production systems often layer on semantic similarity (embedding-based)"), so this is a deliberate teaching choice, not a bug. The divergence is still worth naming: the pseudocode draws a HIGH-vs-MEDIUM distinction that the Python collapses. A reader trying to reproduce the pseudocode's three-tier status logic (`VALIDATED` / `NEEDS_CLINICIAN_REVIEW` / `VALIDATION_FAILED`) from the Python alone will miss where MEDIUM-severity claims come from.
+- **How to fix:** Either add a brief note to the Python explaining that the MEDIUM-severity branch collapses into the substring path for teaching simplicity, or introduce a trivial "close but not equal" heuristic (e.g., token-set overlap) so the MEDIUM branch exists in code. Not blocking.
 
 ---
 
-### Finding 4: Model IDs differ between pseudocode and Python
+### Finding 7: `_parse_json_response` helper is defined at the bottom of Step 3
 
 - **Severity:** NOTE
-- **Location:** `chapter02.05-after-visit-summary-generation.md` pseudocode (uses `"anthropic.claude-haiku-4"` in Step 3 and `"anthropic.claude-sonnet-4"` in Step 4) vs `chapter02.05-python-example.md` Configuration section (uses `EXTRACTION_MODEL_ID = "anthropic.claude-3-5-haiku-20241022-v1:0"` and `GENERATION_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"`)
-- **Description:** The pseudocode uses illustrative placeholder model identifiers; the Python uses concrete, currently-available Bedrock model IDs. The Python comment acknowledges the gap and flags the cross-region inference profile convention (`us.` prefix) as a `TODO: verify the exact model IDs available in your region and account`. A reader comparing the files side by side may still notice the mismatch.
-- **Suggested fix:** Optional. Add one line to the pseudocode noting that Bedrock model IDs are versioned and the Python companion uses a specific working example. No code change required. Same note applies to every chapter; consider handling in the style guide.
+- **Location:** `chapter02.05-python-example.md`, defined at the end of Step 3's code block, used again in Step 4
+- **Description:** A learner who copies only the Step 4 block in isolation will hit `NameError` because the helper lives in Step 3. Running the whole file works fine.
+- **How to fix:** Move the helper into a "Shared Helpers" block above Step 3, or add a one-line comment at the first Step 4 use site: `# _parse_json_response is defined in Step 3`.
 
 ---
 
-### Finding 5: Commented-out stub references `patient_prefs["patient_id"]` which isn't in the dict
+### Finding 8: Module logger has no handler configured
 
 - **Severity:** NOTE
-- **Location:** `chapter02.05-python-example.md`, Step 7 (`render_and_deliver`), within the commented-out portal stub
-- **Description:** The commented-out portal delivery example reads `patient_id=patient_prefs["patient_id"]`. The `patient_prefs` dict is populated from the `patient-preferences` DynamoDB table in Step 2 plus defaults, and the defaults dict includes `language`, `reading_level`, `delivery_channels`, `accommodations`, `preferred_name`, but not `patient_id`. A reader who uncomments the stub expecting it to run will hit `KeyError` unless the patient_id is also added to the prefs dict or passed separately. The calling orchestrator does have `event["patient_id"]` available, but `render_and_deliver` does not receive the patient_id as a parameter.
-- **Suggested fix:** Two options. (a) Change the stub comment to `patient_id=patient_id` and add `patient_id: str` to the function signature, then pass `event["patient_id"]` through from the orchestrator. (b) Leave the stub but adjust the reference to `patient_prefs.get("patient_id")` and add a comment noting that a real integration would plumb patient_id through the call chain. Since this is commented-out illustrative code, option (b) is lighter and still pedagogically clear.
+- **Location:** `chapter02.05-python-example.md`, top of Configuration section (`logger = logging.getLogger(__name__); logger.setLevel(logging.INFO)`)
+- **Description:** Without a handler, `logger.info` and `logger.warning` calls throughout the pipeline silently drop messages when the file is run directly as `__main__`. The orchestrator at the bottom uses `print(...)` for demo output, so the interactive run still shows progress, but the log lines sprinkled through each step never reach the console. A reader trying to understand what the code does by running it will not see the structured log output the author clearly intended to show.
+- **How to fix:** Add a single line to the configuration block:
+  ```python
+  logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+  ```
+  Or drop the `logger.setLevel` and let the root logger propagate. Either way, the rest of the logging code becomes visible without pulling in a full observability stack.
 
 ---
 
-### Finding 6: Orchestrator mixes `print` with `logger` calls
+### Finding 9: Model IDs differ between pseudocode and Python
 
 - **Severity:** NOTE
-- **Location:** `chapter02.05-python-example.md`, `generate_after_visit_summary` orchestrator (step-by-step progress lines) vs the rest of the module which uses `logger.info(...)`
-- **Description:** The orchestrator emits progress via `print(...)` statements (e.g., `print(f"Step 1: Receiving note-signed event for encounter {event['encounter_id']}...")`) while individual step functions use `logger.info(...)`. The prints are clearly intended to make the demo run visible in a terminal. Mixed usage is minor but could mislead learners about recommended patterns. The printed fields (encounter IDs, visit types, medication counts) are not direct PHI but are clinical metadata that in a production context would be scrubbed from non-audit logs per minimum-necessary.
-- **Suggested fix:** Either add a brief comment noting the prints are intentional for the walkthrough (e.g., `# Using print here so the demo run is visible in a terminal; production code should use logger exclusively`), or convert the prints to `logger.info` with a matching logging config. No functional change required.
+- **Location:** Pseudocode references `"anthropic.claude-haiku-4"` / `"anthropic.claude-sonnet-4"`; Python uses `"anthropic.claude-3-5-haiku-20241022-v1:0"` / `"anthropic.claude-3-5-sonnet-20241022-v2:0"`
+- **Description:** Same pattern observed in Recipe 2.4. The pseudocode uses an illustrative family name while Python pins a currently-available model ID. The Python has a `TODO: verify the exact model IDs available in your region and account` and a comment about the `us.` cross-region inference profile prefix, which is good. A reader comparing the two side by side will still notice the gap.
+- **How to fix:** Optionally add a one-line note in the pseudocode that Bedrock model IDs are versioned and the Python companion shows a specific working example. No code change required.
 
 ---
 
-## Pseudocode-to-Python Consistency
+## Re-review checklist
 
-| Pseudocode Step | Pseudocode Function | Python Function | Consistent? |
-|----------------|---------------------|-----------------|-------------|
-| Step 1 | `receive_note_signed_event(event)` | `receive_note_signed_event(event: dict) -> str` | Yes |
-| Step 2 | `pull_encounter_data(patient_id, encounter_id)` | `pull_encounter_data(patient_id, encounter_id, encounter_clinical_data)` | Yes (Python accepts clinical data as a parameter so the AI pattern isn't entangled with a HealthLake fetch; docstring explains this) |
-| Step 3 | `extract_summary_object(encounter_data)` | `extract_summary_object(summary_id, encounter_data)` | Yes (Python adds `summary_id` for audit persistence in S3) |
-| Step 4 | `generate_summary(summary_object, patient_prefs)` | `generate_summary(summary_object, patient_prefs, regeneration_hint="")` | Yes (Python adds `regeneration_hint` for the retry loop, which matches the "loop back with an extra instruction" language in the main recipe prose) |
-| Step 5 | `validate_summary(summary_text, provenance, summary_object)` | `validate_summary(provenance, summary_object)` | Yes (Python drops `summary_text` because the check operates on the provenance map and source object; the text isn't needed for claim verification) |
-| Step 6 | `check_readability(summary_text, target_grade_level)` | `check_readability(summary_text, target_grade_level)` | Yes |
-| Step 7 | `render_and_deliver(summary_id, summary_text, patient_prefs)` | `render_and_deliver(summary_id, summary_markdown, patient_prefs, validation_status, requires_clinician_review)` | Yes (Python adds `validation_status` and `requires_clinician_review` so the same function can route between direct-to-patient delivery and clinician review) |
+When this review is addressed, a re-reviewer should verify:
 
-The `generate_after_visit_summary` orchestrator chains the seven steps in order and implements the regeneration loop with a hard cap (`MAX_GENERATION_ATTEMPTS`). The loop uses Python's `for/else` idiom correctly: the `else` branch runs only if no `break` fired, which is the exhausted-retries case. Escalation to clinician review combines three conditions (high-risk visit type, validation flagged items, readability-loop exhaustion), matching the risk-tiering language in the main recipe.
-
----
-
-## AWS SDK Accuracy
-
-### Bedrock Runtime `invoke_model` (Anthropic messages format)
-
-Both call sites (Step 3 extraction, Step 4 generation) use the Anthropic messages body correctly:
-
-```python
-bedrock_runtime.invoke_model(
-    modelId=...,
-    contentType="application/json",
-    accept="application/json",
-    body=json.dumps({
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": ...,
-        "temperature": ...,
-        "system": ...,
-        "messages": [{"role": "user", "content": ...}],
-    }),
-)
-```
-
-- Parameter names (`modelId`, `contentType`, `accept`, `body`): correct
-- Anthropic body fields (`anthropic_version`, `max_tokens`, `temperature`, `system`, `messages`): correct
-- Response parsing `json.loads(response["body"].read())` then `payload["content"][0]["text"]`: matches the documented Anthropic response structure on Bedrock
-- Temperatures are well-chosen with rationale in comments: 0.0 for deterministic extraction, 0.3 for natural prose variation in the patient-facing summary
-
-### Bedrock Guardrails on `invoke_model`
-
-```python
-invoke_kwargs["guardrailIdentifier"] = GUARDRAIL_ID
-invoke_kwargs["guardrailVersion"] = GUARDRAIL_VERSION
-```
-
-Parameter names match the documented Bedrock API. The pattern of only adding the kwargs when both are configured is a clean way to keep the example runnable without a guardrail while showing where to plug one in.
-
-### Comprehend Medical `detect_entities_v2`
-
-```python
-comprehend_medical.detect_entities_v2(Text=note_text[:20000])
-```
-
-- Method name: correct (`detect_entities_v2` is the current version; `detect_entities` is deprecated)
-- Parameter name: `Text` is correct
-- Response traversal: `cm_response.get("Entities", [])` with per-entity `.Category`, `.Text`, `.Attributes` is correct
-- The `[:20000]` chunking is a reasonable teaching simplification of the per-call size limit; the comment acknowledges that production would chunk-and-merge for longer notes
-
-The exception handling on this call is the issue flagged in Finding 1; the call itself is correctly structured.
-
-### S3 `put_object`
-
-Both writes (`summary-extractions/{summary_id}/extracted.json` and `final-summaries/{summary_id}/summary.md`) use:
-
-- Correct parameter names (`Bucket`, `Key`, `Body`, `ContentType`)
-- Bytes for `Body` (`json.dumps(...).encode("utf-8")` and `summary_markdown.encode("utf-8")`)
-- `default=str` in `json.dumps` to handle datetime objects
-- Bucket-default SSE-KMS assumption called out in the comment, with a note on how to set `ServerSideEncryption` and `SSEKMSKeyId` explicitly if not configured at the bucket level
-
-### DynamoDB
-
-- `put_item(Item=summary_record)` in Step 1: all values are strings. No Decimal concerns.
-- `get_item(Key={"patient_id": patient_id})` in Step 2: correct.
-- Decimal-to-int conversion in Step 2: `if isinstance(patient_prefs["reading_level"], Decimal): patient_prefs["reading_level"] = int(...)`. This prevents the prompt from receiving `Decimal('7')` instead of `7`, which would serialize awkwardly in the JSON payload the model sees. Good defensive pattern.
-- `update_item(...)` in Step 7: values are strings and a list of strings. No floats reach DynamoDB.
-- `ExpressionAttributeNames={"#status": "status"}` correctly escapes the DynamoDB reserved word `status`.
-
-### S3 Keys
-
-- `summary-extractions/{summary_id}/extracted.json`: no leading slash, no reserved characters, UUID-based prefix
-- `final-summaries/{summary_id}/summary.md`: no leading slash
-
-Pass.
-
----
-
-## DynamoDB Decimal Check
-
-- `reading_level` from DynamoDB is correctly unwrapped with `int(patient_prefs["reading_level"])` before being embedded in the generation prompt.
-- No Python `float` is written to DynamoDB. The one place that might have been a concern (validation_rate) is kept as a return value and not persisted directly in this example.
-- `Decimal` is imported (`from decimal import Decimal`) and used exactly once (the isinstance check in Step 2). Good minimal footprint.
-
-Pass.
-
----
-
-## Comment Quality
-
-Comments consistently explain the "why," not just the "what." High-value examples:
-
-- Two-tier model rationale at the top of Configuration ("extraction is a narrow, well-bounded task... generation cares a lot about tone, reading level, and multilingual quality")
-- Adaptive retry rationale tied to the domain ("clinicians sign notes in waves (end of morning clinic, end of day)")
-- `MIN_VALIDATION_RATE = 1.0` reasoning ("Don't go below 1.0 for high-risk visit types; allow slightly lower for routine visits only if you have a compensating review")
-- Temperatures with clinical justification in Steps 3 and 4
-- Language-instruction dict with explicit per-language strings and the honest note that "for less-supported languages, the safer path is to generate in English and post-process through Amazon Translate. The boundary is fuzzy and should be validated per language with native speakers"
-- Reading-level buffer (0.5) rationale ("we don't want to regenerate endlessly over a 0.1 grade difference")
-- Flesch-Kincaid language-specificity caveat in Step 6 ("For Spanish, use INFLESZ or FernĂ¡ndez Huerta. For Mandarin, grade-level formulas don't translate directly")
-- Minimum-necessary PHI call-out in the "Gap to Production" section
-- Audit-retention note (6+ years HIPAA) attached to the S3 write
-
-The `_parse_json_response` helper has an honest comment about Claude occasionally wrapping JSON in code fences "even when instructed not to," which is a real behavior a learner will eventually encounter.
-
----
-
-## Healthcare-Specific Requirements
-
-- **PHI logging:** Logger setup comment explicitly forbids PHI in logs ("Never log PHI: no patient names, no MRNs, no clinical note text, no generated summary bodies"). Pass.
-- **Encryption:** SSE-KMS with customer-managed keys referenced for S3 writes. Explicit `ServerSideEncryption` and `SSEKMSKeyId` fields are shown in a commented-out example. Pass.
-- **BAA / HIPAA context:** Setup section notes Bedrock under BAA for PHI in summary content. Pass.
-- **Synthetic data:** The `__main__` example is explicitly labeled "All data below is SYNTHETIC. Do not use real patient data in development." Pass.
-- **Retention:** Comment on the final-summary S3 write notes "HIPAA retention (typically 6+ years) applies." Pass.
-- **Minimum necessary:** Explicitly discussed in both Step 2 comment (narrow encounter scope) and in the "Gap to Production" section (redact names/MRNs before sending to model). Pass.
-- **Hallucination mitigation:** Three layers in the pipeline: prompt grounding ("Use ONLY information in the structured summary object"), structured provenance tracking (factual_claims with source_field), and post-generation validation that checks each claim against the source object. The validator performs real substring-and-normalization checks rather than being theater. Pass.
-- **Clinician review gating:** Explicit `HIGH_RISK_VISIT_TYPES` set with defensible defaults (hospital discharge, ED discharge, new cancer diagnosis, anticoagulation initiation, pediatric discharge), and the orchestrator routes those to clinician review regardless of validation outcome. Pass.
-- **Multilingual caveats:** Per-language QA framed as an ongoing program, not a one-time launch. Flesch-Kincaid's English-only nature flagged. Pass.
-- **Minor/caregiver routing:** Surfaced in the "Gap to Production" section. Pass.
-
----
-
-## Logical Flow
-
-The code reads cleanly top-to-bottom:
-
-1. Imports and module-level clients with a clear note about the two Bedrock endpoints
-2. Configuration constants with explanatory comments
-3. Step 1: intake and case initialization
-4. Step 2: encounter data retrieval and patient preference resolution (with Decimal handling)
-5. Step 3: structured extraction (structured FHIR pass-through, LLM extraction of note prose, optional Comprehend Medical cross-check)
-6. Step 4: patient-facing generation with provenance tracking
-7. Step 5: claim-to-source validation with severity tiering
-8. Step 6: readability check with a remediation hint for regeneration
-9. Step 7: archive and channel routing (with clinician-review hold path)
-10. Orchestrator that chains the seven steps and runs the regeneration loop
-11. Synthetic `__main__` example that covers the full flow
-
-The regeneration loop's flow (validate, and only if validation passes proceed to readability; if readability fails, loop with a simplification hint) matches the main recipe's prose description. The final routing (require clinician review if any of: high-risk visit type, validation flagged, readability exhausted) is defensible and documented.
-
----
-
-## What Is Clean
-
-- Two-tier model strategy (Haiku for extraction, Sonnet for generation) with explicit per-tier rationale
-- Guardrails integration that's optional (`None` defaults) so the example runs without guardrail configuration but clearly shows where to plug one in
-- Decimal-to-int conversion on the reading_level field before it reaches a prompt string (a real gotcha when using DynamoDB-sourced values in generation)
-- Structured claim provenance (`source_field` JSON path + `asserted_value`) turns validation into a mechanical traversal instead of free-form fact-checking
-- `_resolve_json_path` correctly handles dot notation with bracketed list indexing (`medications[0].dose`)
-- Bidirectional substring check in the validator is forgiving enough to accept paraphrased prose around an exact dose ("5 mg claimed against `apixaban 5 mg twice daily`") but strict enough to reject numeric mismatches
-- `for/else` regeneration loop with `MAX_GENERATION_ATTEMPTS` cap (prevents the runaway-cost failure mode called out in the main recipe's "measure per-summary cost" section)
-- The regeneration hint includes concrete failed-claim detail ("issue: value_mismatch; claimed '10 mg' for field medications[0].dose"), which gives the model something to correct rather than a vague "try again"
-- Per-channel delivery routing shows portal, email, and SMS patterns as stubs so the shape is clear without committing the example to any one integration
-- Synthetic sample data uses realistic clinical values (apixaban 5 mg bid for new-onset atrial fibrillation, day-3 lab draw, 2-week follow-up) that trace through the whole pipeline end to end
-- The "Gap to Production" section is substantial and honest about EHR integration, portal delivery per vendor, language-specific readability validators, multilingual QA programs, clinician review UI, Step Functions orchestration, validation-beyond-substring, readability-beyond-FKGL, minor/caregiver routing, feedback/correction loops, cost monitoring with regeneration caps, PHI minimization in prompts, VPC posture, testing strategy, and model-ID lifecycle via SSM/AppConfig
-
----
-
-## Closing Assessment
-
-This is near-publication-ready teaching code. The code will run given the stated prerequisites (IAM, Bedrock model access, bucket, tables) with one caveat: if Comprehend Medical actually throws an exception, the broken except clause will propagate a chained `AttributeError` instead of the graceful log-and-continue the comment promises (Finding 1). That's a one-line fix with a `from botocore.exceptions import ClientError` import and a matching `except ClientError`.
-
-The other five findings are pedagogical polish items an editor can address in a single pass without changing behavior: remove the unused `math` import, move or document the shared helper, add a one-line note about the pseudocode-vs-Python model ID convention, adjust the commented-out portal stub so it would actually work, and either comment or convert the orchestrator's `print` calls to the logger.
-
-Pseudocode and Python are tightly aligned in structure and intent. Healthcare-specific concerns (PHI handling, synthetic data labeling, minimum necessary, BAA, retention, hallucination mitigation, multilingual gaps, minor/caregiver routing) are handled in code and in narrative. Comment quality is uniformly high, with clinical and operational reasoning surfaced alongside the technical choices.
+1. The Spanish, Chinese, and Vietnamese `language_instruction` values render correctly when read by Python (`python -c "print('español')"` equivalent).
+2. The orchestrator treats an exhausted regeneration loop as a reason to require clinician review, not as a reason to deliver.
+3. The "DynamoDB Decimal gotcha" prose accurately describes what the example code does.
+4. (Optional) Comprehend Medical truncation is byte-safe for UTF-8 inputs.
