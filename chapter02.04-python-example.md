@@ -36,6 +36,7 @@ Everything that's configuration rather than logic lives here. The two knowledge 
 ```python
 import json
 import logging
+import time
 import uuid
 import datetime
 from datetime import timezone
@@ -65,6 +66,7 @@ bedrock_runtime = boto3.client("bedrock-runtime", config=BOTO3_RETRY_CONFIG)
 bedrock_agent_runtime = boto3.client("bedrock-agent-runtime", config=BOTO3_RETRY_CONFIG)
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
+# Reserved for the Step Functions orchestration shown commented-out in Step 1.
 stepfunctions_client = boto3.client("stepfunctions", config=BOTO3_RETRY_CONFIG)
 
 # --- Model Configuration ---
@@ -445,6 +447,7 @@ Extract all facts relevant to this criterion."""
 
         response_body = json.loads(response["body"].read())
         raw_text = response_body["content"][0]["text"]
+        # _parse_json_response is the shared helper defined at the end of Step 2.
         criterion_result = _parse_json_response(raw_text)
 
         # Assign a stable fact_id to each fact for later provenance tracking.
@@ -1031,7 +1034,6 @@ def process_pa_request(
     Returns:
         Dict with case_id, status, and the letter draft if generation succeeded.
     """
-    import time
     start = time.time()
 
     # Step 1
