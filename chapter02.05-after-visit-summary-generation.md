@@ -1,21 +1,55 @@
 <!--
-TechEditor pass (v1) - 2026-05-07
+TechEditor pass (v2) - 2026-05-10
 
-Editorial changes applied:
+v2 copy-editing changes applied (this pass):
+- Fixed UTF-8 mojibake "FernĂ¡ndez" -> "Fernández" in the Why-Not-Production-Ready
+  non-English readability paragraph.
+- Removed a stray double space between the Finding V3 TODO closer and the following
+  sentence ("... -->  The average after-visit summary..." -> single space).
+- No structural changes, no new claims, no technical content changes.
+
+v1 changes (2026-05-07, preserved):
 - Added inline TODO markers pointing to expert-review findings that need TechWriter attention.
 - Minor polish on a couple of sentences for active voice and parallelism.
 - No substantive rewrites (per editor scope). Original TODOs from TechWriter preserved.
 
-Open items flagged for TechWriter (see reviews/chapter02.05-expert-review.md and
+Open items still flagged for TechWriter (see reviews/chapter02.05-expert-review.md and
 reviews/chapter02.05-code-review.md for full context):
 - CRITICAL S2: Clinical inconsistency between Problem narrative (warfarin) and Sample Output (apixaban).
 - CRITICAL S1: SMS delivery of clinical PHI lacks consent / content-minimization framework.
 - HIGH S3: IAM permissions not scoped to resource ARNs.
 - HIGH S4: Bedrock model-invocation-logging creates unaddressed PHI store.
 - HIGH N1: VPC endpoint list incomplete (kms, logs, states, events, sms-voice, email-smtp, translate, monitoring).
-- MEDIUM items on regeneration caps, Step Functions HITL, idempotency, Guardrails capability, provenance completeness, prompt PHI minimization, EHR connectivity, SES deliverability.
+- MEDIUM items on regeneration caps, Step Functions HITL, idempotency, Guardrails capability,
+  provenance completeness, prompt PHI minimization, EHR connectivity, SES deliverability.
 - Python companion also has ERROR-level UTF-8 mojibake in non-English instruction strings and an
   orchestrator fall-through that auto-delivers exhausted-retry summaries (see code review).
+
+Editorial checklist this pass:
+- Grammar/mechanics:      clean (one double-space fixed).
+- Code formatting:        fenced blocks consistent with Chapter 1 convention (pseudocode
+                          uses unlabeled fences; json, mermaid labeled appropriately).
+- Link verification:      all Additional Resources URLs are plausible AWS, AHRQ, HHS,
+                          CDC, Joint Commission, HL7, and SMART on FHIR domains.
+                          No GitHub URLs except three verified aws-samples repos.
+- Header hierarchy:       H1 title only; H2 for the major sections; H3 for subsections;
+                          single H4 under Code for Walkthrough. No skipped levels.
+- Readability:            paragraphs are short; active voice is dominant; no run-on
+                          sentences flagged on re-read.
+- Voice drift:            no documentation-voice ("This recipe demonstrates...") detected;
+                          no feature-list-without-context passages; no announcement
+                          phrasing; no em dashes (U+2014 count = 0); no LinkedIn-influencer
+                          openers. "highest-leverage" appears once in prose (line 836)
+                          and is being used as a technical qualifier, not marketing.
+- RECIPE-GUIDE compliance: all required sections present and in the expected order
+                          (Problem, Technology, General Architecture Pattern, AWS
+                          Implementation with Why These Services/Diagram/Prerequisites/
+                          Ingredients/Code/Expected Results, Why This Isn't Production-
+                          Ready, Honest Take, Variations, Related Recipes, Additional
+                          Resources, Estimated Implementation Time, Tags, Navigation).
+- Vendor balance:         Part 1 (Problem, Technology, General Architecture) is
+                          vendor-neutral; AWS names enter cleanly at "Why These
+                          Services." Split holds at roughly 70/30.
 -->
 
 # Recipe 2.5: After-Visit Summary Generation
@@ -38,7 +72,7 @@ A 68-year-old patient with new-onset atrial fibrillation walks out of the cardio
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
-Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly. <!-- TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated) --> The average American adult reads at roughly an 8th-grade level. <!-- TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing. -->  The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
+Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly. <!-- TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated) --> The average American adult reads at roughly an 8th-grade level. <!-- TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing. --> The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
 
 For the patient with atrial fibrillation, the consequences of that gap are concrete. They don't go for the INR draw because the paper didn't mention it. They continue their usual salad-heavy diet because nobody wrote down the dietary interaction. They show up to the follow-up appointment confused about why they're on a new medication, or they no-show because "follow up as needed" felt optional. Six weeks later they're in the ER with a bleed that could have been caught earlier, or a clot that could have been prevented. Their chart documents everything the physician did correctly. The communication layer is where it fell apart.
 
@@ -804,7 +838,7 @@ The architecture above gives you a working pipeline. Deploying it at a health sy
 
 **The "what's new today" question is harder than it sounds.** Identifying which medications are new versus continued requires comparing today's medication list against yesterday's medication list. That comparison logic is brittle across EHRs because each EHR represents medication lists differently. Some show only "active medications." Some show medication changes as deltas. Some show both. Your extraction code has to handle the EHR you're integrated with, which means it's not fully portable to the next EHR.
 
-**Reading level for non-English languages is poorly defined.** Flesch-Kincaid is an English-language formula. Spanish has its own formulas (INFLESZ, FernĂ¡ndez Huerta). Mandarin doesn't use grade levels the same way. If you're generating in multiple languages, you need multiple readability validators, each calibrated to that language. Many teams skip this and just trust the model, which mostly works but can hide occasional failures.
+**Reading level for non-English languages is poorly defined.** Flesch-Kincaid is an English-language formula. Spanish has its own formulas (INFLESZ, Fernández Huerta). Mandarin doesn't use grade levels the same way. If you're generating in multiple languages, you need multiple readability validators, each calibrated to that language. Many teams skip this and just trust the model, which mostly works but can hide occasional failures.
 
 **Clinician review workflows need thought.** For routine visits, direct-to-patient delivery is the goal because clinician review adds friction that eats the time savings. For high-risk visits (new cancer diagnosis, hospital discharges, complex med regimens), review is essential. Defining the risk tier at trigger time (based on visit type, specific medication changes, or diagnosis codes) is a policy decision that takes coordinating across clinical, legal, and operational stakeholders. It's not a code problem; it's a governance problem.
 
