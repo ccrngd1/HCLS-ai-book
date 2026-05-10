@@ -8,7 +8,7 @@
 
 ## Setup
 
-You'll need the AWS SDK for Python and a JSON parsing library:
+You'll need the AWS SDK for Python. JSON handling is in the standard library, so `boto3` is the only install:
 
 ```bash
 pip install boto3
