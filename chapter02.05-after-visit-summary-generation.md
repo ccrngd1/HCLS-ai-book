@@ -1,7 +1,43 @@
 <!--
-TechEditor pass (v4) - 2026-05-10
+TechEditor pass (v5) - 2026-05-10
 
-v4 copy-editing pass (this pass):
+v5 copy-editing pass (this pass):
+- Re-ran the full editorial checklist against the v4 state. All editor-scope
+  checks still pass cleanly:
+    * em dashes (U+2014): 0 (confirmed via byte-level scan)
+    * en dashes (U+2013): 0
+    * UTF-8 mojibake in body: 0
+    * Doubled spaces in prose paragraphs: 0
+    * Repeated words ("the the", "and and", etc.): 0
+    * Header hierarchy: H1 title only, 12 H2 sections in RECIPE-GUIDE order,
+      H3 subsections under Technology/AWS Implementation, single H4 under
+      Code for Walkthrough. No skipped levels.
+    * Code fences: 10 fenced blocks; json and mermaid correctly labeled;
+      pseudocode fences intentionally unlabeled per Chapter 1 convention.
+    * Voice drift scan: "demonstrates/leverage/seamless/excited to" matches
+      are all legitimate (editor-log meta-references, one RECIPE-GUIDE-mandated
+      Python callout, and "highest-leverage" as a technical qualifier).
+    * Link verification: all Additional Resources URLs are plausible AWS,
+      AHRQ, HHS, CDC, Joint Commission, HL7, SMART on FHIR domains; only
+      three GitHub URLs, all verified aws-samples repos.
+    * Vendor balance: ~70/30, Part 1 vendor-neutral, AWS names enter cleanly
+      at "Why These Services."
+- No structural changes, no new claims, no technical content changes this pass.
+- No TODO markers from other personas moved, altered, or removed.
+
+STATE FOR LOOP DRIVER: This recipe has converged from an editorial perspective.
+Every remaining open item (S1 SMS PHI consent, S2 warfarin/apixaban clinical
+inconsistency, S3 IAM ARN scoping, S4 Bedrock model-invocation-logging PHI,
+N1 VPC endpoint expansion, A1-A4 architectural corrections, S5/N2 network and
+PHI minimization notes, V1-V4 low-severity polish items) requires substantive
+content changes that the TechEditor persona is explicitly NOT permitted to make
+("Do not introduce new claims or technical content. If a section needs
+substantial rewriting, flag it rather than rewriting."). These findings are
+flagged in place as TODO markers for TechWriter. Next useful loop step is
+TechWriter resolution of the flagged TODOs, then a short TechEditor re-pass
+to catch any grammar/mechanics/voice-drift introduced by those edits.
+
+v4 copy-editing pass:
 - No substantive copy changes needed. Re-ran the full editorial checklist against
   the v3 state of the file and confirmed:
     * No em dashes anywhere in the body (U+2014 count = 0).
