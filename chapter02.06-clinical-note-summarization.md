@@ -176,6 +176,13 @@ Let's walk through the conceptual stages.
 
 **Amazon OpenSearch (optional) for searchable note indexing.** For very large charts or when summaries are requested across multi-year histories, indexing all notes into OpenSearch lets you retrieve relevant notes by semantic or keyword search rather than pulling everything and chunking. This is a RAG flavor of summarization: retrieve the most relevant chunks first, then summarize the retrieved set. It trades completeness for scalability and can be appropriate for outpatient longitudinal summaries where "relevant to the current question" is a meaningful filter.
 
+<!-- TODO (TechWriter, Expert Review N2, LOW): If OpenSearch is used, deploy the
+     domain inside the same VPC with VPC-only access (no public endpoint),
+     fine-grained access control enabled, and encryption at rest with a CMK.
+     Reads from Lambda require security-group rules that permit the domain's VPC
+     endpoint. Call this out here so a reader wiring in OpenSearch doesn't land
+     the domain in a public configuration. -->
+
 **AWS Lambda for pipeline steps.** Each stage (retrieve, chunk, extract, aggregate, generate, validate, render) is a Lambda function. Parallelism at the extract stage is often useful: with many chunks, fan out extractions in parallel to keep total latency low.
 
 **AWS Step Functions for orchestration.** The pipeline has branching logic (specialty-specific paths, must-include failure loops, review routing). Step Functions makes the state machine visible and debuggable. For long summaries with many chunks, the parallel Map state is particularly useful for the per-chunk extraction step.
@@ -185,6 +192,14 @@ Let's walk through the conceptual stages.
 **Amazon DynamoDB for summary metadata and provenance mapping.** One item per generated summary, tracking request parameters, status, and provenance map (which source note contributed which fact). The provenance map is what powers the "where did this come from?" UI feature.
 
 **Amazon EventBridge for trigger patterns.** Summaries may be generated on demand (clinician clicks "summarize") or proactively (every admission gets an on-admission summary; every shift change triggers handoff summaries). EventBridge routes both patterns to the same pipeline.
+
+<!-- TODO (TechWriter, Expert Review A3, HIGH): EventBridge delivery is at-least-once.
+     Duplicate ADT replays and shift-change-rule DST overlaps will produce duplicate
+     summaries and duplicate LLM spend. Add an idempotency pattern here and in Step 1:
+     fingerprint = (encounter_id, admission_event_timestamp) for on-admission;
+     (service_id, shift_change_timestamp) for shift-change; conditional DynamoDB
+     PutItem with TTL before starting the Step Functions execution. Note on-demand
+     requests use a different fingerprint key to allow re-requests after edits. -->
 
 **Amazon API Gateway + Cognito for clinician-facing APIs.** The EHR-side integration calls into API Gateway to request summaries. Cognito (or SAML federation with the EHR's identity provider) handles clinician authentication so that access can be audited at the user level.
 
@@ -239,9 +254,9 @@ flowchart TB
 | **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferICD10CM`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `states:SendTaskSuccess`, `states:SendTaskFailure`, `events:PutEvents`, `kms:Decrypt`, `kms:GenerateDataKey`. Every action should be scoped to specific resource ARNs (bucket ARNs, table ARNs, HealthLake datastore ARN, foundation-model ARNs, Guardrail ARN, CMK ARNs). |
 | **BAA** | AWS BAA signed. Notes contain PHI. Every service in the pipeline must be HIPAA-eligible and covered. |
 | **Bedrock Model Access** | Request access to a capable generation model (Claude Sonnet or equivalent) and a smaller extraction model (Claude Haiku or Nova Lite). Verify model behavior on clinical text with negation and uncertainty language before shipping. |
-| **EHR Integration** | Authenticated API from the EHR (context-aware launch, SMART on FHIR is typical). Patient and encounter context passed from the EHR. For handoff or shift-change use cases, event triggers on admission and on shift-change times. |
+| **EHR Integration** | Authenticated API from the EHR (context-aware launch, SMART on FHIR is typical). Patient and encounter context passed from the EHR. For handoff or shift-change use cases, event triggers on admission and on shift-change times. <!-- TODO (TechWriter, Expert Review N3, LOW): add a sentence that inbound access from the EHR terminates at API Gateway with connectivity pattern per "Why This Isn't Production-Ready" (Direct Connect or site-to-site VPN for on-prem EHRs; PrivateLink or IP-allowlisted public API Gateway for cloud EHRs). --> |
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Bedrock and Comprehend Medical: TLS in transit, encryption at rest. CloudWatch Logs: KMS encryption. If Bedrock model-invocation-logging is enabled for quality monitoring, the logged prompts and responses contain PHI; the log destination must be KMS-encrypted and access-controlled to the same standard as the summary archive. Consider sampling rather than logging every invocation. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock, Comprehend Medical, HealthLake, KMS, CloudWatch Logs, Step Functions, and EventBridge. Gateway endpoints for S3 and DynamoDB. Interface endpoints are roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock, Comprehend Medical, HealthLake, KMS, CloudWatch Logs, Step Functions, and EventBridge. Gateway endpoints for S3 and DynamoDB. Interface endpoints are roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. <!-- TODO (TechWriter, Expert Review N1, LOW): add `com.amazonaws.{region}.monitoring` (CloudWatch metrics plane, distinct from `logs`) because Step 9 emits custom metrics. Clarify that `com.amazonaws.{region}.execute-api` is required only if the clinician-facing API is a private API (EHR callers inside the same VPC). Add `secretsmanager` if credentials are managed through Secrets Manager. --> |
 | **CloudTrail** | Enabled with data events for Bedrock invocations, S3 object access, DynamoDB access, and HealthLake reads. Correlate summary requests to the requesting clinician identity. |
 | **Sample Data** | Synthea synthetic FHIR data is fine for shape testing. For realistic long-chart testing, MIMIC-IV (through PhysioNet credentialed access) provides de-identified ICU notes in substantial volumes. <!-- TODO: verify current MIMIC-IV access process and note that it is not PHI but is credentialed data --> Never use real PHI in development or testing. |
 | **Cost Estimate** | Per-chunk extraction (Haiku/Nova Lite): roughly $0.002-$0.01 per chunk. A typical inpatient stay has 30-80 chunks. Generation (Sonnet): roughly $0.02-$0.08 per summary. Comprehend Medical: roughly $0.001-$0.01 per chunk. End-to-end: $0.05-$0.25 per patient summary for a typical inpatient chart; longitudinal summaries over multi-year histories can run higher ($0.30-$1.00). At 500 summaries per day, roughly $1,500-$7,500 per month. <!-- TODO: verify Bedrock per-1K-token pricing for current Claude models; pricing changes periodically --> |
@@ -311,6 +326,17 @@ FUNCTION receive_summary_request(request):
 
 **Step 2: Retrieve source documents.** Pull the notes and structured data that fall inside the request's scope. Scope matters: a handoff summary should look at the current encounter; a pre-visit summary for a new specialty consult may want to look at the entire relevant history. Structured data (allergies, active problems, current medications) is pulled even when scope is narrow, because those categories belong in every summary regardless of the time window.
 
+<!-- TODO (TechWriter, Expert Review S1, HIGH): this step pulls every note in scope
+     without filtering for restricted categories. 42 CFR Part 2 substance-use-treatment
+     notes, HIV-related content, adolescent confidential notes, and genetic test
+     results all have specific disclosure rules. The prose in "Why This Isn't
+     Production-Ready" correctly says "Access control has to be enforced at the
+     retrieval layer, not bolted on downstream." Add a consent-filter step in the
+     pseudocode before returning: use FHIR DocumentReference.securityLabel when
+     available, or a local policy engine keyed on note.type + practitioner specialty.
+     Without this, the default teaches "pull everything and let downstream sort
+     it out," which is a federal-law compliance gap. -->
+
 ```
 FUNCTION retrieve_source_documents(patient_id, scope, encounter_id):
     // Pull notes based on scope
@@ -362,6 +388,18 @@ FUNCTION retrieve_source_documents(patient_id, scope, encounter_id):
 ```
 
 **Step 3: Chunk and preprocess notes.** Turn the flat list of notes into processable chunks. A single note is often a reasonable chunk; very long notes (an H&P or a multi-page consult) may need sub-chunking. Preprocessing removes boilerplate (EHR-generated headers and footers, standard signatures, macro text) and normalizes dates. This step also tags notes with their service and author so the extraction can attribute content correctly.
+
+<!-- TODO (TechWriter, Expert Review A5, MEDIUM): encounter-boundary enforcement is
+     named as the mitigation for the "fact blending across patients or visits"
+     failure mode (see "The Failure Modes You Have to Design Around") but the
+     pseudocode does not carry encounter_id through chunk metadata or enforce it
+     during sub-chunking. A long H&P that references prior admissions, or a
+     consult note citing historical context, can feed the extraction with
+     mixed-encounter content. Add encounter_id to chunk_metadata, keep sub-chunks
+     from crossing encounter boundaries, and (in Step 4) add a hard rule to the
+     extraction prompt that facts not tied to this chunk's encounter go into a
+     separate `historical_context` field. Aggregation in Step 5 then indexes by
+     encounter_id so historical context is preserved but separated. -->
 
 ```
 FUNCTION chunk_and_preprocess(notes):
@@ -580,6 +618,16 @@ FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
 
     // Conflict detection: e.g., Cardiology recommends X on day 3, Hospitalist still has Y on day 5
     aggregated.conflicts = detect_conflicts(aggregated)
+    // TODO (TechWriter, Expert Review A1, HIGH): aggregated.conflicts is built here
+    // but never referenced by Step 7's generation prompt. The generator will
+    // default to smoothing disagreements into single recommendations, which is
+    // the specific clinical-safety failure mode this section of the recipe
+    // identifies ("Contradictions across services"). Thread conflicts into
+    // Step 7: (a) add "Active Disagreements Between Services" to the use-case
+    // section list, (b) add an explicit CONFLICT HANDLING block to the
+    // generation prompt that renders each conflict attributed by service
+    // without reconciling to a single recommendation.
+
 
     write to S3: "aggregations/{summary_id}/aggregated.json" = aggregated
 
@@ -688,6 +736,27 @@ FUNCTION generate_summary_prose(aggregated, request_params):
         //   threshold tuned for clinical fidelity (typically 0.85+)
         // - PII detection disabled or configured to permit PHI (this is clinician-facing)
         // - Content filters on harmful content
+        //
+        // TODO (TechWriter, Expert Review A4, MEDIUM): two corrections required.
+        // (1) The contextual grounding check does not compare against the whole
+        //     prompt; it compares against text explicitly tagged as grounding
+        //     source. Using the Converse API, wrap the aggregated JSON in a
+        //     `guardContent` block; using InvokeModel, supply the grounding
+        //     source via the Guardrails policy configuration. Without the
+        //     tagging, the check returns SAFE regardless of fidelity.
+        // (2) Guardrail intervention is signaled on the response body via
+        //     `amazon-bedrock-guardrailAction == "INTERVENED"`, not via
+        //     `stop_reason`. Branch on that field, not on stop_reason.
+        // The Python companion has the matching bug (Code Review Findings 2 and 4);
+        // fix them together.
+        //
+        // TODO (TechWriter, Expert Review S2, MEDIUM): minimum-necessary applies
+        // to prompts. The generation step does not need MRN, DOB, phone, address,
+        // or insurance identifiers. Redact non-clinical PHI from the aggregated
+        // object before the generation call. The preferred name is an exception
+        // if the summary references the patient by name; strip everything else.
+        // Call this out here and echo it in the Bedrock-logging note in the
+        // Encryption row of Prerequisites.
 
     summary_text = parse summary content from response
     provenance   = parse provenance JSON from response
@@ -699,6 +768,21 @@ FUNCTION generate_summary_prose(aggregated, request_params):
 
     RETURN { status: "GENERATED", summary_text: summary_text, provenance: provenance }
 ```
+
+<!-- TODO (TechWriter, Expert Review A2, HIGH): define the fallback for retry
+     exhaustion. The prose says "capped at 2-3 attempts" and Step 8 mentions
+     "held for regeneration or explicit clinician review," but neither the
+     pseudocode nor the architecture diagram defines what happens after the
+     cap. Specify a three-attempt ladder (original prompt at T=0.2; stronger
+     grounding prompt that names the unverified claims; deterministic T=0.0)
+     and a terminal state that routes to a clinician_review_queue or a
+     hold-with-alert. Track the terminal state in DynamoDB as
+     status = "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW" and emit a CloudWatch
+     metric "ValidationExhausted" with specialty and use_case dimensions.
+     Mirror the exhausted-retry exit edge in the architecture diagram so it
+     terminates at a review node rather than looping back to the generator.
+     The Python companion has the matching auto-deliver bug (Code Review
+     Finding 3); fix together. -->
 
 **Step 8: Validate claims and attach provenance.** Belt-and-suspenders alongside the Guardrails grounding check. Parse the generated prose, identify specific claims (dates, doses, named findings, named recommendations), and verify each one against the structured object. Attach source-note links so the clinician can click into any claim to see the note it came from. This is the feature that turns "a summary I have to trust" into "a summary I can verify."
 
@@ -782,6 +866,24 @@ FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_pa
 <!-- Note: all identifiers, dates, and clinician names below are synthetic. Never use
      real patient data in development or test fixtures. -->
 
+<!-- TODO (TechWriter, Expert Review A6, MEDIUM): the generated_summary above
+     contains 25+ specific claims (EF, troponin trend, cath date, LAD stenosis,
+     BNP values, furosemide doses, HD timing, UF volumes, hematocrit trend,
+     atorvastatin dose change, metoprolol home med, etc.) but `factual_claims`
+     lists only 7. For a recipe whose teaching pivot is "every specific claim
+     must trace to source," the showcase output models a sparse trace. Either
+     expand `factual_claims` to 20-40 entries matching the density of the
+     summary, or add a one-line note beneath the JSON that the array is
+     abbreviated here for readability and a production validator enumerates
+     every specific claim. -->
+<!-- TODO (TechWriter, Expert Review V4, LOW): the sample uses clinician
+     shorthand without expansion (DAPT, PCI, DES to LAD, IJ tunneled, UF, BNP,
+     s/p, NSTEMI, "per cards"). Appropriate for a clinician-facing summary,
+     but this cookbook has a mixed audience. Either add a brief
+     "Reading the Sample: Abbreviations" footnote right before the JSON, or
+     preface the JSON with a note that clinician-facing summaries use clinical
+     shorthand by design. -->
+
 ```json
 {
   "summary_id": "CNS-2026-05-10-04129",
@@ -791,7 +893,7 @@ FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_pa
   "format": "problem_oriented",
   "scope": "current_encounter",
   "source_note_count": 47,
-  "generated_summary": "# Handoff Summary\n\n## One-Liner\n72M with CHF (EF 30%) and ESRD on HD, admitted 5/4 with volume overload and NSTEMI, now HD day 6, post-cath with DES to LAD on 5/7, currently on heparin drip, cards following.\n\n## Active Issues\n\n**1. NSTEMI, post-PCI (active).** Troponin peaked 4.2 on 5/5, trended down to 0.18 on 5/9. Cardiac cath 5/7: 90% LAD stenosis, DES placed. No complications. On DAPT (aspirin 81 mg, clopidogrel 75 mg) and heparin drip per cards.\n\n**2. Acute on chronic CHF exacerbation (improving).** Admission BNP 3200 (baseline ~800). IV furosemide 80 mg BID x 3 days, transitioned to oral 40 mg daily 5/8. Net -6L since admission. Weights stable x 48 hours. EF 30% (unchanged from prior TTE).\n\n**3. ESRD on hemodialysis (stable).** Dialyzes MWF at outpatient center. Continued in-hospital schedule. Last HD 5/9 with UF 2.5L. Line is right IJ tunneled catheter (dialysis access).\n\n**4. Anemia of CKD (stable).** Hgb 9.4 on admission, nadir 8.6 post-cath (no bleeding identified), currently 9.1. Continuing home darbepoetin.\n\n## Medications\n\n- Aspirin 81 mg daily (started this admission)\n- Clopidogrel 75 mg daily (started this admission)\n- Heparin drip (cards managing, anticipate transition to fondaparinux or discontinuation per cards 5/10 or 5/11)\n- Metoprolol succinate 50 mg daily (home med, continued)\n- Atorvastatin 80 mg nightly (home 40 mg, increased this admission per cards)\n- Furosemide 40 mg PO daily (transitioned from IV 5/8)\n- Darbepoetin per HD protocol\n- Lisinopril HELD (renal)\n\n## Allergies\n- Sulfa (rash, documented)\n\n## Code Status\nFull code, confirmed with patient and daughter on 5/5.\n\n## Recent Significant Events\n- 5/5 07:12 Troponin peak 4.2, cards consulted\n- 5/7 Cardiac cath with DES to LAD\n- 5/7 Post-cath small groin hematoma, stable, resolved\n- 5/8 Transitioned IV to PO diuretic, weights holding\n\n## Pending\n- Cards to decide on heparin-to-fondaparinux transition vs. discontinuation (expected 5/10-5/11)\n- Nephrology weighing in on contrast exposure impact, no worsening of baseline renal function noted\n- Outpatient cards follow-up to be scheduled for 1 week post-discharge\n\n## Consults and Recommendations\n- **Cardiology (Dr. Patel):** Managing post-PCI anticoagulation. DAPT for 12 months minimum.\n- **Nephrology (Dr. Martinez):** No dose adjustments needed for current regimen; continue HD schedule.\n\n## Lines, Tubes, Drains\n- Right IJ tunneled HD catheter (dialysis access, established prior to admission)\n- Peripheral IV x 1\n\n## Disposition Plan\nAnticipate discharge 5/11 or 5/12 pending cards clearance. Home with outpatient HD continuation. Cards follow-up within 7 days, PCP follow-up within 14 days.",
+  "generated_summary": "# Handoff Summary\n\n## One-Liner\n72M with CHF (EF 30%) and ESRD on HD, admitted 5/4 with volume overload and NSTEMI, now hospital day 6, post-cath with DES to LAD on 5/7, currently on heparin drip, cards following.\n\n## Active Issues\n\n**1. NSTEMI, post-PCI (active).** Troponin peaked 4.2 on 5/5, trended down to 0.18 on 5/9. Cardiac cath 5/7: 90% LAD stenosis, DES placed. No complications. On DAPT (aspirin 81 mg, clopidogrel 75 mg) and heparin drip per cards.\n\n**2. Acute on chronic CHF exacerbation (improving).** Admission BNP 3200 (baseline ~800). IV furosemide 80 mg BID x 3 days, transitioned to oral 40 mg daily 5/8. Net -6L since admission. Weights stable x 48 hours. EF 30% (unchanged from prior TTE).\n\n**3. ESRD on hemodialysis (stable).** Dialyzes MWF at outpatient center. Continued in-hospital schedule. Last HD 5/9 with UF 2.5L. Line is right IJ tunneled catheter (dialysis access).\n\n**4. Anemia of CKD (stable).** Hgb 9.4 on admission, nadir 8.6 post-cath (no bleeding identified), currently 9.1. Continuing home darbepoetin.\n\n## Medications\n\n- Aspirin 81 mg daily (started this admission)\n- Clopidogrel 75 mg daily (started this admission)\n- Heparin drip (cards managing, anticipate transition to fondaparinux or discontinuation per cards 5/10 or 5/11)\n- Metoprolol succinate 50 mg daily (home med, continued)\n- Atorvastatin 80 mg nightly (home 40 mg, increased this admission per cards)\n- Furosemide 40 mg PO daily (transitioned from IV 5/8)\n- Darbepoetin per HD protocol\n- Lisinopril HELD (hyperkalemia risk)\n\n## Allergies\n- Sulfa (rash, documented)\n\n## Code Status\nFull code, confirmed with patient and daughter on 5/5.\n\n## Recent Significant Events\n- 5/5 07:12 Troponin peak 4.2, cards consulted\n- 5/7 Cardiac cath with DES to LAD\n- 5/7 Post-cath small groin hematoma, stable, resolved\n- 5/8 Transitioned IV to PO diuretic, weights holding\n\n## Pending\n- Cards to decide on heparin-to-fondaparinux transition vs. discontinuation (expected 5/10-5/11)\n- Nephrology weighing in on contrast exposure impact, no worsening of baseline renal function noted\n- Outpatient cards follow-up to be scheduled for 1 week post-discharge\n\n## Consults and Recommendations\n- **Cardiology (Dr. Patel):** Managing post-PCI anticoagulation. DAPT for 12 months minimum.\n- **Nephrology (Dr. Martinez):** No dose adjustments needed for current regimen; continue HD schedule.\n\n## Lines, Tubes, Drains\n- Right IJ tunneled HD catheter (dialysis access, established prior to admission)\n- Peripheral IV x 1\n\n## Disposition Plan\nAnticipate discharge 5/11 or 5/12 pending cards clearance. Home with outpatient HD continuation. Cards follow-up within 7 days, PCP follow-up within 14 days.",
   "factual_claims": [
     {"claim": "EF 30%", "source_note_id": "note-2026-05-04-echo-impression"},
     {"claim": "Troponin peaked 4.2 on 5/5", "source_note_id": "note-2026-05-05-hospitalist-progress"},
