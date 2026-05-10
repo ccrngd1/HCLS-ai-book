@@ -35,7 +35,7 @@ import logging
 import uuid
 import datetime
 from datetime import timezone
-from decimal import Decimal
+from decimal import Decimal  # Imported for when you add numeric confidence/impact scores to DynamoDB items. DynamoDB requires Decimal for numbers, not Python float.
 
 import boto3
 from botocore.config import Config
@@ -75,6 +75,8 @@ KNOWLEDGE_BASE_ID = "YOUR_KNOWLEDGE_BASE_ID"  # Replace with your actual KB ID
 # --- Suggestion Thresholds ---
 # Maximum suggestions per note. More than this causes alert fatigue.
 # Start at 3 during pilot, increase to 5 once physicians trust the system.
+# (The main recipe's pseudocode uses 5 as the eventual target; we deliberately
+# start lower here to model a conservative pilot configuration.)
 MAX_SUGGESTIONS_PER_NOTE = 3
 
 # Minimum confidence level to surface a suggestion.
