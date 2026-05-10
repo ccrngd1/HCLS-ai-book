@@ -96,7 +96,7 @@ Prior auth letter generation is different because it's fundamentally a synthesis
 - The requested service details (from the order or referral)
 - Provider credentials (from practice metadata)
 
-Each of these lives in a different system, has a different update cadence, and requires different extraction approaches. The architecture has to orchestrate retrieval across all of them before generation can begin. That orchestration is where most of the engineering work lives. The LLM call itself is almost an afterthought.
+Each of these lives in a different system, has a different update cadence, and requires different extraction approaches. The architecture has to orchestrate retrieval across all of them before generation can begin. That orchestration is where most of the engineering work lives. The LLM call itself is the smallest engineering problem in the pipeline.
 
 ---
 
