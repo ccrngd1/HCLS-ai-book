@@ -1,7 +1,38 @@
 <!--
-TechEditor pass (v3) - 2026-05-10
+TechEditor pass (v4) - 2026-05-10
 
-v3 copy-editing changes applied (this pass):
+v4 copy-editing pass (this pass):
+- No substantive copy changes needed. Re-ran the full editorial checklist against
+  the v3 state of the file and confirmed:
+    * No em dashes anywhere in the body (U+2014 count = 0).
+    * No UTF-8 mojibake in body content (the lone "FernĂ¡ndez" hit in this header
+      is intentional, describing the v2 fix).
+    * All "demonstrates/leverage/seamless/excited to" patterns are legitimate
+      (three in this header block describing voice-drift checks, one in the
+      Python-companion callout "Python code that demonstrates these patterns"
+      which is the RECIPE-GUIDE-mandated phrasing, and one "highest-leverage" in
+      the Honest Take used as a technical qualifier).
+    * Header hierarchy clean: H1 title only; H2 for major sections; H3 for
+      subsections; single H4 under Code for Walkthrough. No skipped levels.
+    * Fenced code blocks labeled correctly (json, mermaid) or intentionally
+      unlabeled for pseudocode per Chapter 1 convention.
+    * All TODO markers from TechExpertReviewer and TechCodeReviewer preserved
+      with explicit attribution, severity, and finding IDs so TechWriter can
+      resolve them in a subsequent pass.
+    * Vendor balance holds at roughly 70/30: Part 1 (Problem, Technology, General
+      Architecture Pattern) is vendor-neutral; AWS names enter cleanly at "Why
+      These Services."
+    * RECIPE-GUIDE section order intact: Problem, Technology, General Architecture
+      Pattern, AWS Implementation (Why These Services / Diagram / Prerequisites /
+      Ingredients / Code / Expected Results), Why This Isn't Production-Ready,
+      Honest Take, Variations, Related Recipes, Additional Resources, Estimated
+      Implementation Time, Tags, Navigation.
+- Open items still flagged for TechWriter are substantive (clinical, security,
+  architectural) and outside TechEditor scope per persona rules ("do not rewrite
+  sections wholesale; flag rather than rewrite"). Full list preserved below.
+- No structural changes, no new claims, no technical content changes this pass.
+
+v3 copy-editing changes applied (preserved):
 - Reformatted the Step 3 model_id inline comment: one 280+ character single-line
   comment was hurting pseudocode readability. Split into a multi-line "Note on
   model IDs" block comment placed just above the InvokeModel call, with the
