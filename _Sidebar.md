@@ -50,6 +50,7 @@
   * [Python Example](chapter02.05-python-example)
 * [2.6 — Clinical Note Summarization](chapter02.06-clinical-note-summarization)
   * [Python Example](chapter02.06-python-example)
+* [2.7 — Literature Search and Evidence Synthesis](chapter02.07-literature-search-evidence-synthesis)
 
 ---
 
