@@ -48,6 +48,7 @@
   * [Python Example](chapter02.04-python-example)
 * [2.5 — After-Visit Summary Generation](chapter02.05-after-visit-summary-generation)
   * [Python Example](chapter02.05-python-example)
+* [2.6 — Clinical Note Summarization](chapter02.06-clinical-note-summarization)
 
 ---
 
