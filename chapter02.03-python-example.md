@@ -531,8 +531,7 @@ def prioritize_suggestions(suggestions: list) -> dict:
     Returns:
         A dict with:
         - active_suggestions: the suggestions to surface to the CDI specialist/physician
-        - suppressed: suggestions that were filtered out
-        - suppression_reasons: why each was suppressed
+        - suppressed: list of filtered-out suggestions, each with a "reason" explaining why
     """
     threshold_value = CONFIDENCE_LEVELS.get(CONFIDENCE_THRESHOLD, 2)
 
@@ -818,7 +817,7 @@ if __name__ == "__main__":
 
 Run this end to end against a synthetic note and you'll get the full CDI pattern in motion: clinical elements extracted, guidelines retrieved, suggestions generated, results stored. The distance between this and a production CDI deployment is significant. Here's where the gap lives.
 
-**EHR integration is the hardest part of the entire project.** This example accepts a note as a string. In reality, getting clinical notes out of an EHR in real time requires HL7 FHIR subscriptions, ADT event feeds, or vendor-specific APIs (Epic's CDS Hooks, Oracle Health's Smart on FHIR). The integration layer is often more complex than the AI pipeline itself. Budget 40-60% of your implementation timeline for EHR integration alone.
+**EHR integration is the hardest part of the entire project.** This example accepts a note as a string. In reality, getting clinical notes out of an EHR in real time requires HL7 FHIR subscriptions, ADT event feeds, or vendor-specific APIs (Epic's CDS Hooks, Oracle Health's SMART on FHIR). The integration layer is often more complex than the AI pipeline itself. Budget 40-60% of your implementation timeline for EHR integration alone.
 
 **Knowledge base population and maintenance.** The example assumes a populated Bedrock Knowledge Base. Building one requires: downloading the current ICD-10-CM Official Guidelines from CMS (updated every October), chunking them appropriately for vector search, writing organizational CDI query templates (compliance-reviewed), and adding payer-specific documentation requirements. This knowledge base needs annual maintenance at minimum, and more frequent updates when CMS publishes mid-year corrections.
 
@@ -838,7 +837,7 @@ Run this end to end against a synthetic note and you'll get the full CDI pattern
 
 **DynamoDB table design.** The example uses a simple single-table design with suggestion_id as the partition key. In production, you need efficient access patterns: query all suggestions for an encounter, query all open suggestions for a CDI specialist's workqueue, query acceptance rates by diagnosis category. Design your GSIs (Global Secondary Indexes) around these access patterns before you go live.
 
-**VPC and encryption.** This example makes API calls without VPC configuration. A production Lambda handling clinical notes runs inside a VPC with private subnets and VPC endpoints for S3, Bedrock Runtime (for model invocation), Bedrock Agent Runtime (for knowledge base retrieval), DynamoDB, and CloudWatch Logs. The two Bedrock endpoints are easy to miss: Bedrock Runtime and Bedrock Agent Runtime are separate service endpoints, so you need both even though the code uses a single "Bedrock" concept. Clinical notes are PHI. S3 SSE-KMS with a customer-managed key. DynamoDB encryption at rest. All calls over TLS. Bedrock encrypts data in transit and at rest by default, but verify your BAA covers the specific models you're using.
+**VPC and encryption.** This example makes API calls without VPC configuration. A production Lambda handling clinical notes runs inside a VPC with private subnets and VPC endpoints for S3, Bedrock Runtime (for model invocation), Bedrock Agent Runtime (for knowledge base retrieval), DynamoDB, and CloudWatch Logs. The two Bedrock endpoints are easy to miss: Bedrock Runtime and Bedrock Agent Runtime are separate service endpoints, so you need both even though the code uses a single "Bedrock" concept. Clinical notes are PHI. S3 SSE-KMS with a customer-managed key. DynamoDB encryption at rest with a customer-managed KMS key (not the AWS-owned default, which isn't auditable in CloudTrail). All calls over TLS. Bedrock encrypts data in transit and at rest by default, but verify your BAA covers the specific models you're using.
 
 **Testing with synthetic notes.** There are no tests here. A production pipeline has: unit tests for the prioritization and filtering logic, integration tests against Bedrock with synthetic notes covering common diagnosis categories, regression tests ensuring known specificity gaps are consistently detected, and load tests validating throughput at expected note volumes. Generate synthetic notes covering your top 20 DRGs for test fixtures. Never use real patient notes in non-production environments.
 
