@@ -53,6 +53,7 @@
 * [2.7 — Literature Search and Evidence Synthesis](chapter02.07-literature-search-evidence-synthesis)
   * [Python Example](chapter02.07-python-example)
 * [2.8 — Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation)
+  * [Python Example](chapter02.08-python-example)
 
 ---
 
