@@ -6,7 +6,7 @@
 
 ## Setup
 
-You'll need the AWS SDK for Python:
+You'll need the AWS SDK for Python installed:
 
 ```bash
 pip install boto3
@@ -254,10 +254,10 @@ def load_system_prompt(prompt_key: str = "prompts/system-prompt-v2.txt") -> str:
         return response["Body"].read().decode("utf-8")
     except Exception:
         # Fall back to the default prompt. Production code should distinguish
-        # between "bucket doesn't exist" (a configuration bug that should
-        # crash) and "transient network issue" (which should fall back).
-        # Catch botocore.exceptions.ClientError and check the error code
-        # rather than swallowing everything with a bare Exception.
+        # configuration errors (bucket doesn't exist: crash) from transient
+        # errors (network blip: fall back). Catch botocore.exceptions.ClientError
+        # and check the error code rather than swallowing everything with a bare
+        # Exception.
         logger.warning("Failed to load prompt from S3, using default")
         return DEFAULT_SYSTEM_PROMPT
 
