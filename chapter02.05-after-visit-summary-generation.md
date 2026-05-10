@@ -1,7 +1,15 @@
 <!--
-TechEditor pass (v2) - 2026-05-10
+TechEditor pass (v3) - 2026-05-10
 
-v2 copy-editing changes applied (this pass):
+v3 copy-editing changes applied (this pass):
+- Reformatted the Step 3 model_id inline comment: one 280+ character single-line
+  comment was hurting pseudocode readability. Split into a multi-line "Note on
+  model IDs" block comment placed just above the InvokeModel call, with the
+  inline comment shortened back to a single short phrase. Same content, same
+  placement, no new claims.
+- No structural changes, no new claims, no technical content changes.
+
+v2 changes (2026-05-10, preserved):
 - Fixed UTF-8 mojibake "FernĂ¡ndez" -> "Fernández" in the Why-Not-Production-Ready
   non-English readability paragraph.
 - Removed a stray double space between the Finding V3 TODO closer and the following
@@ -26,21 +34,25 @@ reviews/chapter02.05-code-review.md for full context):
   orchestrator fall-through that auto-delivers exhausted-retry summaries (see code review).
 
 Editorial checklist this pass:
-- Grammar/mechanics:      clean (one double-space fixed).
-- Code formatting:        fenced blocks consistent with Chapter 1 convention (pseudocode
-                          uses unlabeled fences; json, mermaid labeled appropriately).
+- Grammar/mechanics:      clean (no new issues found this pass).
+- Code formatting:        Step 3 InvokeModel comment reformatted for readability
+                          (multi-line block comment above the call + short inline
+                          comment). Fenced blocks remain consistent with Chapter 1
+                          convention (pseudocode uses unlabeled fences; json, mermaid
+                          labeled appropriately).
 - Link verification:      all Additional Resources URLs are plausible AWS, AHRQ, HHS,
                           CDC, Joint Commission, HL7, and SMART on FHIR domains.
                           No GitHub URLs except three verified aws-samples repos.
 - Header hierarchy:       H1 title only; H2 for the major sections; H3 for subsections;
                           single H4 under Code for Walkthrough. No skipped levels.
 - Readability:            paragraphs are short; active voice is dominant; no run-on
-                          sentences flagged on re-read.
+                          sentences flagged on re-read. The long Step 3 comment was
+                          the one readability snag in the pseudocode blocks; fixed.
 - Voice drift:            no documentation-voice ("This recipe demonstrates...") detected;
                           no feature-list-without-context passages; no announcement
                           phrasing; no em dashes (U+2014 count = 0); no LinkedIn-influencer
-                          openers. "highest-leverage" appears once in prose (line 836)
-                          and is being used as a technical qualifier, not marketing.
+                          openers. "highest-leverage" appears once in prose and is being
+                          used as a technical qualifier, not marketing.
 - RECIPE-GUIDE compliance: all required sections present and in the expected order
                           (Problem, Technology, General Architecture Pattern, AWS
                           Implementation with Why These Services/Diagram/Prerequisites/
@@ -507,8 +519,13 @@ FUNCTION extract_summary_object(encounter_data):
     {note_text}
     """
     
+    // Note on model IDs: Bedrock model IDs are versioned and, in most regions,
+    // now require a regional inference-profile prefix (for example,
+    // "us.anthropic.claude-3-5-haiku-20241022-v1:0"). The family-style IDs used
+    // in this pseudocode are illustrative; the Python companion shows a current
+    // working example.
     response = call Bedrock.InvokeModel with:
-        model_id    = "anthropic.claude-haiku-4"    // smaller model suffices for extraction. In production, use the fully-versioned model ID with the regional inference-profile prefix (e.g., "us.anthropic.claude-3-5-haiku-20241022-v1:0"). The Python companion shows a current working example.
+        model_id    = "anthropic.claude-haiku-4"    // smaller model suffices for extraction
         prompt      = extraction_prompt
         max_tokens  = 2048
         temperature = 0.0
