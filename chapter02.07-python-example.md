@@ -1,6 +1,6 @@
 # Recipe 2.7: Python Implementation Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.7. It demonstrates one way you could translate those literature-search-and-evidence-synthesis concepts into working Python using Amazon Bedrock, Amazon OpenSearch Service, Amazon Comprehend Medical, S3, and DynamoDB. It is not production-ready. There is no corpus ingestion pipeline (that's a significant project on its own), no SMART-on-FHIR or EHR integration, no Step Functions orchestration, no clinician-facing UI, no cross-encoder re-ranker (we use a small-LLM re-ranker stand-in, which is cheaper but less accurate), and no fine-grained evidence-grading beyond publication-type tiers. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire up to a health system on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.7. It shows one way you could translate those literature-search-and-evidence-synthesis concepts into working Python using Amazon Bedrock, Amazon OpenSearch Service, Amazon Comprehend Medical, S3, and DynamoDB. It is not production-ready. There is no corpus ingestion pipeline (that's a significant project on its own), no SMART-on-FHIR or EHR integration, no Step Functions orchestration, no clinician-facing UI, no cross-encoder re-ranker (we use a small-LLM re-ranker stand-in, which is cheaper but less accurate), and no fine-grained evidence-grading beyond publication-type tiers. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd wire up to a health system on Monday morning. Consider it a starting point, not a destination.
 >
 > The pipeline maps to the ten pseudocode steps from the main recipe: receive and classify the question, expand the query and extract entities, multi-source retrieval with hybrid search, re-rank candidates, tag evidence tiers, fetch full-text context, grounded generation with citation discipline, validate citations and claims, render with bibliography, archive for audit. Unverifiable claims trigger regeneration up to a cap, then escalate for clinician review.
 
@@ -1054,7 +1054,7 @@ def fetch_full_context(top_chunks: list) -> list:
 
 *The pseudocode calls this `generate_synthesis(question, patient_context, top_chunks, question_category)`. Build a prompt that includes the question, the retrieved chunks with stable identifiers, their evidence tiers, and full context. Tell the model to cite every claim by chunk identifier, describe evidence rather than recommend, surface uncertainty honestly, and quote numerical findings verbatim. Apply a Bedrock Guardrail with contextual grounding as the outer guardrail; the validator in Step 8 is the inner check.*
 
-```python
+````python
 def generate_synthesis(
     question: str,
     patient_context: dict | None,
@@ -1290,7 +1290,7 @@ def _strip_trailing_json_block(text: str) -> str:
         r"```json\s*.*?\s*```\s*$", "", text.strip(), flags=re.DOTALL,
     )
     return cleaned.strip()
-```
+````
 
 ---
 
