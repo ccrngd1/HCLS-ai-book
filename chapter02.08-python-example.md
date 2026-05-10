@@ -1,3 +1,17 @@
+<!--
+TechEditor pass (2026-05-10): minor edits for clarity and consistency.
+  - Clarified the HealthScribe vs Transcribe Medical sentence in Setup.
+  - Added a TODO flag for TechCodeReviewer on the HealthLake FHIR resource
+    creation pattern in Step 8. The boto3 `healthlake` client does not
+    expose a `create_resource` method (the datastore FHIR endpoint is an
+    HTTPS API that requires SigV4-signed requests, typically via the
+    `requests` library or an FHIR client), so the current snippet always
+    raises AttributeError. The `except (ClientError, AttributeError)`
+    block hides this but the code is misleading as written.
+  - No structural or content rewrites. Voice, order, and technical claims
+    preserved as drafted.
+-->
+
 # Recipe 2.8: Python Implementation Example
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.8. It shows one way you could translate the ambient-clinical-documentation concepts into working Python using AWS HealthScribe, Amazon Bedrock, Amazon Comprehend Medical, AWS HealthLake, S3, DynamoDB, and Step Functions. It is not production-ready. There is no exam-room audio device integration, no real-time streaming via Kinesis Video Streams, no EHR-embedded clinician UI, no Step Functions orchestration wired up end-to-end (we call the steps sequentially for clarity), no real two-party-consent workflow, no jurisdiction-aware policy engine, and no case-review or quality-evaluation program. Think of it as a sketchpad: useful for understanding the shape of the pipeline, not something you'd deploy on Monday morning.
@@ -30,7 +44,7 @@ Your environment needs credentials configured (environment variables, an instanc
 - `states:SendTaskSuccess`, `states:SendTaskFailure` (if wiring the human-review wait state through Step Functions)
 - `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents`, `cloudwatch:PutMetricData` (audit logs and quality metrics)
 
-You also need HealthScribe enabled in your target region; verify regional availability before building. HealthScribe is distinct from the Transcribe service that Transcribe Medical uses; the boto3 client is still `transcribe`, but the operations (`start_medical_scribe_job`, `get_medical_scribe_job`) are HealthScribe-specific. Bedrock model access for a capable generation model (such as Claude Sonnet) has to be requested in the Bedrock console for your account. A no-training option under the AWS BAA is the correct posture for clinical audio; verify the contractual terms before running anything that touches real encounter recordings.
+You also need HealthScribe enabled in your target region; verify regional availability before building. HealthScribe is distinct from Transcribe Medical; the boto3 client name is still `transcribe`, but the operations (`start_medical_scribe_job`, `get_medical_scribe_job`) are HealthScribe-specific. Bedrock model access for a capable generation model (such as Claude Sonnet) has to be requested in the Bedrock console for your account. A no-training option under the AWS BAA is the correct posture for clinical audio; verify the contractual terms before running anything that touches real encounter recordings.
 
 A few things worth knowing upfront:
 
@@ -1419,12 +1433,22 @@ def write_to_ehr(session_id: str) -> dict:
     # Submit to HealthLake. Real deployments have a retry policy here; a
     # signed note that doesn't reach the EHR is a priority-1 operational
     # incident, not a dropped write.
+    #
+    # TODO (TechCodeReviewer / TechWriter): The boto3 `healthlake` client
+    # does not expose a `create_resource` method. FHIR resource creation
+    # on a HealthLake datastore is done by HTTPS POST to the datastore
+    # endpoint with SigV4-signed requests (commonly via the `requests`
+    # library plus `botocore.auth.SigV4Auth`, or via an FHIR client). The
+    # call below will always raise AttributeError on current boto3
+    # versions; the except block masks that. Replace this sketch with the
+    # real HTTPS+SigV4 pattern (or mark it clearly as pseudo-boto3 for
+    # illustration) before the code review pass.
     healthlake = boto3.client("healthlake", config=BOTO3_RETRY_CONFIG)
     try:
         # HealthLake accepts FHIR over HTTPS; the boto3 client provides a
         # thin wrapper. In production, the FHIR client (e.g., fhirclient)
         # or direct requests to the HealthLake endpoint give more control.
-        # The placeholder below demonstrates the pattern; real integration
+        # The placeholder below sketches the pattern; real integration
         # requires the HealthLake datastore ID and appropriate permissions.
         response = healthlake.create_resource(
             DatastoreId="your-healthlake-datastore-id",  # replace with your datastore ID
@@ -1435,7 +1459,7 @@ def write_to_ehr(session_id: str) -> dict:
     except (ClientError, AttributeError) as exc:
         # AttributeError here handles the case where a boto3 version
         # doesn't expose create_resource on healthlake; the real integration
-        # may use a different SDK path. For illustration only.
+        # uses a different SDK path (SigV4-signed HTTPS). For illustration only.
         logger.error("HealthLake write failed: %s", exc)
         sessions_table.update_item(
             Key={"session_id": session_id},
