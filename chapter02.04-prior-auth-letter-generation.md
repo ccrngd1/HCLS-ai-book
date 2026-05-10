@@ -758,7 +758,7 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 - **Recipe 2.3 (Clinical Documentation Improvement):** CDI suggestions improve the clinical documentation that this recipe depends on. Better notes produce better fact extraction and stronger PA letters.
 - **Recipe 2.7 (Literature Search and Evidence Synthesis):** The evidence retrieval in this recipe is a simplified form of the RAG pattern in 2.7. For complex PA cases where standard citations don't apply, the literature search pattern becomes relevant.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Similar synthesis architecture but higher-stakes output. The grounding patterns used here are essential there.
-- **Recipe 5.x (Entity Resolution):** TODO: verify recipe number. Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation.
+- **Recipe 5.x (Entity Resolution):** Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. <!-- TODO: verify the specific Chapter 5 recipe number once Chapter 5 planning resolves; update the cross-reference or remove this bullet if no matching recipe exists. -->
 
 ---
 
