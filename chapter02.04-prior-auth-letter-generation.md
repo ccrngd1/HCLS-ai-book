@@ -1,6 +1,6 @@
 # Recipe 2.4: Prior Authorization Letter Generation
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter
+**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter <!-- TODO: recompute cost against actual multi-call pipeline (Step 2 extraction, Step 3 per-criterion fact extraction, Step 4 per-criterion mapping, Step 6 generation). Expert review flagged the current range as ~5-10x optimistic for a typical 10-criterion PA on Claude Sonnet 4. -->
 
 ---
 
@@ -210,16 +210,16 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Bedrock Knowledge Bases, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon API Gateway, Amazon Textract, Amazon HealthLake (optional), Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `bedrock:RetrieveAndGenerate`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `healthlake:SearchWithGet`, `textract:StartDocumentAnalysis` |
+| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `bedrock:RetrieveAndGenerate`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `healthlake:SearchWithGet`, `textract:StartDocumentAnalysis` <!-- TODO: scope each action to specific resource ARNs (KB ARNs, foundation-model ARN, bucket ARNs, table ARN, HealthLake datastore ARN) and add `kms:Decrypt` / `kms:GenerateDataKey` for the CMK. Expert review flagged recurring least-privilege gap across Chapter 2. --> |
 | **BAA** | AWS BAA signed (required: letters contain PHI). Payer policy content is not PHI but clinical facts extracted from patient data are. |
 | **Bedrock Model Access** | Request access to Claude Sonnet (or equivalent capable model) in the Bedrock console. Letter generation benefits from a stronger model; do not use the smallest tier. |
 | **EHR Integration** | FHIR R4 access to clinical data (direct API or via HealthLake). SMART on FHIR for EHR-embedded workflows (Epic App Orchard, Cerner Code). |
 | **Payer Policy Ingestion** | Recurring process (scheduled Lambda or manual) to pull updated policies from each contracted payer's provider portal. Budget 2-4 hours per payer per quarter for policy maintenance. |
 | **Encryption** | S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption |
-| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions |
+| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions <!-- TODO: expand endpoint list to include `bedrock-agent-runtime` (KB retrieve), `kms`, `textract`, `healthlake`, `logs`, `monitoring`, `secretsmanager`, and `states`. Several of these are required for this pipeline to start in a private subnet. --> |
 | **CloudTrail** | Enabled with data events: log all Bedrock invocations, S3 object access, and HealthLake queries for HIPAA audit |
 | **Sample Data** | Synthetic patient cases matched to publicly available payer coverage policies. Never use real patient data in development. Synthea is a useful source of synthetic FHIR data. |
-| **Cost Estimate** | Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter. |
+| **Cost Estimate** | Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter. <!-- TODO: rebuild breakdown accounting for per-criterion extraction in Step 3 and per-criterion mapping in Step 4 (approximately 22+ Bedrock calls per case for a 10-criterion PA). Expert review estimated realistic end-to-end cost at ~$1.50-$2.50 per letter on Claude Sonnet 4. --> |
 
 ### Ingredients
 
@@ -634,7 +634,7 @@ FUNCTION validate_letter(letter, provenance, inputs):
 
 ### Expected Results
 
-**Sample output for a rheumatoid arthritis biologic prior auth:**
+**Sample output for a rheumatoid arthritis biologic prior auth** (all identifiers below are synthetic; never use real patient data in development or test fixtures):
 
 ```json
 {
@@ -685,7 +685,7 @@ FUNCTION validate_letter(letter, provenance, inputs):
 | Physician acceptance rate without edits | 40-60% |
 | Physician acceptance rate with minor edits | 85-95% |
 | Payer approval rate, generated letters | Comparable to hand-composed (practice-dependent; budget time for measurement) <!-- TODO: no verified benchmark exists; outcomes vary by payer and specialty --> |
-| Cost per letter | $0.10-0.30 (tokens + retrieval) |
+| Cost per letter | $0.10-0.30 (tokens + retrieval) <!-- TODO: see cost TODO in Prerequisites; recompute against full multi-call pipeline --> |
 
 **Where it struggles:** 
 - **Novel clinical scenarios.** If the payer's policy doesn't explicitly address the patient's situation (e.g., off-label use, rare disease variants), the criteria extraction produces ambiguous results and the letter has weak arguments.
