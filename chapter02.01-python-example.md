@@ -253,10 +253,11 @@ def load_system_prompt(prompt_key: str = "prompts/system-prompt-v2.txt") -> str:
         response = s3_client.get_object(Bucket=PROMPT_BUCKET, Key=prompt_key)
         return response["Body"].read().decode("utf-8")
     except Exception:
-        # Fall back to default. In production, log this as a warning.
-        # Also: distinguish between "bucket doesn't exist" (configuration bug,
-        # should crash) and "transient network issue" (should fall back).
-        # Catch botocore.exceptions.ClientError and check the error code.
+        # Fall back to the default prompt. Production code should distinguish
+        # between "bucket doesn't exist" (a configuration bug that should
+        # crash) and "transient network issue" (which should fall back).
+        # Catch botocore.exceptions.ClientError and check the error code
+        # rather than swallowing everything with a bare Exception.
         logger.warning("Failed to load prompt from S3, using default")
         return DEFAULT_SYSTEM_PROMPT
 
