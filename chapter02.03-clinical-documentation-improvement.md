@@ -17,6 +17,12 @@ Editorial pass 3 (TechEditor, 2026-05-11):
 - Verified: zero em dashes (U+2014 full-file scan), zero en dashes, no hype markers (leverage, seamless, delve, empower, revolutionize, game-changer, cutting-edge, robust, unlock), no doubled-word typos, header hierarchy (H1 title / H2 major / H3 subsection / H4 Walkthrough) stable, all 10 external URLs in Additional Resources well-formed on their documented AWS / CMS / AHIMA domains, vendor balance holds at approximately 70/30 (AWS service names first appear in "The AWS Implementation").
 - RECIPE-GUIDE section order verified: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Walkthrough), Expected Results, Why This Isn't Production-Ready, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
 - TODOs preserved verbatim for TechWriter: (H1) PHI minimization before LLM calls via Comprehend Medical DetectPHI, (H3) SQS/DLQ on the S3-to-Lambda ingestion path, (M4) idempotency composite key, (M1) knowledge-base retrieval caching and batching, (L1) suggestion retention / secure deletion policy, (L2) EHR network connectivity note on the EHR integration paragraph, and the Recipe 7.3 cross-reference handoff (now in HTML-comment form). Per persona instructions, these six structural items are left for the TechWriter rather than rewritten here because each introduces new architectural prose rather than an in-place correction.
+
+Editorial pass 4 (TechEditor, 2026-05-11):
+- Fixed a broken internal navigation link at the bottom of the file. The "Next" link previously pointed to `chapter02.04-prior-authorization-letter-generation`, but the actual filename in the repository is `chapter02.04-prior-auth-letter-generation.md` (verified against repo directory listing and confirmed consistent with the back-link convention used by chapter02.02 and chapter02.01). The link display text ("Recipe 2.4 - Prior Authorization Letter Generation") is unchanged; only the URL slug was corrected. Pure in-place fix, no structural change, no new content. Passes 1-3 all missed this because file-level grep for "prior-auth" was never run against the nav footer.
+- Re-verified against chapter 1 reference files that bare-fenced pseudocode blocks (triple backticks with no language tag) match the established book convention; chapter01.02 uses the same style. No change required.
+- Re-verified: zero em dashes, zero en dashes, no hype markers, all nine external URLs in Additional Resources well-formed, all internal links now point to real filenames, header hierarchy intact, RECIPE-GUIDE section order intact, vendor balance approximately 70/30, all six TechWriter TODOs preserved.
+- No remaining fixable issues at the editing layer. Handing back to the pipeline.
 -->
 
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
@@ -525,4 +531,4 @@ One more thing: the financial ROI on CDI is easy to measure (compare DRG weights
 
 ---
 
-*← [Recipe 2.2: Medical Terminology Simplification](chapter02.02-medical-terminology-simplification) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.4 - Prior Authorization Letter Generation →](chapter02.04-prior-authorization-letter-generation)*
+*← [Recipe 2.2: Medical Terminology Simplification](chapter02.02-medical-terminology-simplification) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.4 - Prior Authorization Letter Generation →](chapter02.04-prior-auth-letter-generation)*
