@@ -689,7 +689,8 @@ FUNCTION validate_letter(letter, provenance, inputs):
 | Payer approval rate, generated letters | Comparable to hand-composed (practice-dependent; budget time for measurement) <!-- TODO: no verified benchmark exists; outcomes vary by payer and specialty --> |
 | Cost per letter | $0.10-0.30 (tokens + retrieval) <!-- TODO: see cost TODO in Prerequisites; recompute against full multi-call pipeline --> |
 
-**Where it struggles:** 
+**Where it struggles:**
+
 - **Novel clinical scenarios.** If the payer's policy doesn't explicitly address the patient's situation (e.g., off-label use, rare disease variants), the criteria extraction produces ambiguous results and the letter has weak arguments.
 - **Recently updated policies.** If the knowledge base hasn't been refreshed since a payer's policy change, the letter cites outdated criteria. The payer denies. You find out a week later.
 - **Complex medication histories.** Patients with 10+ prior medication trials stress the fact extraction step. The LLM sometimes collapses trials, misattributes dates, or omits relevant failures.
