@@ -1,3 +1,11 @@
+<!--
+Editorial pass (TechEditor, 2026-05-11):
+- Hoisted `import time` from the orchestrator body to the module-level imports; per-function imports are legal Python but a teaching example should model the conventional style (code review F4).
+- Added a brief inline note on colons in ISO timestamps that end up embedded in S3 keys, for readers who `aws s3 cp` objects to Windows filesystems during local debugging (code review F3, optional fix).
+- Preserved F1 (unused `Decimal` import, intentional with inline comment) and F2 (MAX_SUGGESTIONS_PER_NOTE deliberately set to 3 here vs 5 in the main recipe pseudocode, with inline explanation) as the reviewer recommended no change.
+- No new technical content, no API signature changes, no pedagogical restructuring. Code review verdict remained PASS with four NOTE-level findings and none requiring a rewrite.
+-->
+
 # Recipe 2.3: Python Implementation Example
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.3. It shows one way you could translate those CDI concepts into working Python code using Amazon Bedrock. It is not production-ready. There's no EHR integration, no real-time streaming, no compliance-reviewed query templates. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a CDI workqueue on Monday morning. Consider it a starting point, not a destination.
@@ -32,6 +40,7 @@ Everything that's configuration rather than logic lives here. The confidence thr
 ```python
 import json
 import logging
+import time
 import uuid
 import datetime
 from datetime import timezone
@@ -137,6 +146,9 @@ def receive_note(note_content: str, metadata: dict) -> str:
 
     # Build a predictable key structure for easy retrieval and lifecycle policies.
     # Pattern: notes-inbox/{encounter_id}/{timestamp}-{note_type}.txt
+    # Note: ISO timestamps from `isoformat()` contain colons (e.g., `2026-05-06T09:30:00-04:00`).
+    # S3 accepts these fine, but colons are illegal in Windows filenames, so `aws s3 cp`
+    # downloads to a Windows filesystem will need renaming. Not a bug, just a footgun for local debugging.
     note_key = f"notes-inbox/{encounter_id}/{timestamp}-{note_type}.txt"
 
     s3_client.put_object(
@@ -712,7 +724,6 @@ def analyze_note_for_cdi(note_content: str, metadata: dict) -> dict:
     Returns:
         A dict with the analysis results: suggestions, suppressed count, timing.
     """
-    import time
     start_time = time.time()
 
     encounter_id = metadata.get("encounter_id", "unknown")

@@ -1,3 +1,12 @@
+<!--
+Editorial pass (TechEditor, 2026-05-11):
+- Tightened Prerequisites: scoped IAM permissions to resource ARNs, promoted DynamoDB encryption to customer-managed KMS key, split the Bedrock VPC endpoint into its two real endpoints (bedrock-runtime and bedrock-agent-runtime), and added a Lambda Runtime row with an explicit timeout floor (expert review H2-HIGH Lambda timeout, M2 IAM scoping, M3 DynamoDB CMK, M9 bedrock-agent-runtime endpoint).
+- Softened one hyperbolic word in Variations (dramatically -> substantially) to match the engineer-explaining voice used elsewhere in the recipe (voice review L11).
+- Preserved the TechWriter TODO on Recipe 7.3 cross-reference. Note: a pass through categories/07-predictive-analytics.md finds no "DRG Prediction" recipe in the current plan; the closest neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). Flagging for the book-wide cross-reference sweep.
+- Flagged remaining structural items as TODOs for TechWriter (see inline comments): PHI minimization guidance in Why This Isn't Production-Ready (H1), DLQ / reliable ingestion note (H3), idempotency on repeat events (M4), knowledge base retrieval caching and batching (M1), suggestion retention / secure deletion policy (L1), and EHR network connectivity sentence (L2). Per persona rules, structural additions that introduce new architectural content are left for the TechWriter rather than rewritten here.
+- Verified: zero em dashes (U+2014 full-file scan), header hierarchy (H1 title, H2 major, H3 subsection, H4 Walkthrough) matches chapter01 and chapter02.01/02.02, RECIPE-GUIDE section order intact, vendor balance holds at ~70/30 (AWS names first appear at "The AWS Implementation"), all external URLs well-formed, no documentation-voice or LinkedIn-influencer anti-patterns present.
+-->
+
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
 
 **Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.02-0.08 per note
@@ -132,11 +141,12 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon OpenSearch Serverless (for Knowledge Bases), Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` |
+| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`. Scope each action to specific resource ARNs (your notes bucket, your suggestions table, the specific model ARN such as `arn:aws:bedrock:{region}::foundation-model/anthropic.claude-3-sonnet*`, and your knowledge base ARN) rather than `*`. If you use a customer-managed KMS key for DynamoDB or S3, also grant `kms:Decrypt` and `kms:GenerateDataKey` scoped to that key ARN. |
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Bedrock Model Access** | Request access to Claude models (or your preferred model) in the Bedrock console |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Bedrock: data encrypted in transit and at rest; CloudWatch Logs: KMS encryption configured |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Bedrock, DynamoDB, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS with a customer-managed key; DynamoDB: encryption at rest with a customer-managed KMS key (the AWS-owned default key does not appear in CloudTrail and cannot be revoked, which fails most HIPAA auditability requirements); Bedrock: data encrypted in transit and at rest; CloudWatch Logs: KMS encryption configured |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3 and DynamoDB (free gateway endpoints) and interface endpoints for `com.amazonaws.{region}.bedrock-runtime` (for `InvokeModel`), `com.amazonaws.{region}.bedrock-agent-runtime` (for Knowledge Base `Retrieve`; this is a separate endpoint from `bedrock-runtime` and is easy to miss), KMS, and CloudWatch Logs. A Lambda with only the `bedrock-runtime` endpoint will invoke models successfully but fail every knowledge base retrieval. |
+| **Lambda Runtime** | Timeout 60-90 seconds. End-to-end latency is 3-8 seconds under normal conditions, but two Bedrock invocations plus multiple knowledge base retrievals can spike higher under throttling. The default 3-second timeout will fail every invocation. Memory: 512 MB floor. For production, consider Step Functions orchestration to decompose the pipeline into individually retryable steps rather than a single long-running Lambda. |
 | **CloudTrail** | Enabled: log all Bedrock invocations and S3 access for HIPAA audit trail |
 | **Knowledge Base Content** | Current ICD-10-CM Official Guidelines (updated annually each October), organizational CDI query templates, payer-specific documentation requirements |
 | **Sample Data** | Synthetic clinical notes. Never use real patient notes in development. Use de-identified note datasets or generate synthetic notes for testing. |
@@ -408,11 +418,23 @@ FUNCTION store_and_notify(encounter_id, suggestions, suppressed):
 
 The architecture above demonstrates the pattern. Deploying this in a health system requires addressing several gaps:
 
+<!-- TODO (TechWriter): Add a paragraph on PHI minimization before LLM calls. Clinical notes contain Safe Harbor identifiers (patient name, DOB, MRN, addresses) that are not needed for specificity gap analysis. Production implementations should redact or de-identify non-clinical PHI before sending to Bedrock using Amazon Comprehend Medical's DetectPHI API or a regex/rules-based approach, even under BAA, to honor minimum-necessary standards. Expert review H1 (Security, HIGH). -->
+
+<!-- TODO (TechWriter): Add a paragraph on reliable note ingestion. The current architecture shows S3 event -> Lambda with no dead letter queue or retry mechanism. If the Lambda fails (Bedrock throttling, timeout, malformed note), the S3 event is lost with no visibility into which notes failed analysis. Production systems should insert SQS between S3 and Lambda with a redrive policy (3 retries before DLQ) and a CloudWatch alarm on DLQ depth. Expert review H3 (Architecture, HIGH). -->
+
+<!-- TODO (TechWriter): Add a paragraph on idempotency. Duplicate S3 events, EHR re-sends, or Lambda retries after partial failure will currently create duplicate suggestions in DynamoDB because each invocation generates new UUIDs. Production systems should deduplicate using a composite key (encounter_id + diagnosis hash) with a DynamoDB conditional expression, or use an idempotency token passed through from the EHR integration layer. Expert review M4 (Architecture, MEDIUM). -->
+
+<!-- TODO (TechWriter): Add a paragraph on knowledge base retrieval efficiency. The pseudocode queries the KB once per diagnosis plus one template query, so a 5-diagnosis note generates 6 retrieval calls. At scale (morning rounds, shift change bursts) this hits Bedrock Knowledge Base per-account TPS limits. Mitigations: batch common diagnoses into broader queries, cache the top frequently retrieved guideline sections (heart failure, pneumonia, diabetes, sepsis, AKI) in ElastiCache or in-memory, and implement exponential backoff on retrieval calls. Expert review M1 (Architecture, MEDIUM). -->
+
+<!-- TODO (TechWriter): Add a sentence on suggestion retention and secure deletion. DynamoDB TTL deletes expired suggestions within 48 hours of expiration, not immediately, so expired clinical content remains queryable during that window. Data retention policy should specify how long CDI suggestions are kept: archive to S3 Glacier for audit trail versus hard-delete for data minimization. Expert review L1 (Security, LOW). -->
+
 **EHR integration is the hard part.** Getting clinical notes out of an EHR in real time is not a simple API call. Most EHR systems require HL7 FHIR subscriptions, ADT event feeds, or custom integration engines. The note extraction and delivery mechanism is often more complex than the CDI analysis itself. Budget more time for integration than for the AI pipeline.
+
+<!-- TODO (TechWriter): Extend the paragraph above with a sentence on EHR network connectivity. Connectivity to the EHR (Direct Connect, Site-to-Site VPN, or PrivateLink) must be established with TLS encryption and restricted security groups. PHI must never traverse the public internet between the EHR and AWS, even encrypted. Expert review L2 (Networking, LOW). -->
 
 **Feedback loop for model improvement.** When physicians accept or reject suggestions, that signal needs to flow back into the system. Accepted suggestions validate the model's reasoning. Rejected suggestions (especially with physician comments explaining why) are training data for improving future suggestions. Without this feedback loop, you can't measure or improve accuracy over time.
 
-**Concurrent vs. retrospective CDI.** This recipe shows a retrospective pattern (note is complete, then analyzed). Concurrent CDI (suggestions while the physician is still writing) requires different architecture: streaming note content, incremental analysis, and tight EHR UI integration. Concurrent CDI has higher impact but dramatically higher integration complexity.
+**Concurrent vs. retrospective CDI.** This recipe shows a retrospective pattern (note is complete, then analyzed). Concurrent CDI (suggestions while the physician is still writing) requires different architecture: streaming note content, incremental analysis, and tight EHR UI integration. Concurrent CDI has higher impact but substantially higher integration complexity.
 
 **Compliance review of suggestions.** Every CDI query template in production should be reviewed by your compliance team. Suggestions that could be interpreted as "telling physicians what to document" (rather than asking for clarification) create regulatory risk. The line between "documentation improvement" and "documentation coaching for revenue" is one that OIG auditors care about.
 
