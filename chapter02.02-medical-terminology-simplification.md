@@ -1,6 +1,24 @@
+<!--
+Editorial pass (TechEditor, 2026-05-11):
+- Corrected the per-document cost estimate: Comprehend Medical dominates and was omitted from the top-line number (expert review A2).
+- Added KMS VPC endpoint and interface-vs-gateway distinction to Prerequisites (S1/N1/N2).
+- Added Bedrock endpoint name (bedrock-runtime) and noted it serves both InvokeModel and ApplyGuardrail (N3).
+- Added Lambda timeout and memory row to Prerequisites (A1).
+- Added note on Bedrock model-invocation-logging PHI to Encryption row (S4).
+- Revised The Honest Take's retry-loop claim to match the current single-pass behavior (A4).
+- Removed the Architecture Diagram's second Comprehend Medical arrow, which disagreed with Step 4's string-matching logic (A3).
+- Added a parenthetical on segment-classifier ambiguity in Step 2 (A6).
+- Added input-side Guardrails note for untrusted sources in Step 3 (S2).
+- Added PHI retention / TTL guidance to Step 5 (S3).
+- Added guardrail-event metric note to Step 3 (S5).
+- Replaced two broken URLs in Additional Resources; removed the V2 inline TODO (V2).
+- Preserved the V3 TODO on Recipe 8.1 cross-reference for the book-wide sweep.
+- Flagged remaining structural items (cache lookup step, classifier upgrade, retry loop) as TODOs for TechWriter (A4, A5, A6).
+-->
+
 # Recipe 2.2: Medical Terminology Simplification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.005–0.02 per document
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15–0.30 per document (Comprehend Medical dominates; see Prerequisites for breakdown)
 
 ---
 
@@ -116,7 +134,7 @@ flowchart LR
     D -->|Generate| F[Amazon Bedrock\nFoundation Model]
     F -->|Simplified Text| G[Bedrock Guardrails]
     G -->|Validated Output| H[Lambda:\nValidate & Assemble]
-    H -->|Check Preservation| C
+    H -->|String-match entities from Step 1| H
     H -->|Score Readability| H
     H -->|Store Result| I[DynamoDB:\nSimplified Docs]
     I -->|Serve| J[Patient Portal / Print]
@@ -135,11 +153,12 @@ flowchart LR
 | **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`, `comprehendmedical:DetectEntitiesV2`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:GetItem`. Scope each to specific resource ARNs. |
 | **BAA** | AWS BAA signed (required: clinical text contains PHI) |
 | **Bedrock Guardrails** | Configure guardrail to block added clinical recommendations and ensure medication details are preserved |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest with customer-managed KMS key; all API calls over TLS; CloudWatch Logs: KMS encryption |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for Bedrock, Comprehend Medical, S3, DynamoDB, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest with customer-managed KMS key; all API calls over TLS; CloudWatch Logs: KMS encryption. If Bedrock model-invocation-logging is enabled for quality monitoring, the logged prompts contain PHI (the system prompt embeds the `must_preserve` entity list). The invocation-log destination (S3 or CloudWatch Logs) must be KMS-encrypted and subject to the same retention controls as other PHI stores. |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for Bedrock (`com.amazonaws.{region}.bedrock-runtime`, which serves both `InvokeModel` and `ApplyGuardrail`; there is no separate guardrails endpoint), Comprehend Medical, S3, DynamoDB, KMS, and CloudWatch Logs. S3 and DynamoDB use free gateway endpoints (route-table based). Bedrock, Comprehend Medical, KMS, and CloudWatch Logs use interface endpoints (PrivateLink, billed per AZ per hour plus data processing, with a security group that allows HTTPS from the Lambda subnet). The KMS endpoint is non-optional: every S3 SSE-KMS read, DynamoDB CMK write, and CloudWatch Logs write makes a KMS API call, and a Lambda in a private subnet without the KMS endpoint will time out on the first S3 `GetObject`. |
+| **Lambda config** | Timeout 60 seconds minimum. The recipe's own end-to-end latency is 3-6 seconds per document under normal conditions, and multi-segment runs with guardrail evaluation can spike higher under Bedrock throttling. The default 3-second timeout will fail every invocation. Memory: 512 MB floor (SDK payloads and segment reassembly run poorly at 128 MB). |
 | **CloudTrail** | Enabled: log all Bedrock and Comprehend Medical API calls for audit |
 | **Sample Data** | Synthetic clinical text (discharge summaries, lab reports). Never use real patient documents in dev. |
-| **Cost Estimate** | Bedrock (Claude Haiku): ~$0.005-0.02 per document depending on length. Comprehend Medical: $0.01 per 100 characters. Lambda and DynamoDB negligible. |
+| **Cost Estimate** | Comprehend Medical dominates total cost. At $0.01 per 100-character unit (first tier for `DetectEntitiesV2`), a 1-page discharge summary (~1,700 characters) is ~$0.17 per call. Bedrock Claude Haiku adds ~$0.002-0.01 for the simplification calls depending on length and segment count. Lambda, DynamoDB, and S3 are negligible. Uncached total for a 1-page document: ~$0.18-0.20. Cost scales roughly linearly with character count for multi-page documents. If caching is implemented (see Variations) and hits at the 30-50% rate shown in Expected Results, the amortized cost drops proportionally. |
 
 ### Ingredients
 
@@ -159,6 +178,9 @@ flowchart LR
 #### Walkthrough
 
 **Step 1: Extract medical entities from source text.** Before simplifying anything, identify the critical clinical content that must survive the transformation. Medication names, dosages, conditions, procedures, dates, and provider names are non-negotiable. If any of these get lost or altered during simplification, the output is unsafe. Amazon Comprehend Medical parses clinical text and returns structured entities with their categories and positions. We use this as our "preservation checklist" that gets verified after simplification. Skip this step and you have no way to automatically detect when simplification accidentally drops a medication or changes a dosage.
+
+<!-- TODO (TechWriter): Add an explicit cache-lookup step (Step 0) before Step 1 that computes `cache_key = hash(original_text + "|" + target_grade)` and short-circuits to a cached result if present. The cost discussion, Expected Results cache-hit-rate benchmark, and "Why These Services" narrative all assume this step exists, but the pseudocode currently starts at Step 1 and never consults the cache. A reader implementing the walkthrough as written will get zero cache hits. -->
+
 
 ```
 FUNCTION extract_critical_entities(clinical_text):
@@ -207,6 +229,8 @@ FUNCTION extract_critical_entities(clinical_text):
 
 **Step 2: Segment the clinical text.** Different parts of a clinical document need different simplification approaches. A medication list needs dosages preserved verbatim with plain-language explanations added alongside. A diagnosis narrative needs conceptual translation. Follow-up instructions need to become clear action items. Segmenting first lets you apply the right prompt and constraints to each section. Without segmentation, you're asking the model to handle everything uniformly, which leads to either over-simplified medication sections or under-simplified narrative sections.
 
+The classifier shown below is deliberately simple: keyword-based, first-match-wins. That's fine for a teaching example but worth knowing about. A section like "Please take this medication and follow up in 2 weeks" hits both `medications` and `instructions` keywords, and whichever iterates first wins. Misclassification matters because it changes which preservation rules the prompt carries. A medication list classified as `narrative` loses the verbatim-dosage constraint. For production, track how many keywords matched and for which types, apply the stricter prompt when ties occur (prefer `medications` over `instructions`), or replace the keyword classifier with a small learned model (TF-IDF + logistic regression, or a distilled transformer fine-tuned on labeled segments). See Variations.
+
 ```
 SEGMENT_TYPES = {
     "medications":   ["medication", "prescription", "drug", "dose", "mg", "tablet"],
@@ -243,6 +267,8 @@ FUNCTION segment_document(clinical_text):
 ```
 
 **Step 3: Simplify each segment with type-specific constraints.** This is the core transformation step. Each segment gets a tailored system prompt that tells the model exactly how to handle that content type. Medication segments get instructions to preserve drug names and dosages verbatim while adding plain-language explanations. Diagnosis segments get instructions to translate medical terms into everyday language. Instruction segments get rewritten as clear action items. The reading level target (default: 6th grade Flesch-Kincaid) is enforced across all segment types. The "must_preserve" list from Step 1 is included in the prompt so the model knows which terms are untouchable.
+
+Two things worth noting about the guardrail call. First, when the source text comes from untrusted channels (OCR of handwritten notes, patient-supplied free text, addenda copy-pasted from a portal), configure the Bedrock Guardrail with input-side prompt-attack filters in addition to the output filters shown here. Input filtering catches injection attempts before the model sees the manipulated text, which is a cheap defense-in-depth layer for PHI-carrying pipelines. Second, treat guardrail blocks as safety events: emit a distinct CloudWatch metric (e.g., `SegmentBlockedByGuardrail`) with dimensions for segment type and triggered policy so you can monitor which content triggers which policies and at what rate. Do not log the raw `guardrail_reason` string unredacted, because it may echo PHI from the blocked segment.
 
 ```
 TARGET_READING_LEVEL = "6th grade (Flesch-Kincaid)"
@@ -389,6 +415,8 @@ FUNCTION validate_output(simplified_segment, original_segment, must_preserve, ta
 
 **Step 5: Assemble and store the simplified document.** Reassemble the individually simplified segments into a complete document, maintaining the original ordering. Store the result with metadata for audit: what source text was simplified, what reading level was achieved, which entities were preserved, and whether any segments required fallback to the original. The cache key (a hash of the source text plus target reading level) enables serving cached results for repeated simplification of the same content, which is common for standard discharge instruction templates.
 
+The stored records are PHI from end to end: original text, simplified text, medication lists, and condition names all live in the table. Define a retention policy explicitly rather than letting the table grow forever. A common pattern is DynamoDB TTL for hot retention matching the patient portal access window (typically 6-12 months), archival of older records to S3 Glacier under a customer-managed KMS key for longer-term audit, and a deletion path that can act on patient-initiated data-subject requests under state privacy laws. Under HIPAA's minimum-necessary principle, "we kept it because the cache was warm" is not a retention rationale.
+
 ```
 FUNCTION assemble_and_store(original_text, simplified_segments, validation_results, 
                             must_preserve, target_grade):
@@ -479,7 +507,7 @@ Simplified output (6th grade target):
 | End-to-end latency | 3-6 seconds per document |
 | Readability target hit rate | 85-92% of segments on first pass |
 | Entity preservation rate | 95-99% for verbatim entities |
-| Cost per document (1-page discharge summary) | $0.005-0.02 |
+| Cost per document (1-page discharge summary, uncached) | ~$0.18-0.20 (Comprehend Medical ~$0.17 + Bedrock ~$0.002-0.01) |
 | Cache hit rate (standard templates) | 30-50% after warm-up |
 | Throughput | ~20 documents/second (Lambda concurrency limited) |
 
@@ -493,7 +521,7 @@ This is one of the most satisfying LLM applications to build because the results
 
 The part that surprised me: the segmentation step matters more than the model choice. A single prompt that says "simplify this entire discharge summary" produces mediocre results because the model tries to apply one strategy uniformly. Medication sections get over-explained. Instruction sections get under-simplified. Segmenting first and applying type-specific prompts produces dramatically better output.
 
-The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The validation loop (simplify, score, re-simplify if needed) adds latency but is worth it.
+The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The pseudocode here flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
 
 The entity preservation check is where you'll find your scariest bugs. Early in development, I watched the model simplify "ticagrelor 90mg BID" into "your blood thinner twice a day." Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy. The preservation checklist catches this, but you need to be thoughtful about what goes on the list.
 
@@ -539,8 +567,8 @@ The caching layer pays for itself quickly. Standard procedure discharge instruct
 - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Hands-on workshop covering text generation and transformation patterns
 
 **AWS Solutions and Blogs:**
-- [Generative AI on AWS for Healthcare](https://aws.amazon.com/health/generative-ai/): Overview of generative AI applications in healthcare
-- [Guidance for Generative AI Text Summarization using LLMs on AWS](https://aws.amazon.com/solutions/guidance/generative-ai-text-summarization-using-large-language-models-on-aws/): Reference architecture for text transformation pipelines <!-- TODO: Verify this URL exists -->
+- [AWS for Healthcare & Life Sciences](https://aws.amazon.com/health/): Overview of AWS services and generative AI solutions for healthcare and life sciences
+- [Using Amazon Comprehend Medical and LLMs for healthcare and life sciences (AWS Prescriptive Guidance)](https://docs.aws.amazon.com/prescriptive-guidance/latest/generative-ai-nlp-healthcare/introduction.html): Reference patterns for combining Comprehend Medical with foundation models on clinical text, including summarization and extraction workflows that parallel this recipe's pipeline
 
 ---
 
