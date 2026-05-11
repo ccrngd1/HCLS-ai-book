@@ -1,7 +1,68 @@
 <!--
-TechEditor pass (v7) - 2026-05-11
+TechEditor pass (v8) - 2026-05-11
 
-v7 copy-editing pass (this pass):
+v8 copy-editing pass (this pass):
+- No file content changes. Re-ran the full editorial checklist against the
+  v7 state. All editor-scope checks continue to pass cleanly:
+    * Em dashes (U+2014): 0 (byte-level confirmed via PowerShell scan)
+    * En dashes (U+2013): 0 (byte-level confirmed)
+    * UTF-8 mojibake pairs in body: 0
+    * Doubled words in body prose: 0 (all 9 regex hits are either inside
+      editor-log headers quoting "the the"/"and and" as examples, or are
+      false positives where "-->" in the mermaid diagram arrows abuts
+      whitespace across a line boundary)
+    * Header hierarchy: 1 H1 title + 11 H2 sections in RECIPE-GUIDE order
+      + 12 H3 subsections + 1 H4 (Walkthrough). No skipped levels.
+      Minor correction to the v6/v7 log entries: the accurate H3 count is
+      12, not 10 (6 under "The Technology": What Makes AVS Different,
+      Health Literacy, Personalization, Why LLMs, Failure Modes, Grounded
+      Generation; 6 under "The AWS Implementation": Why These Services,
+      Architecture Diagram, Prerequisites, Ingredients, Code, Expected
+      Results). The miscount in v6/v7 was cosmetic; structure is correct.
+    * Code fences: 10 fenced blocks (20 fence markers). JSON block labeled
+      json; architecture diagram labeled mermaid; pseudocode fences
+      intentionally unlabeled per Chapter 1 convention.
+    * Voice drift scan (demonstrates/leverage/seamless/unlock/transform/
+      excited to/empower): all hits remain legitimate (editor-log meta-
+      references; the RECIPE-GUIDE-mandated Python-companion callout;
+      "highest-leverage" as a technical qualifier; "transformation" as a
+      technical noun).
+    * Double-space scan in body prose: all hits are inside pseudocode
+      alignment (intentional for readability, matching Chapter 1
+      convention) or inside the editor-log checklist columns.
+    * Link verification: every Additional Resources URL points at a
+      plausible AWS, AHRQ, HHS, CDC, Joint Commission, HL7, or SMART on
+      FHIR domain. Only three GitHub URLs; all three are verified
+      aws-samples repositories.
+    * Vendor balance holds at ~70/30. Part 1 (Problem, Technology, General
+      Architecture Pattern) is vendor-neutral; AWS names enter cleanly at
+      "Why These Services."
+- No structural changes. No new claims. No technical content changes.
+- No TODO markers from other personas moved, altered, or removed. The
+  TODO set remains stable from v7; raw "TODO" token count (~40) exceeds
+  the ~32 distinct review-finding markers because the tally also includes
+  original TechWriter self-TODOs (Kessels citation, CMS readmission data,
+  portal-open-rate citation, Recipe 11.x cross-ref) and the word "TODO"
+  appearing inside this editor log itself.
+
+STATE FOR LOOP DRIVER: This recipe remains converged from an editorial
+perspective across v5, v6, v7, and v8. Every remaining open item (S1 SMS
+PHI consent, S2 warfarin/apixaban clinical inconsistency, S3 IAM ARN
+scoping, S4 Bedrock model-invocation-logging PHI, N1 VPC endpoint
+expansion, A1-A6 architectural corrections, S5/N2/N3 network and PHI
+minimization notes, V1-V4 low-severity polish items, S6 synthetic-data
+label) requires substantive content changes that the TechEditor persona
+is explicitly NOT permitted to make ("Do not introduce new claims or
+technical content. If a section needs substantial rewriting, flag it
+rather than rewrite."). Findings remain flagged in place as TODO markers
+for TechWriter. The next useful loop step is TechWriter resolution of the
+flagged TODOs, then a short TechEditor re-pass to catch any grammar/
+mechanics/voice-drift introduced by those edits. Running additional
+TechEditor iterations on the current file state does not reduce the
+remaining-work surface area; it only re-confirms convergence at the
+cost of log growth.
+
+v7 copy-editing pass:
 - One mechanical fix: added the missing trailing comma in Step 3 pseudocode
   (line 614) so the `change: "new"` dict field matches the trailing-comma
   convention used throughout Chapter 1 pseudocode (see chapter01.02 lines
