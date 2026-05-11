@@ -232,6 +232,17 @@ def _embed_text(text: str) -> list:
     corpus was indexed with Titan v2 and this function uses Titan v1,
     retrieval quality will be garbage and you won't get an error. Always
     pin the embedding model ID in config and verify it matches the index.
+
+    This helper is hard-coded to Amazon Titan Text Embeddings request/
+    response shape. Other embedders on Bedrock use different schemas:
+      - Cohere Embed: body = {"texts": [text], "input_type": "search_query"};
+        response payload has "embeddings" (plural, list of lists).
+      - Self-hosted biomedical embedders on SageMaker: use the
+        sagemaker-runtime client and whatever input/output format the
+        endpoint's inference.py expects.
+    If you change EMBEDDING_MODEL_ID to a non-Titan model, update the body
+    shape and response parsing here accordingly; an embedder swap is not
+    just a model-ID change.
     """
     body = json.dumps({"inputText": text})
     response = bedrock_runtime.invoke_model(
@@ -681,6 +692,16 @@ def multi_source_retrieval(
     # We collect lists of results so we can fuse them. Real deployments may
     # run these in parallel via asyncio or a ThreadPoolExecutor; keeping
     # them serial here for readability.
+    #
+    # Note on k-NN filtering: placing the filter in `bool.filter` alongside
+    # a `bool.must` kNN clause applies the filter AFTER the initial k-NN
+    # candidate set is returned (post-filtering). If your metadata filters
+    # are restrictive (narrow date window, rare population tag), post-
+    # filtering can produce far fewer than `size` results because many
+    # nearest-neighbor candidates get filtered out. For production, consider
+    # OpenSearch's efficient-filter syntax where the filter lives inside
+    # the `knn` clause and integrates with ANN traversal; see the OpenSearch
+    # k-NN filtering docs for engine-specific (Lucene/faiss/nmslib) support.
     ranked_lists = []
     for query_text, query_vector in query_embeddings:
         knn_query = {
@@ -815,6 +836,11 @@ def rerank_candidates(
     # Batch scoring: pass N (query, chunk) pairs per model call. Higher N
     # reduces per-chunk cost but raises prompt-length sensitivity. For a
     # real deployment, tune or skip this approach in favor of a cross-encoder.
+    # Re-ranker cost scales linearly with candidate count: for
+    # RERANK_CANDIDATE_LIMIT above ~150, switch to a cross-encoder on
+    # SageMaker rather than scaling up the number of small-LLM batches.
+    # The cost curve crosses over quickly and accuracy at the top of the
+    # ranking is meaningfully better with a real cross-encoder.
     BATCH_SIZE = 10
     scored = []
 
@@ -1221,10 +1247,13 @@ AT THE END, append a JSON code block with tracked claims:
         return {"status": "GENERATION_FAILED", "error": str(exc),
                 "answer_text": "", "claims": []}
 
-    # Detect Guardrail intervention. Field shape varies by Guardrail
-    # configuration; verify against your setup and branch accordingly.
-    stop_reason = response_payload.get("stop_reason")
-    if stop_reason == "guardrail_intervened":
+    # Detect Guardrail intervention. Bedrock signals a Guardrail intervention
+    # via the top-level `amazon-bedrock-guardrailAction` field in the response
+    # body (values "INTERVENED" or "NONE"); Anthropic Claude's `stop_reason`
+    # is unaffected by Guardrails on InvokeModel. Check the Guardrail field
+    # as the primary signal.
+    guardrail_action = response_payload.get("amazon-bedrock-guardrailAction")
+    if guardrail_action == "INTERVENED":
         logger.warning("Guardrail intervened on synthesis; returning rejection")
         return {
             "status": "GROUNDING_REJECTED",
@@ -1503,17 +1532,25 @@ def _extract_numeric_tokens(text: str) -> list:
     """
     Pull numeric tokens out of a claim for verbatim matching.
 
-    Captures integers, decimals, percentages, ratios ("2:1"), CI-style
-    formats ("1.1-1.8"), and units attached to numbers ("80 mg", "4.2%").
-    Production systems should also normalize unit variations ("mg" vs
-    "milligram") before comparison.
+    Captures integers, decimals, optional negative sign, optional scientific
+    notation (1.2e-4), percentages, ratios ("2:1"), CI-style ranges
+    ("1.1-1.8"), and a small allowlist of common medical units.
+
+    Scope and limitations:
+    - Units not in the allowlist (U/L, ng/mL, bpm, beats/min, umol/L, etc.)
+      fall through to the token-overlap similarity check rather than the
+      verbatim check. Broaden the allowlist for your clinical domain.
+    - The negative-sign support matters for direction-bearing effect sizes;
+      without it, "-0.15" and "0.15" collapse to the same check and sign
+      flips slip through the numeric validator. Direction validation (see
+      the direction-mismatch check in the recipe's Step 8 pseudocode) is
+      the complementary layer that catches sign flips on outcomes like
+      "20% increase" vs "20% reduction".
     """
-    # Broad pattern: numbers with optional decimal, optional trailing
-    # percent/unit, optional range/CI forms.
     pattern = re.compile(
-        r"\d+(?:\.\d+)?"
-        r"(?:\s*[-–]\s*\d+(?:\.\d+)?)?"
-        r"(?:\s*(?:%|mg|mcg|g|kg|mL|IU|mmHg))?"
+        r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"           # optional sign, decimal, exponent
+        r"(?:\s*[-–]\s*-?\d+(?:\.\d+)?)?"             # optional range (e.g., CI)
+        r"(?:\s*(?:%|mg|mcg|g|kg|mL|IU|mmHg|U/L|ng/mL|bpm))?"
     )
     return pattern.findall(text)
 
@@ -1648,13 +1685,20 @@ def render_answer(
         })
 
     # Replace [chunk_N] markers in the prose with numeric citations.
-    rendered_answer = answer_text
-    for cid, display_num in citation_map.items():
-        rendered_answer = rendered_answer.replace(cid, f"{display_num}")
-    # Normalize any [chunk_N] markers we missed (e.g., the model cited a
-    # chunk id that wasn't in our mapping). Strip those to avoid dangling
-    # references in the final output.
-    rendered_answer = re.sub(r"\[chunk_\d+\]", "", rendered_answer)
+    # Use a single regex pass with a callback so every [chunk_N] marker is
+    # replaced atomically. A naive loop that calls str.replace("chunk_1", "1")
+    # before handling "chunk_10" would corrupt "chunk_10" into "10" on the
+    # first iteration, because str.replace matches every substring, including
+    # the "chunk_1" prefix inside "chunk_10". Bracket-anchored regex avoids
+    # the prefix collision and handles unresolved markers in the same pass.
+    def _citation_replacer(match: re.Match) -> str:
+        cid = f"chunk_{match.group(1)}"
+        display_num = citation_map.get(cid)
+        if display_num is None:
+            return ""  # unresolved marker: strip it rather than leave a dangling reference
+        return f"[{display_num}]"
+
+    rendered_answer = re.sub(r"\[chunk_(\d+)\]", _citation_replacer, answer_text)
 
     # Evidence strength badge framing so the UI can color-code it.
     strength_badge = {
@@ -1695,11 +1739,21 @@ def _format_citation(chunk: dict) -> str:
     starter keeps it short and structured; swap in your preferred formatter.
     """
     authors = chunk.get("authors") or []
+    # PubMed XML carries authors as structured objects, so a team indexing
+    # the corpus might store a list of dicts ({"last": "Smith", "first": "J"})
+    # rather than pre-formatted strings. Defensively coerce to strings so
+    # rendering doesn't fail on the list-of-dicts case; document the
+    # expected schema in the OpenSearch field mapping as well.
     if isinstance(authors, list) and authors:
-        if len(authors) > 3:
-            author_str = f"{authors[0]}, et al."
+        author_strs = [
+            a if isinstance(a, str)
+            else f"{a.get('last', '')} {a.get('first', '')}".strip()
+            for a in authors
+        ]
+        if len(author_strs) > 3:
+            author_str = f"{author_strs[0]}, et al."
         else:
-            author_str = ", ".join(authors)
+            author_str = ", ".join(author_strs)
     else:
         author_str = "Unknown authors"
 
@@ -1736,12 +1790,16 @@ def _build_source_link(chunk: dict) -> str:
 
 def _get_corpus_date_range_stub() -> str:
     """
-    Return a human-readable corpus coverage string.
-
-    In production, query the index's metadata record for the ingestion
-    window and last-ingestion timestamp. Stubbed here with a placeholder.
+    PLACEHOLDER. In production, query the index's metadata record for the
+    ingestion window and last-ingestion timestamp, e.g.:
+        GET /medical-corpus/_doc/__meta__
+    Return something like "Papers indexed 1990 through April 2026. Last
+    ingestion: 2026-05-09." This string is rendered in the clinician UI
+    and is a trust signal; do NOT ship the stubbed value to production.
     """
-    return "Corpus coverage: stubbed for this example. In production, query the index metadata."
+    # Returning an empty string rather than a literal "stubbed" string keeps
+    # a copy-paste accident from surfacing the word "stubbed" in a real UI.
+    return ""
 ```
 
 ---
@@ -1855,6 +1913,13 @@ def archive_and_log(
     #     }],
     # )
 
+    # Issue a feedback correlation token. In production, persist this token
+    # in DynamoDB alongside query_id with a short TTL (e.g., 48 hours), OR
+    # sign it as a JWT with the query_id as a claim so the UI can echo it
+    # back on a thumbs-up/thumbs-down event without exposing query_id to a
+    # less-trusted client context. As written, the token is cosmetic; the
+    # persistence/signing step is what makes feedback-to-query correlation
+    # work end-to-end.
     feedback_token = str(uuid.uuid4())
     logger.info(
         "Query %s archived (status=%s, cited=%d)",

@@ -192,7 +192,7 @@ Let's walk through each stage conceptually.
 
 **Query expansion.** Rewrite the question into multiple search queries that capture likely terminology variations. Include synonyms, generic-to-brand conversions for drugs, standard-to-specific condition names. The expansion step is cheap and dramatically improves retrieval coverage.
 
-**Multi-source retrieval.** Query the corpus across modalities: dense-vector similarity, sparse keyword match, metadata filters. If the corpus is sharded by source (PubMed abstracts, guidelines, Cochrane, institutional content), query each shard and collect candidate chunks. Merge the result sets with rank fusion.
+**Multi-source retrieval.** Query the corpus across modalities: dense-vector similarity, sparse keyword match, metadata filters. If the corpus is sharded by source (PubMed abstracts, guidelines, Cochrane, institutional content), query each shard and collect candidate chunks. Merge the result sets with rank fusion. Evidence tier enters as a ranking boost, not a hard filter: a question where the only evidence is observational should still surface that evidence and let the generation step's evidence-strength rating reflect the tier mix honestly.
 
 **Re-rank.** Apply a more expensive re-ranker to the candidate set to surface the most relevant chunks. Re-ranking is where retrieval quality goes from acceptable to good.
 
@@ -237,6 +237,12 @@ Let's walk through each stage conceptually.
 
 **Amazon EventBridge for corpus update triggers.** New PubMed releases, new guideline publications, and new institutional content trigger corpus ingestion. EventBridge routes these events to the ingestion pipeline. Scheduled rules drive periodic full or incremental rebuilds.
 
+EventBridge delivery is at-least-once, and scheduled rules can fire twice across time zones, after failover, or during operator re-runs. Without an idempotency guard, duplicate deliveries run duplicate Step Functions executions, re-embed the same chunks (the most expensive ingestion step at $200-$2,000 per full rebuild), and write duplicate chunks to OpenSearch, which then appear as duplicate citations in answers. Idempotency has three layers:
+
+- **Per-document:** Deterministic `chunk_id` from `(paper_id, section, paragraph_index, chunk_hash)`. OpenSearch index operations use the `chunk_id` as the document ID, so duplicate ingests become upserts rather than new documents.
+- **Per-run:** Before starting an ingestion Step Functions execution, attempt a conditional DynamoDB `PutItem` keyed on `(source, window_start, window_end, run_token)`. If the item exists, the run is a duplicate and should no-op.
+- **Embedding cost control:** Track embedded `chunk_id` values in DynamoDB with their current content hash. Re-embedding is triggered only when `chunk_hash` changes (content changed), not when the same content is re-ingested.
+
 **Amazon API Gateway + Cognito for clinician-facing APIs.** The EHR-integrated tool or standalone literature search UI calls into API Gateway to submit questions and retrieve answers. Cognito handles authentication so queries and answers can be attributed to a user for audit.
 
 **AWS CloudTrail and Amazon CloudWatch for audit, monitoring, and analytics.** Every Bedrock invocation, every retrieval call, every answer delivered, every user feedback event. CloudWatch dashboards track question volume, answer latency percentiles, validation pass rate, citation accuracy, and user satisfaction signals.
@@ -248,7 +254,9 @@ Let's walk through each stage conceptually.
 ```mermaid
 flowchart TB
     subgraph Ingestion[Corpus Ingestion Pipeline - Scheduled]
-        A1[EventBridge Schedule] --> A2[Step Functions<br/>Ingestion Workflow]
+        A1[EventBridge Schedule] --> A0{Idempotency Guard<br/>DynamoDB Conditional Write}
+        A0 -->|New run token| A2[Step Functions<br/>Ingestion Workflow]
+        A0 -->|Duplicate| A99[No-op / Exit]
         A2 --> A3[Lambda<br/>Fetch New PubMed Records]
         A2 --> A4[Lambda<br/>Fetch Guideline Updates]
         A2 --> A5[Lambda<br/>Fetch Institutional Content]
@@ -258,7 +266,7 @@ flowchart TB
         A6 --> A7[Lambda or Batch<br/>Parse, Clean, Chunk]
         A7 --> A8[Amazon Comprehend Medical<br/>Entity Tagging per Chunk]
         A8 --> A9[Amazon Bedrock<br/>Titan/Cohere Embeddings]
-        A9 --> A10[OpenSearch<br/>Hybrid Index<br/>Vector + BM25 + Metadata]
+        A9 --> A10[OpenSearch<br/>Hybrid Index<br/>Vector + BM25 + Metadata<br/>Deterministic chunk_id upserts]
     end
 
     subgraph Query[Query-Time Pipeline - Per Clinician Question]
@@ -274,8 +282,10 @@ flowchart TB
         B9 --> B10[Amazon Bedrock<br/>Grounded Generation<br/>Stronger Model + Guardrails]
         B10 --> B11[Lambda<br/>Validate Claims vs Chunks]
         B11 --> B12{Validation<br/>Pass?}
-        B12 -->|No| B10
+        B12 -->|No, retries remaining| B10
+        B12 -->|No, retries exhausted| B19[Route to<br/>Clinician Review Queue]
         B12 -->|Yes| B13[Lambda<br/>Render Answer with Citations]
+        B19 --> B14
         B13 --> B14[S3 + DynamoDB<br/>Answer Archive and Provenance]
         B13 --> B15[Return to Clinician]
     end
@@ -300,7 +310,7 @@ flowchart TB
 | **Bedrock Model Access** | Request access to a capable generation model (Claude Sonnet or equivalent), a cheaper assistant model (Claude Haiku or Nova Lite), and an embedding model (Amazon Titan Text Embeddings v2 or Cohere Embed English v3). Evaluate retrieval quality with your chosen embedder before production. |
 | **Corpus Licensing** | PMC Open Access Subset and PubMed abstracts are freely usable. UpToDate, DynaMed, and Cochrane full text have licensing constraints; institutional subscriptions may allow internal RAG use but verify with the vendor. Guidelines vary (USPSTF and CDC are generally redistributable; specialty societies vary). Document the license for every corpus source and configure the pipeline to respect redistribution terms. |
 | **Encryption** | S3 corpus and answer archive: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. OpenSearch: encryption at rest and in transit with a CMK, fine-grained access control, no public endpoint. Bedrock and Comprehend Medical: TLS in transit, encryption at rest. Bedrock model-invocation logging (if enabled) contains the question and the retrieved chunks; the chunks may reference patient context from the question. Log destination must be KMS-encrypted to the same standard as the answer archive. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock, Bedrock Runtime, Bedrock Agent Runtime (if using Knowledge Bases), Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, and EventBridge. Gateway endpoints for S3 and DynamoDB. OpenSearch domain in VPC-only mode with security-group rules for Lambda access. Interface endpoints cost roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock, Bedrock Runtime, Bedrock Agent Runtime (if using Knowledge Bases), Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, and EventBridge. Gateway endpoints for S3 and DynamoDB. OpenSearch domain in VPC-only mode with security-group rules for Lambda access. Interface endpoints cost roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. Conditionals: if the clinician-facing API is a private API (EHR callers inside the same VPC), add `execute-api`. If OpenSearch Serverless is used instead of the provisioned domain, substitute `aoss` for the OpenSearch VPC posture. External egress: the ingestion workload calls NCBI E-utilities, ClinicalTrials.gov, and potentially licensed-content endpoints. For private-subnet deployments, route egress through a NAT Gateway (higher cost at full-rebuild volumes) or through a forward proxy in a DMZ subnet with destination allow-listing; log egress in VPC Flow Logs and publish the destination allow-list as code. |
 | **CloudTrail** | Enabled with data events for Bedrock invocations, S3 object access, DynamoDB access, and Secrets Manager retrievals. Correlate queries to the requesting clinician identity. |
 | **Sample Data** | For development: use synthetic clinician questions with a corpus built from PMC Open Access and PubMed abstracts (both freely available via NCBI E-utilities and the PMC bulk download). For evaluation: curated question-answer pairs from published benchmark datasets (MedQA, BioASQ, or similar) provide a more objective quality signal than ad-hoc testing. Never use real clinician questions with real patient context in development environments. |
 | **Cost Estimate** | Corpus ingestion (one-time per full rebuild, a few million chunks): embeddings run $200-$2,000 depending on corpus size and model choice; re-usable as an amortized upfront cost. Per-query cost: query expansion and classification $0.001-$0.005, retrieval (OpenSearch or Bedrock Knowledge Bases) $0.005-$0.02 including re-ranking, generation $0.03-$0.15 depending on model and retrieved context size, validation $0.005-$0.02. End-to-end: $0.08-$0.60 per question. OpenSearch cluster (if self-hosted) is the largest fixed cost, typically $300-$2,000/month depending on size and redundancy. At 1,000 queries per day, query-side variable cost runs $80-$600/day. |
@@ -352,7 +362,12 @@ FUNCTION receive_question(request):
         requesting_specialty = request.specialty
         received_at       = current UTC timestamp
 
-    // Classify question type with a cheap model
+    // Classify question type with a cheap model. Model IDs are placeholders
+    // because Bedrock's versioned model IDs change periodically and cross-region
+    // inference profiles (prefixed with `us.` or `eu.`) are the recommended
+    // path in many regions. The Python companion pins the current versioned
+    // IDs (e.g., "anthropic.claude-3-5-haiku-20241022-v1:0"); verify against
+    // the Bedrock console for your region before deploying.
     classification_prompt = """
     Classify the following clinical question into one of these categories:
     - therapeutic: asks about treatment effects or interventions
@@ -375,7 +390,7 @@ FUNCTION receive_question(request):
     """
 
     classification = call Bedrock.InvokeModel with:
-        model_id    = "anthropic.claude-haiku-4"
+        model_id    = SMALL_MODEL_ID   // e.g., Claude Haiku or Nova Lite; see companion for current versioned ID
         prompt      = classification_prompt
         max_tokens  = 500
         temperature = 0.0
@@ -397,6 +412,22 @@ FUNCTION receive_question(request):
 ```
 FUNCTION expand_query_and_extract_entities(question, patient_context):
 
+    // Before sending patient_context to downstream services, strip fields
+    // that aren't needed for literature retrieval or synthesis. Minimum-
+    // necessary applies: Bedrock and Comprehend Medical are HIPAA-eligible,
+    // but the model doesn't need MRN, DOB, name, address, phone, or payer
+    // identifiers to produce a literature synthesis.
+    //
+    // Keep: age band, sex if clinically relevant, active conditions, current
+    //       medications, pertinent labs (renal/hepatic function, pregnancy
+    //       status, immune status), weight if drug-dosing is relevant.
+    // Drop: MRN, DOB (age band is enough), name, address, phone, email,
+    //       payer/member IDs, provider NPIs, provider addresses.
+    //
+    // Carry the scrubbed payload through the pipeline; do not re-hydrate
+    // the full record downstream.
+    patient_context_minimal = minimize_phi_for_literature(patient_context)
+
     // Query expansion: generate 3-5 query variants that cover terminology shifts
     expansion_prompt = """
     Rewrite the following clinical question into 3-5 search queries that a medical librarian
@@ -410,13 +441,13 @@ FUNCTION expand_query_and_extract_entities(question, patient_context):
     formulation for the retrieval step to match semantically.
 
     QUESTION: {question}
-    PATIENT CONTEXT: {patient_context}
+    PATIENT CONTEXT: {patient_context_minimal}
 
     Return JSON: { queries: [...], canonical: "..." }
     """
 
     expansion = call Bedrock.InvokeModel with:
-        model_id   = "anthropic.claude-haiku-4"
+        model_id   = SMALL_MODEL_ID   // same small model used for classification
         prompt     = expansion_prompt
         max_tokens = 600
         temperature = 0.3
@@ -424,10 +455,10 @@ FUNCTION expand_query_and_extract_entities(question, patient_context):
     expanded = parse JSON from expansion
 
     // Entity extraction using Comprehend Medical
-    // Run on the original question plus patient context; combine for richer retrieval
+    // Run on the original question plus the minimized patient context
     text_for_entities = question
-    IF patient_context:
-        text_for_entities = text_for_entities + " " + serialize(patient_context)
+    IF patient_context_minimal:
+        text_for_entities = text_for_entities + " " + serialize(patient_context_minimal)
 
     cm_response = call ComprehendMedical.DetectEntitiesV2 with:
         text = text_for_entities
@@ -445,39 +476,52 @@ FUNCTION expand_query_and_extract_entities(question, patient_context):
         conditions:  extract_conditions(cm_response, icd_response),
         procedures:  extract_procedures(cm_response),
         anatomy:     extract_anatomy(cm_response),
-        population:  infer_population(patient_context)  // adult, pediatric, geriatric, pregnancy, etc.
+        population:  infer_population(patient_context_minimal)  // adult, pediatric, geriatric, pregnancy, etc.
     }
 
     RETURN {
         expanded_queries: expanded.queries,
         canonical_query: expanded.canonical,
-        entities: entities
+        entities: entities,
+        patient_context_minimal: patient_context_minimal  // carried forward to generation
     }
 ```
 
-**Step 3: Multi-source retrieval with hybrid search.** Query the corpus across multiple modalities in parallel: dense-vector similarity for each expanded query, keyword search for entity-driven terms, and metadata filters for things like date range, evidence tier preference, and population match. Merge and deduplicate results.
+**Step 3: Multi-source retrieval with hybrid search.** Query the corpus across multiple modalities in parallel: dense-vector similarity for each expanded query, keyword search for entity-driven terms, hard metadata filters for date range and population match, and a source-tier ranking boost. Merge and deduplicate results.
 
 ```
 FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, question_category):
 
     // Embed the canonical query and each expanded query with the same model used at indexing time
     canonical_embedding = call Bedrock.InvokeModel with:
-        model_id = "amazon.titan-embed-text-v2"
+        model_id = EMBEDDING_MODEL_ID   // e.g., Amazon Titan Text Embeddings v2 or Cohere Embed; see companion for current versioned ID
         input    = canonical_query
 
     expanded_embeddings = empty list
     FOR each q in expanded_queries:
         emb = call Bedrock.InvokeModel with:
-            model_id = "amazon.titan-embed-text-v2"
+            model_id = EMBEDDING_MODEL_ID
             input    = q
         append emb to expanded_embeddings
 
-    // Build metadata filters based on question category and patient population
-    // These filters are passed to OpenSearch as a boolean query alongside the vector/BM25 query.
+    // Build metadata filters and boosts based on question category and patient population.
+    // Tier is a ranking BOOST, not a hard filter. For a question where only
+    // observational evidence exists, the pipeline should still surface that
+    // evidence and let the generation step's evidence-strength rating reflect
+    // the tier mix honestly. Hard-filtering by tier can silently exclude all
+    // relevant evidence for questions about newly-approved drugs, orphan
+    // indications, or topics where no systematic review exists yet.
     metadata_filters = {
-        publication_date: within_last_10_years,     // tune per question; drug-safety favors recent
-        population_tags:  entities.population,       // adult, pediatric, etc.
-        source_tier:      preferred_tiers_for(question_category)
+        publication_date: within_useful_window_for(question_category),
+        population_tags:  entities.population     // hard filter; pediatric-only
+                                                  // studies are rarely valid
+                                                  // for adult questions
+    }
+
+    metadata_boosts = {
+        source_tier: tier_weights_for(question_category)
+        // e.g., therapeutic: { SR/MA: 1.5, RCT: 1.3, Cohort: 1.0,
+        //                      Case-control: 0.8, Case series: 0.5, Guideline: 1.2 }
     }
 
     // Dense-vector retrieval with each query embedding
@@ -490,6 +534,7 @@ FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, que
             index        = "medical-corpus"
             query_vector = embedding
             filters      = metadata_filters
+            boosts       = metadata_boosts   // applied as function_score or rescorer
             size         = 200
             knn          = true
         append results to dense_candidates
@@ -502,6 +547,7 @@ FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, que
         index    = "medical-corpus"
         query    = build_bm25_query(entity_terms, canonical_query)
         filters  = metadata_filters
+        boosts   = metadata_boosts
         size     = 200
 
     // Merge with reciprocal rank fusion
@@ -526,7 +572,15 @@ FUNCTION rerank_candidates(canonical_query, candidates, top_k=20):
     // Option B: Call a cross-encoder re-ranker hosted on SageMaker.
     // Option C: Use a small LLM as a re-ranker (cheaper but lower quality).
 
-    // Pseudocode assumes a cross-encoder re-ranker endpoint
+    // Pseudocode assumes a cross-encoder re-ranker endpoint. Note: the
+    // endpoint named below (e.g., "medical-reranker-v1") is a SageMaker
+    // endpoint the team deploys separately, not a managed AWS service.
+    // Building a medical re-ranker is its own project: pick a base model
+    // (MS-MARCO cross-encoder or a biomedical cross-encoder), optionally
+    // fine-tune on labeled medical relevance pairs, package, deploy,
+    // manage inference scaling. See "Why This Isn't Production-Ready"
+    // for the lifecycle. The Python companion uses Option C (small-LLM
+    // stand-in) for teaching; upgrade to Option B for production.
     rerank_pairs = empty list
     FOR each candidate in candidates:
         append {
@@ -569,6 +623,9 @@ FUNCTION tag_evidence_tiers(top_chunks):
             chunk.evidence_tier = "Level 4: Case-Control Study"
         ELSE IF source_paper.publication_types includes "Case Reports" OR "Case Series":
             chunk.evidence_tier = "Level 5: Case Series / Case Reports"
+        ELSE IF source_paper.publication_types includes "Adverse Event Report"
+                OR source_paper.source_type == "pharmacovigilance":
+            chunk.evidence_tier = "Level 4: Pharmacovigilance"
         ELSE IF source_paper.source_type == "guideline":
             chunk.evidence_tier = "Guideline: " + source_paper.issuing_body
         ELSE IF source_paper.source_type == "narrative_review":
@@ -606,7 +663,7 @@ FUNCTION fetch_full_context(top_chunks):
 **Step 7: Grounded generation with citation discipline.** Now the synthesis step. Construct a prompt that includes the question, the retrieved chunks with identifiers, evidence tiers, and full context. The prompt instructs the model to cite every claim by chunk identifier, to describe rather than recommend, to surface uncertainty, and to explicitly state when the retrieved evidence does not answer the question.
 
 ```
-FUNCTION generate_synthesis(question, patient_context, top_chunks, question_category):
+FUNCTION generate_synthesis(question, patient_context_minimal, top_chunks, question_category):
 
     // Format chunks for the prompt with identifiers the model will cite
     chunks_block = ""
@@ -658,8 +715,8 @@ FUNCTION generate_synthesis(question, patient_context, top_chunks, question_cate
     QUESTION:
     {question}
 
-    PATIENT CONTEXT (if any):
-    {patient_context}
+    PATIENT CONTEXT (minimized; if any):
+    {patient_context_minimal}
 
     QUESTION CATEGORY: {question_category}
 
@@ -668,7 +725,7 @@ FUNCTION generate_synthesis(question, patient_context, top_chunks, question_cate
     """
 
     response = call Bedrock.InvokeModel with:
-        model_id       = "anthropic.claude-sonnet-4"
+        model_id       = GENERATION_MODEL_ID   // e.g., Claude Sonnet or equivalent; see companion for current versioned ID
         prompt         = generation_prompt
         max_tokens     = 4000
         temperature    = 0.2
@@ -678,6 +735,11 @@ FUNCTION generate_synthesis(question, patient_context, top_chunks, question_cate
         //   per the Guardrails API (via guardContent block in Converse or grounding source
         //   in the Guardrails policy). The grounding check does NOT auto-detect what in
         //   the prompt is the grounding source; it must be explicitly tagged.
+        // - Input-side prompt-attack filters. Retrieved chunks are attacker-reachable
+        //   content (PMC text, institutional notes, OCR'd imports with prompt-shaped
+        //   footers). Treat chunks as untrusted input, not verified instructions;
+        //   configure the prompt-attack filter on the input side in addition to the
+        //   output-side grounding check.
         // - Content filters on harmful content
         // - PII detection configured to permit medical content but block unintended identifiers
 
@@ -726,6 +788,36 @@ FUNCTION validate_answer(answer_text, claims, chunks_used, retry_count):
                 IF num not verbatim in supporting_text:
                     append { claim: claim, reason: "numeric_not_in_source",
                              number: num } to unverified
+
+        // For claims that assert a direction (reduction, increase, improvement,
+        // decline, superiority, noninferiority, benefit, harm), verify the
+        // direction token matches the cited chunk in the same sentence.
+        // "20% increase in mortality" and "20% reduction in mortality" both
+        // pass the verbatim-numeric check and typically pass semantic
+        // similarity; neither catches a sign flip. Direction validation is
+        // the hardest of the three checks. Implementation options in
+        // increasing sophistication:
+        //   (a) token co-occurrence check scoped to a sentence window
+        //   (b) NLI classifier (entailment vs contradiction) between the
+        //       claim and the cited sentence
+        //   (c) domain-specific relation extractor producing
+        //       (intervention, outcome, direction, magnitude) tuples with
+        //       exact-match verification
+        // Option (c) is the right production target. The pseudocode shows
+        // option (a) as a starter; do not ship clinical RAG without at
+        // least this check, since wrong-direction errors are catastrophic.
+        IF claim_asserts_direction(claim.text):
+            direction_in_claim    = extract_direction_token(claim.text)
+            supporting_sentences  = sentence_split(concatenate(
+                                       chunk.full_context
+                                       for chunk in valid_citations))
+            matched_sentence      = find_sentence_with_shared_terms(
+                                       claim.text, supporting_sentences)
+            direction_in_source   = extract_direction_token(matched_sentence)
+            IF direction_in_claim != direction_in_source:
+                append { claim: claim, reason: "direction_mismatch",
+                         claim_direction: direction_in_claim,
+                         source_direction: direction_in_source } to unverified
 
         // For semantic claims, check similarity
         supporting_text = concatenate(chunk.full_context for chunk in valid_citations)
@@ -871,7 +963,7 @@ FUNCTION archive_and_log(query_id, rendered, chunks_used, generation_trace):
   "question_category": "safety_interaction",
   "specialty": "internal_medicine",
   "evidence_strength": "Moderate",
-  "evidence_strength_justification": "Based on one systematic review [1], three retrospective cohort studies [2][3][4], and one society consensus statement [5]. No randomized trials directly address this question.",
+  "evidence_strength_justification": "Based on one systematic review [1], two retrospective cohort studies [2][3], one FDA FAERS pharmacovigilance analysis [4], and one society consensus statement [5]. No randomized trials directly address this question.",
   "answer_markdown": "## Summary\n\nThe available evidence suggests that concurrent methotrexate and aromatase inhibitor therapy is generally tolerated in patients with inflammatory arthritis and early-stage breast cancer, with a moderate hepatotoxicity signal that warrants enhanced monitoring. No randomized controlled trials directly address this combination. [1][2][3]\n\n## Key Findings by Evidence Tier\n\n**Systematic Review (Level 1)**\n\nA 2024 systematic review of 14 observational studies (N=2,847 adult women with inflammatory arthritis on concurrent DMARDs and aromatase inhibitor therapy) found no significant increase in arthritis disease activity but a small increase in transaminase elevations (pooled OR 1.4, 95% CI 1.1-1.8) compared to DMARD therapy alone. [1] The review noted heterogeneity in monitoring protocols and recommended standardized liver function testing every 8-12 weeks during combined therapy.\n\n**Observational Studies (Level 3)**\n\n- A 2022 retrospective cohort from a single tertiary center (N=187) found grade 2+ transaminitis in 11% of patients on methotrexate plus aromatase inhibitor vs 6% on methotrexate alone (p=0.03); no cases progressed to liver failure. [2]\n- A 2023 multi-center observational study (N=412) found no significant difference in arthritis flare rates between patients who continued methotrexate during aromatase inhibitor therapy and those who discontinued. [3]\n- A 2022 pharmacovigilance analysis of the FDA FAERS database identified a disproportionality signal for hepatotoxicity with the combination but could not adjust for confounding. [4] (Note: FAERS data are subject to reporting bias and cannot establish causation.)\n\n**Consensus Statements**\n\nA 2023 joint statement from the American College of Rheumatology and the American Society of Clinical Oncology recommends individualized decision-making, with explicit discussion of flare risk if methotrexate is held and hepatotoxicity risk if it is continued. The statement recommends liver function testing every 8-12 weeks and multidisciplinary decision-making between rheumatology and oncology. [5] (Consensus statement, not a formal guideline with evidence grading.)\n\n## Limitations and Gaps\n\n- No randomized controlled trials address this combination directly. All evidence is observational.\n- Most studies focus on methotrexate plus aromatase inhibitors as a class; subgroup data for anastrozole specifically versus letrozole or exemestane are limited.\n- Long-term (>5 year) outcomes are not well characterized in the retrieved literature.\n- Studies are predominantly in postmenopausal women; generalizability to premenopausal women on ovarian suppression is less clear.\n\n## Overall Evidence Strength: Moderate\n\nOne systematic review and multiple observational studies converge on a consistent picture (combined therapy is tolerated, with a hepatotoxicity signal warranting monitoring), but the absence of randomized trials and the heterogeneity of observational protocols limit confidence.",
   "factual_claims": [
     {
