@@ -10,6 +10,16 @@ TechEditor pass (2026-05-10): minor edits for clarity and consistency.
     block hides this but the code is misleading as written.
   - No structural or content rewrites. Voice, order, and technical claims
     preserved as drafted.
+
+TechEditor pass (2026-05-10, iteration 2): additional mechanics pass.
+  - Fixed bold-scope inconsistency on the "Equity" entry in the Gap
+    section. Previously had two sentences in bold ("**Equity. The failure
+    modes are worst for patients who are hardest to serve.**"), which
+    broke the pattern used by every other entry in that section (single
+    declarative sentence bolded, supporting prose unbolded). Replaced
+    with a colon-joined single bold sentence to match the surrounding
+    pattern.
+  - No other changes. All TODO markers from the prior pass preserved.
 -->
 
 # Recipe 2.8: Python Implementation Example
@@ -1992,7 +2002,7 @@ Run this end-to-end against a HealthScribe-eligible AWS account with a test audi
 
 **Case review is the quality program.** Sample signed notes weekly with a clinical reviewer. Look at what the AI got right, what it got wrong, and what clinicians edited. The patterns feed directly into prompt iteration, template changes, and training content. Budget clinical-reviewer time as an ongoing cost. Skip this and the pipeline silently degrades; the metrics look fine until they don't.
 
-**Equity. The failure modes are worst for patients who are hardest to serve.** Non-native English speakers, patients with heavy accents, patients with impaired speech, patients from demographic groups underrepresented in ASR training data all get worse pipeline performance. Measure this explicitly. Track validation-pass rate, edit-distance, and clinician-reported issues by patient language, accent indicators where known, and demographic bucket. Address gaps explicitly, don't assume the system serves everyone equally until you've verified it does.
+**Equity: the failure modes are worst for patients who are hardest to serve.** Non-native English speakers, patients with heavy accents, patients with impaired speech, patients from demographic groups underrepresented in ASR training data all get worse pipeline performance. Measure this explicitly. Track validation-pass rate, edit-distance, and clinician-reported issues by patient language, accent indicators where known, and demographic bucket. Address gaps explicitly, don't assume the system serves everyone equally until you've verified it does.
 
 **The clinician is still the signer.** The AI drafts; the clinician reviews; the clinician signs. Never auto-route a draft to the chart. Never remove the signing step. This is the single most important workflow invariant in the whole architecture. Every line of this code assumes it; every deployment should enforce it.
 
