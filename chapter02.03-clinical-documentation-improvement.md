@@ -1,10 +1,15 @@
 <!--
 Editorial pass (TechEditor, 2026-05-11):
 - Tightened Prerequisites: scoped IAM permissions to resource ARNs, promoted DynamoDB encryption to customer-managed KMS key, split the Bedrock VPC endpoint into its two real endpoints (bedrock-runtime and bedrock-agent-runtime), and added a Lambda Runtime row with an explicit timeout floor (expert review H2-HIGH Lambda timeout, M2 IAM scoping, M3 DynamoDB CMK, M9 bedrock-agent-runtime endpoint).
-- Softened one hyperbolic word in Variations (dramatically -> substantially) to match the engineer-explaining voice used elsewhere in the recipe (voice review L11).
-- Preserved the TechWriter TODO on Recipe 7.3 cross-reference. Note: a pass through categories/07-predictive-analytics.md finds no "DRG Prediction" recipe in the current plan; the closest neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). Flagging for the book-wide cross-reference sweep.
+- Softened one hyperbolic word in the "Why LLMs Work Here" discussion (dramatically -> substantially) to match the engineer-explaining voice used elsewhere in the recipe (voice review L11).
+- Preserved the TechWriter TODO on Recipe 7.3 cross-reference. Note: a pass through categories/07-predictive-analytics.md finds no "DRG Prediction" recipe in the current plan (7.3 is currently "Patient Churn / Disenrollment Prediction"); the closest clinically related neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). Flagging for the book-wide cross-reference sweep.
 - Flagged remaining structural items as TODOs for TechWriter (see inline comments): PHI minimization guidance in Why This Isn't Production-Ready (H1), DLQ / reliable ingestion note (H3), idempotency on repeat events (M4), knowledge base retrieval caching and batching (M1), suggestion retention / secure deletion policy (L1), and EHR network connectivity sentence (L2). Per persona rules, structural additions that introduce new architectural content are left for the TechWriter rather than rewritten here.
 - Verified: zero em dashes (U+2014 full-file scan), header hierarchy (H1 title, H2 major, H3 subsection, H4 Walkthrough) matches chapter01 and chapter02.01/02.02, RECIPE-GUIDE section order intact, vendor balance holds at ~70/30 (AWS names first appear at "The AWS Implementation"), all external URLs well-formed, no documentation-voice or LinkedIn-influencer anti-patterns present.
+
+Editorial pass 2 (TechEditor, 2026-05-11):
+- Corrected pass-1 changelog to say "Why LLMs Work Here" (the actual location of the `dramatically -> substantially` swap) rather than "Variations," and expanded the Recipe 7.3 note with the current title from categories/07-predictive-analytics.md so the downstream cross-reference sweep has the context it needs.
+- Re-verified: zero em dashes (U+2014), zero triple-blank-line gaps in prose, header hierarchy unchanged from pass 1, pseudocode fences all tagged, Mermaid block intact, all sample ICD-10-CM codes (J18.9, J15.1, J15.6, J13, I50.9, I50.23) valid in the current code set, Related Recipes numbers match the current chapter 2 plan (2.1, 2.4, 2.6).
+- Confirmed the five TODOs flagged in pass 1 are still the right handoff to TechWriter: each introduces new architectural prose (PHI redaction via Comprehend Medical, SQS/DLQ in the ingestion path, idempotency composite key, knowledge-base caching, retention policy, EHR connectivity) rather than in-place edits, which is the boundary persona rules draw between editor and writer. No rewrites performed.
 -->
 
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
