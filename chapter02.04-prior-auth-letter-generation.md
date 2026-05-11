@@ -1,3 +1,10 @@
+<!--
+Editorial pass (TechEditor, 2026-05-11):
+- Removed a documentation-voice opening sentence at the end of The Problem ("This recipe is about the generation side of prior auth.") that duplicated the next sentence's framing ("This one is about being the provider..."). The second sentence already carries the contrast with Recipe 1.4 in CC voice; the first was redundant and leaned into the anti-pattern flagged in STYLE-GUIDE.md.
+- Preserved all TODO markers inserted by TechWriter, TechCodeReviewer, and TechExpertReviewer, including the three HIGH findings from expert review (cost estimate A1, VPC endpoint list N1, IAM ARN scoping S1), the six MEDIUM findings (S2 minimum-necessary, S3 model-invocation-logging PHI, S4 input-side prompt injection, A2 Step Functions task-token pattern, A3 regeneration retry cap, A4 idempotency fingerprint, N2 EHR connectivity), and the LOW findings (V1 three unverified items, the "PAO" acronym correction, the Recipe 5.x cross-reference). Per persona rules, structural additions that introduce new architectural or clinical content are left for the TechWriter rather than rewritten here.
+- Verified: zero em dashes (U+2014 and U+2013 full-file scans), header hierarchy intact (H1 title, H2 major sections, H3 subsections, H4 Walkthrough), RECIPE-GUIDE section order preserved, vendor balance holds (AWS names first appear at "The AWS Implementation"), all external URLs well-formed (AWS docs, CMS-0057-F fact sheet, HL7 DaVinci PAS IG, AMA PA resources, ACR guidelines), fenced pseudocode blocks match the unlabeled convention established in Chapter 1 and Recipe 2.3, JSON and Mermaid blocks carry language tags, no LinkedIn-influencer or announcement-voice patterns present.
+-->
+
 # Recipe 2.4: Prior Authorization Letter Generation
 
 **Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter <!-- TODO: recompute cost against actual multi-call pipeline (Step 2 extraction, Step 3 per-criterion fact extraction, Step 4 per-criterion mapping, Step 6 generation). Expert review flagged the current range as ~5-10x optimistic for a typical 10-criterion PA on Claude Sonnet 4. -->
@@ -20,7 +27,7 @@ Here's the thing that makes this problem particularly interesting for AI: the wr
 
 The economic impact of getting this right is substantial. If you can reduce letter composition time from 25 minutes to 5 minutes of physician review, you recover roughly 13 hours per physician per week. For a mid-sized practice, that's the equivalent of eliminating a full staff position dedicated to prior auth writing, or redeploying that person to higher-value work. For the patient, it's the difference between starting therapy next Monday and starting therapy next month.
 
-This recipe is about the generation side of prior auth. Recipe 1.4 covered the flip side: ingesting and processing prior auth submissions as a payer. This one is about being the provider who has to send those submissions in, and using an LLM to write the narrative letter rather than typing it by hand.
+Recipe 1.4 covered the flip side of this problem: ingesting and processing prior auth submissions as a payer. This one is about being the provider who has to send those submissions in, and using an LLM to write the narrative letter rather than typing it by hand.
 
 ---
 
