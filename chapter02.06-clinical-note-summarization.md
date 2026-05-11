@@ -1,6 +1,6 @@
 # Recipe 2.6: Clinical Note Summarization
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.05-0.25 per patient summary
+**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.05-$0.25 per patient summary
 
 ---
 
