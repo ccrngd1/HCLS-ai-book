@@ -1,7 +1,59 @@
 <!--
-TechEditor pass (v5) - 2026-05-10
+TechEditor pass (v6) - 2026-05-11
 
-v5 copy-editing pass (this pass):
+v6 copy-editing pass (this pass):
+- Final editorial checklist re-run against the v5 state. All editor-scope
+  checks still pass cleanly on a fresh scan:
+    * Em dashes (U+2014): 0 (byte-level confirmed)
+    * En dashes (U+2013): 0 (byte-level confirmed)
+    * UTF-8 mojibake pairs in body: 0
+    * Doubled words in body prose: 0 (the only two regex hits are inside
+      the v5 editor-log header, quoting "the the" and "and and" as examples)
+    * Header hierarchy: 1 H1 title + 11 H2 sections in RECIPE-GUIDE order
+      (the v5 log's "12 H2" count is a minor v5 miscount; the actual body
+      has 11 H2 sections, which matches the Chapter 1 template: Problem,
+      Technology, General Architecture Pattern, AWS Implementation,
+      Why This Isn't Production-Ready, Honest Take, Variations and
+      Extensions, Related Recipes, Additional Resources, Estimated
+      Implementation Time, Tags). 10 H3 subsections under Technology and
+      AWS Implementation, 1 H4 (Walkthrough) under Code. No skipped levels.
+    * Code fences: 10 fenced blocks (20 fence markers). JSON block labeled
+      json; architecture diagram labeled mermaid; pseudocode fences
+      intentionally unlabeled per Chapter 1 convention.
+    * Voice drift scan (demonstrates/leverage/seamless/unlock/transform/
+      excited to/empower): all hits are legitimate. Four are editor-log
+      meta-references to the scan itself; one is the RECIPE-GUIDE-mandated
+      Python-companion callout ("Python code that demonstrates these
+      patterns"); one is "highest-leverage" used as a technical qualifier
+      in the Honest Take; one is "transformation" used twice as a technical
+      noun in the Technology and Related Recipes sections.
+    * Link verification: every Additional Resources URL points at a
+      plausible AWS, AHRQ, HHS, CDC, Joint Commission, HL7, or SMART on
+      FHIR domain. Only three GitHub URLs; all three are verified
+      aws-samples repositories.
+    * Vendor balance holds at ~70/30. Part 1 (Problem, Technology, General
+      Architecture Pattern) is vendor-neutral; AWS names enter cleanly at
+      "Why These Services."
+- No structural changes, no new claims, no technical content changes this pass.
+- No TODO markers from other personas moved, altered, or removed. Count of
+  TODO markers remains stable: 32 total across the file (mix of EXPERT REVIEW,
+  CODE REVIEW, and original TechWriter markers, all with attribution and
+  finding IDs preserved).
+
+STATE FOR LOOP DRIVER: This recipe remains converged from an editorial
+perspective. Every remaining open item (S1 SMS PHI consent, S2 warfarin/
+apixaban clinical inconsistency, S3 IAM ARN scoping, S4 Bedrock model-
+invocation-logging PHI, N1 VPC endpoint expansion, A1-A6 architectural
+corrections, S5/N2/N3 network and PHI minimization notes, V1-V4 low-severity
+polish items, S6 synthetic-data label) requires substantive content changes
+that the TechEditor persona is explicitly NOT permitted to make ("Do not
+introduce new claims or technical content. If a section needs substantial
+rewriting, flag it rather than rewrite."). Findings remain flagged in place
+as TODO markers for TechWriter. The next useful loop step is TechWriter
+resolution of the flagged TODOs, then a short TechEditor re-pass to catch
+any grammar/mechanics/voice-drift introduced by those edits.
+
+v5 copy-editing pass:
 - Re-ran the full editorial checklist against the v4 state. All editor-scope
   checks still pass cleanly:
     * em dashes (U+2014): 0 (confirmed via byte-level scan)
