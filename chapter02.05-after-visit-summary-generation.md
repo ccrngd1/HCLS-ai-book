@@ -1,7 +1,27 @@
 <!--
-TechEditor pass (v8) - 2026-05-11
+TechEditor pass (v9) - 2026-05-11
 
-v8 copy-editing pass (this pass):
+v9 copy-editing pass (this pass):
+- No file content changes. Re-ran the editor checklist via a byte-level
+  PowerShell scan against the v8 state. Every editor-scope check passes
+  identically: em dashes U+2014 = 0, en dashes U+2013 = 0, UTF-8 mojibake
+  pairs in body = 0, header hierarchy holds (1 H1 + 11 H2 + 12 H3 + 1 H4,
+  no skipped levels), fence markers = 20 (10 fenced blocks), RECIPE-GUIDE
+  section order intact, vendor balance ~70/30.
+- No TODO markers from other personas moved, altered, or removed. Raw
+  TODO-token count is 47 (mix of editor-log meta-references,
+  TechExpertReviewer and TechCodeReviewer flags, and original TechWriter
+  self-TODOs).
+
+STATE FOR LOOP DRIVER: File remains converged from an editorial perspective
+across v5 through v9. All remaining open items require substantive content
+changes (clinical, security, architecture, networking) that the TechEditor
+persona is explicitly not permitted to make. The next useful loop step is
+TechWriter resolution of the flagged TODOs; a further TechEditor pass on
+the current file state adds no new information. See v8 entry immediately
+below for the full checklist audit and the standing open-items list.
+
+v8 copy-editing pass:
 - No file content changes. Re-ran the full editorial checklist against the
   v7 state. All editor-scope checks continue to pass cleanly:
     * Em dashes (U+2014): 0 (byte-level confirmed via PowerShell scan)
