@@ -471,7 +471,7 @@ FUNCTION extract_chunk_facts(chunk):
     """
 
     // Note on model IDs: Bedrock model IDs are versioned and, in most regions,
-    // now require a regional inference-profile prefix (e.g. "us.anthropic...").
+    // now require a regional inference-profile prefix (e.g., "us.anthropic...").
     // The family-style IDs used in this pseudocode are illustrative.
     llm_response = call Bedrock.InvokeModel with:
         model_id    = "anthropic.claude-haiku-4"
