@@ -19,6 +19,14 @@ Editorial pass 2 (TechEditor, 2026-05-11):
 - Removed stray double blank lines before "## The AWS Implementation" and before the Step 1 code fence (whitespace polish, no content change).
 - Confirmed zero em dashes, header hierarchy (H1 / H2 / H3 / H4 Walkthrough) consistent with Chapter 1, all URLs well-formed, no documentation-voice or LinkedIn-influencer patterns, vendor balance holds at approximately 70/30.
 - No structural rewrites; all TODOs preserved for the TechWriter.
+
+Editorial pass 3 (TechEditor, 2026-05-11):
+- Final checklist sweep against both reviews. No remaining fixable issues at the editing layer.
+- Verified: zero em dashes (U+2014 full-file scan), zero trailing whitespace, all fenced blocks match chapter-1 convention (bare fences for pseudocode, language tags on json/mermaid), all 12 external URLs are well-formed AWS docs/samples/solutions domains, no hype-marker phrases (leverage, seamless, delve, revolutionize, etc.) present.
+- Header hierarchy (H1 title, H2 major, H3 subsection, H4 Walkthrough) matches chapter01.01 and chapter02.01.
+- RECIPE-GUIDE section order verified: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Walkthrough), Expected Results, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
+- Vendor balance verified: The Problem, The Technology, and General Architecture Pattern stay vendor-neutral; AWS service names appear only from "The AWS Implementation" onward.
+- Preserved TODOs flagged for downstream personas: (1) cache-lookup Step 0 before Step 1 (TechWriter; A5), (2) optional retry loop in Step 5 with cost/latency adjustment (TechWriter; A4), (3) Recipe 8.1 cross-reference number (book-wide sweep; V3). Per persona instructions, structural additions are left for the TechWriter rather than rewritten here.
 -->
 
 # Recipe 2.2: Medical Terminology Simplification
