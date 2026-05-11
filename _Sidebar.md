@@ -54,6 +54,7 @@
   * [Python Example](chapter02.07-python-example)
 * [2.8 — Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation)
   * [Python Example](chapter02.08-python-example)
+* [2.9 — Clinical Decision Support Synthesis](chapter02.09-clinical-decision-support-synthesis)
 
 ---
 
