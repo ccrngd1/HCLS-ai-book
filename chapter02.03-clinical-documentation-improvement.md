@@ -10,6 +10,13 @@ Editorial pass 2 (TechEditor, 2026-05-11):
 - Corrected pass-1 changelog to say "Why LLMs Work Here" (the actual location of the `dramatically -> substantially` swap) rather than "Variations," and expanded the Recipe 7.3 note with the current title from categories/07-predictive-analytics.md so the downstream cross-reference sweep has the context it needs.
 - Re-verified: zero em dashes (U+2014), zero triple-blank-line gaps in prose, header hierarchy unchanged from pass 1, pseudocode fences all tagged, Mermaid block intact, all sample ICD-10-CM codes (J18.9, J15.1, J15.6, J13, I50.9, I50.23) valid in the current code set, Related Recipes numbers match the current chapter 2 plan (2.1, 2.4, 2.6).
 - Confirmed the five TODOs flagged in pass 1 are still the right handoff to TechWriter: each introduces new architectural prose (PHI redaction via Comprehend Medical, SQS/DLQ in the ingestion path, idempotency composite key, knowledge-base caching, retention policy, EHR connectivity) rather than in-place edits, which is the boundary persona rules draw between editor and writer. No rewrites performed.
+
+Editorial pass 3 (TechEditor, 2026-05-11):
+- Moved the visible "TODO: verify recipe number." text in the Recipe 7.3 bullet of Related Recipes into an HTML comment, matching the convention already used in chapter02.02 (Recipe 8.1 bullet). The TODO itself is preserved, including the pass-1 note that the current chapter 7 plan has 7.3 as "Patient Churn / Disenrollment Prediction" rather than "DRG Prediction." Persona rule on preserving TODO markers is honored; change is pure formatting/convention alignment so the TODO no longer appears in rendered output.
+- Final checklist sweep against both reviews. No remaining fixable issues at the editing layer.
+- Verified: zero em dashes (U+2014 full-file scan), zero en dashes, no hype markers (leverage, seamless, delve, empower, revolutionize, game-changer, cutting-edge, robust, unlock), no doubled-word typos, header hierarchy (H1 title / H2 major / H3 subsection / H4 Walkthrough) stable, all 10 external URLs in Additional Resources well-formed on their documented AWS / CMS / AHIMA domains, vendor balance holds at approximately 70/30 (AWS service names first appear in "The AWS Implementation").
+- RECIPE-GUIDE section order verified: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Walkthrough), Expected Results, Why This Isn't Production-Ready, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
+- TODOs preserved verbatim for TechWriter: (H1) PHI minimization before LLM calls via Comprehend Medical DetectPHI, (H3) SQS/DLQ on the S3-to-Lambda ingestion path, (M4) idempotency composite key, (M1) knowledge-base retrieval caching and batching, (L1) suggestion retention / secure deletion policy, (L2) EHR network connectivity note on the EHR integration paragraph, and the Recipe 7.3 cross-reference handoff (now in HTML-comment form). Per persona instructions, these six structural items are left for the TechWriter rather than rewritten here because each introduces new architectural prose rather than an in-place correction.
 -->
 
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
@@ -474,7 +481,7 @@ One more thing: the financial ROI on CDI is easy to measure (compare DRG weights
 - **Recipe 2.1 (Patient Message Response Drafting):** Shares the Bedrock inference pattern but for a different text generation use case
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Uses similar clinical element extraction but generates outbound letters rather than internal queries
 - **Recipe 2.6 (Clinical Note Summarization):** Complementary capability; summarization helps CDI specialists review notes faster
-- **Recipe 7.3 (DRG Prediction):** TODO: verify recipe number. Predicts DRG assignment, which CDI suggestions aim to improve through better documentation
+- **Recipe 7.3 (DRG Prediction):** Predicts DRG assignment, which CDI suggestions aim to improve through better documentation <!-- TODO: Verify recipe number and title against final chapter 7 index. Editorial pass 1 noted that categories/07-predictive-analytics.md currently lists 7.3 as "Patient Churn / Disenrollment Prediction"; closest clinical neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). -->
 
 ---
 
