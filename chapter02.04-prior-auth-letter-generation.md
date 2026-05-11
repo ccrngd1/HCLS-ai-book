@@ -143,7 +143,7 @@ Let's walk through each stage conceptually.
 
 **Present for physician review.** The generated letter is shown to the prescribing physician along with source provenance: each claim links to the source fact, each citation links to the retrieved evidence. The physician reviews quickly, edits if needed, and signs. This is where the time savings live: reducing a 25-minute composition task to a 3-5 minute review task.
 
-**Finalize and submit.** The signed letter is formatted for the payer's submission mechanism: PDF for portal upload, structured data for API submission (for payers supporting the DaVinci PAS or PAO FHIR profiles), or fax for legacy payers. Submission status is tracked for follow-up.
+**Finalize and submit.** The signed letter is formatted for the payer's submission mechanism: PDF for portal upload, structured data for API submission (for payers supporting the DaVinci PAS or PAO FHIR profiles), or fax for legacy payers. Submission status is tracked for follow-up. <!-- TODO: editor flagged "PAO" as an unrecognized HL7 DaVinci IG abbreviation. The recognized DaVinci PA-related IGs are PAS (Prior Authorization Support), CRD (Coverage Requirements Discovery), and DTR (Documentation Templates and Rules). Either correct the acronym (likely CRD or DTR was intended) or remove the "or PAO" clause if PAS alone was meant. -->
 
 This is a lot of machinery. The LLM call is one step in a pipeline of ten or twelve, and most of the engineering complexity lives in the non-LLM steps. Retrieval, extraction, mapping, and validation are where the system lives or dies. The generation is almost easy once you've done the rest correctly.
 
