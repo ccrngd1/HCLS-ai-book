@@ -1,7 +1,52 @@
 <!--
-TechEditor pass (v9) - 2026-05-11
+TechEditor pass (v10) - 2026-05-11
 
-v9 copy-editing pass (this pass):
+v10 copy-editing pass (this pass):
+- No file content changes. Re-ran the editor checklist via a body-only
+  PowerShell scan that excludes this HTML comment block, so the counts
+  below are against the published prose only (line 317 onward), not the
+  editor-log meta text. Every editor-scope check passes cleanly:
+    * Em dashes (U+2014) in body: 0
+    * En dashes (U+2013) in body: 0
+    * UTF-8 mojibake pairs in body: 0
+    * Voice-drift tokens in body: demonstrates=1 (the RECIPE-GUIDE-mandated
+      Python-companion callout), leverage=1 ("highest-leverage" as a
+      technical qualifier in the Honest Take), seamless=0, excited_to=0,
+      unlock=0, transform=0.
+    * Doubled-word matches in body: 3, all three false positives inside
+      the Mermaid diagram where node labels like "F[...]" and "H[...]"
+      adjoin arrow tokens across line breaks (F-->F, H-->H, O-->O). No
+      actual prose doubling.
+    * Header hierarchy: 1 H1 + 11 H2 + 12 H3 + 1 H4, no skipped levels.
+    * Code fences: 20 fence markers, 10 fenced blocks (json + mermaid
+      labeled; pseudocode intentionally unlabeled per Chapter 1 convention).
+    * RECIPE-GUIDE section order intact; vendor balance ~70/30.
+    * TODO markers in body: 25 (author-originated + reviewer-flagged),
+      all attributed and preserved.
+- No TODO markers from other personas moved, altered, or removed.
+- No structural changes, no new claims, no technical content changes.
+
+STATE FOR LOOP DRIVER: File remains converged from an editorial perspective
+across v5 through v10. All remaining open items require substantive content
+changes (clinical inconsistency S2, SMS PHI S1, IAM scoping S3, Bedrock
+logging PHI S4, VPC endpoint expansion N1, regeneration caps A1, HITL
+pattern A2, idempotency A3, Guardrails description A4, provenance
+completeness A5, PHI minimization S5, EHR connectivity N2, SES deliverability
+N3, TODO-citation resolution V1, model-ID versioning note V2, dated-stat
+hedge V3, Polly PHI note V4, synthetic-label S6) that the TechEditor persona
+is explicitly not permitted to make. The next useful loop step is TechWriter
+resolution of the flagged TODOs. Additional TechEditor iterations on the
+current file state add no new information and should be skipped by the
+loop driver until the TechWriter has made a content pass.
+
+Recommendation for the next TechWriter pass: once the flagged TODOs are
+resolved, collapse this editor log to a short two- or three-line summary
+before the recipe content is finalized for publication. The log currently
+spans ~316 lines of HTML comment and is larger than any single recipe
+section in the published body; its usefulness at this point is historical,
+not editorial.
+
+v9 copy-editing pass:
 - No file content changes. Re-ran the editor checklist via a byte-level
   PowerShell scan against the v8 state. Every editor-scope check passes
   identically: em dashes U+2014 = 0, en dashes U+2013 = 0, UTF-8 mojibake
