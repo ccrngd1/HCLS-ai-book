@@ -14,6 +14,11 @@ Editorial pass (TechEditor, 2026-05-11):
 - Replaced two broken URLs in Additional Resources; removed the V2 inline TODO (V2).
 - Preserved the V3 TODO on Recipe 8.1 cross-reference for the book-wide sweep.
 - Flagged remaining structural items (cache lookup step, classifier upgrade, retry loop) as TODOs for TechWriter (A4, A5, A6).
+
+Editorial pass 2 (TechEditor, 2026-05-11):
+- Removed stray double blank lines before "## The AWS Implementation" and before the Step 1 code fence (whitespace polish, no content change).
+- Confirmed zero em dashes, header hierarchy (H1 / H2 / H3 / H4 Walkthrough) consistent with Chapter 1, all URLs well-formed, no documentation-voice or LinkedIn-influencer patterns, vendor balance holds at approximately 70/30.
+- No structural rewrites; all TODOs preserved for the TechWriter.
 -->
 
 # Recipe 2.2: Medical Terminology Simplification
@@ -103,7 +108,6 @@ The pipeline at a conceptual level:
 
 The key design principle: simplification is a transformation with verifiable properties. You can measure whether the output is simpler (readability scores). You can verify whether critical content survived (entity matching). This makes it far easier to validate than open-ended generation tasks.
 
-
 ---
 
 ## The AWS Implementation
@@ -180,7 +184,6 @@ flowchart LR
 **Step 1: Extract medical entities from source text.** Before simplifying anything, identify the critical clinical content that must survive the transformation. Medication names, dosages, conditions, procedures, dates, and provider names are non-negotiable. If any of these get lost or altered during simplification, the output is unsafe. Amazon Comprehend Medical parses clinical text and returns structured entities with their categories and positions. We use this as our "preservation checklist" that gets verified after simplification. Skip this step and you have no way to automatically detect when simplification accidentally drops a medication or changes a dosage.
 
 <!-- TODO (TechWriter): Add an explicit cache-lookup step (Step 0) before Step 1 that computes `cache_key = hash(original_text + "|" + target_grade)` and short-circuits to a cached result if present. The cost discussion, Expected Results cache-hit-rate benchmark, and "Why These Services" narrative all assume this step exists, but the pseudocode currently starts at Step 1 and never consults the cache. A reader implementing the walkthrough as written will get zero cache hits. -->
-
 
 ```
 FUNCTION extract_critical_entities(clinical_text):
