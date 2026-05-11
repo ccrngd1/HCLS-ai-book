@@ -20,6 +20,17 @@ TechEditor pass (2026-05-10, iteration 2): additional mechanics pass.
     with a colon-joined single bold sentence to match the surrounding
     pattern.
   - No other changes. All TODO markers from the prior pass preserved.
+
+TechEditor pass (2026-05-11, iteration 3): code-fence consistency pass.
+  - Normalized the Step 5 (`render_institutional_note`) code block from
+    four-backtick fences (````python ... ````) to three-backtick fences
+    (```python ... ```) to match the other nine Python code blocks in
+    the file. The defensive four-backtick wrapping was unnecessary: no
+    line inside the block begins with three backticks at column 0
+    (the string literals containing "```" in `_parse_json_response` are
+    indented and do not terminate a fenced block).
+  - No content changes. No structural rewrites. All TODO markers from
+    prior passes preserved.
 -->
 
 # Recipe 2.8: Python Implementation Example
@@ -823,7 +834,7 @@ def _extract_symptom_phrases(patient_text_parts: list) -> list:
 
 *The pseudocode calls this `render_institutional_note(...)`. HealthScribe produces a structured note in one of its supported templates (History and Physical, SOAP, DAP, etc.). Institutions almost always want a specific format with their own language conventions, section ordering, and required fields. Bedrock is the post-processor: it takes the HealthScribe structured output plus the raw transcript plus the must-include checklist plus EHR context (meds, allergies, problem list) and produces the final institutional note with transcript-segment traceability.*
 
-````python
+```python
 def render_institutional_note(
     session_record: dict,
     transcript_json: dict,
@@ -1014,7 +1025,7 @@ Produce the institutional-format note now. Output ONLY the JSON object, no prose
         "sections": parsed.get("sections", {}),
         "claims": parsed.get("claims", []),
     }
-````
+```
 
 ---
 
