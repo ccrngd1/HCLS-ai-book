@@ -56,6 +56,8 @@
   * [Python Example](chapter02.08-python-example)
 * [2.9 — Clinical Decision Support Synthesis](chapter02.09-clinical-decision-support-synthesis)
   * [Python Example](chapter02.09-python-example)
+* [2.10 — Multi-Modal Clinical Reasoning](chapter02.10-multi-modal-clinical-reasoning)
+  * [Python Example](chapter02.10-python-example)
 
 ---
 
