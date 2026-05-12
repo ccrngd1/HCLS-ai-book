@@ -65,6 +65,7 @@
 
 * [Preface](chapter03-preface)
 * [3.1 — Duplicate Claim Detection](chapter03.01-duplicate-claim-detection)
+  * [Python Example](chapter03.01-python-example)
 
 ---
 
