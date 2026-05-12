@@ -67,6 +67,7 @@
 * [3.1 — Duplicate Claim Detection](chapter03.01-duplicate-claim-detection)
   * [Python Example](chapter03.01-python-example)
 * [3.2 — Patient No-Show Pattern Detection](chapter03.02-patient-no-show-pattern-detection)
+  * [Python Example](chapter03.02-python-example)
 
 ---
 
