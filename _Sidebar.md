@@ -64,6 +64,7 @@
 #### Ch 3: Anomaly Detection
 
 * [Preface](chapter03-preface)
+* [3.1 — Duplicate Claim Detection](chapter03.01-duplicate-claim-detection)
 
 ---
 
