@@ -195,7 +195,7 @@ The overall flow looks like this:
 
 **Reasoning layer.** The LLM call, with a prompt that includes the patient context, the modality inventory and interpretations, the retrieved sources, and the deterministic safety findings. The prompt enforces multi-hypothesis evaluation with evidence-for-and-against per hypothesis, verbatim preservation of quantitative values and graded terms, explicit handling of missing modalities, cross-modality consistency, citation discipline, and framing as options. The output is structured JSON.
 
-**Post-generation validation.** Citation check (every claim traces to a source), verbatim check (numbers and graded terms match sources), cross-modality consistency check (no claim contradicts another modality's input), modality coverage check (all present modalities considered; missing modalities acknowledged), scope check (recommendations within scope). Failures retry with augmented prompting; persistent failures route to human review.
+**Post-generation validation.** Citation check (every claim traces to a source), verbatim check (numbers and graded terms match sources), cross-modality consistency check (no claim contradicts another modality's input), modality coverage check (all present modalities considered; missing modalities acknowledged), scope check (recommendations within scope). Failures retry with augmented prompting up to a cap. Retry-exhausted failures route to a distinct human-review queue with a separate DynamoDB record and S3 archive; they do NOT proceed to tier/render/archive, and do NOT flow to the clinician UI as delivered reasoning. Only a `VALIDATED` reasoning output is delivered.
 
 **Tiering and rendering.** Recommendations tiered by clinical importance. Rendering foregrounds reasoning and evidence. Every modality source is one click away (open the imaging study in PACS, open the ECG waveform, open the original note). Uncertainty is explicit in both overall and per-recommendation form.
 
@@ -209,7 +209,7 @@ The overall flow looks like this:
 
 **Amazon Bedrock for the reasoning layer.** A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under AWS BAA.
 
-**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than unimodal cases.
+**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
 
 **Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
 
@@ -291,8 +291,10 @@ flowchart TB
         PROMPT --> GEN[Bedrock + Guardrails<br/>Reasoning Model]
         GEN --> VAL[Lambda<br/>Validation:<br/>Cites, Numbers, Consistency]
         VAL --> RCHK{Pass?}
-        RCHK -->|No| GEN
         RCHK -->|Yes| TIER[Lambda<br/>Tiering + Suppression]
+        RCHK -->|No, retries left| GEN
+        RCHK -->|No, retries exhausted| HRQ[Human Review Queue]
+        HRQ --> HRS[S3 + DynamoDB<br/>Review Queue Archive<br/>Not Delivered to Clinician UI]
         TIER --> DYN[DynamoDB<br/>Per-Patient History]
         TIER --> REND[Lambda<br/>Render]
         REND --> ARCH[S3 + DynamoDB<br/>Archive + Provenance]
@@ -308,6 +310,7 @@ flowchart TB
     style SAFE fill:#9f9,stroke:#333
     style INV fill:#ffb,stroke:#333
     style ARCH fill:#f9f,stroke:#333
+    style HRQ fill:#f99,stroke:#333
 ```
 
 
@@ -323,10 +326,10 @@ flowchart TB
 | **Bedrock Model Access** | Request access to a strong generation model (Claude Sonnet or equivalent) for the reasoning layer and a cheaper model (Claude Haiku or Nova Lite) for auxiliary tasks. Evaluate the chosen generation model against representative reasoning scenarios with clinician-reviewed gold answers before pilot deployment. |
 | **Modality AI Vendor Decisions** | Cleared imaging AI vendors produce structured outputs for specific imaging modalities and findings (Aidoc, Viz.ai, RapidAI, others for specific indications). Contracts usually include workflow integration, API access, and retention terms. Evaluate each before commitment; verify FDA clearance for the intended use; verify performance data in your patient population; confirm integration complexity. Non-cleared models (including many vision-language models) have a different regulatory posture and should not be used for diagnostic impression generation without explicit regulatory review. |
 | **Encryption** | S3 (modality artifacts, per-run archives, corpus): SSE-KMS with customer-managed keys, distinct keys per modality if retention policies differ. DynamoDB: encryption at rest with CMK. OpenSearch: encryption at rest and in transit, fine-grained access control, no public endpoint. Aurora: encryption at rest, TLS in transit. HealthLake and HealthImaging: encryption at rest with CMK. Bedrock and Comprehend Medical: TLS in transit. Bedrock model-invocation logging (if enabled) contains PHI; log destinations must be encrypted to the same standard as the archive. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock (Runtime and Guardrails), Comprehend Medical, HealthLake, HealthImaging, KMS, Secrets Manager, Step Functions, CloudWatch Logs, and EventBridge. Gateway endpoints for S3 and DynamoDB. Aurora and OpenSearch in VPC with security groups restricted to the Lambda execution role. SageMaker Endpoints in VPC if used. Factor interface endpoint costs into the cost estimate. |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock (Runtime and Guardrails), Comprehend Medical, HealthLake, HealthImaging, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch (monitoring), and EventBridge. Gateway endpoints for S3 and DynamoDB. If API Gateway is configured as a private REST API (recommended for EHR-internal clinician-facing endpoints), add the `execute-api` interface endpoint. Aurora and OpenSearch in VPC with security groups restricted to the Lambda execution role. SageMaker Endpoints in VPC if used. Factor interface endpoint costs into the cost estimate. |
 | **CloudTrail** | Enabled with data events for Bedrock invocations, S3 object access, DynamoDB access, HealthLake reads, HealthImaging reads, SageMaker endpoint invocations, and Secrets Manager retrievals. Correlate each reasoning run to the requesting clinician and the patient identifier via Cognito session claims. |
 | **Sample Data** | Development: synthetic FHIR bundles (Synthea), open guideline content (USPSTF, CDC, HHS, open society guidelines), open imaging report corpora (MIMIC-CXR reports are a common starting point), open ECG data (PhysioNet datasets). Never use real PHI in dev. Evaluation: curated case-scenario-to-reasoning-output pairs reviewed by clinical domain experts; these are expensive to assemble and essential for meaningful validation. |
-| **Cost Estimate** | Per-run cost varies substantially with scenario complexity and modalities in scope. Typical ranges: patient context fetch plus normalization $0.01-$0.03; modality ingestion $0.02-$0.15 (cleared imaging AI calls and foundation model calls dominate when enabled); deterministic safety checks $0.005-$0.02; retrieval $0.02-$0.08; reasoning layer $0.15-$2.50 (depends heavily on context size and model choice; multi-modal reasoning contexts can be large); validation $0.02-$0.10. End-to-end: $0.40-$4.00 per run. At 300 runs per day in a focused deployment, variable cost runs $120-$1,200/day. Fixed infrastructure (OpenSearch cluster, Aurora, HealthLake baseline, HealthImaging baseline, optional SageMaker Endpoints) adds $1,000-$5,000/month depending on scale and optional modality models. |
+| **Cost Estimate** | Per-run cost varies substantially with scenario complexity and modalities in scope. Typical ranges: patient context fetch plus normalization $0.01-$0.03; modality ingestion $0.02-$0.15 (cleared imaging AI calls and foundation model calls dominate when enabled); deterministic safety checks $0.005-$0.02; retrieval $0.02-$0.08; reasoning layer $0.15-$2.50 (depends heavily on context size and model choice; multi-modal reasoning contexts can be large); validation $0.02-$0.10. End-to-end: $0.40-$4.00 per run for typical focused scenarios. Broad scenarios with multi-year longitudinal context plus validator retries can exceed the top of that range; budget $5-$8 per run for worst-case comprehensive reasoning. At 300 runs per day in a focused deployment, variable cost runs $120-$1,200/day. Fixed infrastructure (OpenSearch cluster, Aurora, HealthLake baseline, HealthImaging baseline, optional SageMaker Endpoints) adds $1,000-$5,000/month depending on scale and optional modality models. |
 
 ### Ingredients
 
@@ -356,6 +359,16 @@ flowchart TB
 #### Walkthrough
 
 **Step 1: Trigger and orchestrate.** The pipeline starts from a clinical event or a clinician request. The first step creates the reasoning run record and prepares to kick off parallel modality ingestion.
+
+<!-- TODO (TechWriter, from expert review A3): EventBridge is at-least-once
+     delivery. The UUID approach here produces a new run on every duplicate
+     delivery. Consider deriving run_id from a deterministic event-key hash
+     (for example `f"{patient_id}:{encounter_id}:{scenario}"`) and using a
+     DynamoDB conditional write (`attribute_not_exists(run_id)`) plus a
+     Step Functions deterministic execution name so duplicates are rejected
+     at the orchestration layer rather than running the full pipeline twice.
+     This pattern has recurred across multiple Chapter 2 recipes and is a
+     candidate for a chapter-wide appendix. -->
 
 ```
 FUNCTION start_reasoning_run(trigger):
@@ -629,6 +642,22 @@ FUNCTION ingest_structured_context(run_id, patient_id):
 
 **Step 3: Normalize, annotate, and build the modality inventory.** Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.
 
+<!-- TODO (TechWriter, from expert review A2): each ingestion function currently
+     returns a bare list. Expert review A2 recommends distinguishing "failed to
+     retrieve" (HealthImaging timeout, Comprehend throttle, vendor AI 500) from
+     "genuinely absent" (the patient does not have this modality). Consider
+     returning a status-annotated record per modality (`status: "retrieved" |
+     "empty" | "failed" | "scoped_out"`) and building the inventory from status
+     rather than cardinality. The scope gate's defer path should then route
+     `failed` to retry rather than defer. -->
+<!-- TODO (TechWriter, from expert review S1): add a PHI-minimization step
+     between Step 3 and Step 7 that strips MRN, DOB, name, address, phone,
+     email, and payer or NPI identifiers from the serialized state before the
+     reasoning prompt is constructed. Bedrock under BAA is compliant for PHI,
+     but minimum-necessary applies inside the BAA boundary as well. The
+     rendered output re-associates reasoning to the patient via run_id plus
+     patient_id; identifiers do not need to round-trip through the prompt. -->
+
 ```
 FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
 
@@ -688,9 +717,31 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
 
 **Step 4: Scope gate.** Given the scenario and the modality inventory, decide whether the reasoning run should proceed. If a recent run covered the same scenario without material changes, suppress. If critical modalities are missing for the scenario, either scope down or defer with an explanatory output.
 
+<!-- TODO (TechWriter, from expert review A4): the "scoped_to" rewrite for
+     missing recommended modalities fires only when scenario ==
+     "comprehensive_reasoning". For any other scenario (including
+     "ed_dyspnea_workup"), a recommended-but-missing modality currently has
+     no architectural handler; the recipe depends on the reasoning layer
+     obeying the prompt's hard requirements rather than a scope-gate
+     guarantee. Consider expanding this branch so every scenario has one of
+     three handlers for a missing recommended modality: (a) narrow the scope
+     to a sub-scenario, (b) proceed with a completeness_cap of "low", or (c)
+     defer when the recommended modality is effectively required for that
+     sub-scenario (for example ECG for ACS-inclusive reasoning). -->
+
 ```
 FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
 
+    // recent_runs is a DynamoDB query on the mm-reasoning-runs table by
+    // (patient_id, initiated_at) over the SUPPRESSION_WINDOW_HOURS (typically
+    // 24 hours). A GSI on patient_id is required; a composite partition key
+    // of (patient_id + date) is a reasonable optimization at high-volume
+    // facilities.
+    //
+    // no_material_change_since compares the current modality inventory's
+    // content hash to the prior run's stored inventory hash. Material
+    // changes include: new imaging study, new ECG, lab value crossing a
+    // clinical threshold, new note of a relevant type, medication change.
     decision = {
         proceed:      false,
         reason:       "",
@@ -973,11 +1024,15 @@ FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
         // Guardrails configured with:
         //   - Contextual grounding: source context = inventory_block + safety_block
         //     + sources_block, tagged via the Guardrails API so grounding runs against
-        //     the authoritative content, not the prompt instructions.
+        //     the authoritative content, not the prompt instructions. Threshold 0.85+.
         //   - Content filters enabled.
         //   - PII policy appropriate for clinical content.
         //   - Denied-topics list including directive prescriptive phrasing outside
         //     of verbatim quoted guideline text.
+        //   - Input-side prompt-attack filters enabled on the Guardrail policy
+        //     itself (not the invocation). Modality inputs (reports, notes,
+        //     retrieved guidelines, protocols, vendor AI outputs) are untrusted
+        //     input surfaces that can carry instruction-shaped content.
 
     IF response.guardrail_action == "INTERVENED":
         RETURN { status: "GROUNDING_REJECTED",
@@ -1083,6 +1138,34 @@ FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
                  augmentation: augmentation }
 
     RETURN { status: "ROUTED_TO_HUMAN_REVIEW", unverified: unverified }
+```
+
+**Orchestration gate between Step 8 and Step 9.** Validation status is the last safety gate before the clinician UI. The orchestrator must distinguish `VALIDATED` from `ROUTED_TO_HUMAN_REVIEW`. Only `VALIDATED` proceeds to Step 9 and becomes a delivered reasoning output. `ROUTED_TO_HUMAN_REVIEW` is a terminal state: the trace is archived for audit, the run is recorded as pending clinical review, and the reasoning does not render to the clinician.
+
+```
+FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
+    IF validation_result.status == "VALIDATED":
+        // Fall through to Step 9: tier, render, archive, deliver.
+        RETURN { next_step: "tier_render_archive" }
+
+    IF validation_result.status == "ROUTED_TO_HUMAN_REVIEW":
+        // Write the trace to S3 (KMS-encrypted) for audit.
+        write to S3: f"mm-reasoning-runs/{run_id}/review-queue-trace.json" = trace
+
+        // Record the run state distinct from DELIVERED.
+        update DynamoDB: run_id with
+            status             = "ROUTED_TO_REVIEW"
+            validation_issues  = validation_result.unverified
+
+        // Enqueue for a clinical reviewer (SQS, DynamoDB stream, or
+        // equivalent). Reviewer triage is out of scope for this pseudocode.
+        enqueue_to_review_queue(run_id, validation_result.unverified)
+
+        emit CloudWatch metric: ReasoningRoutedToReview
+
+        // Do NOT call tier_render_archive. Do NOT return rendered reasoning
+        // to the clinician UI.
+        RETURN { next_step: "terminal_review_queue" }
 ```
 
 **Step 9: Tier, render, and archive.** Score against prior runs for suppression. Render with deep links to every modality source. Archive the full provenance.
@@ -1311,7 +1394,7 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
   ],
   "safety_findings_included": [
     {
-      "finding": "Renal function: current creatinine up from baseline [lab:2160-0]; eGFR estimated at 40 is a decrease from prior baseline of 44. Iodinated contrast for CT pulmonary angiography should consider this decrement per institutional contrast protocol.",
+      "finding": "Renal function: current creatinine up from baseline [lab:2160-0]; eGFR estimated at 36 is a decrease from prior baseline of 44 (CKD-EPI 2021). Iodinated contrast for CT pulmonary angiography should consider this decrement per institutional contrast protocol.",
       "source_citations": ["lab:2160-0", "protocol:contrast_nephropathy"],
       "where_in_output": "Suggested next steps of Hypothesis 2 (PE)"
     },
@@ -1406,6 +1489,10 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 **Specialty and institutional adaptation.** A pipeline that works for hospital medicine may need meaningful adjustment to work for emergency medicine, primary care, or subspecialty clinics. Each adaptation is its own validation. Plan incremental rollout rather than big-bang deployment.
 
 **Security and access control.** Reasoning outputs contain PHI, including inferred PHI (a combination of lab values and imaging findings may reveal more than any single item). Authorization must ensure that the reasoning output is delivered only to authorized clinicians with a legitimate care relationship. Integrate with the EHR authorization model; do not maintain a parallel system.
+
+**PHI minimization in prompts.** Bedrock is HIPAA-eligible and appropriate for PHI under BAA, but minimum-necessary applies inside the BAA boundary as well. The reasoning layer does not need MRN, date of birth, name, address, phone, or payer identifiers to produce a differential; it needs age band, sex where clinically relevant, active problems, current medications, derived values (eGFR, weight), lab trends, and the clinical content of the notes. Strip identifiers before serializing patient state into the reasoning prompt, and re-associate the rendered output to the patient via the run record rather than round-tripping identifiers through the model.
+
+**Trigger idempotency.** EventBridge is at-least-once delivery. Duplicate clinical triggers (the same new-admission event delivered twice, the same lab-threshold-crossed event fired by two rules) will produce duplicate reasoning runs if the orchestration layer does not enforce idempotency. Derive the run identifier from a deterministic event-key hash, use a DynamoDB conditional write to reject duplicates, and set the Step Functions execution name to the same deterministic value so a second start fails cleanly.
 
 ---
 
