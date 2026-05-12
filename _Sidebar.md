@@ -68,6 +68,7 @@
   * [Python Example](chapter03.01-python-example)
 * [3.2 — Patient No-Show Pattern Detection](chapter03.02-patient-no-show-pattern-detection)
   * [Python Example](chapter03.02-python-example)
+* [3.3 — Billing Code Anomalies](chapter03.03-billing-code-anomalies)
 
 ---
 
