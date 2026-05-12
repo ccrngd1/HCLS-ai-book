@@ -73,6 +73,10 @@ from requests_aws4auth import AWS4Auth
 # Never log raw patient context, modality contents, or rendered reasoning in plain
 # text. The audit trail for clinical content lives in S3 and DynamoDB under KMS,
 # with CloudTrail data events enabled.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -602,12 +606,15 @@ def ingest_ecg(run_id: str, patient_id: str, scenario: str,
 
 
 def _synthetic_ecg_records(patient_id: str, scenario: str) -> list:
-    """Synthetic ECGs for illustration. Replace with HealthLake search."""
-    # For the ED dyspnea scenario, we deliberately omit the ECG to exercise
-    # the missing-modality acknowledgment path. Flip the list to include
-    # ECGs for other scenarios.
-    if scenario == "ed_dyspnea_workup":
-        return []
+    """
+    Synthetic ECGs for illustration. Replace with HealthLake Observation
+    search for LOINC 11524-6 (12-lead ECG report).
+
+    For the default ED dyspnea vignette we return no ECGs so the pipeline
+    exercises the missing-modality acknowledgment path in the reasoning
+    prompt and validator. Production replaces this stub across all
+    scenarios.
+    """
     return []
 
 
@@ -1271,6 +1278,9 @@ def _derive_retrieval_queries(scenario: str, patient_state: dict,
                 "dyspnea and elevated BNP",
             ],
         }
+    # Only ED dyspnea queries are populated in this teaching example.
+    # Replace with scenario-aware queries for each scenario you support
+    # in production.
     return {"guideline_queries": [], "protocol_queries": [],
             "case_analog_queries": []}
 
@@ -1439,11 +1449,8 @@ Produce the reasoning now. Output ONLY the JSON object."""
         return {"status": "GENERATION_FAILED", "error": str(exc),
                 "reasoning": {}, "id_to_source": id_to_source}
 
-    guardrail_action = (
-        payload.get("amazon-bedrock-guardrailAction")
-        or payload.get("stop_reason")
-    )
-    if guardrail_action in ("INTERVENED", "guardrail_intervened"):
+    guardrail_action = payload.get("amazon-bedrock-guardrailAction")
+    if guardrail_action == "INTERVENED":
         logger.warning("Guardrail intervened on reasoning")
         return {"status": "GROUNDING_REJECTED",
                 "reasoning": {}, "id_to_source": id_to_source}
@@ -1628,9 +1635,12 @@ def validate_reasoning(reasoning: dict, id_to_source: dict,
             })
 
     # 2. Verbatim quantitative check
+    # Regex alternatives are tried left-to-right. Longer, more specific
+    # units (`ng/mL FEU`) come before shorter prefixes (`ng/mL`) so the
+    # full unit matches before a prefix consumes the numeric value.
     quantity_regex = re.compile(
-        r"\b\d+(?:\.\d+)?\s*(?:%|mg|mcg|g|mL|mmHg|bpm|ng/mL|pg/mL|"
-        r"U/L|mmol/L|ng/mL FEU|ms)\b",
+        r"\b\d+(?:\.\d+)?\s*(?:%|mcg|mg|g|mL|mmHg|bpm|ng/mL FEU|ng/mL|"
+        r"pg/mL|U/L|mmol/L|ms)\b",
         flags=re.IGNORECASE,
     )
     for item in items:
@@ -1708,6 +1718,17 @@ def validate_reasoning(reasoning: dict, id_to_source: dict,
                     "item": item.get("title"), "phrase": phrase,
                     "severity": "MEDIUM",
                 })
+
+    # NOTE: two validator checks from the Recipe 2.10 pseudocode are NOT
+    # implemented in this teaching example:
+    #   - Cross-modality consistency scan (semantic contradiction
+    #     detection across modalities that the reasoning did not
+    #     acknowledge).
+    #   - Scope-compliance check (classifier over scope_decision.scoped_to
+    #     that flags recommendations outside the scenario scope).
+    # Both require more than regex and are discussed in the main recipe's
+    # "Gap to Production" section. Production validators include a
+    # semantic-similarity pass and a scope classifier.
 
     high = sum(1 for u in unverified if u["severity"] == "HIGH")
     medium = sum(1 for u in unverified if u["severity"] == "MEDIUM")
@@ -2041,13 +2062,10 @@ def _deep_link_for_source(source: dict, source_id: str) -> str:
 The full pipeline assembled into one callable. Runs every step sequentially for one trigger. In production, each step becomes a Step Functions state; the parallel modality ingestion uses a Parallel or Map state; the generation-validation retry loop is a proper state-machine loop with a bounded counter. The sequential Python version below is fine for understanding the flow.
 
 ```python
-def _collect_all_citations(item: dict) -> list:
-    """(Used in the pipeline's id_to_source fallback; see Step 8 above.)"""
-    cits = []
-    for side in ("evidence_for", "evidence_against"):
-        for e in item.get(side, []) or []:
-            cits.extend(e.get("source_citations", []) or [])
-    return list(set(cits))
+# _collect_all_citations is defined in Step 8 above; it is the text-scanning
+# version that also reads bracketed inline citations from description and
+# evidence fields. Do NOT redefine it here; a second `def` at module scope
+# would silently shadow the Step 8 helper and weaken the validator.
 
 
 def run_multi_modal_reasoning(trigger: dict) -> dict:
@@ -2191,6 +2209,72 @@ def run_multi_modal_reasoning(trigger: dict) -> dict:
         )
         elapsed_ms = int((time.time() - start) * 1000)
         return {"status": "GENERATION_FAILED", "run_id": run_id,
+                "processing_time_ms": elapsed_ms}
+
+    # Orchestration gate between Step 8 and Step 9: only VALIDATED reasoning
+    # is delivered to the clinician UI. REVIEW_REQUIRED is a terminal state;
+    # archive the trace for audit, enqueue for clinical review, do NOT call
+    # tier_render_archive. See the main recipe's "Orchestration gate between
+    # Step 8 and Step 9" pseudocode block.
+    if not validation_result or validation_result.get("status") != "VALIDATED":
+        review_trace_key = f"reasoning-runs/{run_id}/review-queue-trace.json"
+        try:
+            s3_client.put_object(
+                Bucket=REASONING_ARCHIVE_BUCKET,
+                Key=review_trace_key,
+                Body=json.dumps({
+                    "run_id":             run_id,
+                    "trigger":            trigger,
+                    "scope_decision":     scope_decision,
+                    "modality_inventory": modality_inventory,
+                    "safety_findings":    safety_findings,
+                    "raw_reasoning":      generation_result.get("reasoning"),
+                    "validation_result":  validation_result,
+                    "routed_at":          _now_iso(),
+                }, indent=2, default=str).encode("utf-8"),
+                ContentType="application/json",
+                ServerSideEncryption="aws:kms",
+                SSEKMSKeyId=REASONING_ARCHIVE_CMK_ARN,
+            )
+        except ClientError as exc:
+            logger.error("Failed to archive review-queue trace for %s: %s",
+                         run_id, exc)
+
+        runs_table = dynamodb.Table(REASONING_RUNS_TABLE)
+        runs_table.update_item(
+            Key={"run_id": run_id},
+            UpdateExpression=(
+                "SET #s = :s, review_trace_s3_key = :rk, "
+                "validation_issues = :v, routed_at = :r"
+            ),
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":s":  "ROUTED_TO_REVIEW",
+                ":rk": review_trace_key,
+                ":v":  (validation_result or {}).get("unverified", []),
+                ":r":  _now_iso(),
+            },
+        )
+
+        # Enqueue to a clinical reviewer queue (SQS, DynamoDB stream, or
+        # equivalent). Reviewer triage is out of scope for this example.
+        try:
+            cloudwatch.put_metric_data(
+                Namespace="MultiModalClinicalReasoning",
+                MetricData=[{"MetricName": "ReasoningRoutedToReview",
+                             "Value": 1.0, "Unit": "Count"}],
+            )
+        except ClientError:
+            pass
+
+        elapsed_ms = int((time.time() - start) * 1000)
+        logger.warning("Run %s routed to clinical review; not delivered",
+                       run_id)
+        return {"status":             "ROUTED_TO_REVIEW",
+                "run_id":             run_id,
+                "review_trace_key":   review_trace_key,
+                "validation_result":  validation_result,
+                "attempts":           attempts,
                 "processing_time_ms": elapsed_ms}
 
     # Step 9: tier, render, archive
