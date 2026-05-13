@@ -73,6 +73,7 @@
 * [3.4 — Medication Dispensing Anomalies](chapter03.04-medication-dispensing-anomalies)
   * [Python Example](chapter03.04-python-example)
 * [3.5 — Lab Result Outlier Detection](chapter03.05-lab-result-outlier-detection)
+  * [Python Example](chapter03.05-python-example)
 
 ---
 
