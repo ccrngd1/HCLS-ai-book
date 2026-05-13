@@ -71,6 +71,7 @@
 * [3.3 — Billing Code Anomalies](chapter03.03-billing-code-anomalies)
   * [Python Example](chapter03.03-python-example)
 * [3.4 — Medication Dispensing Anomalies](chapter03.04-medication-dispensing-anomalies)
+  * [Python Example](chapter03.04-python-example)
 
 ---
 
