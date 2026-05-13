@@ -74,6 +74,8 @@
   * [Python Example](chapter03.04-python-example)
 * [3.5 — Lab Result Outlier Detection](chapter03.05-lab-result-outlier-detection)
   * [Python Example](chapter03.05-python-example)
+* [3.6 — Healthcare Fraud, Waste, and Abuse Detection](chapter03.06-healthcare-fraud-waste-abuse-detection)
+  * [Python Example](chapter03.06-python-example)
 
 ---
 
