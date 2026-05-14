@@ -77,6 +77,7 @@
 * [3.6 — Healthcare Fraud, Waste, and Abuse Detection](chapter03.06-healthcare-fraud-waste-abuse-detection)
   * [Python Example](chapter03.06-python-example)
 * [3.7 — Patient Deterioration Early Warning](chapter03.07-patient-deterioration-early-warning)
+  * [Python Example](chapter03.07-python-example)
 
 ---
 
