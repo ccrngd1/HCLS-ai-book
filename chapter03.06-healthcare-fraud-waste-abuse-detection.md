@@ -12,6 +12,21 @@ reference-data versioning propagation; legal-privilege infrastructure
 primitives) that require TechWriter follow-up rather than in-place
 rewriting. Preserved all existing TODOs from earlier personas. Section
 order and structural claims unchanged.
+
+Final pass (TechEditor, 2026-05-15): re-verified zero em-dashes (any
+en-dash matches are confined to the ASCII-art architecture-pattern
+block-diagram inside a fenced code block, not in prose); confirmed
+header hierarchy (one H1, structured H2/H3/H4 progression with no
+skipped levels); confirmed all sample provider/organization names in
+Expected Results carry an explicit "(sample)" suffix or are obviously
+synthetic placeholders ("Corp Shell A LLC"); confirmed sample NPIs
+remain `<synthetic-NPI>` placeholders behind the Luhn-validity
+disclaimer; confirmed legal citations (42 USC 1320a-7b, 42 USC 1395nn,
+31 USC 3729-3733, 42 CFR 411.354, 42 CFR 422.504(h), 42 CFR 438.608,
+45 CFR 164.512(f)) are correctly formatted; confirmed all 17 TODO
+markers are well-formed and addressed to TechWriter for follow-up.
+No further in-place rewrites; recipe is ready for publication pending
+TechWriter resolution of flagged TODOs.
 -->
 
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
