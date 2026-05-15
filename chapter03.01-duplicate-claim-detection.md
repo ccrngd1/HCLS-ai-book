@@ -280,7 +280,7 @@ flowchart TB
 ### Code
 
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
-> - [`aws-ml-samples`](https://github.com/aws-samples): Search for "record linkage" and "entity resolution" patterns; duplicate detection is a flavor of entity resolution where both entities are claims rather than people.
+> - [`aws-samples`](https://github.com/aws-samples): Search for "record linkage" and "entity resolution" patterns; duplicate detection is a flavor of entity resolution where both entities are claims rather than people.
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Covers gradient-boosted classifier training, including XGBoost built-in algorithm workflows that apply directly to the learned scorer.
 > <!-- TODO: verify a specific, current aws-samples repo that demonstrates duplicate claim detection on 837 data; as of this writing, a direct match has not been confirmed. The closest adjacent patterns are in general record-linkage and fraud-detection repos. -->
 
@@ -730,6 +730,8 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 <!-- TODO (TechWriter): expert review (A5) flagged missing DLQ / OnFailure destination for the parser, detector, and label-writer Lambdas. With Lambda's default async retry behavior (two retries over six hours, then drop), malformed-837 events silently disappear from operational state and require log-trawling to recover. Suggested fix: add a `parser-dlq` SQS queue to the Architecture Diagram with the parser Lambda's `OnFailure` destination configured, and the same pattern for the detector and label-writer Lambdas. -->
 
 <!-- TODO (TechWriter): expert review (S1) flagged PHI minimization on the examiner free-text `reasoning_text` field in Step 5. Examiners working with the patient record open in another tab routinely reference identifiers and clinical context in their notes; the field flows verbatim through DynamoDB to S3 (Parquet) to SageMaker training jobs. Suggested mitigation: add a regex-or-Comprehend-Medical-based scrub before write (MRN-shaped strings, NPI-shaped strings, names following common honorifics, DOB patterns, phone numbers); rely on the controlled-vocabulary `reasoning_code` for operational signal. Same minimum-necessary-inside-the-BAA pattern that has appeared as a recurring finding across Recipes 2.7-2.10 with a different surface (human-input free text rather than serialized prompt context). -->
+
+<!-- TODO (TechWriter): code review (Finding 5) flagged a small drift between Step 4 pseudocode and the Python companion's `route_claim`. The Python adds a `match_type` parameter and an exact-match fast-path (auto-suspend when `find_candidates` returned `match_type == "exact"`, regardless of score-threshold logic) that this pseudocode does not describe. The Python's branch is defense-in-depth (an exact `content_hash` collision lands at score 1.0 and would auto-suspend anyway) but the pseudocode-to-Python parity should be restored either by adding an explicit exact-match fast-path at the top of `route_claim` here, or by leaving a one-line note in the Python companion explaining the intentional deviation. -->
 
 ---
 
