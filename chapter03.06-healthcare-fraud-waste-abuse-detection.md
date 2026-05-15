@@ -97,6 +97,16 @@ above stand. No further in-place rewrites; recipe sits at the same
 publication-ready quality bar as Recipes 3.1 through 3.5 pending
 TechWriter resolution of the 16 flagged TODOs and the Python
 companion code-review fixes.
+
+Iteration sign-off (TechEditor): repeat mechanical pass confirms
+em-dash count zero, prose en-dash count zero, header hierarchy
+intact, 16 TechWriter TODOs intact and well-formed, sample-data
+hygiene intact (synthetic provider names, `<synthetic-NPI>`
+placeholders, draft-date timestamp disclaimer). No prose edits
+applied this iteration; the substantive expert-review and
+code-review concerns are flagged as TODOs for TechWriter and the
+Python-companion FAIL state is the cross-file blocker. Recipe
+remains publication-ready as a standalone main file.
 -->
 
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
