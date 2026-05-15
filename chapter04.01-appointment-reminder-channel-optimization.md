@@ -44,7 +44,7 @@ That property (learning by doing, where each decision generates the signal that 
 
 **Approach 1: Rule-based defaults.** The simplest thing that could possibly work. Encode the explicit patient preferences and a set of clinical rules: if the patient has a stated channel preference, use it. If they've opted out of SMS, never text them. If they're over 70, default to voice. If they haven't logged into the portal in 90 days, don't send portal messages. No learning, no optimization, just well-curated rules.
 
-Rules-based systems are underrated. They're transparent, auditable, and they're what you should have running while you build anything more sophisticated. For many organizations, a well-tuned rules engine gets you most of the way there. The no-show rate drops from 22% to 16%. The next five percentage points of improvement are what the ML approaches fight for.
+Rule-based systems are underrated. They're transparent, auditable, and they're what you should have running while you build anything more sophisticated. For many organizations, a well-tuned rules engine gets you most of the way there. The no-show rate drops from 22% to 16%. The next five percentage points of improvement are what the ML approaches fight for.
 
 **Approach 2: Propensity models.** Step up: for each channel, train a classifier that predicts the probability of a successful response conditional on patient features. You end up with one model per channel (a "propensity to confirm given SMS," a "propensity to confirm given email"), and at send time you pick the channel with the highest predicted probability. Gradient-boosted trees work well here. XGBoost, LightGBM, CatBoost, take your pick.
 
@@ -606,7 +606,7 @@ And the trap worth flagging, because it's the most common failure mode I've seen
 
 | Tier | Scope | Time |
 |------|-------|------|
-| Basic | Rules-based baseline: explicit preferences, single-channel dispatch, one reminder offset, no bandit | 2–3 weeks |
+| Basic | Rule-based baseline: explicit preferences, single-channel dispatch, one reminder offset, no bandit | 2–3 weeks |
 | Production-ready | Full pipeline: scheduling, multi-channel dispatch, Thompson bandit, reward feedback loop, cohort monitoring, opt-out management, idempotency | 3–4 months |
 | With variations | Add LLM-based content drafting, multi-touch sequence optimization, uplift modeling, SDOH integration | 6–9 months beyond production-ready |
 
