@@ -27,6 +27,47 @@ disclaimer; confirmed legal citations (42 USC 1320a-7b, 42 USC 1395nn,
 markers are well-formed and addressed to TechWriter for follow-up.
 No further in-place rewrites; recipe is ready for publication pending
 TechWriter resolution of flagged TODOs.
+
+Sign-off pass (TechEditor, 2026-05-15): re-verified mechanical
+checklist on the main recipe. Direct grep for U+2014 and the en-dash
+range (U+2010 through U+2015 plus U+2212): zero matches in prose.
+Direct grep for documentation-voice and announcement anti-patterns
+("we are excited", "this recipe demonstrates", "in this recipe we
+will", "need to talk about"): zero matches. Code-fence inventory: 28
+fenced blocks, 4 with explicit language tags (one `mermaid`, three
+`json` for the Expected Results sample alerts) and 24 unlabeled for
+pseudocode and ASCII-art block-diagrams; matches the convention
+established in chapter01 and used consistently through chapter03.05.
+Header hierarchy unchanged (one H1, structured H2/H3/H4 progression).
+TODO inventory: 17 well-formed `<!-- TODO (TechWriter): ... -->`
+markers in prose plus references to those TODOs in this editor
+comment block; all preserved. No prose edits; the prior two passes
+already settled voice, hygiene, and safety. Recipe is publication-
+ready as a standalone file.
+
+Cross-file flag for TechWriter (publication blocker, not a TechEditor
+fix): the companion `chapter03.06-python-example.md` is in the FAIL
+state from code review (`reviews/chapter03.06-code-review.md`,
+2026-05-14). One ERROR (`aggregate_flags_to_cases` writes flag dicts
+containing Python floats to DynamoDB; the resource-API serializer
+raises `TypeError: Float types are not supported. Use Decimal types
+instead.` the first time a statistical or graph flag reaches the
+put_item call) and five WARNINGs (OWNERSHIP_CASCADE detector cannot
+fire because organization nodes are never created; "Rule 3: LEIE
+exclusion" comment does not match the code which checks the
+`UNRESOLVED:` prefix; patient node ID is the raw patient_id rather
+than a hash, contradicting the main recipe's Step 3 pseudocode and
+the privacy rationale; `capture_case_outcome` S3 put_object uses
+`ServerSideEncryption="aws:kms"` without `SSEKMSKeyId`; deterministic
+case-id idempotency is undermined by `uuid.uuid4()` per call). The
+ERROR breaks the demo for any realistic full-pipeline run and is a
+publication blocker. WARNINGs 2 and 3 (graph-construction
+inconsistency, patient-node hashing) parallel the main recipe's
+Step 3 expert-review TODO (S1) and should be fixed in lockstep so
+the pseudocode and the Python companion remain in agreement. The
+TechEditor persona is not the right pass to apply these fixes;
+TechWriter should pick up `chapter03.06-python-example.md` against
+the code-review checklist before this recipe goes to publication.
 -->
 
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
