@@ -1,4 +1,16 @@
 <!--
+Editorial pass v2 (TechEditor, 2026-05-15):
+- Follow-through on V1 (Expert review): the v1 pass updated the opening
+  vignette's "recollect from a central line" phrasing to "properly drawn
+  peripheral recollect with immediate transport," but the same imprecise
+  phrasing remained inside the JSON sample's `interpretation_hint` field
+  in the Expected Results section. V2 propagates the V1 fix into the
+  sample so the canonical pseudohyperkalemia-investigation phrasing is
+  consistent throughout the file.
+- No structural changes. No new technical claims. No TODO markers added,
+  removed, or modified. Style hygiene re-verified: zero em dashes
+  (U+2014), zero en dashes (U+2013) across the file.
+
 Editorial pass v1 (TechEditor, 2026-05-15):
 - Incorporated expert review feedback (verdict PASS; 0 CRITICAL / 0 HIGH / 8 MEDIUM
   / 9 LOW findings) and code review (PASS with 3 WARNINGs / 8 NOTEs).
@@ -1030,7 +1042,7 @@ FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
     "unit": "mEq/L",
     "resulted_at": "2026-05-11T06:15:00Z"
   },
-  "interpretation_hint": "Critical value fires; hemolysis index 4+ and transport delay 92 minutes suggest pseudohyperkalemia. Recommend recollect from a central line with immediate transport before treating. Callback must still occur within the CLIA-mandated window; the callback payload includes this artifact context for faster clinical disposition.",
+  "interpretation_hint": "Critical value fires; hemolysis index 4+ and transport delay 92 minutes suggest pseudohyperkalemia. Recommend a properly drawn peripheral recollect with immediate transport before treating. Callback must still occur within the CLIA-mandated window; the callback payload includes this artifact context for faster clinical disposition.",
   "detected_at": "2026-05-12T06:42:11.180Z"
 }
 ```
