@@ -7,6 +7,48 @@ TechEditor pass v1 (2026-05-15):
 - Inline TODOs added for the HIGH and MEDIUM technical findings raised in
   reviews/chapter03.02-expert-review.md so the TechWriter can address them in a single
   coordinated pass on the patient-baseline subsystem and the feedback-loop artifacts.
+
+TechEditor pass v2 (2026-05-15):
+- Re-ran the editorial checklist; v1 findings hold. No additional in-place fixes were
+  warranted.
+- Re-confirmed character-level hygiene against Chapter 1 / Recipe 3.1 precedent: 0 em
+  dashes, 28 en dashes (all in numeric ranges in the cost row, performance benchmarks
+  table, and implementation-time tiers), 0 curly quotes, 0 horizontal ellipsis, 0
+  non-breaking spaces, 0 trailing whitespace, 0 stray double-spaces in prose.
+- Re-confirmed code-fence convention matches Chapter 1 published precedent: `json` and
+  `mermaid` blocks are language-tagged; pseudocode and ASCII-art diagram fences are
+  intentionally untagged (Chapter 1 sets this convention). Inline backticks are applied
+  consistently on identifiers, API method names, and configuration constants.
+- Re-confirmed link form: every URL in Additional Resources is well-formed and points
+  to a known-real domain (docs.aws.amazon.com, github.com/aws, github.com/aws-samples,
+  github.com/shap/shap, github.com/synthetichealth/synthea, ahrq.gov, pcori.org,
+  en.wikipedia.org). The four HTML-comment forward-placeholder TODOs that flag
+  unverified citations (no-show reduction percentage, performance benchmark ranges,
+  transportation intervention effectiveness, additional aws-samples / blog references)
+  are the right discipline; resolve before publication.
+- Re-confirmed RECIPE-GUIDE compliance: all required sections present and in canonical
+  order (The Problem -> The Technology -> General Architecture Pattern -> The AWS
+  Implementation [Why These Services -> Architecture Diagram -> Prerequisites ->
+  Ingredients -> Code -> Expected Results] -> Why This Isn't Production-Ready -> The
+  Honest Take -> Variations and Extensions -> Related Recipes -> Additional Resources
+  -> Estimated Implementation Time -> Tags -> Navigation footer).
+- Re-confirmed voice and the 70/30 vendor balance: the conceptual sections (Problem,
+  Technology, General Architecture Pattern) are vendor-neutral; AWS service names enter
+  at "The AWS Implementation" and stay there. No documentation-voice, no marketing
+  language, no LinkedIn-influencer phrasing, no announcement statements.
+- TODO inventory unchanged from v1: 19 markers across the file. Three are inline `//`
+  comments inside pseudocode blocks (the A2 MIN_BASELINE_OBSERVATIONS reminder in Step
+  3, the A1 baseline-update reminder in Step 5, and the A5 temporal-split reminder in
+  the retrain block); the rest are HTML-comment TODOs. All are owned by the TechWriter
+  and are tracked against findings in reviews/chapter03.02-expert-review.md and
+  reviews/chapter03.02-code-review.md. The single sentence-fragment TODO in The Problem
+  section (the trailing clause about double-booking and waiting patients) requires a
+  TechWriter call on intended meaning; it is flagged rather than guessed at.
+- The file is ready for the TechWriter coordinated pass on the patient-baseline
+  subsystem (A1 + A2 fixes, propagated to the Python companion's
+  `_load_or_create_baseline` and `_update_patient_baseline`) and the feedback-loop
+  artifacts (A3 idempotency, A4 DLQs, A5 temporal validation, A6 feature-contribution
+  reframing). Editorial polish is otherwise complete.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
