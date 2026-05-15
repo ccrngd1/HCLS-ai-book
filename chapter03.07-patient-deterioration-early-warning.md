@@ -1,3 +1,122 @@
+<!--
+Editor pass (TechEditor, 2026-05-15):
+- Mechanical hygiene verified: U+2014 em-dash count 0 in prose; U+2013
+  en-dash count 0 in prose (any U+2013 hits are inside the ASCII-art
+  pipeline diagram inside a fenced code block). Documentation-voice and
+  announcement anti-pattern grep ("we are excited", "this recipe
+  demonstrates", "in this recipe we will", "AWS architects, we"): zero
+  matches in prose.
+- Header hierarchy verified: one H1 (the title); H2 for major sections
+  (Problem / Technology / General Architecture Pattern / AWS
+  Implementation / Why This Isn't Production-Ready / Honest Take /
+  Variations and Extensions / Related Recipes / Additional Resources /
+  Implementation Time / Tags); structured H3 subsections under
+  Technology and AWS Implementation; one H4 (Walkthrough) under Code; no
+  skipped levels. Matches chapter01 and chapter03.01-3.06 patterns.
+- RECIPE-GUIDE compliance verified: Problem -> Technology -> General
+  Architecture Pattern -> AWS Implementation (Why These Services,
+  Architecture Diagram, Prerequisites, Ingredients, Code, Expected
+  Results) -> Why This Isn't Production-Ready -> The Honest Take ->
+  Variations and Extensions -> Related Recipes -> Additional Resources
+  -> Implementation Time -> Tags -> Navigation. All required sections
+  present in correct order.
+- Vendor balance verified: conceptual sections (The Problem, The
+  Technology, General Architecture Pattern) are vendor-neutral; AWS
+  service names enter at the AWS Implementation section and stay there.
+  ~70/30 split intact.
+- Editorial fixes applied in place:
+  * V2 (expert review): moved the performance-benchmarks population /
+    outcome-definition / window-dependence caveat from an HTML-comment
+    TODO into a visible inline paragraph above the table so deployment
+    teams reading the table know the numbers are not portable. The
+    citation TODO (Wong et al., Romero-Brufau et al., Churpek et al.,
+    Smith et al.) is preserved as a separate forward-placeholder for
+    TechWriter to resolve before publication.
+  * V4 (expert review): tightened the sample alert payload narrative.
+    The original "consideration of empiric antibiotic timing per local
+    sepsis protocol" sat at the constraint boundary between "suggest
+    evaluation steps" and "recommend specific treatments"; replaced
+    with "and assessment per local sepsis protocol" which lands further
+    from the treatment-recommendation boundary and aligns with the
+    Bedrock-prompt constraint stated in Step 6 ("never recommend
+    specific treatments").
+  * V5 (expert review): added a one-sentence cross-reference in the
+    first paragraph of The Honest Take so the "build the workflow
+    first" lesson explicitly ties to the Implementation-Time Basic tier
+    (the NEWS2-engine-and-workflow-only deployment in 4-6 months that
+    embeds exactly that discipline).
+- Substantive technical findings from the expert review surfaced as
+  TechWriter TODO markers in place rather than rewritten by editor:
+  A1 (outcome-event idempotency at the outcome-capture and ack-capture
+  Lambdas; recurring chapter pattern); A2 (DLQ posture for the five
+  critical Lambdas with single-event sensitivity for the
+  event-normalizer and scoring-orchestrator paths); A3 (treatment-
+  leakage and feature-cutoff discipline in Step 4's compute_features;
+  prose names this as the fundamental modeling concern but pseudocode
+  does not enforce it); A4 (cold-start detection and routing primitive
+  at Step 4 and Step 5; prose names the failure mode but pseudocode
+  does not architecturally support fall-back to population priors or
+  NEWS2); A5 (suppression-rule expiry-enforcement primitive and
+  care-transition trigger; Step 7 reads suppression_until but no
+  scheduled job walks the registry); A6 (reference-data versioning
+  propagation from score record into alert payload and OpenSearch alert
+  audit index; sample alert payload audit_trail block is implicit but
+  pseudocode does not show construction); S1 (alert payload PHI
+  minimization for pager / Vocera / TigerConnect channels at Step 7;
+  the explanation narrative is itself the PHI-carrying field); S2
+  (subgroup data governance architectural artifacts; recipe correctly
+  identifies the subgroup taxonomy and metrics but the access-control,
+  audit, and aggregated-view discipline that operationalizes the
+  framing is unspecified).
+- Preserved all existing TODO markers from earlier personas (twelve
+  forward-placeholder TODOs covering NEWS2/MEWS published operational
+  performance characteristics; current FDA CDS guidance; specific
+  peer-reviewed evaluations including Wong et al. on EDI and
+  Romero-Brufau et al. and Churpek et al. on eCART; the Wong et al.
+  JAMA Internal Medicine specific citation; Amazon Timestream
+  HIPAA-eligibility verification; HIPAA-eligible Bedrock foundation
+  models list; aws-samples deterioration-prediction repository
+  confirmation; published fairness-in-clinical-deterioration-models
+  literature; performance-benchmark citations; academic-literature
+  citations including Singer et al. Sepsis-3 and Escobar et al.
+  Kaiser AAM; AWS blog posts on clinical deterioration). Total
+  inventory after this pass: 20 well-formed `<!-- TODO (TechWriter)`
+  markers (twelve preserved from earlier personas plus eight new
+  TODOs flagging expert-review architectural findings A1, A2, A3, A4,
+  A5, A6, S1, S2 for TechWriter follow-up).
+- Cross-file flag for TechWriter (publication coordination, not a
+  TechEditor fix): companion `chapter03.07-python-example.md` is in
+  the PASS state from code review (`reviews/chapter03.07-code-review.md`,
+  2026-05-14). Two WARNINGs require TechWriter follow-up before
+  publication: (1) `update_patient_state` uses a non-atomic get-then-put
+  that under realistic Kinesis fan-out can lose concurrent writes for
+  the same encounter; the immediately adjacent `score_patient` function
+  demonstrates the right `UpdateExpression` plus `ConditionExpression`
+  pattern; (2) `build_explanation` queries scoring history with default
+  eventually-consistent reads while assuming `items[0]` is the
+  just-written score, which can produce wrong `score_change_from_last`
+  values that propagate into the Bedrock narrative; the immediately
+  adjacent `route_alert` function uses the correct
+  `get_last_score(exclude_score_id=...)` helper. Both fixes are
+  localized. Eleven Python-companion NOTEs (unused imports, missing
+  logger handler, PHI-policy contradiction in suppression log, three
+  feature-engineering gaps relative to pseudocode, Timestream f-string
+  query interpolation, S3 put_object missing SSEKMSKeyId paralleling
+  chapter-3-recurring pattern, EventBridge put_events response
+  unchecked, SageMaker CSV column-0 assumption, hardcoded
+  two-generations-old Bedrock model ID, undocumented Feature Store
+  all-strings convention, "DEFAULT" unit-type sentinel leaking into
+  the data plane) are TechWriter-side editorial polish on the Python
+  companion. The TechEditor persona is not the right pass for those
+  Python fixes; TechWriter should run the code-review checklist
+  against `chapter03.07-python-example.md` before this recipe goes to
+  publication.
+- No structural changes; no new technical claims; no rewrites of any
+  section. All finding-level architectural fixes from the expert
+  review (A1-A7, S1-S6, N1-N3) are flagged as TODO markers for
+  TechWriter follow-up rather than rewritten by editor.
+-->
+
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
 
 **Complexity:** Complex · **Phase:** Production (with clinical governance) · **Estimated Cost:** ~$0.0008 to $0.005 per patient-hour scored (mostly compute and feature joins; vendor models often run as separate licensed costs)
@@ -173,6 +292,8 @@ Calibration plots, Brier score, and reliability diagrams should be reported alon
 Every production deterioration model must monitor performance across clinically meaningful subgroups: age bands, sex, race and ethnicity (where structurally captured), insurance status (a useful proxy for SES), unit, service line, primary diagnosis, time of day, day of week. Models that perform well overall but worse on specific subgroups produce harm patterns that map onto existing care disparities.
 
 Mitigations include subgroup-stratified threshold tuning, subgroup-specific recalibration, fairness-aware training (adversarial debiasing, reweighing), and ongoing audit cycles that flag subgroups whose performance has drifted out of acceptable bounds. The mitigation strategy must be picked deliberately because the wrong mitigation can degrade overall performance without improving the subgroup that motivated it. <!-- TODO (TechWriter): cite the published literature on fairness in clinical deterioration models and Epic Deterioration Index subgroup performance critiques. The Wong et al. analyses are central. -->
+
+<!-- TODO (TechWriter): expert review finding S2 (subgroup data governance architectural artifacts). The framing-level treatment of subgroup monitoring above is the strongest in any chapter-3 recipe. The architectural backstop that makes subgroup monitoring binding rather than aspirational is missing: where the demographic-and-attribute store lives, who has read access, how it joins to alert events and acknowledgment records, what the audit trail for subgroup queries looks like, what IAM scope the QuickSight dashboard role and the retraining job role need on demographic data, and how the dashboard avoids exposing row-level demographic data to viewers. Race and ethnicity data has different governance from PHI per se in some regulatory regimes (state laws often restrict secondary use). Add a "Subgroup data access" row to Prerequisites: restrict read access on the demographic-and-attribute store to the retraining-job role and the fairness-monitoring dashboard role; CloudTrail data events on subgroup queries; QuickSight against an aggregated subgroup-metrics table (alert rate by age band by unit type, calibration ECE by sex, time-to-acknowledge by service line) rather than the raw demographic-joined alert archive. Six chapter-3 recipes deep on this finding shape; second-highest-leverage cookbook-wide editorial investment alongside the trigger-idempotency appendix. -->
 
 ### Alert Fatigue Is a Design Constraint
 
@@ -642,6 +763,10 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
 
 **Step 4: Compute the feature vector.** The feature engine reads patient state and time-series history, computes the model's input vector, and writes it to the Feature Store for both online use and offline reproduction.
 
+<!-- TODO (TechWriter): expert review finding A3 (treatment-leakage and feature-cutoff). The Technology section's Sampling-Time-Windows-And-Right-Censoring subsection correctly identifies treatment leakage and event leakage as fundamental modeling concerns and names the as-of-cutoff mitigation ("restrict the model to features available at decision time only"). The pseudocode below accepts an `as_of` parameter but does not enforce a temporal filter on every field (medication-class features, order-context features, and current-vital reads pull from the latest patient state without filtering on `observed_at <= as_of - LEAKAGE_BUFFER_MINUTES`). Add a `LEAKAGE_BUFFER_MINUTES` configuration constant (typically 30-60 minutes per the Event-Leakage paragraph) and apply it consistently across vitals, labs, medications, and orders. Add a paragraph to the General Architecture Pattern's Feature Engine subsection naming feature-cutoff and leakage-buffer discipline as a first-class concern; tie the buffer setting to clinical-governance ownership. -->
+
+<!-- TODO (TechWriter): expert review finding A4 (cold-start handling). The "Where it struggles" subsection correctly identifies cold-start as a key failure mode and names the operational mitigation (rely on standard track-and-trigger during the early-stay window). The pseudocode below does not detect cold-start state or route cold-start patients differently. Add a `data_richness_index` computation (number of vitals observations in the last 24 hours, number of labs in the last 48 hours, hours since admission) and a `cold_start_flag` in this Step 4; in Step 5, route cold-start patients to a population-prior model variant or to a NEWS2 fallback with the cold-start status surfaced in the alert payload in Step 7. Add a paragraph to the General Architecture Pattern's Scoring Service subsection naming cold-start handling as a first-class concern. -->
+
 ```
 FUNCTION compute_features(patient_id, encounter_id, as_of):
     state = DynamoDB.GetItem(
@@ -892,6 +1017,12 @@ FUNCTION build_explanation(score_record, features):
 
 **Step 7: Route alerts based on tier and suppression rules.** The alert router applies tier-based routing, suppression rules (active comfort care, already in ICU, recent rapid response), and delta detection (this patient's score just jumped substantially).
 
+<!-- TODO (TechWriter): expert review finding S1 (alert payload PHI minimization for pager / Vocera / TigerConnect channels). The pseudocode below constructs an `alert` object that carries `patient_id`, current vital values, a structured explanation with feature values, and the full Bedrock-generated narrative (which itself names the deterioration phenotype, surgical context, and current vital and lab values), then publishes it to pager / messaging channels via `send_pager_notification(alert)`. For lock-screen-visible channels, this is a substantial PHI surface that exceeds the chapter-3-settled "alert-id-only with fetch-by-id" convention used in Recipes 3.1, 3.3, 3.4, 3.5, 3.6. Update Step 7 so the EventBridge / SNS / pager-integration message carries only `alert_id`, `tier`, and a minimal location attribute; the consuming application fetches the full alert by `alert_id` through an authenticated path with appropriate IAM scope on the alert-state table and the alert audit index. PHI does not transit pager / Vocera / TigerConnect / SMS channels or any logs they generate. Update the sample alert payload in Expected Results to show the minimal pager-channel payload separately from the full alert record stored in the alert-state DynamoDB table and the OpenSearch alert audit index. -->
+
+<!-- TODO (TechWriter): expert review finding A5 (suppression-rule expiry-enforcement primitive and care-transition trigger). The `check_suppression_rules` function below correctly reads `state.suppression_until` at alert-routing time but no scheduled job walks the suppression registry for expired entries (which would transition them to "expired_pending_review" and notify the suppression-owning attending), and no ADT-event-triggered suppression-review step surfaces suppressions to the receiving care team at unit transfer. For a deterioration system where missed alerts can produce harm, silent suppression-blind-spots at care transitions are a clinical-safety concern. Add a daily scheduled job and an ADT-trigger; default-expire suppressions without documented `suppression_until` to a programmatic default (typically 72 hours). -->
+
+<!-- TODO (TechWriter): expert review finding A6 (reference-data versioning propagation). Step 5's score record correctly captures `model_version`, `feature_snapshot_id`, and `feature_importance`, and the sample alert payload in Expected Results shows an `audit_trail` block with `feature_snapshot_id`, `scoring_record_id`, `calibration_curve_version`, and `thresholds_version`, but the pseudocode below does not show audit_trail construction. Update Step 7's `route_alert` to construct an explicit `audit_trail` block on the alert object (feature_snapshot_id, scoring_record_id, model_version, calibration_curve_version, thresholds_version, rule_library_version, unit_threshold_set_id) and update OpenSearch indexing to include the audit_trail block. The snapshot-ID trail is what makes a clinical-safety review's "reproduce the prediction" requirement tractable under the FDA CDS exemption posture. -->
+
 ```
 FUNCTION route_alert(score_record, explanation):
     // Suppression rules. Many alerts that the model would generate are not
@@ -979,6 +1110,8 @@ FUNCTION check_suppression_rules(score_record):
 ```
 
 **Step 8: Capture acknowledgments and outcomes.** Every alert generates an acknowledgment requirement. Subsequent clinical events (ICU transfer, code blue, sepsis bundle initiation) get linked to the alert as the eventual outcome.
+
+<!-- TODO (TechWriter): expert review finding A1 (outcome-event idempotency at the EventBridge -> outcome-capture and ack-capture Lambdas). EventBridge -> Lambda async is at-least-once; the pseudocode below has no idempotency guard. Redelivered outcome events double-link outcomes to alerts and double-write S3 label rows, biasing the supervised classifier's training distribution toward redelivered cases on a rare positive class. Same recurring trigger-idempotency pattern as Recipes 2.4-2.10 and 3.1-3.6 (twelfth consecutive recipe). Add a deterministic event-key derivation (`outcome_event.event_id + outcome_event.type` for outcomes; `acknowledgment_event_id` for acks) and a conditional DynamoDB write to `processed-outcome-events` and `processed-acknowledgment-events` tables before the OpenSearch search, the linkage update, and the S3 label write. Strongly recommend a cookbook-wide trigger-idempotency appendix to consolidate this twelve-recipe-deep pattern; per-recipe-edit posture is producing diminishing returns. -->
 
 ```
 FUNCTION on_clinician_acknowledgment(alert_id, clinician_id, disposition, intervention, notes):
@@ -1118,7 +1251,7 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
       ],
       "score_change_from_last": 0.34
     },
-    "narrative": "Risk score has increased substantially over the last 4 hours, driven primarily by rising heart rate (76 to 102 bpm), rising respiratory rate (16 to 22), a lactate of 3.2, and temperature trend rising 1.4°C above baseline. Pattern is consistent with early sepsis. Patient is post-op day 2 from colon resection. Blood cultures have been ordered, suggesting bedside team has noted concern. Suggest sepsis bundle evaluation: full set of vitals, repeat lactate, source review, and consideration of empiric antibiotic timing per local sepsis protocol. This is decision support; clinical judgment governs."
+    "narrative": "Risk score has increased substantially over the last 4 hours, driven primarily by rising heart rate (76 to 102 bpm), rising respiratory rate (16 to 22), a lactate of 3.2, and temperature trend rising 1.4°C above baseline. Pattern is consistent with early sepsis. Patient is post-op day 2 from colon resection. Blood cultures have been ordered, suggesting bedside team has noted concern. Suggest sepsis bundle evaluation: full set of vitals, repeat lactate, source review, and assessment per local sepsis protocol. This is decision support; clinical judgment governs."
   },
   "routing": {
     "channels": ["pager", "dashboard", "ehr_banner"],
@@ -1162,6 +1295,8 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 ```
 
 **Performance benchmarks (illustrative; measure against your own data):**
+
+These ranges are directional from typical published deterioration-model performance and are not portable across deployments. Specific figures vary substantially by population (academic medical center vs community hospital), outcome definition (ICU transfer vs composite endpoint vs phenotype-specific), and prediction window (4h to 48h are common; the table fixes 6h and 24h for illustration). PRAUC in particular is population-dependent because the base rate of deterioration events varies substantially across hospitals and units. Treat the table as a sanity check for the order of magnitude you should expect, not as a target. Replace with measured numbers from local validation before any clinical deployment.
 
 | Metric | NEWS2 baseline | LR with engineered features | GBT (XGBoost / LightGBM) | LSTM / time-series model | Ensemble |
 |--------|----------------|------------------------------|---------------------------|---------------------------|----------|
@@ -1221,6 +1356,8 @@ The pseudocode shows the shape. A production deterioration early warning system 
 
 **Disaster recovery and continuity.** The deterioration system is ideally available 24/7. Multi-AZ deployment is the minimum. For a pipeline this safety-relevant, multi-region failover is worth considering, with regular failover drills. The fallback must be documented: when the system is down, the existing track-and-trigger system (NEWS2 charted in the flowsheet) is the backstop, and the staff need to know that.
 
+<!-- TODO (TechWriter): expert review finding A2 (DLQ and poison-message handling for the five critical Lambdas: event-normalizer, scoring-orchestrator, alert-router, ack-capture, outcome-capture). For a system in the alert path of inpatient clinical care, a dropped vital event is a patient-state gap, a dropped scoring event is an unscored patient at the moment a triggering vital came in, and a dropped alert event is a missed alert. Lambda's default async retry behavior (two retries over six hours then drop) is not acceptable for a deterioration system whose FDA-CDS-exemption posture depends on transparent operation. Add five SQS DLQs with `OnFailure` destinations on each Lambda and CloudWatch alarms on DLQ depth (alarm threshold 1 for the event-normalizer and scoring-orchestrator paths because a single dropped event is a patient-state gap or an unscored patient; sustained-backlog threshold acceptable for the alert-router and capture paths). Replay events from DLQ after fixing the root cause; for events older than the deterioration prediction window, escalate to clinical-governance-committee review rather than auto-replay because the timing-of-detection is itself part of the system's safety case. -->
+
 **Integration with rapid response and code teams.** The output of the system is a pre-arrival alert. The downstream rapid response team needs to know what to do with a "high-tier deterioration alert" that isn't yet a code or an active rapid response activation. Their protocols need to be updated to include the alert path. Often this involves new workflows: a rapid response team that visits the bedside for a high-tier alert without a formal RRT activation, providing situational assessment without taking over care.
 
 **Cross-shift handoffs.** A patient with an active high-tier alert at the end of one shift needs to be handed off explicitly. The system should produce shift-change reports of active alerts so the incoming charge nurse and bedside nurse have visibility. This is workflow design, not just technical wiring.
@@ -1231,7 +1368,7 @@ The pseudocode shows the shape. A production deterioration early warning system 
 
 ## The Honest Take
 
-The model is the smaller half of this problem. I keep saying this in different ways across this chapter, and it's especially true here: the workflow integration, the alert design, the governance committee, and the clinical change management dwarf the modeling effort in time, cost, and risk. I've watched teams spend nine months building a beautiful model and three weeks on alert routing, then wonder why nobody on the floor uses the alerts. It's the alert routing. Build the workflow first, even if it has to be wired to a NEWS2 score initially, and add the better model into it once the workflow is working.
+The model is the smaller half of this problem. I keep saying this in different ways across this chapter, and it's especially true here: the workflow integration, the alert design, the governance committee, and the clinical change management dwarf the modeling effort in time, cost, and risk. I've watched teams spend nine months building a beautiful model and three weeks on alert routing, then wonder why nobody on the floor uses the alerts. It's the alert routing. Build the workflow first, even if it has to be wired to a NEWS2 score initially, and add the better model into it once the workflow is working. The Implementation-Time table at the end of this recipe encodes the same discipline: the Basic tier (4-6 months) is a NEWS2-engine-and-workflow-only deployment with full governance and dashboard wiring, before any ML work begins; the Production-ready tier adds the ML model into a workflow that already works.
 
 Vendor models versus build-your-own is mostly a false choice. The real choice is "do we deploy a vendor model with strong local validation, monitoring, and integration, or do we build the same operational infrastructure plus the model?" The model itself is rarely the differentiator. The team that's good at workflow integration and clinical governance gets value from any reasonable model; the team that's not, fails with the best model in the world. If a vendor model that locally validates well is available and your team's strength is workflow and governance, take the vendor model. If your team has deep clinical ML capability and is willing to take on the model lifecycle, building can be the right call. Most hospitals should not build from scratch.
 
