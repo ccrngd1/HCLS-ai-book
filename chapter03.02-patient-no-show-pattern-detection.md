@@ -1,3 +1,14 @@
+<!--
+TechEditor pass v1 (2026-05-15):
+- Style hygiene: zero em dashes confirmed, en dashes restricted to numeric ranges, header
+  hierarchy clean (H1 -> H2 -> H3 with one H4 under Code), all fenced blocks tagged where
+  applicable, voice and 70/30 vendor balance preserved.
+- Content untouched per persona constraints (no new claims, no wholesale rewrites).
+- Inline TODOs added for the HIGH and MEDIUM technical findings raised in
+  reviews/chapter03.02-expert-review.md so the TechWriter can address them in a single
+  coordinated pass on the patient-baseline subsystem and the feedback-loop artifacts.
+-->
+
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
 
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001–0.005 per appointment scored (mostly compute; feature pulls dominate)
@@ -24,7 +35,7 @@ There's the patient who tried to cancel and couldn't. Called the number on the a
 
 And there's the patient who is a habitual no-show. Not because they don't care, but because their life circumstances (housing instability, transportation precarity, shift work with little notice, chronic conditions that flare unpredictably) make committing to a weekday appointment three weeks out genuinely hard to keep. Their no-show pattern is a signal about their life, not about the care the clinic is offering.
 
-The usual response to this mess is uniform: send every patient the same reminder via the same channel at the same time, then double-book the slots that historically no-show the most. Both of these are blunt instruments. The uniform reminder wastes budget on patients who don't need reminding and fails the patients who'd have responded to a different channel (see Recipe 4.1 for the channel optimization problem in detail). The double-booking punishes the patients who do show up for their slots, because the provider is now running thirty minutes behind and a legitimate reason someone had to wait.
+The usual response to this mess is uniform: send every patient the same reminder via the same channel at the same time, then double-book the slots that historically no-show the most. Both of these are blunt instruments. The uniform reminder wastes budget on patients who don't need reminding and fails the patients who'd have responded to a different channel (see Recipe 4.1 for the channel optimization problem in detail). The double-booking punishes the patients who do show up for their slots, because the provider is now running thirty minutes behind and a legitimate reason someone had to wait. <!-- TODO (TechWriter): the trailing clause "and a legitimate reason someone had to wait" reads as a sentence fragment with a missing word. Probable intent: "and there's no legitimate reason they had to wait" or "and the patients who showed up on time had no legitimate reason to be punished by waiting." Please clarify the intended meaning. -->
 
 What you actually want to do is more targeted. You want to rank tomorrow's appointments by no-show risk. You want to intervene on the high-risk ones (extra reminder, phone outreach, transportation assistance, maybe an offer to reschedule to a more convenient time) before they become no-shows. And crucially, you want to know which of those high-risk appointments are driven by patient-level patterns versus appointment-level factors (wrong time of day for this patient, wrong provider, wrong prep instructions) because those two cases need different interventions.
 
@@ -69,6 +80,16 @@ Here's a rough taxonomy of the features that show up in no-show models, ordered 
 Here's the thing you learn after building a few of these: most of the win comes from the historical behavior features plus lead time. If you get those two feature families clean, you're already at 60-70% of the lift. Everything else adds marginal improvement. Don't let the temptation to engineer exotic features distract from getting the basics right.
 
 ### Establishing a Patient-Level Baseline
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). The prose below recommends Bayesian smoothing
+with a Beta-distribution prior as the standard cold-start fix, but the pseudocode in Step 3
+and Step 5 does not implement it: empty_baseline() returns rolling_no_show_rate=0, the update
+rule is naive EMA, and Step 3 references MIN_BASELINE_OBSERVATIONS as a hard cutoff that is
+never defined. Please reconcile by either (a) implementing the Bayesian-prior initialization
+in pseudocode (cohort-derived Beta prior with effective sample size ~10, posterior update on
+each observation) and defining MIN_BASELINE_OBSERVATIONS with a default and motivation, or
+(b) softening the prose so it matches the simpler EMA implementation. The Python companion
+mirrors the broken pseudocode pattern; both should change in the same pass. -->
 
 The anomaly detection framing requires a per-patient baseline. This is where the problem gets interesting, because baselines in healthcare are never as simple as "the patient's average."
 
@@ -121,6 +142,18 @@ As with every anomaly detection recipe, the feedback loop is the difference betw
 The decisions you make on the model's output are themselves a source of training data. If the model flags an appointment as high-risk and you intervene successfully (the patient shows up because you called them), that's a counterfactual problem: the label for that appointment is now "showed up," but it would have been "no-show" without the intervention. Train on it naively and the model learns that high-risk appointments actually show up fine, and it will progressively downweight the features that got them flagged in the first place. This is the reminder system's selection bias problem and it will eat your model over time.
 
 Two standard mitigations. First, explicitly label interventions: for every appointment that was high-risk, record whether an intervention was made and what it was. Exclude intervened appointments from the straight "predict show/no-show" training data, or train a separate model on them that accounts for the intervention effect. Second, occasionally hold out a small fraction of high-risk appointments from the intervention (a "no-intervention" cohort for that risk band) so that you have unintervented outcome data to keep the model calibrated. The second approach is a controlled experiment, and it needs ethics and operational review because you're deliberately not intervening on patients the model thinks are at risk. In practice, most organizations do the first and skip the second, accepting some model drift as the price of not withholding reminders.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). The same selection-bias discipline this
+section recommends for the model retrain should be extended to the patient baseline updates
+in Step 5. Today the pseudocode updates baseline.rolling_no_show_rate on every outcome
+regardless of intervention status, which causes baselines for successfully intervened
+high-risk patients to collapse over time toward the intervention-adjusted rate. The
+deviation calculation degrades, and the "investigate" queue progressively loses the
+reliable-patient-with-elevated-risk signal that is the central design hypothesis of this
+recipe. Please add a paragraph here making the baseline-must-also-exclude-intervened-outcomes
+point explicit, and update the Step 5 pseudocode to gate the baseline update on intervention
+status. The Python companion (_update_patient_baseline) needs the matching change. -->
+
 
 ### Fairness Concerns, Which Are Real
 
@@ -286,7 +319,7 @@ flowchart TB
 | **CloudTrail** | Enabled with data events on the patient-baselines, intervention-queue, investigation-queue, intervention-log tables, and the labels S3 bucket. Audit logs must capture every model prediction, every intervention decision, and every outcome event. |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) generates synthetic appointment and patient data suitable for development. CMS publishes appointment-adjacent datasets but nothing that directly substitutes for your own scheduling data. Never use real PHI in development. |
 | **Retention** | HIPAA baseline is 6 years for records containing PHI. Appointment and outcome records generally fall under that retention. Configure S3 lifecycle policies and DynamoDB point-in-time recovery accordingly. |
-| **Fairness Monitoring Data** | The subgroup dashboard requires access to protected-characteristic data (race, ethnicity, preferred language, insurance type). Coordinate with the health equity team on what data is captured, how it's joined to the model outputs for monitoring, and who has access to the dashboard. |
+| **Fairness Monitoring Data** | The subgroup dashboard requires access to protected-characteristic data (race, ethnicity, preferred language, insurance type). Coordinate with the health equity team on what data is captured, how it's joined to the model outputs for monitoring, and who has access to the dashboard. <!-- TODO (TechWriter): Expert review S2 (MEDIUM). The architectural artifacts that make subgroup monitoring binding (rather than aspirational) are not specified here: where the demographic store lives, who has read access, how the join to predictions happens, what the audit trail for subgroup queries looks like, and which IAM roles need read access. Race/ethnicity data has different governance from PHI in some regulatory regimes. Consider scoping read access to the demographic store to the training-job role and the QuickSight dashboard role only, with CloudTrail data events on subgroup queries; QuickSight should query an aggregated subgroup-metrics table rather than the raw demographic-joined prediction archive. --> |
 | **Cost Estimate** | Per 100,000 appointments scored: SageMaker Batch Transform (spin up, score, shut down): ~$5–15 depending on model size and instance type. DynamoDB reads + writes (baselines, queues, intervention log): ~$2–5. Glue feature assembly: ~$3–10. Feature Store online reads: ~$5. Pinpoint outreach (varies wildly by channel mix): $0.01–0.04 per outreach. For a 500,000-appointment-per-month organization with interventions on the top 10%: all-in model infrastructure ~$100–300/month fixed plus $500–2000/month variable on outreach, offset against the recovered revenue from reduced no-shows. No-show reduction of 2–5 percentage points on a 20% baseline is a realistic target and easily pays for the infrastructure. <!-- TODO: verify current published ranges for no-show reduction from targeted intervention programs; 2-5 percentage points is directionally accurate but confirm against a recent published case study. --> |
 
 ### Ingredients
@@ -416,6 +449,12 @@ HIGH_RISK_THRESHOLD           = 0.35    // absolute risk above which we want to 
 DEVIATION_FLAG_THRESHOLD      = 0.25    // appointment-specific risk this far above the
                                         // patient's rolling baseline is a contextual anomaly
 INTERVENTION_CAPACITY_PER_DAY = 120     // tune to your team's actual outreach capacity
+// TODO (TechWriter): Expert review A2 (HIGH). MIN_BASELINE_OBSERVATIONS is referenced below
+// but never defined. Pick a default with motivation (the expert review suggests ~8, with a
+// note that the right value depends on visit frequency: a few months for high-frequency
+// specialties such as dialysis or oncology, 1-2 years for routine primary care). Coordinate
+// with the Bayesian-prior fix in "Establishing a Patient-Level Baseline" so the cold-start
+// branch and the prior-driven baseline are consistent.
 
 FUNCTION route_scored_appointments(predictions_uri):
     predictions = S3.ReadJSONL(predictions_uri)
@@ -529,6 +568,15 @@ FUNCTION execute_outreach(intervention):
 
 **Step 5: Capture outcomes and close the loop.** When the appointment date arrives, the EHR records the outcome. An event flows to EventBridge. A Lambda consumes the event, joins the outcome to the prediction and intervention records, writes a labeled training row, and updates the patient baseline.
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). EventBridge -> Lambda async is at-least-once
+delivery. The pseudocode below has no idempotency guard, so a redelivered outcome event will
+write a duplicate label row, update the patient baseline twice (compounding the EMA update),
+and double-emit CloudWatch metrics. Add a deterministic event-key check (appointment_id +
+outcome) with a conditional write to a "processed-outcomes" table at the top of
+on_appointment_outcome, returning early on the duplicate path. This is the recurring
+trigger-idempotency pattern flagged across Recipes 2.4-2.10 and 3.1; consider whether a
+chapter-wide appendix is the better home for the full discipline. -->
+
 ```
 FUNCTION on_appointment_outcome(event):
     // event contains: appointment_id, outcome, outcome_recorded_at,
@@ -585,8 +633,22 @@ FUNCTION on_appointment_outcome(event):
 
     is_no_show_or_late = label in ["no_show", "late_cancellation"]
     alpha = 0.05   // exponential decay factor; tune based on how fast you want the
-                   // baseline to respond to new behavior.
+                   // baseline to respond to new behavior. Intuition: alpha=0.05 means
+                   // each new observation contributes 5% of the new baseline; the
+                   // baseline reaches ~50% of its eventual value after roughly 14
+                   // observations and ~95% after roughly 60. For high-frequency-visit
+                   // specialties (dialysis, oncology) that's a few months; for routine
+                   // primary care it's 1-2 years.
 
+    // TODO (TechWriter): Expert review A1 (HIGH). This update is unconditional, so
+    // outcomes from intervened appointments (where the patient showed because the
+    // care coordinator called) drift the baseline downward toward the
+    // intervention-adjusted rate. Over months of operation this collapses baselines
+    // for high-risk patients and degrades the deviation calculation. The fix is to
+    // gate the rolling-rate update on intervention status (the same exclusion the
+    // retrain_monthly query applies via intervention_count = 0). Track an
+    // intervened_observation_count separately for analysis. The Python companion
+    // _update_patient_baseline mirrors this bug; both should change in the same pass.
     baseline.rolling_no_show_rate = (
         (1 - alpha) * baseline.rolling_no_show_rate +
         alpha * (1 if is_no_show_or_late else 0)
@@ -619,6 +681,13 @@ FUNCTION retrain_monthly():
     // 2. Split train/val with patient-level stratification (a patient appears in
     //    exactly one of the splits; prevents leakage where the same patient is
     //    on both sides of the split).
+    // TODO (TechWriter): Expert review A5 (MEDIUM). Patient-stratified split prevents
+    // patient-level leakage but does not prevent temporal leakage. The "Where it
+    // struggles" subsection in Expected Results identifies seasonality as a real
+    // failure mode; the validation strategy should match. Consider a time-based
+    // split first (validation = the most recent ~30 days, training = the prior ~11
+    // months), then patient-stratified within each side so the same patient is not
+    // on both sides of the temporal boundary.
     X, y = build_features_and_labels(training_df)
     X_train, X_val, y_train, y_val = patient_stratified_split(X, y, patients = training_df.patient_id)
 
@@ -647,6 +716,18 @@ FUNCTION retrain_monthly():
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter03.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). The sample intervention-queue record below
+presents `feature_contributions` as a map whose values sum to `risk_score` (0.52 in the
+example). That decomposition is technically incorrect for both modeling approaches the
+recipe recommends: logistic regression decomposes additively in log-odds space (not
+probability), and SHAP for tree models also decomposes in raw-score (log-odds) space, with
+the sigmoid making per-feature contributions non-additive in probability space. A reader
+who copies this format risks teaching operational stakeholders something false about how
+the score is produced. Reframe either as `feature_importance` (normalized to sum to 1.0,
+which is what most operational dashboards actually show) or as `feature_log_odds_contributions`
+with an explanatory comment that values are pre-sigmoid. Update the sample numbers so the
+math is right under the new label. -->
 
 **Sample intervention-queue record for a high-risk appointment:**
 
@@ -745,7 +826,27 @@ The pseudocode above covers the pattern. A production deployment closes several 
 
 **PHI handling in the outreach messages.** A reminder message is clinical PHI: it names a provider, a clinic, a visit type, a date. The messaging infrastructure (SMS carrier, voice telephony provider, email sender) all need to be under a BAA with appropriate protections. Pinpoint has specific configuration requirements for HIPAA; don't skip the service-level reference documentation.
 
+<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Add a paragraph here on high-stigma
+specialty disclosure: for behavioral health, addiction medicine, OB/GYN, infectious
+disease, and oncology clinics, the clinic name itself is a diagnostic disclosure. SMS
+messages are visible on lock screens, on shared family-plan devices, and in carrier
+billing logs. The minimum-necessary message body for those specialties is typically time
+plus a generic identifier; the clinic or specialty name should only be included when the
+patient has explicitly opted into specialty-disclosing reminders. Recommend a per-clinic
+"reminder content sensitivity" flag in the patient-preference store with template
+selection gated on it. -->
+
 **Appeal and override workflow.** Sometimes the operations team will want to override the model's decision ("this patient shouldn't be in the investigation queue, we already talked to them yesterday"). Provide an override mechanism that records who overrode, when, and why. The overrides are also training data; if overrides pile up in a specific pattern, it's a signal the model or thresholds need adjustment.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add a "DLQ and replay" bullet covering
+poison-message handling for the outcome-joiner, routing, and deviation-calc Lambdas. Today
+the Architecture Diagram has no DLQs configured; Lambda's default async retry behavior
+(two retries, then drop) silently loses outcome events that exhaust retries, which means
+the retraining pipeline runs on a training set missing some of the highest-signal outcome
+data. Recommend an OnFailure SQS DLQ per Lambda, a CloudWatch alarm on queue depth, and
+an explicit replay procedure. Tie this to the existing label-retention discussion: lost
+outcome events are lost labels. The Architecture Diagram should also gain the three DLQ
+nodes. -->
 
 <!-- TODO (TechWriter): consider adding a note about provider-level no-show patterns. If the model consistently shows high risk for one specific provider's panel, the issue may not be the patients, it may be scheduling practices (always booking new patients into early morning slots, for example). Provider-level dashboards are a useful companion to the patient-level model. -->
 
