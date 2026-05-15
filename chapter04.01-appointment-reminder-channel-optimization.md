@@ -87,7 +87,7 @@ The reward signal you feed the model is derived from these events. A reasonable 
 
 ### Where This Fits in the Bigger Picture
 
-This recipe is a simple, well-scoped entry point into healthcare personalization. The infrastructure you build here (patient preference store, engagement event pipeline, reward computation, bandit or propensity model serving) is the same infrastructure that future personalization recipes reuse. Recipe 4.2 (education content matching) consumes the preference and engagement data. Recipe 4.5 (adherence intervention targeting) extends the bandit pattern to a more complex action space. Recipe 4.6 (care gap prioritization) reuses the same engagement baselines. Treat this recipe as a capability investment, not just a point solution.
+This recipe is a simple, well-scoped entry point into healthcare personalization. The infrastructure you build here (patient preference store, engagement event pipeline, reward computation, bandit or propensity model serving) is the same infrastructure that future personalization recipes reuse. Recipe 4.2 (Patient Education Content Matching) consumes the preference and engagement data. Recipe 4.5 (Medication Adherence Intervention Targeting) extends the bandit pattern to a more complex action space. Recipe 4.6 (Care Gap Prioritization) reuses the same engagement baselines. Treat this recipe as a capability investment, not just a point solution.
 
 One more framing note: channel optimization sits near the boundary between "operational tooling" and "clinical care." The reminder itself is operational (nobody's treatment decision is being altered by a channel choice), but the information inside a reminder is clinical PHI ("You have a cardiology follow-up on Friday" reveals both a diagnosis area and a care plan). That means the whole pipeline, SMS provider, email provider, everything, needs to be under a BAA. More on that in the AWS implementation.
 
@@ -491,8 +491,8 @@ FUNCTION process_engagement_event(event):
 |--------|-----------------------|----------------------|
 | Confirmed-or-showed rate | 78% | 82–85% (observed range; depends on baseline and data volume) |
 | Time to learn a new channel | N/A | ~50 observations per (patient, channel) for a tight posterior |
-| End-to-end reminder latency (decision + dispatch) | <500 ms for SMS/email; 1–3 s for voice |
-| Cost per reminder | $0.008 (SMS) to $0.03 (voice) |
+| End-to-end reminder latency (decision + dispatch) | <500 ms for SMS/email; 1–3 s for voice | Same |
+| Cost per reminder | $0.008 (SMS) to $0.03 (voice) | Same |
 
 <!-- TODO: the "Confirmed-or-showed rate" lift range is illustrative and has not been measured for this specific pipeline. Replace with measured results when available, or with citations from published healthcare bandit deployments. -->
 
