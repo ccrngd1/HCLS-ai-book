@@ -1,3 +1,32 @@
+<!--
+Editorial pass v1 (TechEditor, 2026-05-15):
+- Incorporated expert review feedback (0 HIGH / 7 MEDIUM / 6 LOW findings, verdict PASS):
+  * A3: Added oncology / palliative-care context flag architectural specification
+    (Patient-context-cache subsection, Step 2 enrich pseudocode, Step 3 rule_screen).
+  * A1: Added trigger-idempotency bullet to "Why This Isn't Production-Ready".
+  * A2: Added DLQ / poison-message handling bullet to "Why This Isn't Production-Ready".
+  * A4: Calibrated cross-reactive allergy severity in Step 3 pseudocode and prose.
+  * S1: Tightened SNS interrupt-alert payload PHI minimization in Step 5.
+  * S2: Added Subgroup data access row to Prerequisites.
+  * S5: Strengthened IAM row with per-consumer scoping.
+  * A5: Defined "investigation" severity tier explicitly.
+  * A6: Updated amoxicillin sample to align with current AAP high-dose AOM guidance.
+  * A7: Reconciled latency budget framings into single layered budget.
+  * S3: Added HL7 v2 MLLP bridge security note.
+  * S4: Added Bedrock BAA-discipline forward reference to Chapter 2.
+  * N1: Added VPC endpoint precision (CloudWatch monitoring, Scheduler, SageMaker
+    api/featurestore-runtime/runtime, SNS, Step Functions, bedrock-runtime,
+    comprehendmedical).
+  * N2: Added VPC Flow Logs requirement.
+  * V1: Added editorial disclaimer on sample timestamps.
+  * V4: Softened ASHP source attribution in diversion sample.
+- Preserved all existing TODOs from prior personas (industry-figure citations).
+- No structural reordering. No new technical claims beyond what reviewers specified.
+- TechCodeReviewer's recipe-specific finding (Python companion `total_dose_mg_equiv`
+  feature unit-mixing) does not surface in the main recipe pseudocode and is left for
+  TechWriter to address in the Python companion file.
+-->
+
 # Recipe 3.4: Medication Dispensing Anomalies ⭐
 
 **Complexity:** Medium · **Phase:** MVP+ · **Estimated Cost:** ~$0.002 to $0.012 per dispense event screened (mostly compute; reference-data joins dominate)
@@ -46,7 +75,7 @@ Medication dispensing anomaly detection lumps together a handful of structurally
 
 **Frequency and duration anomalies.** The right drug at the right dose, but given too often (insulin correction doses every 15 minutes), or for too long (a 10-day antibiotic course that's still dispensing on day 18). These are sometimes catchable at order entry (the order itself specifies frequency) and sometimes only visible at the administration record (a PRN order that's being given every 30 minutes when the label says "every 4 hours as needed"). Requires sequence-aware logic and often trips on the distinction between the order and the actual administration pattern.
 
-**Interaction anomalies.** Drug-drug, drug-disease, drug-food, drug-lab. The order is fine in isolation. The patient profile makes it risky. Warfarin plus a new fluconazole prescription; metoprolol in a patient whose blood pressure was 85/60 this morning; acetaminophen 4 grams per day in a patient with a bilirubin of 6.2. The data needed is broader than the dispense record: active medications, active diagnoses, recent labs. Most EHRs have interaction checkers built in, and most of them over-alert. The goal of a smart detector here is to suppress the low-severity interactions and surface the clinically important ones given this patient's specific context.
+**Interaction anomalies.** Drug-drug, drug-disease, drug-food, drug-lab. The order is fine in isolation. The patient profile makes it risky. Warfarin plus a new fluconazole prescription; metoprolol in a patient whose blood pressure was 85/60 this morning; acetaminophen 4 grams per day in a patient with a bilirubin of 6.2. The data needed is broader than the dispense record: active medications, active diagnoses, recent labs. Most EHRs have interaction checkers built in, and most of them over-alert. The goal of a smart detector here is to suppress the low-severity interactions and surface the clinically important ones given this patient's specific context. Drug-class cross-reactivity (the classic case is penicillin-cephalosporin, where historical 10% cross-reactivity figures have been revised down to roughly 1-2% for first-generation cephalosporins and essentially zero for third- and fourth-generation) requires per-pair severity calibration rather than a single severity tier. Over-restriction of beta-lactams in penicillin-allergic patients is itself a documented patient-safety problem, and the rule library has to encode current evidence rather than historical assumptions.
 
 **Controlled-substance pattern anomalies.** Suspicious patterns in the dispensing of DEA-scheduled drugs. Pulls that don't match administrations. Administrations charted on patients who were off-unit. Restock discrepancies that cluster by shift, by station, by user. Early refills on outpatient controlled substances. Doctor-shopping patterns visible in PDMP (Prescription Drug Monitoring Program) data. This is a fraud-adjacent problem: humans are acting adversarially, patterns evolve, and the regulatory stakes are high (DEA audits, license actions, criminal referrals). Architecturally, this class of anomaly looks more like EHR access monitoring (Recipe 3.9) than like the clinical anomaly classes above.
 
@@ -202,13 +231,15 @@ At a conceptual level, a medication dispensing anomaly pipeline has to serve two
 
 **Patient-context cache.** A read-optimized store of the patient attributes needed for anomaly checks. Refreshed from EHR events as they arrive. Contains demographics, current weight, recent labs, active diagnoses, active medication list, allergies, location/acuity, encounter type. Query latency matters: every dispense event checks the cache, and a slow cache turns a 50-millisecond dispense check into a several-second delay that clinicians will not tolerate.
 
-**Real-time path.** For dispense events that can be held briefly for screening (order verification, cabinet pull at the dispensing point), the pipeline runs a rule-based check followed by a population-level z-score against the drug-class-specific distribution for similar patients. The latency budget is on the order of tens to low hundreds of milliseconds end-to-end. The output is a severity tier that drives the UX: interrupt the pharmacist synchronously, add to a review queue, or log for background analysis.
+The cache must also include clinical-context flags that gate the anomaly checks. Oncology-protocol membership (patient is on an active chemotherapy protocol; suppress general dose anomalies for the drugs in that protocol's regimen, but retain weight-based and renal-adjustment checks). Palliative-care status (different alerting thresholds for opioid and sedative dosing where the clinical goals differ from standard pain management). Known-rare-condition flags (some genetic and metabolic disorders require dosing that looks anomalous against general population baselines). Source these flags from the EHR's care-plan feeds or oncology-specific EHR feeds (Aria, Mosaiq, Beacon); do not infer them from diagnosis codes alone, because diagnosis-code completeness and freshness varies. Audit every suppression decision: which flag was set, who set it, when it expires, what data source it came from. A suppressed alert that turns out to be a missed dose error is the failure mode the suppression discipline is designed to prevent. Get this wrong and the general detector flags chemotherapy doses constantly, which is exactly the alert-fatigue failure mode the rest of the architecture is built to avoid.
+
+**Real-time path.** For dispense events that can be held briefly for screening (order verification, cabinet pull at the dispensing point), the pipeline runs a rule-based check followed by a population-level z-score against the drug-class-specific distribution for similar patients. The latency budget is layered: the hot-path service (cache lookup + rule screen + z-score check + flag publish) targets p95 of 100-200ms, and the end-to-end latency from order verification UI to flag arrival in the pharmacist's UI targets p95 under 500ms (the additional 300-400ms accounts for upstream message delivery, downstream UX rendering, and the alert-routing layer). The Pyxis or Omnicell cabinet-pull experience is the tightest budget in the architecture: the cabinet door has to open before the user perceives a delay, so end-to-end has to be sub-second, which usually requires provisioned concurrency on the hot-path compute and a regionally co-located cache rather than a cross-region default. The output is a severity tier that drives the UX: interrupt the pharmacist synchronously, add to a review queue, or log for background analysis.
 
 **Batch pattern path.** Time-series and pattern-level anomaly detection runs on accumulated dispense history per patient and per unit. Executes on a cadence (every 15 minutes for ICU trajectories, hourly for ward-level trends, daily for facility-level aggregates). CUSUM and EWMA charts for continuous infusion trajectories, Isolation Forest on per-patient-day feature vectors, population-level drift detection on drug-class volumes.
 
 **Diversion path.** Controlled-substance transaction patterns go through a dedicated pipeline. Graph construction from user-station-drug-patient transactions. Community detection and unusual-subgraph analysis. Comparison against baselines built from each user's own history plus peer groups (same role, similar station). Output goes to the diversion investigation team and, when thresholds trip, to pharmacy compliance and (when warranted) DEA reporting workflows.
 
-**Severity tiering and routing.** Every flag gets a severity that determines the response. "Interrupt" is reserved for events where the risk of dispensing is high and the cost of interruption is acceptable (a pediatric dose that's an order of magnitude too high, a drug that's directly contraindicated by a known severe allergy). "Synchronous review" queues to a pharmacist for near-term attention (within a shift). "Background trend" rolls into dashboards and weekly reports. The tier thresholds are set by clinical leadership, monitored against override rates, and revised regularly based on feedback data.
+**Severity tiering and routing.** Every flag gets a severity that determines the response. "Interrupt" is reserved for events where the risk of dispensing is high and the cost of interruption is acceptable (a pediatric dose that's an order of magnitude too high, a drug that's directly contraindicated by a known severe allergy). "Synchronous review" queues to a pharmacist for near-term attention (within a shift). "Background trend" rolls into dashboards and weekly reports. "Investigation" is parallel to the clinical tiers and is reserved for diversion-pattern alerts that route to the diversion investigation team rather than to the pharmacist's queue; it is sorted separately from the clinical hierarchy because the workflow, audience, and legal posture all differ. The tier thresholds are set by clinical leadership, monitored against override rates, and revised regularly based on feedback data.
 
 **Feedback capture.** Every override gets a reason code and optionally free-text. Every confirmed adverse drug event from incident reporting gets linked back to the dispense records (catching both the events we flagged correctly and the ones we missed). This feedback is the training signal for supervised retraining and the input for rule tuning.
 
@@ -222,7 +253,7 @@ At a conceptual level, a medication dispensing anomaly pipeline has to serve two
 
 **Amazon Kinesis Data Streams for the dispense event feed.** The ingest pipeline has to accept events from multiple upstream systems (CPOE order verifications, automated dispensing cabinet pulls, retail pharmacy fills) with different throughput profiles. Kinesis gives you durable, ordered event streams with multi-consumer fanout, which matters because the same event gets read by the real-time anomaly service, the batch aggregation pipeline, and the audit archive. HIPAA-eligible under the BAA.
 
-**AWS Lambda for the real-time anomaly service.** The hot path (rule screening, cache lookup, z-score computation) needs to complete in tens to low hundreds of milliseconds. A Lambda function triggered by Kinesis records fits this profile: fast cold-start with SnapStart or provisioned concurrency, autoscales with event volume, and the per-invocation cost at typical pharmacy volumes is negligible. Keep the business logic small; offload anything heavy to async downstream steps.
+**AWS Lambda for the real-time anomaly service.** The hot path (rule screening, cache lookup, z-score computation) targets p95 of 100-200ms; the end-to-end target from order-entry UI to pharmacist-side flag is under 500ms (cabinet-pull experiences are tighter, typically sub-second). A Lambda function triggered by Kinesis records fits this profile: fast cold-start with SnapStart or provisioned concurrency, autoscales with event volume, and the per-invocation cost at typical pharmacy volumes is negligible. Keep the business logic small; offload anything heavy to async downstream steps. For cabinet-pull paths, provisioned concurrency on the hot-path Lambda is usually required to hit the sub-second budget consistently.
 
 **Amazon DynamoDB for the patient-context cache.** Low-latency key-value reads are exactly what DynamoDB is for. The cache is keyed by patient ID and contains the recent demographic, lab, medication, and problem-list snapshots the anomaly service needs. Refreshed by a separate Lambda that consumes FHIR and HL7 events from the EHR feed. HIPAA-eligible and supports customer-managed KMS for encryption at rest.
 
@@ -234,7 +265,7 @@ At a conceptual level, a medication dispensing anomaly pipeline has to serve two
 
 **Amazon OpenSearch Service for the alert and audit index.** Every flag produced by the pipeline gets indexed for search and aggregation. The pharmacy director's dashboard queries OpenSearch for trend views; the audit team queries it for specific-patient lookups and regulatory reporting. OpenSearch supports fine-grained access control which matters when pharmacy, compliance, and IT security all need different slices of the same data.
 
-**Amazon MSK or Amazon MQ for HL7 integration.** Most hospital EHR integrations speak HL7 v2 over MLLP (Minimal Lower Layer Protocol), and getting those messages into AWS typically uses an on-premises MLLP receiver that republishes to Amazon MQ (ActiveMQ flavor) or an MSK (Managed Kafka) topic. From there the event normalizer Lambda picks up and transforms into the canonical format. FHIR-native EHRs can push directly to API Gateway instead; both paths land in Kinesis for downstream consumption.
+**Amazon MSK or Amazon MQ for HL7 integration.** Most hospital EHR integrations speak HL7 v2 over MLLP (Minimal Lower Layer Protocol), and getting those messages into AWS typically uses an on-premises MLLP receiver that republishes to Amazon MQ (ActiveMQ flavor) or an MSK (Managed Kafka) topic. From there the event normalizer Lambda picks up and transforms into the canonical format. FHIR-native EHRs can push directly to API Gateway instead; both paths land in Kinesis for downstream consumption. The on-premises MLLP receiver is the PHI ingress surface into AWS, so the production posture matters: wrap MLLP in TLS (often called MLLPS) with mutual TLS authentication, deploy the receiver in a DMZ or integration tier rather than on the clinical network, connect to AWS via Direct Connect for production volumes (Site-to-Site VPN is acceptable for lower-volume and pilot deployments), and authenticate the AWS-side MQ or Kafka broker via mutual TLS or short-lived IAM-derived tokens rather than long-lived shared secrets. Raw MLLP without TLS is acceptable only in development environments with synthetic data.
 
 **Amazon S3 with AWS KMS for durable storage.** Raw dispense events, patient-context snapshots, model artifacts, and feedback data all land in S3 with server-side encryption using customer-managed KMS keys. Parquet for the structured data, JSON for raw events. Lifecycle rules move cold data to S3 Glacier for long-term retention (pharmacy records often have 10-year or longer retention requirements depending on jurisdiction).
 
@@ -242,13 +273,13 @@ At a conceptual level, a medication dispensing anomaly pipeline has to serve two
 
 **Amazon EventBridge for routing flags.** When a flag is produced, an EventBridge event goes out. Subscribers include the real-time alert delivery service, the audit logger, the metrics aggregator, and the feedback capture service. Using EventBridge rather than hard-coded integrations lets the pipeline evolve without touching the detection logic.
 
-**Amazon SNS and Amazon Pinpoint for alert delivery.** Interrupt-severity alerts go to the pharmacist's workstation or phone through whatever integration the hospital uses (often a custom app that subscribes to SNS or an MDM-pushed notification channel). Lower-severity alerts go to email or to the EHR's secure messaging. Pinpoint handles patient-level outreach when the detected anomaly requires contacting the patient (outpatient early-refill patterns, for example).
+**Amazon SNS and Amazon Pinpoint for alert delivery.** Interrupt-severity alerts go to the pharmacist's workstation or phone through whatever integration the hospital uses (often a custom app that subscribes to SNS or an MDM-pushed notification channel). Lower-severity alerts go to email or to the EHR's secure messaging. Pinpoint handles patient-level outreach when the detected anomaly requires contacting the patient (outpatient early-refill patterns, for example). The notification payload follows the chapter-3-settled minimum-PHI convention: the SNS message carries event ID, severity, and routing tier only, and the pharmacist UI fetches the full record (drug, dose, patient context) by ID over a separate authenticated channel. PHI does not transit through SNS, downstream notification channels, or any subscriber logs.
 
 **Amazon QuickSight for pharmacy leadership dashboards.** Override rates by alert type, adverse event correlations, diversion investigation queue depth, dispensing trend monitoring. QuickSight on top of Athena against the OpenSearch archive and the S3 analytics buckets. HIPAA-eligible.
 
 **Amazon Comprehend Medical for unstructured clinical context.** Some of the most useful context for anomaly detection lives in free-text clinical notes (the reason for the medication, the clinical goals of care, the specific symptoms being treated). Comprehend Medical extracts medical entities and relationships from notes and makes them available to the anomaly detector as structured features. Use it sparingly: the cost per page of text adds up, so extract-once-and-cache is the right pattern.
 
-**Amazon Bedrock for LLM-assisted triage (optional, advanced).** For the clinical-reasoning class of anomaly (does this dispense match the clinical intent in the note?), a HIPAA-eligible LLM through Bedrock can compare the dispense event against the patient's recent clinical notes and flag reasoning mismatches. Expensive and requires rigorous validation. Layer on top of the statistical detection, not a replacement for it. <!-- TODO (TechWriter): as HIPAA-eligible Bedrock patterns mature in healthcare in 2026, add a specific reference to validated clinical-reasoning triage architectures. Avoid speculative specifics for now. -->
+**Amazon Bedrock for LLM-assisted triage (optional, advanced).** For the clinical-reasoning class of anomaly (does this dispense match the clinical intent in the note?), a HIPAA-eligible LLM through Bedrock can compare the dispense event against the patient's recent clinical notes and flag reasoning mismatches. Use only models with BAA coverage on the inference path; Amazon's foundation models on Bedrock are HIPAA-eligible, but third-party models on Bedrock have differing BAA postures, and the model's terms of service have to be reviewed before PHI-bearing prompts are sent. Construct prompts with minimum-necessary context (the relevant note excerpts, the dispense event, the active medication list, not the full chart), filter outputs for clinical-recommendation hallucinations, and log every prompt and response to the audit trail tied to the triage decision. Expensive and requires rigorous validation. Layer on top of the statistical detection, not a replacement for it. See Chapter 2's generative AI recipes (2.4 through 2.10) for the established BAA discipline for PHI-bearing LLM workloads. <!-- TODO (TechWriter): as HIPAA-eligible Bedrock patterns mature in healthcare in 2026, add a specific reference to validated clinical-reasoning triage architectures. Avoid speculative specifics for now. -->
 
 **Amazon CloudWatch and AWS CloudTrail.** Standard operational and audit logging. CloudWatch dashboards for pipeline health, alert latency, override rates, and drift metrics. CloudTrail data events on every PHI-bearing store so access is auditable end-to-end.
 
@@ -311,12 +342,13 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon SageMaker (Processing, Training, Feature Store), Amazon Neptune, Amazon OpenSearch Service, Amazon S3, Amazon MQ or MSK, API Gateway, AWS Step Functions, Amazon EventBridge, Amazon SNS, Amazon Pinpoint, Amazon Comprehend Medical, Amazon Bedrock (optional), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Least-privilege per role. Real-time anomaly Lambda: `dynamodb:GetItem` on patient-context-cache, `sagemaker-featurestore-runtime:GetRecord` on baseline feature groups, `s3:GetObject` on clinical-rules bucket, `events:PutEvents` to the anomaly-events bus, `kinesis:GetRecords`. Event normalizer Lambda: `kinesis:GetRecords`, `dynamodb:PutItem`. Batch pipelines: scoped to their specific input and output prefixes in S3. Diversion pipeline has separate, stricter access. No `*` actions in production. |
+| **IAM Permissions** | Least-privilege per role. Real-time anomaly Lambda role: `dynamodb:GetItem` on patient-context-cache only (no write), `sagemaker-featurestore-runtime:GetRecord` on baseline feature groups, `s3:GetObject` on clinical-rules bucket, `events:PutEvents` to the anomaly-events bus, `kinesis:GetRecords`. Cache-refresher Lambda role: `dynamodb:PutItem` and `dynamodb:UpdateItem` on patient-context-cache only, `kinesis:GetRecords` on the EHR event stream. Event normalizer Lambda role: `kinesis:GetRecords`, `dynamodb:PutItem`. Alert-delivery Lambda role: consumes events from the bus (no `events:PutEvents`), `sns:Publish` on the interrupt-alert topic only. Feedback-capture Lambda role: `events:PutEvents` on a dedicated feedback-events bus only, `dynamodb:PutItem` on a label-write-only table, `s3:PutObject` on the labels-parquet bucket only. Batch pipelines: scoped to their specific input and output prefixes in S3. Diversion-pipeline roles are scoped separately and stricter (separate KMS keys, separate Neptune cluster access, separate IAM boundary). No `*` actions in production. Per-resource ARNs everywhere; no wildcard resource scopes. |
 | **BAA** | AWS BAA signed. Every service listed is HIPAA-eligible under the BAA when configured properly. See the [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). |
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Kinesis: server-side encryption with CMK. Neptune: encryption at rest with CMK. OpenSearch: encryption at rest and in-transit. SageMaker: KMS on volumes, model artifacts, and Feature Store. TLS 1.2 or higher in transit everywhere. |
-| **VPC** | Production: Lambdas, SageMaker jobs, and Neptune in a VPC with VPC endpoints for S3, DynamoDB, Kinesis, SageMaker runtime, OpenSearch, Bedrock, Comprehend Medical, and KMS. Neptune only accessible via VPC; no public endpoints. |
+| **VPC** | Production: Lambdas, SageMaker jobs, and Neptune in a VPC with the following endpoints. Gateway: `s3`, `dynamodb`. Interface: `kinesis`, `sagemaker.api` (control-plane Processing and Training), `sagemaker.featurestore-runtime` (online baseline retrieval), `sagemaker.runtime` (if a real-time endpoint variant is used), `states` (Step Functions), `events` (EventBridge bus), `scheduler` (EventBridge Scheduler), `logs` (CloudWatch Logs), `monitoring` (CloudWatch `PutMetricData`), `kms`, `sns`, `bedrock-runtime`, `comprehendmedical`, plus OpenSearch via VPC. Neptune only accessible via VPC; no public endpoints. Pinpoint API is reached through its regional endpoint; if the calling Lambda is in a private subnet, route Pinpoint traffic via a NAT gateway or a Pinpoint VPC endpoint where available. VPC Flow Logs enabled on the VPC carrying Lambda, SageMaker, and Neptune traffic; logs delivered to a dedicated S3 bucket with KMS encryption and retention aligned to the deepest applicable requirement (HIPAA 6-year baseline; DEA 2-year minimum for controlled-substance-related records; state pharmacy boards 5-10 years where applicable). For the diversion-investigation Neptune cluster specifically, Flow Logs become evidentiary records and follow the organization's evidence-handling retention policy (typically 7+ years). |
 | **CloudTrail** | Enabled with data events on patient-context-cache, clinical-rules bucket, labels-parquet bucket, Neptune cluster operations, and OpenSearch domain operations. Every real-time anomaly decision is logged to an immutable audit trail. |
 | **Data Access Controls** | Controlled-substance transaction data and diversion investigation records require stricter access controls than general medication data. Separate IAM roles, separate KMS keys, separate Neptune cluster or a dedicated logical partition. Access reviewed quarterly. |
+| **Subgroup data access** | Subgroup performance and override-pattern monitoring requires read access to patient demographic attributes (age band, sex, race, ethnicity, preferred language, insurance type) and provider demographic attributes (specialty, training program, demographics where available under HR rules). These attributes may be governed differently from claims and clinical PHI in some regulatory regimes. Restrict read access to the demographic-and-attribute store to the retraining job role and the QuickSight dashboard role; audit subgroup queries via CloudTrail data events. The QuickSight dashboard backed by Athena should query an aggregated subgroup-metrics table (override rates by drug class by patient demographic, missed-ADE rates by drug class by demographic), not the raw demographic-joined anomaly archive, so dashboard-user access does not require row-level read on the subgroup attributes. Provider-demographic data has its own HR-confidentiality governance and may not be addressable by the same architectural pattern as patient-demographic data; coordinate with HR and legal on the provider side. |
 | **Clinical Governance** | Pharmacy leadership signs off on rule thresholds, severity tier definitions, and alert delivery workflows before production deployment. Changes to interrupt-severity rules require re-approval. This is clinical decision support; treat the governance accordingly. |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) generates synthetic medication orders and administrations suitable for development. [MIMIC-IV](https://mimic.mit.edu/) has detailed ICU medication administration data, but access requires a data use agreement and credentialed access through PhysioNet. For drug reference data development, [RxNorm from the NLM](https://www.nlm.nih.gov/research/umls/rxnorm/index.html) is free and sufficient to prototype the normalization pipeline. Never use real PHI in development. |
 | **Drug Reference Content** | A licensed drug knowledge base (First Databank, Wolters Kluwer, Micromedex, Lexicomp, or Medi-Span) or a carefully-maintained open-source equivalent built on RxNorm + DailyMed. Budget vendor license fees. Plan for monthly update cycles. |
@@ -466,6 +498,14 @@ FUNCTION enrich_with_patient_context(canonical_event):
     enriched.active_problems = context.active_problems         // list of ICD-10 codes
     enriched.allergies       = context.allergies               // normalized allergen list
 
+    // Clinical-context flags that gate the anomaly checks. The oncology-protocol
+    // flag is the highest-value feature in the recipe (see "The Honest Take");
+    // without it, the general detector flags chemotherapy doses constantly. These
+    // come from the EHR's care-plan or oncology-specific EHR feed (Aria, Mosaiq,
+    // Beacon), not from diagnosis-code inference.
+    enriched.active_protocols       = context.active_protocols       // list of regimen identifiers
+    enriched.palliative_care_active = context.palliative_care_active // boolean
+
     // Derived features the scorer will use.
     IF enriched.patient_weight_kg and enriched.dose_unit in ["mg", "mcg", "g", "units"]:
         enriched.dose_per_kg = canonical_event.dose_value / enriched.patient_weight_kg
@@ -486,7 +526,27 @@ FUNCTION rule_screen(enriched_event):
     flags = []
     rule_set = clinical_rules.get_active_rules_for_drug(enriched_event.drug_rxnorm)
 
+    // Protocol-aware suppression. If the patient is on an active oncology protocol
+    // and this drug is part of the protocol's regimen, suppress general dose-range
+    // anomalies (the doses are wildly anomalous against the population baseline by
+    // clinical design). Weight-based and renal-adjustment checks still fire, because
+    // those are protocol-independent safety floors. Every suppression decision emits
+    // an audit metric so a missed dose error from a wrongly-set protocol flag is
+    // detectable retrospectively.
+    suppressed_rule_types = set()
+    FOR each protocol_id in enriched_event.active_protocols:
+        protocol = oncology_protocols.lookup(protocol_id)
+        IF enriched_event.drug_rxnorm in protocol.regimen_drugs:
+            suppressed_rule_types = suppressed_rule_types UNION protocol.suppressed_rule_types
+            emit_metric("rule_suppressed_by_protocol", 1, dimensions = {
+                protocol_id: protocol_id,
+                drug:        enriched_event.drug_rxnorm
+            })
+
     FOR each rule in rule_set:
+        IF rule.type in suppressed_rule_types:
+            CONTINUE   // protocol membership suppresses this rule type for this drug
+
         CASE rule.type:
 
             "max_dose_per_kg":
@@ -529,14 +589,36 @@ FUNCTION rule_screen(enriched_event):
 
             "allergy_contraindication":
                 FOR each allergen in enriched_event.allergies:
-                    IF allergen.normalized_id in rule.cross_reactive_allergens:
+                    IF allergen.normalized_id == rule.direct_allergen:
+                        // Direct allergen match (e.g., penicillin-allergic patient
+                        // receiving penicillin). Interrupt severity is appropriate.
                         flags.append({
                             rule_id:    rule.id,
-                            rule_type:  "allergy_contraindication",
-                            severity:   "interrupt",    // almost always interrupt-severity
+                            rule_type:  "allergy_contraindication_direct",
+                            severity:   "interrupt",
                             allergen:   allergen.normalized_id,
                             reaction:   allergen.reaction,
-                            message:    f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is cross-reactive",
+                            message:    f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is the same agent",
+                            reference:  rule.reference_source
+                        })
+                    ELSE IF allergen.normalized_id in rule.cross_reactive_allergens:
+                        // Cross-reactivity (e.g., penicillin-allergic patient
+                        // receiving a cephalosporin). Severity depends on (1) the
+                        // specific drug pair (penicillin / first-gen cephalosporin
+                        // cross-reactivity is roughly 1-2%; penicillin / third-gen
+                        // is essentially nil; penicillin / carbapenem is under 1%)
+                        // and (2) the reaction history (anaphylaxis vs. rash vs.
+                        // unspecified). Defer to the rule's per-pair severity
+                        // rather than a global "interrupt." See ASHP and Joint
+                        // Commission guidance on penicillin-allergy de-labeling
+                        // and beta-lactam stewardship.
+                        flags.append({
+                            rule_id:    rule.id,
+                            rule_type:  "allergy_cross_reactive",
+                            severity:   rule.cross_reactive_severity[allergen.reaction_type] OR "synchronous",
+                            allergen:   allergen.normalized_id,
+                            reaction:   allergen.reaction,
+                            message:    f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is potentially cross-reactive (per-pair severity calibration applies)",
                             reference:  rule.reference_source
                         })
 
@@ -642,10 +724,23 @@ FUNCTION route_flags(enriched_event, rule_flags, zscore_flags):
     OpenSearch.Index("medication-anomalies", anomaly_event)
 
     // Interrupt severity triggers synchronous notification.
+    // The SNS message carries the event ID, severity, and a coarse routing tier
+    // only; the pharmacist UI fetches the full record (drug, dose, patient,
+    // context) by ID. PHI does not transit through SNS, downstream notification
+    // channels (SMS, pager, mobile push, Slack/Teams webhooks), or any logs they
+    // generate. For high-stigma drug classes (HIV antiretrovirals, opioid-use-
+    // disorder treatments, gender-affirming hormones, certain psychiatric
+    // medications), even the drug display name is a diagnostic disclosure on a
+    // lock screen and should not appear in the notification subject line.
     IF overall_severity == "interrupt":
         SNS.Publish(
             topic   = INTERRUPT_ALERT_TOPIC,
-            message = build_pharmacist_alert_payload(anomaly_event),
+            message = {
+                event_id:     anomaly_event.event_id,
+                severity:     "interrupt",
+                routing_tier: anomaly_event.severity,
+                fetch_by_id:  True
+            },
             attributes = {
                 "patient_location": enriched_event.patient_location,
                 "severity":         "interrupt"
@@ -810,6 +905,8 @@ FUNCTION on_adverse_event_report(ade_event):
 
 ### Expected Results
 
+<!-- Sample timestamps and event IDs below are illustrative and reflect the draft date; production output uses real ISO-8601 timestamps from the event-handler's invocation time. -->
+
 **Sample interrupt-severity alert for a pediatric dose anomaly:**
 
 ```json
@@ -822,20 +919,20 @@ FUNCTION on_adverse_event_report(ade_event):
   "source": "cpoe",
   "flags": [
     {
-      "rule_id": "MAX_DOSE_PER_KG_AMOXICILLIN_PEDIATRIC",
+      "rule_id": "MAX_DOSE_PER_KG_AMOXICILLIN_PEDIATRIC_AOM_HIGH_DOSE",
       "rule_type": "max_dose_per_kg",
       "severity": "interrupt",
-      "actual": 35.7,
-      "threshold": 15.0,
-      "message": "Dose 35.7 mg/kg exceeds maximum 15.0 mg/kg per dose for patient age 4.3 years (weight 14 kg). Standard pediatric amoxicillin dose for this age and weight is approximately 200-225 mg per dose.",
+      "actual": 71.4,
+      "threshold": 50.0,
+      "message": "Dose 71.4 mg/kg per dose exceeds the per-dose ceiling of 50.0 mg/kg for patient age 4.3 years (weight 14 kg). Standard pediatric amoxicillin for AOM under current AAP high-dose guidance is 80-90 mg/kg/day divided BID, which works out to approximately 40-45 mg/kg per dose.",
       "reference": "drug_kb_v2026.05_amoxicillin_pediatric_dosing"
     },
     {
       "type": "population_dose_per_kg_zscore",
       "feature": "dose_per_kg",
-      "actual": 35.7,
-      "baseline_median": 13.2,
-      "robust_z": 6.8,
+      "actual": 71.4,
+      "baseline_median": 41.5,
+      "robust_z": 5.6,
       "profile": "pediatric:child:outpatient:ckd_none:indication_otitis_media",
       "severity": "interrupt"
     }
@@ -850,10 +947,11 @@ FUNCTION on_adverse_event_report(ade_event):
     "patient_acuity": "outpatient",
     "egfr": null,
     "active_medications": [],
+    "active_protocols": [],
     "allergies": []
   },
   "detected_at": "2026-05-12T19:42:18.215Z",
-  "narrative_summary": "Prescribed amoxicillin dose of 500 mg is 35.7 mg/kg based on patient weight of 14 kg, substantially above the standard pediatric range. Recommend verifying intended dose; a likely intent is 200-250 mg per dose three times daily."
+  "narrative_summary": "Prescribed amoxicillin dose of 1000 mg is 71.4 mg/kg per dose based on patient weight of 14 kg, substantially above the AAP high-dose AOM target of 40-45 mg/kg per dose (80-90 mg/kg/day divided BID). Recommend verifying intended dose; a likely intent is 600 mg per dose twice daily for high-dose AOM."
 }
 ```
 
@@ -917,7 +1015,7 @@ FUNCTION on_adverse_event_report(ade_event):
   "severity": "investigation",
   "routing": "diversion_investigation_team",
   "message": "User shows elevated rates of controlled-substance pulls without matching administrations and unusually high waste-witness-required rate (self-witness patterns). Requires investigation before any disciplinary or clinical inference.",
-  "note": "Pattern matches indicators published in the ASHP guidelines for controlled substance diversion; does not constitute proof of diversion. Investigation to be conducted under existing pharmacy-compliance protocol.",
+  "note": "Pattern matches diversion indicators consistent with ASHP guidance and common production detection patterns; does not constitute proof of diversion. Investigation to be conducted under existing pharmacy-compliance protocol with HR and legal involvement as appropriate.",
   "detected_at": "2026-05-13T06:00:00Z"
 }
 ```
@@ -977,6 +1075,10 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 **Data retention and audit trail integrity.** Every alert, every override, every confirmed event has retention requirements that may extend well beyond the general HIPAA 6-year baseline. DEA records for controlled substances have specific retention mandates. State pharmacy board retention can be 5-10 years or longer. Sentinel event records may be retained permanently. The audit trail has to be immutable (typically S3 Object Lock or equivalent) because it will be subject to subpoena and regulatory review.
 
 **Disaster recovery and business continuity.** The pipeline is in the medication-dispensing path. If the pipeline is down, pharmacy workflow has to continue, which means the downtime mode has to be documented, drilled, and tested. The rules layer should be deployable as a standalone fallback even if the ML components are unavailable. The pharmacy doesn't stop dispensing when AWS has an issue; plan accordingly.
+
+**Trigger idempotency on the feedback loop.** EventBridge guarantees at-least-once delivery, and Lambda async invocation retries on failure. Without an idempotency guard at the feedback-capture Lambda, a redelivered pharmacist-response event or ADE event can run the OpenSearch update, the label write, and the metric emissions twice. Doubled override counts directly distort which rules look high-override and get retired by the rule-tuning loop, and a rule retired because of artificially-doubled counts is a missed-future-flag, which can be a missed-future-ADE. Derive a deterministic event key (the anomaly event ID plus the response type for pharmacist responses; the ADE event ID plus the dispense event ID for ADE reports) and use it as a write-once guard in DynamoDB before the OpenSearch update, the label write, and the metric emissions run. This is a recurring pattern across the cookbook's event-driven pipelines and is a strong candidate for a shared idempotency appendix.
+
+**DLQ and replay for the streaming Lambdas.** A dropped event in the real-time-anomaly-service path is a dispense without an anomaly check, which is precisely the failure mode the entire pipeline is designed to prevent. Lambda's default async retry is two retries over six hours and then drop, with the only evidence in CloudWatch Logs. Configure each streaming Lambda's `OnFailure` destination to a dedicated SQS DLQ (`event-normalizer-dlq`, `real-time-anomaly-service-dlq`, `feedback-capture-dlq`); CloudWatch alarms on DLQ depth alert the on-call clinical-informatics and pharmacy-operations teams. For the real-time-anomaly-service DLQ specifically, alarm threshold is 1, because a single dropped dispense event is a patient-safety event. Replay events from the DLQ after fixing the root cause; for events older than the dispense window (typically one hour), escalate to clinical-informatics review rather than auto-replay because the dispense decision has already been made downstream.
 
 <!-- TODO (TechWriter): consider adding a note about FDA 510(k) and De Novo pathways for clinical decision support software, as some dispensing anomaly detectors may cross into regulated device territory depending on how outputs are used. The FDA's 2022 CDS guidance document is the relevant reference. -->
 
