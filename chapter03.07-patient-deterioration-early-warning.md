@@ -157,6 +157,73 @@ Follow-up editor pass (TechEditor, 2026-05-15, second iteration):
   `build_explanation` prior-score query) plus eleven NOTEs remain
   TechWriter-side polish before publication. The TechEditor persona is
   not the right pass for those Python-companion fixes.
+
+Follow-up editor pass (TechEditor, 2026-05-15, third iteration):
+- Re-verified style hygiene with explicit UTF-8 read: U+2014 em-dash
+  count 0 (prose and code blocks combined); U+2013 en-dash count 0
+  (prose and code blocks combined). Documentation-voice and
+  announcement-anti-pattern grep ("this recipe demonstrates", "we are
+  excited", "in this recipe we will", "AWS architects, we", "let's
+  dive", "let's explore", "delve into", "leverage") returns zero
+  matches in prose; the only hits are inside this editor-comment block
+  itself referencing the anti-pattern grep, which is expected.
+- Re-verified header hierarchy: one H1 (the title), 11 H2 sections
+  (The Problem / The Technology / General Architecture Pattern / The
+  AWS Implementation / Why This Isn't Production-Ready / The Honest
+  Take / Variations and Extensions / Related Recipes / Additional
+  Resources / Estimated Implementation Time / Tags), 16 H3
+  subsections (8 under The Technology, 7 under The AWS Implementation,
+  1 under Code), one H4 (Walkthrough). No skipped levels.
+- Re-verified fenced-code-block consistency: 12 paired fences total
+  (one ASCII pipeline diagram, one Mermaid block tagged `mermaid`, two
+  JSON blocks tagged `json`, eight pseudocode blocks bare; bare
+  pseudocode fences match the chapter-1 reference convention from
+  chapters 1.01-1.10).
+- Re-verified RECIPE-GUIDE compliance and vendor balance: section
+  ordering matches the prior-pass inventory; conceptual sections (The
+  Problem, The Technology, General Architecture Pattern) remain
+  vendor-neutral; AWS service names are confined to The AWS
+  Implementation, Why This Isn't Production-Ready, and Additional
+  Resources sections; ~70/30 split intact.
+- Mechanical service-name-capitalization fix applied in place: the
+  Why-These-Services Amazon-DynamoDB paragraph (line 447) had a
+  lowercase-s "DynamoDB streams" reference; corrected to "DynamoDB
+  Streams" (the proper AWS service name) for consistency with the
+  three other uses in the file (architecture diagram edge label, Step
+  3 walkthrough prose, Step 3 pseudocode comment). One-character fix;
+  no semantic change.
+- Spell check: no typos detected in prose. Duplicate-word check: no
+  consecutive duplicate words detected.
+- Link verification: every URL in the Additional Resources section is
+  a plausible, well-formed canonical URL. AWS documentation URLs
+  follow the `docs.aws.amazon.com/{service}/latest/{guide-type}/`
+  pattern; clinical-and-research references resolve to authoritative
+  sources (RCP London for NEWS2, SCCM for Surviving Sepsis,
+  PhysioNet for MIMIC-IV and eICU, GitHub for Synthea, FDA for CDS
+  and SaMD guidance). No fabricated URLs.
+- Sample-narrative tightening from V4 (prior pass) verified intact:
+  the closing of the sample alert payload narrative reads "and
+  assessment per local sepsis protocol" rather than the original
+  "consideration of empiric antibiotic timing per local sepsis
+  protocol".
+- TODO inventory reconfirmed: 21 well-formed `<!-- TODO (TechWriter)`
+  markers from prior passes preserved verbatim. No new TODOs added in
+  this iteration.
+- All MEDIUM expert-review findings (A1 outcome-event idempotency, A2
+  DLQ posture for the five critical Lambdas, A3 treatment-leakage and
+  feature-cutoff discipline, A4 cold-start detection and routing
+  primitive, A5 suppression-rule expiry-enforcement and care-transition
+  trigger, A6 reference-data versioning propagation, S1 alert payload
+  PHI minimization for pager / Vocera / TigerConnect channels, S2
+  subgroup data governance architectural artifacts) remain flagged as
+  TODO markers for TechWriter follow-up.
+- Companion `chapter03.07-python-example.md` follow-up status
+  unchanged from prior passes: PASS state from code review; two
+  WARNINGs and eleven NOTEs remain TechWriter-side polish before
+  publication. The TechEditor persona is not the right pass for those
+  Python-companion fixes.
+- No structural changes; no new technical claims; no rewrites of any
+  section.
 -->
 
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
@@ -444,7 +511,7 @@ At a conceptual level, the deterioration early warning pipeline ingests vitals, 
 
 **AWS HealthLake or a custom FHIR repository for the longitudinal patient record.** HealthLake stores patient records in FHIR format, supports query, and integrates with downstream analytics. For deployments with established FHIR infrastructure, HealthLake is a strong choice. For deployments that interface directly with EHR data via HL7 v2 or proprietary feeds, a custom FHIR transformation layer plus DynamoDB / S3 storage may fit better. The decision is more about existing integration patterns than about technical capability.
 
-**Amazon DynamoDB for the patient state store.** Single-digit-millisecond reads on the current patient snapshot. Each admitted patient is a record (or a small set of records) with current vitals, rolling history pointers, active medications, current location, and active orders. DynamoDB streams trigger the feature engine on state changes, so scoring is event-driven (not polling) for fresh events while a periodic backstop catches patients whose state hasn't changed but whose elapsed-time features have shifted.
+**Amazon DynamoDB for the patient state store.** Single-digit-millisecond reads on the current patient snapshot. Each admitted patient is a record (or a small set of records) with current vitals, rolling history pointers, active medications, current location, and active orders. DynamoDB Streams trigger the feature engine on state changes, so scoring is event-driven (not polling) for fresh events while a periodic backstop catches patients whose state hasn't changed but whose elapsed-time features have shifted.
 
 **Amazon Timestream for time-series storage.** Vitals and labs are inherently time-series data, and Timestream is purpose-built for this. Trajectory features (slopes, deltas, rolling statistics) compute efficiently against a Timestream-backed history. Magnetic-tier retention is cost-effective for the multi-year history needed for retraining. <!-- TODO (TechWriter): verify current HIPAA eligibility status of Amazon Timestream; confirm with the AWS HIPAA Eligible Services Reference. Some deployments may prefer storing time-series data in DynamoDB or S3 (with Athena) if Timestream eligibility or feature set doesn't match requirements. -->
 
