@@ -115,6 +115,48 @@ Editor pass (TechEditor, 2026-05-15):
   section. All finding-level architectural fixes from the expert
   review (A1-A7, S1-S6, N1-N3) are flagged as TODO markers for
   TechWriter follow-up rather than rewritten by editor.
+
+Follow-up editor pass (TechEditor, 2026-05-15, second iteration):
+- Verified prior pass holds: U+2014 em-dash count 0 in prose
+  reconfirmed; U+2013 en-dash count outside fenced code blocks 0
+  reconfirmed; documentation-voice and announcement-anti-pattern grep
+  ("this recipe demonstrates", "we are excited", "in this recipe we
+  will", "AWS architects, we") returns zero matches in prose.
+- Header hierarchy reconfirmed: one H1, H2 for major sections, H3
+  subsections under Technology and AWS Implementation, one H4
+  (Walkthrough), no skipped levels.
+- RECIPE-GUIDE compliance reconfirmed: section ordering matches the
+  prior-pass inventory; all required sections present.
+- Vendor balance reconfirmed: 70/30 split intact; conceptual sections
+  vendor-neutral; AWS service names confined to AWS Implementation.
+- TODO inventory reconfirmed: 20 well-formed `<!-- TODO (TechWriter)`
+  markers from the prior pass preserved verbatim.
+- One additional TODO added in this pass: V1 (expert review finding,
+  future-dated timestamps in the two sample payloads under Expected
+  Results) is now flagged inline so TechWriter can either replace the
+  timestamps with placeholder patterns or add a visible-to-reader
+  caveat tying them to the opening 3:14 a.m. sepsis vignette before
+  publication. Updated TODO inventory after this pass: 21 TODOs.
+- No other structural or content changes in this iteration. Prior-pass
+  inline edits (V2 performance-benchmarks visible caveat above the
+  table; V4 sample-narrative tightening from "consideration of empiric
+  antibiotic timing per local sepsis protocol" to "and assessment per
+  local sepsis protocol"; V5 cross-reference between The Honest Take
+  first lesson and the Implementation-Time Basic tier) are unchanged.
+- All MEDIUM expert-review findings (A1 outcome-event idempotency, A2
+  DLQ posture for the five critical Lambdas, A3 treatment-leakage and
+  feature-cutoff discipline, A4 cold-start detection and routing
+  primitive, A5 suppression-rule expiry-enforcement and care-transition
+  trigger, A6 reference-data versioning propagation, S1 alert payload
+  PHI minimization for pager / Vocera / TigerConnect channels, S2
+  subgroup data governance architectural artifacts) remain flagged as
+  TODO markers for TechWriter follow-up.
+- Companion `chapter03.07-python-example.md` follow-up status
+  unchanged: PASS state from code review; two WARNINGs (non-atomic
+  `update_patient_state` get-then-put; eventually-consistent
+  `build_explanation` prior-score query) plus eleven NOTEs remain
+  TechWriter-side polish before publication. The TechEditor persona is
+  not the right pass for those Python-companion fixes.
 -->
 
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
@@ -1180,6 +1222,16 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 ---
 
 ### Expected Results
+
+<!-- TODO (TechWriter): expert review finding V1 (future-dated timestamps).
+The 2026-05-14 alert IDs and timestamps in the two sample payloads below
+are tied to the opening 3:14 a.m. medical-surgical-floor sepsis vignette
+(post-op day 2, daughter pressing the call button at 1:40 a.m., sepsis
+protocol activation, ICU transfer). They are illustrative; production
+output uses real ISO-8601 timestamps from the alert-router invocation
+time. Either replace with placeholder patterns or keep the dates and
+add an inline visible-to-reader caveat tying them to the vignette
+before publication. -->
 
 **Sample alert payload:**
 
