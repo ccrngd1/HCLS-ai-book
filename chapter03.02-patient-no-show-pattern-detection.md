@@ -118,6 +118,36 @@ TechEditor pass v4 (2026-05-15):
   the sentence-fragment clarification in The Problem section ("and a legitimate
   reason someone had to wait"). Coordinate the Python-companion update with the
   A1 + A2 pseudocode change in a single pass.
+
+TechEditor pass v5 (2026-05-15):
+- Re-ran the full editorial checklist a fifth time and confirmed the v4 state
+  reproduces exactly: 0 em dashes (U+2014), 28 en dashes (U+2013) all in numeric
+  ranges (cost row L125, cost-estimate row L434, performance benchmarks L898-L903,
+  implementation-time tiers L1048-L1050), 0 curly quotes, 0 ellipsis chars, 0
+  non-breaking spaces, 0 trailing whitespace.
+- Re-confirmed structure: 1 H1, 11 H2, 13 H3, 1 H4 (Walkthrough under Code), 0 H5;
+  10 fenced blocks (1 mermaid, 2 json, 7 untagged for pseudocode and ASCII-art per
+  Chapter 1 precedent); 28 markdown links (24 absolute across docs.aws.amazon.com,
+  aws.amazon.com, github.com, ahrq.gov, pcori.org, en.wikipedia.org and 4 internal
+  cross-references; no fabricated URLs).
+- Re-confirmed TODO inventory: 28 line-level occurrences. All trace to HTML
+  comments owned by the TechWriter (the A1, A2, A3, A4, A5, A6, S1 callouts and
+  the sentence-fragment flag in The Problem) or to inline pseudocode `//` comments
+  (the A1, A2, A5 reminders in Steps 3 and 5) or to meta-references inside this
+  comment block. None are in editorial scope.
+- Re-ran the documentation-voice and marketing-language scan: zero matches on the
+  standard offender list ("We are excited," "This recipe demonstrates," "leveraging
+  the power," "seamlessly," "industry-leading," "cutting-edge," "state-of-the-art,"
+  "unlock," "empower," "revolutionize," "transform your," "game-changing," "next-
+  generation"). Voice and the 70/30 vendor balance hold.
+- No in-place edits warranted in this iteration. The recipe is editorial-ready
+  and has been so since v1; v2 through v5 have re-verified rather than added new
+  fixes. The remaining work is exclusively the TechWriter's coordinated pass on
+  the patient-baseline subsystem (A1 + A2), the feedback-loop artifacts (A3, A4,
+  A5, A6), the PHI-handling additions (S1, S2, S3, S4), the VPC-endpoint precision
+  (N1, N2), the publication-readiness polish (V1, V2, V3), and the L149 sentence-
+  fragment clarification. The Python companion update must move in lockstep with
+  the A1 + A2 pseudocode change.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
