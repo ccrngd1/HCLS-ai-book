@@ -82,6 +82,7 @@
   * [Python Example](chapter03.08-python-example)
 * [3.9 — Cybersecurity / Access Pattern Anomalies](chapter03.09-cybersecurity-access-pattern-anomalies)
   * [Python Example](chapter03.09-python-example)
+* [3.10 — Epidemic / Outbreak Detection](chapter03.10-epidemic-outbreak-detection)
 
 ---
 
