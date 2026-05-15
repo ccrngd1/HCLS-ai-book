@@ -1,4 +1,42 @@
 <!--
+Editorial pass v3 (TechEditor, 2026-05-15):
+- Mechanics fix: rewrote "Quality control runs twice or three times a shift
+  catch most drift" in the Three-Stage Lab Workflow / Analytical paragraph
+  to "Quality control runs, performed two or three times per shift, catch
+  most drift." The original parsed ambiguously because "runs" can read as
+  either the plural noun or the verb; the comma-bracketed modifier clarifies
+  that the subject is "Quality control runs" (plural noun) and the verb is
+  "catch."
+- Verified prior pass work: V1 (vignette wording) consistent in opening
+  prose and in the JSON `interpretation_hint` field; V2 (illustrative
+  timestamps disclaimer) present above Expected Results sample alerts.
+- Style hygiene re-verified with explicit UTF-8 read: zero em dashes
+  (U+2014); zero en dashes (U+2013); 106 box-vertical and 183 box-horizontal
+  characters preserved correctly in the architecture diagram.
+- Header hierarchy verified: H1 only for title; H2 for major sections
+  (Problem, Technology, General Architecture Pattern, AWS Implementation,
+  Why This Isn't Production-Ready, The Honest Take, Variations, Related
+  Recipes, Additional Resources, Implementation Time, Tags); H3 for
+  Technology and AWS Implementation subsections; H4 only for the Walkthrough
+  marker inside Code; no skipped levels.
+- RECIPE-GUIDE compliance verified: Problem → Technology → General Architecture
+  Pattern → AWS Implementation (Why These Services, Architecture Diagram,
+  Prerequisites, Ingredients, Code, Expected Results) → Why This Isn't
+  Production-Ready → The Honest Take → Variations and Extensions → Related
+  Recipes → Additional Resources → Implementation Time → Tags → Navigation.
+  All required sections present, correct order, correct location.
+- Vendor balance verified: conceptual sections (Problem, Technology, General
+  Architecture Pattern) are vendor-neutral; AWS service names confined to
+  the AWS Implementation section and onward; ~70/30 split preserved.
+- Link verification: all URLs in Additional Resources are well-formed and
+  point to plausible canonical sources (LOINC, CLSI, CAP, CMS CLIA, FDA LDT,
+  HL7, Joint Commission, IQLM, AWS docs, AWS HealthLake, Synthea, MIMIC-IV,
+  SHAP, SPC Wikipedia, original Isolation Forest paper). No fabricated
+  GitHub URLs. Forward-placeholder TODOs flag aws-samples and AWS-blog
+  searches that are pending verification before publication.
+- No structural changes. No new technical claims. All TODO markers from
+  prior personas (TechWriter and TechEditor v1/v2) preserved verbatim.
+
 Editorial pass v2 (TechEditor, 2026-05-15):
 - Follow-through on V1 (Expert review): the v1 pass updated the opening
   vignette's "recollect from a central line" phrasing to "properly drawn
@@ -105,7 +143,7 @@ Laboratory testing has three phases, and an outlier detection system that ignore
 
 **Pre-analytical.** Everything that happens before the specimen enters the analyzer. Order entry (right test on right patient). Specimen collection (right tube, right site, right technique). Transport (right temperature, within stability window). Receipt and accessioning (right barcode, right priority, right condition). The majority of lab errors, depending on which study you read, originate here. Hemolyzed potassiums, clotted CBCs, diluted-by-IV-fluid chemistries, mislabeled specimens, drift due to delayed transport of temperature-sensitive samples. <!-- TODO (TechWriter): reference the specific published estimates for pre-analytical error rates; CAP and CLSI have published studies over the years estimating pre-analytical origin for 60-70% of lab errors. Verify the most current figure before citing a specific number. -->
 
-**Analytical.** The instrument measurement itself. Modern analyzers are extremely reliable, but they drift. Quality control runs twice or three times a shift catch most drift. But drift between QC events, reagent lot changes, carryover contamination, and interferences from medications or endogenous substances (lipemia, icterus, paraproteins) all introduce analytical error.
+**Analytical.** The instrument measurement itself. Modern analyzers are extremely reliable, but they drift. Quality control runs, performed two or three times per shift, catch most drift. But drift between QC events, reagent lot changes, carryover contamination, and interferences from medications or endogenous substances (lipemia, icterus, paraproteins) all introduce analytical error.
 
 **Post-analytical.** Result release, reporting, and clinical interpretation. The result the analyzer produced is correct, but the lab manually transcribed it incorrectly. Or the result was sent to the wrong patient chart because of an LIS mapping error. Or the reference range applied was for the wrong age or sex.
 
