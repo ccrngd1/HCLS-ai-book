@@ -265,6 +265,53 @@ Follow-up editor pass (TechEditor, 2026-05-15, fourth iteration):
   the TechWriter pass that resolves the MEDIUM findings (A1-A6, S1,
   S2) and the LOW citation/verification findings (V3 set) before
   publication.
+
+Follow-up editor pass (TechEditor, 2026-05-15, fifth iteration, hold
+the line):
+- Re-verified mechanical hygiene with explicit UTF-8 byte-level read
+  separated by editor-comment block vs prose. Prose: U+2014 em-dash
+  count 0; U+2013 en-dash count 0; documentation-voice and
+  announcement-anti-pattern grep ("this recipe demonstrates", "we are
+  excited", "let's dive", "delve into", "leverage" verb form) returns
+  zero matches in prose. The single "leverage" hit in the file is the
+  noun-as-adjective form ("highest-leverage cookbook-wide editorial
+  investment") inside an HTML-comment TODO referring to editorial
+  priority, not the documentation-voice verb form.
+- Re-verified header hierarchy: one H1 (the title), 11 H2 sections,
+  16 H3 subsections, one H4 (Walkthrough). No skipped levels.
+- Re-verified TODO inventory: 21 well-formed `<!-- TODO (TechWriter)`
+  markers in prose, matching prior-iteration count exactly. No drift.
+- Re-verified RECIPE-GUIDE compliance against `RECIPE-GUIDE.md`: Part
+  1 (vendor-agnostic) covers The Problem, The Technology with eight
+  conceptual subsections, General Architecture Pattern. Part 2 (AWS-
+  specific) covers Why These Services, Architecture Diagram (Mermaid),
+  Prerequisites table, Ingredients table, Code with Walkthrough, the
+  Python-companion callout, Expected Results with sample payloads and
+  Performance Benchmarks table and Where-It-Struggles list. Closing
+  sections cover Why This Isn't Production-Ready, The Honest Take,
+  Variations and Extensions, Related Recipes, Additional Resources,
+  Estimated Implementation Time tiered table, Tags, and Navigation
+  footer. All present in the prescribed order.
+- Re-verified STYLE-GUIDE.md voice: 70/30 vendor balance preserved
+  (conceptual sections vendor-neutral; AWS service names confined to
+  Why These Services, Architecture Diagram, Prerequisites, Ingredients,
+  Code AWS Implementation, and Additional Resources); engineer-
+  explaining-to-engineer voice maintained throughout (the 3:14 a.m.
+  vignette, "the math is intentionally blunt", "the model is the
+  smaller half", "lives are saved sometimes"); no marketing language;
+  no announcement statements; no LinkedIn-tone hooks.
+- All MEDIUM expert-review findings (A1, A2, A3, A4, A5, A6, S1, S2)
+  remain flagged as TODO markers for TechWriter follow-up. All LOW
+  findings status unchanged from prior passes.
+- Companion `chapter03.07-python-example.md` follow-up status
+  unchanged from prior passes: PASS state from code review; two
+  WARNINGs (non-atomic `update_patient_state`; eventually-consistent
+  `build_explanation` prior-score query) and eleven NOTEs remain
+  TechWriter-side polish.
+- No edits in this iteration. Five-iteration editor cycle holds the
+  line; the file is now editor-stable. Subsequent iterations on this
+  recipe should be TechWriter passes that resolve the MEDIUM findings
+  and the LOW citation/verification TODOs before publication.
 -->
 
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
