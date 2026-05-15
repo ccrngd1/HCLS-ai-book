@@ -80,6 +80,7 @@
   * [Python Example](chapter03.07-python-example)
 * [3.8 — Readmission Risk Anomaly Detection](chapter03.08-readmission-risk-anomaly-detection)
   * [Python Example](chapter03.08-python-example)
+* [3.9 — Cybersecurity / Access Pattern Anomalies](chapter03.09-cybersecurity-access-pattern-anomalies)
 
 ---
 
