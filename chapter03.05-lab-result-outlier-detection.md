@@ -1,4 +1,44 @@
 <!--
+Editorial pass v4 (TechEditor, 2026-05-15):
+- Mechanics fix (capitalization): "gram stain findings in free text" -> "Gram
+  stain findings in free text" in the Microbiology result interpretation
+  Variations bullet. Gram stain is named after Hans Christian Gram and the
+  proper-noun capitalization is the standard medical-writing convention for
+  the stain itself; the related modifiers "gram-positive" / "gram-negative"
+  are commonly lowercase in modern usage, but the stain retains the capital.
+- Mechanics fix (punctuation): in The Honest Take's reference-range
+  paragraph, the original "I asked \"what's the reference range for this
+  test?\", I assumed there was one range in a table" piled a comma onto a
+  closing question mark inside quotes. Removed the comma; the question mark
+  already terminates the dependent clause, and the resulting "I asked
+  \"what's the reference range for this test?\" I assumed there was one
+  range in a table" reads cleanly without changing meaning.
+- Verified prior pass work: V1, V2, V3 fixes still in place; opening vignette
+  uses canonical pseudohyperkalemia phrasing; Expected Results illustrative
+  timestamps disclaimer present; JSON `interpretation_hint` consistent with
+  V1; no em dashes (U+2014 count: 0); no en dashes (U+2013 count: 0).
+- Header hierarchy re-verified: H1 only for title; H2 for major sections;
+  H3 for subsections; H4 only for the Walkthrough marker; no skipped levels.
+- RECIPE-GUIDE compliance re-verified: Problem -> Technology -> General
+  Architecture Pattern -> AWS Implementation (Why These Services,
+  Architecture Diagram, Prerequisites, Ingredients, Code, Expected Results)
+  -> Why This Isn't Production-Ready -> The Honest Take -> Variations and
+  Extensions -> Related Recipes -> Additional Resources -> Implementation
+  Time -> Tags -> Navigation. All required sections present, correct order.
+- Vendor balance preserved: conceptual sections vendor-neutral; AWS service
+  names confined to AWS Implementation onward; ~70/30 split intact.
+- Code formatting re-verified: bare ``` for ASCII-art and pseudocode (matches
+  Chapter 1 / Chapter 3.1-3.4 precedent); ```mermaid for the architecture
+  diagram; ```json for sample outputs; service names in inline code where
+  appropriate (`dynamodb:GetItem`, `kinesis:GetRecords`, etc.).
+- Link verification: Synthea, MIMIC-IV, LOINC, CLSI, CAP, CMS CLIA, FDA LDT,
+  HL7, Joint Commission, IQLM, AWS docs, AWS HealthLake, SHAP, SPC Wikipedia,
+  Isolation Forest paper all well-formed and point to canonical sources;
+  forward-placeholder TODOs preserved for aws-samples and AWS-blog searches
+  pending verification before publication.
+- All TODO markers from prior personas (TechWriter and TechEditor v1/v2/v3)
+  preserved verbatim. No structural changes; no new technical claims.
+
 Editorial pass v3 (TechEditor, 2026-05-15):
 - Mechanics fix: rewrote "Quality control runs twice or three times a shift
   catch most drift" in the Three-Stage Lab Workflow / Analytical paragraph
@@ -1251,7 +1291,7 @@ Specimen quality fusion is the single biggest lever nobody talks about. Modern c
 
 The critical-value callback workflow is more complex than it looks. New teams tend to think of "fire an alert" as a simple action. In a regulated lab, the callback is a timed, documented, read-back-verified workflow with escalation rules when the primary target can't be reached. Getting the automation for this right is 40% of the engineering effort in the critical-path part of the pipeline, and it's the part that will be inspected during accreditation surveys. Build it carefully and document the timing. Assume your audit logs will be read.
 
-Reference ranges encode more complexity than you expect. The first time I asked "what's the reference range for this test?", I assumed there was one range in a table. There are seven, differentiated by age, sex, pregnancy, method, and two lab-specific customizations. A version of this table has changed three times in the last five years. The ranges that were in force when a particular alert fired may no longer be the ranges in force today. Treat reference ranges as versioned first-class data, not as a config file. Audit trails that don't record which range was in force for a given alert are not audit trails; they're wishes.
+Reference ranges encode more complexity than you expect. The first time I asked "what's the reference range for this test?" I assumed there was one range in a table. There are seven, differentiated by age, sex, pregnancy, method, and two lab-specific customizations. A version of this table has changed three times in the last five years. The ranges that were in force when a particular alert fired may no longer be the ranges in force today. Treat reference ranges as versioned first-class data, not as a config file. Audit trails that don't record which range was in force for a given alert are not audit trails; they're wishes.
 
 The autoverification story is where the ROI lives. Most labs have autoverification rates in the 60-85% range for routine chemistry, lower for specialty tests. Raising that rate from (say) 72% to 88% in a mid-size lab eliminates thousands of tech reviews per week. The savings are real. But the wrong way to go after the improvement is "relax the hold rules until more results pass through." The right way is to improve the signal: better delta check calibration, better specimen quality fusion, better patient-context awareness, better cohort modeling. When the signal gets sharper, you can hold the hold-rate down (reviewing fewer false positives) while maintaining the same safety net. That's where the outlier detector becomes a business case, not just a safety feature.
 
@@ -1273,7 +1313,7 @@ The politics: the lab and the clinical teams view alerts differently. A lab dire
 
 **Blood bank critical value and compatibility pipeline.** Blood bank testing (type and screen, crossmatch, antibody identification) has its own critical-value workflow with particularly strict compliance requirements. An antibody detected against a common antigen that was missed would be a sentinel event. Pipeline extension to blood bank requires specialized reference data (blood group antigens, antibody cross-reactivities, compatibility rules), different vendor data feeds, and particularly rigorous audit. Usually structured as a parallel dedicated pipeline sharing the ingest and storage layers.
 
-**Microbiology result interpretation assist.** Microbiology results are semi-structured (organism identification, antibiotic susceptibility in a grid of MIC values, gram stain findings in free text). Outlier detection for microbiology looks for unusual organism-antibiotic susceptibility patterns (emerging resistance), organism-source mismatches (a gut organism growing in a blood culture might be contamination or might be translocation), and culture growth in unexpected contexts. LLM-assisted interpretation of culture results alongside the patient's clinical context is an active development area.
+**Microbiology result interpretation assist.** Microbiology results are semi-structured (organism identification, antibiotic susceptibility in a grid of MIC values, Gram stain findings in free text). Outlier detection for microbiology looks for unusual organism-antibiotic susceptibility patterns (emerging resistance), organism-source mismatches (a gut organism growing in a blood culture might be contamination or might be translocation), and culture growth in unexpected contexts. LLM-assisted interpretation of culture results alongside the patient's clinical context is an active development area.
 
 **Coagulation panel specialty detection.** Coagulation results (PT/INR, aPTT, fibrinogen, D-dimer, thromboelastography) have complex interactions with medications, clinical state, and specimen quality (poorly filled blue-top tubes produce spuriously prolonged PT). A coagulation-specific detection path uses coagulation-aware rules (PT/INR delta checks adjusted for warfarin initiation, aPTT in the context of heparin infusion). Often paired with anticoagulation management workflows.
 
