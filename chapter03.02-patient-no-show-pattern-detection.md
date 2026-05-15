@@ -78,6 +78,46 @@ TechEditor pass v3 (2026-05-15):
   additional aws-samples / blog references) should be resolved before the recipe
   goes to publication, but they read cleanly as forward placeholders in the
   meantime.
+
+TechEditor pass v4 (2026-05-15):
+- Re-ran the full editorial checklist independently of prior passes. All counts
+  reproduce: 0 em dashes (U+2014), 28 en dashes (U+2013) all within numeric ranges
+  (verified line-by-line: L85 cost row, L394 cost-estimate row, L858-L863 performance
+  benchmarks table, L1008-L1010 implementation-time tiers), 0 curly quotes, 0
+  ellipsis characters, 0 non-breaking spaces, 0 trailing whitespace lines.
+- Re-confirmed code-fence inventory: 10 fenced blocks total. 1 mermaid (architecture
+  diagram), 2 json (sample intervention-queue and investigation-queue records), 7
+  untagged (pseudocode and ASCII-art pipeline diagram). Cross-checked against
+  Chapter 1.01 published precedent (1 mermaid, 3 json, 6 untagged): the convention
+  matches. Pseudocode and ASCII-art fences are intentionally untagged per the
+  Chapter 1 baseline.
+- Re-confirmed link inventory: 28 markdown links total. 24 absolute URLs to known
+  domains (docs.aws.amazon.com x8, aws.amazon.com x4, github.com/aws x2,
+  github.com/aws-samples x2, github.com/aws/amazon-sagemaker-examples/tree/main x1,
+  github.com/synthetichealth/synthea x2, github.com/shap/shap x1, ahrq.gov x1,
+  pcori.org x1, en.wikipedia.org x1). 4 internal cross-references (Recipe 3.1
+  duplicate-claim-detection, chapter03-preface, chapter03.03-billing-code-anomalies,
+  chapter03.02-python-example). All well-formed; no fabricated GitHub URLs.
+- Re-confirmed header hierarchy holds: 1 H1, 11 H2, 13 H3, 1 H4 (Walkthrough under
+  Code), 0 H5. No skipped levels.
+- Re-confirmed voice and 70/30 vendor balance hold. Conceptual sections (Problem,
+  Technology, General Architecture Pattern) are vendor-neutral; AWS service names
+  appear at "The AWS Implementation" and stay there. No documentation-voice, no
+  marketing language, no LinkedIn-influencer phrasing.
+- TODO inventory is stable at 27 line-level occurrences (matches v3 expectation
+  once meta-references inside this comment block are counted). All flagged as
+  TechWriter follow-up; none are in editorial scope.
+- No in-place edits warranted in this iteration. The recipe is editorial-ready;
+  the open work is the TechWriter's coordinated pass on the patient-baseline
+  subsystem (A1 + A2), the feedback-loop artifacts (A3 idempotency, A4 DLQs,
+  A5 temporal validation, A6 feature-contribution reframing), the PHI-handling
+  additions (S1 high-stigma specialty disclosure, S2 subgroup-data governance,
+  S3 per-consumer IAM scoping, S4 real-time-scoring egress), the VPC-endpoint
+  precision (N1, N2), the publication-readiness polish (V1 future-dated timestamps,
+  V2 alpha decay-factor intuition, V3 industry-figure citation verification), and
+  the sentence-fragment clarification in The Problem section ("and a legitimate
+  reason someone had to wait"). Coordinate the Python-companion update with the
+  A1 + A2 pseudocode change in a single pass.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
