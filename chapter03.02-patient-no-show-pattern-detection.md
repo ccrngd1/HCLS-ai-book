@@ -49,6 +49,35 @@ TechEditor pass v2 (2026-05-15):
   `_load_or_create_baseline` and `_update_patient_baseline`) and the feedback-loop
   artifacts (A3 idempotency, A4 DLQs, A5 temporal validation, A6 feature-contribution
   reframing). Editorial polish is otherwise complete.
+
+TechEditor pass v3 (2026-05-15):
+- Re-verified character-level hygiene with an encoding-aware UTF-8 byte-decoding
+  tool to confirm v2 counts: 0 em dashes (U+2014), 28 en dashes (U+2013) all
+  contained within numeric ranges (cost row L56 + L365, performance-benchmarks
+  table L829-L834, implementation-time tiers L979-L981), 0 curly single quotes,
+  0 curly double quotes, 0 horizontal ellipsis, 0 non-breaking spaces. Earlier
+  console-encoding noise on the en-dash count is resolved.
+- Re-confirmed header hierarchy: H1=1 (title), H2=11 (top-level sections), H3=13
+  (subsections), H4=1 (the intentional `Walkthrough` under `Code`, matching the
+  Chapter 1 published precedent), H5=0. No skipped levels.
+- Re-confirmed TODO inventory: 23 line-level TODO occurrences (the v2 count of 19
+  reflected unique markers; the 23 includes inline pseudocode TODO comments and
+  the references to TODO IDs inside this comment block). All markers are owned
+  by the TechWriter and trace to specific findings in the expert review and code
+  review. Nothing in the editorial scope.
+- The eight items in the editorial checklist (grammar/mechanics, code formatting,
+  link verification, header hierarchy, readability, voice drift, RECIPE-GUIDE
+  compliance, vendor balance) are clean. No structural reordering, no new claims,
+  no in-place rewrites required.
+- Final state: editorial polish is complete and re-verified. The remaining work
+  is technical. The TechWriter should pick up the A1 + A2 coordinated pass on the
+  patient-baseline subsystem (prose + pseudocode + Python companion) and address
+  A3-A6, S1-S4, and N1-N2 in the same arc. The four HTML-comment forward
+  placeholders for unverified industry citations (no-show reduction percentage,
+  performance benchmark ranges, transportation intervention effectiveness,
+  additional aws-samples / blog references) should be resolved before the recipe
+  goes to publication, but they read cleanly as forward placeholders in the
+  meantime.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
