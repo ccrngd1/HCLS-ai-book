@@ -6,7 +6,7 @@
 
 ## The Problem
 
-Picture a payment integrity analyst at a regional payer on a Thursday afternoon. Her dashboard shows 142,000 claims adjudicated this week across roughly 18,000 billing providers. Somewhere inside that pile are patterns that shouldn't be there. A dermatology practice that billed 97110 (therapeutic exercise) on eighty-four claims this quarter, a code that most dermatology practices would bill approximately zero times a year. An internist who, after being flat at two CPT codes per visit for a decade, suddenly jumped to five codes per visit two months ago. A small urgent care in the suburbs where the distribution of evaluation and management levels went from a reasonable-looking bell curve centered at 99213 (level 3) to a distribution that leans almost entirely on 99214 and 99215 (levels 4 and 5). None of these patterns are duplicates. None of them are necessarily fraud. Some of them are legitimate practice evolution. A few of them are seven-figure problems hiding in plain sight.
+Picture a payment integrity analyst at a regional payer on a Thursday afternoon. Her dashboard shows 142,000 claims adjudicated this week across roughly 18,000 billing providers. Somewhere inside that pile are patterns that shouldn't be there. A dermatology practice that billed 97110 (therapeutic exercise) on eighty-four claims this quarter, a code that most dermatology practices would bill approximately zero times a year. An internist who, after being flat at two CPT codes per visit for a decade, suddenly jumped to five codes per visit two months ago. A small urgent care in the suburbs where the distribution of evaluation and management levels went from a reasonable-looking bell curve centered at 99213 (level 3) to a distribution that leans almost entirely on 99214 and 99215 (levels 4 and 5). (In 2021 a similar shift happened across the entire industry as a consequence of the CMS/AMA E/M documentation overhaul, which is exactly why peer comparisons matter as much as self-comparisons; the upcoding signal is the shift relative to peers, not the shift in absolute terms.) None of these patterns are duplicates. None of them are necessarily fraud. Some of them are legitimate practice evolution. A few of them are seven-figure problems hiding in plain sight.
 
 That's the billing code anomaly problem. Not "is this claim wrong?" but "is this provider's billing behavior unusual, and in what way?"
 
@@ -94,7 +94,7 @@ The field has tried a lot of methods. A few work well enough that they're standa
 
 **Control charts and CUSUM.** Treat each provider-feature as a time series and monitor for out-of-control signals. A standard Shewhart control chart flags when a single observation goes beyond 3-sigma limits. A CUSUM (cumulative sum) chart is more sensitive to small, sustained shifts (which is exactly what upcoding looks like: not a single huge jump, but a persistent small elevation). This is classical statistical process control, and it fits billing data very well because the underlying problem (detect a distributional shift) is exactly what SPC was invented for.
 
-**Isolation Forest or other unsupervised anomaly detectors.** Feed the per-provider feature vectors into an Isolation Forest. Providers that require few splits to isolate are anomalies. Works especially well for multivariate anomalies where no single feature is unusual but the combination is. Interpretability takes extra work (you have to compute per-feature contributions to the anomaly score), but it's doable.
+**Isolation Forest or other unsupervised anomaly detectors.** Feed the per-provider feature vectors into an Isolation Forest. Providers that require few splits to isolate are anomalies. Works especially well for multivariate anomalies where no single feature is unusual but the combination is. Interpretability takes extra work. SHAP's tree-explainer doesn't directly apply (Isolation Forest's prediction function is path-length-based, not leaf-level); the practical patterns are KernelSHAP (model-agnostic, slow), path-length attribution from the original IF paper (custom implementation), or feature-deviation proxies (z-score against training-set per-feature stats, fast and good enough for analyst-facing explanations). Most production systems use the third option.
 
 **Matrix factorization / collaborative filtering.** Treat the provider-by-code matrix as a sparse matrix and factorize it. Predict each provider's expected frequency for each code based on their latent factors (which end up capturing specialty, practice type, patient mix). Compare actual to predicted. Large residuals are anomalies. This approach borrows from recommender systems and handles the "expected given this provider's profile" question naturally. It requires more modeling work than z-scores but produces richer anomaly signals.
 
@@ -254,7 +254,7 @@ At a conceptual level, the pipeline has four stages plus a feedback loop. The ar
 
 **Amazon EventBridge for scheduling and outcome events.** EventBridge Scheduler triggers the monthly pipeline and the retraining job. A dedicated event bus carries investigation-outcome events from the analyst tooling to the Lambda outcome-joiner.
 
-**Amazon SNS for analyst notifications.** When a new high-severity case lands in the queue, the payment integrity team gets notified. Low volume, mostly email or Slack routing.
+**Amazon SNS for analyst notifications.** When a new high-severity case lands in the queue, the payment integrity team gets notified. Low volume, mostly email or Slack routing. The notification payload carries the case id and routing tier only; the analyst UI fetches the full record (provider_id, signals, evidence claims, exposure) by id, so SNS infrastructure and downstream subscribers (mobile push, email previews, Slack webhooks) never carry PHI or PHI-adjacent identifiers.
 
 **Amazon QuickSight for operational and subgroup dashboards.** The payment integrity team needs views into: queue depth and aging, case outcomes by severity band, dollar exposure resolved per period, subgroup monitoring (who is being flagged, who is being investigated, who is being found anomalous). QuickSight against Athena over the case registry archive supports all of this. The subgroup monitoring view is part of the minimum deployment, not optional.
 
@@ -315,16 +315,18 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, Amazon Redshift or Amazon Athena, AWS Glue, Amazon SageMaker (Processing, optional Training, Feature Store), Amazon DynamoDB, AWS Step Functions, AWS Lambda, Amazon EventBridge + EventBridge Scheduler, Amazon SNS, Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Least-privilege per role. Glue aggregation role: `s3:GetObject` on claims-parquet, `s3:PutObject` on features-parquet, `sagemaker:PutFeatureStoreRecord`. Scoring role: `s3:GetObject` on features-parquet, `s3:PutObject` on anomaly-signals, `dynamodb:GetItem` on provider-peer-groups. Case assembly Lambda: `s3:GetObject` on anomaly-signals, `athena:StartQueryExecution` for evidence pull, `dynamodb:PutItem` on case-registry. Outcome Lambda: `dynamodb:UpdateItem` on case-registry, `s3:PutObject` on labels-parquet. No `*` actions in production. |
+| **IAM Permissions** | Least-privilege per role. Glue aggregation role: `s3:GetObject` on claims-parquet, `s3:PutObject` on features-parquet, `sagemaker:PutFeatureStoreRecord`. Scoring role: `s3:GetObject` on features-parquet, `s3:PutObject` on anomaly-signals, `dynamodb:GetItem` on provider-peer-groups. Case-assembly Lambda role: `s3:GetObject` on anomaly-signals, `athena:StartQueryExecution` plus `athena:GetQueryExecution`/`GetQueryResults` for evidence pulls, `dynamodb:PutItem` on case-registry. Analyst workstation role: `dynamodb:GetItem` and `dynamodb:UpdateItem` on case-registry only, scoped via condition keys to the analyst's assigned cases where feasible. Outcome-joiner Lambda role: `dynamodb:UpdateItem` on case-registry, `s3:PutObject` on labels-parquet, `dynamodb:PutItem` on processed-outcomes (idempotency table). QuickSight dashboard role: `athena:StartQueryExecution` only on the aggregated case-archive view; no direct `dynamodb:Scan` on case-registry. Training job role (subgroup metrics): `glue:GetTable` and `s3:GetObject` only on the demographic-joined view. No `*` actions in production. |
 | **BAA** | AWS BAA signed. Every service listed is HIPAA-eligible under the BAA when configured correctly. See the [AWS HIPAA Eligible Services reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). |
-| **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with customer-managed KMS. SageMaker: KMS on processing volumes, model artifacts, and Feature Store offline/online stores. Redshift: KMS cluster encryption. TLS in transit everywhere. |
-| **VPC** | Production: Glue jobs, SageMaker jobs, and Lambda functions in a VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, Athena/Redshift, CloudWatch Logs, and KMS. |
+| **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with customer-managed KMS. SageMaker: KMS on processing volumes, model artifacts, and Feature Store offline/online stores. Redshift: KMS cluster encryption. TLS in transit everywhere. Investigation outcome records on the `labels-parquet` bucket are subject to provider grievance, regulatory inquiry, and SIU/law-enforcement subpoena; configure S3 Object Lock in COMPLIANCE mode in production (GOVERNANCE mode in dev so test data can be cleaned up). Optionally write a parallel decision-record log to Amazon QLDB if cryptographic verification of decision history is required by your organization's compliance posture. |
+| **VPC** | Production: Glue jobs, SageMaker jobs, and Lambda functions in a VPC with the following VPC endpoints. Gateway: `s3`, `dynamodb`. Interface: `sagemaker.api` (control-plane), `sagemaker.featurestore-runtime` (online features), `sagemaker.runtime` (only if the real-time scoring extension is used), `glue`, `states` (Step Functions), `events` (EventBridge bus), `scheduler` (EventBridge Scheduler), `logs` (CloudWatch Logs), `monitoring` (CloudWatch `PutMetricData`), `kms`, `athena`, `sns`, plus Redshift Data API or direct cluster connectivity as applicable. VPC Flow Logs enabled on the VPC carrying Glue, SageMaker, and Lambda traffic; logs delivered to a dedicated S3 bucket with KMS encryption and 6+ year retention to align with HIPAA audit requirements. |
 | **CloudTrail** | Enabled with data events on the case-registry and provider-peer-groups tables, and on the labels-parquet and claims-parquet S3 buckets. Audit trail for every signal computation, every case creation, and every investigation outcome. |
+| **DLQs and Replay** | Each Lambda's `OnFailure` destination configured to a dedicated SQS dead-letter queue: `case-assembly-dlq`, `outcome-joiner-dlq`. Step Functions failure handlers route scoring-job failures to `scoring-job-dlq`. CloudWatch alarms on DLQ depth alert the on-call team. Replay tooling lets operators re-process events after the root cause is fixed. Without this, failed events disappear after Lambda's default two-retry-then-drop behavior; signal payloads orphan in S3, outcome data drops out of the supervised retraining pipeline, and the failure is invisible until someone notices a gap. |
 | **Data Access Controls** | Case records and claims evidence contain provider PII and patient PHI. Access restricted to the payment integrity team; all reads and writes logged; no broad read grants on the case registry table. |
 | **Retention** | HIPAA baseline is 6 years for records containing PHI. Investigation outcomes have additional retention requirements under some state laws and anti-fraud regulations (often 7-10 years). Coordinate with legal and compliance on the specific retention schedule for your jurisdictions. |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) generates synthetic claims and encounter data. CMS publishes aggregate provider utilization files that are useful for building peer-group statistics in development environments but cannot substitute for provider-level transactional data. Never use real PHI in development. |
 | **Provider Reference Data** | The peer grouping depends on provider taxonomy (specialty, subspecialty), practice setting, and geography. Sources include the NPPES (National Plan and Provider Enumeration System) dataset for NPI-to-taxonomy mapping, plus internal provider master data for practice setting and network tier. Budget integration time for this reference data; it's usually in a different system than the claims data. |
 | **Fairness Monitoring Data** | Subgroup dashboards require provider-level attributes that may not be in the claims warehouse: practice size, patient-population demographics, geographic characteristics. Coordinate with provider-network operations on what attributes are available and how they can be joined to the case registry. |
+| **Subgroup Data Access** | Provider-level attributes used for fairness monitoring (practice setting, geographic region, patient-population demographics where captured, network tier) may be governed differently from claims PHI in some regulatory regimes. Restrict read access to the demographic-and-attribute store to the supervised training job role and the QuickSight dashboard role, with CloudTrail data events on subgroup queries. The QuickSight dashboard backed by Athena should query an aggregated subgroup-metrics table, not the raw demographic-joined case-registry archive, so dashboard-user access does not require row-level read on the subgroup attributes. |
 | **Cost Estimate** | Per monthly cycle for a mid-size payer (say, 3-5 million claims per month, 15,000-25,000 active providers): Athena scans for aggregation: ~$5-20. Glue provider-period rollup: ~$10-30. SageMaker Processing for scoring: ~$5-15. Feature Store storage (10GB of provider features): ~$5/month. DynamoDB (case registry with PITR): ~$10-30/month depending on case volume. Total infrastructure: typically $200-800/month. Compare to recovery: if the program prevents even 0.25% of fraudulent or erroneous payments on a $500M annual spend, that's $1.25M recovered against a $10K/year infrastructure cost. <!-- TODO: verify whether any published payer case studies report specific ROI numbers for payment integrity programs at this scale; directional claim is industry-accepted but a citation would strengthen it. --> |
 
 ### Ingredients
@@ -364,7 +366,7 @@ flowchart TB
 
 #### Walkthrough
 
-**Step 1: Roll up claims to provider-period features.** A monthly Glue job reads the adjudicated claims for the period and aggregates them by provider. The output is a wide feature table with one row per provider-period, including histograms over code distributions, E&M level distributions, modifier rates, and volume metrics. The correctness property that matters most here is stable provider identifier resolution: a provider who bills under multiple NPIs or tax IDs needs to be resolved to a single entity, otherwise their behavior shows up split across multiple rows and the anomaly signal is diluted. Recipe 5.x (entity resolution) covers this in depth; for the baseline pipeline, use a precomputed provider-master reference table.
+**Step 1: Roll up claims to provider-period features.** A monthly Glue job reads the adjudicated claims for the period and aggregates them by provider. The output is a wide feature table with one row per provider-period, including histograms over code distributions, E&M level distributions, modifier rates, and volume metrics. The correctness property that matters most here is stable provider identifier resolution: a provider who bills under multiple NPIs or tax IDs needs to be resolved to a single entity, otherwise their behavior shows up split across multiple rows and the anomaly signal is diluted. Recipe 5.2 (Provider Entity Resolution) covers this in depth; for the baseline pipeline, use a precomputed provider-master reference table.
 
 Skip this step, or get it wrong, and you get two classes of problem. First, noise from small providers: a practice with 20 claims per month has high variance in every aggregate statistic, and naive z-scores will flag them constantly. Second, provider fragmentation: a multi-NPI provider whose anomalous behavior is split across their NPIs won't get flagged because no single NPI shows enough volume to be clearly off-norm.
 
@@ -415,20 +417,26 @@ FUNCTION rollup_provider_period(period_start, period_end):
         all_codes = count(provider_claims.procedure_code)
         features.code_entropy = shannon_entropy(all_codes.values())
 
-        // E&M level distribution (99201-99215, 99381-99395, etc.).
+        // E&M level distribution. Note that CPT 99201 was deleted effective
+        // 2021-01-01; current new-patient codes are 99202-99205 (levels 2-5).
+        // Track new-patient and established-patient distributions separately,
+        // since the documentation rules that govern them differ and structural
+        // breaks (e.g., the 2021 E/M overhaul) affect them differently.
         em_claims = provider_claims WHERE procedure_code in EM_CODES
+        em_new_patient_claims    = em_claims WHERE procedure_code in NEW_PATIENT_EM_CODES   // 99202-99205
+        em_established_claims    = em_claims WHERE procedure_code in ESTABLISHED_EM_CODES   // 99211-99215
         IF length(em_claims) >= MIN_EM_CLAIMS:
-            features.em_distribution = {
-                "level_1": count_where(em_claims, level == 1) / length(em_claims),
-                "level_2": count_where(em_claims, level == 2) / length(em_claims),
-                "level_3": count_where(em_claims, level == 3) / length(em_claims),
-                "level_4": count_where(em_claims, level == 4) / length(em_claims),
-                "level_5": count_where(em_claims, level == 5) / length(em_claims)
-            }
+            features.em_new_patient_distribution = level_distribution(
+                em_new_patient_claims, levels = [2, 3, 4, 5]
+            )
+            features.em_established_distribution = level_distribution(
+                em_established_claims, levels = [1, 2, 3, 4, 5]
+            )
             features.em_avg_level = mean(em_claims.level)
         ELSE:
-            features.em_distribution = null
-            features.em_avg_level = null
+            features.em_new_patient_distribution = null
+            features.em_established_distribution = null
+            features.em_avg_level                = null
 
         // Modifier rates (per-claim basis).
         features.modifier_25_rate = count_where(provider_claims, has_modifier(25)) / length(provider_claims)
@@ -563,10 +571,22 @@ FUNCTION score_anomalies(period_start, period_end):
         // quarter; here we just score the current provider-period vector.
         if_score = isolation_forest.score(feature_vector(record))
         IF if_score <= ISOLATION_FOREST_THRESHOLD:   // more negative = more anomalous
+            // Top contributors. SHAP's TreeExplainer doesn't directly apply to
+            // Isolation Forest (the model's prediction is path-length-based,
+            // not leaf-level), and KernelSHAP is too slow at this volume. Use
+            // feature-deviation proxies: for each feature, compute the z-score
+            // against the IF training set's per-feature mean and stddev (captured
+            // at training time and stored alongside the model artifact); surface
+            // the top-k by absolute z-score.
+            top_contributors = explain_iforest_by_deviation(
+                record         = record,
+                feature_stats  = isolation_forest.training_feature_stats,
+                top_k          = 5
+            )
             signals.append({
                 type:            "isolation_forest",
                 anomaly_score:   if_score,
-                top_contributors: shap_explain(isolation_forest, record, top_k = 5),
+                top_contributors: top_contributors,
                 severity:        if_score_to_severity(if_score)
             })
 
@@ -585,6 +605,8 @@ FUNCTION score_anomalies(period_start, period_end):
 ```
 
 **Step 4: Assemble cases and attach evidence.** A Lambda reads the anomaly signals files and consolidates them into case records. Multiple signals from the same provider in the same period become a single case. Representative claims are pulled from the warehouse to serve as evidence (the analyst needs to see specific examples, not just aggregate statistics). Prioritization combines signal severity, persistence (how many consecutive periods this provider has been flagged), and financial exposure (total billed amount on potentially anomalous claims).
+
+> **Simplification:** The pseudocode below creates a new case every period for any flagged provider, which produces operational noise in production. Production systems maintain a case-lineage view: if a provider is already in an open case and new signals fire, the signals append to the existing case rather than creating a new one. The case closes when the analyst closes it. See "Why This Isn't Production-Ready" for the full discipline.
 
 ```
 FUNCTION assemble_cases(period_start):
@@ -651,14 +673,16 @@ FUNCTION assemble_cases(period_start):
         DynamoDB.PutItem("case-registry", case)
 
         IF routing in ["payment_integrity", "clinical_review"]:
+            // The notification carries the case id and routing tier only; the
+            // analyst UI fetches the full case record (including provider_id,
+            // signals, evidence claims, exposure) by id so the notification
+            // channel never carries PHI or PHI-adjacent identifiers.
             SNS.Publish(
                 topic = ANALYST_NOTIFICATION_TOPIC,
                 message = {
-                    case_id:     case.case_id,
-                    provider_id: provider_id,
-                    severity:    overall_severity,
-                    routing:     routing,
-                    exposure:    exposure
+                    case_id:       case.case_id,
+                    routing_tier:  routing,
+                    severity_band: overall_severity
                 }
             )
 ```
@@ -669,6 +693,23 @@ FUNCTION assemble_cases(period_start):
 FUNCTION on_investigation_outcome(event):
     // event contains: case_id, disposition, notes, resolved_at, resolved_by,
     // dollars_recovered, referred_to_siu (boolean), provider_educated (boolean).
+
+    // EventBridge guarantees at-least-once delivery; without an idempotency
+    // guard a redelivered outcome event updates the case record twice, writes
+    // duplicate label rows that bias supervised retraining, and double-counts
+    // dollars-recovered metrics. Derive a deterministic event key and write
+    // it to a processed-outcomes table with a conditional check before any
+    // downstream side effect.
+    event_key = event.case_id + "|" + event.disposition
+    TRY:
+        DynamoDB.PutItem(
+            table     = "processed-outcomes",
+            item      = { event_key: event_key, processed_at: NOW() },
+            condition = "attribute_not_exists(event_key)"
+        )
+    CATCH ConditionalCheckFailedException:
+        emit_metric("outcome_event_duplicate_dropped", 1)
+        RETURN
 
     case = DynamoDB.GetItem("case-registry", { case_id: event.case_id })
 
@@ -757,6 +798,8 @@ FUNCTION retrain_supervised_quarterly():
 ---
 
 ### Expected Results
+
+<!-- Sample timestamps and case IDs are illustrative and reflect the draft date; production output uses real ISO-8601 timestamps and case IDs from the case-assembly Lambda's invocation time. -->
 
 **Sample case record for a sustained E&M upcoding pattern:**
 
@@ -881,6 +924,7 @@ The second case is exactly the kind of case that wouldn't be caught by a pure "E
 - **Legitimate practice evolution.** A provider who hires a care manager, implements a new documentation system, or changes practice models will show sustained shifts that look exactly like upcoding on the data. The proper handling is a first-contact conversation, not a payment denial.
 - **Coordinated patterns across providers.** If multiple providers are acting together (a practice group with common billing practices), the per-provider comparison to peers can catch them, but a network-level analysis (provider-patient-claim graph) catches more. That's Recipe 3.6 territory; this recipe lays the groundwork.
 - **Payer-specific policy changes.** When the payer changes a policy (say, a new coverage rule for a specific code family), provider billing adjusts. The adjustments will look like anomalies until the baselines catch up. Pause or dampen the signals during known policy rollouts.
+- **Industry-wide coding rule changes.** CMS and the AMA periodically restructure coding rules across whole code families. The 2021 E/M documentation overhaul (99201 deleted, 99202-99215 documentation rules changed, level shifts industry-wide) and the 2023 inpatient/observation E/M reorganization (99217-99220 deleted, 99221-99239 restructured) are the most recent examples. During and after these transitions, every provider's billing pattern shifts in the same direction simultaneously. Self-history CUSUM signals will fire at industry scale; peer comparisons stay roughly stable. Pause or recalibrate self-history signals during known industry-wide transitions, and treat any 12-18 month window straddling a transition as low-confidence for self-comparison purposes.
 - **Seasonal patterns.** Emergency medicine bills differently in flu season. Allergy practices see volume spikes in spring and fall. The pipeline should account for seasonality in the baseline, either through longer rolling windows or explicit seasonal adjustment.
 
 ---
@@ -909,6 +953,8 @@ The pseudocode above covers the shape of the pipeline. A production payment inte
 
 **Incident response when a flag is wrong.** When the system flags a provider and the investigation concludes the provider was fine, that's a false positive with real operational and reputational cost. The system needs a clean mechanism to (a) close the case as no-action, (b) record that the provider was flagged and cleared, (c) suppress duplicate flags on the same signal for some recovery period, and (d) feed the false positive back into model tuning. Organizations that skip the fourth step see the same provider flagged every month until the analyst burns out.
 
+**Trigger idempotency for the outcome-joiner.** EventBridge guarantees at-least-once delivery, and Lambda's async retry behavior re-invokes the handler on transient failures. Without a deterministic event-key guard, a redelivered outcome event updates the case-registry twice (with timestamp inconsistency), writes a duplicate label row to S3 that biases the next supervised retrain, and double-emits the `dollars_recovered` and `case_closed` CloudWatch metrics that the program is reported on. The pseudocode shows a `processed-outcomes` table with a conditional write; production should also configure a dead-letter queue for events that fail repeatedly so a malformed event from the analyst tooling doesn't disappear silently.
+
 **Model drift and data drift monitoring.** The pipeline is scoring against statistical baselines computed from recent data. When the underlying data distribution shifts (because of a policy change, a new EHR rollout, a pandemic-scale external event), the baselines are wrong for a while. Build monitoring that alerts on sudden distribution shifts in the input features, and manual review of the baselines during known policy transitions.
 
 **Cost of investigation per case.** An experienced payment integrity analyst costs real money per hour, and a complex case can consume dozens of hours. The system should track not just how many cases are generated but the marginal analyst cost per case and the marginal dollars recovered per case. The break-even threshold (cases that cost more to investigate than they recover) is where the lower routing threshold should be set, and that threshold drifts over time as labor costs and fraud patterns shift.
@@ -925,7 +971,7 @@ The peer group definition is the single most consequential design decision. You 
 
 The operational cost of false positives is worse than you think. A false positive in no-show prediction is a wasted phone call. A false positive in billing anomaly detection is a provider who feels accused of fraud for behavior that turns out to be legitimate. The damage to the provider relationship, the damage to morale on the provider's team, and the operational cost of working through the investigation are all real. Budget your tolerance for false positives carefully, and err on the side of higher thresholds than you'd pick if the cost were zero. Catching 80% of true anomalies with 50% precision is better than catching 95% with 15% precision, because the operational bandwidth to investigate the latter doesn't exist.
 
-The narrative summary in the case record is surprisingly important. I initially built a version of this pipeline that produced case records with rich structured signal data and no prose. Analysts couldn't process them fast enough because they had to reconstruct the story from the signals. Adding a generated narrative summary ("this provider shifted their E&M distribution in March, persisted through May, combined with elevated modifier 25 usage") cut case-triage time dramatically. You can generate these summaries from templates using the signal data, or use an LLM if you have a HIPAA-eligible LLM pipeline. Either works. The narrative matters more than you'd think.
+The narrative summary in the case record is surprisingly important. I initially built a version of this pipeline that produced case records with rich structured signal data and no prose. Analysts couldn't process them fast enough because they had to reconstruct the story from the signals. Adding a generated narrative summary ("this provider shifted their E&M distribution in March, persisted through May, combined with elevated modifier 25 usage") cut case-triage time dramatically. You can generate these summaries from templates using the signal data, or use an LLM if your organization has an established HIPAA-eligible LLM pipeline (BAA coverage of the model and the serving infrastructure, minimum-necessary prompt construction, output filtering, and a full prompt-and-response audit trail; see Chapter 2 for the patterns). The template approach is faster to build and easier to certify; the LLM approach produces more natural prose but inherits the compliance scaffolding of the broader generative AI program. Most teams start with templates and only move to LLM when those Chapter 2 patterns are already in place for other reasons. The narrative matters more than you'd think.
 
 The thing that surprised me on the last project: the Isolation Forest caught cases that none of the z-score signals did. I was initially skeptical of adding the multivariate detector because z-scores covered the obvious cases. The first month the Isolation Forest ran, it surfaced a handful of providers who were outliers on combinations of features that no individual feature caught. One of them was running what turned out to be a legitimate but unusual practice model (a holistic clinic billing a specific mix of codes); two of them were misconfigured billing systems; one was the kind of pattern that eventually resulted in a seven-figure recovery. Worth the extra complexity. Add the multivariate signal earlier than you think you need to.
 
