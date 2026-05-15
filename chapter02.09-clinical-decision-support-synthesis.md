@@ -1,6 +1,34 @@
+<!--
+Editor pass v1 (TechEditor, 2026-05-15):
+- A1 (HIGH): Architecture diagram updated with bounded retry edge and a
+  Human Review Queue terminal node (does not flow to delivery). Post-generation
+  validation prose bullet in General Architecture Pattern expanded to name
+  the non-delivery path. New orchestration gate added between Step 9 and
+  Step 10 distinguishing VALIDATED from VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW.
+  Coordinated with Python companion code-review Finding 1.
+- S1 (MEDIUM): PHI minimization note added between Step 2 and Step 5; bullet
+  added to "Why This Isn't Production-Ready."
+- S2 (MEDIUM): Input-side prompt-attack filter prerequisite added to the
+  Step 8 Guardrails comment block.
+- A2 (MEDIUM): Deterministic event-key idempotency note added to Step 1;
+  bullet added to "Why This Isn't Production-Ready."
+- A3 (MEDIUM): Literal Bedrock model IDs in pseudocode replaced with
+  placeholder constants (SMALL_MODEL_ID, EMBEDDING_MODEL_ID,
+  SYNTHESIS_MODEL_ID) with family-name comments, matching Recipe 2.10's
+  chapter template.
+- S3 (LOW): Grounding threshold (>= 0.85) named in Step 8 Guardrails block
+  and in Why These Services paragraph.
+- A4 (LOW): Cost-estimate ceiling clarified for complex multi-scenario
+  syntheses with validator retry.
+- N1, N2, N3 (LOW): VPC interface-endpoint list now includes execute-api
+  (conditional, private API Gateway), CloudWatch (monitoring), and rds-data
+  (conditional, Aurora Data API path).
+- V3 (LOW): Markdown links added to same-chapter Related Recipes entries.
+-->
+
 # Recipe 2.9: Clinical Decision Support Synthesis
 
-**Complexity:** Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.15-$1.20 per synthesized recommendation
+**Complexity:** Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.15-$1.20 per synthesized recommendation (typical); approaching $2.00 for complex multi-scenario syntheses with validator retry
 
 ---
 
@@ -223,7 +251,7 @@ Let's walk through each stage conceptually.
 
 **Grounded synthesis.** Construct the generation prompt with the patient context, the retrieved sources with source tiers, and the deterministic safety-check results. Instruct the model to produce a structured recommendation set: assessment summary, ranked recommendations, per-recommendation reasoning with citations, flagged interactions and contraindications (including those surfaced by the deterministic check), uncertainty flags, items for clinician to consider.
 
-**Post-generation validation.** Every recommendation traces to a source. Every dose appears verbatim in a retrieved structured record. Every interaction surfaced by the deterministic check appears in the final output. No recommendation contradicts a contraindication that appeared in the retrieval. Numeric thresholds preserve. Validation failures trigger retry with stricter prompting, or route to human review.
+**Post-generation validation.** Every recommendation traces to a source. Every dose appears verbatim in a retrieved structured record. Every interaction surfaced by the deterministic check appears in the final output. No recommendation contradicts a contraindication that appeared in the retrieval. Numeric thresholds preserve. Validation failures retry with stricter prompting up to a bounded number of attempts. Retry-exhausted failures route to a distinct human-review queue (separate DynamoDB status and S3 archive prefix) and do NOT proceed to tier/suppress/render or flow to the clinician UI. The orchestrator must distinguish `VALIDATED` from `VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW`; only `VALIDATED` (and `NO_EVIDENCE`, where the system explicitly declines) proceed to delivery.
 
 **Tiering and suppression.** Score the recommendation set against clinician-engagement history for this patient in this encounter. If nothing new and material is present, suppress. If critical items are present, elevate visibility. If the same recommendation has been rejected for this patient, suppress or downgrade.
 
@@ -239,7 +267,7 @@ Let's walk through each stage conceptually.
 
 **Amazon Bedrock for LLM inference and embeddings.** Two model tiers again. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, retrieval query planning, structured-fact extraction, and candidate re-ranking. A stronger model (Claude Sonnet or equivalent) produces the final synthesis with reasoning and citations. For embeddings, Amazon Titan Text Embeddings or Cohere Embed are the usual starting points; a specialized biomedical embedder (self-hosted on SageMaker) may improve retrieval precision on guideline content. The generation model runs with Bedrock Guardrails configured for contextual grounding, content filtering, and PII policies.
 
-**Amazon Bedrock Guardrails for grounding and safety enforcement.** Guardrails' contextual grounding check verifies that the generated output is grounded in the provided context (the retrieved sources). For CDS, grounding enforcement is non-negotiable. Guardrails also applies content filters and can block outputs that include prohibited categories (for example, explicit dosing instructions outside the intended CDS scope).
+**Amazon Bedrock Guardrails for grounding and safety enforcement.** Guardrails' contextual grounding check verifies that the generated output is grounded in the provided context (the retrieved sources). For CDS, grounding enforcement is non-negotiable. Set the contextual grounding threshold at or above 0.85 as a conservative starting point, and tune upward for scenarios where fabrication tolerance is lowest (oncology dosing, anticoagulation management, critical-care empiric antibiotic selection). Re-evaluate the threshold per scenario during clinical validation. Guardrails also applies content filters and can block outputs that include prohibited categories (for example, explicit dosing instructions outside the intended CDS scope). The Guardrail policy itself should also have input-side prompt-attack filters enabled, since retrieved guideline chunks, institutional protocols, drug-database records, and patient-derived note content are untrusted inputs, not verified instructions.
 
 **Amazon Bedrock Knowledge Bases for guideline and protocol retrieval (option A).** For teams who want a managed RAG pipeline over guideline content, Knowledge Bases handles ingestion, chunking, embedding, and retrieval. Good fit when the corpus is guideline PDFs and prose protocols and the retrieval patterns are standard. Supports metadata filtering which is essential for population-specific filtering.
 
@@ -316,7 +344,9 @@ flowchart TB
         S14 --> S15[Bedrock<br/>Synthesis with Guardrails<br/>Stronger Model]
         S15 --> S16[Lambda<br/>Post-Generation Validation]
         S16 --> S17{Pass?}
-        S17 -->|No| S15
+        S17 -->|No, retries left| S15
+        S17 -->|No, retries exhausted| HRQ[Human Review Queue<br/>Not Delivered to Clinician UI]
+        HRQ --> HRS[S3 + DynamoDB<br/>Review Queue Archive]
         S17 -->|Yes| S18[Lambda<br/>Tiering + Suppression]
         S18 --> S19[DynamoDB<br/>Per-Patient History]
         S19 --> S20[Lambda<br/>Render]
@@ -333,6 +363,7 @@ flowchart TB
     style S8 fill:#9f9,stroke:#333
     style S21 fill:#f9f,stroke:#333
     style S2 fill:#9cf,stroke:#333
+    style HRQ fill:#f99,stroke:#333
 ```
 
 ### Prerequisites
@@ -347,10 +378,10 @@ flowchart TB
 | **Regulatory Review** | Before production, a documented determination of whether the system meets the four-part FDA CDS exemption. Include: scope of use (what clinical decisions the system supports and does not support), UI design decisions that enable independent review, source transparency, clinician acceptance workflow, training and deployment plan. If the determination is "exempt," retain the documentation. If "not exempt," plan for FDA medical device submission pathway, which is substantially more work. |
 | **EHR Integration** | For real-time CDS at the point of care, EHR integration matters. SMART on FHIR is the standard for clinician-launched apps; Epic, Cerner, and other major EHRs support it. Alternative integrations include CDS Hooks (a HL7 standard for EHR-triggered CDS calls), HL7 v2 messaging for non-FHIR EHRs, and custom integrations. Evaluate the EHR's FHIR capabilities early; not all EHRs expose the resources a CDS system needs (particularly around real-time labs and active medications). |
 | **Encryption** | S3 (corpus, per-synthesis archive): SSE-KMS with customer-managed keys, separate keys for corpus vs PHI archive. DynamoDB: encryption at rest with CMK. OpenSearch: encryption at rest and in transit, fine-grained access control, no public endpoint. Aurora: encryption at rest, SSL/TLS in transit. HealthLake: encryption at rest with CMK. Bedrock and Comprehend Medical: TLS in transit, encryption at rest. Bedrock model-invocation logging (if enabled) contains PHI in the prompt (patient context); log destination must be encrypted to the same standard as the archive. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock (Runtime, Agent Runtime if using Knowledge Bases), Bedrock Guardrails, Comprehend Medical, HealthLake, KMS, Secrets Manager, Step Functions, CloudWatch Logs, and EventBridge. Gateway endpoints for S3 and DynamoDB. Aurora and OpenSearch in VPC with security groups restricting access to the Lambda execution role. Interface endpoints run roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Bedrock (Runtime, Agent Runtime if using Knowledge Bases), Bedrock Guardrails, Comprehend Medical, HealthLake, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch (monitoring, for `PutMetricData`), and EventBridge. Gateway endpoints for S3 and DynamoDB. Aurora and OpenSearch in VPC with security groups restricting access to the Lambda execution role. Conditionals: if API Gateway is configured as a private REST API (recommended for EHR-internal clinician-facing endpoints), add `execute-api`. If the Aurora Data API path is used (`rds-data:ExecuteStatement`), add `rds-data`; if direct PostgreSQL connection via Secrets Manager is used instead, the in-VPC security-group-restricted Aurora cluster does not require an additional endpoint. Interface endpoints run roughly $7-10/month per AZ per endpoint; reflect this in the cost estimate. |
 | **CloudTrail** | Enabled with data events for Bedrock invocations, S3 object access, DynamoDB access, HealthLake reads, and Secrets Manager retrievals. Correlate synthesis events to the requesting clinician identity and the patient identifier via Cognito session claims. |
 | **Sample Data** | For development: synthetic patient records (Synthea is the standard synthetic-FHIR generator) combined with a corpus of open guidelines (USPSTF, CDC, HHS) and open drug data (DDInter, DrugBank research). Never use real PHI in dev environments. For evaluation: curated patient-scenario pairs with known correct recommendations, ideally reviewed by clinical domain experts. |
-| **Cost Estimate** | Corpus ingestion (one-time per rebuild, typically a few hundred thousand chunks across guidelines and protocols): embeddings cost $50-$400; re-usable as amortized upfront. Per-synthesis cost: patient context fetch and normalization $0.005-$0.02, deterministic safety checks $0.002-$0.01 (mostly compute), scenario classification $0.001-$0.005, multi-source retrieval $0.01-$0.04, synthesis with stronger model $0.08-$0.80 (depends heavily on context size and model choice), validation $0.01-$0.05. End-to-end: $0.15-$1.20 per synthesized recommendation set. At 500 syntheses per day, variable cost runs $75-$600/day. Fixed infrastructure (OpenSearch cluster, Aurora, HealthLake baseline) adds $500-$3,500/month depending on scale. |
+| **Cost Estimate** | Corpus ingestion (one-time per rebuild, typically a few hundred thousand chunks across guidelines and protocols): embeddings cost $50-$400; re-usable as amortized upfront. Per-synthesis cost: patient context fetch and normalization $0.005-$0.02, deterministic safety checks $0.002-$0.01 (mostly compute), scenario classification $0.001-$0.005, multi-source retrieval $0.01-$0.04, synthesis with stronger model $0.08-$0.80 (depends heavily on context size and model choice), validation $0.01-$0.05. End-to-end: $0.15-$1.20 per synthesized recommendation set for typical scenarios. Complex multi-scenario syntheses with broad retrieval and validator retry can approach $2.00 per synthesis; budget at scale assuming an average around $0.50 with a long tail to $2.00. At 500 syntheses per day, variable cost runs $75-$600/day. Fixed infrastructure (OpenSearch cluster, Aurora, HealthLake baseline) adds $500-$3,500/month depending on scale. |
 
 ### Ingredients
 
@@ -389,17 +420,36 @@ FUNCTION trigger_synthesis(trigger):
     // trigger.clinician_id: Cognito user ID for audit trail
     // trigger.context: trigger-specific payload (order being placed, lab value, etc.)
 
-    synthesis_id = generate UUID
+    // Derive the synthesis_id deterministically from an event key so that
+    // EventBridge at-least-once redelivery does not produce duplicate
+    // synthesis runs. The DynamoDB conditional write below is the idempotency
+    // gate; a duplicate trigger fails the condition and short-circuits.
+    event_key = build_event_key(trigger)
+        // For admission:           f"{patient_id}:{encounter_id}:admission_synthesis"
+        // For medication_order:    f"{patient_id}:{order_id}:med_order_review"
+        // For lab_result:          f"{patient_id}:{lab_observation_id}:lab_triggered"
+        // For clinician_request:   include a request UUID provided by the UI
+    synthesis_id = deterministic_hash(event_key)
 
-    // Create the synthesis record early for traceability
-    write to DynamoDB table "cds-syntheses":
-        synthesis_id    = synthesis_id
-        trigger_type    = trigger.type
-        patient_id      = trigger.patient_id
-        encounter_id    = trigger.encounter_id
-        clinician_id    = trigger.clinician_id
-        status          = "FETCHING_CONTEXT"
-        initiated_at    = current UTC timestamp
+    // Create the synthesis record early for traceability. The conditional
+    // expression rejects a duplicate delivery before any downstream work runs.
+    TRY:
+        write to DynamoDB table "cds-syntheses":
+            synthesis_id    = synthesis_id
+            trigger_type    = trigger.type
+            patient_id      = trigger.patient_id
+            encounter_id    = trigger.encounter_id
+            clinician_id    = trigger.clinician_id
+            status          = "FETCHING_CONTEXT"
+            initiated_at    = current UTC timestamp
+            condition_expression = "attribute_not_exists(synthesis_id)"
+    CATCH ConditionalCheckFailedException:
+        // Duplicate trigger; the original synthesis is in flight or complete.
+        RETURN { status: "DUPLICATE_SUPPRESSED", synthesis_id: synthesis_id }
+
+    // Step Functions execution name = synthesis_id; a second invocation
+    // with the same name fails with ExecutionAlreadyExists, which is a
+    // second layer of idempotency at the orchestration boundary.
 
     // Pull relevant FHIR resources. The resource set depends on the trigger and scope.
     // For a broad synthesis (new admission, general decision support), pull broadly.
@@ -519,6 +569,8 @@ FUNCTION normalize_patient_context(patient_bundle):
 
     RETURN structured_context
 ```
+
+> **PHI minimization before the synthesis prompt.** The `structured_context` returned above carries fields a downstream prompt does not need to reason effectively. Before serialization into the Step 8 generation prompt, strip identifiers that are not load-bearing for clinical reasoning. Keep age band (instead of DOB), sex when clinically relevant, active problems with SNOMED/ICD-10 codes, current medications (drug, dose, frequency, route), allergies, derived values (eGFR, BMI, Child-Pugh, QTc), and recent lab values with LOINC codes. Drop MRN, DOB, name, address, phone, email, payer or member IDs, prescriber NPIs, and encounter-linked identifiers. Bedrock is HIPAA-eligible under the BAA, but minimum-necessary applies inside the BAA boundary, and unnecessary identifiers expand the model-invocation-logging PHI surface that the Encryption row already calls out as a sensitive store. The rendered output reattaches the synthesis to the patient via the `synthesis_id`/`patient_id` pointer; identifiers do not need to round-trip through the prompt.
 
 **Step 3: Scope determination.** Not every trigger should produce a synthesis. A refill of chronic metformin probably doesn't. A new admission with sepsis does. The scope gate is cheap; skipping unnecessary syntheses is the biggest lever against alert fatigue.
 
@@ -689,7 +741,7 @@ FUNCTION classify_and_plan(structured_context, scope_decision, safety_findings):
     """
 
     classification = call Bedrock.InvokeModel with:
-        model_id    = "anthropic.claude-haiku-4"
+        model_id    = SMALL_MODEL_ID         // e.g., Claude Haiku, Nova Lite
         prompt      = classification_prompt
         max_tokens  = 1500
         temperature = 0.0
@@ -735,7 +787,7 @@ FUNCTION multi_source_retrieval(retrieval_plans):
         // Guideline retrieval: hybrid search against OpenSearch
         FOR each query in plan.guideline_queries:
             query_embedding = call Bedrock.InvokeModel with:
-                model_id = "amazon.titan-embed-text-v2"
+                model_id = EMBEDDING_MODEL_ID    // e.g., Titan Text Embeddings v2
                 input    = query
 
             guideline_results = call OpenSearch.search with:
@@ -937,19 +989,28 @@ FUNCTION generate_synthesis(structured_context, retrieval_results, safety_findin
     """
 
     response = call Bedrock.InvokeModel with:
-        model_id      = "anthropic.claude-sonnet-4"
+        model_id      = SYNTHESIS_MODEL_ID    // e.g., Claude Sonnet
         prompt        = synthesis_prompt
         max_tokens    = 4500
         temperature   = 0.2
         guardrail_id  = CDS_GUARDRAIL_ID
         // Guardrails configured with:
-        // - Contextual grounding: source context = sources_block + safety_block,
-        //   tagged with the Guardrails API so grounding check runs against the
+        // - Contextual grounding check at threshold >= 0.85 (tune upward
+        //   for scenarios where fabrication tolerance is lowest). Source
+        //   context = sources_block + safety_block, tagged with the
+        //   Guardrails API so grounding check runs against the
         //   authoritative content only (not the prompt instructions).
+        // - Input-side prompt-attack filters enabled on the Guardrail
+        //   policy itself. Retrieved guideline chunks, institutional
+        //   protocols, drug-database records, and patient-derived note
+        //   content are untrusted-input surfaces, not verified
+        //   instructions; the policy filters defend against retrieved-text
+        //   injection at the input boundary.
         // - Content filters enabled.
-        // - PII policy that allows medical content but flags unexpected identifier patterns.
-        // - Custom denied-topics list including prescriptive directive language outside
-        //   of verbatim quoted guidelines.
+        // - PII policy that allows medical content but flags unexpected
+        //   identifier patterns.
+        // - Custom denied-topics list including prescriptive directive
+        //   language outside of verbatim quoted guidelines.
 
     // Check Guardrail intervention (amazon-bedrock-guardrailAction field in response)
     IF response.guardrail_action == "INTERVENED":
@@ -1057,6 +1118,40 @@ FUNCTION validate_synthesis(synthesis, id_to_source, safety_findings,
     // Retries exhausted; route to human review
     RETURN { status: "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW",
              unverified: unverified }
+```
+
+**Step 9.5: Orchestration gate between validation and delivery.** This is not a separate Lambda; it is the branch the orchestrator (Step Functions) takes after Step 9 returns. The distinction is non-negotiable: only `VALIDATED` (and `NO_EVIDENCE`, where the system explicitly declined to synthesize) proceed to tier/suppress/render and `status = DELIVERED`. `VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW` is a terminal state that writes the trace for audit and routes to a human-review queue without surfacing anything to the clinician UI.
+
+```
+// Orchestrator branch on validation result
+IF validation_result.status == "VALIDATED":
+    proceed to Step 10 (tier_suppress_render) and Step 11 (archive_and_log
+                       with status = "DELIVERED")
+
+ELSE IF validation_result.status == "NO_EVIDENCE":
+    // System explicitly declined to synthesize because retrieval found
+    // nothing relevant; render a "no synthesis available" payload and
+    // archive with status = "NO_EVIDENCE_DELIVERED" (not the same as
+    // "DELIVERED" with a synthesis).
+    proceed to a constrained no-evidence render path
+
+ELSE IF validation_result.status == "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW":
+    // Terminal state. The synthesis failed validation after MAX_RETRIES
+    // for one or more of: citation_not_in_retrieved_set,
+    // dose_not_in_structured_source, safety_finding_not_represented,
+    // contradicts_contraindication, contradicts_allergy,
+    // directive_language_in_model_voice, out_of_scope.
+    //
+    // Persist the trace for audit (KMS-encrypted, distinct S3 prefix from
+    // delivered syntheses), update DynamoDB with status =
+    // "ROUTED_TO_REVIEW", and enqueue to a clinical reviewer queue
+    // (SQS or DynamoDB stream). Do NOT call tier_suppress_render and do
+    // NOT call archive_and_log with status = "DELIVERED".
+    write_review_queue_artifact(synthesis_id, validation_result, raw_model_output,
+                                trace, kms_key=REVIEW_QUEUE_CMK_ARN)
+    update DynamoDB: synthesis_id with status = "ROUTED_TO_REVIEW"
+    enqueue to clinical reviewer queue
+    RETURN { status: "ROUTED_TO_REVIEW", synthesis_id: synthesis_id }
 ```
 
 **Step 10: Tier, suppress, and render.** Score the synthesis against the patient's prior engagement history for alert-fatigue suppression. If nothing material is new, suppress or downgrade. Otherwise, render with reasoning foregrounded, sources one click away, uncertainty explicit.
@@ -1359,6 +1454,10 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 
 **Localization and specialty adaptation.** A CDS system that works for hospitalists may need meaningful prompt and retrieval adjustments to work for outpatient primary care, subspecialty clinics, or pediatrics. Each adaptation is its own validation effort. Plan a specialty-at-a-time rollout rather than a big-bang launch.
 
+**Trigger idempotency on at-least-once event delivery.** EventBridge, SNS, and most event sources guarantee at-least-once, not exactly-once delivery. Without an idempotency gate, a redelivered admission event or medication-order event produces two parallel synthesis runs with different IDs, both of which proceed through retrieval, generation, validation, and delivery. The clinician sees duplicate panels for the same trigger, and the cost is doubled. Step 1's pseudocode shows the deterministic-event-key pattern (hash of patient + encounter + trigger payload) plus DynamoDB conditional write plus Step Functions deterministic execution name. In production, every trigger source needs a corresponding event-key construction; document the construction per trigger type and audit the conditional-write rejection rate as an idempotency-health metric.
+
+**PHI minimization in prompts.** Bedrock under the BAA is HIPAA-compliant infrastructure, but minimum-necessary applies inside the BAA boundary. The patient context and the synthesized output passing through Bedrock prompts (and through Bedrock model-invocation logging if enabled) should not carry identifiers the synthesis does not need to reason. Step 2's pseudocode preserves the structured patient context; the minimization step before Step 8 strips MRN, DOB, name, address, phone, payer/NPI identifiers while keeping age band, sex when clinically relevant, problems, medications, allergies, and derived clinical values. Implement minimization, document the kept-vs-dropped field map in your data flow diagram, and test that no removed identifier surfaces in the rendered output.
+
 **Audit logs and regulatory evidence.** Every synthesis is a clinical decision support event. For regulatory posture, patient safety review, and institutional QA, you need: the trigger, the patient context snapshot, the retrieval trace, the prompt version, the model output, the validation result, the clinician engagement (viewed, accepted, modified, rejected with reason), and downstream outcome data where capturable. Store this long enough to satisfy retention policy, which for clinical records is typically years. Plan retention and storage cost accordingly.
 
 **Liability insurance and legal posture.** Ask your legal and risk management teams what the liability posture is for a CDS system that synthesizes recommendations. Some institutions require additional coverage. Some require clinician acknowledgment of CDS review in the chart. Some have specific consent language for patients whose care is informed by AI-based tools. These are not engineering problems but they constrain the engineering.
@@ -1427,12 +1526,12 @@ Final thought. Clinical decision support synthesis is one of the genuinely high-
 
 ## Related Recipes
 
-- **Recipe 2.4 (Prior Authorization Letter Generation):** Similar grounded-generation pattern applied to payer-facing output. The authoritative-source retrieval and patient-context integration in 2.9 share infrastructure with the evidence-retrieval pieces of 2.4.
-- **Recipe 2.5 (After-Visit Summary Generation):** Patient-facing synthesis of a single encounter. Shares the grounding, citation, and validation patterns.
-- **Recipe 2.6 (Clinical Note Summarization):** Clinician-facing synthesis of encounter content. Same pipeline skeleton.
-- **Recipe 2.7 (Literature Search and Evidence Synthesis):** Descriptive sibling of this recipe. 2.7 describes evidence; 2.9 synthesizes patient-specific recommendations. The retrieval infrastructure overlaps substantially; the regulatory posture and the generation prompt differ.
-- **Recipe 2.8 (Ambient Clinical Documentation):** Produces the patient context that a CDS system can then reason over. Ambient documentation and CDS are complementary; both live inside the encounter workflow.
-- **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Extends CDS into multi-modal inputs (imaging findings, ECG, pathology). The CDS synthesis pipeline here is the reasoning layer that a multi-modal system feeds into.
+- **[Recipe 2.4: Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation):** Similar grounded-generation pattern applied to payer-facing output. The authoritative-source retrieval and patient-context integration in 2.9 share infrastructure with the evidence-retrieval pieces of 2.4.
+- **[Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation):** Patient-facing synthesis of a single encounter. Shares the grounding, citation, and validation patterns.
+- **[Recipe 2.6: Clinical Note Summarization](chapter02.06-clinical-note-summarization):** Clinician-facing synthesis of encounter content. Same pipeline skeleton.
+- **[Recipe 2.7: Literature Search and Evidence Synthesis](chapter02.07-literature-search-evidence-synthesis):** Descriptive sibling of this recipe. 2.7 describes evidence; 2.9 synthesizes patient-specific recommendations. The retrieval infrastructure overlaps substantially; the regulatory posture and the generation prompt differ.
+- **[Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation):** Produces the patient context that a CDS system can then reason over. Ambient documentation and CDS are complementary; both live inside the encounter workflow.
+- **[Recipe 2.10: Multi-Modal Clinical Reasoning](chapter02.10-multi-modal-clinical-reasoning):** Extends CDS into multi-modal inputs (imaging findings, ECG, pathology). The CDS synthesis pipeline here is the reasoning layer that a multi-modal system feeds into.
 - **Recipe 5.x (Entity Resolution / Record Linkage):** Accurate patient record linkage is a prerequisite for pulling a complete patient context. If patient records are split across systems, the CDS synthesis is working with an incomplete picture. <!-- TODO (TechWriter): update to specific recipe number once Chapter 5 is drafted. -->
 - **Recipe 13.x (Knowledge Graphs / Ontology):** Knowledge-graph representations of drug-drug relationships, disease-drug contraindications, and guideline-recommendation-condition links can augment the retrieval layer. Hybrid graph-plus-vector retrieval is a promising direction for CDS. <!-- TODO (TechWriter): update to specific recipe number once Chapter 13 is drafted. -->
 - **Recipe 7.x (Predictive Analytics / Risk Scoring):** Risk scores (sepsis early-warning, readmission risk, fall risk) can be inputs to a CDS synthesis. "This patient's sepsis risk score is elevated; consider the following empiric workup." The score triggers the synthesis and becomes part of the context. <!-- TODO (TechWriter): update to specific recipe number once Chapter 7 is drafted. -->
