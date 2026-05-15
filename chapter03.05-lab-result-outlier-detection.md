@@ -1,3 +1,55 @@
+<!--
+Editorial pass v1 (TechEditor, 2026-05-15):
+- Incorporated expert review feedback (verdict PASS; 0 CRITICAL / 0 HIGH / 8 MEDIUM
+  / 9 LOW findings) and code review (PASS with 3 WARNINGs / 8 NOTEs).
+- In-place edits applied:
+  * V1: Updated opening vignette wording from "recollect from a central line" to
+    "properly drawn peripheral recollect with immediate transport" to match
+    canonical pseudohyperkalemia investigation.
+  * V2: Added inline disclaimer on illustrative sample timestamps in Expected
+    Results section.
+- TODO comments inserted for findings that require new technical content beyond
+  the editor's mandate; deferred to TechWriter:
+  * A1: Outcome-event idempotency for feedback-capture Lambda (recurring
+    chapter-wide pattern; eleventh consecutive recipe).
+  * A2: DLQ / poison-message handling for result-normalizer, real-time-outlier-
+    service, and feedback-capture Lambdas.
+  * A3: Method/reagent-change handling in delta-check pseudocode (Step 4).
+  * A4: Cross-test coherence rules in pseudocode (Step 7).
+  * A5: CLIA critical-callback workflow primitives (Step 6 routing).
+  * A6: Reference-range version propagation into outlier event and audit index.
+  * A7: Severity-tier mapping between flag-level and routing-level (Step 6).
+  * S1: SNS critical-callback payload PHI minimization with high-stigma
+    test-class handling.
+  * S2: Subgroup data access governance row in Prerequisites.
+  * S3: Per-consumer IAM scoping for shared resources (cache, event bus).
+  * S4: HL7 v2 MLLP-over-TLS bridge security posture in Why-These-Services.
+  * S5: Bedrock BAA-discipline forward reference to Chapter 2.
+  * S6: Transfer Family SFTP source-IP allowlist and authentication posture.
+  * N1: VPC endpoint precision (CloudWatch monitoring vs Logs, EventBridge bus
+    vs Scheduler, SageMaker api/runtime/featurestore-runtime, SNS, Step
+    Functions, bedrock-runtime, comprehendmedical, Pinpoint).
+  * N2: VPC Flow Logs requirement.
+- Preserved all existing TechWriter TODOs (industry-figure citations: CAP/CLSI
+  pre-analytical error rates, lab error cost estimates, FDA LDT 2024 rule
+  status, CAP Q-Probe / Q-Tracks benchmarks, validated LLM-assisted lab-
+  interpretation patterns, aws-samples laboratory-analytics repo verification).
+- Style hygiene verified: zero em dashes (U+2014), zero en dashes (U+2013) in
+  prose; code-fence convention matches Chapter 1 and Chapter 3 precedent
+  (bare ``` for pseudocode, ```mermaid for diagrams, ```json for examples);
+  H1 only for title, H2 for major sections, H3 for subsections; no skipped
+  levels; 70/30 vendor balance preserved (conceptual sections vendor-neutral,
+  AWS service names confined to AWS Implementation section).
+- No structural reordering. No new technical claims beyond what reviewers
+  specified.
+- TechCodeReviewer's recipe-specific finding (Python companion's creatinine
+  mg/dL ↔ mmol/L vs μmol/L conversion factor mislabeling, plus the recurring
+  WARNING items: broken `__name__ != "__production__"` assert, missing
+  `SSEKMSKeyId` on `_write_label_to_s3`) is Python-companion-only and does
+  not surface in the main recipe pseudocode; left for TechWriter to address
+  in the Python companion file.
+-->
+
 # Recipe 3.5: Lab Result Outlier Detection ⭐
 
 **Complexity:** Medium · **Phase:** MVP+ · **Estimated Cost:** ~$0.0005 to $0.003 per lab result screened (mostly compute and reference-data joins)
