@@ -1,3 +1,19 @@
+<!--
+Editor pass (TechEditor, 2026-05-15): style/voice check (zero em-dashes
+verified; 70/30 vendor balance preserved); replaced real-sounding sample
+provider name "Pine Ridge Medical Associates" with explicitly synthetic
+name (privacy/reputation hygiene); added Luhn-validity disclaimer on
+sample NPIs; added a draft-date disclaimer on sample timestamps; added
+TODO markers for substantive technical concerns surfaced by the expert
+review (graph-construction missing claim vertices; outcome-event
+idempotency at the evidence-aggregator; DLQ posture for the four
+critical Lambdas; provider appeals workflow architectural backstop;
+reference-data versioning propagation; legal-privilege infrastructure
+primitives) that require TechWriter follow-up rather than in-place
+rewriting. Preserved all existing TODOs from earlier personas. Section
+order and structural claims unchanged.
+-->
+
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
 
 **Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.002 to $0.02 per claim scored (mostly compute and graph traversal; full provider-level scoring runs weekly and dominates cost)
@@ -420,7 +436,7 @@ flowchart TB
 | **Encryption** | Customer-managed KMS keys on every PHI-bearing store: S3, DynamoDB, Neptune, OpenSearch, SageMaker (volumes, model artifacts, Feature Store), MSK. Kinesis SSE with CMK. TLS 1.2 or higher in transit everywhere. |
 | **VPC** | Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, SageMaker runtime, Bedrock, Comprehend Medical, and Neptune. Neptune is always in a VPC (no public endpoint). OpenSearch in VPC with fine-grained access control. Lambdas that access PHI stores run in the VPC. |
 | **CloudTrail and Data Events** | Enabled with data events on every PHI-bearing store and on the case management DynamoDB and OpenSearch resources. Every investigator read and write is logged. Logs are stored in a separate account under Organizations SCPs that prevent deletion, because these logs may be subpoenaed. |
-| **Legal Privilege Architecture** | If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture. |
+| **Legal Privilege Architecture** | If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture. <!-- TODO (TechWriter): per expert review (S4), expand this row to name the specific infrastructure primitives that operationalize the privilege boundary so an architect has something concrete to bring to the GC conversation: separate AWS account in an OU administered by GC; separate VPC with no peering to general analytics; separate customer-managed KMS keys whose key policies exclude analytics-engineer roles; distinct CloudTrail trail to a GC-controlled S3 bucket; distinct OpenSearch domain and DynamoDB tables for case data with `PRIVILEGED` data-classification tags; SCP-level prevention of S3 cross-account access from the privileged environment. --> |
 | **Regulatory Referral Workflows** | Documented workflows for CMS fraud reporting (42 CFR 422.504(h) for Medicare Advantage, 42 CFR 438.608 for Medicaid MCOs). OIG hotline referrals. State Medicaid Fraud Control Unit referrals. SIU-to-DOJ workflows for False Claims Act cases. Infrastructure must support documented, auditable handoffs including data packages that meet the receiving agency's specifications. |
 | **Clinical Governance** | Clinical reviewers (typically RNs, MDs with coding credentials) are part of the case team for medical-necessity cases. Their work (medical records review, documentation assessment) must be integrated into the case management workflow. |
 | **Sample Data** | [CMS Synthetic Public Use Files (SynPUF)](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files) provide synthetic Medicare claims for development and testing. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic patient and provider data. [CMS Open Payments](https://openpaymentsdata.cms.gov/) is public Sunshine Act data. [OIG LEIE](https://oig.hhs.gov/exclusions/) is public exclusion data. [SAM.gov](https://sam.gov/) is public federal exclusion data. Never use real PHI in development. |
@@ -466,7 +482,7 @@ flowchart TB
 ### Code
 
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
-> - [`amazon-neptune-samples`](https://github.com/aws/graph-notebook): Neptune notebooks, Gremlin traversal patterns, and examples for graph analytics including community detection.
+> - [`graph-notebook`](https://github.com/aws/graph-notebook): Neptune notebooks, Gremlin traversal patterns, and examples for graph analytics including community detection.
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Isolation Forest and XGBoost examples applicable to the statistical and supervised layers; Feature Store examples for the per-entity feature architecture.
 > <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating healthcare fraud detection, graph-based anti-fraud, or payment integrity analytics on AWS. A direct match has not been confirmed at the time of writing. -->
 
@@ -598,6 +614,21 @@ FUNCTION resolve_providers(claims_batch, external_provider_data):
 ```
 
 **Step 3: Build and refresh the relationship graph.** The graph loader takes the resolved entities and the claim activity and produces the nodes and edges in Neptune. Refreshes are incremental (upsert changed relationships) to avoid full rebuilds.
+
+<!-- TODO (TechWriter): per expert review (S1), the pseudocode below
+upserts patient nodes (correctly hashed) and rendered/billed/referred
+edges, but does not upsert claim vertices despite the prose's node-type
+taxonomy listing claims as a node type, and the `billed` edge currently
+goes "organization -> hashed-patient" while the comment promises
+"organization -> claim". The high-value graph queries the recipe
+describes ("find all claims for which provider X is the rendering
+provider"; community detection over provider-and-organization
+collusive networks rather than patient-centered subgraphs) require
+claim vertices and explicit `rendered_on_claim`, `billed_for_claim`,
+and `for_patient` edge types. Update Step 3 to upsert Claim vertices
+and to separate the three edge types, and update Step 6 to be explicit
+about which node types and edge types participate in the
+community-detection projection. -->
 
 ```
 FUNCTION refresh_graph(since_timestamp):
@@ -1003,6 +1034,26 @@ FUNCTION run_graph_analytics():
 
 **Step 7: Aggregate evidence and build the case bundle.** Flags from all layers combine into per-entity case bundles with ranked evidence, estimated dollar impact, and graph context.
 
+<!-- TODO (TechWriter): per expert review (A1), the EventBridge -> Lambda
+async path is at-least-once and the pseudocode below has no idempotency
+guard. Redelivered flag events double-count flags on the case (which
+double the combined dollar impact and distort the priority score) and
+re-publish triage events. Add a deterministic event key
+(`flag.flag_id + flag.detector_source`) and a conditional DynamoDB write
+to a `processed-flag-events` table before the case-flag append, the
+subgraph fetch, and the triage-event publish. Same pattern recurring
+across Recipes 2.4-2.10 and 3.1-3.5; strong candidate for a cookbook-wide
+trigger-idempotency appendix. -->
+
+<!-- TODO (TechWriter): per expert review (A4), every flag should carry
+a `reference_versions` envelope (rule library version, CCI table version,
+MUE table version, LEIE/SAM extract date, death-master extract date,
+coverage-policy versions, graph-snapshot ID, supervised-model version,
+peer-baseline snapshot) preserved through evidence aggregation and
+included in any regulatory-referral package. State MFCU asking "why was
+this flag fired in November when the LEIE record was added in June?"
+requires the LEIE-extract date in the evidence trail. -->
+
 ```
 FUNCTION on_flag_event(flag):
     // Determine the target entity (provider, organization, community, or patient).
@@ -1122,6 +1173,19 @@ FUNCTION assist_documentation_review(case_id, medical_records_uri):
 
 **Step 9: Capture outcomes and feed the retraining loop.** Case outcomes structurally feed back into label stores. Retraining runs quarterly (or more often for rule tuning).
 
+<!-- TODO (TechWriter): per expert review (A3), the ten outcome states
+below are terminal-state-only. The recipe's "Why This Isn't Production-
+Ready" section correctly identifies provider appeals and due-process
+workflows as a core production concern, but the pseudocode here has no
+appeal-stage state, no immutable evidence-as-of-decision snapshot in
+`case.evidence_history`, no appeal-outcome taxonomy (appeal_upheld /
+appeal_overturned / appeal_modified / appeal_withdrawn), and no
+feedback path from appeal-overturned outcomes to the supervised
+classifier as confirmed false positives. Either add the appeal state
+machine to Step 9, or add an explicit cross-link to the Provider
+appeals and due-process workflows bullet in "Why This Isn't Production-
+Ready" so a reader following the pseudocode does not miss the gap. -->
+
 ```
 FUNCTION on_case_outcome(case_id, outcome_event):
     // outcome_event: { case_id, investigator_id, outcome_type, confirmed_loss,
@@ -1186,6 +1250,15 @@ FUNCTION on_case_outcome(case_id, outcome_event):
 
 ### Expected Results
 
+<!-- Sample alerts below are illustrative. Provider names are explicitly
+fictional and any resemblance to real entities is coincidental. NPIs and
+EINs in the samples are placeholders and are not Luhn-validated against
+the CMS NPPES specification (NPI = 10 digits with a Luhn check using the
+"80840" prefix); production output carries Luhn-validated NPIs from
+NPPES. Timestamps reflect the draft date and are illustrative;
+production output uses real ISO-8601 timestamps from the detector
+invocation. -->
+
 **Sample rule-based flag (exclusion violation):**
 
 ```json
@@ -1198,8 +1271,8 @@ FUNCTION on_case_outcome(case_id, outcome_event):
   "target_entity": {
     "id": "PROV-CAN-00998712",
     "type": "Provider",
-    "npi": "1234567890",
-    "name": "Pine Ridge Medical Associates",
+    "npi": "<synthetic-NPI>",
+    "name": "Synthetic Family Practice LLC (sample)",
     "specialty": "Family Practice"
   },
   "detection_details": {
@@ -1240,8 +1313,8 @@ FUNCTION on_case_outcome(case_id, outcome_event):
   "target_entity": {
     "id": "PROV-CAN-00445533",
     "type": "Provider",
-    "npi": "9988776655",
-    "name": "Dr. X, Internal Medicine",
+    "npi": "<synthetic-NPI>",
+    "name": "Dr. X, Internal Medicine (sample)",
     "specialty": "Internal Medicine"
   },
   "peer_group": {
@@ -1292,16 +1365,16 @@ FUNCTION on_case_outcome(case_id, outcome_event):
   "community_id": "COMMUNITY-2026-05-12-00044",
   "community_entities": {
     "providers": [
-      { "id": "PROV-CAN-00112233", "name": "Pain Relief Center Provider 1", "specialty": "Pain Management" },
-      { "id": "PROV-CAN-00112234", "name": "Pain Relief Center Provider 2", "specialty": "Pain Management" },
-      { "id": "PROV-CAN-00112235", "name": "Pain Relief Center Provider 3", "specialty": "Pain Management" },
-      { "id": "PROV-CAN-00112240", "name": "Dr. Y, Primary Care", "specialty": "Family Practice" }
+      { "id": "PROV-CAN-00112233", "name": "Synthetic Pain Management Clinic 1 (sample)", "specialty": "Pain Management" },
+      { "id": "PROV-CAN-00112234", "name": "Synthetic Pain Management Clinic 2 (sample)", "specialty": "Pain Management" },
+      { "id": "PROV-CAN-00112235", "name": "Synthetic Pain Management Clinic 3 (sample)", "specialty": "Pain Management" },
+      { "id": "PROV-CAN-00112240", "name": "Dr. Y, Primary Care (sample)", "specialty": "Family Practice" }
     ],
     "labs": [
-      { "id": "ORG-CAN-00077012", "name": "Advanced Toxicology Lab Inc.", "type": "Independent Lab" }
+      { "id": "ORG-CAN-00077012", "name": "Synthetic Toxicology Lab Inc. (sample)", "type": "Independent Lab" }
     ],
     "dme_suppliers": [
-      { "id": "ORG-CAN-00088771", "name": "Northside DME Supply LLC", "type": "DME Supplier" }
+      { "id": "ORG-CAN-00088771", "name": "Synthetic DME Supply LLC (sample)", "type": "DME Supplier" }
     ]
   },
   "detection_details": {
@@ -1399,6 +1472,19 @@ The pseudocode shows the shape. A production FWA detection pipeline closes sever
 **Change management for rule releases.** New rules can silently shift the flag distribution, generate a flood of false positives, or miss a scheme that shifted the week before. Rule changes go through testing (against historical data), staged rollout (shadow mode before production), and explicit sign-off from program leadership. Treating rule updates like code deploys (pull requests, review, staged rollout) is appropriate.
 
 **Disaster recovery and continuity.** The FWA pipeline is not in the payment-gating hot path for most architectures (payment integrity usually runs alongside or after adjudication, not inline). But the detection workload itself is essential; a quarter without FWA detection is a quarter of undetected schemes. Plan for multi-region failover or at least cross-region backup of the case management state.
+
+<!-- TODO (TechWriter): per expert review (A2), add a DLQ / poison-message
+discipline for the four critical Lambdas in the pipeline (stream-
+normalizer, rules-engine, evidence-aggregator, outcome-capture). Each
+Lambda's `OnFailure` destination should point to a dedicated SQS DLQ;
+CloudWatch alarms on DLQ depth alert the on-call SIU-engineering team;
+for the stream-normalizer-dlq specifically, alarm threshold should be
+1 because a single dropped claim is a claim that escaped scoring.
+Replay events from DLQ after fixing the root cause; for events older
+than the regulatory-referral compliance window, escalate to compliance-
+team review rather than auto-replay because the timing-of-detection is
+itself part of the compliance posture under 42 CFR 422.504(h) and 42
+CFR 438.608. -->
 
 **Cross-border and international dimensions.** Some schemes involve offshore entities, international money flows, or providers practicing across jurisdictions. These add complexity (data-sharing restrictions, currency normalization, international sanctions lists) that domestic-focused architectures may not anticipate. Consult with legal and international compliance before handling these cases.
 
