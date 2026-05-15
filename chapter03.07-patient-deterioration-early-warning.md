@@ -224,6 +224,47 @@ Follow-up editor pass (TechEditor, 2026-05-15, third iteration):
   Python-companion fixes.
 - No structural changes; no new technical claims; no rewrites of any
   section.
+
+Follow-up editor pass (TechEditor, 2026-05-15, fourth iteration):
+- Re-verified style hygiene: U+2014 em-dash count 0 (prose and code
+  blocks combined); U+2013 en-dash count 0. Documentation-voice and
+  announcement-anti-pattern grep ("this recipe demonstrates", "we are
+  excited", "in this recipe we will", "AWS architects, we", "let's
+  dive", "let's explore", "delve into", "leverage") returns zero
+  matches in prose. Header hierarchy reconfirmed (one H1, 11 H2s, 16
+  H3s, one H4, no skipped levels). RECIPE-GUIDE compliance and 70/30
+  vendor balance reconfirmed.
+- Mechanical table-formatting fix applied in place: the Performance
+  Benchmarks table's "Scoring throughput (patients per minute, peak)"
+  row carried only three cells against a six-column header (Metric /
+  NEWS2 baseline / LR / GBT / LSTM / Ensemble), which would render
+  with two trailing empty cells in published markdown. Repeated the
+  "infrastructure-dependent; budget for 2x peak load" content across
+  the four model-variant columns so the row balances cleanly to six
+  cells. Tightened "depends on infrastructure" to "infrastructure-
+  dependent" for compactness. Substantively unchanged: the row still
+  conveys that throughput is infrastructure-bound rather than model-
+  bound across all ML model choices.
+- TODO inventory reconfirmed: 21 well-formed `<!-- TODO (TechWriter)`
+  markers from prior passes preserved verbatim. No new TODOs added in
+  this iteration.
+- All MEDIUM expert-review findings (A1, A2, A3, A4, A5, A6, S1, S2)
+  remain flagged as TODO markers for TechWriter follow-up. All LOW
+  expert-review findings (A7, S3, S4, S5, S6, N1, N2, N3, V1, V2, V3,
+  V4, V5) status unchanged from prior passes (V2, V4, V5 inline edits
+  from prior iterations; V1 inline TODO from prior iteration; V3 set
+  remains as forward-placeholder TODOs for TechWriter).
+- Companion `chapter03.07-python-example.md` follow-up status
+  unchanged from prior passes: PASS state from code review; two
+  WARNINGs and eleven NOTEs remain TechWriter-side polish before
+  publication. The TechEditor persona is not the right pass for those
+  Python-companion fixes.
+- No structural changes; no new technical claims; no rewrites of any
+  section. The four-iteration editor cycle on this file is now at the
+  point of diminishing returns; subsequent iterations should defer to
+  the TechWriter pass that resolves the MEDIUM findings (A1-A6, S1,
+  S2) and the LOW citation/verification findings (V3 set) before
+  publication.
 -->
 
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
@@ -1428,7 +1469,7 @@ These ranges are directional from typical published deterioration-model performa
 | Median time-to-acknowledge (minutes) | n/a | n/a | 4-12 (operational target) | 4-12 | 4-12 |
 | Subgroup AUROC range (across protected categories) | ±0.05 | ±0.04 | ±0.04 | ±0.05 | ±0.04 |
 | End-to-end latency (event ingest to alert) p95 | n/a | <60s | <60s | <60s | <60s |
-| Scoring throughput (patients per minute, peak) | n/a | depends on infrastructure; budget for 2x peak load |
+| Scoring throughput (patients per minute, peak) | n/a | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load |
 
 <!-- TODO (TechWriter): benchmark ranges are directional from typical published deterioration model performance. Specific figures vary substantially by population, outcome definition, and prediction window. Replace with measured numbers from local validation before clinical deployment. Key references include Wong et al. (Epic Deterioration Index), Romero-Brufau et al. (machine learning for deterioration), Churpek et al. (eCART), and the meta-analyses by Smith et al. on early warning scores. -->
 
