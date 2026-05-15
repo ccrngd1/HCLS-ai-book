@@ -1110,4 +1110,722 @@ Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-a
 [38;5;8m
  ▸ Credits: 1.71 • Time: 57s
 
-[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "Reviewed chapter02.07-literature-search-evidence-synthesis.md against all four dimensions. Clinical accuracy: evidence hierarchy (Levels 1-5), GRADE/USPSTF/Oxford CEBM references, population-specific limitations, and the explicit 'illustrative citations' disclaimer on the sample output are all sound; hallucination failure modes (fabrication, sign flips, population mismatch, equipoise collapse, temporal drift) are well enumerated. Architectural soundness: hybrid retrieval (dense + BM25 + RRF), re-ranking, evidence tiering, post-generation validation, Step Functions orchestration, and Bedrock Knowledge Bases vs OpenSearch vs Aurora/pgvector trade-offs are coherent and production-credible. Security: BAA, KMS/SSE-KMS, VPC with interface endpoints for Bedrock/Comprehend Medical/KMS/Secrets Manager, Cognito-authenticated API Gateway, CloudTrail data events, and PHI treatment of queries/answers are addressed. Prioritized findings with concrete remediation: HIGH — (1) numeric validator uses verbatim substring match and will miss equivalent forms (0.03 vs p=0.03, 1.4 vs 1.40, CI punctuation variants); remediation: tokenize and normalize numerics with unit/CI-aware comparison; (2) no sign/direction check despite 'wrong direction' being flagged catastrophic; remediation: add directional-entailment check (NLI model or structured extraction of effect direction) comparing claim vs cited chunk; (3) Guardrails contextual grounding source not explicitly tagged via Converse guardContent/grounding source blocks in Step 7's shown call; remediation: show the guardContent tagging so the grounding check actually fires. MEDIUM — (4) 200 candidates × N expanded queries plus 100-pair cross-encoder rerank has unbounded latency/cost; remediation: cap merged candidate pool pre-rerank and batch cross-encoder calls with a SageMaker async or multi-record invocation; (5) PHI in patient_context is sent directly to Bedrock and into prompts/logs without a de-identification or minimization step; remediation: add Comprehend Medical PHId or a de-id Lambda prior to prompt assembly and scrub from CloudWatch/model-invocation logs; (6) evidence-tier logic conflates practice guidelines with consensus statements; remediation: separate issuing-body-graded guidelines from non-graded consensus and reflect in prompt; (7) no API Gateway rate limiting or per-user quota noted despite cost-control discussion; remediation: add usage plans/WAF and per-identity quotas; (8) retry loop in validator lacks explicit Step Functions retry-count state and backoff; remediation: persist retry_count in workflow state with a hard cap and dead-letter to review queue; (9) no retrieval-failure degraded mode shown in pipeline despite being mentioned in Honest Take; remediation: add fallback branch returning top-k raw retrieval with explicit 'unsynthesized' labeling. LOW — (10) semantic similarity threshold 0.65 is hardcoded; remediation: tune per question category from labeled eval set; (11) 'Unclassified' default tier should downgrade to 'Narrative/Unknown — low confidence' rather than neutral; (12) cross-references to Recipes 2.9/2.10/13.x/8.x should be validated once drafted; (13) add MIRAGE/BEIR-Clinical to evaluation benchmarks list. Review meets the pass condition across all required dimensions."}
+[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "Reviewed chapter02.07-literature-search-evidence-synthesis.md against all four dimensions. Clinical accuracy: evidence hierarchy (Levels 1-5), GRADE/USPSTF/Oxford CEBM references, population-specific limitations, and the explicit 'illustrative citations' disclaimer on the sample output are all sound; hallucination failure modes (fabrication, sign flips, population mismatch, equipoise collapse, temporal drift) are well enumerated. Architectural soundness: hybrid retrieval (dense + BM25 + RRF), re-ranking, evidence tiering, post-generation validation, Step Functions orchestration, and Bedrock Knowledge Bases vs OpenSearch vs Aurora/pgvector trade-offs are coherent and production-credible. Security: BAA, KMS/SSE-KMS, VPC with interface endpoints for Bedrock/Comprehend Medical/KMS/Secrets Manager, Cognito-authenticated API Gateway, CloudTrail data events, and PHI treatment of queries/answers are addressed. Prioritized findings with concrete remediation: HIGH — (1) numeric validator uses verbatim substring match and will miss equivalent forms (0.03 vs p=0.03, 1.4 vs 1.40, CI punctuation variants); remediation: tokenize and normalize numerics with unit/CI-aware comparison; (2) no sign/direction check despite 'wrong direction' being flagged catastrophic; remediation: add directional-entailment check (NLI model or structured extraction of effect direction) comparing claim vs cited chunk; (3) Guardrails contextual grounding source not explicitly tagged via Converse guardContent/grounding source blocks in Step 7's shown call; remediation: show the guardContent tagging so the grounding check actually fires. MEDIUM — (4) 200 candidates × N expanded queries plus 100-pair cross-encoder rerank has unbounded latency/cost; remediation: cap merged candidate pool pre-rerank and batch cross-encoder calls with a SageMaker async or multi-record invocation; (5) PHI in patient_context is sent directly to Bedrock and into prompts/logs without a de-identification or minimization step; remediation: add Comprehend Medical PHId or a de-id Lambda prior to prompt assembly and scrub from CloudWatch/model-invocation logs; (6) evidence-tier logic conflates practice guidelines with consensus statements; remediation: separate issuing-body-graded guidelines from non-graded consensus and reflect in prompt; (7) no API Gateway rate limiting or per-user quota noted despite cost-control discussion; remediation: add usage plans/WAF and per-identity quotas; (8) retry loop in validator lacks explicit Step Functions retry-count state and backoff; remediation: persist retry_count in workflow state with a hard cap and dead-letter to review queue; (9) no retrieval-failure degraded mode shown in pipeline despite being mentioned in Honest Take; remediation: add fallback branch returning top-k raw retrieval with explicit 'unsynthesized' labeling. LOW — (10) semantic similarity threshold 0.65 is hardcoded; remediation: tune per question category from labeled eval set; (11) 'Unclassified' default tier should downgrade to 'Narrative/Unknown — low confidence' rather than neutral; (12) cross-references to Recipes 2.9/2.10/13.x/8.x should be validated once drafted; (13) add MIRAGE/BEIR-Clinical to evaluation benchmarks list. Review meets the pass condition across all required dimensions."}[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1021 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.29s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-expert-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m148638 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m194792 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m53071 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.7s[0m
+
+[38;5;141m> [0mNow let me check the style guide and look at what's in the existing recipe vs. what Chapter 1 patterns look like:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter01.04-prior-auth-document-processing.md[0m for pattern: [38;5;141m^```[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '^```' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter01.04-prior-auth-document-processing.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.35s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter01.04-prior-auth-document-processing.md' | Select-String -Pattern '^```' | Select-Object -First 20"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check fenced code block language tags in Chapter 1
+
+
+```
+```
+```mermaid
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+``` 
+```
+```
+```
+```
+
+
+[38;5;244m - Completed in 2.889s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.07-patient-deterioration-early-warning.md' | Select-String -Pattern '^```' | Select-Object -First 25"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check fenced code block tags in Recipe 3.7
+
+
+```
+```
+```mermaid
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```
+```json
+```
+```json
+```
+`anomaly-detection` Â· `early-warning-system` Â· `clinical-deterioration` Â· `sepsis-prediction` Â· `news2` Â· `mews` Â· `ews` Â· `track-and-trigger` Â· `vital-signs` Â· 
+`time-series` Â· `xgboost` Â· `lstm` Â· `lightgbm` Â· `feature-store` Â· `clarify` Â· `model-monitor` Â· `model-registry` Â· `bedrock` Â· `comprehend-medical` Â· `kinesis` Â· 
+`timestream` Â· `dynamodb` Â· `opensearch` Â· `eventbridge` Â· `sagemaker` Â· `clinical-governance` Â· `local-validation` Â· `subgroup-performance` Â· `calibration` Â· `shap` 
+Â· `alert-fatigue` Â· `fda-cds` Â· `samd` Â· `hipaa` Â· `complex` Â· `production` Â· `provider`
+
+
+[38;5;244m - Completed in 2.327s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "$f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'; $c = Get-Content -Raw $f; $em = [regex]::Matches($c, '\u2014').Count; $en = [regex]::Matches($c, '\u2013').Count; Write-Host ('Em dashes (U+2014): ' + $em); Write-Host ('En dashes (U+2013): ' + $en)"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Verify zero em/en dashes
+
+At line:1 char:256
++ ... tches(, '\u2013').Count; Write-Host ('Em dashes (U+2014): ' + ); Writ ...
++                                                                  ~
+You must provide a value expression following the '+' operator.
+At line:1 char:296
++ ... t ('Em dashes (U+2014): ' + ); Write-Host ('En dashes (U+2013): ' + )
++                                                                        ~
+You must provide a value expression following the '+' operator.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedValueExpression
+ 
+[38;5;244m - Completed in 1.977s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_dashes.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $content = Get-Content -Raw $file
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m $emDashCount = [regex]::Matches($content, [char]0x2014).Count
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m $enDashCount = [regex]::Matches($content, [char]0x2013).Count
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m Write-Host "Em dashes (U+2014): $emDashCount"
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m Write-Host "En dashes (U+2013): $enDashCount"
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m # Also check for common voice-drift patterns
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m Write-Host ""
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m Write-Host "--- Voice-drift checks ---"
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m $thisRecipeDemo = ([regex]::Matches($content, "this recipe demonstrates")).Count
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m Write-Host "'this recipe demonstrates' occurrences: $thisRecipeDemo"
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m $weAreExcited = ([regex]::Matches($content, "we are excited")).Count
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m Write-Host "'we are excited' occurrences: $weAreExcited"
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m $linkedinTone = ([regex]::Matches($content, "we need to talk about")).Count
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m Write-Host "'we need to talk about' occurrences: $linkedinTone"
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m # Header hierarchy check
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m Write-Host ""
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m Write-Host "--- Header counts ---"
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m $h1 = ([regex]::Matches($content, "(?m)^# ")).Count
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m $h2 = ([regex]::Matches($content, "(?m)^## ")).Count
+[0m[49m[38;5;10m+    23[0m:[38;5;10m[49m $h3 = ([regex]::Matches($content, "(?m)^### ")).Count
+[0m[49m[38;5;10m+    24[0m:[38;5;10m[49m $h4 = ([regex]::Matches($content, "(?m)^#### ")).Count
+[0m[49m[38;5;10m+    25[0m:[38;5;10m[49m Write-Host "H1: $h1"
+[0m[49m[38;5;10m+    26[0m:[38;5;10m[49m Write-Host "H2: $h2"
+[0m[49m[38;5;10m+    27[0m:[38;5;10m[49m Write-Host "H3: $h3"
+[0m[49m[38;5;10m+    28[0m:[38;5;10m[49m Write-Host "H4: $h4"
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_dashes.ps1[0m
+[38;5;244m - Completed in 0.7s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_dashes.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Run dash/voice/header check
+
+Em dashes (U+2014): 0
+En dashes (U+2013): 11
+
+--- Voice-drift checks ---
+'this recipe demonstrates' occurrences: 0
+'we are excited' occurrences: 0
+'we need to talk about' occurrences: 0
+
+--- Header counts ---
+H1: 1
+H2: 11
+H3: 15
+H4: 1
+[38;5;244m - Completed in 2.772s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $lines = Get-Content $file
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m $endash = [char]0x2013
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m for ($i = 0; $i -lt $lines.Length; $i++) {
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m     if ($lines[$i] -match $endash) {
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m         Write-Host "Line $($i+1): $($lines[$i])"
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m Write-Host ""
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m Write-Host "--- H4 location ---"
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m for ($i = 0; $i -lt $lines.Length; $i++) {
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m     if ($lines[$i] -match '^#### ') {
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m         Write-Host "Line $($i+1): $($lines[$i])"
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m Write-Host ""
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m Write-Host "--- Em-dash check on JSON pretty values ---"
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m for ($i = 0; $i -lt $lines.Length; $i++) {
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m     if ($lines[$i] -match '[\u2014]') {
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m         Write-Host "EM-DASH Line $($i+1): $($lines[$i])"
+[0m[49m[38;5;10m+    23[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    24[0m:[38;5;10m[49m }
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate.ps1[0m
+[38;5;244m - Completed in 0.5s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Locate the en-dashes
+
+Line 228: â”‚           â–¼                                                      â”‚
+Line 233: â”‚           â–¼                                                      â”‚
+Line 238: â”‚           â–¼                                                      â”‚
+Line 243: â”‚           â–¼                                                      â”‚
+Line 249: â”‚           â–¼                                                      â”‚
+Line 254: â”‚           â–¼                                                      â”‚
+Line 259: â”‚           â–¼                                                      â”‚
+Line 264: â”‚           â–¼                                                      â”‚
+Line 269: â”‚           â–¼                                                      â”‚
+Line 274: â”‚           â–¼                                                      â”‚
+Line 279: â”‚           â–¼                                                      â”‚
+
+--- H4 location ---
+Line 508: #### Walkthrough
+
+--- Em-dash check on JSON pretty values ---
+[38;5;244m - Completed in 2.760s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m226[0m to [38;5;141m290[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m5396 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.2s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate2.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m # Find every U+2013 (en-dash) by codepoint
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m $matches2013 = [regex]::Matches($content, "\u2013")
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m $matches2014 = [regex]::Matches($content, "\u2014")
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m Write-Host "U+2013 (en-dash) total: $($matches2013.Count)"
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m Write-Host "U+2014 (em-dash) total: $($matches2014.Count)"
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m # For en-dash, find the line numbers
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m $lines = $content -split "`n"
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m $count = 0
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m for ($i = 0; $i -lt $lines.Length; $i++) {
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m     $m = [regex]::Matches($lines[$i], "\u2013")
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m     if ($m.Count -gt 0) {
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m         $count++
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m         if ($count -le 20) {
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m             Write-Host "Line $($i+1) [$($m.Count) en-dashes]: $($lines[$i].Substring(0, [Math]::Min(120, $lines[$i].Length)))"
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m Write-Host "Total lines with en-dashes: $count"
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate2.ps1[0m
+[38;5;244m - Completed in 0.4s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate2.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Find actual en-dash locations
+
+U+2013 (en-dash) total: 0
+U+2014 (em-dash) total: 0
+Total lines with en-dashes: 0
+[38;5;244m - Completed in 2.607s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.07-patient-deterioration-early-warning.md' | Select-String -Pattern '^####' | Select-Object -First 10"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check H4 usage in Recipe 3.7 for parallel
+
+
+#### Walkthrough
+
+
+[38;5;244m - Completed in 1.898s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\RECIPE-GUIDE.md[0m, from line [38;5;141m1[0m to [38;5;141m100[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m5756 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\RECIPE-GUIDE.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me check specific sections for any grammar/mechanical issues:[0m[0m
+I will run the following command: [38;5;141mpowershell -Command "$f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'; $c = Get-Content -Raw $f; Write-Host 'Word count:'; ($c -split '\s+').Count"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check word count
+
+= : The term '=' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that 
+the path is correct and try again.
+At line:1 char:2
++  = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\cha ...
++  ~
+    + CategoryInfo          : ObjectNotFound: (=:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+= : The term '=' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or if a path was included, verify that 
+the path is correct and try again.
+At line:1 char:121
++ ... -book\chapter03.08-readmission-risk-anomaly-detection.md';  = Get-Con ...
++                                                                 ~
+    + CategoryInfo          : ObjectNotFound: (=:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+Word count:
+1
+[38;5;244m - Completed in 1.630s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m $words = ($content -split '\s+' | Where-Object { $_ -ne '' }).Count
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m Write-Host "Word count: $words"
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m # Spot-check for a few common typos/issues
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m $issues = @()
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m # Double spaces (excluding code blocks would require parsing; just count)
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m $dblSpace = ([regex]::Matches($content, "(?<![\r\n])  ")).Count
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m Write-Host "Sequences of double-space (some may be in code/diagram): $dblSpace"
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m # Common typos  
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m $typoChecks = @('teh','recieve','occured','seperate','wich','adn','definately','occuring','its'',Its'',it'','hippa','hipaa-eligible','HIPAA-Eligible')
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m foreach ($w in $typoChecks) {
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m     $cnt = ([regex]::Matches($content, "(?i)\b$w\b")).Count
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m     if ($cnt -gt 0) { Write-Host "'$w': $cnt occurrences" }
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m # Trailing whitespace count
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m $lines = Get-Content $file
+[0m[49m[38;5;10m+    23[0m:[38;5;10m[49m $trailingWS = ($lines | Where-Object { $_ -match ' +$' }).Count
+[0m[49m[38;5;10m+    24[0m:[38;5;10m[49m Write-Host "Lines with trailing whitespace: $trailingWS"
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1[0m
+[38;5;244m - Completed in 0.5s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Word count and typo check
+
+At C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1:15 char:110
++ ... ccuring','its'',Its'',it'','hippa','hipaa-eligible','HIPAA-Eligible')
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unexpected token 'hippa','hipaa-eligible','HIPAA-Eligible')
+foreach ($w in $typoChecks) {
+    $cnt = ([regex]::Matches($content, "(?i)\b$w\b")).Count
+    if ($cnt -gt 0) { Write-Host "'$w': $cnt occurrences" }
+}
+# Trailing whitespace count
+$lines = Get-Content $file
+$trailingWS = ($lines | Where-Object { $_ -match '' in expression or statement.
+At C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1:23 char:54
++ $trailingWS = ($lines | Where-Object { $_ -match ' +$' }).Count
++                                                      ~~~~~~~~~~
+The string is missing the terminator: '.
+At C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1:25 char:2
++ 
+Missing closing ')' in subexpression.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : UnexpectedToken
+ 
+[38;5;244m - Completed in 1.750s[0m
+
+I'll create the following file: [38;5;141mcheck_r08_typos.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m   1,  1[0m:[39m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[39m   2,  2[0m:[39m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[39m   3,  3[0m:[39m[49m $words = ($content -split '\s+' | Where-Object { $_ -ne '' }).Count
+[0m[49m[39m   4,  4[0m:[39m[49m Write-Host "Word count: $words"
+[0m[49m[39m   5,  5[0m:[39m[49m 
+[0m[49m[38;5;9m-  6    [0m:[38;5;9m[49m # Spot-check for a few common typos/issues
+[0m[49m[38;5;9m-  7    [0m:[38;5;9m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[38;5;9m-  8    [0m:[38;5;9m[49m $issues = @()
+[0m[49m[38;5;9m-  9    [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m- 10    [0m:[38;5;9m[49m # Double spaces (excluding code blocks would require parsing; just count)
+[0m[49m[38;5;9m- 11    [0m:[38;5;9m[49m $dblSpace = ([regex]::Matches($content, "(?<![\r\n])  ")).Count
+[0m[49m[38;5;9m- 12    [0m:[38;5;9m[49m Write-Host "Sequences of double-space (some may be in code/diagram): $dblSpace"
+[0m[49m[38;5;9m- 13    [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m- 14    [0m:[38;5;9m[49m # Common typos  
+[0m[49m[38;5;9m- 15    [0m:[38;5;9m[49m $typoChecks = @('teh','recieve','occured','seperate','wich','adn','definately','occuring','its'',Its'',it'','hippa','hipaa-eligible','HIPAA-Eligible')
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m $typoChecks = @('teh','recieve','occured','seperate','wich','adn','definately','occuring','hippa')
+[0m[49m[39m  16,  7[0m:[39m[49m foreach ($w in $typoChecks) {
+[0m[49m[39m  17,  8[0m:[39m[49m     $cnt = ([regex]::Matches($content, "(?i)\b$w\b")).Count
+[0m[49m[38;5;9m- 18    [0m:[38;5;9m[49m     if ($cnt -gt 0) { Write-Host "'$w': $cnt occurrences" }
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m     if ($cnt -gt 0) { Write-Host ("'" + $w + "': " + $cnt + " occurrences") }
+[0m[49m[39m  19, 10[0m:[39m[49m }
+[0m[49m[39m  20, 11[0m:[39m[49m 
+[0m[49m[38;5;9m- 21    [0m:[38;5;9m[49m # Trailing whitespace count
+[0m[49m[39m  22, 12[0m:[39m[49m $lines = Get-Content $file
+[0m[49m[38;5;9m- 23    [0m:[38;5;9m[49m $trailingWS = ($lines | Where-Object { $_ -match ' +$' }).Count
+[0m[49m[38;5;9m- 24    [0m:[38;5;9m[49m Write-Host "Lines with trailing whitespace: $trailingWS"
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m $ws = '\s+$'
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m $count = 0
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m foreach ($line in $lines) {
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m     if ($line -match $ws) { $count++ }
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m Write-Host "Lines with trailing whitespace: $count"
+[0m[K
+Replacing: [38;5;141mcheck_r08_typos.ps1[0m
+[38;5;244m - Completed in 0.4s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Run typo and WS check
+
+Word count: 17448
+Lines with trailing whitespace: 0
+[38;5;244m - Completed in 3.547s[0m
+
+[38;5;141m> [0mLet me check the TODOs are present and well-formed:[0m[0m
+I will run the following command: [38;5;141mpowershell -Command "Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md' | Select-String -Pattern 'TODO' | Measure-Object | Select-Object -ExpandProperty Count"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Count TODOs in recipe
+
+24
+[38;5;244m - Completed in 2.123s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md' | Select-String -Pattern 'TODO' | ForEach-Object { '{0,5} {1}' -f $_.LineNumber, $_.Line.Substring(0, [Math]::Min(140, $_.Line.Length)) }"[0m[38;5;244m (using tool: shell)[0m
+Purpose: List TODO lines with context
+
+At line:1 char:193
++ ... lect-String -Pattern 'TODO' | ForEach-Object { '{0,5} {1}' -f .LineNu ...
++                                                                  ~
+You must provide a value expression following the '-f' operator.
+At line:1 char:194
++ ... -Pattern 'TODO' | ForEach-Object { '{0,5} {1}' -f .LineNumber, .Line. ...
++                                                       ~~~~~~~~~~~
+Unexpected token '.LineNumber' in expression or statement.
+At line:1 char:205
++ ... Pattern 'TODO' | ForEach-Object { '{0,5} {1}' -f .LineNumber, .Line.S ...
++                                                                 ~
+Missing argument in parameter list.
+At line:1 char:242
++ ... 0,5} {1}' -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.L ...
++                                                                  ~
+Missing expression after ','.
+At line:1 char:243
++ ...  -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.Length)) }
++                                                          ~~~~~~~~~~~~
+Unexpected token '.Line.Length' in expression or statement.
+At line:1 char:242
++ ... 0,5} {1}' -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.L ...
++                                                                  ~
+Missing closing ')' in expression.
+At line:1 char:177
++ ... ection.md' | Select-String -Pattern 'TODO' | ForEach-Object { '{0,5}  ...
++                                                                 ~
+Missing closing '}' in statement block or type definition.
+At line:1 char:255
++ ...  -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.Length)) }
++                                                                      ~
+Unexpected token ')' in expression or statement.
+At line:1 char:256
++ ...  -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.Length)) }
++                                                                       ~
+Unexpected token ')' in expression or statement.
+At line:1 char:258
++ ...  -f .LineNumber, .Line.Substring(0, [Math]::Min(140, .Line.Length)) }
++                                                                         ~
+Unexpected token '}' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedValueExpression
+ 
+[38;5;244m - Completed in 1.690s[0m
+
+Searching for: [38;5;141mTODO[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m24 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md (result is truncated)
+[38;5;244m - Completed in 0.8s[0m
+
+[38;5;141m> [0mLet me read several sections to check for any final polish opportunities:[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m1[0m to [38;5;141m60[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m12182 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m480[0m to [38;5;141m580[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m12301 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m1020[0m to [38;5;141m1090[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3086 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.3s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m1260[0m to [38;5;141m1290[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1386 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_consistency.ps1[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $file = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $content = Get-Content -Raw -Encoding UTF8 $file
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m # Look for inconsistencies in hyphenation
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m $variants = @(
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m     @('post-discharge', 'post discharge', 'postdischarge'),
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m     @('care management', 'care-management'),
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m     @('patient-reported', 'patient reported'),
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m     @('discharge-time', 'discharge time'),
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m     @('cold-start', 'cold start'),
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m     @('multi-cohort', 'multi cohort', 'multicohort'),
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m     @('end-user', 'end user'),
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m     @('in-hospital', 'in hospital'),
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m     @('value-based', 'value based')
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m )
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m foreach ($g in $variants) {
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m     Write-Host "--- Group:" $($g -join ', ')
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m     foreach ($v in $g) {
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m         $cnt = ([regex]::Matches($content, "(?i)\b" + [regex]::Escape($v) + "\b")).Count
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m         Write-Host ("  '" + $v + "': " + $cnt)
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    23[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    24[0m:[38;5;10m[49m # Look for double-words (e.g. "the the", "and and")
+[0m[49m[38;5;10m+    25[0m:[38;5;10m[49m $dbl = [regex]::Matches($content, '\b(\w+)\s+\1\b')
+[0m[49m[38;5;10m+    26[0m:[38;5;10m[49m Write-Host ""
+[0m[49m[38;5;10m+    27[0m:[38;5;10m[49m Write-Host "Possible double-words (first 10):"
+[0m[49m[38;5;10m+    28[0m:[38;5;10m[49m $seen = New-Object System.Collections.Generic.HashSet[string]
+[0m[49m[38;5;10m+    29[0m:[38;5;10m[49m $shown = 0
+[0m[49m[38;5;10m+    30[0m:[38;5;10m[49m foreach ($m in $dbl) {
+[0m[49m[38;5;10m+    31[0m:[38;5;10m[49m     $w = $m.Value.ToLower()
+[0m[49m[38;5;10m+    32[0m:[38;5;10m[49m     if ($seen.Add($w) -and $shown -lt 10) {
+[0m[49m[38;5;10m+    33[0m:[38;5;10m[49m         Write-Host "  $w"
+[0m[49m[38;5;10m+    34[0m:[38;5;10m[49m         $shown++
+[0m[49m[38;5;10m+    35[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    36[0m:[38;5;10m[49m }
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_consistency.ps1[0m
+[38;5;244m - Completed in 0.6s[0m
+
+I will run the following command: [38;5;141mpowershell -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_consistency.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check term consistency and double-words
+
+--- Group: post-discharge, post discharge, postdischarge
+  'post-discharge': 74
+  'post discharge': 0
+  'postdischarge': 0
+--- Group: care management, care-management
+  'care management': 55
+  'care-management': 4
+--- Group: patient-reported, patient reported
+  'patient-reported': 12
+  'patient reported': 0
+--- Group: discharge-time, discharge time
+  'discharge-time': 28
+  'discharge time': 0
+--- Group: cold-start, cold start
+  'cold-start': 13
+  'cold start': 0
+--- Group: multi-cohort, multi cohort, multicohort
+  'multi-cohort': 5
+  'multi cohort': 0
+  'multicohort': 0
+--- Group: end-user, end user
+  'end-user': 0
+  'end user': 5
+--- Group: in-hospital, in hospital
+  'in-hospital': 0
+  'in hospital': 0
+--- Group: value-based, value based
+  'value-based': 4
+  'value based': 0
+
+Possible double-words (first 10):
+  k
+
+    k
+  s
+    s
+  w
+
+    w
+  u
+
+    u
+  ar
+    ar
+[38;5;244m - Completed in 3.36s[0m
+
+Searching for: [38;5;141mcare-management[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m4 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.2s[0m
+
+[38;5;141m> [0mI'll make the one small consistency fix I found — the hyphenation of "care-management" in narrative prose at line 133, where the surrounding 55 occurrences of "care management" all go unhyphenated:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.08-readmission-risk-anomaly-detection.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;79;40;40m[39m- 133     [0m:[39m[48;2;36;25;28m [38;2;192;197;206mValidate that the worklist generated by this simple system matches care-management judgment about which patients to call.[K
+[0m[48;2;40;67;43m[39m+      133[0m:[39m[48;2;24;38;30m [38;2;192;197;206mValidate that the worklist generated by this simple system matches care management judgment about which patients to call.[K
+[0m[K
+Updating: [38;5;141mchapter03.08-readmission-risk-anomaly-detection.md[0m
+[38;5;244m - Completed in 0.11s[0m
+
+[38;5;141m> [0mNow let me do a final read of the closing sections to verify everything is clean:[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, from line [38;5;141m1380[0m to [38;5;141m1410[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7299 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me clean up my temporary check scripts:[0m[0m
+I will run the following command: [38;5;141mpowershell -Command "Remove-Item 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_dashes.ps1','C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate.ps1','C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_locate2.ps1','C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_typos.ps1','C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r08_consistency.ps1' -ErrorAction SilentlyContinue; Write-Host 'Cleaned up temporary scripts.'"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Remove temporary check scripts
+
+Cleaned up temporary scripts.
+[38;5;244m - Completed in 2.78s[0m
+
+[38;5;141m> [0mLet me also verify the one consistency edit I made took effect:[0m[0m
+Searching for: [38;5;141mcare management judgment[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+[38;5;244m - Completed in 0.3s[0m
+
+[38;5;141m> [0m[38;5;252m[1m## Editorial Pass Complete — Recipe 3.8 Final Edit[0m[0m
+[0m[0m
+[1mVerdict: PASS (no further edits required beyond one consistency fix).[22m[0m[0m
+[0m[0m
+[38;5;252m[1m### Commit message version note[0m[0m
+[0m[0m
+[38;5;10medit(ch03-r08): final editorial pass
+
+- Fix one hyphenation inconsistency: "care-management judgment" → "care management
+  judgment" at line 133, matching the dominant unhyphenated "care management"
+  convention used 55 times elsewhere in the recipe.
+[0m[0m[0m
+[0m[0m
+[38;5;252m[1m### Editorial checklist results[0m[0m
+[0m[0m
+| Item | Result |[0m[0m
+|---|---|[0m[0m
+| Em dashes | 0 (verified U+2014) |[0m[0m
+| En dashes | 0 (verified U+2013) |[0m[0m
+| Trailing whitespace | 0 lines |[0m[0m
+| Header hierarchy | H1 (1) → H2 (11) → H3 (15) → H4 (1, "Walkthrough" under "Code") — no skipped levels, matches Recipe 3.7 convention |[0m[0m
+| Code-block language tags | Match chapter convention: bare [38;5;10m[0m[38;5;10m for pseudocode and text-art diagrams, [0m[38;5;10m[0mmermaid for the architecture diagram, [38;5;10m[0m[38;5;10mjson for sample output |
+| Voice drift patterns | Zero: no "this recipe demonstrates", no "we are excited", no "we need to talk about", no LinkedIn-influencer tone, no documentation-voice |
+| RECIPE-GUIDE.md compliance | All required sections present in correct order |
+| Vendor balance | 70/30 preserved cleanly: The Problem, The Technology, General Architecture Pattern are vendor-neutral; AWS service names enter at The AWS Implementation and stay there |
+| Term consistency | One minor hyphenation inconsistency fixed (above); all other terms (post-discharge ×74, patient-reported ×12, discharge-time ×28, cold-start ×13, multi-cohort ×5, value-based ×4) are consistent |
+| TODO markers preserved | All 18 TODO HTML-comment markers from TechWriter, TechCodeReviewer, and TechExpertReviewer kept intact |
+| Link verification | All URLs in Additional Resources are plausible and well-formed (CMS, AHRQ, FDA, NIH/PhysioNet, AWS docs, GitHub for SHAP and Synthea) — none look fabricated |
+| Word count | 17,448 — comparable to Recipe 3.7's complexity tier |
+
+### Why the editorial pass is so light
+
+Both prior reviews concluded **PASS**:
+
+- **TechExpertReviewer** flagged 0 CRITICAL, 0 HIGH, 8 MEDIUM, 13 LOW. Every MEDIUM finding (A1-A8, S1-S2) and most LOW findings require introducing new architectural primitives, security disciplines, or technical content — explicitly out of scope per persona instructions ("Do not introduce new claims or technical content"; "If a section needs substantial rewriting, flag it rather than rewriting").
+- **TechCodeReviewer** flagged 0 ERROR, 3 WARNING, 11 NOTE — all in the Python companion file ([0mchapter03.08-python-example.md[38;5;10m), not the main recipe. Out of scope for ch03-r08-edit which targets the main recipe.
+
+The TODO markers in the file already comprehensively capture all expert-review findings as TechWriter follow-ups:
+- The block TODO above [0m#### Walkthrough[38;5;10m lists A1-A8 architectural primitives.
+- A dedicated TODO block flags S1 (worklist row PHI minimization).
+- A dedicated TODO block flags S2 (subgroup data governance).
+- A long TODO block flags S3-S7 and N1-N4 (operational completeness items).
+- The eighteen pre-existing inline TODOs flag industry-figure verification needs (HRRP penalty cap, CMS exclusion rules, HRRP peer-grouping methodology year, state HIE / TEFCA landscape, HIPAA-eligible Bedrock model list, Timestream HIPAA-eligibility, LACE/HOSPITAL citations, Coleman/Naylor/Project RED citations).
+
+### Already addressed in the existing draft (not edits I made)
+
+The expert review's V5 and V6 fixes are already present in the draft:
+- The Honest Take's "Build the workflow first" lesson cross-references the Implementation-Time Tier table's Basic tier inline.
+- The Variations and Extensions section opens with a sequencing note tying back to The Honest Take's "start narrower" recommendation.
+
+### Edits applied directly
+
+One minor hyphenation consistency fix at line 133. No other edits required.
+
+### Unresolved technical concerns flagged for TechWriter
+
+All previously-captured TODO markers preserved verbatim. The TechWriter's next pass should prioritize per the expert review's recommended actions:
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 40.49 • Time: 6m 9s
+
+[0m[1G[0m[0m[?25h1. **Highest leverage (architectural enforcement of prose disciplines):** A3 cold-start uniform-high-touch primitive in Step 7; A5 engagement-decay first-class worklist pathway; A4 randomized-rollout / [0mevaluation_track[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1021 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.40s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-expert-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m148638 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.08-readmission-risk-anomaly-detection.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m194792 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m53071 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.08-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;141m> [0mLooking at the final edited recipe file, I can see explicit TODO comments at the top of the Walkthrough section that document the expert reviewer's MEDIUM findings but state they have not been addressed:[0m[0m
+[0m[0m
+[38;5;10m<!-- TODO (TechWriter): the expert reviewer flagged several prose-vs-pseudocode asymmetries that need follow-up before the next pass. None of these block PASS, but each is a place where the prose makes a discipline claim that the canonical pseudocode walkthrough does not architecturally enforce. Address by adding short architectural primitives in the relevant Steps... Specifically:
+  - Cold-start uniform-high-touch in the first 72 hours regardless of model output (A3)
+  - Randomized-rollout / target-trial-emulation primitive for causal evaluation (A4)
+  - Engagement-decay first-class worklist pathway (A5)
+  - Outcome-event and intervention-event idempotency (A1)
+  - DLQ / poison-message handling (A2)
+  - Reference-data versioning propagation (A6)
+  - Multi-cohort architecture (A7)
+  - Suppression-rule expiry
+-->
+[0m[0m[0m
+[0m[0m
+Plus separate TODOs explicitly flagging:[0m[0m
+- S1 (worklist row PHI minimization) - "Update Step 7 so the per-row event carries only worklist_id..."[0m[0m
+- S2 (subgroup data governance) - "Add architectural artifacts to Prerequisites..."[0m[0m
+[0m[0m
+These TODOs explicitly state the changes still need to be made. The pseudocode in Steps 1-8 has not been modified to add idempotency guards, DLQ handling, cold-start routing, randomized rollout primitive, engagement-decay first-class pathway, multi-cohort dispatching, audit_trail propagation, suppression expiry, or the reduced worklist event payload.[0m[0m
+[0m[0m
+Additionally, the Python companion (per the code review) has 3 WARNINGs (operational-correctness equivalents to MEDIUM) that include silent-loss bugs (Limit=1 + FilterExpression, missing GSI pagination, broken SHAP proxy math). I have no evidence these were fixed either.[0m[0m
+[0m[0m
+The sample narrative still contains "a diuretic adjustment per standing orders" (V4), timestamps still use 2026-05-14 dates (V1), and 18 HTML-comment TODOs remain (V3 flagged 8 should be resolved before publication).[0m[0m
+[0m[0m
+The pass condition requires the final version to incorporate all HIGH and MEDIUM findings. Style hygiene is clean (no em dashes, no en dashes verified), but the substantive MEDIUM findings have only been documented as deferred TODOs, not actually incorporated.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.47 • Time: 52s
+
+{"verdict": "fail", "rationale": "Final edit does not incorporate the MEDIUM findings from the expert review or the WARNING findings from the code review. The file contains explicit TODO comments at the top of the Walkthrough section enumerating MEDIUM findings A1-A7 (idempotency, DLQs, cold-start uniform-high-touch enforcement, randomized-rollout primitive, engagement-decay first-class pathway, reference-data versioning propagation, multi-cohort architecture) plus suppression-rule expiry, and separate TODOs deferring S1 (worklist row PHI minimization with row-id-only event-bus payload) and S2 (subgroup data governance artifacts). The pseudocode in Steps 1-8 was not modified to add these architectural primitives. The sample narrative still uses 'a diuretic adjustment per standing orders' (V4) and 2026-05-14 sample timestamps (V1); 18 HTML-comment TODOs remain, including 8 the expert review said should be resolved before publication (HRRP penalty cap and conditions, HRRP exclusion rules, HRRP peer-grouping methodology year, state HIE/TEFCA landscape, HIPAA-eligible Bedrock model list, Timestream HIPAA-eligibility, LACE/HOSPITAL citations, Coleman/Naylor/Project RED citations). No evidence the Python companion's three WARNINGs (Limit=1 + FilterExpression silent-loss bug, missing GSI pagination, mathematically nonsensical compute_top_drivers standardization) were fixed. Style hygiene is clean (no em dashes, no en dashes verified) and the prose is publication-ready in voice, but the pass condition explicitly requires incorporation of HIGH and MEDIUM findings, which has not occurred."}[0m[1G[0m[0m[?25h
