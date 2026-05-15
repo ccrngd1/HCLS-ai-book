@@ -68,6 +68,35 @@ the pseudocode and the Python companion remain in agreement. The
 TechEditor persona is not the right pass to apply these fixes;
 TechWriter should pick up `chapter03.06-python-example.md` against
 the code-review checklist before this recipe goes to publication.
+
+Final iteration confirmation (TechEditor, 2026-05-15): re-ran the
+mechanical checklist on this iteration. U+2014 em-dash count: 0.
+U+2212 minus-sign count: 0. U+2013 en-dash count: 17, all confined
+to the ASCII-art block-diagrams inside fenced code blocks (zero
+prose en-dashes). Documentation-voice and announcement
+anti-pattern grep ("we are excited", "this recipe demonstrates",
+"in this recipe we will", "let's talk about", "we need to talk
+about", "aws architects, we"): zero matches in prose; all hits
+confined to this editor comment block where the patterns are
+enumerated as items to check for. Header hierarchy: one H1 (the
+title), 11 H2 (Problem / Technology / General Architecture Pattern
+/ AWS Implementation / Why This Isn't Production-Ready / Honest
+Take / Variations and Extensions / Related Recipes / Additional
+Resources / Estimated Implementation Time / Tags), structured H3
+subsections under Technology and AWS Implementation, one H4
+(Walkthrough) under Code; no skipped levels; matches the
+chapter03.04 and chapter03.05 patterns. TechWriter TODO inventory
+unchanged at 16 well-formed `TODO (TechWriter)` markers. Sample
+provider-name discipline confirmed: every entity name in the
+Expected Results sample alerts carries either an explicit
+"(sample)" suffix or is an obvious synthetic placeholder. Sample
+NPIs remain `<synthetic-NPI>` placeholders behind the Luhn-validity
+disclaimer at the top of the Expected Results block. The cross-
+file Python-companion FAIL flag and TechWriter follow-up note
+above stand. No further in-place rewrites; recipe sits at the same
+publication-ready quality bar as Recipes 3.1 through 3.5 pending
+TechWriter resolution of the 16 flagged TODOs and the Python
+companion code-review fixes.
 -->
 
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
