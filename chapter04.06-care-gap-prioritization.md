@@ -74,6 +74,41 @@ TechEditor pass v2 (2026-05-16, ch04-r06-edit). Verification-only pass:
   reconciliation, A2 data_quality_flag gating, A3 HEDIS CDC measure
   rename) remain flagged as TechWriter TODOs per persona rule "if a
   section needs substantial rewriting, flag it rather than rewriting."
+
+TechEditor pass v3 (2026-05-16, ch04-r06-edit). Final verification pass:
+- Re-confirmed UTF-8 byte-level counts on the persisted file:
+  em-dash (U+2014) = 0, en-dash (U+2013) = 0, smart single quotes
+  (U+2018/U+2019) = 0, smart double quotes (U+201C/U+201D) = 0.
+  (PowerShell Get-Content with regex initially reported false positives
+  due to encoding handling; raw [System.IO.File]::ReadAllBytes plus
+  UTF-8 decode confirms zero on all six code points.)
+- Re-confirmed header hierarchy: 1 H1, 11 H2, 14 H3, 1 H4, 0 H5.
+  No skipped levels.
+- Re-confirmed TODO marker count: 34 actual persona-TODO HTML-comment
+  markers in the file (canonical shape: an HTML comment opener
+  followed by the word TODO and a persona name). All 34 markers
+  originate from prior personas (TechWriter, Code Review, Expert
+  Review). Zero TODO markers added or removed by this editor pass.
+  (Earlier loose word-match counts in v1 and v2 reported 37-38
+  because they also matched narrative mentions of "TODO" inside
+  prior editor comment blocks; this v3 count uses a tighter regex.)
+- Re-confirmed code-fence convention: 24 fence lines = 12 fenced
+  blocks. Convention (mermaid and json tagged; pseudocode and
+  ASCII-art unlabeled) preserved.
+- Voice drift re-scan: zero "This recipe demonstrates", zero
+  "we need to talk about". The two "we are excited" regex hits both
+  fall inside this editor-comment block (v1 and v2 self-references
+  describing what was scanned for); zero hits in prose.
+- Cross-checked persona instructions: "Do not change the structural
+  order of sections", "Do not introduce new claims or technical
+  content", "Preserve all TODO markers from other personas",
+  "If a section needs substantial rewriting, flag it rather than
+  rewriting", "Match STYLE-GUIDE.md voice throughout". All five
+  constraints satisfied.
+- Final disposition: PASS for editorial publication. Recipe is ready
+  to ship as soon as the three HIGH TechWriter TODOs are resolved
+  (A1, A2, A3) and the chapter-wide hardening TODOs land in their
+  next pass (S1-S5, A4-A11, N1-N3). The editorial layer is complete.
 -->
 
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
