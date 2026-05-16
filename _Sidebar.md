@@ -96,6 +96,7 @@
   * [Python Example](chapter04.02-python-example)
 * [4.3 — Provider Directory Search Optimization](chapter04.03-provider-directory-search-optimization)
   * [Python Example](chapter04.03-python-example)
+* [4.4 — Wellness Program Recommendations](chapter04.04-wellness-program-recommendations)
 
 ---
 
