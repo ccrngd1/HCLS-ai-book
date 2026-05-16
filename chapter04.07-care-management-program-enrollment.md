@@ -1608,21 +1608,23 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
 
 **Sample care manager enrollment briefing:**
 
+<!-- TODO (TechWriter): the briefing's social-context details (Medicare donut hole, grandchildren-care responsibilities, no home scale, Spanish-preferred written materials) are additive context not present in the opening vignette of Linda. Either fold the corresponding details into the vignette so the briefing reads as a faithful synthesis, or add a one-line note in The Problem section that the briefing in Expected Results includes care-management-relevant context surfaced from the patient profile beyond what the vignette establishes. Editor renamed Mr. Garcia to Linda for continuity (per expert review V2); the social-context reconciliation is the remaining piece. -->
+
 ```json
 {
   "briefing_id": "brief-2026-04-15-pat-002148-hf",
   "patient_id": "pat-002148",
   "program_id": "heart-failure-program",
   "headline": "HF program candidate after recent decompensation; cost concerns likely; daughter is engaged.",
-  "lead_with": "Mr. Garcia was admitted in February for HF decompensation that started after he ran out of furosemide. The HF program's weekly check-ins and daily-weight monitoring directly address that pattern. Lead with the connection to keeping him out of the hospital, not with the program structure.",
+  "lead_with": "Linda was admitted in February for HF decompensation that started after she ran out of furosemide. The HF program's weekly check-ins and daily-weight monitoring directly address that pattern. Lead with the connection to keeping her out of the hospital, not with the program structure.",
   "anticipated_concerns": [
-    "Cost of additional medications (he's a Medicare beneficiary in donut hole most of the year; LIS not enrolled).",
+    "Cost of additional medications (she's a Medicare beneficiary in donut hole most of the year; LIS not enrolled).",
     "Concern about additional appointments competing with grandchildren-care responsibilities.",
-    "Uncertainty about whether he can do daily weights reliably (no scale at home; the program covers a Bluetooth scale)."
+    "Uncertainty about whether she can do daily weights reliably (no scale at home; the program covers a Bluetooth scale)."
   ],
   "social_context_that_matters": "Lives alone in a fourth-floor walkup with intermittent elevator. Daughter visits weekends and is documented as a willing care partner. Spanish is preferred for written materials; verbal communication in English is fine.",
   "suggested_modality": "telephonic for first contact; transition to video for week-three care-plan review when daughter can participate.",
-  "suggested_outreach_window": "weekday mornings; he's typically home then.",
+  "suggested_outreach_window": "weekday mornings; she's typically home then.",
   "confidence_notes": "Uplift estimate has wide CI (0.09-0.27); the recommendation is to enroll, but expectations should be calibrated to a probabilistic improvement, not a guaranteed prevention.",
   "policy_version": "cm-policy-v0.6"
 }
