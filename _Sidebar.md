@@ -94,6 +94,7 @@
   * [Python Example](chapter04.01-python-example)
 * [4.2 — Patient Education Content Matching](chapter04.02-patient-education-content-matching)
   * [Python Example](chapter04.02-python-example)
+* [4.3 — Provider Directory Search Optimization](chapter04.03-provider-directory-search-optimization)
 
 ---
 
