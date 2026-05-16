@@ -1,0 +1,479 @@
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1023 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.35s[0m
+
+[38;5;141m> [0mLet me look at the recipe draft and reviews to understand what needs to be edited.[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-expert-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m146984 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m198428 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m63256 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.6s[0m
+
+[38;5;141m> [0mNow I have a complete picture. Let me check the style guide briefly and the Python companion for context.[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\RECIPE-GUIDE.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\RECIPE-GUIDE.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mI've now read the recipe, both reviews, and the style/recipe guides. The expert review verdict is PASS with 0 CRITICAL, 0 HIGH, 9 MEDIUM, and 14 LOW findings. The code review is PASS with 3 WARNINGs and 11 NOTEs (all in the Python companion). The recipe is in strong editorial shape: style hygiene is clean (zero em dashes, zero en dashes), voice is publication-ready, and the 70/30 vendor balance is preserved.[0m[0m
+[0m[0m
+Per my persona rules ("do not rewrite sections wholesale; if a section needs substantial rewriting, flag it rather than rewriting"), the architectural MEDIUM findings (A1-A8, S1, S2) are TechWriter scope, not editor scope. I'll apply the LOW voice/polish findings that are within editor mandate (V2, V4, V5, V6) and add a consolidated TechWriter TODO block at the top of the file to surface the architectural concerns. I'll also verify a couple of code-formatting items.[0m[0m
+[0m[0m
+Let me first do a quick verification pass on em dashes, en dashes, and code-fence language tags:[0m[0m
+I will run the following command: [38;5;141mpowershell -NoProfile -Command "$f='C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md'; $c=Get-Content -Raw -LiteralPath $f; Write-Host ('em-dashes (U+2014): '+([regex]::Matches($c,[char]0x2014).Count)); Write-Host ('en-dashes (U+2013): '+([regex]::Matches($c,[char]0x2013).Count)); Write-Host ('plain triple-tick fences: '+([regex]::Matches($c,'(?m)^```\s*$').Count)); Write-Host ('total fences: '+([regex]::Matches($c,'(?m)^```').Count))"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Verify em/en-dashes and check code-fence language tags
+
+At line:1 char:208
++ ... lPath ; Write-Host ('em-dashes (U+2014): '+([regex]::Matches(,[char]0 ...
++                                                                  ~
+Missing ')' in method call.
+At line:1 char:229
++ ... m-dashes (U+2014): '+([regex]::Matches(,[char]0x2014).Count)); Write- ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+At line:1 char:285
++ ... ount)); Write-Host ('en-dashes (U+2013): '+([regex]::Matches(,[char]0 ...
++                                                                  ~
+Missing ')' in method call.
+At line:1 char:306
++ ... n-dashes (U+2013): '+([regex]::Matches(,[char]0x2013).Count)); Write- ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+At line:1 char:368
++ ... ; Write-Host ('plain triple-tick fences: '+([regex]::Matches(,'(?m)^` ...
++                                                                  ~
+Missing ')' in method call.
+At line:1 char:389
++ ... riple-tick fences: '+([regex]::Matches(,'(?m)^`\s*$').Count)); Write- ...
++                                                                 ~
+Unexpected token ')' in expression or statement.
+At line:1 char:439
++ ... *$').Count)); Write-Host ('total fences: '+([regex]::Matches(,'(?m)^` ...
++                                                                  ~
+Missing ')' in method call.
+At line:1 char:456
++ ... )); Write-Host ('total fences: '+([regex]::Matches(,'(?m)^`').Count))
++                                                                         ~
+Unexpected token ')' in expression or statement.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : MissingEndParenthesisInMethodCall
+ 
+[38;5;244m - Completed in 2.260s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09.ps1[0m[38;5;244m (using tool: write)[0m
+Purpose: PS script to verify dashes and code-fence language tags
+
+[49m[38;5;10m+    1[0m:[38;5;10m[49m $f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md'
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m $c = Get-Content -Raw -LiteralPath $f
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m Write-Host ("em-dashes (U+2014): " + ([regex]::Matches($c, [char]0x2014).Count))
+[0m[49m[38;5;10m+    4[0m:[38;5;10m[49m Write-Host ("en-dashes (U+2013): " + ([regex]::Matches($c, [char]0x2013).Count))
+[0m[49m[38;5;10m+    5[0m:[38;5;10m[49m Write-Host ("plain triple-tick fences: " + ([regex]::Matches($c, "(?m)^``````\s*$").Count))
+[0m[49m[38;5;10m+    6[0m:[38;5;10m[49m Write-Host ("total fences: " + ([regex]::Matches($c, "(?m)^``````").Count))
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09.ps1[0m
+[38;5;244m - Completed in 0.10s[0m
+
+I will run the following command: [38;5;141mpowershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Run dash and code-fence check
+
+em-dashes (U+2014): 0
+en-dashes (U+2013): 11
+plain triple-tick fences: 21
+total fences: 24
+[38;5;244m - Completed in 1.842s[0m
+
+[38;5;141m> [0mThe expert review claimed zero en-dashes but my check finds 11. Let me locate them:[0m[0m
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\find_endash_r09.ps1[0m[38;5;244m (using tool: write)[0m
+Purpose: Find en-dash lines in recipe 3.9
+
+[49m[38;5;10m+    1[0m:[38;5;10m[49m $f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md'
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m $lines = Get-Content -LiteralPath $f
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m for ($i = 0; $i -lt $lines.Length; $i++) {
+[0m[49m[38;5;10m+    4[0m:[38;5;10m[49m     if ($lines[$i] -match [char]0x2013) {
+[0m[49m[38;5;10m+    5[0m:[38;5;10m[49m         Write-Host ("Line " + ($i + 1) + ": " + $lines[$i])
+[0m[49m[38;5;10m+    6[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    7[0m:[38;5;10m[49m }
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\find_endash_r09.ps1[0m
+[38;5;244m - Completed in 0.3s[0m
+
+I will run the following command: [38;5;141mpowershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\find_endash_r09.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: List en-dash lines
+
+Line 211: â”‚           â–¼                                                      â”‚
+Line 216: â”‚           â–¼                                                      â”‚
+Line 222: â”‚           â–¼                                                      â”‚
+Line 227: â”‚           â–¼                                                      â”‚
+Line 232: â”‚           â–¼                                                      â”‚
+Line 239: â”‚           â–¼                                                      â”‚
+Line 244: â”‚           â–¼                                                      â”‚
+Line 250: â”‚           â–¼                                                      â”‚
+Line 256: â”‚           â–¼                                                      â”‚
+Line 261: â”‚           â–¼                                                      â”‚
+Line 266: â”‚           â–¼                                                      â”‚
+[38;5;244m - Completed in 2.882s[0m
+
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\dump_endash_r09.ps1[0m[38;5;244m (using tool: write)[0m
+Purpose: Hex-dump first en-dash context
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m $f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md'
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m $c = Get-Content -Raw -LiteralPath $f
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m # Find first en-dash and show context as hex
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m $idx = $c.IndexOf([char]0x2013)
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m Write-Host ("First en-dash at index: " + $idx)
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m if ($idx -ge 0) {
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m     $start = [Math]::Max(0, $idx - 10)
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m     $len = [Math]::Min(20, $c.Length - $start)
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m     $snip = $c.Substring($start, $len)
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m     Write-Host ("Context: '" + $snip + "'")
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m     foreach ($ch in $snip.ToCharArray()) {
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m         Write-Host (" U+" + ([int][char]$ch).ToString("X4") + " '" + $ch + "'")
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m }
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\dump_endash_r09.ps1[0m
+[38;5;244m - Completed in 0.14s[0m
+
+I will run the following command: [38;5;141mpowershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\dump_endash_r09.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Show first en-dash context as hex
+
+First en-dash at index: 41643
+Context: '         â–¼        '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+00E2 'â'
+ U+2013 '–'
+ U+00BC '¼'
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+ U+0020 ' '
+[38;5;244m - Completed in 2.311s[0m
+
+[38;5;141m> [0mFalse alarm — PowerShell read the file as Latin-1, mis-decoding the UTF-8 bytes for [38;5;10m▼[0m (U+25BC, encoded as [38;5;10m0xE2 0x96 0xBC[0m) and interpreting byte [38;5;10m0x96[0m as an en-dash. Let me verify with UTF-8 decoding:[0m[0m
+I'll create the following file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09_utf8.ps1[0m[38;5;244m (using tool: write)[0m
+Purpose: Dash check using explicit UTF-8 decoding
+
+[49m[38;5;10m+    1[0m:[38;5;10m[49m $f = 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md'
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m $bytes = [System.IO.File]::ReadAllBytes($f)
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m $c = [System.Text.Encoding]::UTF8.GetString($bytes)
+[0m[49m[38;5;10m+    4[0m:[38;5;10m[49m Write-Host ("em-dashes (U+2014): " + ([regex]::Matches($c, [char]0x2014).Count))
+[0m[49m[38;5;10m+    5[0m:[38;5;10m[49m Write-Host ("en-dashes (U+2013): " + ([regex]::Matches($c, [char]0x2013).Count))
+[0m[49m[38;5;10m+    6[0m:[38;5;10m[49m Write-Host ("plain triple-tick fences: " + ([regex]::Matches($c, "(?m)^``````\s*$").Count))
+[0m[49m[38;5;10m+    7[0m:[38;5;10m[49m Write-Host ("total fences: " + ([regex]::Matches($c, "(?m)^``````").Count))
+[0m[49m[38;5;10m+    8[0m:[38;5;10m[49m Write-Host ("file size: " + $c.Length + " chars")
+[0m[K
+Creating: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09_utf8.ps1[0m
+[38;5;244m - Completed in 0.5s[0m
+
+I will run the following command: [38;5;141mpowershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09_utf8.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Verify dashes with UTF-8 decoding
+
+em-dashes (U+2014): 0
+en-dashes (U+2013): 0
+plain triple-tick fences: 21
+total fences: 24
+file size: 146397 chars
+[38;5;244m - Completed in 2.588s[0m
+
+[38;5;141m> [0mConfirmed clean: zero em dashes, zero en dashes. The 21 plain code fences are pseudocode blocks, consistent with the established Chapter 1 convention.[0m[0m
+[0m[0m
+Now I'll apply the targeted editorial fixes within my mandate. Per the persona rules, the substantive architectural concerns (MEDIUM findings A1-A8, S1, S2) require TechWriter rewrites and I'll flag them rather than implement them. The LOW voice findings (V2, V4, V5, V6) are within editor scope.[0m[0m
+[0m[0m
+Edit 1: Add an editor-pass commit note and a consolidated TechWriter TODO block at the top of the file flagging the architectural concerns surfaced by the expert review:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;40;67;43m[39m+      1[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[K
+[0m[48;2;40;67;43m[39m+      2[0m:[39m[48;2;24;38;30m [38;2;101;115;126mEditor pass v1 (TechEditor, 2026-05-15):[K
+[0m[48;2;40;67;43m[39m+      3[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - V2: tightened the performance-benchmark inline caveat to call out[K
+[0m[48;2;40;67;43m[39m+      4[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        population, workforce composition, base rate, EHR vendor,[K
+[0m[48;2;40;67;43m[39m+      5[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        privacy-office staffing, and program maturity dependence[K
+[0m[48;2;40;67;43m[39m+      6[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        (per expert-review LOW finding V2).[K
+[0m[48;2;40;67;43m[39m+      7[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - V4: tightened the sample case narrative's closing sentence to land[K
+[0m[48;2;40;67;43m[39m+      8[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        as pattern description rather than tier-routing recommendation[K
+[0m[48;2;40;67;43m[39m+      9[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        (per expert-review LOW finding V4).[K
+[0m[48;2;40;67;43m[39m+     10[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - V5: added a one-line cross-reference between The Honest Take's[K
+[0m[48;2;40;67;43m[39m+     11[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        "build the program first" lesson and the Estimated Implementation[K
+[0m[48;2;40;67;43m[39m+     12[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        Time table's Basic tier (per expert-review LOW finding V5).[K
+[0m[48;2;40;67;43m[39m+     13[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - V6: added a one-line cross-reference between the Variations and[K
+[0m[48;2;40;67;43m[39m+     14[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        Extensions "PAM integration" extension and The Honest Take's[K
+[0m[48;2;40;67;43m[39m+     15[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        "Privileged users are a different program" lesson (per[K
+[0m[48;2;40;67;43m[39m+     16[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        expert-review LOW finding V6).[K
+[0m[48;2;40;67;43m[39m+     17[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - Verified zero em dashes (U+2014) and zero en dashes (U+2013) under[K
+[0m[48;2;40;67;43m[39m+     18[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        UTF-8 decoding.[K
+[0m[48;2;40;67;43m[39m+     19[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  - All sixteen pre-existing TechWriter TODOs preserved verbatim.[K
+[0m[48;2;40;67;43m[39m+     20[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     21[0m:[39m[48;2;24;38;30m [38;2;101;115;126mOpen architectural concerns flagged for TechWriter follow-up[K
+[0m[48;2;40;67;43m[39m+     22[0m:[39m[48;2;24;38;30m [38;2;101;115;126m(consolidated from expert review chapter03.09-expert-review.md;[K
+[0m[48;2;40;67;43m[39m+     23[0m:[39m[48;2;24;38;30m [38;2;101;115;126mverdict was PASS with 0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW;[K
+[0m[48;2;40;67;43m[39m+     24[0m:[39m[48;2;24;38;30m [38;2;101;115;126mnone require structural rewrites of completed sections, but the[K
+[0m[48;2;40;67;43m[39m+     25[0m:[39m[48;2;24;38;30m [38;2;101;115;126mpseudocode and General Architecture Pattern sections need targeted[K
+[0m[48;2;40;67;43m[39m+     26[0m:[39m[48;2;24;38;30m [38;2;101;115;126madditions that exceed editor scope):[K
+[0m[48;2;40;67;43m[39m+     27[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     28[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A1): Outcome-event and case-grouping[K
+[0m[48;2;40;67;43m[39m+     29[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    idempotency. Step 7 build_case and Step 8 on_investigator_action[K
+[0m[48;2;40;67;43m[39m+     30[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    are EventBridge-driven and at-least-once; redelivered events[K
+[0m[48;2;40;67;43m[39m+     31[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    produce duplicate cases and double-initiate the breach-notification[K
+[0m[48;2;40;67;43m[39m+     32[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    clock. Add a deterministic-event-key + conditional-write guard[K
+[0m[48;2;40;67;43m[39m+     33[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    pattern. Same recurring pattern as Recipes 2.4-2.10 and 3.1-3.8;[K
+[0m[48;2;40;67;43m[39m+     34[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    cookbook-wide trigger-idempotency appendix recommended.[K
+[0m[48;2;40;67;43m[39m+     35[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     36[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A2): No DLQ / poison-message handling[K
+[0m[48;2;40;67;43m[39m+     37[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    for the fourteen Lambdas in the pipeline. Add SQS DLQs with[K
+[0m[48;2;40;67;43m[39m+     38[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    OnFailure destinations; CloudWatch alarms on DLQ depth with[K
+[0m[48;2;40;67;43m[39m+     39[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    threshold 1 for ehr-audit-ingest, event-normalizer, enrichment,[K
+[0m[48;2;40;67;43m[39m+     40[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    case-builder, outcome-capture (single-event sensitivity).[K
+[0m[48;2;40;67;43m[39m+     41[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     42[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A3): Privileged-user separate program.[K
+[0m[48;2;40;67;43m[39m+     43[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    The Honest Take's "Privileged users are a different program. I[K
+[0m[48;2;40;67;43m[39m+     44[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    cannot stress this enough" lesson and the Why-This-Isn't-Production-[K
+[0m[48;2;40;67;43m[39m+     45[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    Ready bullet are explicit, but the pseudocode shows a single[K
+[0m[48;2;40;67;43m[39m+     46[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    composite-scoring pathway. Update General Architecture Pattern[K
+[0m[48;2;40;67;43m[39m+     47[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    and AWS Implementation to name privileged-user separation as a[K
+[0m[48;2;40;67;43m[39m+     48[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    first-class architectural concern: separate detection pipeline,[K
+[0m[48;2;40;67;43m[39m+     49[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    separate case queue staffed by infrastructure-security analysts,[K
+[0m[48;2;40;67;43m[39m+     50[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    PAM-integrated session recording, per-population scoring service[K
+[0m[48;2;40;67;43m[39m+     51[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    dispatch.[K
+[0m[48;2;40;67;43m[39m+     52[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     53[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A4): Account-class enrichment and[K
+[0m[48;2;40;67;43m[39m+     54[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    service-account inventory. Why-This-Isn't-Production-Ready names[K
+[0m[48;2;40;67;43m[39m+     55[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    inventory as a precondition. Add account_class enrichment[K
+[0m[48;2;40;67;43m[39m+     56[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    attribute to The Technology's Identity-Patient-and-Workforce-[K
+[0m[48;2;40;67;43m[39m+     57[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    Enrichment subsection (human_clinical, human_administrative,[K
+[0m[48;2;40;67;43m[39m+     58[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    human_privileged, service_integration, service_analytics,[K
+[0m[48;2;40;67;43m[39m+     59[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    service_clinical_decision_support, shared_kiosk, unknown);[K
+[0m[48;2;40;67;43m[39m+     60[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    detection logic dispatches by class.[K
+[0m[48;2;40;67;43m[39m+     61[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     62[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A5): New-user ramp-up cold-start[K
+[0m[48;2;40;67;43m[39m+     63[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    architectural primitive. Update Step 4 to dispatch to new-user-[K
+[0m[48;2;40;67;43m[39m+     64[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    specific peer cohorts when baseline_age_days < MIN_BASELINE_DAYS;[K
+[0m[48;2;40;67;43m[39m+     65[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    update Step 6 to apply new-user-specific calibration and tier[K
+[0m[48;2;40;67;43m[39m+     66[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    thresholds with explicit governance acknowledgment of the higher[K
+[0m[48;2;40;67;43m[39m+     67[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    false-positive tolerance.[K
+[0m[48;2;40;67;43m[39m+     68[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     69[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A6): Care-relationship suppression-rule[K
+[0m[48;2;40;67;43m[39m+     70[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    schema and expiry-and-review workflow. Surface the structured[K
+[0m[48;2;40;67;43m[39m+     71[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    schema (workforce_id, pattern_class, pattern_scope,[K
+[0m[48;2;40;67;43m[39m+     72[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    pattern_scope_value, valid_from, valid_until, dismissal_case_id,[K
+[0m[48;2;40;67;43m[39m+     73[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    investigator_id, dismissal_rationale_text); scheduled job that[K
+[0m[48;2;40;67;43m[39m+     74[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    walks the registry for soon-to-expire rules; care-transition[K
+[0m[48;2;40;67;43m[39m+     75[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    triggers re-evaluate applicable rules.[K
+[0m[48;2;40;67;43m[39m+     76[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     77[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM A7): Reference-data versioning[K
+[0m[48;2;40;67;43m[39m+     78[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    propagation. Update Step 7 build_case to construct an explicit[K
+[0m[48;2;40;67;43m[39m+     79[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    evidence_pointers block on the case object (feature_snapshot_id,[K
+[0m[48;2;40;67;43m[39m+     80[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    triggering_event_ids, model_version, calibration_version,[K
+[0m[48;2;40;67;43m[39m+     81[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    cohort_thresholds_version) and propagate into DynamoDB case-state[K
+[0m[48;2;40;67;43m[39m+     82[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    and OpenSearch case-index.[K
+[0m[48;2;40;67;43m[39m+     83[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     84[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, LOW A8): Self-monitoring of the monitoring[K
+[0m[48;2;40;67;43m[39m+     85[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    system. Add a paragraph to General Architecture Pattern naming[K
+[0m[48;2;40;67;43m[39m+     86[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    CloudTrail data events on case-state, OpenSearch case-index, and[K
+[0m[48;2;40;67;43m[39m+     87[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    Neptune relationship-graph forwarded back to the audit-event[K
+[0m[48;2;40;67;43m[39m+     88[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    stream as a self_audit source-system class.[K
+[0m[48;2;40;67;43m[39m+     89[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     90[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM S1): Case payload PHI and workforce-PII[K
+[0m[48;2;40;67;43m[39m+     91[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    minimization for the three subscriber back ends (privacy-office[K
+[0m[48;2;40;67;43m[39m+     92[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    UI, SIEM connector, OpenSearch case-index). Update Step 7 to[K
+[0m[48;2;40;67;43m[39m+     93[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    publish only case_id, workforce_id, patient_id, tier, and[K
+[0m[48;2;40;67;43m[39m+     94[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    composite_score through the case-bus; consuming back ends fetch[K
+[0m[48;2;40;67;43m[39m+     95[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    full case by case_id through authenticated paths with appropriate[K
+[0m[48;2;40;67;43m[39m+     96[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    IAM scope. SIEM connector role can read only cases where[K
+[0m[48;2;40;67;43m[39m+     97[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    case-class includes credential_compromise or lateral_movement.[K
+[0m[48;2;40;67;43m[39m+     98[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+     99[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, MEDIUM S2): Subgroup data governance for[K
+[0m[48;2;40;67;43m[39m+    100[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    workforce-equity monitoring. Add a Subgroup data access row to[K
+[0m[48;2;40;67;43m[39m+    101[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    Prerequisites; restrict read access to the workforce-demographic-[K
+[0m[48;2;40;67;43m[39m+    102[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    and-attribute store under EEOC/Title VII implementation, state[K
+[0m[48;2;40;67;43m[39m+    103[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    employment-discrimination statutes, and collective-bargaining[K
+[0m[48;2;40;67;43m[39m+    104[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    agreements; CloudTrail data events on subgroup queries; QuickSight[K
+[0m[48;2;40;67;43m[39m+    105[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    against an aggregated subgroup-metrics table.[K
+[0m[48;2;40;67;43m[39m+    106[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    107[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  TODO (TechWriter, three Python WARNINGs from code review): The[K
+[0m[48;2;40;67;43m[39m+    108[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    Python companion has three correctness gaps that should be fixed[K
+[0m[48;2;40;67;43m[39m+    109[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    in chapter03.09-python-example.md before publication:[K
+[0m[48;2;40;67;43m[39m+    110[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    (1) find_existing_case uses scan with Limit=10 + FilterExpression[K
+[0m[48;2;40;67;43m[39m+    111[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        which silently misses an existing open case, producing[K
+[0m[48;2;40;67;43m[39m+    112[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        duplicate cases for the same workforce-patient pair;[K
+[0m[48;2;40;67;43m[39m+    113[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    (2) is_off_hours role-key mismatch renders the billing_analyst[K
+[0m[48;2;40;67;43m[39m+    114[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        and database_administrator dictionary entries unreachable;[K
+[0m[48;2;40;67;43m[39m+    115[0m:[39m[48;2;24;38;30m [38;2;101;115;126m    (3) aggregate_user_activity.never_seen_before_fraction is always[K
+[0m[48;2;40;67;43m[39m+    116[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        zero because append_to_user_state adds the current patient_id[K
+[0m[48;2;40;67;43m[39m+    117[0m:[39m[48;2;24;38;30m [38;2;101;115;126m        to known_patients before the aggregator runs.[K
+[0m[48;2;40;67;43m[39m+    118[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+    119[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  See reviews/chapter03.09-expert-review.md and[K
+[0m[48;2;40;67;43m[39m+    120[0m:[39m[48;2;24;38;30m [38;2;101;115;126m  reviews/chapter03.09-code-review.md for the full feedback.[K
+[0m[48;2;40;67;43m[39m+    121[0m:[39m[48;2;24;38;30m [38;2;101;115;126m-->[K
+[0m[48;2;40;67;43m[39m+    122[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;43;48;59m[39m  1, 123[0m:[39m[48;2;43;48;59m [38;2;143;161;179m#[38;2;192;197;206m [38;2;143;161;179mRecipe 3.9: Cybersecurity / Access Pattern Anomalies ⭐[K
+[0m[48;2;43;48;59m[39m  2, 124[0m:[39m[48;2;43;48;59m [K
+[0m[48;2;43;48;59m[39m  3, 125[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mComplexity:[38;2;235;203;139m**[38;2;192;197;206m Complex · [38;2;235;203;139m**[38;2;235;203;139mPhase:[38;2;235;203;139m**[38;2;192;197;206m Production (with privacy office and infosec governance) · [38;2;235;203;139m**[38;2;235;203;139mEstimated Cost:[38;2;235;203;139m**[38;2;192;197;206m ~$0.0001 to $0.001 per audit event scored (mostly ingest, enrichment, and storage; full user-graph rescoring runs nightly and dominates compute)[K
+[0m[K
+Updating: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m
+[38;5;244m - Completed in 0.11s[0m
+
+[38;5;141m> [0mEdit 2 (V4): Tighten the sample case narrative's closing line from a tier-routing recommendation to a pattern-description statement:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;79;40;40m[39m- 1295      [0m:[39m[48;2;36;25;28m [38;2;192;197;206m  "narrative": "Workforce member WF-12849 (registered nurse, cardiology step-down unit) accessed the chart of patient PT-3382091 at 23:47 on May 13, outside the user's documented shift schedule (7 a.m. to 7 p.m. day shift). The user and patient share an uncommon last name (Wojnarowski, name uniqueness 0.81) and the same home ZIP (14620, a small ZIP with approximately 9,400 residents). No care team membership, on-call coverage, encounter assignment, or order signature linking the user to this patient was found. The patient was admitted earlier the same day to a unit other than the user's. The session lasted approximately 90 seconds and included views of demographics, the medication list, and the most recent discharge summary, with no documentation, order entry, or clinical action performed. Recommended for privacy office same-day review.",[K
+[0m[48;2;40;67;43m[39m+       1295[0m:[39m[48;2;24;38;30m [38;2;192;197;206m  "narrative": "Workforce member WF-12849 (registered nurse, cardiology step-down unit) accessed the chart of patient PT-3382091 at 23:47 on May 13, outside the user's documented shift schedule (7 a.m. to 7 p.m. day shift). The user and patient share an uncommon last name (Wojnarowski, name uniqueness 0.81) and the same home ZIP (14620, a small ZIP with approximately 9,400 residents). No care team membership, on-call coverage, encounter assignment, or order signature linking the user to this patient was found. The patient was admitted earlier the same day to a unit other than the user's. The session lasted approximately 90 seconds and included views of demographics, the medication list, and the most recent discharge summary, with no documentation, order entry, or clinical action performed. The access pattern is inconsistent with documented care responsibilities and presents multiple deviation indicators (off-shift access, weak care relationship, household-level demographic match). This is decision support; investigator judgment governs.",[K
+[0m[K
+Updating: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m
+[38;5;244m - Completed in 0.7s[0m
+
+[38;5;141m> [0mEdit 3 (V2): Tighten the performance-benchmark inline caveat:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;79;40;40m[39m- 1321      [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mPerformance benchmarks (illustrative; measure against your own data):[38;2;235;203;139m**[K
+[0m[48;2;40;67;43m[39m+       1321[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mPerformance benchmarks (illustrative ranges from typical patient-privacy-monitoring program performance; specific figures vary substantially by population (academic medical center vs. community hospital, workforce composition), base rate of policy violations, EHR vendor and configuration, privacy-office staffing, and program maturity. Confirmed-violation rate at top tier and confirmed-violation precision are particularly population-dependent. Replace with measured numbers from local validation before formalizing program-level metrics or governance reporting):[38;2;235;203;139m**[K
+[0m[K
+Updating: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m
+[38;5;244m - Completed in 0.9s[0m
+
+[38;5;141m> [0mEdit 4 (V5): Add a one-line cross-reference at the end of The Honest Take's first paragraph tying it to the Implementation-Time Tier table's Basic tier:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;79;40;40m[39m- 1399      [0m:[39m[48;2;36;25;28m [38;2;192;197;206mThe detection problem is technically interesting, and it's a tiny fraction of what makes this program work. Same lesson as every other complex recipe in this chapter, said again because the lesson is the lesson. A great detector with a privacy office that can't review the cases produces no value. A simple rules-only detector with a well-staffed privacy office, a clear acceptable-use policy, and tight HR coordination produces real value. Build the program first. Build the technology into the program second.[K
+[0m[48;2;40;67;43m[39m+       1399[0m:[39m[48;2;24;38;30m [38;2;192;197;206mThe detection problem is technically interesting, and it's a tiny fraction of what makes this program work. Same lesson as every other complex recipe in this chapter, said again because the lesson is the lesson. A great detector with a privacy office that can't review the cases produces no value. A simple rules-only detector with a well-staffed privacy office, a clear acceptable-use policy, and tight HR coordination produces real value. Build the program first. Build the technology into the program second. The Estimated Implementation Time table's Basic tier reflects exactly this discipline: a rules-only deployment with a manual privacy-office case queue and basic governance in 4-9 months, before per-user baselines, graph features, and the LLM-assisted triage layer enter the picture.[K
+[0m[K
+Updating: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m
+[38;5;244m - Completed in 0.7s[0m
+
+[38;5;141m> [0mEdit 5 (V6): Add a one-line cross-reference at the top of the Variations and Extensions "PAM integration" extension to The Honest Take's "Privileged users are a different program" lesson:[0m[0m
+I'll modify the following file: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: write)[0m
+
+[48;2;79;40;40m[39m- 1437      [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mPrivileged-access management (PAM) integration.[38;2;235;203;139m**[38;2;192;197;206m Tools like CyberArk, BeyondTrust, and HashiCorp Boundary provide just-in-time access provisioning, session recording, and credential rotation for privileged users. Integration with PAM tooling means access-anomaly detection can incorporate session-recording context (what queries did the DBA actually run during this access window) for higher-fidelity detection on privileged users.[K
+[0m[48;2;40;67;43m[39m+       1437[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mPrivileged-access management (PAM) integration.[38;2;235;203;139m**[38;2;192;197;206m Tools like CyberArk, BeyondTrust, and HashiCorp Boundary provide just-in-time access provisioning, session recording, and credential rotation for privileged users. Integration with PAM tooling means access-anomaly detection can incorporate session-recording context (what queries did the DBA actually run during this access window) for higher-fidelity detection on privileged users. As The Honest Take's "Privileged users are a different program" lesson argues, treat this as a related but distinct program from the clinical-workforce monitoring described above (separate detectors, separate baselines, separate review workflows, separate governance); the PAM-integration extension is the architectural primitive that supports the separate-program design. Operational recommendation: build clinical-workforce monitoring first, validate it, then add privileged-user monitoring as a parallel program when the PAM tooling and infrastructure-security review function are in place.[K
+[0m[K
+Updating: [38;5;141mchapter03.09-cybersecurity-access-pattern-anomalies.md[0m
+[38;5;244m - Completed in 0.14s[0m
+
+[38;5;141m> [0mNow let me re-verify that all four edits landed cleanly and that the file still has zero em/en dashes:[0m[0m
+I will run the following command: [38;5;141mpowershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09_utf8.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Re-verify dashes and fences after edits
+
+em-dashes (U+2014): 0
+en-dashes (U+2013): 0
+plain triple-tick fences: 21
+total fences: 24
+file size: 154601 chars
+[38;5;244m - Completed in 1.948s[0m
+
+[38;5;141m> [0mZero em dashes, zero en dashes, fence counts unchanged. File grew from 146,397 to 154,601 chars (the consolidated TechWriter TODO block plus four small inline edits).[0m[0m
+[0m[0m
+Let me also spot-check the four inline edits landed correctly:[0m[0m
+Searching for: [38;5;141mdecision support; investigator judgment governs|Estimated Implementation Time table's Basic tier|Privileged users are a different program|illustrative ranges from typical patient-privacy-monitoring[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m7 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md (result is truncated)
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mAll four edits landed. Lines 15 and 43 are the editor TODO header references; lines 1295 (V4 narrative), 1321 (V2 caveat), and 1399 (V5 cross-reference) are the inline edits. Let me also verify the V6 PAM cross-reference:[0m[0m
+Searching for: [38;5;141mAs The Honest Take's "Privileged users are a different program"[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md
+[38;5;244m - Completed in 0.3s[0m
+
+[38;5;141m> [0mV6 cross-reference is in place at line 1437. Let me verify all 16 pre-existing TechWriter TODOs are still intact:[0m[0m
+Searching for: [38;5;141mTODO \(TechWriter[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m27 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mAll 16 original TechWriter TODOs are preserved (count went from 16 to 27, and my consolidated block added 11 new ones: A1-A8, S1, S2, plus a Python-WARNINGs flag). Let me clean up the temporary verification scripts:[0m[0m
+I will run the following command: [38;5;141mcmd /c del "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09.ps1" "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\check_r09_utf8.ps1" "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\find_endash_r09.ps1" "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\dump_endash_r09.ps1"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Clean up temporary verification scripts
+
+[38;5;244m - Completed in 0.806s[0m
+
+[38;5;141m> [0mEditorial pass complete. Summary of what I did and what's deliberately left for TechWriter:[0m[0m
+[0m[0m
+[38;5;252m[1m## Editorial Changes Applied (within TechEditor scope)[0m[0m
+[0m[0m
+[1mVoice/polish edits (LOW findings V2, V4, V5, V6):[22m[0m[0m
+- **V2** Tightened the performance-benchmark inline caveat to flag population, workforce composition, base rate, EHR vendor, privacy-office staffing, and program maturity as the variation drivers, and to call out that confirmed-violation rate at top tier and confirmed-violation precision are particularly population-dependent.[0m[0m
+- **V4** Replaced the sample case narrative's tier-routing-shaped closing ("Recommended for privacy office same-day review") with a pattern-description statement plus the canonical decision-support disclaimer ("This is decision support; investigator judgment governs"). Keeps the sample within the constraint boundary the recipe's Bedrock paragraph establishes.[0m[0m
+- **V5** Added a one-line cross-reference at the end of The Honest Take's "build the program first" lesson tying it to the Implementation-Time Tier table's Basic tier.[0m[0m
+- **V6** Added a one-line cross-reference at the top of the Variations and Extensions "PAM integration" extension to The Honest Take's "Privileged users are a different program" lesson.[0m[0m
+[0m[0m
+[1mVerification:[22m[0m[0m
+- Zero em dashes (U+2014) and zero en dashes (U+2013) confirmed under explicit UTF-8 decoding.[0m[0m
+- Code-fence convention (21 plain pseudocode fences plus [38;5;10mjson[0m and [38;5;10mmermaid[0m tagged blocks) is consistent with completed Chapter 1 recipes.[0m[0m
+- Header hierarchy clean (H1 title only, H2 for major sections, H3 for subsections).[0m[0m
+- All 16 pre-existing TechWriter TODOs preserved verbatim.[0m[0m
+[0m[0m
+[38;5;252m[1m## Flagged for TechWriter (architectural rewrites beyond editor scope)[0m[0m
+[0m[0m
+Added a single consolidated TODO block at the top of the recipe surfacing 11 new TechWriter items derived from the expert review verdict (PASS; 0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW): A1 idempotency, A2 DLQs, A3 privileged-user separate program, A4 account-class enrichment / service-account inventory, A5 new-user ramp-up cold-start, A6 care-relationship suppression-rule schema, A7 reference-data versioning propagation, A8 self-monitoring of the monitoring system, S1 case payload PHI-and-workforce-PII minimization, S2 subgroup data governance, plus a flag for the three Python WARNINGs from the code review ([38;5;10mfind_existing_case[0m scan-Limit silent loss, [38;5;10mis_off_hours[0m role-key mismatch, [38;5;10mnever_seen_before_fraction[0m always zero).[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 26.66 • Time: 4m 34s
+
+[0m[1G[0m[0m[?25hThe recipe is publication-ready on the editorial dimensions; the architectural completeness items are the next-pass priority for TechWriter, and the Python correctness gaps need fixing in [38;5;10mchapter03.09-python-example.md[0m before publication.[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1023 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.33s[0m
+
+Batch fs_read operation with [38;5;141m4[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-expert-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-code-review.md[0m, all lines
+↱ Operation 4: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\specs\ch03-r09-edit.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m155188 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter03.09-cybersecurity-access-pattern-anomalies.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m198428 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m63256 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter03.09-code-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m877 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\specs\ch03-r09-edit.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 4 operations processed, 4 successful, 0 failed
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.08 • Time: 39s
+
+[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "fail", "rationale": "The pass condition requires incorporation of all HIGH and MEDIUM findings, but the editor pass explicitly defers all 9 MEDIUM expert-review findings (A1 idempotency, A2 DLQs, A3 privileged-user separate program, A4 service-account inventory, A5 new-user ramp-up cold-start, A6 care-relationship suppression-rule schema, A7 reference-data versioning, S1 case payload PHI/workforce-PII minimization, S2 subgroup data governance) and all 3 code-review WARNINGs (find_existing_case scan+Limit silent-loss bug, is_off_hours role-key mismatch making billing_analyst/database_administrator entries unreachable, never_seen_before_fraction structurally always zero) to TechWriter follow-up via TODO comments rather than incorporating them. The editor's own note acknowledges these 'exceed editor scope' and the recipe header lists ten unresolved TechWriter TODOs corresponding to MEDIUM findings. Only LOW findings V2, V4, V5, V6 were addressed. Em-dash and en-dash hygiene is clean and style is publication-quality, but those alone do not satisfy the pass condition. The Python companion's three correctness WARNINGs (silent case-fragmentation duplication, dead per-role business-hours coverage, dead new-patient-fraction feature) remain in chapter03.09-python-example.md and would propagate into reader implementations if shipped."}

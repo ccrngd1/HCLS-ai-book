@@ -1,3 +1,125 @@
+<!--
+Editor pass v1 (TechEditor, 2026-05-15):
+  - V2: tightened the performance-benchmark inline caveat to call out
+        population, workforce composition, base rate, EHR vendor,
+        privacy-office staffing, and program maturity dependence
+        (per expert-review LOW finding V2).
+  - V4: tightened the sample case narrative's closing sentence to land
+        as pattern description rather than tier-routing recommendation
+        (per expert-review LOW finding V4).
+  - V5: added a one-line cross-reference between The Honest Take's
+        "build the program first" lesson and the Estimated Implementation
+        Time table's Basic tier (per expert-review LOW finding V5).
+  - V6: added a one-line cross-reference between the Variations and
+        Extensions "PAM integration" extension and The Honest Take's
+        "Privileged users are a different program" lesson (per
+        expert-review LOW finding V6).
+  - Verified zero em dashes (U+2014) and zero en dashes (U+2013) under
+        UTF-8 decoding.
+  - All sixteen pre-existing TechWriter TODOs preserved verbatim.
+
+Open architectural concerns flagged for TechWriter follow-up
+(consolidated from expert review chapter03.09-expert-review.md;
+verdict was PASS with 0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW;
+none require structural rewrites of completed sections, but the
+pseudocode and General Architecture Pattern sections need targeted
+additions that exceed editor scope):
+
+  TODO (TechWriter, MEDIUM A1): Outcome-event and case-grouping
+    idempotency. Step 7 build_case and Step 8 on_investigator_action
+    are EventBridge-driven and at-least-once; redelivered events
+    produce duplicate cases and double-initiate the breach-notification
+    clock. Add a deterministic-event-key + conditional-write guard
+    pattern. Same recurring pattern as Recipes 2.4-2.10 and 3.1-3.8;
+    cookbook-wide trigger-idempotency appendix recommended.
+
+  TODO (TechWriter, MEDIUM A2): No DLQ / poison-message handling
+    for the fourteen Lambdas in the pipeline. Add SQS DLQs with
+    OnFailure destinations; CloudWatch alarms on DLQ depth with
+    threshold 1 for ehr-audit-ingest, event-normalizer, enrichment,
+    case-builder, outcome-capture (single-event sensitivity).
+
+  TODO (TechWriter, MEDIUM A3): Privileged-user separate program.
+    The Honest Take's "Privileged users are a different program. I
+    cannot stress this enough" lesson and the Why-This-Isn't-Production-
+    Ready bullet are explicit, but the pseudocode shows a single
+    composite-scoring pathway. Update General Architecture Pattern
+    and AWS Implementation to name privileged-user separation as a
+    first-class architectural concern: separate detection pipeline,
+    separate case queue staffed by infrastructure-security analysts,
+    PAM-integrated session recording, per-population scoring service
+    dispatch.
+
+  TODO (TechWriter, MEDIUM A4): Account-class enrichment and
+    service-account inventory. Why-This-Isn't-Production-Ready names
+    inventory as a precondition. Add account_class enrichment
+    attribute to The Technology's Identity-Patient-and-Workforce-
+    Enrichment subsection (human_clinical, human_administrative,
+    human_privileged, service_integration, service_analytics,
+    service_clinical_decision_support, shared_kiosk, unknown);
+    detection logic dispatches by class.
+
+  TODO (TechWriter, MEDIUM A5): New-user ramp-up cold-start
+    architectural primitive. Update Step 4 to dispatch to new-user-
+    specific peer cohorts when baseline_age_days < MIN_BASELINE_DAYS;
+    update Step 6 to apply new-user-specific calibration and tier
+    thresholds with explicit governance acknowledgment of the higher
+    false-positive tolerance.
+
+  TODO (TechWriter, MEDIUM A6): Care-relationship suppression-rule
+    schema and expiry-and-review workflow. Surface the structured
+    schema (workforce_id, pattern_class, pattern_scope,
+    pattern_scope_value, valid_from, valid_until, dismissal_case_id,
+    investigator_id, dismissal_rationale_text); scheduled job that
+    walks the registry for soon-to-expire rules; care-transition
+    triggers re-evaluate applicable rules.
+
+  TODO (TechWriter, MEDIUM A7): Reference-data versioning
+    propagation. Update Step 7 build_case to construct an explicit
+    evidence_pointers block on the case object (feature_snapshot_id,
+    triggering_event_ids, model_version, calibration_version,
+    cohort_thresholds_version) and propagate into DynamoDB case-state
+    and OpenSearch case-index.
+
+  TODO (TechWriter, LOW A8): Self-monitoring of the monitoring
+    system. Add a paragraph to General Architecture Pattern naming
+    CloudTrail data events on case-state, OpenSearch case-index, and
+    Neptune relationship-graph forwarded back to the audit-event
+    stream as a self_audit source-system class.
+
+  TODO (TechWriter, MEDIUM S1): Case payload PHI and workforce-PII
+    minimization for the three subscriber back ends (privacy-office
+    UI, SIEM connector, OpenSearch case-index). Update Step 7 to
+    publish only case_id, workforce_id, patient_id, tier, and
+    composite_score through the case-bus; consuming back ends fetch
+    full case by case_id through authenticated paths with appropriate
+    IAM scope. SIEM connector role can read only cases where
+    case-class includes credential_compromise or lateral_movement.
+
+  TODO (TechWriter, MEDIUM S2): Subgroup data governance for
+    workforce-equity monitoring. Add a Subgroup data access row to
+    Prerequisites; restrict read access to the workforce-demographic-
+    and-attribute store under EEOC/Title VII implementation, state
+    employment-discrimination statutes, and collective-bargaining
+    agreements; CloudTrail data events on subgroup queries; QuickSight
+    against an aggregated subgroup-metrics table.
+
+  TODO (TechWriter, three Python WARNINGs from code review): The
+    Python companion has three correctness gaps that should be fixed
+    in chapter03.09-python-example.md before publication:
+    (1) find_existing_case uses scan with Limit=10 + FilterExpression
+        which silently misses an existing open case, producing
+        duplicate cases for the same workforce-patient pair;
+    (2) is_off_hours role-key mismatch renders the billing_analyst
+        and database_administrator dictionary entries unreachable;
+    (3) aggregate_user_activity.never_seen_before_fraction is always
+        zero because append_to_user_state adds the current patient_id
+        to known_patients before the aggregator runs.
+
+  See reviews/chapter03.09-expert-review.md and
+  reviews/chapter03.09-code-review.md for the full feedback.
+-->
+
 # Recipe 3.9: Cybersecurity / Access Pattern Anomalies ⭐
 
 **Complexity:** Complex · **Phase:** Production (with privacy office and infosec governance) · **Estimated Cost:** ~$0.0001 to $0.001 per audit event scored (mostly ingest, enrichment, and storage; full user-graph rescoring runs nightly and dominates compute)
@@ -1170,7 +1292,7 @@ FUNCTION on_investigator_action(action):
     "cluster_anomaly": false,
     "family_match": "candidate_via_address_zip_and_surname"
   },
-  "narrative": "Workforce member WF-12849 (registered nurse, cardiology step-down unit) accessed the chart of patient PT-3382091 at 23:47 on May 13, outside the user's documented shift schedule (7 a.m. to 7 p.m. day shift). The user and patient share an uncommon last name (Wojnarowski, name uniqueness 0.81) and the same home ZIP (14620, a small ZIP with approximately 9,400 residents). No care team membership, on-call coverage, encounter assignment, or order signature linking the user to this patient was found. The patient was admitted earlier the same day to a unit other than the user's. The session lasted approximately 90 seconds and included views of demographics, the medication list, and the most recent discharge summary, with no documentation, order entry, or clinical action performed. Recommended for privacy office same-day review.",
+  "narrative": "Workforce member WF-12849 (registered nurse, cardiology step-down unit) accessed the chart of patient PT-3382091 at 23:47 on May 13, outside the user's documented shift schedule (7 a.m. to 7 p.m. day shift). The user and patient share an uncommon last name (Wojnarowski, name uniqueness 0.81) and the same home ZIP (14620, a small ZIP with approximately 9,400 residents). No care team membership, on-call coverage, encounter assignment, or order signature linking the user to this patient was found. The patient was admitted earlier the same day to a unit other than the user's. The session lasted approximately 90 seconds and included views of demographics, the medication list, and the most recent discharge summary, with no documentation, order entry, or clinical action performed. The access pattern is inconsistent with documented care responsibilities and presents multiple deviation indicators (off-shift access, weak care relationship, household-level demographic match). This is decision support; investigator judgment governs.",
   "evidence_pointers": {
     "triggering_event_ids": ["EVT-2026-05-13-3392111", "EVT-2026-05-13-3392112", "EVT-2026-05-13-3392113"],
     "feature_snapshot_id": "FEAT-2026-05-14-001821",
@@ -1196,7 +1318,7 @@ FUNCTION on_investigator_action(action):
 }
 ```
 
-**Performance benchmarks (illustrative; measure against your own data):**
+**Performance benchmarks (illustrative ranges from typical patient-privacy-monitoring program performance; specific figures vary substantially by population (academic medical center vs. community hospital, workforce composition), base rate of policy violations, EHR vendor and configuration, privacy-office staffing, and program maturity. Confirmed-violation rate at top tier and confirmed-violation precision are particularly population-dependent. Replace with measured numbers from local validation before formalizing program-level metrics or governance reporting):**
 
 | Metric | Rules-only | + Per-user baselines | + Graph relationship | + Sequence model | LLM-assisted triage |
 |--------|-----------|---------------------|----------------------|------------------|---------------------|
@@ -1274,7 +1396,7 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 
 ## The Honest Take
 
-The detection problem is technically interesting, and it's a tiny fraction of what makes this program work. Same lesson as every other complex recipe in this chapter, said again because the lesson is the lesson. A great detector with a privacy office that can't review the cases produces no value. A simple rules-only detector with a well-staffed privacy office, a clear acceptable-use policy, and tight HR coordination produces real value. Build the program first. Build the technology into the program second.
+The detection problem is technically interesting, and it's a tiny fraction of what makes this program work. Same lesson as every other complex recipe in this chapter, said again because the lesson is the lesson. A great detector with a privacy office that can't review the cases produces no value. A simple rules-only detector with a well-staffed privacy office, a clear acceptable-use policy, and tight HR coordination produces real value. Build the program first. Build the technology into the program second. The Estimated Implementation Time table's Basic tier reflects exactly this discipline: a rules-only deployment with a manual privacy-office case queue and basic governance in 4-9 months, before per-user baselines, graph features, and the LLM-assisted triage layer enter the picture.
 
 The thing that surprised me the first time I worked on access monitoring at scale: the volume is somehow both crushing and tractable. A major health system generates tens of millions of audit events per day, which sounds impossible to review until you realize that you're not trying to review individual events. You're trying to identify users whose behavior over a window is anomalous. The day-event count drops to thousands when you aggregate to user-window vectors. The flagged-user-window count drops to hundreds with rules and baselines. The reviewable case count drops to tens with composite scoring and graph features. The math works because you're not reviewing events; you're reviewing patterns. Get the aggregation right and the volume problem is mostly solved.
 
@@ -1312,7 +1434,7 @@ Patients matter most, even when they're invisible in the operational workflow. T
 
 **SIEM-native deployment.** Some organizations route access-anomaly events to their existing SIEM (Splunk, Microsoft Sentinel, Chronicle, IBM QRadar) and run the analytics inside the SIEM. The trade-off: integrate-with-existing-tooling versus build-best-of-breed. SIEM-native deployments are easier for cybersecurity teams to operate and harder to customize for healthcare-specific patterns. AWS-native deployments are the inverse.
 
-**Privileged-access management (PAM) integration.** Tools like CyberArk, BeyondTrust, and HashiCorp Boundary provide just-in-time access provisioning, session recording, and credential rotation for privileged users. Integration with PAM tooling means access-anomaly detection can incorporate session-recording context (what queries did the DBA actually run during this access window) for higher-fidelity detection on privileged users.
+**Privileged-access management (PAM) integration.** Tools like CyberArk, BeyondTrust, and HashiCorp Boundary provide just-in-time access provisioning, session recording, and credential rotation for privileged users. Integration with PAM tooling means access-anomaly detection can incorporate session-recording context (what queries did the DBA actually run during this access window) for higher-fidelity detection on privileged users. As The Honest Take's "Privileged users are a different program" lesson argues, treat this as a related but distinct program from the clinical-workforce monitoring described above (separate detectors, separate baselines, separate review workflows, separate governance); the PAM-integration extension is the architectural primitive that supports the separate-program design. Operational recommendation: build clinical-workforce monitoring first, validate it, then add privileged-user monitoring as a parallel program when the PAM tooling and infrastructure-security review function are in place.
 
 **Patient-portal access monitoring.** The recipe focuses on workforce access. The patient-portal access pattern is a related but distinct problem: detecting compromised patient accounts, fraudulent account takeovers, and abusive patient-to-patient interactions in tethered messaging. Same architectural patterns, different feature engineering, different policy framework.
 
