@@ -34,7 +34,7 @@ A second wrinkle that makes adherence intervention distinct from wellness progra
 
 These have wildly different costs, different operational requirements, different evidence bases, and different patient experiences. A text reminder costs cents. A clinical pharmacist video visit costs $40 to $80 of staff time. A manufacturer copay card application costs staff time but no marginal medication cost. A regimen simplification requires a prescriber action. The recommender has to choose not just *whether* to intervene but *which* intervention, and the choice has to be matched to the underlying barrier, not just to the patient's PDC.
 
-A third wrinkle: Star Ratings and HEDIS pressure. CMS Medicare Advantage Star Ratings include three medication adherence measures (statins for cardiovascular disease, RAS antagonists for hypertension, and oral diabetes medications), and the cut points are unforgiving: a patient with a PDC of 79 percent and a patient with a PDC of 81 percent count differently for the plan even though their clinical risk is essentially identical. This produces a real organizational temptation to optimize for the cohort just below the cut point ("if we can get these 4,000 members from 78 to 81 percent, we move the Star score") at the expense of the cohort with PDCs in the 30 to 50 percent range, where the clinical lift is much larger but the Star Ratings improvement per member is smaller. The recipe is going to flag this trap explicitly, because it is one of the most common ways adherence-intervention programs end up doing the wrong thing very efficiently. <!-- TODO: confirm the current CMS Star Ratings cut-point methodology and the exact list of Part D adherence measures at the time of publication; CMS has revised this regularly and the 2023 Tukey-outlier change moved the cut points materially. -->
+A third wrinkle: Star Ratings and HEDIS pressure. CMS Medicare Advantage Star Ratings include three Pharmacy Quality Alliance (PQA) medication adherence measures (Adherence to Cholesterol Statins, Adherence to Hypertension RAS Antagonists, and Adherence to Diabetes Medications), all with denominators based on use of the medication class regardless of indication. (Note: a separate HEDIS Part C measure, Statin Therapy for Patients with Cardiovascular Disease, evaluates statin *use* in CVD patients rather than adherence; the two are easy to conflate and aren't the same thing.) The cut points are unforgiving: a patient with a PDC of 79 percent and a patient with a PDC of 81 percent count differently for the plan even though their clinical risk is essentially identical. This produces a real organizational temptation to optimize for the cohort just below the cut point ("if we can get these 4,000 members from 78 to 81 percent, we move the Star score") at the expense of the cohort with PDCs in the 30 to 50 percent range, where the clinical lift is much larger but the Star Ratings improvement per member is smaller. The recipe is going to flag this trap explicitly, because it is one of the most common ways adherence-intervention programs end up doing the wrong thing very efficiently. <!-- TODO: confirm the current CMS Star Ratings cut-point methodology and the exact list of Part D adherence measures at the time of publication; CMS has revised this regularly and the 2023 Tukey-outlier change moved the cut points materially. -->
 
 A fourth wrinkle: pharmacy data is messy. Claims arrive on a 1 to 30 day lag (retail pharmacy claims are usually within 48 hours; mail-order can be a week; specialty pharmacy can be longer). Cash-paying members, members using manufacturer-direct programs, and members using GoodRx or similar discount programs may not show up in PBM data at all. Patients with multiple pharmacies have fragmented data. 90-day mail-order fills can look like 30-day non-adherence if the calculation isn't careful. Therapeutic substitutions (a patient swaps from atorvastatin to rosuvastatin) can look like non-adherence if you're computing PDC by NDC instead of by therapeutic class. None of these are exotic edge cases. They affect 10 to 30 percent of the population in a typical plan, and they tilt the recommender's view of who is non-adherent in directions that correlate with socioeconomic status.
 
@@ -57,7 +57,7 @@ Before any modeling, the system has to compute adherence. The two metrics that m
 
 Both metrics depend entirely on having clean fill data. Two non-obvious complications that wreck the calculation if you ignore them:
 
-**Therapeutic class versus molecule.** A patient on atorvastatin who switches to rosuvastatin should not be marked non-adherent for the gap. Compute PDC at the therapeutic-class level (statins, RAS antagonists, oral diabetes medications) using the AHFS or NDF-RT classifications, not at the NDC level. The CMS Part D Star Ratings methodology specifies the class definitions; use them. <!-- TODO: confirm the current CMS PQA (Pharmacy Quality Alliance) measure specifications and class definitions for the three Part D adherence measures at the time of publication. -->
+**Therapeutic class versus molecule.** A patient on atorvastatin who switches to rosuvastatin should not be marked non-adherent for the gap. Compute PDC at the therapeutic-class level (statins, RAS antagonists, oral diabetes medications) using the AHFS or NDF-RT classifications, not at the NDC level. The CMS Part D Star Ratings methodology, via the PQA measure specifications, defines the canonical class membership for the three adherence measures; use those definitions to keep your numbers comparable to the Star Ratings reporting your plan will be measured on. <!-- TODO: confirm the current CMS PQA (Pharmacy Quality Alliance) measure specifications and class definitions for the three Part D adherence measures at the time of publication. -->
 
 **Fill cadence and overlapping supplies.** A patient who fills a 90-day supply in January doesn't need to fill again until April. If you compute PDC monthly, January looks like 100 percent adherence and February looks like 0 percent, when actually the patient is fine. The standard fix is "carry forward" days-supply: track running days-on-hand on a daily basis, and PDC is the count of days where days-on-hand was greater than zero.
 
@@ -118,7 +118,7 @@ Capacity constraints are even more granular here than in 4.4. Each intervention 
 The allocator has to respect each intervention's per-day capacity, the cumulative per-patient contact-frequency cap, and any cross-intervention exclusions (a patient referred for a clinical pharmacist consult does not also get the text-reminder enrollment for the same medication; the pharmacist will handle the reminder framing). A greedy allocator sorted by priority is a fine starter, with two adjustments from 4.4:
 
 - **Multi-intervention assignment per patient.** Unlike 4.4 where each patient was allocated one program per run, an adherence run may allocate multiple interventions to one patient when their barriers warrant it (cost-assistance navigation for the SGLT2 plus a belief-conversation pharmacist call for the statin). The allocator's per-patient cap is policy: typical defaults are at most 2 interventions per patient per run, at most 1 high-touch intervention (pharmacist or care manager), at most 3 patient-facing contacts in any 30-day window.
-- **Sequencing within a patient.** Some interventions chain. Cost-assistance navigation is typically a prerequisite to "patient now has the medication"; a reminder enrollment chained after the navigation completes is more likely to land. The allocator can either assign in sequence with the chain explicit, or assign the first link only and let a state machine reschedule the next link when the first completes. The state-machine version is more robust; the sequence version is simpler and acceptable for early implementations.
+- **Sequencing within a patient.** Some interventions chain. Cost-assistance navigation is typically a prerequisite to "patient now has the medication"; a reminder enrollment chained after the navigation completes is more likely to land. The allocator can either assign in sequence with the chain explicit, or assign the first link only and let a state machine reschedule the next link when the first completes. The state-machine version is more robust; the sequence version is simpler and acceptable for early implementations. <!-- TODO (TechWriter): the cost-assistance to reminder chain is the recipe's primary example, but the architecture doesn't show how chaining is tracked. Add a small subsection (200-300 words) showing the state-machine version concretely: `predecessor_intervention_id` and `successor_intervention_id` fields on the catalog, `chain_position` and `chain_id` on the recommendation log, and an `intervention_completed` handler in Step 8 that triggers chain continuation. The simpler sequence version can be a one-paragraph alternative. Without this, the chain pattern stays a nice idea instead of an implemented feature. -->
 
 ### Where LLMs Fit (and Don't)
 
@@ -557,6 +557,9 @@ FUNCTION compute_adherence_features(patients, run_date):
         )
 ```
 
+<!-- TODO (TechWriter): The `data_quality_flag` is computed in Step 1 and propagated through the barrier-classifications table and engagement events, but no downstream component gates on it. The "Where it struggles" section names the gate as necessary, but the pseudocode in Steps 2, 3, 5, and 7 does not implement it. A reader copying the pseudocode literally produces confidently-wrong adherence labels for the cohorts most affected by data fragmentation (cash-pay, multi-pharmacy, recent plan change). Add explicit gating: cap barrier-classifier confidence on non-`complete` cases (Step 2), route low-quality cases to verification-first interventions or downweight (Step 3 or 5), and tailor patient-facing messages to acknowledge uncertainty rather than confidently asserting non-adherence (Step 7). Add a paragraph to the architecture pattern section naming the gate explicitly. -->
+
+
 **Step 2: Classify barriers per (patient, medication) below the adherence threshold.** The rule-based classifier runs first and is deterministic; the supervised classifier refines confidence where labels exist; the LLM second opinion runs for high-stakes cases. The output is a ranked list of barriers per (patient, medication). Skip this and the recommender treats every adherence gap the same way.
 
 ```
@@ -640,6 +643,20 @@ FUNCTION classify_barriers(target_set, features, run_date):
             // Validate the LLM output: barrier must be in allowed taxonomy,
             // rationale must reference observed data points (not invent).
             validate_barrier_review(llm_parsed, observed_data = features)
+                // <!-- TODO (TechWriter): Specify validate_barrier_review's
+                // four-layer structure: (1) schema and taxonomy check,
+                // (2) rationale length/structure, (3) rationale must cite
+                // observable data points whose values match observed_data
+                // within tolerance (the meaningful and non-trivial layer:
+                // a substring match between rationale and serialized data
+                // produces both false positives and false negatives), and
+                // (4) prohibited content (PHI, prescriber names) in
+                // rationale. Specify failure-handling: validator failure
+                // means the LLM second opinion is dropped from the blended
+                // classification, the failure is logged for prompt-
+                // engineering review, and the case is flagged for
+                // pharmacist-review queue with the LLM output included
+                // for diagnostic purposes (not as a decision input). -->
 
             // Flag for human review if LLM disagrees with blended top-1
             // by a material margin and the case is high-stakes.
@@ -895,6 +912,17 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
 
         // Per-patient contact-frequency cap (rolling 30-day).
         existing_contacts = member.outreach_recent_30d_count
+            // <!-- TODO (TechWriter): the "30d" in the name implies a
+            // rolling 30-day window, but the counter as implemented in
+            // Step 7 increments forward without decay. After three
+            // months of weekly runs, the counter no longer reflects
+            // recent contact frequency, and the contact-cap deferral
+            // becomes a lifetime-of-program filter rather than a 30-day
+            // window. Pick a rolling-window pattern (DynamoDB TTL on
+            // per-event rows, daily-bucket aggregation, or scheduled
+            // decay Lambda) and document it. Coordinate with the
+            // cross-recipe global counter TODO in Why This Isn't
+            // Production-Ready. -->
         new_contacts_this_run = patient_contact_count_30d.get(candidate.patient_id, 0)
         IF intervention.generates_patient_contact AND
            (existing_contacts + new_contacts_this_run) >= policy.max_contacts_per_patient_30d:
@@ -907,6 +935,12 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
 
         // Equity floor: prefer to use a floor slot if applicable.
         cohort_features = lookup_cohort_features(candidate.patient_id)
+            // <!-- TODO (TechWriter): same chapter-wide pattern as 4.4
+            // Finding 13. The cohort-feature lookup runs per-(patient,
+            // intervention) inside this loop; for a patient with N
+            // candidate triples it repeats N times. Hoist the cache out
+            // of the per-candidate loop and build it once per unique
+            // patient_id before the allocation walk. -->
         applicable_floors = applicable_floor_cohorts(cohort_features,
                                                       policy.equity_floors[candidate.intervention_id])
         used_floor = null
@@ -1061,6 +1095,20 @@ FUNCTION orchestrate_interventions(allocated, run_date, policy):
                     suggested_action = "consider regimen simplification (combination pill, once-daily, blister pack)",
                     tracking_id = build_tracking_id(row, run_date)
                 )
+                // <!-- TODO (TechWriter): regimen_simplification has no
+                // PCP-review hold-time semantics. Unlike a text reminder
+                // (which is parallel-track safe) or a pharmacist consult
+                // (which sorts itself out at the consult), this
+                // intervention requires the prescriber to act, and any
+                // simultaneous patient-facing message creates the same
+                // backfire pattern as 4.4 Finding 4 named for behavioral
+                // health. Add a `pcp_review_policy` field to the
+                // intervention catalog (`none`, `notify_parallel`,
+                // `review_required_24h`, `review_required_72h_then_hold`)
+                // and default regimen_simplification to
+                // `review_required_72h_then_hold`. Update the orchestrator
+                // to schedule the patient-facing message conditional on
+                // PCP endorsement when the policy requires review. -->
 
         // Update contact-frequency counter optimistically when patient
         // contact is generated. Reconcile in the engagement-attribution
@@ -1347,7 +1395,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Star Ratings cycle awareness.** CMS Star Ratings measurement years are calendar-aligned, with cut points published in the spring for the prior measurement year. The recommender should know where in the measurement cycle each target patient sits (months remaining for them to recover their PDC for this measurement year), which affects the urgency of intervention and the appropriate intervention choice (a patient with 60 days remaining and a PDC of 73 percent has a different math problem than the same patient on day 1 of the year). Encode the cycle in the policy. Don't pretend it doesn't exist; don't optimize purely against it either.
 
-<!-- TODO (TechWriter): Add a paragraph clarifying the Star Ratings ethics. The documented temptation is to over-target the 75-79 PDC band because of the threshold-effect on Star Ratings. The recipe has called this out in The Honest Take, but the production deployment needs an explicit governance decision: how much of the allocator's capacity is reserved for the high-clinical-need / low-PDC cohort, regardless of Star Ratings impact, and how is that policy reviewed? Without an explicit floor, the optimization quietly drifts toward the financially-attractive band and the clinically-attractive band gets under-served. The cross-functional review committee owns this decision; document it in the policy version notes. -->
+<!-- TODO (TechWriter): Add a paragraph clarifying the Star Ratings ethics. The documented temptation is to over-target the 75-79 PDC band because of the threshold-effect on Star Ratings. The recipe has called this out in The Honest Take, but the production deployment needs an explicit governance decision: how much of the allocator's capacity is reserved for the high-clinical-need / low-PDC cohort, regardless of Star Ratings impact, and how is that policy reviewed? Without an explicit floor, the optimization quietly drifts toward the financially-attractive band and the clinically-attractive band gets under-served. The cross-functional review committee owns this decision; document it in the policy version notes. Additionally, show where the cycle plugs into the architecture: (1) need-score features (does the model take "months remaining in measurement year" as a feature, or does the cycle weighting live in the priority combiner?), (2) priority-combiner weights as a function of (PDC band, months-remaining), and (3) equity floors that reserve capacity for high-clinical-need cohorts independent of cycle. Reference Recipe 14.x for the LP version. -->
 
 **Wellness-program coordination (Recipe 4.4) and care-management coordination (Recipe 4.7).** A patient on a wellness program (DPP) and an adherence-targeting program (statin reminder) and a care-management program (high-risk diabetes) can easily get four to seven outreach contacts per month from the plan's various optimizations, which is too many. Cross-recipe orchestration in this chapter requires a global contact-frequency cap that all recipes' orchestrators consult; the patient-profile DynamoDB table is the natural place for the shared counter. Recipes 4.1, 4.2, 4.4, 4.5, 4.6, and 4.7 all need to read and update the same counter, and the cap policy needs to live in a place all of them respect.
 
