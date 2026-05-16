@@ -399,12 +399,20 @@ FUNCTION build_patient_context(patient_id):
     // Includes: format_ctr (article vs video click-through), avg_completion_rate,
     //          last_topics_engaged, time_since_last_session
 
+    // Derive cohort labels used downstream by the re-ranker (Step 4) and the
+    // recommendation log feature_snapshot (Step 5). Computing them here keeps
+    // the inference path's joins to one place.
+    audience          = infer_audience(profile)                  // "adult" or "pediatric" from age
+    format_preference = highest_ctr_format(engagement_summary)   // "article" / "video" / null for cold-start
+
     RETURN {
         patient_id:         patient_id,
         language:           profile.language,
         reading_level_est:  profile.reading_level,    // can be null for new patients
+        audience:           audience,
         intent_text:        intent_text,
         engagement_summary: engagement_summary,
+        format_preference:  format_preference,
         topic_tags_pref:    profile.preferred_topics  // optional, from prior engagement
     }
 ```
