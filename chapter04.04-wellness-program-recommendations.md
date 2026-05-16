@@ -452,7 +452,7 @@ FUNCTION score_eligible_population(programs, run_date):
     job_handles = []
 
     FOR each program in programs:
-        eligible_path = "s3://wellness-eligible-members/run_date=" + run_date + 
+        eligible_path = "s3://wellness-eligible-members/run_date=" + run_date +
                         "/program=" + program.program_id + "/members.parquet"
 
         // Need score. Single multi-output model trained across programs;
@@ -462,7 +462,7 @@ FUNCTION score_eligible_population(programs, run_date):
             transform_job_name = "need-" + program.program_id + "-" + run_date,
             model_name         = NEED_MODEL_NAME,
             transform_input    = eligible_path,
-            transform_output   = "s3://wellness-scores/run_date=" + run_date + 
+            transform_output   = "s3://wellness-scores/run_date=" + run_date +
                                 "/program=" + program.program_id + "/need/",
             instance_type      = "ml.m5.large",
             instance_count     = 1
@@ -476,7 +476,7 @@ FUNCTION score_eligible_population(programs, run_date):
             transform_job_name = "eng-" + program.program_id + "-" + run_date,
             model_name         = ENGAGEMENT_MODEL_NAMES[program.program_id],
             transform_input    = eligible_path,
-            transform_output   = "s3://wellness-scores/run_date=" + run_date + 
+            transform_output   = "s3://wellness-scores/run_date=" + run_date +
                                 "/program=" + program.program_id + "/engagement/",
             instance_type      = "ml.m5.large",
             instance_count     = 1
@@ -493,7 +493,7 @@ FUNCTION score_eligible_population(programs, run_date):
             transform_job_name = "uplift-" + program.program_id + "-" + run_date,
             model_name         = UPLIFT_MODEL_NAMES[program.program_id],
             transform_input    = eligible_path,
-            transform_output   = "s3://wellness-scores/run_date=" + run_date + 
+            transform_output   = "s3://wellness-scores/run_date=" + run_date +
                                 "/program=" + program.program_id + "/uplift/",
             instance_type      = "ml.m5.xlarge",  // causal forest is heavier
             instance_count     = 1
