@@ -382,7 +382,6 @@ flowchart LR
 | **Amazon CloudWatch** | Operational metrics, cohort-sliced NDCG and exposure dashboards, alarms |
 | **AWS CloudTrail** | Audit logging for all PHI-related API calls |
 
-
 ### Code
 
 > **Reference implementations:** Useful aws-samples patterns for this recipe:
@@ -939,7 +938,6 @@ FUNCTION process_engagement_event(event):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample search response:**
@@ -1094,7 +1092,6 @@ And the trap worth flagging: confusing CTR with success. A directory ranker that
 One last point, because it's specific to this use case: the directory is often the first sustained interaction a member has with their plan after enrolling. If it works well, the member's mental model of "this plan helps me find care" gets reinforced. If it fails, the member's mental model becomes "this plan's tools don't work, I'll just google instead, and good luck calling them about anything else." The technology choices in this recipe are interesting and the ML is genuinely useful, but the most important thing about provider directory search is that it sets the trust baseline for everything else the member will eventually need from the plan. Treat that trust as the success metric, not the NDCG.
 
 ---
-
 
 ## Variations and Extensions
 
