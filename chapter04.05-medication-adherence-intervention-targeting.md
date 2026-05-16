@@ -559,7 +559,6 @@ FUNCTION compute_adherence_features(patients, run_date):
 
 <!-- TODO (TechWriter): The `data_quality_flag` is computed in Step 1 and propagated through the barrier-classifications table and engagement events, but no downstream component gates on it. The "Where it struggles" section names the gate as necessary, but the pseudocode in Steps 2, 3, 5, and 7 does not implement it. A reader copying the pseudocode literally produces confidently-wrong adherence labels for the cohorts most affected by data fragmentation (cash-pay, multi-pharmacy, recent plan change). Add explicit gating: cap barrier-classifier confidence on non-`complete` cases (Step 2), route low-quality cases to verification-first interventions or downweight (Step 3 or 5), and tailor patient-facing messages to acknowledge uncertainty rather than confidently asserting non-adherence (Step 7). Add a paragraph to the architecture pattern section naming the gate explicitly. -->
 
-
 **Step 2: Classify barriers per (patient, medication) below the adherence threshold.** The rule-based classifier runs first and is deterministic; the supervised classifier refines confidence where labels exist; the LLM second opinion runs for high-stakes cases. The output is a ranked list of barriers per (patient, medication). Skip this and the recommender treats every adherence gap the same way.
 
 ```
@@ -817,7 +816,6 @@ FUNCTION score_candidates(candidates, run_date):
         //               need_score, barrier_fit, engagement_prob,
         //               uplift_estimate, intervention_cost
 ```
-
 
 **Step 5: Combine scores into per-candidate priority with cost-effectiveness.** The combination weights are policy: documented, version-controlled, reviewable. The cost-effectiveness term divides expected-uplift by intervention cost so a $0.05 reminder doesn't get crowded out by a $80 pharmacist consult on every candidate. Skip the cost term and the system over-allocates expensive interventions to patients where a cheaper one would have worked.
 
