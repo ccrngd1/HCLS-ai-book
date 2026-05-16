@@ -98,6 +98,8 @@
   * [Python Example](chapter04.03-python-example)
 * [4.4 — Wellness Program Recommendations](chapter04.04-wellness-program-recommendations)
   * [Python Example](chapter04.04-python-example)
+* [4.5 — Medication Adherence Intervention Targeting](chapter04.05-medication-adherence-intervention-targeting)
+  * [Python Example](chapter04.05-python-example)
 
 ---
 
