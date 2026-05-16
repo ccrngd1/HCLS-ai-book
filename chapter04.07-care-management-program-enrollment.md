@@ -1,5 +1,69 @@
 # Recipe 4.7: Care Management Program Enrollment ⭐⭐⭐
 
+<!--
+TechEditor pass v1 (2026-05-16, ch04-r07-edit). Editorial fixes:
+- Verified em-dash count: 0 (passes "no em dashes ever" rule).
+- Verified en-dash count: 0.
+- Header hierarchy: H1 title only, H2 for major sections, H3 for
+  subsections, one H4 (#### Walkthrough). No skipped levels.
+- Voice drift scan: no documentation-voice openings in body prose, no
+  LinkedIn-influencer patterns, no "we are excited" announcements.
+  "High-leverage" appears twice (Step 3 pseudocode comment, Variations)
+  in the colloquial leverage-point sense (acceptable per Voice
+  Reviewer V3 finding, consistent with 4.6 final edit). The Linda
+  vignette and the closing "Build the second one" paragraph are
+  preserved verbatim per Voice Reviewer V1.
+- Vendor balance: 70/30 maintained. The Problem, The Technology, and
+  General Architecture Pattern stay vendor-neutral; AWS service names
+  appear only in The AWS Implementation, Why This Isn't
+  Production-Ready, and Variations.
+- RECIPE-GUIDE compliance: all required sections present in correct
+  order (Problem, Technology, General Architecture, AWS Implementation,
+  Expected Results, Why This Isn't Production-Ready, Honest Take,
+  Variations, Related Recipes, Additional Resources, Implementation
+  Time, Tags, Footer Navigation).
+- Existing TechWriter / prior-editor TODO markers preserved verbatim
+  (TCM CPT codes, SageMaker Batch Transform HIPAA, Bedrock service
+  terms, SES/Pinpoint scope, HealthLake pricing, Cost Estimate
+  validation, validate_briefing four-layer spec, validate_rationale
+  spec, model-promotion path, tracking-ID privacy, cross-recipe
+  arbitration, SDOH-cohort PHI promotion, DLQ coverage, caseload
+  literature citation, predictive-disenrollment literature,
+  aws-samples repo confirmation, AWS blog URLs, CMS landing pages,
+  NCQA/Care Continuum URL, performance-benchmark range citations,
+  briefing social-context reconciliation note from prior editor pass).
+- New TODOs added flagging substantive technical concerns rather than
+  rewriting (per persona instructions: "do not introduce new claims or
+  technical content"; "if a section needs substantial rewriting, flag
+  it rather than rewriting"):
+  * Expert Review A1 HIGH: cm_outreach_recent_30d_count optimistic
+    increment lacks decrement on terminal-unreachable, declined,
+    deferred outcomes (added at Step 4 record_outreach_attempt
+    pseudocode). Code Review ERROR 2 names the same gap in the
+    Python implementation's :zero placeholder.
+  * Expert Review A2 HIGH: data_quality_flag is computed in Step 1
+    and named in Where It Struggles as a gating signal for the
+    disenrollment evaluator, but the disenrollment evaluator
+    pseudocode in Step 5 does not gate (added at Step 5
+    evaluate_disenrollment).
+  * Expert Review A3 HIGH: human_review_pending workflow on
+    disenrollment-decisions and cross-program-transitions has no
+    SLA, no escalation, no default action; uniquely 4.7-specific
+    gap (added at Why This Isn't Production-Ready, in the
+    Disenrollment governance and review paragraph).
+  * Code Review ERROR 1: ADD state_history :history_event is invalid
+    DynamoDB UpdateExpression syntax (ADD supports only Number and
+    Set, not List). Pattern propagated chapter-wide. Flagged at the
+    pseudocode preamble for Step 1 and at the Why This Isn't
+    Production-Ready Idempotency paragraph; the fix is in the
+    Python companion file, but a note in the main recipe ensures
+    a reader copying the pseudocode pattern does not reproduce the
+    bug.
+- No code-block language tags changed; the unlabeled fenced blocks
+  carry pseudocode and ASCII architecture diagrams per chapter-wide
+  convention. Mermaid and JSON blocks are tagged.
+-->
+
 **Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.005-0.025 per enrollment recommendation (depends on uplift model serving, LLM-generated enrollment briefings, and longitudinal outcome tracking)
 
 ---
@@ -1078,6 +1142,29 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
     //   { result: "declined", reason }
     //   { result: "unreachable", attempt_count, next_attempt_scheduled }
     //   { result: "deferred", reason, defer_until }
+    //
+    // <!-- TODO (TechWriter): Expert Review HIGH A1 (chapter-wide
+    // pattern propagated unresolved through 4.4-4.7). Add a counter
+    // decrement on the patient-profile attribute
+    // cm_outreach_recent_30d_count for the terminal-unreachable,
+    // declined, and deferred outcomes; otherwise the 4.7-specific
+    // outreach budget accumulates phantom counter consumption that
+    // silences the patient from future enrollment outreach for 30
+    // days when the original outreach never reached the patient.
+    // The pathology disproportionately affects cohorts with flaky
+    // channels (transient housing, prepaid phones with intermittent
+    // service, language-mismatch with assigned care manager) which
+    // correlate with the cohorts the equity floors are trying to
+    // protect. Coordinate the implementation with the parallel 4.4,
+    // 4.5, 4.6 fixes; the chapter editor should land all four
+    // together. The Python companion's record_outreach_attempt
+    // unreachable-terminal branch already attempts the decrement but
+    // currently fails (Code Review ERROR 2: missing :zero placeholder
+    // and ExpressionAttributeNames=None); fix both at once. Also add
+    // a stale-pending sweep Lambda (hourly): for outreach-state rows
+    // where state == "queued" or state == "outreach_in_progress" and
+    // created_at > 7 days ago with no engagement-event activity, mark
+    // state = "stale_no_activity" and decrement the counter. -->
     outreach = DynamoDB.GetItem("outreach-state", outreach_id)
     outreach.attempts.append({
         attempt_at:  current UTC timestamp,
@@ -1277,6 +1364,35 @@ FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
     // weekly) for at-risk patients whose retention attempts have not
     // succeeded. The decision is decision-supported, not autonomous;
     // a human (clinical lead, program manager) makes the actual call.
+    //
+    // <!-- TODO (TechWriter): Expert Review HIGH A2. The
+    // data_quality_flag is computed in Step 1, persisted to
+    // patient-program-state, and named in Where It Struggles as a
+    // signal that "downstream consumers (specifically the
+    // disenrollment evaluator) should gate harder when quality is
+    // low." The pseudocode below does not gate. For
+    // cross_provider_fragmentation and multi_source_disagreement
+    // patients, the engagement profile may appear worse than it
+    // actually is because the patient is engaging through encounters
+    // the recommender's data feed does not see; a
+    // disenroll_for_no_engagement recommendation against fragmented
+    // data has civil-rights implications when it concentrates in
+    // protected cohorts (mobile populations, recent plan-changers,
+    // patients seen across multiple practices). Add a
+    // verify_engagement_first action that runs before
+    // disenroll_for_no_engagement when state.data_quality_flag is in
+    // {"cross_provider_fragmentation", "multi_source_disagreement"}.
+    // Mirror the gating language at five additional sites: Step 2
+    // response enrichment (widen uplift CI on non-complete cases),
+    // Step 3 orchestrator (route fragmented-data patients through
+    // verification-first allocation), Step 4 briefing
+    // (data_quality_caveat in confidence_notes), Step 5 engagement
+    // scoring (widen CI on the score; require multi-source
+    // consistency for is_at_risk = true), and Step 6 cross-program
+    // transition recommender (flag the recommendation with
+    // data_quality_caveat). Same chapter-wide pattern as 4.5
+    // Finding A2 and 4.6 Finding A2; the chapter editor should land
+    // all three together. -->
     state = DynamoDB.GetItem("patient-program-state",
                               key = (patient_id, program_id))
     engagement = DynamoDB.GetItem("engagement-state",
@@ -1749,6 +1865,34 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Disenrollment governance and review.** Disenrollment-for-cause decisions have member-experience implications and may have civil-rights implications if they concentrate in protected populations. Build a monthly disenrollment-review cadence: a cross-functional committee reviews the prior month's disenrollment-for-cause cases, with cohort breakdowns, looking for patterns that suggest the policy is mis-targeting, the retention attempts are inadequate, or the program structure is unfit for some cohorts. Build the review cadence into the policy from day one, not as an afterthought.
 
+<!-- TODO (TechWriter): Expert Review HIGH A3 (uniquely 4.7-specific).
+The disenrollment-decisions and cross-program-transitions queues both
+hold rows with human_review_pending: true and no SLA, no escalation,
+no default action. Three pathologies follow: (a) patient remains
+enrolled indefinitely while the disenrollment recommendation sits
+unreviewed, consuming a slot another patient could use; (b) patient
+is silently disenrolled when stale review eventually happens against
+out-of-date engagement and clinical-event data; (c) clinical leads
+with high case-load triage easy cases first, so complex cases (which
+correlate with the cohorts the equity floors protect) sit longer in
+the pending queue, producing disparate review-latency that the
+disenrollment-rate equity dashboard does not catch. Add SLA-and-
+escalation specification with per-action defaults that err toward
+retention rather than disenrollment: 7-day review SLA for
+disenroll_for_no_engagement (auto-defer 7 more days then
+auto-default to extend_for_review with current data); 14-day review
+SLA for disenroll_did_not_complete (auto-default to
+graduate_with_partial_credit); 72-hour review SLA for
+transition_to_higher_acuity (clinical-urgency driven; escalate to
+medical director on miss); 14-day SLA for graduation transitions
+(auto-expire); 7-day SLA for relapse transitions (escalate to
+program manager on miss). Per-cohort review-latency monitoring goes
+into the equity instrumentation alongside per-cohort disenrollment-
+rate metrics; disparities in review latency are fairness signals
+just like disparities in eventual outcome. Specify in the
+architecture pattern; add the sweep_pending_decisions Lambda to
+the pseudocode as a daily run. -->
+
 **Equity floor design.** The equity floors implemented in Step 3 reserve capacity for cohorts with documented enrollment-rate disparities. Designing the floors well requires baseline cohort data (which you don't have until operating for some time), explicit policy on which disparities trigger floors, and willingness to revisit floors quarterly. The Obermeyer failure mode is the canonical concern: a recommender trained on historical data with under-represented cohorts will systematically under-enroll those cohorts unless the design explicitly compensates. Equity floors are one mechanism; cohort-aware retraining with reweighting is another; cohort-stratified outcome evaluation is the validation.
 
 <!-- TODO (TechWriter): Add a paragraph on the SDOH-cohort PHI boundary. Cohort labels like "transportation_barrier" and "low_food_security" are PHI-equivalent and should follow the minimum-necessary principle. Engagement events should carry only the cohort axes the equity dashboard actually consumes, with narrower IAM scope than for general engagement data. Mirror the language flagged in 4.4 through 4.6. -->
@@ -1756,6 +1900,22 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Privacy in program state and enrollment briefings.** The `patient-program-state` table joins (patient_id, program_id, state, uplift_score, priority_components) and is highly inferential. A row indicating "patient recommended for high-risk complex-care program" is more sensitive than a row indicating "patient eligible for wellness program." Apply tighter controls to program state for stigmatized or high-sensitivity programs (behavioral health, substance use, palliative care, HIV-related): narrower IAM read scopes, optional separate-table partitioning, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Enrollment briefings stored in DynamoDB are PHI; the briefing text contains diagnoses, social context, and trajectory framing. Treat them with the same encryption, IAM, and audit posture as clinical notes.
 
 **Idempotency and retry semantics.** Same pattern as 4.4 through 4.6. Each stage's outputs are addressed by deterministic keys (run_date, program_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.
+
+<!-- TODO (TechWriter): Code Review ERROR 1 (chapter-wide pattern in
+the Python companion files for 4.6 and 4.7). The pseudocode
+state_history.append(...) semantics are correct, but the
+straightforward DynamoDB translation is *not* "ADD state_history
+:history_event" because the ADD action only supports Number and Set
+data types, not List. The correct UpdateExpression is
+"SET state_history = list_append(if_not_exists(state_history, :empty),
+:history_event)" with :empty defined as []. Update the Python
+companion (chapter04.07-python-example.md) for all ten state-
+transition update_item call sites; propagate the same fix to 4.6's
+Python example. Add a one-line note here in the recipe's
+Idempotency paragraph (or in a dedicated DynamoDB-gotchas paragraph)
+warning readers who copy the pseudocode pattern that the literal
+"append to history list" idiom requires the list_append +
+if_not_exists pattern, not ADD. -->
 
 <!-- TODO (TechWriter): Specify DLQ coverage on all Lambda paths in the architecture. (a) Step Functions to Lambda pipeline: Catch on each Lambda task pointing to an SQS failure queue keyed on (run_date, stage, failure_reason); (b) Kinesis to state-machine-worker Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth; (c) Batch Transform job failures: SageMaker doesn't surface failures via DLQ; wire the Step Functions Catch to handle TransformJob failed states explicitly. A silently-dropped state-transition event is operationally damaging in this recipe (a missed program_at_risk event delays retention; a missed program_enrolled event leaves the engagement scorer unarmed), so DLQ coverage matters substantively. Mirror the language from 4.4 through 4.6. -->
 
