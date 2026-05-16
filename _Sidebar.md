@@ -102,6 +102,7 @@
   * [Python Example](chapter04.05-python-example)
 * [4.6 — Care Gap Prioritization](chapter04.06-care-gap-prioritization)
   * [Python Example](chapter04.06-python-example)
+* [4.7 — Care Management Program Enrollment](chapter04.07-care-management-program-enrollment)
 
 ---
 
