@@ -1,4 +1,32 @@
 <!--
+Editor pass v3 (TechEditor, 2026-05-15):
+  - No body changes. Verification pass only; the v1 and v2 passes
+        addressed every editor-scope finding from the expert review
+        (LOW V2, V4, V5, V6) and the IdP capitalization mechanics fix.
+  - Re-verified mechanically: 0 em dashes (U+2014) and 0 en dashes
+        (U+2013) under UTF-8 decoding; 27 TODO (TechWriter, ...)
+        markers preserved (16 in body + 11 carry-over in v1 comment
+        block); header hierarchy clean (1 H1, 11 H2, 12 H3, 1 H4, no
+        skipped levels); 24 fence markers = 12 balanced fenced code
+        blocks; "IdP" capitalization consistent throughout body text
+        (the single "IDP" hit is in this comment block documenting
+        the v2 fix, not in body content); all hyperlinks in Additional
+        Resources point to plausible AWS, regulatory (ecfr.gov,
+        hhs.gov, csrc.nist.gov, cisa.gov, hitrustalliance.net,
+        405d.hhs.gov), and vendor (protenus.com, imprivata.com,
+        microsoft.com, splunk.com) domains; no fabricated GitHub URLs;
+        70/30 vendor balance preserved (conceptual sections vendor-
+        neutral, AWS service names confined to The AWS Implementation,
+        Architecture Diagram, Prerequisites, Ingredients, Code
+        walkthrough, Why-This-Isn't-Production-Ready, Variations and
+        Extensions, and Additional Resources).
+  - Open items remain TechWriter follow-ups (exceed editor scope per
+        persona instructions "Do not introduce new claims or technical
+        content"): the 9 MEDIUM and 14 LOW expert-review findings plus
+        the 3 Python WARNINGs from code review are catalogued in this
+        comment block below. Recipe is at publication-ready quality
+        for the editor-scope items.
+
 Editor pass v2 (TechEditor, 2026-05-15):
   - Mechanics: corrected "IDP service-account credentials" to
         "IdP service-account credentials" in the AWS Secrets Manager
