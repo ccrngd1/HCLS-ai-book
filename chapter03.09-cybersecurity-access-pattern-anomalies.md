@@ -1,4 +1,75 @@
 <!--
+Editor pass v4 (TechEditor, 2026-05-15):
+  - No body changes. Independent verification pass on top of v3.
+        Re-confirmed every editor-scope mechanical and voice
+        checkpoint; the recipe remains at publication-ready quality
+        for editor-scope items.
+  - Mechanical re-verification under UTF-8 decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
+        sections), 12 H3 (subsections), 1 H4 (the Vocabulary You
+        Need / Detection Pattern Catalog tier of nested headers
+        under The Technology), 0 H5; no skipped levels.
+      * 24 fence markers = 12 balanced fenced code blocks (one
+        mermaid block tagged, JSON sample cases tagged, pseudocode
+        and architecture-text blocks intentionally untagged per
+        Chapter 1 convention).
+      * 28 regex matches for "TODO (TechWriter": 16 inline body
+        TODOs + 11 carry-over consolidated TODOs in the v1 comment
+        block + 1 meta-reference at line 7 inside the v3 comment
+        text itself ("27 TODO (TechWriter, ...)" appears in narrative
+        prose describing the count). The 27 actual TODO markers are
+        preserved verbatim; the 28th regex hit is the v3 comment
+        block's own self-reference and not a real TODO.
+      * "IdP" capitalization consistent in body (14 mixed-case "IdP"
+        hits); the only "IDP" all-caps hits are 2, both inside this
+        editor comment block (one in the v3 description quoting the
+        prior v2 fix narrative, one in the v2 description of that
+        same fix). No body-text capitalization drift.
+      * No common dittography ("the the", "of of", "is is", etc.).
+      * No trailing-whitespace lines.
+  - Voice and structure re-verification:
+      * No documentation-voice ("This recipe demonstrates...") in
+        body.
+      * No announcement statements ("We are excited to...").
+      * No LinkedIn-influencer tone ("AWS architects, we need to
+        talk about...").
+      * Cross-reference from The Honest Take to the Implementation
+        Time table's Basic tier (v1 V5 fix) intact at line 1454.
+      * Cross-reference from the Variations and Extensions PAM
+        integration extension to The Honest Take's "Privileged
+        users are a different program" lesson (v1 V6 fix) intact
+        at line 1492.
+      * Performance-benchmark header tightened in v1 to call out
+        population, workforce composition, base rate, EHR vendor,
+        privacy-office staffing, and program maturity dependence
+        (v1 V2 fix) intact at line 1376.
+      * 70/30 vendor balance preserved: AWS service names confined
+        to The AWS Implementation, Architecture Diagram,
+        Prerequisites, Ingredients, Code walkthrough,
+        Why-This-Isn't-Production-Ready, Variations and Extensions,
+        and Additional Resources.
+      * All hyperlinks in Additional Resources point to plausible
+        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
+        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
+        imprivata.com, microsoft.com, splunk.com) domains; no
+        fabricated GitHub URLs.
+  - Open items remain TechWriter follow-ups (exceed editor scope
+        per persona instructions "Do not introduce new claims or
+        technical content" and "If a section needs substantial
+        rewriting, flag it rather than rewriting"): the 9 MEDIUM
+        and 14 LOW expert-review findings plus the 3 Python
+        WARNINGs from code review remain catalogued in the v1
+        comment block below. The MEDIUM cluster (A1 idempotency,
+        A2 DLQs, A3 privileged-user separate program, A4
+        service-account inventory, A5 new-user ramp-up cold-start,
+        A6 care-relationship suppression-rule schema-and-workflow,
+        A7 reference-data versioning propagation, S1 case payload
+        PHI/workforce-PII minimization, S2 subgroup data
+        governance) requires architectural and prose additions
+        outside editor mandate.
+
 Editor pass v3 (TechEditor, 2026-05-15):
   - No body changes. Verification pass only; the v1 and v2 passes
         addressed every editor-scope finding from the expert review
