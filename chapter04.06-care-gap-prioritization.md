@@ -44,6 +44,36 @@ TechEditor pass v1 (2026-05-16, ch04-r06-edit). Editorial fixes:
 - Did NOT modify: prose flow, structural section order, technical claims
   (these are TechWriter's domain). Did NOT rewrite the David vignette,
   the Honest Take, or any code block.
+
+TechEditor pass v2 (2026-05-16, ch04-r06-edit). Verification-only pass:
+- Re-verified em-dash count: 0 (UTF-8 byte-level scan for U+2014).
+- Re-verified en-dash count: 0 (UTF-8 byte-level scan for U+2013).
+- Re-verified zero smart quotes (U+2018/U+2019/U+201C/U+201D), zero
+  double-spaces between words in prose, no genuine repeated-word typos
+  (the only regex hits were intentional Mermaid node IDs).
+- Re-verified header hierarchy: 1 H1, 11 H2, 14 H3, 1 H4. No skipped
+  levels.
+- Code-fence convention: 12 fenced blocks total. 1 mermaid, 4 json,
+  7 unlabeled (pseudocode and ASCII-art architecture diagram). Verified
+  this matches the chapter-wide convention by sampling 1.1, 4.1, 4.4,
+  4.5, all of which leave pseudocode/ASCII fences unlabeled and tag
+  only mermaid and json. Convention is consistent across the book;
+  no fence-tag changes made.
+- TODO marker count: 37, all from prior personas, all preserved.
+- Voice drift re-scan with expanded marketing-language list: no hits
+  (the single "We are excited" regex hit was inside the v1 editor
+  HTML comment block describing what was scanned for, not in prose).
+- Vendor balance: spot-checked The Problem, The Technology, General
+  Architecture Pattern; AWS service names remain confined to The AWS
+  Implementation onward.
+- Front matter (Complexity / Phase / Estimated Cost) and footer
+  navigation links preserved; Python companion link target
+  (chapter04.06-python-example) verified.
+- No new edits applied this pass. Recipe is publishable on editorial
+  grounds; the three HIGH expert-review findings (A1 contact-counter
+  reconciliation, A2 data_quality_flag gating, A3 HEDIS CDC measure
+  rename) remain flagged as TechWriter TODOs per persona rule "if a
+  section needs substantial rewriting, flag it rather than rewriting."
 -->
 
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
