@@ -101,6 +101,7 @@
 * [4.5 — Medication Adherence Intervention Targeting](chapter04.05-medication-adherence-intervention-targeting)
   * [Python Example](chapter04.05-python-example)
 * [4.6 — Care Gap Prioritization](chapter04.06-care-gap-prioritization)
+  * [Python Example](chapter04.06-python-example)
 
 ---
 
