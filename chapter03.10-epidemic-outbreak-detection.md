@@ -1,3 +1,312 @@
+<!--
+Editor pass v1 (TechEditor, 2026-05-15):
+  - Mechanics: corrected "Adopts complementary signal to provider-based
+        surveillance" to "Provides a complementary signal to
+        provider-based surveillance" in the Variations and Extensions
+        "Conversational AI for the public" entry. The verb "adopts" is
+        a lexical mismatch in context: a public-facing chatbot supplies
+        signal to surveillance rather than adopts signal from it.
+  - Verified mechanically under UTF-8 decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major sections),
+        11 H3 (subsections under The Technology and The AWS
+        Implementation), 0 H4, 0 H5; no skipped levels.
+      * 28 fence markers = 14 balanced fenced code blocks (mermaid
+        block tagged at line 370, JSON sample cases tagged at lines
+        1215, 1276, 1291; pseudocode and architecture-text blocks
+        intentionally untagged per Chapter 1 convention).
+      * 13 TODO (TechWriter, ...) markers preserved verbatim (in
+        body) plus the consolidated catalog of architectural and
+        Python WARNINGs below.
+      * No trailing-whitespace lines.
+  - Voice and structure verification:
+      * No documentation-voice ("This recipe demonstrates...") in
+        body.
+      * No announcement statements ("We are excited to...").
+      * No LinkedIn-influencer tone ("AWS architects, we need to talk
+        about...").
+      * No feature-list formatting (bullet lists of capabilities
+        without context).
+      * 70/30 vendor balance preserved: AWS service names confined to
+        The AWS Implementation, Architecture Diagram, Prerequisites,
+        Ingredients, the Pseudocode Walkthrough, Why-This-Isn't-
+        Production-Ready, Variations and Extensions, and Additional
+        Resources. The Problem, The Technology, and General
+        Architecture Pattern sections remain vendor-neutral.
+      * All hyperlinks in Additional Resources point to plausible AWS,
+        regulatory (ecfr.gov, hhs.gov, cdc.gov, jhuapl.edu,
+        aimsplatform.org, cste.org, aphl.org, satscan.org,
+        nextstrain.org), industry standard (hl7.org, loinc.org,
+        snomed.org), and vendor (conduent.com, trisano.org,
+        bluedot.global, healthmap.org) domains; no fabricated GitHub
+        URLs.
+
+Open architectural concerns flagged for TechWriter follow-up
+(consolidated from expert review reviews/chapter03.10-expert-review.md
+and code review reviews/chapter03.10-code-review.md; verdict on the
+recipe was PASS with 0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW; verdict on
+the Python companion was PASS with 3 WARNINGs, 10 NOTEs; none require
+structural rewrites of completed sections, but the pseudocode and
+General Architecture Pattern sections need targeted additions that
+exceed editor scope per persona instructions "Do not introduce new
+claims or technical content" and "If a section needs substantial
+rewriting, flag it rather than rewriting"):
+
+  TODO (TechWriter, MEDIUM A1): Outcome-event and cluster-grouping
+    idempotency. Step 8 build_clusters and Step 9 on_investigator_action
+    are EventBridge-driven and at-least-once; redelivered score events
+    produce duplicate clusters for the same geography x syndrome,
+    redelivered investigator-action events double-update cluster state,
+    double-invoke initiate_external_reporting (eCR/NEDSS/NORS/NHSN/NMI
+    reporting clock initiated twice), double-invoke
+    notify_neighboring_jurisdictions, double-invoke
+    initiate_response_coordination, double-write S3 label rows. Add a
+    deterministic-event-key + conditional-write guard pattern. Same
+    recurring pattern as Recipes 2.4-2.10 and 3.1-3.9 (fifteenth
+    consecutive recipe); cookbook-wide trigger-idempotency appendix
+    strongly recommended.
+
+  TODO (TechWriter, MEDIUM A2): No DLQ / poison-message handling for
+    the Lambdas in the pipeline. Add SQS DLQs with OnFailure
+    destinations; CloudWatch alarms on DLQ depth with threshold 1 for
+    encounter-ingest, lab-ingest, syndrome-classifier, baseline-
+    computer, cluster-builder, and outcome-capture (single-event
+    sensitivity because a dropped event is a missed encounter, missed
+    lab result, missed cell-counter increment, missed baseline
+    refresh, missed cluster, or missed eCR/NEDSS reporting-clock
+    initiation, which can propagate into statutory-compliance gaps
+    and program-credibility issues).
+
+  TODO (TechWriter, MEDIUM A3): Multi-source fusion architectural
+    surfacing. The Honest Take frames multi-source fusion as the
+    headline value-add ("Multi-source fusion is the biggest leverage
+    point I've seen in the last decade") but Step 7 pseudocode does
+    not architecturally surface the cross-source geographic
+    resolution discipline. Reader implementing pseudocode produces a
+    system where concordance structurally cannot fire because
+    clinical signals operate at census-tract / ZCTA / county
+    granularity, wastewater at sewershed, pharmacy at retail-
+    catchment, and school absenteeism at school-district. Add a
+    Cross-Source-Geographic-Resolution paragraph to General
+    Architecture Pattern's Multi-Source-Fusion description that names
+    the explicit cross-source crosswalk maintained in Aurora PostGIS
+    (boundary geometries plus relationship tables) plus population-
+    weighted aggregation for partial-coverage cases; update Step 7
+    pseudocode to show the crosswalk lookup explicitly. Code review
+    Finding 3 documents this at the Python-companion level.
+
+  TODO (TechWriter, MEDIUM A4): Reference-data versioning propagation
+    into cluster and audit index. Step 6 publishes per-detector
+    results without model_version, baseline_version,
+    feature_snapshot_id, cohort_thresholds_version. Step 8 cluster
+    construction does not include explicit evidence_pointers block.
+    For cross-jurisdictional defense, OCR/CSTE audit, or press-
+    conference defense, reproducing the cluster-builder reasoning
+    requires snapshot-ID trail. Add version metadata on detector
+    results and evidence_pointers on cluster object; update DynamoDB
+    and OpenSearch writes to include block; update sample cluster
+    candidate.
+
+  TODO (TechWriter, MEDIUM A5): Suppression-rule schema and
+    expiry-and-review workflow. Why-This-Isn't-Production-Ready
+    correctly identifies suppression-rule lifecycle management as a
+    first-class concern with explicit "Build a suppression-rule audit
+    and renewal process from the start" framing, but suppression-rule
+    schema and expiry-and-review workflow are not architecturally
+    surfaced. Add structured schema (rule_id, geographies, syndromes,
+    reason_class, valid_from, valid_until, dismissal_cluster_id,
+    investigator_id, dismissal_rationale_text, coordination_ticket_id);
+    scheduled-job workflow for soon-to-expire rules surfaced to
+    surveillance program governance committee; source-data-fix events
+    trigger re-evaluation.
+
+  TODO (TechWriter, MEDIUM A6): Case-detail PHI store separation
+    enforcement. Why-This-Isn't-Production-Ready correctly names case-
+    detail PHI store separation as "a privacy-by-design requirement
+    that's easy to skip and hard to retrofit." Add Case-Detail-PHI-
+    Store-Separation paragraph to General Architecture Pattern; AWS
+    Implementation names per-account or per-subnet separation with own
+    KMS key, IAM scoping, CloudTrail data events; pointer-resolution
+    service authenticates requesting role, checks access policy, logs
+    resolution event; Prerequisites row "Case-detail PHI store
+    separation" as precondition to deployment.
+
+  TODO (TechWriter, MEDIUM S1): Cluster payload PHI minimization for
+    surveillance UI back end, eCR/NEDSS connector, OpenSearch cluster-
+    index, and NSSP/NORS/NHSN connector. The cluster payload contains
+    line-list summary at small-geography granularity, demographic
+    breakdown that may be re-identifying in small cells, multi-
+    sentence LLM-generated narrative naming geographies and demographic
+    skew, and lab and genomic context. Update Step 8 pseudocode to
+    publish only cluster_id, tier, composite_score, geography-class,
+    syndrome-class through cluster-bus; consuming back ends fetch full
+    cluster by cluster_id through authenticated paths with per-consumer
+    suppression at read boundary. Tenth distinct PHI-minimization-
+    inside-the-BAA surface across cookbook.
+
+  TODO (TechWriter, MEDIUM S2): Subgroup data governance for
+    surveillance equity. Why-This-Isn't-Production-Ready acknowledges
+    the most comprehensive surveillance-equity taxonomy in any chapter-
+    3 recipe (demographic group, geography, language, insurance
+    category, rurality) with disparate-impact framing. Architectural
+    artifacts unspecified. Add Subgroup data access row to
+    Prerequisites; restrict read access to demographic-and-geographic-
+    class store; CloudTrail data events on subgroup queries; QuickSight
+    against an aggregated subgroup-metrics table. Nine-recipe chapter-
+    wide pattern (Recipes 3.2 through 3.10); cookbook-wide subgroup-
+    governance appendix is the second-highest-leverage editorial
+    investment alongside trigger-idempotency.
+
+  TODO (TechWriter, MEDIUM S8): Suppressed-cell rules at the
+    publication boundary as architectural primitive. Where-it-struggles
+    correctly names suppressed-cell rules as a publication-boundary
+    discipline distinct from per-cluster suppression. Architecture
+    does not enforce the suppression at the publication boundary. Add
+    publication-layer service paragraph to General Architecture
+    Pattern; per-publication-target suppression-policy registry; per-
+    publication audit trail; AWS Implementation names publication-
+    layer Lambda, publication-policy-registry DynamoDB, publication-
+    audit-archive S3. Recipe-3.10-distinctive: only recipe in cookbook
+    where the publication boundary is the operational boundary the
+    program is most likely to be asked to defend in a press conference
+    or cross-jurisdictional review.
+
+  TODO (TechWriter, LOW S3): Per-consumer IAM scoping for cell-state,
+    cluster-state, geocode-cache, suppression-rule, Timestream,
+    OpenSearch, S3 stores. Strengthen the Prerequisites IAM row with
+    per-consumer scope examples covering encounter/lab/wastewater/
+    pharmacy/absenteeism/case-ingest, event-normalizer, geocoding,
+    syndrome-classifier, update-cell-counters, baseline-computer,
+    detector-bank, cluster-builder, outcome-capture, surveillance
+    epidemiologist UI, eCR/NEDSS connector, NSSP connector, cross-
+    jurisdictional notification, surveillance leadership, data-
+    science roles.
+
+  TODO (TechWriter, LOW S4): HL7 v2 / FHIR encounter-feed ingress
+    security posture not specified beyond format mention. Add
+    paragraph covering per-source authentication schemes (MLLP-over-
+    TLS for HL7 v2, OAuth 2.0 with SMART-on-FHIR for FHIR), secret
+    rotation, IP allowlisting, integration-engine scoping where state
+    aggregators (CDC BioSense Platform, state HIEs) are in path; add
+    Prerequisites row "Encounter-feed authentication".
+
+  TODO (TechWriter, LOW S5): NWSS / wastewater-feed ingress security
+    and BAA posture not specified. Add paragraph covering data-
+    classification clarity (wastewater data is non-PHI), NWSS public
+    API plus direct-lab integration, per-source DUA-scope filter at
+    publication boundary; integration with publication-layer service
+    (S8).
+
+  TODO (TechWriter, LOW S6): Bedrock LLM-narrative BAA-discipline
+    forward reference to Chapter 2's settled patterns missing. Expand
+    Bedrock paragraph to acknowledge Amazon foundation models (Titan,
+    Nova) versus third-party model BAA differentiation, name minimum-
+    necessary prompt construction, output filtering for outbreak-
+    determination and specific-pathogen-attribution language, full
+    prompt-and-response audit trail; forward-reference Chapter 2
+    generative AI recipes.
+
+  TODO (TechWriter, LOW S7): Comprehend Medical chief-complaint and
+    triage-note PHI handling not specified. Expand Comprehend Medical
+    paragraph to name HIPAA-eligibility under BAA, synchronous
+    DetectEntitiesV2 with minimum-necessary excerpt, derived-syndrome-
+    category-label-only persistence (no full Comprehend Medical entity
+    payload retention), CloudTrail data events on the call.
+
+  TODO (TechWriter, LOW N1): VPC endpoint precision (multiple gaps:
+    Kinesis, OpenSearch, EventBridge events vs Scheduler, SageMaker
+    api/runtime/featurestore-runtime, Athena, Glue, AppSync,
+    Timestream, Aurora, Neptune, Secrets Manager, bedrock-runtime,
+    comprehendmedical, geo, batch, CloudWatch monitoring vs Logs).
+    Recurring chapter-wide pattern; cookbook-wide VPC-endpoint
+    appendix candidate.
+
+  TODO (TechWriter, LOW N2): VPC Flow Logs not explicitly required.
+    Recipe-3.10-distinctive amplification: data lineage that supports
+    the cluster's classification has to be defensible in cross-
+    jurisdictional and press-conference contexts. Add VPC Flow Logs
+    requirement with KMS-encrypted S3 destination and retention
+    aligned to deepest applicable requirement.
+
+  TODO (TechWriter, LOW N3): Cross-jurisdictional federation network
+    path not specified (SAML 2.0/OIDC bilateral federation, TEFCA-
+    compliant federation, CDC-coordinated direct integration via
+    BioSense Platform, bilateral data-sharing agreements with per-
+    receiving-jurisdiction policy enforcement). Add paragraph to
+    Variations and Extensions "Cross-jurisdictional federated
+    surveillance" extension; integration with publication-layer
+    service (S8).
+
+  TODO (TechWriter, LOW N4): NSSP / NORS / NHSN external-reporting
+    network path not specified (NSSP/BioSense HL7 v2/ECR feeds with
+    secure HTTPS endpoints, NORS web-portal/API, NHSN SAMS-
+    authenticated upload, NMI/NEDSS message structures defined by
+    CDC's surveillance message-mapping guides). Add paragraph
+    covering per-system authentication and integration patterns;
+    Prerequisites row "External-reporting authentication".
+
+  TODO (TechWriter, LOW V1): Sample output future-dated timestamps
+    and identifiers (CL-2026-10-23-000412 opened_at 2026-10-23,
+    CL-2026-10-22-000388 outcome_at 2026-10-22, CL-2026-08-04-000119
+    outcome_at 2026-08-05). Same observation as Recipes 3.1 V1
+    through 3.9 V1. Either replace with placeholder pattern or add
+    HTML-comment disclaimer.
+
+  TODO (TechWriter, LOW V2): Performance-benchmark numbers should
+    be flagged more prominently as illustrative. Tighten existing
+    inline header from "(illustrative; measure against your own
+    data)" to call out jurisdiction-and-population-and-program-
+    maturity dependence; particularly population-dependent rows
+    (confirmed-outbreak rate, false-alarm rate, lead-time vs
+    clinician recognition).
+
+  TODO (TechWriter, LOW V3): Six of the thirteen HTML-comment TODOs
+    should be resolved before publication: CDC/CSTE staffing
+    surveys, HIPAA public-health-exception OCR guidance, cross-
+    jurisdictional coordination practices, Timestream HIPAA-
+    eligibility, Neptune HIPAA-eligibility, HIPAA-eligible Bedrock
+    model list. The remaining seven (cost ranges directional,
+    benchmark literature, BARDA/CDC ROI estimates, wearable-
+    surveillance status, aws-samples repos, AWS blog posts, peer-
+    reviewed citations) read cleanly as forward placeholders.
+
+  TODO (TechWriter, LOW V5): Add one-line cross-reference between
+    The Honest Take's "build the program first" lesson and the
+    Estimated Implementation Time table's Basic tier (6-12 months
+    for control-charts plus Farrington Flexible at county level
+    with manual surveillance team queue).
+
+  TODO (TechWriter, LOW V6): Add one-line note at top of Variations
+    and Extensions section cross-referencing The Honest Take's
+    "biggest mistake: programs that get over-excited about advanced
+    analytics and skimp on the basics" framing.
+
+  TODO (TechWriter, Python WARNING 1): chapter03.10-python-example.md
+    find_existing_open_cluster uses table.scan with FilterExpression
+    and no pagination; silently misses open clusters past the 1MB
+    response limit and produces duplicate clusters. Add GSI-backed
+    query keyed on (status, opened_at) or pagination loop. See
+    reviews/chapter03.10-code-review.md Finding 1.
+
+  TODO (TechWriter, Python WARNING 2): chapter03.10-python-example.md
+    check_recent_dismissal uses table.scan without pagination; same
+    silent-loss failure mode once the suppression-rules table is
+    non-trivial. Add GSI-backed query keyed on (reason_class,
+    valid_until) or pagination loop. See reviews/chapter03.10-code-
+    review.md Finding 2.
+
+  TODO (TechWriter, Python WARNING 3): chapter03.10-python-example.md
+    multi-source fusion candidate-to-signal matching uses raw geo_id
+    string equality; cross-source concordance never fires because
+    clinical, wastewater, and absenteeism signals have different
+    geography types and IDs. Pass the geographic-relationship mapping
+    (already populated in geocode_and_stratify) into the fusion layer
+    and resolve cross-source matches through it. See reviews/
+    chapter03.10-code-review.md Finding 3. Coordinated fix with
+    expert-review MEDIUM A3.
+-->
+
 # Recipe 3.10: Epidemic / Outbreak Detection ⭐
 
 **Complexity:** Complex · **Phase:** Production (with public health partnership and clinical surveillance governance) · **Estimated Cost:** ~$0.0001 to $0.001 per encounter scored (mostly ingest, syndrome classification, and spatiotemporal aggregation; daily full-population recompute dominates the bill)
@@ -1454,7 +1763,7 @@ People matter most, even when they're invisible. The clinicians who first see th
 
 **Privacy-preserving multi-organization surveillance.** Federated learning, secure multi-party computation, and differential privacy approaches that allow cross-organization surveillance without raw-data sharing. Operationally early-stage in healthcare surveillance; the research is active and a few pilots exist. Useful for cross-state cluster detection and for surveillance involving sensitive populations where data-sharing is legally constrained.
 
-**Conversational AI for the public.** A patient-facing chatbot that allows individuals to report symptoms anonymously and aggregates the reports for public health surveillance. Adopts complementary signal to provider-based surveillance because it captures people who don't seek care. Privacy considerations are significant; the surveillance value depends on participation rates that are hard to predict.
+**Conversational AI for the public.** A patient-facing chatbot that allows individuals to report symptoms anonymously and aggregates the reports for public health surveillance. Provides a complementary signal to provider-based surveillance because it captures people who don't seek care. Privacy considerations are significant; the surveillance value depends on participation rates that are hard to predict.
 
 **Patient-facing transparency on outbreaks.** Public-facing dashboards that show current outbreak status (with appropriate suppression) and historical patterns, integrated with the patient portal so individuals can see whether elevated activity is occurring in their area. Operationally early-stage but consistent with broader patient-rights movements toward health-data transparency.
 
