@@ -203,7 +203,7 @@ The pipeline has three logical components: a content ingestion path that prepare
 
 ### Why These Services
 
-**Amazon S3 for the content body store.** Patient education content has a few presentation forms (HTML, PDF, MP4, audio), all of which are blobs. S3 is the obvious home for the body. Bucket-level encryption with KMS, versioning enabled so you have a paper trail when content gets updated, and a prefix structure (`/content/{content_id}/{version}/{format}`) that maps to the content metadata.
+**Amazon S3 for the content body store.** Patient education content has a few presentation forms (HTML, PDF, MP4, audio), all of which are blobs. S3 is the obvious home for the body. Bucket-level encryption with KMS, versioning enabled so you have a paper trail when content gets updated, and a prefix structure (`content/{content_id}/{version}/{format}`) that maps to the content metadata.
 
 **Amazon DynamoDB for content metadata and patient profile.** Two tables. One holds catalog metadata (content_id, title, language, reading_level, topic_tags, content_type, audience, status). One holds patient profile (patient_id, conditions, language, reading_level estimate, format preferences, engagement summary). Both are point-lookup workloads, both fit DynamoDB's strengths, and both are HIPAA-eligible with BAA. Use customer-managed KMS keys; the patient profile is PHI by definition, and the content metadata becomes PHI the moment it's joined to a patient ID.
 
