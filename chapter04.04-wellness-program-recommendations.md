@@ -955,7 +955,7 @@ FUNCTION run_outcome_evaluation(programs, evaluation_window):
   "tailored": {
     "subject_line": "Una opción de prevención que puede ayudarle",
     "opening_line": "Hola Maria, queríamos compartirle un programa que podría apoyarle con sus resultados recientes.",
-    "program_pitch": "El Programa de Prevención de Diabetes (DPP) es un programa de 12 semanas con apoyo de un coach. Los participantes a menudo bajan algo de peso y mejoran sus números de A1c.",
+    "program_pitch": "El Programa de Prevención de Diabetes (DPP) es un programa de 12 meses con apoyo de un coach. Los participantes a menudo bajan algo de peso y mejoran sus números de A1c.",
     "closing_call_to_action": "¿Le gustaría saber más? Responda 'SÍ' a este mensaje o llame al número de su plan."
   },
   "fallback_template": "dpp-default-es",
