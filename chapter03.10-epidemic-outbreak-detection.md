@@ -1,4 +1,51 @@
 <!--
+Editor pass v3 (TechEditor, 2026-05-15):
+  - Re-verification plus one targeted in-body TODO addition.
+    Re-ran the full editorial checklist a third time. Confirmed
+    mechanically under UTF-8 decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * 0 ellipses (U+2026), 0 curly quotes (U+2018/U+2019/U+201C/
+        U+201D), 0 non-breaking spaces (U+00A0), 0 tab characters.
+      * Header hierarchy unchanged: 1 H1, 11 H2, 11 H3, 0 H4, 0 H5;
+        no skipped levels.
+      * 28 fence markers (14 balanced fenced code blocks).
+      * No common typos (verified against a substitution-error
+        sweep: teh, adn, occured, occuring, seperate, recieve,
+        occurence, accomodate, definately, neccesary, mispell,
+        calender, tommorrow, arguement, existance, liason,
+        perserverance, priviledge, pronounciation, supercede,
+        wierd; zero matches).
+      * No double-punctuation or repeated-word issues in body
+        (matches confined to v1/v2 editor catalog and to legitimate
+        constructs such as "et al.," in academic citations and
+        DynamoDB pseudocode placeholders).
+      * No bare http/https URLs outside markdown link wrapping.
+      * No documentation-voice, announcement statements,
+        LinkedIn-influencer tone, or feature-list formatting in
+        body (matches confined to v1/v2 editor catalog references
+        of the anti-pattern names themselves).
+      * 70/30 vendor balance preserved.
+  - One new technical-content concern flagged as a TechWriter TODO
+    in the body: the "Bayesian hierarchical models" paragraph in
+    "The Technology" / "Statistical and ML Methods That Fit"
+    groups `bsts` and `brms` together as "Stan-based R packages."
+    `brms` is Stan-based; `bsts` (Bayesian Structural Time Series
+    by Steven L. Scott) uses a custom MCMC sampler implemented in
+    C++ and is not Stan-based. Per persona instruction "Do not
+    introduce new claims or technical content," the fix is flagged
+    rather than applied; TechWriter should either drop "Stan-based"
+    or restate the relationship (for example, "MCMC-based R
+    packages including `bsts` and `brms` (the latter Stan-based
+    with appropriate priors)").
+  - All other findings from the expert review and code review
+    remain architectural and content-level changes that exceed
+    editor scope per persona instructions ("Do not introduce new
+    claims or technical content" and "If a section needs
+    substantial rewriting, flag it rather than rewriting"). The
+    consolidated TODO catalog below captures each one verbatim
+    for TechWriter follow-up; no re-litigation in this pass.
+
 Editor pass v2 (TechEditor, 2026-05-15):
   - Re-verification only; no in-body changes applied. Ran the full
     editorial checklist a second time to confirm the v1 pass remains
@@ -480,7 +527,7 @@ The technique palette spans simple control charts through scan statistics throug
 
 **Spatial scan statistics.** Kulldorff's method (and its space-time and permutation variants) computes a maximum likelihood ratio over all candidate clusters defined by varying spatial windows. Implemented in SaTScan, which is the standard tool used by CDC, state health departments, and academic surveillance programs. Computationally manageable for daily/weekly runs at county or ZIP-level resolution.
 
-**Bayesian hierarchical models.** When the data has structure (cases nested within geographies, geographies nested within regions, weeks nested within seasons), hierarchical Bayesian models can borrow strength across the hierarchy and handle small-cell estimation gracefully. INLA-based approaches and MCMC-based approaches both have practitioners. The Stan-based R packages (`bsts`, `brms` with appropriate priors) and the `INLA` R package provide accessible implementations.
+**Bayesian hierarchical models.** When the data has structure (cases nested within geographies, geographies nested within regions, weeks nested within seasons), hierarchical Bayesian models can borrow strength across the hierarchy and handle small-cell estimation gracefully. INLA-based approaches and MCMC-based approaches both have practitioners. The Stan-based R packages (`bsts`, `brms` with appropriate priors) and the `INLA` R package provide accessible implementations. <!-- TODO (TechWriter): the `bsts` package (Bayesian Structural Time Series by Steven L. Scott) uses a custom MCMC sampler implemented in C++ and is not Stan-based; only `brms` is Stan-based. Either drop "Stan-based" from the qualifier or restate the relationship, for example: "MCMC-based R packages including `bsts` and `brms` (the latter Stan-based with appropriate priors)." -->
 
 **Negative binomial regression with seasonal terms.** A workhorse for count data with overdispersion (which is most surveillance data). Model expected counts as a function of trend, seasonal harmonics, day-of-week effects, and (where available) special-cause indicators (school closures, holidays, regional events). Flag observations whose probability under the model is below a threshold.
 
