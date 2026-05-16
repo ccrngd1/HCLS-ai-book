@@ -216,8 +216,8 @@ SAMPLE_PROGRAMS = [
     {
         "program_id":           "prog-dpp",
         "display_name":         "Diabetes Prevention Program",
-        "public_summary":       "A 12-week program with a coach focused on lifestyle changes that lower diabetes risk.",
-        "time_commitment":      "12 weeks, ~1 hour per week",
+        "public_summary":       "A 12-month CDC-recognized program with a coach focused on lifestyle changes that lower diabetes risk.",
+        "time_commitment":      "12 months: 16 weekly core sessions, then monthly post-core sessions",
         "capacity":             200,    # seats per cohort cycle
         "min_cohort_size":      40,
         "cohort_cadence":       "monthly",
@@ -596,6 +596,8 @@ def score_eligible_population(
             model_name=NEED_MODEL_NAME,
             input_uri=eligible_uri,
             output_uri=need_output,
+            run_date=run_date,
+            job_kind="need",
             instance_type="ml.m5.large",
         )
         in_flight.append((need_job_name, "need", program_id, need_output))
@@ -615,6 +617,8 @@ def score_eligible_population(
                 model_name=eng_model,
                 input_uri=eligible_uri,
                 output_uri=eng_output,
+                run_date=run_date,
+                job_kind="engagement",
                 instance_type="ml.m5.large",
             )
             in_flight.append((eng_job_name, "engagement", program_id, eng_output))
@@ -636,6 +640,8 @@ def score_eligible_population(
                 model_name=uplift_model,
                 input_uri=eligible_uri,
                 output_uri=uplift_output,
+                run_date=run_date,
+                job_kind="uplift",
                 # Causal forests are heavier than gradient-boosted
                 # classifiers; bump the instance size.
                 instance_type="ml.m5.xlarge",
@@ -666,6 +672,8 @@ def _start_batch_transform(
     model_name: str,
     input_uri: str,
     output_uri: str,
+    run_date: str,
+    job_kind: str,
     instance_type: str = "ml.m5.large",
     instance_count: int = 1,
 ) -> None:
@@ -702,10 +710,13 @@ def _start_batch_transform(
             "InstanceCount": instance_count,
         },
         # Resource tags so cost-attribution and audit queries can find
-        # this job by program and run_date.
+        # this job by program and run_date. Pass run_date and job_kind
+        # explicitly rather than reconstructing them from job_name:
+        # since program_ids contain hyphens (e.g. "prog-dpp"), splitting
+        # the job_name on "-" produced just the day-of-month suffix.
         Tags=[
-            {"Key": "wellness:run_date",  "Value": job_name.split("-")[-1]},
-            {"Key": "wellness:job_kind",  "Value": job_name.split("-")[0]},
+            {"Key": "wellness:run_date", "Value": run_date},
+            {"Key": "wellness:job_kind", "Value": job_kind},
         ],
     )
 
