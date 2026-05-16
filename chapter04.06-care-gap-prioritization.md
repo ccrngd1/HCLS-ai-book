@@ -1,5 +1,51 @@
 # Recipe 4.6: Care Gap Prioritization ⭐⭐
 
+<!--
+TechEditor pass v1 (2026-05-16, ch04-r06-edit). Editorial fixes:
+- Verified em-dash count: 0 (passes "no em dashes ever" rule).
+- Verified en-dash count: 0.
+- Header hierarchy: H1 title only, H2 for major sections, H3 for subsections,
+  one H4 (#### Walkthrough). No skipped levels.
+- Voice drift scan: no documentation-voice openings, no LinkedIn-influencer
+  patterns, no "we are excited" announcements. "High-leverage" in
+  Variations is the colloquial leverage-point sense (acceptable per Voice
+  reviewer).
+- Vendor balance: 70/30 maintained. The Problem, The Technology, and
+  General Architecture Pattern stay vendor-neutral; AWS service names
+  appear only in The AWS Implementation.
+- RECIPE-GUIDE compliance: all required sections present in correct order
+  (Problem, Technology, General Architecture, AWS Implementation, Expected
+  Results, Why This Isn't Production-Ready, Honest Take, Variations,
+  Related Recipes, Additional Resources, Implementation Time, Tags,
+  Footer Navigation).
+- Existing TechWriter TODO markers from prior personas preserved in place.
+- New TODOs added flagging substantive technical concerns rather than
+  rewriting (per persona instructions: "do not introduce new claims or
+  technical content"; "if a section needs substantial rewriting, flag it
+  rather than rewriting"):
+  * Expert Review A2 HIGH: data_quality_flag computed but never gates
+    downstream stages (added at General Architecture Pattern).
+  * Expert Review A3 HIGH: HEDIS Comprehensive Diabetes Care (CDC) measure
+    retired; replace with EED/KED/GSD/BPD naming (added at The Technology
+    bullet and at Expected Results sample).
+  * Expert Review A6 MEDIUM: chained-closure state machine missing
+    (added at Variations specialist-coordination paragraph).
+  * Expert Review A9 MEDIUM: David vignette clinical loosenesses
+    (pneumococcal-at-64, family-history elevated-risk, six-years-overdue
+    math; added inline at the eleven-gaps paragraph).
+  * Expert Review A10 MEDIUM: closure-tracker mutation-based state
+    machine fragile to out-of-order events (added at Step 5).
+  * Expert Review A11 MEDIUM: chase_period_weight_overrides not
+    architected (added at production-gaps year-end paragraph).
+  * Expert Review S1 MEDIUM: process_clinician_override missing
+    patient-identity boundary check (added inline in Step 6 pseudocode).
+  * Code Review WARNING 3: in_visit pathway dispatched as no-op when no
+    upcoming visit (added inline in Step 4 pseudocode).
+- Did NOT modify: prose flow, structural section order, technical claims
+  (these are TechWriter's domain). Did NOT rewrite the David vignette,
+  the Honest Take, or any code block.
+-->
+
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
 
 ---
@@ -11,6 +57,8 @@ David is 64. He has been a patient at the same primary care practice for fifteen
 If you ask David's plan's analytics team to pull his open care gaps, the report comes back with eleven of them.
 
 He is overdue for his diabetic retinal exam (last one was 26 months ago; the gap window for the HEDIS Eye Exam for Patients with Diabetes measure closed five months ago). He is overdue for his diabetic foot exam (last documented one was 19 months ago; the practice's quality dashboard shows it red). He is overdue for his colonoscopy (last one was at 54, ten years ago, when normal-result recommendations were every ten years; the current USPSTF guidance starts at 45 and his family history flags him for earlier and more frequent screening). He has not had a flu shot this season. He has not had the COVID booster the CDC recommended for adults over 50 with diabetes. He has not had the pneumococcal vaccine that became indicated when he turned 64 in February. He has not had the shingles vaccine. His statin regimen has not been re-titrated despite his rising A1c (his cardiovascular risk has gone up). His blood pressure was 132/82 at the last visit, which is on the line for hypertension control under the current measure spec, and his medication list hasn't been adjusted. His urine albumin-to-creatinine ratio (UACR) was last drawn 14 months ago, and given his diabetes plus the rising A1c, current ADA guidance would have it drawn annually. His eGFR has been trending down (from 78 two years ago, to 71 a year ago, to 64 last visit). His PCP has not had a documented conversation about chronic kidney disease (CKD) with him.
+
+<!-- TODO (TechWriter, MEDIUM per Expert Review A9): Three clinical-loosenesses in this vignette. (1) Pneumococcal: ACIP has indicated pneumococcal vaccination (PPSV23 historically; PCV15/PCV20 under current simplified recommendations) for adults 19-64 with diabetes for years. David's gap is not "newly indicated at 64"; it has been open for most of a decade. Reframe as a long-standing gap. (2) Diabetic foot exam: the parent HEDIS CDC measure was retired (see HEDIS naming TODO above) and the foot-exam component did not survive the split. Foot exams remain ADA-recommended but no current HEDIS or Star measure tracks them. Either reframe as a guideline-recommended (ADA) gap that the practice's internal quality dashboard tracks, or remove the "quality dashboard shows it red" framing. (3) Colon cancer family history: a paternal CRC diagnosis at 71 generally does NOT trigger elevated-risk surveillance under NCCN/ACG/USMSTF criteria (those trigger when a first-degree relative is diagnosed at <60). Either strengthen the family history to genuinely trigger elevated-risk screening, or drop the "earlier and more frequent" elevated-risk framing and treat David as average-risk where the gap is "the 10-year interval has elapsed." This last cleanup also requires fixing the matching "his colonoscopy that's six years overdue" line in the unlucky-version paragraph below: David is 64 with a normal colonoscopy at 54, so under average-risk guidance he is at-due, not six years overdue. Coordinate all three fixes in a single 30-minute clinical-informatics review pass. -->
 
 Eleven gaps. David is at his PCP next Tuesday morning at 9:15 AM for his annual visit. The visit is scheduled for 25 minutes. The PCP, Dr. Patel, will spend the first five minutes reviewing the chart in the EHR, ten minutes on the visit itself, and ten minutes on documentation and orders. Best case, she addresses three gaps. More realistically, two.
 
@@ -52,7 +100,7 @@ Let's get into how you build it.
 
 Before any modeling, the system has to know what counts as a gap. There are three reasonable definitions in common use, and a production recommender ends up using all three:
 
-- **Quality-measure-defined gaps.** The patient is in the denominator of a HEDIS, Stars, ACO, or contracted quality measure, and the numerator condition (the qualifying event or procedure within the lookback window) is not satisfied. These are deterministically computable from claims, lab data, and EHR data given the measure specification. Examples: HEDIS Comprehensive Diabetes Care eye exam, BCS-E breast cancer screening, FUH (Follow-Up after Hospitalization for Mental Illness), CCS cervical cancer screening. The measure specifications are publicly published, are updated annually, and have well-defined denominator and numerator definitions. <!-- TODO: confirm the current HEDIS, CMS Star Ratings, and major ACO measure specification sources at the time of build; NCQA publishes HEDIS, CMS publishes Stars technical notes, ACO measure sets are program-specific. -->
+- **Quality-measure-defined gaps.** The patient is in the denominator of a HEDIS, Stars, ACO, or contracted quality measure, and the numerator condition (the qualifying event or procedure within the lookback window) is not satisfied. These are deterministically computable from claims, lab data, and EHR data given the measure specification. Examples: HEDIS Comprehensive Diabetes Care eye exam, BCS-E breast cancer screening, FUH (Follow-Up after Hospitalization for Mental Illness), CCS cervical cancer screening. The measure specifications are publicly published, are updated annually, and have well-defined denominator and numerator definitions. <!-- TODO (TechWriter, HIGH per Expert Review A3): NCQA retired the parent Comprehensive Diabetes Care (CDC) measure beginning HEDIS MY 2022 and split it into EED (Eye Exam for Patients with Diabetes), KED (Kidney Health Evaluation for Patients With Diabetes), GSD (Glycemic Status Assessment for Patients With Diabetes), and BPD (Blood Pressure Control for Patients With Diabetes). Replace "HEDIS Comprehensive Diabetes Care eye exam" with "HEDIS Eye Exam for Patients with Diabetes (EED)" and add a parenthetical note explaining the CDC retirement and the EED/KED/GSD/BPD split. Coordinate with the Expected Results sample (`measure_id: hedis-cdc-eye-exam` should become `hedis-eed`) and with the Python companion's synthetic registry (Code Review Finding 1). Also confirm current HEDIS, CMS Star Ratings, and major ACO measure specification sources at the time of build. -->
 
 - **Guideline-recommended gaps.** The patient meets criteria from a clinical guideline (USPSTF, ADA, AHA/ACC, KDIGO, etc.) for a screening, immunization, or monitoring action that has not been performed within the recommended interval. These are similar to quality-measure gaps but broader: the guideline universe is bigger than the measure universe, and the urgency reasoning is clinical rather than operational. Example: a 50-year-old male with documented metabolic syndrome who hasn't had a fasting lipid panel in 18 months has a guideline-recommended gap that is not (necessarily) a HEDIS measure gap.
 
@@ -316,6 +364,8 @@ The pipeline has six logical components: a measure-registry component that maint
 **Outreach orchestration is multi-pathway.** Gaps with pathway "patient-driven" go to the channel optimizer from 4.1. Gaps with pathway "in-visit" stay on the agenda until the visit, then transition to "needs followup" if not addressed. Gaps with pathway "specialist referral" go to the referral-management workflow with prior-auth and scheduling assistance. The capacity-aware allocator from 4.5 handles the heterogeneous capacities across pathways. Equity floors apply at the pathway level.
 
 **Closure tracking is multi-source by design.** Closure events arrive from claims (slow, canonical for HEDIS), EHR (fast, canonical for the practice), lab feeds (fast, canonical for lab-based gaps), pharmacy (fast, canonical for some immunizations), immunization registries (medium speed, canonical in some states), and patient self-report (fast, low confidence, valuable for suppression of unnecessary outreach). The tracker's state machine reconciles these and gates downstream consumers (chase teams, dashboards, billing) on the appropriate confidence level. The HEDIS measure won't credit a self-report; the chase team should still suppress outreach when one arrives.
+
+<!-- TODO (TechWriter, HIGH per Expert Review A2): Add a paragraph naming the data_quality_flag gate explicitly. The flag is computed and persisted in Step 1, then never gates downstream decisions. The "Where it struggles" section says explicitly that downstream consumers should gate on it; the pseudocode does not. Five places need the gate: (a) Step 2 dampens urgency confidence on non-`complete` cases, (b) Step 3 suppresses low-quality gaps from the in-visit agenda, (c) Step 4 routes low-quality cases to a verification-first pathway before any closure-pathway-specific outreach, (d) Step 5 tightens (or relaxes, for `cross_provider_fragmentation`) the canonical-source rule, (e) Step 4 chase brief opens with verification framing when data quality is in doubt. The "calling a patient about a colonoscopy they had last week" failure mode the Honest Take warns against is exactly what `cross_provider_fragmentation` flags; not gating on it produces precisely that failure. Frame as: "the data_quality_flag is not metadata; it's an input to every downstream stage." -->
 
 **Equity instrumentation runs across all components.** Gap-identification rates by cohort (a measure that produces three times as many open gaps for one cohort versus another may reflect actual unmet need or may reflect data-completeness disparities; the dashboard surfaces both). Urgency-score distribution by cohort. In-visit closure rates by cohort and by clinician. Referral completion rates by cohort. Long-horizon closure rates by cohort. Each axis is a monitored dashboard.
 
@@ -956,6 +1006,18 @@ FUNCTION orchestrate_async_closures(visit_agendas, enriched_gaps_today, run_date
         member = lookup_member(candidate.patient_id)
         chosen_pathway = candidate.best_pathway
 
+        // <!-- TODO (TechWriter, MEDIUM per Code Review WARNING 3): When
+        //      best_pathway == "in_visit" but the patient has no upcoming
+        //      visit on the visit-context-ranker horizon, the current
+        //      pseudocode silently allocates the gap to a no-op (no
+        //      outreach is sent, no chase queue is populated, no PCP
+        //      inbox note is filed). The gap is registered as "surfaced"
+        //      but never acted on. Add an explicit fall-through to
+        //      second_best_pathway when chosen_pathway == "in_visit" AND
+        //      candidate.patient_id NOT IN visited_or_planned. The visit-
+        //      context ranker is the only place in_visit gaps should be
+        //      surfaced; the async orchestrator should never see them. -->
+
         // Per-pathway capacity.
         IF capacity_remaining[chosen_pathway] <= 0:
             // Try the second-best pathway.
@@ -1119,6 +1181,19 @@ suppresses outreach for the patient in 4.4, 4.5, and 4.7 too. -->
 
 **Step 5: Track closures from multiple sources and update gap state.** Closure events arrive from claims, EHR encounters, lab feeds, pharmacy data, immunization registries, and patient self-report. Each has its own latency and trustworthiness profile. Skip the multi-source reconciliation and your chase team will call patients about colonoscopies they had last week.
 
+<!-- TODO (TechWriter, MEDIUM per Expert Review A10): The current state machine
+mutates state per-event; this is brittle in the face of out-of-order arrival,
+retroactive corrections, late-arriving exclusions, and source-side restatements
+that the prose names explicitly as production concerns. Add a paragraph naming
+the event-replay pattern: events are stored in a per-(patient, gap) event log
+ordered by event.timestamp; current state is computed by replaying the log
+under the canonical-source rules from the registry; new events re-trigger
+replay rather than mutating state directly. This guarantees out-of-order
+arrivals produce the same final state regardless of receipt order, retroactive
+corrections work via superseding markers, late-arriving exclusions can override
+prior closures, and duplicate events are no-ops. The replay cost is small in
+practice (most gaps have <10 events). -->
+
 ```
 FUNCTION process_closure_event(event):
     // Step 5A: match the event to one or more open or provisionally-closed
@@ -1218,6 +1293,24 @@ FUNCTION process_clinician_override(event):
         LOG("override event with no matched briefing: " + str(event))
         RETURN
 
+    // <!-- TODO (TechWriter, MEDIUM per Expert Review S1): Add identity-boundary
+    //      checks here, mirroring the chapter pattern from 4.2/4.3/4.4/4.5.
+    //      An override event arriving with mismatched (event.patient_id,
+    //      event.measure_id) versus (rec.patient_id, rec.measure_id) should
+    //      be dropped with an `override_identity_mismatch` metric, not written
+    //      to the override audit trail under the event's claimed patient_id.
+    //      Three downstream effects depend on this check: clinician-overrides
+    //      is part of the audit trail; apply_suppression denies outreach for
+    //      30-180 days; update_training_label feeds the urgency-model retrain
+    //      pipeline. A patient-id mismatch contaminates all three. -->
+    // IF event.patient_id != rec.patient_id OR
+    //    event.measure_id != rec.measure_id:
+    //     LOG("override event identity mismatch with briefing; dropping",
+    //         event_patient = event.patient_id,
+    //         briefing_patient = rec.patient_id)
+    //     emit_metric("override_identity_mismatch", value = 1)
+    //     RETURN
+
     // Validate the override reason against the allowed taxonomy.
     allowed_reasons = ["appropriate_decline",
                         "previously_addressed_outside_record",
@@ -1288,6 +1381,12 @@ FUNCTION process_clinician_override(event):
 ### Expected Results
 
 **Sample patient gap state record:**
+
+<!-- TODO (TechWriter, HIGH per Expert Review A3): Update `measure_id` from
+`hedis-cdc-eye-exam` to `hedis-eed` (current NCQA naming after the CDC
+parent measure was retired and split into EED/KED/GSD/BPD beginning HEDIS
+MY 2022). Coordinate with the matching fix in The Technology section and
+the Python companion's synthetic registry. -->
 
 ```json
 {
@@ -1480,6 +1579,8 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Quality-measure year-end push handling.** Many quality programs run a year-end "chase" where the team aggressively closes outstanding gaps in the last 60 to 90 days of the measurement year. This creates a natural seasonality in the program and a temptation to throw the priority weights toward window-urgency in the chase period. Build the seasonality into the policy explicitly (e.g., a `chase_period_weight_overrides` block that activates between specific dates), document it, and put the cohort-equity dashboard on a shorter monitoring cycle during the chase. Otherwise the year-end push quietly redistributes effort to the easiest-to-close gaps in the cohorts already best-served by the program.
 
+<!-- TODO (TechWriter, MEDIUM per Expert Review A11): The `chase_period_weight_overrides` block is named here but not architected. Add a concrete schema sketch (start_date, end_date, weight_overrides, weight_caps, equity_floor_multipliers, monitoring_cadence_days) so a team building this recipe has the architectural primitive to implement. Without the primitive, year-end policy changes happen in a config-management process separate from the recommender, which means the year-end equity-monitoring tightening doesn't happen and the equity floors don't shift; both gaps produce the failure mode the Honest Take warns about. Specify that seasonal overrides go through the same governance review as base policy changes, and that equity floors should expand (not contract) during chase periods because chase periods disproportionately benefit operationally-easy cohorts. -->
+
 **Patient-friendly closure visibility.** Patients should be able to see their own care gaps and closures in the patient portal, with explanations they can understand. "You are due for a screening colonoscopy" is more useful than "HEDIS COL-E open." Patient-facing summaries are a separate UX project, with content review by health-literacy specialists, but the gap state machine in this recipe is the source data for that view. Plan for the patient-facing layer as a parallel deliverable; without it, patients only learn about gaps when the chase team calls, which is the worst time to learn about them.
 
 ---
@@ -1523,6 +1624,20 @@ Last point, because it's specific to this use case: care gaps are not the same a
 **Care-team load balancing.** When chase-team capacity is bounded and the priority queue exceeds capacity, the allocator from Step 4 picks the top of the priority list. A more sophisticated approach: cluster gaps by patient, route patients with multiple high-priority gaps to a single high-touch outreach contact (the agent addresses all of them in one call), and use lower-touch automation for patients with single moderate-priority gaps. This pattern is sometimes called "outreach bundling" and is operationally more efficient than gap-by-gap routing. <!-- TODO: cite literature on outreach bundling effectiveness; the practice is widespread but published evidence is mixed. -->
 
 **Specialist-coordination workflows.** For gaps that close via specialist visits (retinal exam, mammogram, colonoscopy, behavioral-health follow-up), build an end-to-end coordination workflow: scheduling assistance, transportation help, prior auth, reminder cascades, result-return-tracking, and PCP notification. The recommender's referral generation is the entry point; the closure depends on the workflow. Plans that invest in this coordination see materially higher referral-completion rates than plans that send a referral and hope.
+
+<!-- TODO (TechWriter, MEDIUM per Expert Review A6): The specialist-coordination
+workflow named in this Variation requires a chained-closure state machine
+that the core architecture doesn't show. Add the architectural primitive to
+General Architecture Pattern (or a new subsection): `recommendation-log` adds
+chain_id (UUID), chain_position, chain_total, predecessor_recommendation_id.
+Step 4 emits the first link of the chain (e.g., referral_generation) with
+chain_position = 1; later links are not allocated until the predecessor
+completes. Step 5 adds an intermediate-event handler: events that match a
+chain link without closing the gap (e.g., referral_scheduled, referral_attended)
+advance the chain_position and trigger the next link's allocation. Only the
+final qualifying event (per the registry's numerator definition) closes the
+gap. Reference Recipe 14.x for the full multi-stage stochastic-program version.
+Same pattern flagged in 4.5 Finding A7. -->
 
 **Cohort-specific intervention catalogs.** Some patient cohorts benefit from cohort-specific closure pathways: patients in rural areas may need mobile screening units; patients with limited English proficiency benefit from in-language outreach; patients with documented transportation barriers may need rideshare-funded transport. The intervention catalog can carry cohort-eligibility flags so the allocator picks cohort-appropriate pathways rather than defaulting to the general-population pathway.
 
