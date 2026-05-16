@@ -52,7 +52,7 @@ Most production patient education recommenders, regardless of vendor or technolo
 
 Content-based filtering, in plain English: every item in the catalog has a feature vector (what topics does it cover, what reading level, what format, what language, what age range). Every patient has a feature vector (what conditions, what reading level, what language, what preference history). Find the items whose feature vector best aligns with the patient's. The simplest way to do this is to use a small, hand-curated taxonomy (think SNOMED-CT codes mapped to content topics) and a similarity function (Jaccard, cosine, or just a weighted sum of matched fields). It works. It works boringly well.
 
-The fancier version of content-based filtering uses **embeddings**. Take each piece of content, run its title and abstract through a sentence-embedding model, and store the resulting vector. Take the patient's clinical context, build a query string from it, embed that, and do a vector similarity search to find nearest content. This is "semantic search," and it's what most modern search infrastructure looks like. The advantage over a tag-based approach: you can find content that's topically related but doesn't share exact tags. ("Newly diagnosed diabetes" and "starting metformin" are semantically close even if no tag overlap.) The disadvantage: you've now introduced a black box, and you need to do a chunk of evaluation to make sure the embeddings are actually capturing the right kind of similarity for your use case.
+The fancier version of content-based filtering uses **embeddings**. Take each piece of content, run its title and abstract through a sentence-embedding model, and store the resulting vector. Take the patient's clinical context, build a query string from it, embed that, and do a vector similarity search to find nearest content. This is "semantic search," and it's how most production search systems do similarity-by-meaning today. The advantage over a tag-based approach: you can find content that's topically related but doesn't share exact tags. ("Newly diagnosed diabetes" and "starting metformin" are semantically close even if no tag overlap.) The disadvantage: you've now introduced a black box, and you need to do a chunk of evaluation to make sure the embeddings are actually capturing the right kind of similarity for your use case.
 
 **Layer 3: Personalization re-ranking.** Once content-based matching has produced a candidate set of (say) 20 to 50 plausibly relevant items, a re-ranker reorders them based on personalized signals: prior engagement (this patient watched videos, not articles), recent activity (they were just looking at content about A1c, surface related content), and predicted engagement (a small ML model that scores "will this patient actually open this item"). This is where you graduate from generic matching to actual personalization.
 
@@ -195,7 +195,7 @@ The pipeline has three logical components: a content ingestion path that prepare
 
 **The candidate set is small enough to be transparent.** Returning 30-50 candidates after filtering means the re-ranker is not the differentiator between "good" and "bad" recommendations; the candidate generator is. Most of your engineering attention should go to making the candidate generator produce a relevant set, because the re-ranker can only choose among what the candidate generator surfaced. A dazzling re-ranker on top of a clueless candidate generator is still a clueless recommender.
 
-**Explanation features come along for the ride.** When the recommender returns the top N items, it should also return the features that led to each selection (matched tags, semantic similarity score, reading-level fit, prior engagement boost). The UI can use these to render natural-language explanations ("recommended because you have a recent diabetes diagnosis and prefer videos") and the audit log can use them to answer the inevitable "why was this recommended" question from a clinician or a compliance reviewer.
+**Explanation features come along for the ride.** Have the recommender return the features that led to each selection along with the top N items themselves: matched tags, semantic similarity score, reading-level fit, prior engagement boost. The UI uses these to render natural-language explanations ("recommended because you have a recent diabetes diagnosis and prefer videos") and the audit log uses them to answer the inevitable "why was this recommended" question from a clinician or a compliance reviewer.
 
 ---
 
@@ -209,15 +209,22 @@ The pipeline has three logical components: a content ingestion path that prepare
 
 **Amazon OpenSearch Service for vector search.** OpenSearch is the workhorse for both keyword search and vector similarity search in this kind of pipeline. The k-NN plugin supports cosine and L2 similarity over dense vectors at production latencies. The index is small (a few thousand items, each with a few-hundred-dimensional embedding) so a single small cluster is plenty. OpenSearch Service is HIPAA-eligible. <!-- TODO: confirm current OpenSearch Service HIPAA eligibility entry on the AWS HIPAA Eligible Services Reference; the service has been on the list, but verify before publishing. -->
 
-**Amazon Bedrock for embedding generation and (optional) content tailoring.** Bedrock hosts foundation models including embedding models (Amazon Titan Text Embeddings, Cohere Embed) for the content vectorization step, and large language models (Anthropic Claude, Meta Llama, Amazon Nova) for any content-tailoring summarization on the inference path. The embedding model runs once per content ingestion event; the LLM, if you use one, runs at most once per recommendation response. Bedrock is HIPAA-eligible with BAA.
+**Amazon Bedrock for embedding generation and (optional) content tailoring.** Bedrock hosts foundation models including embedding models (Amazon Titan Text Embeddings, Cohere Embed) for the content vectorization step, and large language models (Anthropic Claude, Meta Llama, Amazon Nova) for any content-tailoring summarization on the inference path. The embedding model runs once per content ingestion event; the LLM, if you use one, runs at most once per recommendation response. Bedrock is HIPAA-eligible with BAA. Confirm in your BAA acceptance and Bedrock service terms that customer prompts and completions are not used to train the underlying foundation models and are not retained beyond the request lifecycle. This is the standard Bedrock posture but should be verified per-model and documented for audit. <!-- TODO: confirm Bedrock service terms and per-model data-handling guarantees at the time of build; the eligible-model list and BAA coverage have been evolving. -->
 
 **AWS Lambda for the inference path and ingestion handlers.** Recommendation requests are short, stateless, and bursty (a portal page load triggers one). Lambda fits this naturally. The ingestion handler that processes new content events is also a fine Lambda workload. Set reserved concurrency on the inference Lambda to protect the patient-facing path from noisy-neighbor effects.
 
 **Amazon API Gateway for the recommendation endpoint.** The portal, the email-composer Lambda from Recipe 4.1, and the post-visit summary generator (Recipe 2.5) all need to call the recommender. API Gateway gives you a single authenticated endpoint, request throttling, and integration with WAF for basic protection. Pair with Lambda authorizers or IAM-signed requests for service-to-service auth.
 
+<!-- TODO (TechWriter): Expand this paragraph (or add one alongside) covering three related authn/topology items the expert review flagged:
+     1. API Gateway has two distinct caller contexts here: public portal calls (need patient-session authn via Cognito or Lambda authorizer, with patient_id authorization enforced in the recommender Lambda so the request body's patient_id must match the resolved identity), and service-to-service calls (need IAM-signed SigV4 with a least-privileged execution role per caller). The recommender must validate that the caller is allowed to act on the requested patient_id; do not rely on the upstream service.
+     2. Public vs private API Gateway: portal callers reach a public regional REST API; service-to-service callers should reach a private REST API exposed via a VPC interface endpoint. Two API Gateway deployments fronting the same recommender Lambda is a clean pattern.
+     3. Per-patient throttling: WAF rate-limit on a header populated by the Lambda authorizer (resolved patient identifier). A starting point of 10 req/patient/min and 100 req/patient/hr protects shared backend quotas (Bedrock, OpenSearch) from a single misbehaving caller. See expert review Findings 2, 9, and 13. -->
+
 **Amazon Kinesis Data Streams for engagement events.** Same engagement-event bus you stood up for Recipe 4.1, with new event types added (content_impression, content_click, content_completion, content_rating). One bus, multiple producers, multiple consumers. The reward-attribution Lambda picks up content-related events and persists them to a structured engagement table.
 
-**Amazon SageMaker for the re-ranker training and (optionally) hosting.** The re-ranker is a gradient-boosted ranking model (XGBoost-Ranker or LightGBM with `lambdarank` objective). SageMaker Training Jobs handle the periodic retraining; SageMaker Endpoints host the model for inference if you graduate beyond a Lambda-embedded scoring function. For a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint entirely. Move to a SageMaker endpoint when the model gets large enough that cold-start latency on Lambda becomes painful.
+**Amazon SageMaker for the re-ranker training and (optionally) hosting.** The re-ranker is a gradient-boosted ranking model (XGBoost-Ranker or LightGBM with `lambdarank` objective). SageMaker Training Jobs handle the periodic retraining; SageMaker Endpoints host the model for inference if you graduate beyond a Lambda-embedded scoring function. For a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint entirely. The Lambda-layer approach hits a 250 MB ceiling once you add XGBoost or LightGBM with their numpy/scipy dependencies; plan to graduate to a SageMaker Endpoint when the layer approach starts to feel cramped, which often happens earlier than expected.
+
+<!-- TODO (TechWriter): Specify the SageMaker training-job trigger mechanism (EventBridge schedule? Step Functions on a cron? CloudWatch metric threshold?) and the model-promotion path from training to inference (Lambda-layer publish + alias canary, or SageMaker endpoint variant weights). The architecture diagram currently shows "Periodic retrain" without an explicit trigger node, and there is no path shown for promoting a newly-trained ranker into the inference path. See expert review Finding 8. -->
 
 **AWS Glue / Amazon EMR / AWS Step Functions for the offline content ingestion pipeline.** The reading-level computation, embedding generation, and metadata indexing form a small DAG. Step Functions is the lowest-friction orchestrator for a pipeline of this size. Glue or EMR are overkill unless your catalog is much larger than typical or includes complex preprocessing.
 
@@ -271,7 +278,7 @@ flowchart LR
 | **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem`, `dynamodb:PutItem` on specific tables; `s3:GetObject`/`s3:PutObject` on the content bucket; `bedrock:InvokeModel` on specific model ARNs (e.g., `arn:aws:bedrock:{region}::foundation-model/amazon.titan-embed-text-v2:0`); `aoss:APIAccessAll` or `es:ESHttpPost` scoped to the OpenSearch domain ARN; `kinesis:PutRecord` on the engagement stream. Never `*`. <!-- TODO: confirm exact IAM action names for OpenSearch Service vector search; classic OpenSearch uses `es:*` actions, OpenSearch Serverless uses `aoss:*`. The recipe assumes provisioned OpenSearch Service throughout; adjust if you choose Serverless. --> |
 | **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: S3, DynamoDB, OpenSearch Service, Bedrock, Lambda, API Gateway, Kinesis, SageMaker, Step Functions are all on the HIPAA Eligible Services list. <!-- TODO: confirm Bedrock + the specific embedding and LLM models you select are eligible at the time of build. The eligible list and per-model BAA coverage have been evolving; verify before launch. --> |
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with customer-managed KMS. OpenSearch: encryption at rest enabled, node-to-node encryption enabled, HTTPS-only access. Kinesis: server-side encryption. All Lambda log groups KMS-encrypted (recommender logs include patient context). |
-| **VPC** | Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB, S3 (gateway endpoint), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime. NAT Gateway only if calling external services that don't have VPC endpoints; restrict egress security groups. VPC Flow Logs enabled. |
+| **VPC** | Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB, S3 (gateway endpoint), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), STS, EventBridge (`events`). NAT Gateway only if calling external services that don't have VPC endpoints; restrict egress security groups. VPC Flow Logs enabled. Content ingestion may pull from an external CMS over the public internet (SaaS), a VPN/Direct Connect tunnel (on-prem), or a cross-account VPC endpoint (AWS-hosted); for SaaS pulls, restrict NAT egress to the CMS's published IP ranges, prefer Direct Connect with private routing for on-prem, and use VPC peering or PrivateLink for cross-account rather than internet egress. |
 | **CloudTrail** | Enabled with data events on the patient-profile table, recommendation-log table, and the content S3 bucket if any content is patient-specific. |
 | **Content Governance** | Process to mark content as deprecated, retired, or under review (so the recommender can exclude it); a defined cadence for clinical content team review (annual at minimum); language and reading-level metadata required at content ingestion (don't let untagged content into the index). |
 | **Sample Data** | A starter content catalog (a few dozen items in two languages with reading-level metadata) to seed the index, plus a synthetic patient population. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic FHIR patients with conditions and demographics suitable for testing. For sample education content suitable for development, [MedlinePlus](https://medlineplus.gov/) publishes patient-friendly content under a permissive license; verify license terms before redistribution. <!-- TODO: confirm current MedlinePlus content license and redistribution terms before recommending in print. --> |
@@ -465,30 +472,48 @@ FUNCTION rerank(candidates, patient_context, top_n = 5):
         // Start with the semantic similarity score from candidate generation.
         base_score = candidate.similarity_score
 
+        // Track which factors fired so the audit log and UI explanation can
+        // show the trail per item, not just a final number.
+        applied_factors = []
+
         // Reading-level fit: penalize content significantly above the patient's level.
         // A modest stretch is fine (level + 1) but a college-level piece for a
         // 6th-grade reader is a poor fit, full stop.
         reading_gap = candidate.reading_level - (patient_context.reading_level_est or 8)
-        IF reading_gap > 2:
-            base_score = base_score * 0.5
-        ELSE IF reading_gap > 4:
+        IF reading_gap > 4:
             base_score = base_score * 0.2
+            applied_factors.append("reading_level_gap_over_4: x0.2")
+        ELSE IF reading_gap > 2:
+            base_score = base_score * 0.5
+            applied_factors.append("reading_level_gap_2_to_4: x0.5")
 
         // Format preference: bump items in the patient's preferred format.
         IF patient_context.engagement_summary != null:
             preferred_format = highest_ctr_format(patient_context.engagement_summary)
             IF candidate.content_type == preferred_format:
                 base_score = base_score * 1.25
+                applied_factors.append("format_preference_match: x1.25")
 
         // Topic recency: bump items related to recently-engaged topics.
         IF candidate.topic_tags overlaps patient_context.engagement_summary.last_topics_engaged:
             base_score = base_score * 1.15
+            applied_factors.append("recent_topic_overlap: x1.15")
+
+        // Clamp the cumulative score to a reasonable range so multiplicative
+        // factors can't compound into either zero or runaway values. Helps
+        // when a clinical reviewer asks "why was this recommended" and you
+        // need to explain the math without hand-waving.
+        base_score = max(0.05, min(2.0, base_score))
 
         // Diversity: optional. If two candidates have very similar embeddings,
         // demote the second to avoid showing two near-duplicates side by side.
         // (Maximal Marginal Relevance or simple deduplication on title similarity.)
 
-        scored.append({ candidate: candidate, score: base_score })
+        scored.append({
+            candidate:       candidate,
+            score:           base_score,
+            applied_factors: applied_factors
+        })
 
     // Sort descending and take top N. N is typically 3-5 for a portal slot.
     sorted_scored = sort scored by score DESC
@@ -501,7 +526,7 @@ FUNCTION rerank(candidates, patient_context, top_n = 5):
             content_id:    item.candidate.content_id,
             title:         item.candidate.title,
             score:         item.score,
-            explanation:   build_explanation(item.candidate, patient_context)
+            explanation:   build_explanation(item.candidate, patient_context, item.applied_factors)
                            // e.g., "matches diabetes diagnosis, fits 8th-grade reading level"
         })
 
@@ -522,7 +547,19 @@ FUNCTION log_and_return(patient_id, recommendations):
         scores:            [r.score for r in recommendations],
         model_version:     CURRENT_MODEL_VERSION,
         // Recommendation-time features for offline counterfactual analysis.
-        feature_snapshot:  snapshot_of_patient_context_used
+        // IMPORTANT: minimize. Persist only the cohort-level features used
+        // by downstream ranker training and CloudWatch metric emission.
+        // Do NOT persist the verbatim intent_text or the structured
+        // condition / procedure / medication codes used to build it; that
+        // turns the recommendation log into a free-text clinical narrative
+        // joined to a patient_id.
+        feature_snapshot:  {
+            language:           patient_context.language,
+            reading_level_est:  patient_context.reading_level_est,
+            audience:           patient_context.audience,
+            format_preference:  patient_context.format_preference,
+            topic_tags_pref:    patient_context.topic_tags_pref
+        }
     })
 
     // Emit an impression event for each item shown. Impression != click;
@@ -555,6 +592,16 @@ FUNCTION process_engagement_event(event):
         LOG("event content_id not in recommendation items; dropping")
         RETURN
 
+    // Validate the patient identity claim against the recommendation. The
+    // Kinesis engagement stream is the integrity boundary for the
+    // personalization model: a malicious or buggy producer that submits
+    // events with a patient_id different from the one the recommendation
+    // was issued for would pollute another patient's engagement summary
+    // and skew their re-ranker features.
+    IF event.patient_id != rec.patient_id:
+        LOG("engagement event patient_id mismatch with recommendation; dropping")
+        RETURN
+
     // Persist the event to the engagement table for offline training.
     DynamoDB.PutItem("engagement-events", {
         event_id:           new UUID,
@@ -569,18 +616,24 @@ FUNCTION process_engagement_event(event):
     })
 
     // Update the patient's running engagement summary. These features feed the re-ranker.
-    // Use atomic updates so concurrent events don't trample each other.
+    // Use atomic updates so concurrent events don't trample each other. For nested-map
+    // counters (format_clicks, format_completions), initialize the parent map with
+    // `if_not_exists(...)` in the same expression as the ADD, otherwise the very first
+    // event for a cold-start patient throws ValidationException because the parent map
+    // doesn't exist on the new row yet.
     summary_key = event.patient_id
 
     IF event.event_type == "content_click":
         DynamoDB.UpdateItem("engagement-summary", summary_key,
+            "SET format_clicks = if_not_exists(format_clicks, :empty) " +
             "ADD clicks_total :one, format_clicks." + event.content_type + " :one",
-            values = { ":one": 1 })
+            values = { ":one": 1, ":empty": {} })
 
     ELSE IF event.event_type == "content_completion":
         DynamoDB.UpdateItem("engagement-summary", summary_key,
+            "SET format_completions = if_not_exists(format_completions, :empty) " +
             "ADD completions_total :one, format_completions." + event.content_type + " :one",
-            values = { ":one": 1 })
+            values = { ":one": 1, ":empty": {} })
 
     ELSE IF event.event_type == "content_rating":
         // Rating is a stronger signal; persist average and count.
@@ -691,17 +744,25 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Embedding model versioning.** When you upgrade the embedding model (Titan v1 to Titan v2, for example), every embedding in the index becomes incompatible with new query embeddings. The migration is non-trivial: you need to re-embed the entire catalog under the new model, build a parallel index, switch traffic, and retire the old index. Plan for this; embedding models will continue to improve.
 
-**Cold-start patient handling.** The recipe lightly mentions that new patients get generic results. In production, you'd build an explicit cold-start path: a brief onboarding survey, demographic-cohort defaults, and an explicit fallback strategy when the patient has zero engagement features. The cohort defaults raise the same fairness considerations covered in Recipe 4.1's chapter preface; apply the same care.
+**Cold-start patient handling.** The recipe lightly mentions that new patients get generic results. In production, build an explicit cold-start path: a brief onboarding survey, demographic-cohort defaults, and an explicit fallback strategy when the patient has zero engagement features. The cohort defaults raise the same fairness considerations covered in Recipe 4.1's chapter preface; apply the same care.
 
 **Recommendation diversity and exposure controls.** Without explicit diversity logic, the recommender will surface the most similar three items to the query. If those three are all variations of the same article (e.g., a primary article, its summary, and its FAQ), the patient sees redundancy. Production systems use Maximal Marginal Relevance (MMR), category diversification, or a position-based cap ("no more than 2 items from the same topic in top 5") to maintain breadth. This is a small extension but it materially affects perceived quality.
 
 **Content lifecycle hooks.** When content is deprecated, retired, or under review, the index needs to reflect that within minutes, not days. A recommendation log that surfaces a deprecated piece of content is a small operational embarrassment; surfacing content that has been clinically retracted (rare but real) is worse. Wire deprecation events through the same ingestion pipeline with high priority.
 
+<!-- TODO (TechWriter): The architecture diagram shows the ingestion path writing to both DynamoDB content-metadata and OpenSearch, but does not show how deprecation events propagate. Either extend the Step Functions ingestion path to handle a deprecation parameter that updates DynamoDB.status and OpenSearch.status atomically, or add a separate deprecation-handler Lambda with its own EventBridge rule. Document the SLA (e.g., "deprecation propagation within 5 minutes of CMS event") and add a CloudWatch metric for DeprecationPropagationLatency. See expert review Finding 7. -->
+
+<!-- TODO (TechWriter): Add a paragraph (or extend the existing operational gaps) covering DLQ coverage on all three Lambda paths in the architecture, none of which the diagram currently shows:
+       (a) API Gateway -> recommender Lambda: SQS DLQ on the function, or accept the synchronous-API tradeoff and pair structured logging with a CloudWatch 5xx alarm and a documented replay-from-logs runbook;
+       (b) Step Functions -> ingestion Lambdas: each task should `Catch` to an SQS failure queue keyed on content_id and failure reason, with a "failed-ingestion" replay process in operations;
+       (c) Kinesis -> attribution Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth.
+     The third one is the most insidious: an attribution Lambda silently dropping engagement events leaves the re-ranker training data incomplete with no observable symptom until a cohort dashboard regresses weeks later. Update the architecture diagram to show DLQs on all three paths. See expert review Finding 6. -->
+
 **Re-ranker labeling and training.** The pseudocode treats the re-ranker as either a hand-tuned scoring function or a learned model. In production, the leap from one to the other requires labeled training data: pairs of (patient context, candidate set, observed engagement) that get joined into a learning-to-rank dataset. Building that join correctly (positives are clicked or completed items; negatives are impressions that didn't get engagement; weights account for position bias) is its own small engineering project. Underinvest here and the learned ranker is worse than the hand-tuned one.
 
 **Position bias correction.** Patients click items at the top of the list more than items at the bottom regardless of quality. If you train your ranker on raw clicks, it learns to put already-popular items at the top, regardless of whether they were genuinely better. Inverse-propensity weighting or a click-model-based correction (e.g., position-based model) is required for honest training. This is an easy thing to get wrong and a hard thing to debug after the fact.
 
-**Privacy in the recommendation log.** The recommendation log table contains patient IDs joined to content IDs joined to feature snapshots. That join makes the table sensitive: a content_id like "edu-cancer-stage-iv-end-of-life-care" combined with a patient_id is information you do not want leaked. Apply the same controls as the patient profile table: customer-managed KMS, CloudTrail data events, narrow IAM read scopes, defined retention policy.
+**Privacy in the recommendation log.** The recommendation log table contains patient IDs joined to content IDs joined to feature snapshots. That join makes the table sensitive: a content_id like "edu-cancer-stage-iv-end-of-life-care" combined with a patient_id is information you do not want leaked. Apply the same controls as the patient profile table: customer-managed KMS, CloudTrail data events, narrow IAM read scopes, defined retention policy. Equally important: do not persist the verbatim `intent_text` (or the structured condition / procedure / medication codes used to build it) into the log. Store only the cohort-level features needed for ranker training and CloudWatch metric emission (language, reading-level estimate, audience, format preference, topic-tag preferences). If you need reconstructable patient context for incident investigation, log it through a separate, append-only audit channel with stricter access controls and a shorter retention window.
 
 **Cohort fairness monitoring.** The architecture emits cohort-sliced metrics, but a dashboard nobody looks at is useless. Establish a monthly review cadence with the content team and a quality-of-care committee. Watch for: language cohorts with consistently lower CTR (catalog gap), reading-level cohorts with lower completion rates (content too hard), and clinical-condition cohorts with low coverage (catalog gap or matching gap). Each finding should produce an action item.
 

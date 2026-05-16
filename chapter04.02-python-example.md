@@ -47,7 +47,6 @@ import uuid
 import datetime
 from datetime import timezone
 from decimal import Decimal
-from collections import defaultdict
 
 import boto3
 from botocore.config import Config
@@ -108,6 +107,13 @@ ENGAGEMENT_SUMMARY_TABLE = "engagement-summary"
 # Customer-managed KMS key for encryption at rest.
 CONTENT_BUCKET = "your-patient-education-content-bucket"
 
+# Customer-managed KMS key ARN for the content bucket. Setting
+# ServerSideEncryption="aws:kms" without SSEKMSKeyId falls back to the
+# AWS-managed default key (alias/aws/s3), which is fine for non-PHI data
+# but does not meet the customer-managed-keys posture this recipe assumes
+# for PHI-adjacent stores. Pass the explicit key ARN on every put.
+CONTENT_BUCKET_CMK_ARN = "arn:aws:kms:us-east-1:000000000000:key/REPLACE-WITH-YOUR-KEY-ID"
+
 # --- OpenSearch Configuration ---
 # The k-NN index holds embeddings + duplicate metadata so a single
 # query can filter and search.
@@ -160,12 +166,20 @@ A handful of utilities used across steps. Pulled together here so each step's lo
 ```python
 def _get_opensearch_client() -> OpenSearch:
     """
-    Build an IAM-authenticated OpenSearch client.
+    Build (or reuse) an IAM-authenticated OpenSearch client.
 
-    Uses the current boto3 session's credentials. The Lambda execution role
-    in production should have least-privilege OpenSearch access scoped to
-    the specific domain ARN and index name.
+    The client is cached at module scope after first construction. In a
+    Lambda warm container, the SigV4 credential resolution and TLS
+    handshake happen once per process rather than once per invocation,
+    which matters when the recipe targets sub-200 ms p95 inference latency.
+
+    The Lambda execution role in production should have least-privilege
+    OpenSearch access scoped to the specific domain ARN and index name.
     """
+    global _opensearch_client
+    if _opensearch_client is not None:
+        return _opensearch_client
+
     session = boto3.Session()
     credentials = session.get_credentials()
     awsauth = AWS4Auth(
@@ -175,7 +189,7 @@ def _get_opensearch_client() -> OpenSearch:
         "es",  # use "aoss" if targeting OpenSearch Serverless
         session_token=credentials.token,
     )
-    return OpenSearch(
+    _opensearch_client = OpenSearch(
         hosts=[{"host": OPENSEARCH_ENDPOINT, "port": 443}],
         http_auth=awsauth,
         use_ssl=True,
@@ -183,6 +197,11 @@ def _get_opensearch_client() -> OpenSearch:
         connection_class=RequestsHttpConnection,
         timeout=30,
     )
+    return _opensearch_client
+
+
+# Lazy module-level cache. Populated on first _get_opensearch_client() call.
+_opensearch_client: OpenSearch | None = None
 
 
 def _embed_text(text: str) -> list:
@@ -357,9 +376,11 @@ def on_content_published(content_event: dict) -> dict:
         Body=content_event.get("body", "").encode("utf-8"),
         ContentType=_mime_for_format(content_event.get("format", "html")),
         # Server-side encryption is enforced via bucket policy in production;
-        # passing it explicitly here documents the intent. KMS key ARN
-        # would be passed via SSEKMSKeyId in a real deployment.
+        # passing it explicitly here documents the intent. Pair "aws:kms"
+        # with an explicit SSEKMSKeyId so the put uses the customer-managed
+        # key, not the AWS-managed default (alias/aws/s3).
         ServerSideEncryption="aws:kms",
+        SSEKMSKeyId=CONTENT_BUCKET_CMK_ARN,
     )
 
     # ---- Step 1e: Persist metadata to DynamoDB ----
@@ -688,9 +709,13 @@ def rerank(
     if not candidates:
         return []
 
+    # Explicit None check rather than `or DEFAULT_PATIENT_READING_LEVEL` so
+    # a legitimate Decimal(0) or 0 from the profile pipeline is preserved
+    # instead of silently swapped for the default.
+    profile_reading_level = patient_context.get("reading_level_est")
     patient_reading_level = (
-        patient_context.get("reading_level_est")
-        or DEFAULT_PATIENT_READING_LEVEL
+        DEFAULT_PATIENT_READING_LEVEL if profile_reading_level is None
+        else profile_reading_level
     )
     preferred_format = patient_context.get("format_preference")
     recent_topics = set(
@@ -744,6 +769,12 @@ def rerank(
             explanation_parts.append(
                 f"related to recent activity ({', '.join(sorted(topic_overlap))})"
             )
+
+        # Clamp the cumulative score to a reasonable range so multiplicative
+        # factors can't compound into runaway values or vanish entirely.
+        # Helps when a clinical reviewer asks "why was this recommended" and
+        # you need to explain the math without hand-waving.
+        score = max(0.05, min(2.0, score))
 
         scored.append({
             **c,
@@ -811,6 +842,15 @@ def log_and_return(
         # Feature snapshot lets future analysis ask "what did the model
         # see when it made this decision?" without re-running the pipeline.
         # This row joined to a patient_id is PHI; store accordingly.
+        # Minimization rule: persist only the cohort-level features actually
+        # consumed downstream (CloudWatch metric dimensions, ranker training
+        # features). Do NOT persist the verbatim intent_text or the
+        # structured condition / procedure / medication codes used to build
+        # it; that turns this log into a free-text clinical narrative
+        # joined to a patient_id and dramatically expands the disclosure
+        # surface. If you need reconstructable patient context for incident
+        # investigation, log it through a separate, append-only audit
+        # channel with stricter access controls and a shorter retention.
         "feature_snapshot": {
             "language":           patient_context["language"],
             "reading_level_est":  patient_context.get("reading_level_est") or "unknown",
@@ -824,7 +864,7 @@ def log_and_return(
     # wait for these to commit; if Kinesis is unavailable we'd rather miss
     # an impression event than block the patient-facing response. In a
     # fault-tolerant design, you'd buffer to a local queue and retry async.
-    for r in recommendations:
+    for rank, r in enumerate(recommendations, start=1):
         try:
             kinesis_client.put_record(
                 StreamName=ENGAGEMENT_STREAM_NAME,
@@ -838,7 +878,7 @@ def log_and_return(
                     "content_id":        r["content_id"],
                     "patient_id":        patient_id,
                     "timestamp":         now_iso,
-                    "rank":              recommendations.index(r) + 1,
+                    "rank":              rank,
                 }).encode("utf-8"),
             )
         except Exception as exc:
@@ -934,6 +974,20 @@ def process_engagement_event(event: dict) -> None:
         )
         return
 
+    # Validate the patient identity claim against the recommendation log.
+    # The Kinesis engagement stream is the integrity boundary for the
+    # personalization model: a buggy or malicious producer that submits
+    # events with a patient_id different from the one the recommendation
+    # was issued for would pollute another patient's engagement summary
+    # and skew their re-ranker features.
+    if patient_id != rec_record.get("patient_id"):
+        logger.warning(
+            "Event patient_id=%s does not match recommendation_id=%s "
+            "patient_id; dropping",
+            patient_id, rec_id,
+        )
+        return
+
     # ---- Persist the raw event ----
     # event_id uses content from the event so duplicate Kinesis deliveries
     # converge to the same row. Production systems often add a SHA-256 over
@@ -954,16 +1008,9 @@ def process_engagement_event(event: dict) -> None:
 
     # ---- Update the patient engagement summary ----
     # Atomic ADDs so concurrent events don't trample each other. We need
-    # the content_type to update format-keyed counters; pull it from the
-    # candidate metadata cached on the recommendation log item.
-    content_type = "unknown"
-    for item in rec_record.get("items", []):
-        if item["content_id"] == content_id:
-            # The recommendation log doesn't store content_type today; in
-            # production, denormalize it onto the log row at recommend time.
-            # For this example, we look it up from the catalog.
-            break
-
+    # the content_type to update format-keyed counters; look it up from
+    # the catalog. In production, denormalize content_type onto each
+    # recommendation-log item at recommend time so this lookup goes away.
     content_table = dynamodb.Table(CONTENT_TABLE)
     cat_response = content_table.get_item(Key={"content_id": content_id})
     content_meta = cat_response.get("Item") or {}
@@ -977,33 +1024,42 @@ def process_engagement_event(event: dict) -> None:
     # but rarely captured. Impressions are tracked for CTR computation
     # but don't update the format-preference signal.
     if event_type == "content_click":
+        # SET format_clicks = if_not_exists(...) initializes the parent map
+        # to {} on the very first event for a cold-start patient. Without
+        # this, the nested `ADD format_clicks.#ct :one` throws
+        # ValidationException because DynamoDB cannot update a nested
+        # attribute when the parent map does not exist. Update expressions
+        # are atomic, so the entire UpdateItem would be rejected.
         summary_table.update_item(
             Key={"patient_id": patient_id},
             UpdateExpression=(
-                "ADD clicks_total :one, "
-                "    format_clicks.#ct :one "
-                "SET last_session_at = :ts"
+                "SET format_clicks = if_not_exists(format_clicks, :empty), "
+                "    last_session_at = :ts "
+                "ADD clicks_total :one, format_clicks.#ct :one"
             ),
             ExpressionAttributeNames={"#ct": content_type},
             ExpressionAttributeValues={
-                ":one": Decimal("1"),
-                ":ts":  event["timestamp"],
+                ":one":   Decimal("1"),
+                ":ts":    event["timestamp"],
+                ":empty": {},
             },
         )
     elif event_type == "content_completion":
         # Completion is a stronger signal than click: the patient actually
         # finished (or got most of the way through) the content.
+        # Same parent-map initialization pattern as the click branch above.
         summary_table.update_item(
             Key={"patient_id": patient_id},
             UpdateExpression=(
-                "ADD completions_total :one, "
-                "    format_completions.#ct :one "
-                "SET last_session_at = :ts"
+                "SET format_completions = if_not_exists(format_completions, :empty), "
+                "    last_session_at = :ts "
+                "ADD completions_total :one, format_completions.#ct :one"
             ),
             ExpressionAttributeNames={"#ct": content_type},
             ExpressionAttributeValues={
-                ":one": Decimal("1"),
-                ":ts":  event["timestamp"],
+                ":one":   Decimal("1"),
+                ":ts":    event["timestamp"],
+                ":empty": {},
             },
         )
         # Track recently-engaged topics for the re-ranker's recent-topic boost.
