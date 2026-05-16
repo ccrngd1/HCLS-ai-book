@@ -1,4 +1,35 @@
 <!--
+Editor pass v2 (TechEditor, 2026-05-15):
+  - Re-verification only; no in-body changes applied. Ran the full
+    editorial checklist a second time to confirm the v1 pass remains
+    accurate and that no new mechanics, voice-drift, header-hierarchy,
+    code-formatting, link-formatting, or vendor-balance issues have
+    surfaced. Mechanically reconfirmed under UTF-8 decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * Header hierarchy unchanged: 1 H1, 11 H2, 11 H3, 0 H4, 0 H5; no
+        skipped levels.
+      * 28 fence markers (14 balanced fenced code blocks).
+      * 40 TODO (TechWriter, ...) markers total: 13 in-body HTML-comment
+        TODOs preserved verbatim plus 27 entries in the consolidated
+        architectural and Python-companion concern catalog below.
+      * No documentation-voice, announcement statements, LinkedIn-
+        influencer tone, or feature-list formatting in body.
+      * No common typos (verified against a substitution-error sweep).
+      * No double-punctuation, repeated-word ("the the", "a a",
+        "and and"), or trailing-whitespace issues outside the
+        intentionally aligned ASCII architecture box and JSON sample
+        cases.
+      * 70/30 vendor balance preserved.
+  - The MEDIUM and LOW findings from the expert review and the three
+    WARNING + ten NOTE findings from the code review remain
+    architectural and content-level changes that exceed editor scope
+    per persona instructions ("Do not introduce new claims or technical
+    content" and "If a section needs substantial rewriting, flag it
+    rather than rewriting"). The consolidated TODO catalog below
+    captures each one verbatim for TechWriter follow-up; no
+    re-litigation in this pass.
+
 Editor pass v1 (TechEditor, 2026-05-15):
   - Mechanics: corrected "Adopts complementary signal to provider-based
         surveillance" to "Provides a complementary signal to
