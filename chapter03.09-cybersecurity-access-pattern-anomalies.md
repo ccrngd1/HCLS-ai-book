@@ -1,4 +1,31 @@
 <!--
+Editor pass v2 (TechEditor, 2026-05-15):
+  - Mechanics: corrected "IDP service-account credentials" to
+        "IdP service-account credentials" in the AWS Secrets Manager
+        paragraph under Why These Services for case consistency with
+        the nine other "IdP" references in the recipe (capitalization
+        is the standard identity-provider abbreviation used elsewhere).
+  - Re-verified: zero em dashes (U+2014) and zero en dashes (U+2013)
+        under UTF-8 decoding; 27 TODO markers preserved (16 original
+        TechWriter TODOs in body + 11 carry-over follow-up flags in
+        the v1 comment block consolidating MEDIUM expert-review and
+        WARNING code-review findings; see below).
+  - Header hierarchy verified: 1 H1, 11 H2, 12 H3, 1 H4; no skipped
+        levels.
+  - All 24 fenced code blocks balanced; mermaid block tagged; JSON
+        sample cases tagged; pseudocode and architecture-text blocks
+        intentionally untagged (matches Chapter 1 convention).
+  - All hyperlinks in Additional Resources are well-formed and point
+        to plausible AWS documentation, regulatory (ecfr.gov, hhs.gov,
+        csrc.nist.gov, cisa.gov), and vendor domains; no fabricated
+        GitHub URLs.
+  - 70/30 vendor balance: AWS service names confined to The AWS
+        Implementation, Architecture Diagram, Prerequisites,
+        Ingredients, the Code walkthrough, Why-This-Isn't-Production-
+        Ready, Variations and Extensions, and Additional Resources;
+        The Problem, The Technology, and General Architecture Pattern
+        remain vendor-neutral.
+
 Editor pass v1 (TechEditor, 2026-05-15):
   - V2: tightened the performance-benchmark inline caveat to call out
         population, workforce composition, base rate, EHR vendor,
@@ -461,7 +488,7 @@ At a conceptual level, the access pattern anomaly detection pipeline ingests aud
 
 **AWS KMS.** Customer-managed keys on every PHI-bearing store: Kinesis, DynamoDB, Neptune, Timestream, S3, OpenSearch, SageMaker volumes and Feature Store. Key rotation per organizational requirements.
 
-**AWS Secrets Manager.** EHR API credentials, IdP integration credentials, IDP service-account credentials, and SIEM integration credentials. Rotated per policy.
+**AWS Secrets Manager.** EHR API credentials, IdP integration credentials, IdP service-account credentials, and SIEM integration credentials. Rotated per policy.
 
 ### Architecture Diagram
 
