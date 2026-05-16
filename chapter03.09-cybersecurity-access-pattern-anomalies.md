@@ -1,4 +1,89 @@
 <!--
+<!--
+Editor pass v5 (TechEditor, 2026-05-15):
+  - Mechanics: corrected "FAIRWarning-style monitoring" to
+        "FairWarning-style monitoring" in the Vocabulary You Need
+        opening sentence for case consistency with the seven other
+        "FairWarning" references in the recipe (Imprivata FairWarning
+        in The Technology PPM paragraph, FairWarning in the AWS API
+        Gateway / AppSync paragraph, Imprivata FairWarning in the
+        performance-benchmark TODO, Imprivata FairWarning in the
+        Vendor-tool considerations paragraph in Why-This-Isn't-
+        Production-Ready, and Imprivata FairWarning in the Additional
+        Resources operational vendor link). The original product name
+        is "FairWarning" (capital F, capital W; not all-caps "FAIR").
+  - Re-verified mechanically under UTF-8 decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
+        sections), 12 H3 (subsections), 1 H4, 0 H5; no skipped
+        levels.
+      * 24 fence markers = 12 balanced fenced code blocks (mermaid
+        block tagged, JSON sample cases tagged, pseudocode and
+        architecture-text blocks intentionally untagged per Chapter
+        1 convention).
+      * No common dittography ("the the", "of of", "is is", "and
+        and", "to to") in body text. The 3 in-comment matches are
+        editor self-references in the v3 and v4 verification blocks
+        listing what was checked, not body content.
+      * 16 lowercase "IdP" hits in body, consistent. The 3 all-caps
+        "IDP" hits are all inside this comment block and the v3 and
+        v4 comment blocks documenting the v2 capitalization fix; no
+        body-text capitalization drift.
+      * No trailing-whitespace lines.
+      * Vendor name capitalization consistent: MEDITECH (branded
+        all-caps), Workday, Okta, Active Directory, Microsoft Entra
+        ID, Cerner / Oracle Health, Epic, Allscripts, athenahealth,
+        eClinicalWorks, Kronos, UKG, Protenus, Imprivata
+        FairWarning, MaizeAnalytics, Iatric Patient Privacy
+        Monitor, Splunk, Microsoft Sentinel, Chronicle, IBM QRadar,
+        CyberArk, BeyondTrust, HashiCorp Boundary all consistent
+        with their canonical brand forms.
+      * "vs." with period is the established cookbook style across
+        Chapters 1, 2, and 3 (verified in chapters 01.01, 01.05,
+        01.06, 01.10, 02.03, 02.04, 03.01, 03.03, 03.04, 03.05,
+        03.07, 03.08); the single in-prose "vs." in this recipe's
+        performance-benchmark caveat header is consistent with that
+        style.
+  - Voice and structure re-verification:
+      * No documentation-voice ("This recipe demonstrates...") in
+        body.
+      * No announcement statements ("We are excited to...").
+      * No LinkedIn-influencer tone ("AWS architects, we need to
+        talk about...").
+      * No feature-list formatting (bullet lists of capabilities
+        without context).
+      * Cross-references intact: The Honest Take to Implementation-
+        Time Tier table Basic tier (v1 V5 fix); Variations and
+        Extensions PAM integration extension to The Honest Take's
+        "Privileged users are a different program" lesson (v1 V6
+        fix); performance-benchmark caveat tightened (v1 V2 fix);
+        sample case narrative tightened (v1 V4 fix).
+      * 70/30 vendor balance preserved: AWS service names confined
+        to The AWS Implementation, Architecture Diagram,
+        Prerequisites, Ingredients, Code walkthrough,
+        Why-This-Isn't-Production-Ready, Variations and Extensions,
+        and Additional Resources.
+      * All hyperlinks in Additional Resources point to plausible
+        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
+        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
+        imprivata.com, microsoft.com, splunk.com) domains; no
+        fabricated GitHub URLs.
+  - Open items remain TechWriter follow-ups (exceed editor scope
+        per persona instructions "Do not introduce new claims or
+        technical content" and "If a section needs substantial
+        rewriting, flag it rather than rewriting"): the 9 MEDIUM
+        and 14 LOW expert-review findings plus the 3 Python
+        WARNINGs from code review remain catalogued in the v1
+        comment block below. The MEDIUM cluster (A1 idempotency,
+        A2 DLQs, A3 privileged-user separate program, A4
+        service-account inventory, A5 new-user ramp-up cold-start,
+        A6 care-relationship suppression-rule schema-and-workflow,
+        A7 reference-data versioning propagation, S1 case payload
+        PHI/workforce-PII minimization, S2 subgroup data
+        governance) requires architectural and prose additions
+        outside editor mandate.
+
 Editor pass v4 (TechEditor, 2026-05-15):
   - No body changes. Independent verification pass on top of v3.
         Re-confirmed every editor-scope mechanical and voice
@@ -302,7 +387,7 @@ Let's get into how.
 
 ### The Vocabulary You Need
 
-Healthcare access monitoring has its own jargon, partly inherited from general cybersecurity (UEBA, UBA, SIEM) and partly specific to healthcare (FAIRWarning-style monitoring, "patient privacy monitoring," "appropriate use review"). Quick tour, because these terms are going to recur.
+Healthcare access monitoring has its own jargon, partly inherited from general cybersecurity (UEBA, UBA, SIEM) and partly specific to healthcare (FairWarning-style monitoring, "patient privacy monitoring," "appropriate use review"). Quick tour, because these terms are going to recur.
 
 **UEBA (User and Entity Behavior Analytics).** The general cybersecurity discipline of building behavioral baselines for users and devices and flagging deviations. UEBA tools (Splunk UBA, Exabeam, Securonix, Microsoft Sentinel UEBA, etc.) come from the broader infosec world and are designed for general enterprise environments. They can be tuned for healthcare but rarely ship with healthcare-specific knowledge of the kind that distinguishes a hospitalist's normal access pattern from a billing analyst's.
 
