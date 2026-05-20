@@ -39,13 +39,26 @@ prompt_template: |
   # Output
   Apply fixes directly to the file. Add a version comment at the top of your
   commit message noting what was changed. Flag unresolved technical concerns
-  as TODO comments for the TechWriter.
+  as TODO comments for the TechWriter using this exact format:
+
+      <!-- TODO (<finding_id>): <one-line description of the unresolved finding> -->
+
+  Where ``<finding_id>`` is the identifier from the code review or expert
+  review (for example ``S1``, ``A2``, ``N1``, ``V3``). Place the marker at
+  the location in the recipe where the fix would land. The follow-up task
+  generator and the TechWriter follow-up persona both rely on this exact
+  format to track which findings remain open, so do not paraphrase the
+  ``TODO (id)`` prefix. If you address a finding inline, do not leave a
+  marker for it.
 instructions: |
   - Do not change the structural order of sections.
   - Do not introduce new claims or technical content.
   - Preserve all TODO markers from other personas.
   - If a section needs substantial rewriting, flag it rather than rewriting.
   - Match STYLE-GUIDE.md voice throughout.
+  - When deferring a HIGH or MEDIUM review finding, use the exact
+    `<!-- TODO (<finding_id>): ... -->` marker described above so the
+    follow-up task generator can track it.
 default_persona_review_pass_condition: >-
   Zero em dashes, zero doc-voice instances, all headers in correct hierarchy,
   all code blocks have language tags, voice is consistent with STYLE-GUIDE.md.
