@@ -148,6 +148,45 @@ TechEditor pass v5 (2026-05-15):
   (N1, N2), the publication-readiness polish (V1, V2, V3), and the L149 sentence-
   fragment clarification. The Python companion update must move in lockstep with
   the A1 + A2 pseudocode change.
+
+TechEditor pass v6 (2026-05-20):
+- Re-verified independently with grep counts on the published file. State matches
+  v5: 0 em dashes, 11 lines containing en dashes (all numeric ranges across the
+  cost row, cost-estimate row, performance-benchmarks table, and implementation-
+  time tiers), 1 H1 + 11 H2 + 13 H3 + 1 H4, 0 hits on the documentation-voice /
+  marketing-language offender list within body text (the only matches are the
+  enumeration of the offender list itself inside this version-history block,
+  which is the intended structural exception).
+- No in-place edits made in this pass. v1's editorial fixes hold; v2-v5 have
+  each independently re-verified that the file is editorially ready and that no
+  further in-scope edits are warranted.
+- The remaining work is unchanged and is owned by the TechWriter:
+  * A1 + A2 coordinated pass on the patient-baseline subsystem (prose +
+    pseudocode + Python companion `_update_patient_baseline` and
+    `_load_or_create_baseline`)
+  * A3 outcome-event idempotency on the EventBridge -> outcome-joiner Lambda
+    path
+  * A4 DLQ + poison-message handling for outcome-joiner, routing, and
+    deviation-calc Lambdas
+  * A5 temporal validation in the retrain pipeline
+  * A6 feature-contributions reframing in the Expected Results sample
+  * S1 high-stigma specialty disclosure paragraph in "PHI handling in the
+    outreach messages"
+  * S2 subgroup-data governance row in Prerequisites
+  * S3 per-consumer IAM scoping in the IAM row
+  * S4 PHI-handling notes on the real-time-scoring and self-reschedule
+    extensions
+  * N1 + N2 VPC-endpoint precision (CloudWatch monitoring vs Logs, EventBridge
+    events vs Scheduler, SageMaker api/runtime/featurestore-runtime, Glue,
+    Step Functions)
+  * V1 future-dated timestamps in the Expected Results sample
+  * V2 alpha decay-factor intuition for non-ML readers
+  * V3 industry-figure citation verification (the no-show reduction percentage,
+    the performance-benchmark ranges, the transportation-intervention
+    effectiveness claim)
+  * L149 sentence-fragment clarification in The Problem
+- The aws-samples and AWS-blog forward-placeholder TODOs read cleanly in
+  published form and can remain as TODOs.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
