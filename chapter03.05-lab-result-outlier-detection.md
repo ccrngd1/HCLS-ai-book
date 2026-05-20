@@ -1,4 +1,85 @@
 <!--
+Editorial pass v5 (TechEditor, 2026-05-20):
+- Verification-only pass. No prose changes; no TODO additions or deletions;
+  no structural reordering; no new technical claims.
+- Re-verified all prior pass work (V1 vignette wording, V2 illustrative-
+  timestamp disclaimer, V3 quality-control-runs comma-bracketing, V4 Gram
+  stain capitalization and Honest Take comma-after-question-mark removal):
+  all in place.
+- Re-verified style hygiene with explicit UTF-8 character counts: zero em
+  dashes (U+2014), zero en dashes (U+2013), zero smart quotes (U+2018,
+  U+2019, U+201C, U+201D). The 6:42 a.m. vignette opening, the three-
+  categories framing, the five-outlier-types taxonomy, the reference-range
+  subsection, the autoverification-as-flip-side-of-outlier-detection
+  framing, the alert-fatigue subsection, the Why-This-Isn't-Production-
+  Ready section, The Honest Take, and Variations and Extensions all
+  read clean.
+- Re-verified header hierarchy: H1 only for title (line 143); H2 for the
+  ten major sections (Problem, Technology, General Architecture Pattern,
+  AWS Implementation, Why This Isn't Production-Ready, Honest Take,
+  Variations and Extensions, Related Recipes, Additional Resources,
+  Estimated Implementation Time, Tags); H3 for subsections within
+  Technology (Three-Stage Lab Workflow, What Outlier Actually Means,
+  Reference Ranges, Patient-Specific Baselines, Statistical Methods,
+  Autoverification Connection, Alert Fatigue) and AWS Implementation
+  (Why These Services, Architecture Diagram, Prerequisites, Ingredients,
+  Code, Expected Results); H4 only for the Walkthrough marker inside Code.
+  No skipped levels.
+- Re-verified RECIPE-GUIDE compliance: Problem -> Technology -> General
+  Architecture Pattern -> AWS Implementation (Why These Services,
+  Architecture Diagram, Prerequisites, Ingredients, Code, Expected
+  Results) -> Why This Isn't Production-Ready -> The Honest Take ->
+  Variations and Extensions -> Related Recipes -> Additional Resources ->
+  Implementation Time -> Tags -> Navigation. All required sections
+  present, correct order. Section title ("The AWS Implementation")
+  matches the Chapter 3 convention used in Recipes 3.1 through 3.4 and
+  3.6 through 3.10.
+- Re-verified vendor balance: conceptual sections (Problem, Technology,
+  General Architecture Pattern) are vendor-neutral and a reader on a
+  non-AWS cloud could substitute primitives without rewriting any of
+  the teaching; AWS service names enter at the AWS Implementation
+  section and stay there; ~70/30 split intact.
+- Re-verified code formatting: bare ``` for ASCII-art and pseudocode
+  (matches Chapter 1 / Chapter 3.1-3.4 precedent); ```mermaid for the
+  architecture diagram; ```json for sample outputs; service names in
+  inline code where appropriate (`dynamodb:GetItem`, `kinesis:GetRecords`,
+  `events:PutEvents`, `sns:Publish`).
+- Re-verified link verification: Synthea, MIMIC-IV, LOINC, CLSI, CAP,
+  CMS CLIA, FDA LDT, HL7, HL7 FHIR, Joint Commission, Institute for
+  Quality in Laboratory Medicine, AWS HIPAA Eligible Services Reference,
+  AWS HIPAA whitepaper, AWS HealthLake, SHAP, SPC Wikipedia, Isolation
+  Forest paper, plus all AWS Documentation links well-formed and point
+  to canonical sources. Forward-placeholder TODOs preserved for aws-
+  samples and AWS-blog searches pending verification before publication.
+- Re-verified all eight TechEditor->TechWriter TODO markers from the v1
+  pass remain in place (S1 SNS PHI minimization, S2 subgroup data
+  governance, S3 per-consumer IAM scoping, S4 HL7 v2 MLLP-over-TLS, S5
+  Bedrock BAA-discipline forward reference, S6 Transfer Family SFTP
+  posture, A1 outcome-event idempotency, A2 DLQ / poison-message
+  handling, A3 method/reagent-change in delta checks, A4 cross-test
+  coherence rules in pseudocode, A5 CLIA critical-callback workflow
+  primitives, A6 reference-range version propagation, A7 severity-tier
+  mapping, N1 VPC endpoint precision, N2 VPC Flow Logs requirement, V2
+  illustrative-timestamps disclaimer follow-through). Plus the seven
+  TechWriter TODOs (industry-figure citation: CAP/CLSI pre-analytical
+  error rates, lab error cost estimates, FDA LDT 2024 rule status, CAP
+  Q-Probe / Q-Tracks autoverification benchmarks, validated LLM-assisted
+  lab-interpretation patterns, aws-samples laboratory-analytics repo
+  verification, AWS-blog-post verification). All markers preserved
+  verbatim; no editorial pass has resolved any of them, all remain for
+  TechWriter follow-through.
+- The Python companion's three code-review WARNINGs (broken
+  __name__ != "__production__" assert; missing SSEKMSKeyId on
+  _write_label_to_s3; creatinine mmol/L vs μmol/L conversion-factor
+  mislabeling) are Python-companion-only and beyond the editor's scope
+  on the main recipe; left for TechWriter to address in the Python
+  companion file. The mislabeling specifically warrants TechWriter
+  attention because the recipe's opening framing explicitly names
+  mg/dL ↔ mmol/L conversion errors as a classic clinical mistake.
+- File is publication-ready pending TechWriter resolution of the seven
+  industry-figure TODOs and the seventeen content TODOs deferred from
+  v1. Editor has no further structural or mechanical changes to make.
+
 Editorial pass v4 (TechEditor, 2026-05-15):
 - Mechanics fix (capitalization): "gram stain findings in free text" -> "Gram
   stain findings in free text" in the Microbiology result interpretation
