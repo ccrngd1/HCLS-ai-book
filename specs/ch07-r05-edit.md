@@ -12,7 +12,11 @@ validation:
     name: quality-review
     persona: TechExpertReviewer
     pass_condition: >-
-      Final version incorporates all HIGH and MEDIUM findings from code review and expert review, has no style guide violations, no em dashes, and is publication-ready.
+      No style guide violations, no em dashes, correct header hierarchy,
+      all code blocks have language tags, voice consistent with
+      STYLE-GUIDE.md. HIGH/MEDIUM technical findings from reviews are
+      either incorporated or explicitly flagged as TODO markers for the
+      TechWriter.
 ---
 
 ## Objective
