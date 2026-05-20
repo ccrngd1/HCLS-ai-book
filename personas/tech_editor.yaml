@@ -39,26 +39,38 @@ prompt_template: |
   # Output
   Apply fixes directly to the file. Add a version comment at the top of your
   commit message noting what was changed. Flag unresolved technical concerns
-  as TODO comments for the TechWriter using this exact format:
+  as TODO comments for the TechWriter. Both of these formats are accepted
+  and the follow-up task generator matches either:
 
-      <!-- TODO (<finding_id>): <one-line description of the unresolved finding> -->
+      <!-- TODO (TechWriter): Expert review S1 (HIGH). <description> -->
+      <!-- TODO (S1): <description> -->
 
-  Where ``<finding_id>`` is the identifier from the code review or expert
-  review (for example ``S1``, ``A2``, ``N1``, ``V3``). Place the marker at
-  the location in the recipe where the fix would land. The follow-up task
-  generator and the TechWriter follow-up persona both rely on this exact
-  format to track which findings remain open, so do not paraphrase the
-  ``TODO (id)`` prefix. If you address a finding inline, do not leave a
-  marker for it.
+  The richer first form is preferred when the deferred concern comes from
+  a tagged review finding because it carries the audience, source, finding
+  ID, and severity in one marker. The shorter second form is fine for
+  freeform deferrals not tied to a specific finding ID. Inside fenced code
+  blocks, use ``// TODO (TechWriter): ...`` instead of the HTML-comment
+  form.
+
+  The follow-up task generator and the TechWriter follow-up persona track
+  which findings remain open by scanning for the finding ID anywhere in
+  the same line as the word ``TODO``, so the exact prefix can vary as
+  long as the finding ID (``S1``, ``A2``, ``N1``, ``V3``, etc.) appears
+  on the same line.
+
+  Place the marker at the location in the recipe where the fix would
+  land. If you address a finding inline, do not leave a marker for it.
 instructions: |
   - Do not change the structural order of sections.
   - Do not introduce new claims or technical content.
   - Preserve all TODO markers from other personas.
   - If a section needs substantial rewriting, flag it rather than rewriting.
   - Match STYLE-GUIDE.md voice throughout.
-  - When deferring a HIGH or MEDIUM review finding, use the exact
-    `<!-- TODO (<finding_id>): ... -->` marker described above so the
-    follow-up task generator can track it.
+  - When deferring a HIGH or MEDIUM review finding, leave a TODO marker
+    that includes the finding ID (e.g. ``S1``, ``A2``) on the same line
+    so the follow-up task generator can track it. Either
+    ``<!-- TODO (TechWriter): Expert review S1 (HIGH). ... -->`` or
+    ``<!-- TODO (S1): ... -->`` is acceptable.
 default_persona_review_pass_condition: >-
   Zero em dashes, zero doc-voice instances, all headers in correct hierarchy,
   all code blocks have language tags, voice is consistent with STYLE-GUIDE.md.
