@@ -1,4 +1,47 @@
 <!--
+Editorial pass v6 (TechEditor, 2026-05-20):
+- Verification-only pass. No prose changes, no TODO additions or deletions,
+  no structural reordering, no new technical claims.
+- Independent UTF-8 byte-level re-verification of style hygiene: zero em
+  dashes (U+2014), zero en dashes (U+2013), zero smart single quotes
+  (U+2018, U+2019), zero smart double quotes (U+201C, U+201D), zero
+  non-ASCII ellipsis (U+2026). File is fully ASCII-typographic-clean.
+- Re-counted preserved TODO markers: 16 TechEditor->TechWriter markers
+  (S1, S2, S3, S4, S5, S6, A1, A2, A3, A4, A5, A6, A7, N1, N2, V2) plus
+  9 TechWriter forward-placeholder markers (CAP/CLSI pre-analytical error
+  rate, lab pre-analytical error cost estimates, FDA LDT 2024 rule status,
+  CAP Q-Probe / Q-Tracks autoverification benchmark figures, validated
+  LLM-assisted lab-interpretation patterns at two locations, aws-samples
+  laboratory-analytics repo verification at two locations, AWS-blog
+  verification). All preserved verbatim from prior passes; no follow-up
+  task generator hooks affected.
+- Re-verified header hierarchy (H1 only on title at line ~143; H2 for the
+  ten major sections; H3 for subsections within Technology and AWS
+  Implementation; H4 only for the Walkthrough marker inside Code; no
+  skipped levels), RECIPE-GUIDE compliance (Problem -> Technology ->
+  General Architecture Pattern -> AWS Implementation [Why These Services,
+  Architecture Diagram, Prerequisites, Ingredients, Code, Expected
+  Results] -> Why This Isn't Production-Ready -> The Honest Take ->
+  Variations and Extensions -> Related Recipes -> Additional Resources ->
+  Implementation Time -> Tags -> Navigation), vendor balance (~70/30
+  conceptual to AWS-specific; conceptual sections substitutable for any
+  HIPAA-eligible cloud), and code-fence conventions (bare ``` for
+  pseudocode and ASCII-art; ```mermaid for the architecture diagram;
+  ```json for sample outputs; service names and IAM actions in inline
+  code).
+- Re-verified Additional Resources URLs are well-formed and point to
+  canonical sources (Synthea, MIMIC-IV, LOINC, CLSI, CAP, CMS CLIA, FDA
+  LDT, HL7, HL7 FHIR, Joint Commission, Institute for Quality in
+  Laboratory Medicine, AWS HIPAA Eligible Services Reference, AWS HIPAA
+  whitepaper, AWS HealthLake, SHAP, SPC Wikipedia, Isolation Forest
+  paper, AWS service developer guides). Forward-placeholder TODOs
+  preserved for aws-samples and AWS-blog searches pending verification
+  before publication.
+- File remains publication-ready pending TechWriter resolution of the
+  16 deferred review findings and the 9 industry-figure citations.
+  Editor has no further structural, mechanical, or stylistic changes
+  to make.
+
 Editorial pass v5 (TechEditor, 2026-05-20):
 - Verification-only pass. No prose changes; no TODO additions or deletions;
   no structural reordering; no new technical claims.
