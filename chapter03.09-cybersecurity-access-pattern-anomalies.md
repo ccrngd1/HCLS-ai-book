@@ -1,5 +1,82 @@
 <!--
 <!--
+Editor pass v6 (TechEditor, 2026-05-21):
+  - No body changes. Independent verification pass on top of v5.
+        Re-confirmed every editor-scope mechanical and voice
+        checkpoint; the recipe remains at publication-ready quality
+        for editor-scope items.
+  - Mechanical re-verification under UTF-8 decoding (System.Text.
+        Encoding.UTF8 against the file bytes; PowerShell default-
+        codepage decoding produces a false en-dash count on the
+        architecture-diagram box-drawing lines, so prior pass-level
+        verifications also need explicit UTF-8 to match):
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
+        sections), 12 H3 (subsections), 1 H4, 0 H5; no skipped
+        levels.
+      * 24 fence markers = 12 balanced fenced code blocks (mermaid
+        block tagged, JSON sample cases tagged, pseudocode and
+        architecture-text blocks intentionally untagged per Chapter
+        1 convention).
+      * "FairWarning" capitalization: 18 hits (all body-text plus
+        v1, v2, v3, v4, v5 editor-comment self-references); 1
+        "FAIRWarning" hit at line 4 inside this v6-and-prior comment
+        block documenting the v5 fix narrative; 0 body-text
+        "FAIRWarning" capitalization drift.
+      * "IdP" capitalization: 17 body-text hits, all consistent;
+        4 all-caps "IDP" hits, all inside editor-comment blocks
+        (this v6 block plus v3, v4, v5 self-references documenting
+        the v2 fix narrative); 0 body-text capitalization drift.
+      * 38 regex matches for "TODO": 16 inline body TODOs + the
+        carry-over consolidated TODOs in the v1 comment block + the
+        v3, v4, v5, v6 comment-block self-references describing the
+        TODO inventory. The 27 actual TODO markers (16 in body + 11
+        carry-over in v1 block) are preserved verbatim; the
+        remaining hits are editor-comment self-references and not
+        real TODOs.
+      * No common dittography ("the the", "of of", "is is", etc.)
+        in body text.
+      * No trailing-whitespace lines.
+  - Voice and structure re-verification:
+      * No documentation-voice ("This recipe demonstrates...") in
+        body.
+      * No announcement statements ("We are excited to...").
+      * No LinkedIn-influencer tone ("AWS architects, we need to
+        talk about...").
+      * No feature-list formatting (bullet lists of capabilities
+        without context).
+      * Cross-references intact: The Honest Take to Implementation-
+        Time Tier table Basic tier (v1 V5 fix); Variations and
+        Extensions PAM integration extension to The Honest Take's
+        "Privileged users are a different program" lesson (v1 V6
+        fix); performance-benchmark caveat tightened (v1 V2 fix);
+        sample case narrative tightened (v1 V4 fix).
+      * 70/30 vendor balance preserved: AWS service names confined
+        to The AWS Implementation, Architecture Diagram,
+        Prerequisites, Ingredients, Code walkthrough,
+        Why-This-Isn't-Production-Ready, Variations and Extensions,
+        and Additional Resources.
+      * All hyperlinks in Additional Resources point to plausible
+        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
+        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
+        imprivata.com, microsoft.com, splunk.com) domains; no
+        fabricated GitHub URLs.
+  - Open items remain TechWriter follow-ups (exceed editor scope
+        per persona instructions "Do not introduce new claims or
+        technical content" and "If a section needs substantial
+        rewriting, flag it rather than rewriting"): the 9 MEDIUM
+        and 14 LOW expert-review findings plus the 3 Python
+        WARNINGs from code review remain catalogued in the v1
+        comment block below. The MEDIUM cluster (A1 idempotency,
+        A2 DLQs, A3 privileged-user separate program, A4
+        service-account inventory, A5 new-user ramp-up cold-start,
+        A6 care-relationship suppression-rule schema-and-workflow,
+        A7 reference-data versioning propagation, S1 case payload
+        PHI/workforce-PII minimization, S2 subgroup data
+        governance) requires architectural and prose additions
+        outside editor mandate.
+
 Editor pass v5 (TechEditor, 2026-05-15):
   - Mechanics: corrected "FAIRWarning-style monitoring" to
         "FairWarning-style monitoring" in the Vocabulary You Need
