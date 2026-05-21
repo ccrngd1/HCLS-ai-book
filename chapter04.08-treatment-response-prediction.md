@@ -1,6 +1,7 @@
 # Recipe 4.8: Treatment Response Prediction ⭐⭐⭐⭐
 
-**Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.02-0.10 per per-patient treatment-comparison decision (depends on per-treatment CATE model serving, similar-cohort retrieval, and clinician-facing rationale generation)
+**Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.02-0.10 per-patient treatment-comparison decision (depends on per-treatment CATE model serving, similar-cohort retrieval, and clinician-facing rationale generation)
+
 
 ---
 
@@ -858,6 +859,19 @@ FUNCTION evaluate_and_gate_pair_models(treatment_pair_id, run_date):
     // the treatment-comparison-pairs table. On rejection, the
     // training-status is set to evaluation-failed and the team
     // investigates.
+    //
+    // TODO (TechWriter): Expert review A2 (HIGH). The governance
+    // review task carries an sla_review_by field but the pseudocode
+    // does not specify the SLA-and-escalation pathway: per-tier SLAs
+    // (14 days for tier-1, 28 days for tier-2 and above), 75% and
+    // 100% notification escalation, default-deferral after first
+    // SLA expiry, default-retirement after second SLA expiry (never
+    // auto-promote), per-cohort review-latency monitoring as part
+    // of equity instrumentation. Without this, model artifacts can
+    // sit in pending_review indefinitely while drifted prior models
+    // continue to serve. Reference Recipe 4.7 Finding A3 as the
+    // sibling pattern. Add a sweep_pending_governance_tasks function
+    // and document defaults in the architecture pattern.
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -955,6 +969,20 @@ FUNCTION score_patient(patient_id, request_context):
         // suppressed depending on policy.
         ood_flag = compute_ood_flag(patient_features, pair, cohort_summary)
             // { is_ood, severity, reasons }
+            //
+            // TODO (TechWriter): Expert review A3 (HIGH). Specify
+            // the OOD severity bands as policy in the pseudocode:
+            // severity < 0.50 present normally with standard
+            // uncertainty caveats; 0.50 <= severity < 0.85 present
+            // with explicit OOD warning text; severity >= 0.85
+            // suppress the pair (mark scoring_status =
+            // "suppressed_oodflag", exclude from the briefing's
+            // numeric comparison, render an "estimate suppressed"
+            // line). Co-specify with the validator's
+            // uncertainty-completeness layer in Step 5. Document
+            // suppression as the chapter's most defensive
+            // clinical-safety primitive; per-pair overrides allowed
+            // in the catalog when clinically warranted.
 
         // Step 4F: sensitivity-analysis bounds. The pre-computed
         // sensitivity results from Step 3 bound how much unmeasured
@@ -1064,10 +1092,21 @@ FUNCTION generate_briefing(scoring_run_id):
         //    observational-data limitations, the conditional-average
         //    nature of the estimates, and the clinician's role as
         //    decision-maker.
-        // <!-- TODO (TechWriter): document the four-layer validator
+        // <!-- TODO (TechWriter): Expert review S3 (MEDIUM). document the four-layer validator
         // pattern in the same shared specification used for 4.5
         // through 4.7, and extend it with the recommendation-language
-        // and uncertainty-completeness layers specific to 4.8. -->
+        // and uncertainty-completeness layers specific to 4.8.
+        // Specify (a) eleven-plus aggressive recommendation-language
+        // patterns; (b) a fact-grounding layer that requires every
+        // numeric value cited to trace byte-for-byte to a field in
+        // observed_context.pair_results; (c) an uncertainty-completeness
+        // layer that requires CI alongside every cited point estimate
+        // and explicit OOD/disagreement disclosure when those flags
+        // fire; (d) required-caveats including the observational-data
+        // and conditional-average framings. Specify failure-handling
+        // progression: regenerate with feedback, regenerate strict-mode,
+        // fall back to templated. Co-specify with the OOD-suppression
+        // bands tagged as A3 in Step 4. -->
 
     IF NOT validation_result.passed:
         IF validation_result.failure_count < MAX_REGENERATION_ATTEMPTS:
@@ -1132,6 +1171,23 @@ FUNCTION record_decision(scoring_run_id, decision_payload):
     scoring = DynamoDB.GetItem("scoring-results", scoring_run_id)
     briefing = lookup_latest_briefing(scoring_run_id)
 
+    // TODO (TechWriter): Expert review S1 (HIGH). Add patient-
+    // identity-boundary checks immediately after the scoring
+    // lookup: validate the calling clinician has a treatment
+    // relationship to scoring.patient_id, validate that
+    // decision_payload.chosen_treatment_id is in the scoring run's
+    // eligible_pairs (the clinician cannot record a decision for
+    // a treatment the model did not score), and validate
+    // decision_payload.scoring_run_id matches scoring_run_id when
+    // both are present. Emit decision_authorization_violation,
+    // decision_treatment_mismatch, and decision_scoring_run_mismatch
+    // metrics on failures and reject the write. The artifact being
+    // mutated is a clinical-decision audit record; misrouted
+    // decisions contaminate the audit trail and break the Cures Act
+    // CDS exemption argument. Reference 4.4 through 4.7 chapter
+    // pattern; the regulated-decision audit-trail posture earns the
+    // HIGH severity here.
+
     decision = {
         decision_id:           new UUID,
         scoring_run_id:        scoring_run_id,
@@ -1177,6 +1233,21 @@ FUNCTION match_outcome(decision_id, run_date):
     // prediction-outcome pair.
     decision = DynamoDB.GetItem("decision-records", decision_id)
     pair = lookup_pair_for_treatment(decision.chosen_treatment_id)
+    // TODO (TechWriter): Expert review A11 (MEDIUM). Specify the
+    // mapping. chosen_treatment_id can correspond to multiple pairs
+    // in a single scoring run (GLP-1 was scored against SGLT2,
+    // sulfonylurea, and basal insulin in three separate pairs).
+    // The methodologically-correct choice is to iterate over all
+    // pairs for the chosen treatment and persist multiple
+    // prediction-outcome rows per decision; the calibration analysis
+    // accounts for the per-patient repeated-measures structure.
+    // TODO (TechWriter): Expert review A9 (MEDIUM). Iterate over
+    // all outcomes defined for the pair (primary + secondary +
+    // safety), not just pair.primary_outcome. Without this,
+    // surveillance only catches drift on a single outcome and
+    // misses cardiovascular, weight, and adverse-event signals
+    // that the model trains on but the surveillance pipeline
+    // ignores.
 
     actual_outcome = compute_actual_outcome(
         patient_id = decision.patient_id,
@@ -1205,6 +1276,33 @@ FUNCTION match_outcome(decision_id, run_date):
     chosen_prediction = find_prediction_for_treatment(
         decision.predictions_at_decision, decision.chosen_treatment_id)
 
+    // TODO (TechWriter): Expert review A1 (HIGH). The fields below
+    // conflate two distinct quantities. chosen_prediction.point_estimate
+    // is the per-pair CATE estimate
+    // E[Y(treatment) - Y(comparator) | X], a treatment-effect
+    // *difference*. actual_outcome.value is the patient's
+    // single-arm observed outcome Y(treatment_chosen). These are
+    // not directly comparable; Marcus did not receive the comparator
+    // and his counterfactual is unobserved. Persisting them under
+    // names that suggest comparability (predicted_outcome vs
+    // actual_outcome) feeds run_calibration_drift_detection a
+    // miscalibrated slope. Two fixes acceptable: (Option A) rename
+    // the field to predicted_treatment_effect, persist the
+    // single-arm observed_outcome separately, and document the
+    // CATE-vs-outcome distinction; replace the naive ratio-of-means
+    // slope with IPTW-weighted aggregate-CATE re-estimation in
+    // run_calibration_drift_detection. (Option B) implement the
+    // IPTW-weighted aggregation as a first-class component. Either
+    // way, surveillance must preserve the methodological discipline
+    // the Technology section establishes. Coordinates with the
+    // Python companion's Finding 3 fix.
+    // TODO (TechWriter): Expert review S1 (HIGH). Add the same
+    // identity-boundary checks here as in record_decision: validate
+    // the decision_id has not already been matched (no duplicate
+    // prediction-outcome pair), validate the run_date is consistent
+    // with the protocol's primary-outcome timing window, and
+    // validate the decision-record version has not been superseded
+    // by a replay or reprocessing event.
     DynamoDB.PutItem("prediction-outcome-pairs", {
         pair_id:               new UUID,
         decision_id:           decision_id,
@@ -1277,6 +1375,22 @@ FUNCTION run_calibration_drift_detection(run_date):
         // calibration drift is the equity-relevant signal; even if
         // overall calibration is stable, cohort-specific drift may
         // be widening disparities.
+        //
+        // TODO (TechWriter): Expert review A4 (HIGH). Specify
+        // COHORT_DRIFT_ALERT_THRESHOLD and DRIFT_ALERT_THRESHOLD
+        // (and MIN_DRIFT_DETECTION_SAMPLE) as policy in the
+        // pseudocode rather than referencing them undefined.
+        // Default thresholds: DRIFT_ALERT_THRESHOLD = 0.15,
+        // COHORT_DRIFT_ALERT_THRESHOLD = 0.10 (tighter than overall
+        // because disparate impact can hide in overall stability),
+        // MIN_DRIFT_DETECTION_SAMPLE = 100 per cohort and 500
+        // overall. Document per-axis-per-pair overrides set by the
+        // cross-functional review committee, and frame chronic
+        // suppression-via-insufficient-sample as itself a fairness
+        // signal (a cohort whose enrollment is structurally low
+        // across pairs is one the system is systematically
+        // under-serving). Reference the Obermeyer 2019 framing
+        // already in the recipe.
         FOR cohort_axis, cohort_drift in drift_signal.per_cohort_drift:
             IF cohort_drift.severity >= COHORT_DRIFT_ALERT_THRESHOLD:
                 DynamoDB.PutItem("surveillance-alerts", {
@@ -1465,23 +1579,33 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Causal-inference rigor at production scale.** The methodology described in The Technology section is not a checklist; it is a discipline that requires a dedicated methodologist or a methodologist-trained data scientist in the loop. Plan for the staffing: at minimum a senior data scientist with formal causal-inference training, a clinical informaticist who understands the outcome definitions and target trials, and a biostatistician who can evaluate the sensitivity analyses. The choice of cohort, the outcome definitions, the sensitivity analyses, the calibration tests, and the fairness tests are not template work. They are design work that has to be done well at every catalog entry. The pattern that fails is the data science team shipping CATE estimators on hand-engineered cohorts without methodological review; the resulting estimates look authoritative and are systematically biased.
 
-<!-- TODO (TechWriter): Specify the SageMaker training-job trigger mechanism and model-promotion path for the propensity, outcome, and CATE-ensemble models. With three or more model artifacts per treatment-comparator pair times ten to thirty pairs, the model registry and promotion automation are central. Mirror the EventBridge-trigger plus SageMaker-Model-Registry-with-canary-run pattern flagged in 4.4 through 4.7, with the additional governance gate from Step 3. -->
+<!-- TODO (TechWriter): Expert review A10 (MEDIUM). Specify the SageMaker training-job trigger mechanism and model-promotion path for the propensity, outcome, and CATE-ensemble models. With three or more model artifacts per treatment-comparator pair times ten to thirty pairs, the model registry and promotion automation are central. Mirror the EventBridge-trigger plus SageMaker-Model-Registry-with-canary-run pattern flagged in 4.4 through 4.7, with the additional governance gate from Step 3. -->
 
 **Regulatory pathway determination and documentation.** The model risk tier per treatment-comparator pair determines whether the pair is in scope for FDA SaMD regulation, the 21st Century Cures Act CDS exemption, or another regulatory framework. The decision is fact-specific: the form of the recommendation (suggestive paragraph versus ranked list versus single recommendation), the underlying evidence (RCT-backed versus observational), and the clinician's ability to review the basis (which the briefing's structured evidence is intended to support) all matter. Plan for regulatory legal review at scoping, a predetermined change control plan if SaMD applies, postmarket surveillance documentation, and a complaint-handling process. Retrofitting regulatory compliance is dramatically more expensive than building it in. <!-- TODO: confirm current FDA SaMD framework, the Cures Act CDS exemption criteria, and the Good Machine Learning Practice principles applicable at the time of build. -->
 
 **EHR integration and clinician workflow design.** The recipe assumes a SMART on FHIR app or CDS Hooks endpoint as the integration point. The clinician workflow design (when does the briefing surface, how does the clinician dismiss it, how does the chosen-treatment field get back to the system, how does the rationale get captured) is a substantial UX project. Many clinical decision support systems fail at this layer rather than at the modeling layer; the recommendation is technically correct, presented at the wrong moment, in a way that interrupts the clinician's flow, and gets dismissed without consideration. Plan for a dedicated clinical-informatics-led UX effort, with iterative deployment to a small clinician cohort, clinician feedback loops, and willingness to redesign the surface before broad rollout.
 
+<!-- TODO (TechWriter): Expert review N2 (MEDIUM). Specify the SMART on FHIR / CDS Hooks integration credential posture: OAuth 2.0 with PKCE for SMART launches with JWT validation against the EHR's JWKS endpoint and audience/issuer pinning; mutual TLS or HMAC-signed bearer tokens for CDS Hooks calls with replay protection (timestamp + nonce); OAuth client secrets and HMAC keys in AWS Secrets Manager with KMS encryption and 90-day rotation; per-EHR-tenant TLS certificates managed via ACM; per-tenant audit logging of launch context, requesting clinician, patient context, and scoring API response. The clinician-facing scoring API is the highest-stakes integration in Chapter 4 and the credential posture deserves specification rather than the high-level "PrivateLink, Direct Connect, or institution-private network" framing. -->
+
 **Patient consent and shared decision-making.** Treatment decisions in healthcare are shared decisions between clinician and patient. The briefing supports the clinician; a patient-facing version supports the patient. Whether and how the patient-facing version is shared, whether the patient's preferences are captured back into the decision record, and whether the patient consents to having their data used for ongoing model improvement are all design decisions that have legal, ethical, and operational implications. Integrate with the institution's existing shared decision-making programs; do not invent a parallel patient-engagement layer.
 
-<!-- TODO (TechWriter): Add a specification for the patient consent flow and the shared-decision capture pattern. The pattern needs to handle: (a) consent to the use of model-derived predictions in the patient's care; (b) consent to ongoing data use for model retraining; (c) capture of the patient's stated preferences and their influence on the chosen treatment; (d) the right to withdraw consent and have predictions excluded from future scoring. Mirror the language from 4.5 through 4.7 where applicable, but the consent layer here is more substantive because the prediction is a clinical-decision input. -->
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add a specification for the patient consent flow and the shared-decision capture pattern. The pattern needs to handle: (a) consent to the use of model-derived predictions in the patient's care; (b) consent to ongoing data use for model retraining; (c) capture of the patient's stated preferences and their influence on the chosen treatment; (d) the right to withdraw consent and have predictions excluded from future scoring. Mirror the language from 4.5 through 4.7 where applicable, but the consent layer here is more substantive because the prediction is a clinical-decision input. -->
 
 **Cross-recipe orchestration with Recipes 4.5, 4.6, 4.7, 4.9, and 4.10.** A patient who gets a treatment-response prediction at the visit may also be a candidate for medication-adherence intervention (4.5), care-gap closure (4.6), care-management enrollment (4.7), personalized care plan generation (4.9), or dynamic treatment regime recommendation (4.10). The integration points need to be explicit: the chosen treatment from 4.8 feeds the care plan in 4.9; the predicted adherence from 4.5 feeds the 4.8 prediction's caveat about adherence assumptions; the care-management enrollment in 4.7 may include monitoring for the chosen treatment's outcomes. Document the cross-recipe data flow; design for the integration rather than bolting it on.
 
-<!-- TODO (TechWriter): Replace the string-concatenation scoring_run_id, briefing_id, decision_id with opaque, non-reversible identifiers (UUID or HMAC-SHA256 over the composite with a per-environment secret). Plain-text patient_ids embedded in identifiers carried in EHR responses, scoring API responses, and decision events are PHI leakage. Mirror the language flagged in 4.4 through 4.7. Update Expected Results sample identifiers accordingly. -->
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Replace the string-concatenation scoring_run_id, briefing_id, decision_id with opaque, non-reversible identifiers (UUID or HMAC-SHA256 over the composite with a per-environment secret). Plain-text patient_ids embedded in identifiers carried in EHR responses, scoring API responses, and decision events are PHI leakage. The treatment-class-in-identifier pattern (e.g., po-2026-07-21-pat-007842-glp1) is sharper than prior recipes because it intersects with state-specific confidentiality statutes for analogous pairs in stigmatized clinical areas (42 CFR Part 2, state mental-health-confidentiality laws). Mirror the language flagged in 4.4 through 4.7. Update Expected Results sample identifiers accordingly. -->
 
 **Model retirement and sunset.** Some models will, over time, lose calibration faster than retraining can recover, become structurally biased in ways that fairness instrumentation cannot fully correct, or be superseded by a regulatory-cleared alternative. The catalog needs a sunset path: a treatment-comparator pair can be retired from production with explicit rationale, and the retirement triggers downstream cleanup (suppress the briefings, archive the decision records with the retired-model annotation, communicate to the clinical-informatics team). The pattern that fails is models that quietly degrade in production because nobody is responsible for retiring them; the result is clinicians who learn to ignore the briefing, which is the worst of both worlds (the system is taking up screen real estate without changing decisions).
 
 **Adverse-event surveillance at network scale.** Single-institution surveillance is underpowered for low-base-rate adverse events. The methodologically appropriate response is consortium-based surveillance (Sentinel, OHDSI) where treatment-response surveillance signals are pooled across multiple institutions with privacy-preserving methods. Building the consortium integration is a large external partnership that takes time; the recipe assumes single-institution operation, but the production version benefits substantially from consortium membership.
+
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Architect adverse-event surveillance as first-class pseudocode in Step 6, alongside calibration drift detection. Per pair: define the adverse events of interest at model promotion (GLP-1 -- pancreatitis, severe GI; SGLT2 -- DKA, Fournier's gangrene; sulfonylurea -- severe hypoglycemia hospitalization), establish expected rates from training and trial data, compute observed rates per million patient-days of exposure in the surveillance window, fire alerts via Poisson or exact binomial test at p < 0.01 conditional on a minimum exposure floor, and produce cohort-stratified versions. Surveillance alerts integrate with the existing surveillance-alerts table. Reference Sentinel and OHDSI as the consortium-scale path. -->
+
+<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Specify a separate validate_patient_summary function for the patient-facing path, distinct from the clinician-facing validator. Layers: (1) reading-level enforcement per Recipe 4.2 pattern; (2) prohibition of probabilistic point estimates as percentages and "you will [outcome]" framing in favor of "patients similar to you" cohort-based phrasing; (3) recommendation-language patterns plus extensions for patient context; (4) required content including shared-decision framing and approved-claim-language compliance. -->
+
+<!-- TODO (TechWriter): Expert review A8 (MEDIUM). The cohort-feature lookup at lookup_cohort_features(decision.patient_id) inside the per-pair scoring loop in Step 4 and inside match_outcome in Step 6 repeats per patient; chapter-wide pattern from 4.4 through 4.7. Hoist the cohort-feature cache out of the per-pair loop and compute once per patient. With 5 to 10 eligible pairs per patient and thousands of patients per surveillance run, the redundant lookups multiply. -->
+
+<!-- TODO (TechWriter): Expert review S4 (MEDIUM). Specify the de-identification posture for treatment-response briefings inside the Privacy paragraph. Banded clinical features (eGFR_band, BMI_band, A1c_band) rather than precise lab values. Demographic attributes (race, ethnicity, language, SDOH cohort) excluded by default with explicit pharmacy-and-therapeutics-committee opt-in only when the attribute is clinically relevant (pharmacogenomic indications). No patient_id or clinician_id in prompts; minimum-necessary disclosure remains the architectural posture even for HIPAA-eligible services. -->
 
 **Privacy in scoring results and decision records.** The `scoring-results` table joins (patient_id, predicted treatment outcomes, similar-patient cohort summaries) and is highly inferential. The `decision-records` table joins (patient_id, chosen treatment, predictions at decision time, clinician rationale) and is closer to clinical-record audit content than typical analytics audit. Apply tighter controls than for engagement data: narrower IAM read scopes, optional separate-table partitioning by sensitivity tier, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Briefings stored in DynamoDB are PHI and treatment-recommendation-relevant; treat them with the same encryption, IAM, and audit posture as clinical notes.
 
