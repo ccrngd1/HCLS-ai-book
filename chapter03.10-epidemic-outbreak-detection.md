@@ -1,4 +1,55 @@
 <!--
+Editor pass v6 (TechEditor, 2026-05-21):
+  - Re-verification only; no in-body changes applied. Ran the full
+    editorial checklist a sixth time and confirmed the recipe
+    remains mechanically and stylistically clean under UTF-8
+    decoding:
+      * 0 em dashes (U+2014).
+      * 0 en dashes (U+2013).
+      * 0 ellipses (U+2026), 0 curly quotes (U+2018/U+2019/U+201C/
+        U+201D), 0 non-breaking spaces (U+00A0), 0 tab characters.
+      * Header hierarchy unchanged: 1 H1, 11 H2, 11 H3, 0 H4, 0 H5;
+        no skipped levels.
+      * 28 fence markers (14 balanced fenced code blocks); fence
+        tagging consistent with v5 (mermaid-tagged architecture
+        diagram, three JSON-tagged sample-cluster candidates,
+        ASCII architecture box and pseudocode blocks intentionally
+        untagged per Chapter 1 convention).
+      * No documentation-voice, announcement statements,
+        LinkedIn-influencer tone, or feature-list formatting in
+        body.
+      * No common typos in body (the apparent typo hits from a
+        case-insensitive sweep are confined to the editor v3
+        substitution-error catalog list itself, where the editor
+        enumerates the patterns being checked for).
+      * No double-punctuation, repeated-word, or trailing-
+        whitespace issues in body. (Apparent "OR or" repeated-word
+        hit from a case-insensitive sweep is the legitimate
+        construction "the same OR or surgeon" in the institutional-
+        version paragraph, where "OR" is the operating-room
+        abbreviation and "or" is the conjunction; not a body
+        issue. Other repeated-word hits are confined to the editor
+        v1/v2/v3 catalogs and to legitimate constructs in the
+        ASCII architecture box.)
+      * No bare URLs outside markdown link wrapping.
+      * Compound-modifier hyphenation consistent ("real-time" as
+        adjective, "in real time" as adverb; "end-to-end" as
+        adjective; checked across all occurrences).
+      * 70/30 vendor balance preserved.
+      * In-body HTML-comment TODOs preserved verbatim (including
+        the v3-added bsts/brms Stan-based qualifier TODO and the
+        v5-added SaNDS link-label TODO).
+  - The architectural and Python-companion findings from the expert
+    review (reviews/chapter03.10-expert-review.md, verdict PASS with
+    0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW) and the code review
+    (reviews/chapter03.10-code-review.md, verdict PASS with 3
+    WARNINGs and 10 NOTEs) remain content-level changes that exceed
+    editor scope per persona instructions ("Do not introduce new
+    claims or technical content" and "If a section needs
+    substantial rewriting, flag it rather than rewriting"). The v1
+    consolidated catalog below captures each one verbatim for
+    TechWriter follow-up; no re-litigation in this pass.
+
 Editor pass v5 (TechEditor, 2026-05-16):
   - Re-verification plus one targeted in-body TODO addition. Ran the
     full editorial checklist a fifth time. Confirmed mechanically
