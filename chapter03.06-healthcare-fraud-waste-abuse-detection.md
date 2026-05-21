@@ -107,6 +107,34 @@ applied this iteration; the substantive expert-review and
 code-review concerns are flagged as TODOs for TechWriter and the
 Python-companion FAIL state is the cross-file blocker. Recipe
 remains publication-ready as a standalone main file.
+
+Final iteration (TechEditor, 2026-05-21): added two new TODO
+markers to close out the remaining MEDIUM expert-review findings
+that did not yet have markers in place. Marker for S2 (PHI
+minimization on the EventBridge `CaseReady.triage` notification
+and per-investigator IAM scoping on the OpenSearch case index and
+case-state DynamoDB table) placed immediately after the Step 7
+`on_flag_event` pseudocode block where the notification fans out.
+Marker for S3 (architectural artifacts for subgroup-governance
+data access: where the demographic-and-attribute store lives, who
+has read access, how subgroup queries are audited via CloudTrail,
+how the QuickSight dashboard queries an aggregated subgroup-metrics
+table rather than the raw demographic-joined flag archive) placed
+immediately after the Fairness-bias-equity-monitoring bullet in
+Why This Isn't Production-Ready. Both markers carry the
+`Expert review SN (MEDIUM)` prefix that the follow-up generator
+matches and reference the recurring chapter-wide pattern (S2 is
+the seventh distinct PHI-minimization surface; S3 is the
+five-recipe chapter-wide subgroup-governance pattern). All eight
+expert-review MEDIUM findings (A1, A2, A3, A4, S1, S2, S3, S4)
+now have well-formed TODO markers in place. Re-ran mechanical
+checks: U+2014 em-dash count zero, U+2212 minus-sign count zero,
+U+2013 en-dash count 17 (all confined to ASCII-art block-diagrams
+inside fenced code blocks; zero prose en-dashes); 17 well-formed
+`TODO (TechWriter)` markers in prose. No further in-place
+rewrites; recipe is publication-ready as a standalone main file
+pending TechWriter resolution of the 17 flagged TODOs and the
+Python-companion code-review fixes (cross-file blocker stands).
 -->
 
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
@@ -1195,6 +1223,33 @@ FUNCTION on_flag_event(flag):
         )
 ```
 
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). The CaseReady.triage
+EventBridge event correctly carries a minimal payload (case_id +
+priority_score), but the OpenSearch index of the case carries the full
+evidence_bundle (representative_claims, peer_comparison, subgraph,
+prior_flags_on_entity, prior_case_outcomes_on_entity, dollar_impact,
+legal_basis_flags, documentation_attached) and the case-state DynamoDB
+upsert carries the full case. State explicitly that PHI does not
+transit through EventBridge and that subscribers must fetch by case_id
+through their own IAM-scoped read paths into OpenSearch and DynamoDB.
+Add per-investigator-assignment IAM scope on case state and the
+fwa-cases OpenSearch index (case_id IN assigned_cases for the
+investigator's role; supervisor and compliance roles override with
+higher-granularity CloudTrail data-event audit; analyst roles read
+low-detail case summaries but require case-assignment for full
+evidence-bundle access; clinical-reviewer roles read-only on cases
+routed for clinical review). OpenSearch fine-grained access control
+rules should evaluate against case-assignment claims; case documents
+indexed with a `case_assignments` field that the access-control rules
+query. Notification channels (email, Teams, Slack) carry case_id and
+routing tier only; entity name and dollar impact stay out of the
+notification subject because they are operationally sensitive and may
+be visible on lock screens. Recurring chapter-wide PHI-minimization
+pattern; the FWA-specific concern is that flag content (post-mortem
+billing dates, ownership-cascade corporate officers, exclusion-violation
+provider details) is itself sensitive in ways that go beyond per-patient
+PHI. Strong candidate for a cookbook-wide PHI-minimization appendix. -->
+
 **Step 8: Documentation review assistance.** When an investigator escalates a case that requires medical records, the documentation-assist service coordinates Comprehend Medical entity extraction and LLM-based review.
 
 ```
@@ -1563,6 +1618,31 @@ The pseudocode shows the shape. A production FWA detection pipeline closes sever
 **Provider appeals and due-process workflows.** Providers have due-process rights when adverse actions are taken (audits, recoupments, network termination). The case management system has to support the appeals workflow: what evidence was used in the initial decision, how the provider can request records, how appeals are tracked, how reversals feed back to the detection system. Without this, adverse actions can be overturned and the organization faces liability.
 
 **Fairness, bias, and equity monitoring.** Detection rates by specialty, by geography, by patient demographics, by provider race/ethnicity when identifiable, by practice setting (safety net, rural, FQHC). If the system disproportionately flags providers serving specific patient populations, the implications are significant. Fairness monitoring must be continuous, not a one-time audit. Mitigations include case-mix adjustment, subgroup performance review, and threshold-tuning review specifically for equity.
+
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). The framing-level
+treatment above is correct; the architectural artifacts that make
+subgroup monitoring binding are not specified. Add a Subgroup-Data-
+Access row to the Prerequisites table or expand this paragraph with
+the infrastructure primitives: subgroup performance and detection-rate
+monitoring requires read access to provider attributes (race, ethnicity
+when identifiable, geography, practice setting) and patient demographic
+attributes (age band, sex, race, ethnicity, insurance type, language)
+that may be governed differently from clinical PHI under some state
+laws (state laws often restrict secondary use of race/ethnicity data
+more tightly than HIPAA restricts PHI per se); restrict read access on
+the demographic-and-attribute stores to the retraining job role and
+the fairness-monitoring dashboard role; CloudTrail data events on every
+subgroup query; the QuickSight dashboard backed by Athena queries an
+aggregated subgroup-metrics table (flag rate by specialty by geography
+by practice setting; case-disposition rates by patient demographic;
+overpayment-recovery rates by provider attribute), not the raw
+demographic-joined flag archive, so that dashboard-user access does
+not require row-level read on the subgroup attributes. Case-mix
+adjustment requires patient-level demographic data joined to provider
+attribution; this join occurs in a controlled environment with output
+limited to aggregated metrics. Five-recipe chapter-wide pattern (3.2,
+3.3, 3.4, 3.5, 3.6); strong candidate for a cookbook-wide
+subgroup-governance appendix. -->
 
 **Change management for rule releases.** New rules can silently shift the flag distribution, generate a flood of false positives, or miss a scheme that shifted the week before. Rule changes go through testing (against historical data), staged rollout (shadow mode before production), and explicit sign-off from program leadership. Treating rule updates like code deploys (pull requests, review, staged rollout) is appropriate.
 
