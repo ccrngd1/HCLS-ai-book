@@ -109,6 +109,32 @@ TechEditor pass v3 (2026-05-16, ch04-r06-edit). Final verification pass:
   to ship as soon as the three HIGH TechWriter TODOs are resolved
   (A1, A2, A3) and the chapter-wide hardening TODOs land in their
   next pass (S1-S5, A4-A11, N1-N3). The editorial layer is complete.
+
+TechEditor pass v4 (2026-05-21, ch04-r06-edit). Re-verification only:
+- UTF-8 byte-level scan reconfirms: em-dash=0, en-dash=0,
+  smart-single-quote=0, smart-double-quote=0.
+- Header hierarchy reconfirmed: 1 H1, 11 H2, 14 H3, 1 H4, 0 H5.
+  No skipped levels.
+- TODO marker count reconfirmed: 34 persona-TODO HTML-comment
+  markers, all from prior personas (TechWriter, Code Review tagged,
+  Expert Review tagged). Zero added or removed.
+- Structural section order reconfirmed against RECIPE-GUIDE.
+- Voice spot-check across The Problem, The Technology, The AWS
+  Implementation, The Honest Take, and Variations: no documentation-
+  voice openings, no LinkedIn-influencer patterns, no marketing
+  language, no announcement statements. The single "high-leverage"
+  in Variations is the colloquial leverage-point sense (Voice
+  reviewer's V2 finding accepts as written).
+- Per persona instructions ("Do not change the structural order of
+  sections", "Do not introduce new claims or technical content",
+  "Preserve all TODO markers from other personas", "If a section
+  needs substantial rewriting, flag it rather than rewriting"),
+  this v4 pass applies no edits to the recipe body. The three HIGH
+  TechWriter TODOs (A1 contact-counter reconciliation, A2
+  data_quality_flag gating, A3 HEDIS CDC measure rename) and the
+  chapter-wide hardening TODOs remain in place for the TechWriter
+  follow-up pipeline. Editorial layer is complete; recipe ships
+  when the HIGH TODOs resolve.
 -->
 
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
