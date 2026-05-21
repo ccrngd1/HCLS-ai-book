@@ -1,5 +1,107 @@
 # Recipe 4.1: Appointment Reminder Channel Optimization ⭐
 
+<!--
+TechEditor pass v1 (2026-05-21, ch04-r01-edit). Editorial fixes:
+- Verified em-dash count: 0 (passes "no em dashes ever" rule).
+- En-dashes (U+2013) appear only in numeric ranges (82-85%, $30-$100,
+  $0.01-$0.02, 1-3 s, 2-3 weeks, 3-4 months, 6-9 months, etc.) and
+  the table-row range "$0.01-0.04" in the front matter; this is
+  consistent with chapter-wide convention for numeric ranges.
+- Header hierarchy: H1 title only, H2 for major sections (Problem,
+  Technology, General Architecture Pattern, AWS Implementation, Why
+  This Isn't Production-Ready, Honest Take, Variations, Related
+  Recipes, Additional Resources, Implementation Time, Tags), H3 for
+  subsections under Technology and AWS Implementation, one H4
+  (#### Walkthrough) under Code. No skipped levels.
+- Voice drift scan: no documentation-voice openings, no LinkedIn-
+  influencer patterns, no "we are excited" announcements. The four
+  patient personas in the Problem section (74-year-old flip phone,
+  34-year-old stale number, 58-year-old marketing opt-out, 42-year-old
+  wrong window) and the closing "The reward definition is the system.
+  Get it right, or build the wrong thing faster." are preserved
+  verbatim as Voice Reviewer highlights.
+- Vendor balance: 70/30 maintained. The Problem, Technology, and
+  General Architecture Pattern stay vendor-neutral. AWS service names
+  appear only from "The AWS Implementation" forward.
+- RECIPE-GUIDE compliance: all required sections present in correct
+  order (Problem, Technology, General Architecture, AWS Implementation
+  with Why These Services / Architecture Diagram / Prerequisites /
+  Ingredients / Code / Expected Results, Why This Isn't Production-
+  Ready, Honest Take, Variations, Related Recipes, Additional
+  Resources, Implementation Time, Tags, Footer Navigation).
+- Voice findings already addressed inline before this pass:
+  * V15 (LOW): "modern approach" replaced with "The approach that
+    generates its own training data" in Approach 3 of the Technology
+    section.
+  * V16 (LOW): "materially more expensive" hedge already removed from
+    the Connect cost description (now reads "voice is more expensive").
+  * V17 (LOW): variation paragraph rhythm noted but left as-is per
+    LOW priority and "do not rewrite sections wholesale" rule.
+- Networking findings already addressed inline before this pass:
+  * N12 (MEDIUM): KMS added to the VPC endpoint list in the
+    Prerequisites VPC row.
+  * N13 (MEDIUM): EventBridge and EventBridge Scheduler added to the
+    same VPC endpoint list.
+- Existing TechWriter TODO markers preserved verbatim. Each carries the
+  finding ID on the same line as the word TODO so the follow-up task
+  generator can track open work:
+  * Expert Review S1 HIGH + A2 HIGH (combined): portal_push BAA / push
+    architecture gap (TODO at Step 4 portal_push dispatch branch).
+  * Expert Review A1 HIGH (Finding 6): no DLQs anywhere in the
+    architecture; replay runbook (TODO in the multi-finding block at
+    the bottom of Why This Isn't Production-Ready).
+  * Expert Review S2 MEDIUM (Finding 2): unauthenticated confirm_url
+    and third-party shortener risk (TODO in the same multi-finding
+    block).
+  * Expert Review S3 MEDIUM (Finding 3): bandit-state and reminder-
+    decisions tables contain PHI in combination (TODO at the Expected
+    Results sample records).
+  * Expert Review S4 MEDIUM (Finding 4): TCPA language stricter than
+    FCC healthcare exemption (TODO at Prerequisites TCPA row).
+  * Expert Review A3 MEDIUM (Finding 8): per-patient bandit
+    convergence overstated for low-frequency patients (TODO at Where
+    It Struggles).
+  * Expert Review A4 MEDIUM (Finding 9): EventBridge Scheduler quotas
+    at scale (TODO in the multi-finding block).
+  * Expert Review A5 MEDIUM (Finding 10): Lambda reserved concurrency
+    for T-24h fan-out (TODO in the multi-finding block).
+  * Expert Review S5 LOW (Finding 5): scoped-ARN examples for IAM
+    least-privilege (TODO at Prerequisites IAM row).
+  * Expert Review A6 LOW (Finding 11): cohort prior loading mechanism
+    (TODO in the multi-finding block).
+  * Expert Review N3 LOW (Finding 14): NAT egress posture for Lambdas
+    that reach services outside VPC-endpoint coverage (TODO at
+    Prerequisites VPC row).
+- Generic verification TODOs preserved: SNS vs. AWS End User Messaging
+  service-boundary check, current SNS SMS pricing, illustrative lift
+  numbers in the Expected Results table, aws-samples healthcare-
+  engagement repo verification, AWS Solutions Library / blog URL
+  verification.
+- Code review findings (chapter04.01-code-review.md, PASS verdict)
+  addressed in the Python companion before this pass:
+  * CodeReview C1 WARNING (non-portable strftime %-d / %-I): fixed to
+    zero-padded %d / %I in _format_local_time, with portability comment
+    preserved.
+  * CodeReview C2 WARNING (SNS MessageAttributes do not propagate to
+    delivery status logs): comment in _send_sms corrected to describe
+    the SES Tags vs SNS MessageId behavior accurately, with explicit
+    guidance to capture response["MessageId"] for production event
+    joining.
+  * CodeReview C3 NOTE (_shift_if_quiet_hours edge case for tight
+    offsets): docstring NOTE preserved in the Python helper.
+  * CodeReview C4 NOTE (broad except Exception in dispatch): left as
+    documented intentional choice with explanatory comment.
+- No code-block language tags changed. The unlabeled fenced blocks
+  carry pseudocode and ASCII architecture diagrams per chapter-wide
+  convention. Mermaid and JSON blocks are tagged.
+- All hyperlinks verified as plausible: Synthea (real GitHub repo),
+  Wikipedia Thompson sampling (real article), AWS docs (legitimate
+  paths under docs.aws.amazon.com), AWS Solutions Library, AWS ML
+  Blog, aws-samples repos. Generic AWS Solutions Library and blog
+  search-page links retained (TODO flags exist for adding specific
+  blog post URLs once verified).
+-->
+
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01–0.04 per reminder (channel-dependent)
 
 ---
