@@ -634,6 +634,7 @@ def on_canonical_event(canonical_event):
     patient_id = canonical_event["patient_id"]
 
     table = dynamodb.Table(PATIENT_STATE_TABLE)
+    # TODO (TechWriter): Code review WARNING 1. Limit=1 with FilterExpression silently misses the active record when an older inactive encounter exists for this patient (DynamoDB applies Limit before the filter). After a single readmit-and-rediscarge cycle, every subsequent canonical event for this patient routes through the silent-loss branch. Fix: use a composite GSI keyed on (patient_id, is_active) so the active-flag becomes a key condition, or drop Limit=1 and let the filter scan all encounters for the patient (small partition is fine). Use Attr (not Key) on FilterExpression while we're here.
     response = table.query(
         KeyConditionExpression=Key("patient_id").eq(patient_id),
         FilterExpression=Key("is_active").eq("true"),
@@ -795,6 +796,7 @@ def daily_scoring_pipeline(scoring_handler):
     before invoking the worklist builder.
     """
     table = dynamodb.Table(PATIENT_STATE_TABLE)
+    # TODO (TechWriter): Code review WARNING 2. GSI query lacks pagination; silently drops patients past 1MB DynamoDB response limit. The 2,000-patient program target this recipe names is comfortably above this threshold once you account for discharge_features, latest_values, intervention_history, and recent_acute_events on each record. Patients with rich intervention histories (the highest-risk subset) drop out first. Fix: wrap in a LastEvaluatedKey loop that paginates until the GSI is exhausted; in production replace the in-process accumulation with a Step Functions Map state.
     response = table.query(
         IndexName="is_active-index",
         KeyConditionExpression=Key("is_active").eq("true"),
@@ -1429,6 +1431,7 @@ def compute_top_drivers(features, feature_order, model, top_n=5):
 
     contributions = []
     if importances is not None and len(importances) == len(X):
+        # TODO (TechWriter): Code review WARNING 3. Within-sample standardization is mathematically nonsensical: np.mean(X) and np.std(X) compute the mean and standard deviation across feature values within a single observation (mixed scales: weight in kg, scores 0-1, day counts), not against training-data statistics per feature. The resulting "contributions" have no model-explanation meaning yet ship into worklist rows as the clinical_meaning column. The explanation_version field claims "shap_proxy" semantics the math does not deliver. Fix: replace with coef_ * X (linear models, partial contribution to logit) or feature_importances_ * X (tree models, importance-weighted feature value); update explanation_version to "importance_heuristic_plus_bedrock_v1" so the audit trail accurately names what was used.
         x_std = (X - np.mean(X)) / (np.std(X) + 1e-6)
         contribs = importances * x_std
         for i, name in enumerate(feature_order):
@@ -2097,6 +2100,7 @@ def run_post_discharge_pipeline(discharge_events, rpm_events, pro_events,
     print("[4/8] running daily scoring sweep")
     score_records = []
     table = dynamodb.Table(PATIENT_STATE_TABLE)
+    # TODO (TechWriter): Code review WARNING 2. GSI sweep without pagination here too; same silent-truncation risk as the daily_scoring_pipeline call site. Wrap in a LastEvaluatedKey loop or replace with a Step Functions Map state in production.
     response = table.query(
         IndexName="is_active-index",
         KeyConditionExpression=Key("is_active").eq("true"),
