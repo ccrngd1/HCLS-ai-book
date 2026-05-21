@@ -312,6 +312,42 @@ the line):
   line; the file is now editor-stable. Subsequent iterations on this
   recipe should be TechWriter passes that resolve the MEDIUM findings
   and the LOW citation/verification TODOs before publication.
+
+Follow-up editor pass (TechEditor, 2026-05-21, sixth iteration,
+verification-only):
+- Verified style hygiene: U+2014 em-dash count 0 across the whole
+  file; U+2013 en-dash count 0 across the whole file (verified via
+  scripted UTF-8 read with regex match counts).
+- Verified TODO inventory: 21 well-formed `<!-- TODO (TechWriter)`
+  markers in prose. Total grep count of 26 includes 5 self-references
+  inside this editor-comment block referencing the anti-pattern grep
+  itself; prose count holds at 21, matching prior-iteration baseline.
+  No drift.
+- Verified header hierarchy, RECIPE-GUIDE compliance, and 70/30
+  vendor balance unchanged from prior passes.
+- Verified prior-pass inline edits (V2 visible-to-reader caveat above
+  the Performance Benchmarks table; V4 sample-narrative tightening
+  from "consideration of empiric antibiotic timing per local sepsis
+  protocol" to "and assessment per local sepsis protocol"; V5
+  cross-reference between The Honest Take's first lesson and the
+  Implementation-Time Basic tier; the fourth-iteration table-row
+  rebalance for "Scoring throughput (patients per minute, peak)") all
+  intact verbatim.
+- Verified prior-pass TODO additions (V1 future-dated timestamps;
+  A1 outcome-event idempotency; A2 DLQ posture; A3 treatment-leakage
+  and feature-cutoff; A4 cold-start; A5 suppression expiry; A6
+  reference-data versioning; S1 alert payload PHI minimization; S2
+  subgroup data governance) all intact at their original locations.
+- No content edits applied in this iteration. The file remains
+  editor-stable. The MEDIUM expert-review findings (A1, A2, A3, A4,
+  A5, A6, S1, S2) and the LOW citation/verification findings (V1, V3
+  set) are the publication-blocking items, and they belong to the
+  TechWriter persona, not the TechEditor persona.
+- Companion `chapter03.07-python-example.md` follow-up status
+  unchanged: code review PASSed with two WARNINGs (non-atomic
+  `update_patient_state`; eventually-consistent `build_explanation`
+  prior-score query) and eleven NOTEs that remain TechWriter-side
+  polish before publication.
 -->
 
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
