@@ -599,6 +599,14 @@ FUNCTION aggregate_plan_inputs(patient_id, request_context):
         // returns: { polst, advance_directive, acp_conversations,
         //            stated_preferences, comfort_focused_flag,
         //            decision_maker, last_updated }
+        // TODO (TechWriter): Expert review A5 (MEDIUM). Compute a
+        // goals_of_care_quality_flag here ("high", "medium", "low",
+        // "sparse") so the clinician-facing narrative can disclose
+        // how confident the goals-of-care alignment was. Trigger a
+        // structured ACP conversation action when the flag is low or
+        // sparse. Add cohort-stratified GoC-quality monitoring to
+        // the equity dashboard so systematically lower data quality
+        // in some cohorts is itself surfaced as a fairness signal.
 
     // Step 1E: social determinants and functional status.
     plan_input_record.sdoh = fetch_sdoh_assessment(patient_id)
@@ -822,6 +830,22 @@ FUNCTION assemble_and_reconcile_actions(goal_set, plan_input_record):
         // threshold for Linda is lower than the threshold for a
         // 45-year-old with the same conditions and full social
         // support.
+        // TODO (TechWriter): Expert review A1 (HIGH). The threshold
+        // derivation policy and the compress_for_burden decision
+        // policy are referenced but undefined. Specify the
+        // threshold formula (baseline minus penalties for functional
+        // deficits, cognitive impairment, social support tier, SDOH
+        // burdens; floor for comfort-focused patients) and the
+        // compression-decision policy (which goal classes are
+        // protected from compression; how patient-stated-preference
+        // goals interact with quality-program-incentivized goals).
+        // Reference the Cumulative Complexity Model and the
+        // Treatment Burden Questionnaire as calibration anchors.
+        // The Honest Take warns that naive burden scoring
+        // systematically deprioritizes the wrong actions for the
+        // patients with the least support; the architecture should
+        // not leave the threshold and compression logic
+        // implementation-defined.
     IF cumulative_burden > burden_threshold:
         compression_decisions = compress_for_burden(
             retained_actions, goal_set, target_burden = burden_threshold)
@@ -885,6 +909,16 @@ FUNCTION finalize_plan(goal_set, retained_actions, reconciliation_record,
     // Actions failing this check are not silently accepted; they
     // are surfaced to the care team as to-be-assigned items in the
     // clinician-facing narrative.
+    // TODO (TechWriter): Expert review A7 (MEDIUM). Plan finalization
+    // verifies the fallback chain exists, but architecture is silent
+    // on fallback execution: when an in-flight action transitions to
+    // failed, who fires the fallback (auto for screening
+    // substitutions, clinician-review-gated for medication
+    // substitutions, scheduler-initiated for appointments), how the
+    // fallback interacts with plan-revision triggers (Finding A3),
+    // and what the patient-facing narrative says when a fallback
+    // fires. Add a fallback_dispatcher Lambda and specify the
+    // per-action-class firing policy.
     to_be_assigned = []
     final_actions = []
     FOR each action in retained_actions:
@@ -1107,6 +1141,19 @@ FUNCTION activate_plan(plan_id, activation_payload):
     // treatment relationship to plan.patient_id; validate that
     // approved_action_ids is a subset of plan.final_actions; reject
     // attempts to approve actions not in the structured plan.
+    // TODO (TechWriter): Expert review S1 (HIGH). The comment above
+    // describes the identity-boundary checks but the pseudocode that
+    // follows performs neither. activate_plan and record_feedback
+    // are the most security-sensitive write paths in Chapter 4
+    // (clinical-record-equivalent PHI; downstream dispatch to
+    // e-prescribing, scheduling, and program-registry systems).
+    // Specify in pseudocode: clinician treatment-relationship check,
+    // approved_action_ids subset check against final_actions,
+    // plan_id consistency check, log + emit metric on each
+    // violation, reject mismatches. Add an analogous check in
+    // record_feedback (target_action_id belongs to plan; source is
+    // consistent with feedback_kind; idempotency on the deterministic
+    // event key). Mirror 4.4-4.8 chapter pattern.
 
     activation_record = {
         activation_id:           new UUID,
@@ -1126,6 +1173,22 @@ FUNCTION activate_plan(plan_id, activation_payload):
     // actions go to the program registry, patient-facing reminder
     // actions go to the channel-appropriate sender, care-manager
     // outreach actions are queued in the care-management system.
+    // TODO (TechWriter): Expert review A4 (HIGH). Activation-
+    // dispatch propagation status is not persisted. The pseudocode
+    // marks plan-action-records status="active" immediately after
+    // dispatch, which assumes successful propagation everywhere.
+    // Architect the asynchronous status pipeline: initial state
+    // "pending_dispatch"; per-integration success/failure responses
+    // update to "active", "active_partial", or "dispatch_failed";
+    // SLA-driven retry for stuck dispatches; failed dispatches
+    // surface to care team and feed the plan-revision evaluator
+    // (Finding A3). The patient-facing narrative renders only after
+    // activation reaches a stable state so the system never makes
+    // promises it cannot verify. Add per-integration cohort-
+    // stratified dispatch-success dashboards. Mirror 4.4-4.7's
+    // optimistic-counter-without-reconciliation pattern; the same
+    // architectural primitive applies (close the loop with the
+    // operational system before claiming the action is live).
     FOR each action_id in activation_payload.approved_action_ids:
         action = find_action(plan, action_id)
         edit = activation_payload.clinician_edits[action_id] or null
@@ -1188,6 +1251,20 @@ FUNCTION record_feedback(plan_id, feedback_payload):
 
     // Determine if the feedback should trigger a plan revision.
     revision_signal = evaluate_feedback_for_revision(plan_id, feedback_record)
+    // TODO (TechWriter): Expert review A3 (HIGH). The trigger
+    // calibration policy is undefined. Specify in pseudocode:
+    // always-trigger events (adverse_event, hospitalization,
+    // new_diagnosis); threshold-trigger events (outcome thresholds
+    // catalog-defined per pair, with per-cohort severity tuning);
+    // persistent-failure triggers (action failure beyond the
+    // catalog-defined fallback window); suppress-trigger events
+    // (within-normal-variation). Add idempotency on the feedback
+    // event's deterministic key so replayed events do not re-fire
+    // revisions. Add cohort-stratified trigger-rate monitoring as
+    // part of the equity instrumentation. The Honest Take names
+    // both failure modes (too-sensitive churn versus too-insensitive
+    // staleness); architecture must specify the framework so the
+    // calibration is operational tuning, not implementation guesswork.
     IF revision_signal.should_revise:
         EventBridge.PutEvents([{
             source:      "care-plan",
@@ -1234,6 +1311,22 @@ FUNCTION run_periodic_plan_review(run_date):
                                                     SURVEILLANCE_WINDOW_DAYS)
     FOR each axis, metric in quality_metrics:
         IF metric.disparity >= COHORT_DISPARITY_ALERT_THRESHOLD:
+            // TODO (TechWriter): Expert review A2 (HIGH).
+            // COHORT_DISPARITY_ALERT_THRESHOLD and the equity-
+            // metric definitions are referenced but undefined.
+            // Specify per-axis-per-metric thresholds (plan ambition
+            // disparity, plan complexity disparity, action assignment
+            // disparity, outcome trajectory disparity), the
+            // operationalization of each metric (median ratio of
+            // priority-weight sum, action count, self-management
+            // share, outcome improvement, worst-cohort versus best-
+            // cohort), the chronic-suppression-as-fairness-signal
+            // pattern (when MIN_COHORT_SAMPLE is not met across a
+            // surveillance window, escalate as an equity signal in
+            // its own right), and the per-axis override mechanism
+            // (the equity-review committee documents threshold
+            // overrides per (axis, metric) at deployment). Reference
+            // Obermeyer 2019 and Recipe 4.8 Finding A4.
             DynamoDB.PutItem("surveillance-alerts", {
                 alert_id:           new UUID,
                 alert_type:         "plan_cohort_disparity",
@@ -1528,7 +1621,7 @@ FUNCTION run_periodic_plan_review(run_date):
 - **Conditions not in the clinical content library.** Goal templates and action templates exist for the conditions the clinical-content team has authored. A patient with a less-common condition (e.g., a rare metabolic disorder, a recently-diagnosed-but-not-yet-templated condition) gets a plan that is silent on that condition or that defaults to generic management. Coverage gaps are visible in the plan as "no condition-specific goals authored for X" callouts; the catalog growth rate is the bottleneck.
 - **Patients with very high condition counts and very low capacity.** A patient with eight active conditions, severe frailty, and low health literacy can produce a candidate action set with thirty or more actions before reconciliation. The burden compression layer reduces this, but the resulting plan may be uncomfortably reductive (a lot was dropped to reach a feasible burden); the alternative of presenting all thirty actions is worse, but the compression decisions warrant clinician review every time.
 - **Goals-of-care preferences that conflict with quality-program weighting.** A patient who has elected comfort-focused care but is enrolled in a Medicare Advantage plan with aggressive quality-program incentives produces goals where the goals-of-care alignment removes goals that the quality program rewards. The system should preserve the patient's preferences; some plans will systematically underperform on certain quality measures because the patient does not want the actions those measures incentivize. That is the right outcome, but it requires the operations team to expect it.
-- **Multi-actor coordination across systems.** A care plan spans the EHR, the e-prescribing system, the scheduling system, the program-enrollment system, the patient portal, and the care-management system. Each of these has its own state, its own update cadence, and its own integration friction. Plans that activate cleanly in one system and fail to propagate to another are the hardest failure mode to detect; the activation-dispatcher should produce structured success/failure events per integration, and the plan-action-records should reflect propagation status.
+- **Multi-actor coordination across systems.** A care plan spans the EHR, the e-prescribing system, the scheduling system, the program-enrollment system, the patient portal, and the care-management system. Each of these has its own state, its own update cadence, and its own integration friction. Plans that activate cleanly in one system and fail to propagate to another are the hardest failure mode to detect; the activation-dispatcher should produce structured success/failure events per integration, and the plan-action-records should reflect propagation status. <!-- TODO (TechWriter): Expert review A4 (HIGH). Architect this as a first-class component (asynchronous status pipeline, per-integration success-rate dashboards) rather than leaving it as a struggle bullet. -->
 - **Deprescribing candidates without prescribing-clinician engagement.** The system surfaces deprescribing candidates; the deprescribing decision belongs to the prescribing clinician (often the PCP, sometimes a specialist). If the PCP does not engage with the deprescribing surface, the candidates accumulate and are eventually ignored as noise. Treat deprescribing as a workflow integration problem, not a model-output problem; the candidates need a clear point in the clinician's workflow, not a separate dashboard.
 - **Plans for newly diagnosed patients.** A patient with a new diagnosis has limited longitudinal data; the personalization layer is sparse. Cold-start plans use cohort-level defaults more heavily, which is the right answer in the short term but means the personalization improves over the first few revisions rather than being immediately rich. Set patient expectations accordingly; the first plan is the starting point, not the destination.
 - **LLM narrative drift in less-common scenarios.** The validator catches the common failure modes (recommendation language, prognostic claims, ungrounded facts). Less-common scenarios (an unusual condition combination, a non-English language with subtle clinical-claim translation issues, a rarely-used cohort override) are where validator coverage is thinnest. Expect a higher fallback-to-templated rate for these scenarios and treat the templated narrative as the safe default.
@@ -1543,6 +1636,8 @@ FUNCTION run_periodic_plan_review(run_date):
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.
 
 **Clinical-content library curation as an ongoing program.** The clinical-content library (goal templates and action templates with cohort overrides) is the substrate of the system. It is not a one-time build. Plan for at least 1.0 to 2.0 FTE of clinical informaticist time, plus part-time involvement from pharmacy, care management, quality, and patient education. Establish a versioned change-management process with parallel evaluation against the prior version on a held-out cohort. The pattern that fails is treating the content library as engineering work; the resulting templates drift from current clinical practice within a year and the clinical team's trust evaporates.
+
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Specify clinical-content version transitions in the architecture: how plan_input_record freezes effective template versions at generation time; how plan revision distinguishes patient-state changes from template-content changes via per-element diff; how retired templates are handled for active plans; how parallel evaluation runs (shadow Step Functions pipeline against held-out cohort, diff surface for committee review). Also flagged: A11 (MEDIUM) on the coordinated promotion path for 50-200 goal templates and 200-1000 action templates with cohort overrides; the scale here is materially larger than 4.4-4.8. -->
 
 **Multi-condition reconciliation evidence and validation.** The reconciliation logic (drug-drug, drug-disease, burden compression, capacity reconciliation, schedule reconciliation) requires clinical evidence for the rules and operational validation for the decisions. Drug-interaction databases (First Databank, Lexicomp, Wolters Kluwer) are licensed and integrated. Burden scoring requires a calibrated model (the Treatment Burden Questionnaire, the Patient Experience with Treatment and Self-Management measure, or an internally-validated equivalent) rather than a hand-tuned constant. Capacity reconciliation requires real-time integration with the staffing and panel-management systems. Schedule reconciliation requires integration with the patient's stated capacity, which most systems do not capture in structured form. None of these are quick wins; budget appropriately.
 
@@ -1604,13 +1699,13 @@ The thing about cohort fairness: plan ambition parity is the headline metric, an
 
 A trap worth flagging: the difference between plans for one patient and plans for a population. A plan for Linda is a personalized artifact; the population of Linda-like patients is a portfolio that the care management program is responsible for. A plan that is well-personalized for Linda but inconsistent with the plans of the other patients in her cohort produces operational chaos for the care manager and the social worker. The pattern that works is per-patient personalization within a portfolio-aware framework: the cohort-level priorities (CHF readmission reduction, A1c control, COL screening) inform the goal weighting, and the per-patient personalization is on top. Both layers matter; neither is sufficient alone.
 
-Last point, because it is specific to this use case: care plan generation is the recipe in this chapter where the patient's life intersects most directly with the system's output. Every recipe in this chapter affects the patient, but recipe 4.9 is the one where the patient reads the system's output and acts on it (or doesn't). That means the system is, in a real sense, a co-author of the patient's care. The seriousness with which the team treats that authorship is the difference between a system that earns the patient's trust and one that erodes it. The clinical content has to be right. The personalization has to be honest. The narrative has to be readable in the patient's language, at the patient's reading level, in the patient's preferred channel. The feedback loop has to be respected (a patient who said "this didn't work for me" should see the system change, not repeat the same suggestion at the next review). The operational discipline has to back the technical work. The system that gets these right does not produce a wow; it produces a quiet "this works for me" that, scaled across thousands of patients, is the version of healthcare personalization the chapter has been pointing at all along. Build for that.
+Last point, because it is specific to this use case: care plan generation is the recipe in this chapter where the patient's life intersects most directly with the system's output. Every recipe in this chapter affects the patient, but Recipe 4.9 is the one where the patient reads the system's output and acts on it (or doesn't). That means the system is, in a real sense, a co-author of the patient's care. The seriousness with which the team treats that authorship is the difference between a system that earns the patient's trust and one that erodes it. The clinical content has to be right. The personalization has to be honest. The narrative has to be readable in the patient's language, at the patient's reading level, in the patient's preferred channel. The feedback loop has to be respected (a patient who said "this didn't work for me" should see the system change, not repeat the same suggestion at the next review). The operational discipline has to back the technical work. The system that gets these right does not produce a wow; it produces a quiet "this works for me" that, scaled across thousands of patients, is the version of healthcare personalization the chapter has been pointing at all along. Build for that.
 
 ---
 
 ## Variations and Extensions
 
-**Multi-language patient-facing narratives.** The patient-facing narrative is generated in the patient's preferred language. Beyond simple machine translation, the variation includes: language-specific reading-level scoring, cultural-context overrides for goal framing (e.g., family-decision-making centrality for some cultures), idiomatic localization, and language-specific approved-claim language. The catalog supports per-language template variants. The validator applies language-specific reading-level checks. Plan for in-language clinical content review for the languages you support; machine translation alone is not sufficient for clinical content.
+**Multi-language patient-facing narratives.** The patient-facing narrative is generated in the patient's preferred language. Beyond simple machine translation, the variation includes: language-specific reading-level scoring, cultural-context overrides for goal framing (e.g., family-decision-making centrality for some cultures), idiomatic localization, and language-specific approved-claim language. The catalog supports per-language template variants. The validator applies language-specific reading-level checks. Plan for in-language clinical content review for the languages you support; machine translation alone is not sufficient for clinical content. <!-- TODO (TechWriter): Expert review A10 (MEDIUM). Multi-language is broader than a variation framing suggests because non-English-preferring cohorts are exactly the cohorts the equity instrumentation should be most sensitive to. Promote the per-language validator dispatch (Flesch-Huerta-Macuso for Spanish, INFLESZ for Spanish-medical, syllable algorithms per language), the per-language catalog of prohibited-language patterns and required-content templates, and the per-language templated fallback into a first-class architectural concern with cross-references to Recipe 4.2 reading-level pattern and Recipe 4.1 language-as-channel-attribute pattern. -->
 
 **Caregiver-facing narrative.** When a patient has a designated family caregiver with consent to access the plan, a third audience-specific narrative addresses the caregiver directly: what they should watch for, when to escalate, what specific support they can provide, and what is not their responsibility (an explicit boundary statement). The caregiver narrative respects the patient's privacy preferences (some patients consent to plan sharing without sharing every detail). The validator extends to a caregiver-audience layer with caregiver-specific prohibited-language patterns.
 
