@@ -1,4 +1,64 @@
 <!--
+Editorial pass v8 (TechEditor, 2026-05-21):
+- Verification-only no-op pass. Re-confirmed v7's audit baseline using the
+  same BOM-aware UTF-8 reader (System.IO.File.ReadAllText). Counts hold:
+  zero em dashes (U+2014), zero en dashes (U+2013), zero smart single
+  quotes (U+2018, U+2019), zero smart double quotes (U+201C, U+201D),
+  zero non-ASCII ellipsis (U+2026). 16 TechEditor->TechWriter finding-ID
+  markers preserved verbatim (S1-S6, A1-A7, N1, N2, V2). 9 TechWriter
+  forward-placeholder TODOs preserved verbatim. File length 144,271
+  bytes, structurally unchanged from v7.
+- No prose changes, no TODO additions or deletions, no structural
+  reordering, no new technical claims. The four resolved expert-review
+  findings (V1, V3, V4) and the inline-resolved Honest Take comma fix
+  remain in place from prior passes.
+- Editor work is COMPLETE. No further editor passes warranted. The file
+  is publication-ready pending TechWriter resolution of the 16 deferred
+  expert-review findings and the 9 industry-figure citations. Subsequent
+  Ralph-loop iterations on this recipe should route to TechWriter
+  follow-up (incorporate review findings) rather than another editor
+  audit pass; v5, v6, v7, and v8 have collectively established that the
+  editor mandate has been fully discharged on this recipe.
+
+Editorial pass v7 (TechEditor, 2026-05-20):
+- Verification-only pass. No prose changes, no TODO additions or deletions,
+  no structural reordering, no new technical claims.
+- Independent UTF-8 byte-level re-verification of style hygiene using a
+  BOM-aware reader (an earlier in-pass check via PowerShell `Get-Content
+  -Raw` produced false positives because of its encoding-detection
+  behavior; the corrected check via `System.IO.File.ReadAllText` confirms
+  the v6 counts): zero em dashes (U+2014), zero en dashes (U+2013), zero
+  smart single quotes (U+2018, U+2019), zero smart double quotes (U+201C,
+  U+201D), zero non-ASCII ellipsis (U+2026). The 30 U+2192 (->) arrows
+  present in the file are all in legitimate locations: 5 inside the v3
+  pass HTML comment block (RECIPE-GUIDE compliance check itself,
+  non-rendering); 17 inside the editor->writer HTML-comment annotations
+  (preserved per persona instructions, non-rendering); 1 in the ASCII-art
+  architecture diagram fenced block (`[Analyzers] -> [Middleware]`); 7 in
+  the navigation footer arrows ("Recipe 3.4 <-" and "-> Recipe 3.6") and
+  similar in-prose ASCII renderings. Box-drawing characters (U+2500,
+  U+2502, U+250C, U+2510, U+2514, U+2518, U+2524, U+253C) and pointer
+  characters (U+25BA, U+25BC) are confined to the architecture diagram
+  fenced block. File is fully ASCII-typographic-clean for prose purposes.
+- Re-counted preserved TODO markers: 16 TechEditor->TechWriter markers
+  (S1, S2, S3, S4, S5, S6, A1, A2, A3, A4, A5, A6, A7, N1, N2, V2) plus
+  9 TechWriter forward-placeholder markers (CAP/CLSI pre-analytical error
+  rate, lab pre-analytical error cost estimates, FDA LDT 2024 rule status,
+  CAP Q-Probe / Q-Tracks autoverification benchmark figures, validated
+  LLM-assisted lab-interpretation patterns at two locations, aws-samples
+  laboratory-analytics repo verification at two locations, AWS-blog
+  verification). All preserved verbatim from prior passes; no follow-up
+  task generator hooks affected.
+- Re-verified header hierarchy, RECIPE-GUIDE compliance, vendor balance
+  (~70/30), code-fence conventions, and Additional Resources URL
+  well-formedness against canonical sources. All v6 findings hold.
+- File remains publication-ready pending TechWriter resolution of the
+  16 deferred review findings and the 9 industry-figure citations.
+  Editor has no further structural, mechanical, or stylistic changes
+  to make; this v7 pass is purely an audit-trail entry corroborating
+  v6's conclusion with a corrected typographic-cleanliness verification
+  method.
+
 Editorial pass v6 (TechEditor, 2026-05-20):
 - Verification-only pass. No prose changes, no TODO additions or deletions,
   no structural reordering, no new technical claims.
