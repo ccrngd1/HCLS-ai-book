@@ -62,7 +62,43 @@ TechEditor pass v1 (2026-05-16, ch04-r07-edit). Editorial fixes:
 - No code-block language tags changed; the unlabeled fenced blocks
   carry pseudocode and ASCII architecture diagrams per chapter-wide
   convention. Mermaid and JSON blocks are tagged.
+
+TechEditor pass v2 (2026-05-21, ch04-r07-edit). Re-verification of
+v1 pass against the editorial checklist:
+- Em-dash count: 0 (re-verified). En-dash count: 0 (re-verified).
+- Header hierarchy: H1 title only; H2 for major sections (The Problem,
+  The Technology, General Architecture Pattern, The AWS Implementation,
+  Why This Isn't Production-Ready, The Honest Take, Variations and
+  Extensions, Related Recipes, Additional Resources, Estimated
+  Implementation Time, Tags); H3 for subsections inside The Technology
+  and The AWS Implementation; one H4 (Walkthrough). No skipped levels.
+- All four HIGH/ERROR finding TODOs confirmed present with their
+  finding IDs on the same TODO line so the follow-up task generator
+  can track them: A1 at the record_outreach_attempt pseudocode block,
+  A2 at the evaluate_disenrollment pseudocode block, A3 at the
+  Disenrollment governance and review paragraph in Why This Isn't
+  Production-Ready, and ERROR 1 at the Idempotency paragraph.
+- All prior TechWriter and editor TODOs preserved verbatim.
+- Voice drift sentinel scan: no documentation-voice openings, no
+  LinkedIn-influencer patterns, no announcement statements. The two
+  "high-leverage" hits flagged by Voice V3 are colloquial leverage-
+  point sense and acceptable per the persona instructions.
+- Vendor balance: 70/30 maintained. AWS service names confined to
+  The AWS Implementation, Why This Isn't Production-Ready, and
+  Variations.
+- Footer navigation present and well-formed (Recipe 4.6 back-link,
+  Chapter 4 Preface, Recipe 4.8 forward-link).
+- Linda continuity: vignette-to-briefing patient name reconciliation
+  was addressed in v1 (Mr. Garcia renamed to Linda). The remaining
+  briefing-vs-vignette social-context reconciliation is correctly
+  deferred to TechWriter via the existing TODO at the briefing JSON.
+- No structural rewrites. No new claims or technical content. No
+  changes to the recipe in this v2 pass beyond this verification
+  note; the v1 pass produced a publishable artifact and the
+  remaining open items are TODOs waiting on TechWriter follow-up
+  (HIGH findings) or external verification (TODO links and pricing).
 -->
+
 
 **Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.005-0.025 per enrollment recommendation (depends on uplift model serving, LLM-generated enrollment briefings, and longitudinal outcome tracking)
 
