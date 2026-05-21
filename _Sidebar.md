@@ -108,6 +108,8 @@
   * [Python Example](chapter04.08-python-example)
 * [4.9 — Personalized Care Plan Generation](chapter04.09-personalized-care-plan-generation)
   * [Python Example](chapter04.09-python-example)
+* [4.10 — Dynamic Treatment Regime Recommendation](chapter04.10-dynamic-treatment-regime-recommendation)
+  * [Python Example](chapter04.10-python-example)
 
 ---
 
