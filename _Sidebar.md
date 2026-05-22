@@ -121,6 +121,7 @@
 * [5.2 — Provider NPI Matching](chapter05.02-provider-npi-matching)
   * [Python Example](chapter05.02-python-example)
 * [5.3 — Address Standardization and Household Linkage](chapter05.03-address-standardization-household-linkage)
+  * [Python Example](chapter05.03-python-example)
 
 ---
 
