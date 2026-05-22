@@ -274,6 +274,12 @@ The pipeline has six logical stages: ingest patient address records from source 
 
 **Cohort-stratified accuracy monitoring is required here too.** Address standardization quality varies across cohorts. Patients in dense urban areas with multi-unit buildings have systematically worse standardization quality (missing unit numbers) than patients in single-family homes. Patients with unstable housing have systematically lower DPV-validation rates. Patients in rural areas with non-traditional addressing have systematically more "NOT_VALIDATED" results. Patients with names from naming conventions outside the dominant culture sometimes have addresses keyed in by registration staff with errors that the standardization software cannot fully correct. Per-cohort standardization-success rate, household-inference confidence distribution, and downstream geocoding success rate are all metrics worth tracking, with disparity thresholds that trigger investigation.
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Specify the operational thresholds, per-axis aggregation, and disparity-metric definitions for cohort-stratified accuracy monitoring. Use the institutional cohort registry as the source of truth for cohort axes (no ad-hoc enumeration in code). Metrics: standardization-success rate (percent VALIDATED or CORRECTED at confidence > 0.90) per cohort weekly; household-inference HIGH-confidence rate per cohort weekly; geocoding-success rate per cohort weekly; NCOA mover-detection rate per cohort quarterly. Disparity calculation: absolute difference between best-rate and worst-rate cohort per metric per cycle. Suggested thresholds: standardization-success disparity > 0.05 = MEDIUM alarm; household HIGH-confidence disparity > 0.10 = MEDIUM; geocoding-success disparity > 0.05 = MEDIUM; any disparity > 2x threshold = HIGH. Alarms route to data-quality team with 5-business-day SLA; remediation (vendor tuning, supplementary correction logic, registration-staff training) documented in cohort-disparity ledger and reviewed quarterly. Stakes are higher here than 5.1/5.2 because address-quality disparities translate to SDOH metric disparities, outreach reach disparities, and financial-assistance access disparities. Reference 5.1 Finding A2, 5.2 Finding A2 as chapter pattern. -->
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Specify the identity-boundary policy for the real-time-ingest path, persist_standardized_record, infer_household_for_address, the NCOA-result-processing path, and the household-lookup read endpoint. For the real-time ingest event from registration / portal / HIE: producer-signed envelope (source_system, source_record_id, event_id, signed_payload, signature) validated by the standardize-on-update Lambda against the producer's known signing key, allow-list of source_system values, idempotency-window check, rejected-events DLQ. For persist_standardized_record: caller_context.invocation_source enum (registration_event, portal_self_update, ncoa_mover_processor, monthly_refresh, api_handler) with per-source caller-role validation; for portal_self_update, principal_id must equal patient_id; for api_handler, validate authenticated principal authorized for the patient_id in the request; reject mismatches with logged metric and route to authorization-violation DLQ. For infer_household_for_address: read privacy-suppression flags from a separately access-controlled table with read-side audit logging; reject calls from invocation sources lacking the household-inference role. For NCOA-result handler: vendor-response signature verification against the NCOA-vendor signing key; idempotency on (submission_id, mover_record_id) so replays are rejected. For household-lookup read endpoint: privacy-suppression-on-read pattern that returns "no household" for suppressed patients (matching the response shape for genuinely-single-patient addresses) so absence-as-signal cannot leak the suppression itself; audit every household-lookup query. The address-as-anchor consequence (a misrouted persist call corrupts the canonical address that downstream outreach, SDOH analytics, financial-assistance, the patient matcher, and the portal all consume) earns the HIGH severity. Reference 4.4-5.2 Finding S1 chapter pattern. -->
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Specify the cross-recipe orchestration contract for the address-and-household drift events. The events conform to a chapter-wide schema (source, detail_type, detail.patient_id, detail.event_id, detail.previous_state, detail.new_state, detail.detected_at). Downstream consumers in 5.1 (patient matcher), 5.4 (insurance eligibility), 5.5 (cross-facility HIE), 5.7 (longitudinal across name changes), 5.8 (privacy-preserving linkage), plus the outreach and SDOH pipelines, subscribe to specific detail_type values and acknowledge processing via a CloudWatch metric ({consumer}.events_processed). Specify the schema versioning policy and deprecation cadence for breaking changes. Reference 5.1 / 5.2 contracts as chapter pattern. -->
+
 ---
 
 ## The AWS Implementation
@@ -296,9 +302,17 @@ The pipeline has six logical stages: ingest patient address records from source 
 
 **Amazon API Gateway plus Lambda for the real-time standardization API.** Patient registration workflows call the API at the moment a patient is registering or updating their address, get back a structured standardized address, and present any corrections or ambiguity warnings to the registration clerk for confirmation. The API also handles the household-lookup pattern (given a patient ID, return the household membership records). API Gateway provides authentication, rate-limiting, and request logging; Lambda handles the orchestration of the standardization vendor call and the persist-to-DynamoDB step. Latency budget is sub-second for the registration-clerk experience; vendor API calls typically fit in that budget, with caching for repeat addresses helping the common case.
 
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Specify the latency budget breakdown and the vendor failover pattern. Targets: P50 cache-hit latency < 50ms, P50 cache-miss-with-vendor-call < 400ms, P95 < 800ms, P99 < 2s. Vendor API call timeout 1.5s with one retry (3s total before fallback). Fallback: accept the raw address with standardization_status: "PENDING_STANDARDIZATION", write to patient-address with the pending flag, emit a pending_standardization event drained by an asynchronous re-standardization Lambda when the vendor recovers; registration workflow continues without interruption (fail-open). CloudWatch alarm fires when pending-standardization queue depth exceeds 100 records or persists more than 30 minutes. Vendor failover to a secondary CASS-certified vendor is not architected at the Lambda layer (the multi-vendor consistency complexity exceeds the value at most institutions); institutions with stricter availability requirements evaluate primary-secondary vendor patterns separately. -->
+
+<!-- TODO (TechWriter): Expert review A8 / Networking review N1 (MEDIUM / LOW). Specify the API Gateway resource policy and WAF posture. The API Gateway is a private API with a VPC endpoint resource policy restricting access to the institutional VPC; the registration system, the patient portal, and the clinical-context-query consumers reach the API through the VPC endpoint. AWS WAF attached with rule groups for SQL injection, command injection, request rate limiting (per source-IP and per Cognito principal), and request-size limiting. CloudFront-with-WAF for any publicly-addressable patient-portal frontend; the institutional perimeter terminates TLS at the WAF and re-establishes TLS to the API. Same chapter pattern as 5.1 Finding N1, 5.2 Finding N1. -->
+
 **Amazon Athena and AWS Glue Data Catalog for analytics.** Cohort-stratified standardization-success rates, household-inference confidence distributions, drift-event volumes, mover detection rates from NCOA processing. Athena queries the catalog over the curated and derived S3 zones; QuickSight on top of Athena provides the dashboards for the address-data-quality team and for the population-health and SDOH analytics teams.
 
 **Amazon QuickSight for the operational and quality dashboards.** Per-cohort standardization-success rates (validated vs corrected vs ambiguous vs not-validated), household-inference confidence distribution by building type and by cohort, drift-event rates, NCOA mover rates, geocoding success rates, SDOH-indicator coverage by census tract.
+
+<!-- TODO (TechWriter): Expert review A10 (LOW). Specify Lake Formation column-level and row-level access controls over the Glue-cataloged curated and audit S3 zones. Standardized addresses are PHI; QuickSight users do not need access to the full address payload, only the cohort-aggregated metrics. Restrict dashboards to cohort-aggregated metrics columns; data-quality team users see the full standardized address payload and the audit-trail provenance; the privacy-suppression-audit table is restricted to the privacy office and the institutional auditors. Direct Athena query path uses the same Lake Formation grants. Access logged via CloudTrail data events on the catalog and underlying S3 buckets. Same chapter pattern as 5.2 Finding A10. -->
+
+<!-- TODO (TechWriter): Expert review S5 (LOW). When emitting cohort dimensions on CloudWatch metrics (per-cohort standardization-success rate, per-cohort household HIGH-confidence rate, per-cohort geocoding-success rate, per-cohort NCOA mover rate), use bucketed non-reversible cohort labels (cohort_bucket = A, B, C, D, E, unknown) rather than raw demographic attributes; the cohort-label-to-attribute mapping lives in a separate access-controlled table loaded only at dashboard-render time. Same chapter pattern as 4.4 / 4.10 / 5.1 / 5.2. -->
 
 **AWS KMS, CloudTrail, CloudWatch.** Customer-managed keys for the S3 buckets, the DynamoDB tables, and the Lambda log groups. CloudTrail data events on the address and household tables and on the standardization-audit S3 bucket. CloudWatch alarms on standardization-vendor-API failure rates, on drift-event volumes (a sudden spike often indicates a USPS reference-data anomaly worth investigating), on NCOA-processing-latency breaches, and on cohort-stratified standardization-success-rate disparities.
 
@@ -399,11 +413,11 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon S3, Amazon DynamoDB, AWS Lambda, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon API Gateway, Amazon Cognito, Amazon Location Service (optional), Amazon QuickSight, AWS Secrets Manager, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
 | **External Services** | A CASS-certified address-standardization vendor (Smarty, Melissa, Loqate, Experian, or equivalent). An NCOAlink-certified vendor for periodic mover detection (often the same vendor as standardization). A geocoding source (Amazon Location Service partner providers, or the same address-quality vendor). |
-| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `PutItem` / `UpdateItem` scoped to specific tables; `s3:GetObject` / `PutObject` scoped to specific bucket prefixes; `secretsmanager:GetSecretValue` scoped to the vendor-API-key secret; `events:PutEvents` on the drift bus; `kms:Decrypt` on relevant CMKs. Glue jobs need scoped catalog and S3 permissions. Never use `*` actions or `*` resources in production. |
-| **BAA** | AWS BAA signed. The standardization vendor must also be willing to sign a BAA, since you will be sending PHI (the address combined with patient identifier) to their API. Most major address-quality vendors offer healthcare-tier service plans with BAAs available. <!-- TODO: confirm at time of build; vendor BAA availability and tier pricing changes periodically. --> |
+| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `PutItem` / `UpdateItem` scoped to specific tables; `s3:GetObject` / `PutObject` scoped to specific bucket prefixes; `secretsmanager:GetSecretValue` scoped to the vendor-API-key secret; `events:PutEvents` on the drift bus; `kms:Decrypt` on relevant CMKs. Glue jobs need scoped catalog and S3 permissions. Never use `*` actions or `*` resources in production. <!-- TODO (TechWriter): Expert review S6 (LOW). Pair with one or two scoped Resource ARN examples for the highest-stakes actions: dynamodb:UpdateItem on arn:aws:dynamodb:<region>:<account>:table/patient-address; dynamodb:Query on the canonical-hash-index ARN; s3:PutObject on arn:aws:s3:::<env>-address-curated/audit/*; events:PutEvents on arn:aws:events:<region>:<account>:event-bus/address-and-household-drift; secretsmanager:GetSecretValue on the vendor-API-key secret ARN. Same chapter pattern as 4.1-5.2; consolidate into chapter preface in the next pass. --> |
+| **BAA** | AWS BAA signed. The standardization vendor must also be willing to sign a BAA, since you will be sending PHI (the address combined with patient identifier) to their API. Most major address-quality vendors offer healthcare-tier service plans with BAAs available. <!-- TODO: confirm at time of build; vendor BAA availability and tier pricing changes periodically. --> <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Specify vendor data-handling commitments contractually: (a) the vendor will not retain submitted addresses beyond a documented operational window (typically 30-90 days), with deletion verifiable on request; (b) the vendor will disclose all sub-processors that may handle PHI (cloud-infrastructure providers, sub-vendors for international coverage, sub-vendors for geocoding) and the institution may object to specific sub-processors; (c) the vendor will notify the institution within a documented window (typically 24-72 hours) of any data incident affecting institutional data; (d) the vendor will sign a HIPAA-compliant BAA and a data-processing addendum specifying the institution's right to audit the vendor's controls (typically annually or upon material change). Add an inline comment at the vendor-API call site in the pseudocode explaining the de-identification posture (whether the patient_id flows to the vendor and why, or whether the architecture uses a vendor-side correlation token instead). --> |
 | **Encryption** | S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. Lambda log groups KMS-encrypted. Secrets Manager: KMS-encrypted secrets. EventBridge: server-side encryption. Glue jobs: KMS for connection passwords. TLS 1.2 or higher for all in-transit traffic, including the vendor-API call. |
-| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, Secrets Manager, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway for the vendor API call (vendor APIs typically do not have AWS PrivateLink endpoints) with an outbound HTTPS proxy and an allow-list of vendor domains. <!-- TODO: confirm at time of build; some address-quality vendors offer AWS PrivateLink endpoints for high-volume customers. --> |
-| **CloudTrail** | Enabled with data events on the patient-address and household-membership tables; data events on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy. |
+| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, Secrets Manager, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway for the vendor API call (vendor APIs typically do not have AWS PrivateLink endpoints) with an outbound HTTPS proxy and an allow-list of vendor domains. <!-- TODO: confirm at time of build; some address-quality vendors offer AWS PrivateLink endpoints for high-volume customers. --> <!-- TODO (TechWriter): Networking review N2 / Architecture A9 (LOW). Configure the standardization-vendor egress and the NCOA-vendor egress as distinct outbound proxy rules with non-overlapping allow-lists scoped to compute roles: the standardization Lambda's role allows only the CASS-certified-vendor API domain; the NCOA-result-handler Lambda's role allows only the NCOA-vendor secure-file-exchange domain. Per-role rate limit on vendor API calls below the vendor's published rate limits. Egress connections CloudWatch-logged for chargeback and forensic auditing. At volumes exceeding ~1M vendor API calls/month, evaluate the vendor's PrivateLink endpoint where available (eliminates NAT Gateway data-transfer cost on the egress path and keeps traffic on the AWS network). --> |
+| **CloudTrail** | Enabled with data events on the patient-address and household-membership tables; data events on the audit S3 buckets. API Gateway and Lambda invocations logged. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy. <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Replace the "per the institution's records-retention policy" framing with an explicit floor: the longer of 7 years (records-retention minimum for healthcare encounter-adjacent records), the institution's documented address-and-household retention policy, the financial-assistance program's retention statute (where applicable), the value-based-care contract's retention requirement (where applicable), and the HIE-participation retention specification. Audit logs in a dedicated S3 bucket with Object Lock in Compliance mode for immutability and a lifecycle policy transitioning to S3 Glacier Deep Archive after 90 days. CloudTrail data events forwarded to a dedicated audit AWS account in the institution's organization, isolating the audit substrate from the production data plane. The retention floor is enforced at the bucket-policy and Object-Lock-configuration level, not at application logic. Same chapter pattern as 5.1 Finding S2, 5.2 Finding S2. --> |
 | **Vendor Selection** | Vet the standardization vendor for: CASS certification (current cycle), NCOAlink certification, BAA availability, healthcare-customer references, API rate limits and bulk-processing options, response-time SLAs, geographic coverage (US-only or international), pricing model (per-record, monthly subscription, or annual license), uptime SLA, and data-handling commitments (do they retain submissions, for how long, with what controls). The vendor selection is consequential because the vendor sees PHI; treat the procurement as a privacy and security review, not just a feature comparison. |
 | **Sample Data** | Use synthetic patient address records that exercise the full range of standardization outcomes (clean, corrected, ambiguous, missing-secondary, not-validated, invalid). The USPS provides public reference data and the major vendors typically provide test endpoints with known-test addresses. Never use real patient addresses in development environments. |
 | **Cost Estimate** | At a medium-sized health system with ~500,000 patients and ~10,000 new addresses per month plus quarterly refresh: vendor standardization costs roughly $0.005-0.02 per address validated (typically billed in batches; healthcare-tier with BAA is at the higher end of that range), so monthly throughput at ~520,000 addresses (10K new plus 510K quarterly-refresh share) ≈ $2,500-10,000/month for the vendor. AWS infrastructure: S3, DynamoDB, Lambda, Glue, Step Functions, EventBridge, API Gateway, Athena, QuickSight, KMS combined typically $300-1,500/month. Estimated total: $2,800-11,500/month, dominated by the vendor cost. NCOA processing typically adds $1,000-3,000/quarter for the cross-check submission. <!-- TODO: replace with verified, current pricing once the implementing team validates against vendor quotes and the AWS Pricing Calculator. --> |
@@ -495,6 +509,16 @@ FUNCTION standardize_address(raw):
     cached = check_standardization_cache(raw_input_hash)
     IF cached IS NOT NULL AND cached.cache_age < CACHE_TTL:
         RETURN cached.standardized
+    // CACHE_TTL is bounded by the USPS reference-data update
+    // cadence (monthly): 30 days aligns with the monthly refresh.
+    // TODO (TechWriter): Expert review A12 (LOW). Specify the
+    // cache TTL policy: 30 days bounded by the USPS monthly
+    // reference-data update cadence; cache entries stored in
+    // DynamoDB with a TTL attribute so DynamoDB auto-evicts.
+    // Cache invalidation on USPS reference-data update is handled
+    // by the change-driven refresh (see Step 5A TODO A3): if the
+    // refresh re-standardizes a record, the cache for the
+    // underlying raw_input_hash is updated as a side effect.
 
     vendor_response = vendor_sdk.validate(
         line1: raw.line1,
@@ -595,12 +619,23 @@ FUNCTION persist_standardized_record(patient_id, raw, standardized):
     previous = DynamoDB.GetItem("patient-address",
         key={patient_id: patient_id, address_role: raw.address_role})
 
-    // TODO (TechWriter): Wrap the DynamoDB write, the S3 archive
-    // write, and the EventBridge emit in a transactional pattern
-    // (TransactWriteItems plus an outbox row drained by a separate
-    // Lambda or DynamoDB Streams consumer) so partial failures do
-    // not leave the address table out of sync with downstream
-    // consumers. Same chapter pattern as 5.1, 5.2.
+    // TODO (TechWriter): Expert review A1 (HIGH). Wrap the
+    // DynamoDB write, the S3 archive write, and the EventBridge
+    // emit in a TransactWriteItems plus an outbox row drained by
+    // a separate Lambda or DynamoDB Streams consumer so partial
+    // failures do not leave the address table out of sync with
+    // downstream consumers. Apply the same wrapping pattern to
+    // infer_household_for_address (Step 4) so the per-member
+    // household-membership PutItems plus the household-inferred
+    // event are atomic; for households exceeding the
+    // TransactWriteItems 100-item limit, use a saga pattern keyed
+    // on a household_update_id. Regulatory consequence here is
+    // sharper than 5.1/5.2 because the address store feeds
+    // outreach (mailing-list scrubbing breaks if the address
+    // persisted but the household-inference event was not
+    // emitted) and the financial-assistance workflow (eligibility
+    // re-determination reads household membership). Same chapter
+    // pattern as 5.1 Finding A1, 5.2 Finding A1.
 
     // Step 3B: write the current standardized record.
     DynamoDB.PutItem("patient-address", {
@@ -663,6 +698,25 @@ FUNCTION infer_household_for_address(canonical_hash):
     // privacy flag, the system either suppresses the household
     // for everyone in the group, or excludes the suppressed
     // patient from the group, depending on policy.
+    //
+    // TODO (TechWriter): Expert review S4 (MEDIUM). Specify the
+    // audit posture for the privacy-suppression decision path.
+    // Every household-membership row should record the policy
+    // version active at inference time (privacy_policy_version)
+    // and the policy decision (privacy_decision: none,
+    // suppressed_record_excluded, suppressed_group_entirely). A
+    // separate privacy_suppression_audit table keyed on
+    // (canonical_hash, suppression_event_timestamp) records every
+    // encounter with a suppression flag during inference, with
+    // the suppressed patient_id, the action taken, and the
+    // resulting household state. A change in the institutional
+    // privacy policy emits a privacy_policy_changed event on
+    // EventBridge that triggers re-inference for every canonical
+    // hash with at least one suppressed record. Without these,
+    // forensic reconstruction (a domestic-violence-survivor
+    // patient asks the institution to investigate whether the
+    // household graph leaked her location) cannot reconstruct the
+    // policy state at the time of the inference.
     suppressed_patients = []
     FOR each record in co_located_records:
         patient_privacy = get_patient_privacy_flags(record.patient_id)
@@ -700,6 +754,23 @@ FUNCTION infer_household_for_address(canonical_hash):
 
     // Step 4D: apply corroborating-evidence assessment to assign
     // confidence.
+    //
+    // TODO (TechWriter): Expert review A7 (MEDIUM). Specify the
+    // configuration-and-governance posture for the household-
+    // inference confidence assignment. The thresholds (last-name
+    // overlap fraction, age-pattern consistency criteria,
+    // insurance-subscriber match weight, secondary-unit
+    // completeness weight) live in a versioned configuration
+    // table; re-calibration runs annually or on detection of
+    // cohort-stratified disparity above 0.10, whichever first;
+    // re-calibration produces a candidate threshold set;
+    // institutional review (data-quality team, privacy office,
+    // clinical leadership) reviews the confusion matrix and the
+    // cohort-disparity impact before promoting the candidate to
+    // production; each household-membership row records the
+    // configuration version and threshold values active at
+    // inference time. Reference 5.1 Finding A11, 5.2 Finding A11
+    // as chapter pattern.
     household_id = derive_household_id(canonical_hash)
         // stable household_id derived from the canonical hash so
         // re-runs produce the same id
@@ -760,6 +831,30 @@ FUNCTION monthly_usps_refresh():
     all_addresses = DynamoDB.Scan("patient-address")
         // For large populations, this is a Glue/Spark job over
         // S3-archived snapshots rather than a DynamoDB scan.
+
+    // TODO (TechWriter): Expert review A3 (HIGH). Replace the
+    // entire-population pattern with a change-driven refresh.
+    // Step 5A pulls the USPS reference-data change manifest for
+    // the cycle (which ZIP+4 ranges, DPV records, and building-
+    // type metadata changed since the last processed release);
+    // a Glue/Spark job filters the patient-address snapshot to
+    // records whose canonical-hash prefix maps to a changed range
+    // plus records whose cache TTL expired independent of
+    // reference-data changes (catches vendor software updates and
+    // correction-logic improvements); only those records are
+    // re-standardized. At a 500K-patient system this typically
+    // processes 5-15% of the population per cycle vs the 100%
+    // implied by the current pseudocode, with the corresponding
+    // cost reduction (current cost estimate $2,800-11,500/month
+    // does not square with full-population monthly throughput at
+    // the higher per-record vendor pricing tier; change-driven
+    // baseline is roughly $2,000-6,000/month, with full-population
+    // available as an architectural alternative for institutions
+    // that prefer simplicity over cost optimization at roughly
+    // 3-5x the change-driven baseline). Vendor-side change feeds
+    // (where the vendor offers them) eliminate the need for the
+    // full re-validation pass entirely. Update the Cost Estimate
+    // row in Prerequisites to match the change-driven throughput.
 
     drift_events = []
 
@@ -1019,7 +1114,11 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Audit trail retention.** Address records and household memberships are PHI, and they are referenced in care-coordination, financial-assistance, and equity-reporting contexts. Apply the institution's records-retention policy. Keep the original input on every standardization event so the system can be re-run with newer reference data or newer correction logic and the lineage can be reconstructed.
 
+<!-- TODO (TechWriter): Expert review A11 (LOW). Add a paragraph specifying the initial-backfill operation (a one-time pass over the existing patient address population at launch). Considerations: (a) negotiate a one-time bulk pricing tier with the standardization vendor (typical bulk pricing is 5-10x cheaper per record than the real-time tier); (b) run the backfill as a Glue job with controlled concurrency to stay below the vendor's rate limit; (c) suppress the address-standardized event emission during backfill (downstream consumers refresh from a single backfill_complete marker rather than 500K individual events); (d) run household inference as a separate Glue job after backfill completes; (e) emit one household_inference_backfill_complete event when household inference is done, with the cohort-stratified accuracy report attached. Plan the backfill timeline in coordination with downstream consumers (outreach, SDOH analytics, financial assistance) so the change in address quality lands in their workflows on a known date. Same chapter pattern as 5.1, 5.2. -->
+
 **Idempotency and retry semantics.** Like the other recipes in this chapter, the pipeline must handle duplicate-event delivery without producing duplicate work or inconsistent state. Use the `(patient_id, address_role)` as the idempotency key for standardization-and-persist. Use the `canonical_hash` as the idempotency key for household-inference. Use the `(patient_id, ncoa_submission_id)` for NCOA-result processing. Lambda invocations should be idempotent at these keys; DLQs should be configured on every Lambda path; Step Functions Catch states should route to the DLQ so terminal failures are visible.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Promote the idempotency keys and DLQ topology into the General Architecture Pattern paragraph rather than only in the production-gaps section. Specify recipe-specific keys: standardize-on-update at (patient_id, address_role, raw_input_hash); persist-standardized-record at (patient_id, address_role, standardized.standardized_at); household-inference at (canonical_hash, inference_version); NCOA-result-processing at (submission_id, mover_record_id); drift-event emission at (patient_id, address_role, drift_type, detected_at_day). Each Lambda has a dedicated DLQ; Step Functions Catch states route terminal failures to the DLQ; CloudWatch alarms on DLQ depth surface stuck workflows within 15 minutes of accumulation. Same chapter pattern as 4.4-5.2. -->
 
 **Cost monitoring and per-vendor-call accounting.** Vendor calls are the dominant cost. Tag every vendor call with the workflow that originated it (registration, batch-refresh, NCOA, household-re-inference). Aggregate the calls per workflow per month. Detect cost anomalies (a runaway re-inference job, a registration-system change that re-validates already-validated addresses unnecessarily). Alert on cost thresholds. The vendor cost can spiral fast if a downstream system starts looping.
 
@@ -1072,6 +1171,8 @@ Last point, because it is specific to the regulatory context: HIPAA's de-identif
 **Address-confidence-aware patient matching.** The patient matcher (recipe 5.1) uses address as one of several similarity signals. The matcher's confidence in an address-based match should be weighted by the standardization confidence: a `VALIDATED` address is a stronger signal than a `NOT_VALIDATED` one. Pass the standardization status through to the matcher's per-field comparator and let the matcher's probabilistic combiner weight accordingly.
 
 **Patient-portal address self-service.** Build the portal feature that shows the patient their on-file address with a confirm-or-update flow. Capture the patient's confirmation timestamp as a freshness signal. For updates, route them through the standardization pipeline and surface any corrections to the patient for re-confirmation. Surface the address-update prompt on every portal session (or every Nth session) until confirmation is received. Pair the prompt with related self-service items (insurance update, emergency contact update) so the experience feels coherent rather than nag-y.
+
+<!-- TODO (TechWriter): Expert review S7 (LOW). Before surfacing the institution's standardized address back to the patient, gate on a disclosure-policy review: addresses sourced from the patient's own portal updates are appropriate to display verbatim; addresses sourced from registration-clerk entry, insurance subscriber feeds, or HIE referrals carry separate provenance, and the portal display should indicate the source rather than presenting the address as if the patient had entered it. Patients with privacy-suppression flags require special handling: the portal should not surface the household-membership inference, only the address itself. Sibling pattern to 5.1 / 5.2 patient-portal Findings S5. -->
 
 **Multi-source address reconciliation.** Some patients have addresses captured from multiple sources (registration, insurance subscriber file, HIE referral, portal self-update). The reconciler picks the most authoritative source per address role with explicit precedence rules (portal > registration > insurance > HIE; or per-role variations). The architecture supports this with the `address_role` partition key and per-role-source provenance.
 

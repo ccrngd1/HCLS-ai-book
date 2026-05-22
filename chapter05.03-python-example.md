@@ -11,7 +11,7 @@
 You will need the AWS SDK for Python plus a permissive date parser:
 
 ```bash
-pip install boto3 python-dateutil
+pip install boto3
 ```
 
 In production you would also install the official SDK from your CASS-certified vendor (Smarty's `smartystreets-python-sdk`, Melissa's API client, Loqate's, or Experian's). The demo replaces the vendor SDK with a small `MockAddressValidator` class that returns plausible USPS-style responses for known synthetic inputs, so you can run the demo without a vendor account.
@@ -56,7 +56,6 @@ from typing import Optional
 import boto3
 from boto3.dynamodb.conditions import Key
 from botocore.config import Config
-from dateutil import parser as dateparser
 
 # Structured logging. In production, ship JSON-formatted records to
 # CloudWatch Logs Insights. Address data is PHI; log structural
@@ -91,9 +90,22 @@ EVENTS_BUS_NAME        = "address-and-household-drift"
 CLOUDWATCH_NAMESPACE   = "Address/Standardization"
 
 # Deploy-time guardrail.
-# TODO (TechWriter): Extend the guardrail to cover every resource-name
-# constant so a missing value produces an actionable assertion message
-# rather than a downstream boto3 ValidationException.
+# TODO (TechWriter): Code review Finding 5 (NOTE). Extend the
+# guardrail to cover every resource-name constant so a missing
+# value produces an actionable assertion message rather than a
+# downstream boto3 ValidationException. Suggested loop:
+#
+#   for name, value in [
+#       ("ADDRESS_TABLE", ADDRESS_TABLE),
+#       ("HOUSEHOLD_TABLE", HOUSEHOLD_TABLE),
+#       ("CANONICAL_HASH_INDEX", CANONICAL_HASH_INDEX),
+#       ("AUDIT_BUCKET", AUDIT_BUCKET),
+#       ("EVENTS_BUS_NAME", EVENTS_BUS_NAME),
+#       ("CLOUDWATCH_NAMESPACE", CLOUDWATCH_NAMESPACE),
+#   ]:
+#       assert value, f"{name} must be set before deploying."
+#
+# Same chapter pattern as 5.2 Finding 8.
 assert AUDIT_BUCKET != "", "AUDIT_BUCKET must be set before deploying."
 
 # --- Versioning ---
@@ -482,6 +494,24 @@ def _build_canonical_hash(delivery_line_1: str, secondary_number: Optional[str],
     with the same secondary unit produces the same hash; that is
     the substrate for household grouping. The hash drops casing
     and whitespace differences so equivalent inputs collide.
+
+    TODO (TechWriter): Code review Finding 2 (NOTE). Drop the
+    secondary_number parameter. CASS-certified vendors return
+    delivery_line_1 with the unit number already included (e.g.,
+    "1421 ELM ST APT 3B"), so passing secondary_number separately
+    duplicates the unit number in the canonical form
+    ("1421 elm st apt 3b 3b ..."). The hash is still deterministic
+    so household grouping works, but the redundancy is pedagogically
+    odd and obscures the "canonical form is the standardized address"
+    framing. Replace with:
+
+        def _build_canonical_hash(delivery_line_1, last_line):
+            return _sha256(_canonical_form(delivery_line_1, last_line))
+
+    and update the call site in standardize_address to pass only
+    delivery_line_1 and last_line. Note this changes the canonical
+    hash for any address with a secondary unit; safe before the
+    demo has been run against persisted records.
     """
     canon = _canonical_form(delivery_line_1, secondary_number, last_line)
     return _sha256(canon)
@@ -656,12 +686,22 @@ def persist_standardized_record(patient_id: str, raw: dict,
     new_canonical_hash = standardized.get("canonical_hash")
 
     # 3B: write the current standardized record.
-    # TODO (TechWriter): wrap the DynamoDB write, the S3 audit
-    # write, and the EventBridge emit in a transactional outbox
-    # pattern (TransactWriteItems plus a Streams-driven event
-    # emitter) so partial failures cannot leave the address table
-    # out of sync with downstream consumers. Same chapter pattern
-    # as 5.1 and 5.2.
+    # TODO (TechWriter): Expert review A1 (HIGH). Wrap the
+    # DynamoDB write, the S3 audit write, and the EventBridge
+    # emit in a TransactWriteItems plus an outbox row drained by
+    # a Streams-driven event emitter so partial failures cannot
+    # leave the address table out of sync with downstream
+    # consumers. Same chapter pattern as 5.1 Finding A1, 5.2
+    # Finding A1.
+    #
+    # NOTE for the pseudocode-to-Python reader: the pseudocode's
+    # Step 3E (trigger household re-inference for affected
+    # canonical addresses) is hoisted to the pipeline wrapper
+    # `run_standardize_pipeline_for_patient` rather than living
+    # inside this function. In production, persistence and
+    # household-inference are typically separate Lambdas wired by
+    # EventBridge or Step Functions; the wrapper represents the
+    # orchestration layer. See Code review Finding 3.
     next_revalidation_due = (
         datetime.now(timezone.utc).date()
         + timedelta(days=REVALIDATION_CADENCE_DAYS)
@@ -1213,6 +1253,27 @@ def simulate_ncoa_processing(movers: list) -> dict:
     shape: {patient_id, new_address (raw fields), move_date,
     match_type}. Production submits the patient address list to a
     NCOAlink-certified vendor and processes the response file.
+
+    TODO (TechWriter): Code review Finding 1 (WARNING). This path
+    and `monthly_usps_refresh` both call `persist_standardized_record`
+    directly rather than going through `run_standardize_pipeline_for_patient`,
+    and `persist_standardized_record` does not update the demo-only
+    `_IN_MEMORY_ADDRESS_REGISTRY`. The result is that after Phase 2's
+    NCOA mover simulation the registry still has the moved patient
+    at the old canonical address, so the household re-inference for
+    both old and new canonicals produces silently-wrong results in
+    demo mode. Recommended fix: move the in-memory registry update
+    inside `persist_standardized_record` (so every code path that
+    persists a standardized record also updates the demo's registry)
+    and drop the parallel registry update from
+    `run_standardize_pipeline_for_patient`. Verify by re-running the
+    demo and inspecting the household state after Phase 2: the
+    Patel household at Apt 3B should re-evaluate to the four-record
+    group without 00874, and the Apt 5A canonical should re-evaluate
+    from SINGLE_PATIENT to a two-record group containing 00874 and
+    00990. Optionally extend the demo's print output to surface the
+    post-NCOA household-inference results so the success of the fix
+    is visible without reaching for a debugger.
     """
     processed = 0
     affected_canonicals = set()
