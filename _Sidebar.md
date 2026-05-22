@@ -119,6 +119,7 @@
 * [5.1 — Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection)
   * [Python Example](chapter05.01-python-example)
 * [5.2 — Provider NPI Matching](chapter05.02-provider-npi-matching)
+  * [Python Example](chapter05.02-python-example)
 
 ---
 
