@@ -14,7 +14,9 @@ You will need the AWS SDK for Python plus a couple of string-similarity librarie
 pip install boto3 jellyfish python-dateutil
 ```
 
-`jellyfish` provides the Jaro-Winkler, Damerau-Levenshtein, and double-metaphone implementations used in the comparators. `python-dateutil` provides a permissive date parser that handles the dozen formats registration desks generate (`MM/DD/YYYY`, `DD-MM-YYYY`, `March 14 1972`, `19720314`, and the rest).
+`jellyfish` provides the Jaro-Winkler, Damerau-Levenshtein, and metaphone implementations used in the comparators. `python-dateutil` provides a permissive date parser that handles the dozen formats registration desks generate (`MM/DD/YYYY`, `DD-MM-YYYY`, `March 14 1972`, `19720314`, and the rest).
+
+<!-- TODO (TechWriter): Code review WARNING 1. The recipe text and architecture diagram in the main recipe both call for double metaphone (the modern algorithm with primary and secondary codes). `jellyfish.metaphone` is the original 1990 metaphone, not double metaphone. Two options: (a) add the `metaphone` PyPI package and use `from metaphone import doublemetaphone` so the implementation matches the recipe text and Splink's production guidance; or (b) honestly rename the helper to `_metaphone`, update this Setup paragraph, the function docstring, and the recipe text's pseudocode and architecture diagram to say "metaphone" instead of "double metaphone." Either way, all three places (function name, docstring, Setup prose) must land on the same algorithm name. -->
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
 
@@ -377,6 +379,12 @@ def _double_metaphone(s: str) -> tuple:
     blocking and as comparator inputs; matching on either code
     counts as a phonetic match.
     """
+    # TODO (TechWriter): Code review WARNING 1. jellyfish.metaphone is the
+    # original 1990 metaphone algorithm, not the 2000 double-metaphone
+    # successor. Either swap to a real double-metaphone library
+    # (`from metaphone import doublemetaphone`) or rename this helper
+    # to `_metaphone`, update the docstring, and align Setup prose
+    # plus the main recipe's pseudocode and architecture diagram.
     if not s:
         return ("", "")
     primary, secondary = jellyfish.metaphone(s), None
@@ -529,7 +537,7 @@ def normalize_record(raw_record: dict) -> dict:
         "middle_name":           middle_name,
         "last_name":             last_name,
         "last_name_metaphone":   last_metaphone_pri,
-        "last_name_metaphone_sec": last_metaphone_sec or "",
+        "last_name_metaphone_sec": last_metaphone_sec or "",  # TODO (TechWriter): Code review NOTE 3. Dead attribute: written here but no comparator reads it. Either update _compare_last_name to match on either primary or secondary code (paired with the WARNING 1 fix to use real double metaphone) or drop this field from the schema.
         "suffix":                suffix,
         "dob":                   dob_canon,
         "dob_quality_flag":      dob_flag,
@@ -768,9 +776,9 @@ def _compare_dob(a: dict, b: dict) -> str:
     a_dob, b_dob = a["dob"], b["dob"]
     a_flag, b_flag = a["dob_quality_flag"], b["dob_quality_flag"]
 
-    # Implausible values do not contribute information; treat as null.
-    if a_flag != "ok" and b_flag != "ok":
-        return "one_null"
+    # Implausible or missing values do not contribute information;
+    # treat as null. Standard Fellegi-Sunter null-handling: null on
+    # one or both sides contributes zero log-likelihood.
     if a_flag != "ok" or b_flag != "ok":
         return "one_null"
     if not a_dob or not b_dob:
@@ -811,6 +819,19 @@ def _compare_address(a: dict, b: dict) -> str:
     Compare normalized addresses. A real system uses USPS-standardized
     forms with ZIP+4; the demo's coarse normalizer means same-street
     and same-zip detection is approximate.
+
+    NOTE: The recipe's pseudocode names levels `exact`,
+    `same_zip_plus_4`, `same_street_different_apt`,
+    `same_zip_different_street`, `mismatch`, `one_null`, and
+    `both_null`. The demo collapses these into `exact`,
+    `same_street` (covers same-street-different-apt and
+    same-zip-plus-4 in practice since the demo's coarse normalizer
+    does not surface ZIP+4), `same_zip` (same ZIP, different
+    street; the recipe's `same_zip_different_street`), `mismatch`,
+    and `one_null` (both nulls and one-null collapsed). Production
+    reads ZIP+4 from a CASS-certified standardizer and exposes the
+    finer-grained levels; the M/U tables would carry per-level
+    entries to match.
     """
     a_addr, b_addr = a["address_usps"], b["address_usps"]
     if not a_addr or not b_addr:
@@ -876,13 +897,17 @@ def _compare_email(a: dict, b: dict) -> str:
 def _log_likelihood_ratio(field: str, level: str) -> Decimal:
     """
     Per-field, per-comparison-level log-likelihood-ratio contribution.
-    Look up m and u; return log(m/u) when both are positive, fall back
-    to log((1-m)/(1-u)) for null-handling.
 
-    A "match" comparison level (exact, jaro_winkler_high, etc.)
-    contributes positively when m > u; a "mismatch" level contributes
-    negatively. Null-on-one-side contributes nothing (zero) under
-    standard Fellegi-Sunter.
+    Each comparison level (exact, jaro_winkler_high, mismatch, etc.)
+    has its own (m, u) entry in M_PROBABILITIES / U_PROBABILITIES, so
+    log(m_level / u_level) is the correct contribution uniformly: a
+    "match" level (m > u) contributes positively, a "mismatch" level
+    (m < u) contributes negatively. Null-on-one-side contributes zero
+    under standard Fellegi-Sunter (no information about identity).
+
+    Returns Decimal("0") for null cases and for missing or
+    zero-probability table entries (defensive against table
+    misconfiguration).
     """
     m = M_PROBABILITIES.get(field, {}).get(level)
     u = U_PROBABILITIES.get(field, {}).get(level)
@@ -1153,6 +1178,11 @@ def _query_cluster_members(mpi_id: str) -> list:
     """All xref entries currently assigned to this mpi_id."""
     if not mpi_id:
         return []
+    # TODO (TechWriter): Code review NOTE 4. DynamoDB Query returns at
+    # most 1MB per call; large clusters silently truncate. Add a
+    # LastEvaluatedKey pagination loop so apply_merge sees the entire
+    # cluster. The long-tail patients with dozens of cross-system
+    # linkages are exactly the cohort most affected by the truncation.
     try:
         resp = dynamodb.Table(MPI_XREF_TABLE).query(
             IndexName=MPI_ID_INDEX,
@@ -1289,6 +1319,14 @@ def apply_merge(record_a: dict, record_b: dict, decision_metadata: dict) -> str:
     # source record in either cluster. A real implementation does
     # this in a TransactWriteItems call to keep the master and xref
     # writes atomic; the demo splits them for readability.
+    # TODO (TechWriter): Code review NOTE 5. Wrap this put_item (and
+    # the deprecated-cluster update_item below) in try/except matching
+    # the pattern used elsewhere in the file, and either raise after
+    # logging or route to a DLQ. Today an exception here aborts before
+    # the xref updates run, the audit-archive write, and the
+    # EventBridge emit, leaving the MPI in a half-updated state.
+    # Production replaces the whole block with TransactWriteItems
+    # (Expert review A1 in the main recipe).
     dynamodb.Table(MPI_MASTER_TABLE).put_item(Item=merged_master)
 
     cluster_a_members = _query_cluster_members(master_a.get("mpi_id"))
@@ -1449,6 +1487,21 @@ def unmerge(merge_id: str, reason: str, operator_id: str) -> None:
     demo intentionally leaves this as a TODO since the persistence
     schema for the audit record is up to the implementing team.
     """
+    # TODO (TechWriter): Code review NOTE 10. The recipe text spends
+    # substantial space framing reversibility as non-negotiable, and
+    # the audit record carries everything needed (pre_merge_master_a,
+    # pre_merge_master_b, source_records_in_merge with
+    # previous_mpi_id_history) to restore pre-merge state. Implement
+    # the body using these structures: put pre-merge masters back,
+    # update_item each xref to restore the previous mpi_id, mark the
+    # survivor with unmerged_at and unmerge_reason, write an unmerge
+    # audit record (partition="unmerge"), emit an EventBridge unmerge
+    # event. The institution-specific bit is the audit-record lookup
+    # helper (S3 prefix scan keyed on merge_id, or a dedicated
+    # audit-by-merge-id DynamoDB table); a stub helper that returns
+    # None plus a working unmerge body is more useful than the
+    # current NotImplementedError because it demonstrates the
+    # mechanics with the audit record's data structures.
     # TODO: fetch the audit record from S3 / audit table by merge_id.
     # For each pre-merge master in the audit record:
     #   put_item back into mpi-master.
@@ -1672,6 +1725,10 @@ if __name__ == "__main__":
 ```
 
 Expected console output (scores will vary slightly with the m/u probability values):
+
+<!-- TODO (TechWriter): Code review WARNING 2. The expected scores below (14.21, 11.04, 15.83, 2.65) are roughly one-third of what the code actually produces against the published M_PROBABILITIES and U_PROBABILITIES tables; hand-computing the MRN-009315 vs MRN-014203 case sums to ~42.8, not 14.21. "Slightly" understates a 3x discrepancy. Re-run the demo against the published tables and paste the actual output here, then either adjust HIGH_THRESHOLD upward (around 20.0) so the auto-match / review boundary still discriminates correctly, or tighten the m/u tables until the expected scores cluster in the 10-15 range. Verify by re-running end-to-end and confirming the printed scores match this block exactly. -->
+
+<!-- TODO (TechWriter): Code review NOTE 6. The "merges applied: 3" line implies persistence that does not happen against unprovisioned tables: apply_merge raises out of the unwrapped put_item (NOTE 5), the surrounding try/except catches and logs, and merges_applied stays empty. Either add a clear "running offline against unprovisioned tables" disclaimer at the top of run_demo so the printed counts are framed as "what the pipeline would do," or provide a docker-compose snippet (DynamoDB-Local + minio + LocalStack) so the demo runs end-to-end. -->
 
 ```
 ======================================================================
