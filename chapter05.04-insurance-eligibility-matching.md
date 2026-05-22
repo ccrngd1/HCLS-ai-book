@@ -320,6 +320,8 @@ The pipeline has six logical stages: ingest the eligibility-verification trigger
 
 **Amazon ElastiCache (Redis) for the real-time cache.** The freshness regime requires a fast cache layer in front of DynamoDB for the registration-flow path. Redis holds parsed eligibility state with TTLs that match the freshness policy (24 hours for future service dates, 1 year for past). Cache hits return in under 5ms and skip the DynamoDB read entirely; cache misses fall through to DynamoDB, then to a re-inquiry if no record exists. <!-- TODO: confirm ElastiCache HIPAA eligibility and the encryption-at-rest configuration at time of build; ElastiCache for Redis supports encryption at rest and in transit and is included in AWS HIPAA-eligible services. -->
 
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Specify the cluster sizing methodology and the eviction policy. At a medium-volume institution doing 150K verifications/month, the rolling 12 months of past entries plus the 30-day forward window total approximately 3-4GB at 1-2KB per match-outcome JSON; a `cache.r6g.large` (~13GB memory) with two read replicas and a `volatile-lfu` eviction policy is the recommended starting point. Past-service-date TTL of 1 year is conservative; institutions optimizing for cache cost may shorten to 30-90 days with on-demand re-fetch from DynamoDB on the rare past-date read. CloudWatch alarms on memory utilization > 80% and on per-day eviction count above threshold signal undersizing. The Cost Estimate row's "small Redis cluster runs $200-600/month" is undersized at the stated volumes; correct figure is roughly $400-800/month for `cache.r6g.large` with replicas. -->
+
 **Amazon SQS for the inquiry queues.** Two queues: a high-priority queue for real-time registration inquiries (with a short visibility timeout and aggressive retry), and a standard-priority queue for scheduled pre-warm and batch reconciliation. Separating the queues prevents a flood of pre-warm inquiries from delaying the real-time path. Both queues feed Lambda consumers that submit inquiries through the configured connectivity layer.
 
 **AWS Lambda for the per-inquiry processing.** Lambda is the right substrate because each inquiry is short-lived, mostly I/O-bound (clearinghouse or payer API call plus DynamoDB writes), and benefits from on-demand scaling for the bursty registration-time pattern. Separate Lambdas per pipeline stage: `normalize-inquiry`, `submit-inquiry`, `evaluate-response`, `persist-match`, `invalidate-cache`. Each is in VPC with VPC endpoints for downstream services. Connectivity outbound to clearinghouses or direct payer endpoints uses NAT Gateway with allow-listed egress (most clearinghouses do not offer AWS PrivateLink, though some larger payers and clearinghouses do at high volume tiers). <!-- TODO: confirm clearinghouse and payer PrivateLink availability at time of build; this is evolving. -->
@@ -531,6 +533,27 @@ FUNCTION ingest_eligibility_trigger(trigger_event):
             // for the same payer process in order, which matters
             // for correctly handling subscriber-then-dependent
             // sequenced inquiries.
+            // TODO (TechWriter): Expert review A3 (HIGH). The
+            // FIFO-with-MessageGroupId-per-payer pattern serializes
+            // a horizontally-scalable workload through a per-payer
+            // bottleneck (SQS FIFO is bounded at 300 msg/sec per
+            // MessageGroupId, 3000/sec with batching and high-
+            // throughput mode). At a medium-volume institution
+            // doing 150K verifications/month, a single national
+            // payer (Aetna, Cigna, UnitedHealth) commonly produces
+            // concentrated morning-registration load that cannot
+            // fit the latency budget through one MessageGroupId.
+            // The stated rationale (subscriber-then-dependent
+            // ordering) is also incorrect; subscriber and
+            // dependent inquiries are independently resolvable.
+            // Switch to SQS Standard with idempotency at the
+            // inquiry hash, or use a finer-grained MessageGroupId
+            // (per (payer_id, subscriber_id) for the rare cases
+            // that genuinely need ordering, or per inquiry_hash
+            // for parallelism with idempotent delivery).
+            // Reference 5.1 / 5.2 / 5.3 chapter pattern (those
+            // recipes use SQS Standard or Step Functions, not
+            // FIFO with payer-grouping).
 
     RETURN inquiry
 ```
