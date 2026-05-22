@@ -127,6 +127,7 @@
 * [5.5 — Cross-Facility Patient Matching (HIE)](chapter05.05-cross-facility-patient-matching)
   * [Python Example](chapter05.05-python-example)
 * [5.6 — Claims-to-Clinical Data Linkage](chapter05.06-claims-to-clinical-data-linkage)
+  * [Python Example](chapter05.06-python-example)
 
 ---
 
