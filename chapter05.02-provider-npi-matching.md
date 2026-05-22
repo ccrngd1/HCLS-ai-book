@@ -79,6 +79,9 @@ The string-similarity and probabilistic-linkage techniques from recipe 5.1 carry
 
 **Type 2 NPIs are many-to-many with people.** A provider who works at a solo practice, two hospital systems, and a billing service might be associated with four different Type 2 NPIs. None of those Type 2s "is" the provider; they are the billing entities the provider works under. Your internal record might be tracking the provider's individual identity (Type 1) or one of their billing relationships (Type 2). The matching system needs to know which it is asking about. Some operational workflows (credentialing) care about Type 1. Some (claims, network adequacy) care about both.
 
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Diagnose the Type 2 persistence model in the architecture: the assignment record should carry the matched Type 1 NPI plus a list of current Type 2 affiliations (each with affiliated organization, effective date range, primary-billing flag); drift detection should surface `type2_affiliation_added` and `type2_affiliation_removed` as separate events from Type 1 drift, with downstream consumers (claims validation, network-adequacy reporting) subscribing to the events relevant to their workflow. -->
+
+
 **Deactivation status matters.** A deactivated NPI in the registry means the provider has retired, died, or otherwise notified NPPES that they are no longer practicing. Your matching system should fetch and consider the deactivation flag at every match: matching to a deactivated NPI is almost always wrong (the provider in your record cannot be a deactivated provider unless your record itself is also deactivated), and matching to a deactivated NPI without surfacing the deactivation status to operations is a directory-accuracy failure waiting to happen.
 
 **The match needs to be refreshed on a cadence.** Patient matching is mostly "match once, hold forever, unmerge if wrong." Provider matching is "match once, then re-verify regularly because the registry data drifts." Network adequacy regulations typically require the verification to happen on a defined cadence (every ninety days is common). The architecture has to schedule, execute, and audit those re-verifications, and surface drifts (address change, taxonomy change, deactivation) to operations promptly.
@@ -264,6 +267,9 @@ The pipeline has six logical stages: ingest the internal provider records and th
 
 **Cohort-stratified accuracy monitoring is required here too.** Provider-matching errors are not uniformly distributed across cohorts. Providers with names from naming conventions outside the dominant culture, providers with newly-issued NPIs (less drift history, less data to cross-reference), and providers in certain rural states (where multiple providers share addresses or where address standardization is harder) all match at different rates than the dominant cohort. The monitoring patterns from recipe 5.1 carry over directly: per-cohort match rate, per-cohort review-queue depth, per-cohort post-match drift rate, with alert thresholds and a documented remediation pathway when disparities cross threshold.
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Specify the operational thresholds, per-axis aggregation, disparity-metric definitions, and chronic-suppression handling for cohort-stratified accuracy monitoring. Match-rate disparity threshold (suggested 0.10), auto-attach precision disparity threshold (suggested 0.05), review-queue depth-per-FTE disparity (suggested 0.20), post-match drift-rate disparity (suggested 0.05), MIN_COHORT_SAMPLE_SIZE (suggested 100 per measurement window because provider volumes are smaller than patient volumes; document the rationale for the lower floor). Specify per-axis-per-metric override mechanism, cohort-stratified gold-set construction discipline, and the diagnose-and-address workflow that fires on threshold crossings. Inherits the rigor from 5.1's cohort-monitoring framework. -->
+
+
 ---
 
 ## The AWS Implementation
@@ -282,11 +288,17 @@ The pipeline has six logical stages: ingest the internal provider records and th
 
 **AWS Lambda for the per-stage logic.** Normalization of single records, OpenSearch candidate query, single-record scoring, threshold routing, NPI attachment, drift detection, and re-verification scheduling each run as Lambdas. Lambdas are in VPC with VPC endpoints for downstream services. The split between Glue (batch, monthly volumes) and Lambda (real-time, single-record, daily) lets each workload run on the right substrate.
 
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Specify the identity-boundary policy for the real-time onboarding path, `attach_npi`, `re_verify_npi`, and the review-queue API. The real-time onboarding event should carry a producer-signed envelope (source_system, source_record_id, event_id, signed_payload) that the candidate-generator Lambda validates before processing. `attach_npi` should validate that `decision_metadata.invocation_source` matches the calling Lambda's execution role (auto_attach_pipeline, review_queue_decision, batch_match_pipeline) and reject mismatches with a logged metric. The review-queue Lambda should validate that the named reviewer had an assigned queue containing the pair and is not in the conflict-of-interest list. `re_verify_npi` should be invoked only by the daily Step Functions execution role with `(internal_provider_id, verification_due_date)` as the idempotency key. Same chapter pattern as 4.4-5.1; the consequence here is sharper because the assignment table is the canonical anchor for credentialing, claims, directory, and network-adequacy reporting consumers. -->
+
+
 **Amazon EventBridge for the assignment and drift event bus.** When an NPI is attached or a drift event fires (NPI deactivated, address changed, taxonomy changed), an event flows out to downstream consumers: the credentialing system for cred-file updates, the network management system for directory updates, the claims-processing system for claim-time NPI validation, the network-adequacy reporting pipeline for compliance reports. EventBridge provides the loose coupling and retry semantics for this fan-out.
 
 **AWS Step Functions plus a simple web app (API Gateway + Lambda + a static S3-hosted SPA) for the review queue UI.** Same pattern as recipe 5.1: API Gateway for the read/write endpoints, Cognito for credentialing-team authentication, Lambda backing the API, audit events on every reviewer action. The review interface presents the internal record next to the candidate registry records, highlights matching and differing fields, shows the score and the per-field score contributions, and provides single-keystroke decision plus advance to the next record. <!-- TODO: confirm whether the institution has an existing credentialing system (Symplr, Echo, MedTrainer, Modio, Verifiable, internal) to integrate with. The architecture supports either path; if integrating, replace this surface with the integration adapter and the review queue is exposed as records inside the credentialing tool. -->
 
 **Amazon QuickSight for the operational and compliance dashboards.** Network adequacy by specialty and geography, provider-directory accuracy metrics (percent of providers with verified-within-90-days NPI assignments, percent with current addresses, percent with current taxonomies), drift event rates, review-queue depth, and cohort-stratified accuracy. QuickSight on Athena over the Glue-cataloged data, with row-level security where institutional policy requires it.
+
+<!-- TODO (TechWriter): Expert review A10 (MEDIUM). Specify Lake Formation column-level and row-level access controls for the audit archive's Glue-cataloged tables. QuickSight has named row-level security but Athena does not; a direct Athena query against the audit archive can read every PHI-adjacent row regardless of cohort or access role. Same chapter pattern as 5.1 Finding A10. -->
+
 
 **AWS KMS, CloudTrail, CloudWatch.** Customer-managed keys for the S3 buckets, the DynamoDB tables, the OpenSearch domain, and the Lambda log groups. CloudTrail data events on the assignment and review-queue tables and on the audit-archive S3 buckets. CloudWatch alarms on review-queue depth, on drift event volume (a sudden spike often indicates a data-quality issue in the latest NPPES file), on re-verification SLA breaches (records whose verification is overdue past the regulatory cadence), and on cohort-stratified accuracy disparity threshold crossings.
 
@@ -390,7 +402,7 @@ flowchart LR
 | **BAA** | AWS BAA signed. The provider data itself is generally lower-sensitivity than patient data but the matching pipeline can carry license numbers and personal addresses, so all services in the architecture run under the BAA on the same posture as patient-matching infrastructure. |
 | **Encryption** | S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. OpenSearch: KMS-encrypted indices, TLS in transit, fine-grained access control. Lambda log groups KMS-encrypted. EventBridge: server-side encryption. Glue jobs: KMS for connection passwords and Glue-managed encryption for the catalog. |
 | **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. OpenSearch in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway only for external services without VPC endpoints (the NPI Registry API, the NPPES download endpoint); restrict egress with an outbound HTTPS proxy and an allow-list of destination domains. The NPPES download is from a public CMS endpoint; CMS does not require BAA for this data because the NPI registry is public information, but route the egress through your standard outbound proxy so the connection is logged and auditable. <!-- TODO: confirm the current NPPES download URL pattern at time of build; the file is published at download.cms.gov / NPPES download pages. --> |
-| **CloudTrail** | Enabled with data events on the assignment and review-queue tables; data events on the audit-archive S3 buckets. Review-queue API invocations logged at the API Gateway and Lambda layers. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy (typically several years for credentialing records, longer for compliance attestations). |
+| **CloudTrail** | Enabled with data events on the assignment and review-queue tables; data events on the audit-archive S3 buckets. Review-queue API invocations logged at the API Gateway and Lambda layers. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy (typically several years for credentialing records, longer for compliance attestations). <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify the architectural retention floor: the longer of (HIPAA 6-year minimum, the institution's documented credentialing-record retention policy, the state-specific credentialing retention statute, and the network-adequacy attestation retention requirement; many institutions land at 7 to 10 years). Specify S3 Object Lock in Compliance mode for immutability and a lifecycle policy that transitions to S3 Glacier Deep Archive after 90 days. Forward CloudTrail data events to a dedicated audit AWS account isolated from the production data plane. --> |
 | **Data Quality Baseline** | Internal-provider record completeness audit before launching matching: percentage of records with non-null license number, license state, primary taxonomy, practice address. Records with no license number and no NPI present are the hardest to match; depending on volume, plan a parallel data-collection campaign with the credentialing team. |
 | **Review Team Staffing** | A credentialing or provider-data-management team trained on the review interface and the auto-attach / not-this-NPI / unknown decision criteria. Most production deployments allocate 0.1 to 0.5 FTE per 10,000 active providers for ongoing review work, with higher initial allocation during the historical-backlog cleanup. <!-- TODO: verify staffing ratios; the figures here are rough estimates from credentialing-tool vendor literature and may vary by organization. --> |
 | **Sample Data** | The NPPES Downloadable File is publicly available and free; download a recent extract for development. For internal provider records, use synthetic data based on representative naming-convention distributions and known-NPI seedings; never use real provider data in development environments. |
@@ -778,6 +790,23 @@ FUNCTION route_match(internal_record, scored_candidates, thresholds):
         queue_for_review(internal_record, [], "no_viable_candidates")
         RETURN "review"
 
+    // TODO (TechWriter): Expert review A6 (MEDIUM). Specify the
+    // existing-NPI conflict-resolution branch explicitly. When
+    // `internal_record.has_existing_npi`, find the candidate whose
+    // NPI matches the existing claim. If the existing NPI is not
+    // in the candidate set, emit `existing_npi_not_resolved` and
+    // route to review (the existing NPI may be a typo, a deactivated
+    // entry, or invalid). If the existing NPI is the top-scoring
+    // candidate, the auto-attach path is appropriate. If the
+    // existing NPI is not the top candidate but the top candidate's
+    // margin over the existing NPI is below MIN_MARGIN, prefer
+    // the existing NPI to avoid churn. Otherwise emit
+    // `existing_npi_disputed` and route to review. The recipe
+    // text correctly identifies this scenario in The Problem
+    // ("an internal record with the wrong NPI from a typo or a
+    // prior bad match") but the routing pseudocode does not yet
+    // specify the resolution.
+
     top_candidate = scored_candidates[0]
     runner_up = scored_candidates[1] IF len(scored_candidates) > 1 ELSE NULL
     margin = (top_candidate.composite_score - runner_up.composite_score)
@@ -843,6 +872,19 @@ FUNCTION attach_npi(internal_record, matched_candidate, decision_metadata):
     }
 
     // Step 6B: persist the assignment.
+    // TODO (TechWriter): Expert review A1 (HIGH). Wrap the
+    // assignment Put, the schedule Put, and an outbox row in a
+    // single DynamoDB.TransactWriteItems call so partial failures
+    // do not leave the assignment table out of sync with the
+    // schedule table or the audit archive. The outbox drainer
+    // (a separate Lambda or a DynamoDB Streams consumer) reads
+    // pending outbox rows, writes the audit-archive S3 object,
+    // emits the EventBridge event idempotently at outbox_event_id,
+    // and marks the row drained. Same chapter pattern as 5.1
+    // Finding A1 / 4.6 / 4.7 / 4.10. Consequence here is sharper
+    // because network-adequacy reporting depends on the verified-
+    // within-90-days metric being demonstrable from the assignment
+    // table.
     DynamoDB.PutItem("provider-npi-assignment", {
         internal_provider_id: internal_record.internal_provider_id,
         matched_npi: matched_candidate.npi,
@@ -859,6 +901,17 @@ FUNCTION attach_npi(internal_record, matched_candidate, decision_metadata):
     // Step 6C: schedule the next re-verification. The schedule
     // table is keyed by due-date so the daily verification job
     // can pull due-or-overdue records efficiently.
+    // TODO (TechWriter): Expert review A3 (HIGH). The schedule
+    // table key shape `(verification_due_date, internal_provider_id)`
+    // accumulates stale entries across cycles: each re-verification
+    // writes a new row but does not delete the prior one, so over
+    // time the daily job re-processes providers at the rate of
+    // stale-entry accumulation. Either change the schedule schema
+    // to be keyed on `internal_provider_id` alone (with a GSI on
+    // due-date for the date-range query) so each provider has at
+    // most one row, or specify an upsert pattern that deletes the
+    // prior schedule row inside the same TransactWriteItems block
+    // as the new one. Same correctness gap surfaces in `re_verify_npi`.
     DynamoDB.PutItem("verification-schedule", {
         verification_due_date: today() + VERIFICATION_CADENCE_DAYS,
         internal_provider_id: internal_record.internal_provider_id,
@@ -914,6 +967,13 @@ FUNCTION re_verify_npi(internal_provider_id, matched_npi):
                           })
 
     // Re-schedule the next verification.
+    // TODO (TechWriter): Expert review A3 (HIGH). Same schedule-
+    // table accumulation gap as `attach_npi`: this Put writes a
+    // new (verification_due_date, internal_provider_id) row but
+    // does not delete the prior one. The daily verification job
+    // will pull stale rows on every subsequent run. Apply the
+    // same fix specified above (single-row-per-provider schema
+    // or upsert-with-delete inside TransactWriteItems).
     DynamoDB.PutItem("verification-schedule", {
         verification_due_date: today() + VERIFICATION_CADENCE_DAYS,
         internal_provider_id: internal_provider_id,
@@ -1096,9 +1156,15 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Sanction list integration.** The OIG List of Excluded Individuals/Entities (LEIE) is a separate authoritative source of providers excluded from federal healthcare programs. <!-- TODO: confirm; the OIG LEIE is published monthly at oig.hhs.gov with the full list and incremental update files. --> Cross-checking the matched NPI against the LEIE catches sanctioned providers before they end up in the directory. The cross-check is straightforward (NPI lookup against the LEIE file) but the response logic is organization-specific (immediate directory removal, claims hold, credentialing review, all of the above). The architecture should support the cross-check as a parallel pipeline that emits its own events.
 
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Promote LEIE integration from "Variations and Extensions" into the main architecture. Federal payer compliance (42 USC § 1320a-7) makes LEIE checks table stakes for organizations participating in Medicare Advantage, Medicaid Managed Care, or any federally-funded program; an unchecked NPI exposes the institution to recoupment risk and CMP penalties under § 1320a-7a. Add to the architecture diagram a parallel LEIE Verification flow consuming the monthly OIG LEIE file, with a `leie-sanction-status` attribute on `provider-npi-assignment` carrying the most recent check timestamp and result. Add to the EventBridge fan-out a `provider_sanctioned` detail-type. Update the Honest Take to name LEIE alongside the deactivation flag as the highest-priority drift events. Reference the OIG Special Advisory Bulletin on the Effect of Exclusion as the regulatory anchor. -->
+
+
 **State-level license-board integration.** Beyond NPPES, state medical boards publish license status (active, suspended, revoked, expired) and disciplinary actions. The matched NPI's license-state plus license-number is sufficient to look up the state board record. The lookup is rate-limited and structurally different per state (some states publish flat files, some publish APIs, some publish web pages that need scraping). For organizations with regulatory exposure, the state-board integration is necessary; design it as a separate verification pipeline that emits drift events when license status changes.
 
 **Real-time matching latency budget for onboarding workflows.** Credentialing-team onboarding workflows expect a sub-second response to "what's the NPI for this provider." The OpenSearch-based candidate generation plus Lambda-based scoring typically lands well under that budget for clean lookups, but edge cases (very common surnames with hundreds of candidates, ambiguous taxonomy mappings) can push latency. Architect for sub-second response with fallback paths: candidate-set capping, asynchronous follow-up scoring for borderline cases, and an "in progress" status the credentialing UI can display while the matching completes.
+
+<!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify the OpenSearch failover. OpenSearch availability is a single point of failure for the real-time onboarding path; the candidate-generator Lambda should fall back to (a) a direct NPI Registry API query when OpenSearch is unavailable, or (b) "queued for matching" status with an SQS handoff to the asynchronous scoring path, with a CloudWatch alarm on chronic OpenSearch availability issues. Specify the fallback order and the latency-budget check that triggers the asynchronous path. -->
+
 
 **Audit-log retention.** The matching audit log is a regulatory artifact, particularly for the network-adequacy compliance reports. Apply the institution's records-retention policy to the audit log (typically several years for credentialing files, longer for compliance attestations). Apply tighter access control than for general analytics: the audit log should be queryable only by named credentialing leadership, compliance staff, and auditors.
 
@@ -1106,7 +1172,13 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Idempotency and retry semantics.** Like recipe 5.1, the matching pipeline must handle duplicate-event delivery without producing duplicate attachments or scheduling duplicate verifications. Use the `internal_provider_id` as the idempotency key for normalize-and-route; use the `attachment_id` as the idempotency key for attach-NPI; use `(internal_provider_id, verification_due_date)` as the idempotency key for schedule-re-verification. Lambda invocations should be idempotent at these keys.
 
+<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Specify DLQ coverage on every Lambda path, the Step Functions Catch-with-route-to-DLQ pattern, and an `attachment_id` ConditionExpression on the attach-NPI Put preventing duplicate writes. Distinguish retryable infrastructure failures from terminal logic failures. Same chapter pattern as 4.4-5.1. The duplicate-attach event consequence is sharper here because downstream credentialing-system, directory, and claims-validation consumers may take action on each event delivery. -->
+
+
 **Cross-recipe orchestration with patient matching (recipe 5.1).** The same DynamoDB instance and the same Glue catalog can host both the patient-matching and provider-matching artifacts. Where it makes sense, share the matching-primitives library (blocking passes, comparators, Fellegi-Sunter combiner) as a versioned Lambda layer or Glue Python library so improvements to the comparators benefit both recipes. The provider-matching pipeline is structurally simpler than the patient one, but the operational patterns (review queue, audit, drift detection, equity monitoring) are shared and worth packaging as a shared substrate.
+
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Architect the matching-primitives library boundary explicitly. Specify the versioned Lambda layer or Glue Python library that hosts the shared blocking passes, comparators, and Fellegi-Sunter combiner; the version-coupling contract (each recipe pins a specific library version); and the audit-archive shared-substrate cross-recipe consumption pattern. Same chapter pattern as 5.1 Finding A8. -->
+
 
 ---
 
@@ -1119,6 +1191,9 @@ The trap most specific to this domain is treating it as a credentialing-team pro
 A second trap, related: under-investing in the drift-detection pipeline. The match-once-and-forget pattern is the default. NPPES drifts. The provider's address changes. The provider acquires an additional taxonomy. The provider's NPI gets deactivated. Without drift detection, your directory says the provider is at the old address six months after they moved, your claims system rejects valid claims because the credentialed NPI is now deactivated, and your network adequacy report says the network has providers it does not actually have. Drift detection is not a sophisticated piece of engineering; it is a snapshot comparison and an event emit. But it is the difference between a matcher that keeps the directory accurate and a matcher that produces a static snapshot that decays. Build the drift pipeline at the same time as the initial matcher; do not defer it.
 
 The third trap, specific to organizations with multiple lines of business: configuring the re-verification cadence as a global constant rather than per-segment. Medicare Advantage has stricter requirements than commercial. Medicaid has state-by-state variation. Behavioral-health networks have different rules than medical networks. <!-- TODO: confirm specifics; CMS Medicare Advantage Provider Directory rules, NCQA standards, and state Medicaid agency rules each impose distinct verification cadences. --> A global ninety-day cadence might be fine for the largest segment and inadequate for the most-regulated one. Architect for per-segment cadences from the start. The complexity of segment-specific configuration is small; the complexity of retrofitting it after a Medicare Advantage audit is large.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Architect the per-segment cadence model. Add a `verification-cadence-config` table keyed on segment_id (medicare_advantage, medicaid_<state>, commercial, behavioral_health, ...) with cadence_days, regulatory_basis, and last_reviewed_at. The `provider-npi-assignment` record carries a provider_segments list; `attach_npi` computes the effective cadence as the minimum across segments. A cadence change for a segment triggers a re-schedule for every provider in that segment. The recipe correctly diagnoses the trap in the Honest Take but the architecture's single VERIFICATION_CADENCE_DAYS constant produces the global-cadence pattern the Honest Take warns against. -->
+
 
 The thing that surprises people coming from generic data-integration backgrounds is the centrality of the deactivation flag. In most data-integration problems, the source data is treated as authoritative and stable. NPPES is authoritative but not stable: NPIs get deactivated when providers retire, die, or notify NPPES of a change in status. A matched NPI that becomes deactivated is a critical event for the directory (the provider is no longer in network) and for claims (claims billed under a deactivated NPI may be rejected) and for credentialing (the provider's status needs review). The deactivation flag is the most important field in the drift-detection pipeline, full stop. Do not bury it. Surface it. Alarm on it. Make it the highest-priority drift event.
 

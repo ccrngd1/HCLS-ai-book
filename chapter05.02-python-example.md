@@ -95,6 +95,11 @@ EVENTS_BUS_NAME       = "provider-npi-events"
 CLOUDWATCH_NAMESPACE  = "Provider/NPIMatching"
 
 # Deploy-time guardrail.
+# TODO (TechWriter): Code review F8 (NOTE). Extend the guardrail
+# to cover every resource-name constant (ASSIGNMENT_TABLE,
+# SCHEDULE_TABLE, REVIEW_QUEUE_TABLE, AUDIT_BUCKET, EVENTS_BUS_NAME,
+# CLOUDWATCH_NAMESPACE) so a missing value produces an actionable
+# assertion message rather than a downstream boto3 ValidationException.
 assert AUDIT_BUCKET != "", "AUDIT_BUCKET must be set before deploying."
 
 # --- NPI Registry API ---
@@ -108,6 +113,11 @@ NPI_REGISTRY_BASE_URL = "https://npiregistry.cms.hhs.gov/api/"
 NPI_REGISTRY_API_VERSION = "2.1"
 NPI_REGISTRY_TIMEOUT_SECONDS = 5
 NPI_REGISTRY_MAX_RESULTS_PER_QUERY = 50
+# TODO (TechWriter): Code review F7 (NOTE). The public NPI Registry
+# API supports a `limit` of up to 200 per query; setting 50 silently
+# truncates common-surname searches. Raise to 200 (the public
+# maximum) and optionally add `skip`-based pagination in
+# `_npi_registry_lookup` for queries that hit the cap.
 
 # --- Versioning ---
 NORMALIZER_VERSION = "norm-provider-v1.0"
@@ -368,6 +378,14 @@ def _double_metaphone(s: str) -> str:
     metaphone, not double metaphone. For production, use the
     `metaphone` PyPI package and align all references.
     """
+    # TODO (TechWriter): Code review F9 (NOTE). The function name
+    # claims double metaphone but the docstring honestly admits the
+    # implementation is original metaphone. Either rename to
+    # `_metaphone` here and in the main recipe's pseudocode and
+    # architecture diagram, or adopt the `metaphone` PyPI package
+    # in both 5.1 and 5.2 simultaneously so the foundation recipes
+    # for Chapter 5 use real double metaphone with the equity-
+    # relevant secondary-code matching.
     if not s:
         return ""
     return jellyfish.metaphone(s) or ""
@@ -759,6 +777,12 @@ def generate_candidates(internal_record: dict) -> list:
     # license-number search behavior at time of build; the public
     # API has limited license-search support and the bulk file is
     # the right substrate for license-anchored matching. -->
+    # TODO (TechWriter): Code review F3 (NOTE). Pass 1 is labeled
+    # "license-anchored" but executes a name+state query identical
+    # to Pass 2 except for the state-field source. Either rename
+    # the tag to reflect the actual query shape, or add a client-
+    # side license-number filter on the candidates returned so the
+    # pass actually anchors on license number.
     if internal_record["licenses"]:
         for license_entry in internal_record["licenses"]:
             if not license_entry["license_number"]:
@@ -788,6 +812,17 @@ def generate_candidates(internal_record: dict) -> list:
             _add(c, "last_name_first_name_state")
 
     # Pass 3: last-name + primary taxonomy + state.
+    # TODO (TechWriter): Code review F1 (WARNING). Pass 3 documents
+    # itself as taxonomy-anchored but passes `taxonomy_description: ""`,
+    # degrading the query to a strict subset of Pass 2. Thread the
+    # actual taxonomy through to the API. The API takes a
+    # description string rather than a NUCC code, so either maintain
+    # a NUCC-code-to-description map (alongside INTERNAL_SPECIALTY_TO_NUCC)
+    # and look up the description from the internal record's primary
+    # taxonomy, or preserve the original raw specialty string on the
+    # internal-normalized record and pass that through. After the
+    # fix, Pass 3 should produce a candidate set distinct from Pass 2
+    # when the internal record has a strong taxonomy signal.
     if (internal_record["primary_taxonomy"] != "unknown_taxonomy"
             and internal_record["last_name"]
             and internal_record["practice_address"]["state"]):
@@ -1250,6 +1285,13 @@ def route_match(
     _emit_metric("RoutingDecision", 1.0, dimensions={"Decision": decision, "Reason": reason})
 
     if decision == "review":
+        # TODO (TechWriter): Code review F5 (NOTE). The pseudocode
+        # for `queue_for_review` includes a `priority` field
+        # computed from the candidate scores and the routing
+        # reason. Recipe 5.1's Python companion implements
+        # priority computation; preserve consistency by adding
+        # the same here so the credentialing-team UI can sort
+        # the queue by priority rather than arrival order.
         review_item = _serialize_for_dynamodb({
             "queue_id":           "default",  # tier by team in production
             "candidate_pair_id":  str(uuid.uuid4()),
@@ -1457,6 +1499,17 @@ def re_verify_npi(internal_provider_id: str) -> dict:
                 ":due":  next_verify_date,
             },
         )
+        # TODO (TechWriter): Code review F4 (NOTE). This Put writes
+        # a new (verification_due_date, internal_provider_id) row
+        # without deleting the prior row that the daily verification
+        # job just consumed. Over time the table accumulates stale
+        # rows and the daily job repeatedly processes the same
+        # provider. Either add a delete on the consumed row inside
+        # a TransactWriteItems block, switch to DynamoDB TTL on
+        # schedule items, or change the schema so each provider has
+        # at most one row keyed on internal_provider_id. The
+        # corresponding architectural fix is tracked under expert
+        # review A3.
         dynamodb.Table(SCHEDULE_TABLE).put_item(Item=_serialize_for_dynamodb({
             "verification_due_date": next_verify_date,
             "internal_provider_id":  internal_provider_id,
@@ -1497,6 +1550,20 @@ def re_verify_npi(internal_provider_id: str) -> dict:
             }])
         except Exception as exc:
             logger.error("address-change event emit failed", extra={"error": str(exc)})
+
+    # TODO (TechWriter): Code review F2 (WARNING). The pseudocode
+    # in the main recipe enumerates three drift-event types
+    # (npi_deactivated, practice_address_changed, taxonomy_changed)
+    # but only two are emitted here. Add a `taxonomy_changed`
+    # emission that mirrors the pattern above, surfacing
+    # old_primary_taxonomy / new_primary_taxonomy and the
+    # old_all_taxonomies / new_all_taxonomies lists. Taxonomy
+    # drift is a directory event and a network-adequacy event
+    # (per-specialty provider counts change), so silent emission
+    # is a real operational gap. Optionally drop `phone_changed`
+    # from the drift dict if no event will ever be emitted for it,
+    # or add a `practice_phone_changed` emission to keep the
+    # surface symmetric with the computed flags.
 
     _write_audit_archive(_serialize_for_dynamodb({
         "verification_id":       str(uuid.uuid4()),
@@ -1642,6 +1709,18 @@ SYNTHETIC_INTERNAL_PROVIDERS = [
     },
     # Internal record with an existing NPI on file. Confirmation path,
     # not search.
+    # TODO (TechWriter): Code review F6 (NOTE). The placeholder NPI
+    # 1234567890 is almost certainly registered to a real provider
+    # whose demographics will not match Maria Hernandez. The
+    # Pass-0 confirmation lookup will return that real provider's
+    # record, the per-field comparators will mismatch, and the
+    # actual demo run will route this case to review rather than
+    # auto-attaching with the printed score of 14.20. Either drop
+    # the `npi` field on this record (so the search path runs and
+    # license-anchored auto-attach is the expected outcome), replace
+    # with a real NPI plus matching real demographics, or update
+    # the expected-output block to acknowledge that the placeholder
+    # NPI breaks Pass-0 confirmation reproducibility.
     {
         "provider_id":   "provider-internal-02488",
         "first_name":    "Maria",
