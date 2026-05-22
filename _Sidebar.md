@@ -113,4 +113,10 @@
 
 ---
 
+#### Ch 5: Entity Resolution / Record Linkage
+
+* [Preface](chapter05-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
