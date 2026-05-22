@@ -95,6 +95,13 @@ sagemaker_client = boto3.client("sagemaker", config=BOTO3_RETRY_CONFIG)
 # Haiku-class model for cost efficiency where reading-level allows.
 CLINICIAN_NARRATIVE_MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"
 PATIENT_NARRATIVE_MODEL_ID    = "anthropic.claude-3-5-haiku-20241022-v1:0"
+# TODO (TechWriter): Code review NOTE Finding 10.
+# PATIENT_NARRATIVE_MODEL_ID is defined but never referenced
+# because the patient-facing narrative path is not implemented in
+# the demo. Either remove the constant with a comment that the
+# patient path is in Gap to Production, or add a minimal patient-
+# facing narrative function (templated only is fine) so the
+# constant is wired up to a real call site.
 
 # --- DynamoDB Table Names ---
 # Five tables. Keep them separate so access patterns stay clean and
@@ -504,6 +511,14 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     out None-valued dimensions: CloudWatch rejects them and the
     rejected request loses the rest of the metric data too.
     """
+    # TODO (TechWriter): Code review NOTE Finding 9. _emit_metric
+    # is defined but never called. Either wire it into the load-
+    # bearing observation points (recommendation served, validator
+    # outcome, cohort follow-rate disparity, OOD-flag rate, drift
+    # severity) or remove the helper with a comment in the
+    # surveillance section pointing to CloudWatch as a production
+    # gap. The recipe text describes CloudWatch alarms as load-
+    # bearing observability; the helper is well-formed but unused.
     try:
         clean_dims = [
             {"Name": k, "Value": str(v)[:255]}
@@ -1169,6 +1184,19 @@ def _q_policy(q_models: list, state: np.ndarray, regime: dict) -> dict:
     production picks the appropriate decision-point Q model from
     the patient's trajectory state.
     """
+    # TODO (TechWriter): Code review WARNING Finding 2. Thread
+    # decision_point_index into _q_policy and have the OPE
+    # estimators (DR / IS / FQE) pass each step's
+    # decision_point_index when evaluating. Q-learning with backward
+    # induction trains one Q model per horizon index; using
+    # q_models[0] for every step silently evaluates a stationary
+    # policy at decision point 0 rather than the trained backward-
+    # induction policy. The OPE point estimates and CIs do not then
+    # represent the trained policy's value. Acceptable alternative:
+    # clamp horizon_decision_points = 1 in SAMPLE_REGIME so backward
+    # induction collapses to one model and the simplification is
+    # correct by construction; the trade-off is loss of pedagogical
+    # value for the backward-induction concept.
     n_actions = len(regime["action_catalog"])
     # Use the first valid Q model in the horizon for the demo. Real
     # serving uses the Q model corresponding to the patient's current
@@ -1625,6 +1653,15 @@ def serve_recommendation(patient_id: str,
 
     # Step 5F: build the structured recommendation record. This is
     # the system of record; the narrative renders on top.
+    # TODO (TechWriter): Code review WARNING Finding 1. Persist
+    # cohort_features (race_ethnicity, language, age_band,
+    # comorbidity_tier) on the recommendation record from
+    # patient_profile so run_surveillance can read them. The current
+    # state dict only contains state_schema features; surveillance
+    # then reads r["state"]["cohort"][axis] which never exists,
+    # collapsing every patient to "unknown" cohort across every
+    # axis and silently disabling cohort-disparity alerting that
+    # the recipe describes as non-negotiable.
     recommended_value = float(policy["recommended_value"])
     record = {
         "recommendation_id":   recommendation_id,
@@ -2259,6 +2296,16 @@ def record_action_taken(recommendation_id: str,
             "Recommendation %s not found for action capture",
             recommendation_id)
         return {}
+    # TODO (TechWriter): Code review NOTE Finding 6. Implement the
+    # identity-boundary check the pseudocode names: capture
+    # served_to_clinician_id at serve time and validate
+    # action_taken_payload["clinician_id"] against it here.
+    # Mismatch should log a security violation and reject the
+    # update (return {"status": "rejected", "reason":
+    # "identity_boundary_mismatch"}). Validate action_id is in the
+    # known action set (recommended_action plus alternatives) or
+    # explicit out_of_catalog. Idempotency: if rec.action_taken is
+    # already set, treat as replay and return without re-mutating.
 
     action_id = action_taken_payload.get("action_id")
     valid_action_ids = {a["action_id"]
@@ -2315,6 +2362,19 @@ def record_action_taken(recommendation_id: str,
         )
     except Exception:
         pass
+    # TODO (TechWriter): Code review WARNING Finding 3. The
+    # pseudocode's record_action_taken appends the post-decision
+    # (decision_point_index, timestamp, state, action,
+    # recommendation_id, followed_regime) tuple to the patient's
+    # trajectory record so in-production trajectories continuously
+    # feed the next training cycle. The Python omits this
+    # trajectory append, breaking the load-bearing feedback loop
+    # the recipe says turns the regime from a static artifact into
+    # a living one. Either implement _append_to_trajectory (read
+    # existing blob from S3, append, write back; update
+    # trajectory-metadata pointer) or call it out as a deliberate
+    # demo simplification with explicit production-pattern
+    # reference.
     return update
 
 
@@ -2337,6 +2397,13 @@ def run_surveillance(regime_id: str, surveillance_window: dict,
 
     # Production: a (regime_id, action_recorded_at) GSI; the demo
     # scans because the example does not provision indexes.
+    # TODO (TechWriter): Code review NOTE Finding 5. Replace Scan
+    # with a Query on a (regime_id, action_recorded_at) GSI plus
+    # LastEvaluatedKey pagination. The demo Scan has no pagination,
+    # so production volumes silently truncate at 1MB; surveillance
+    # metrics computed on a truncated subset look complete but are
+    # biased toward whichever rows landed first. Document the GSI
+    # in the IAM permissions list in Setup.
     recs = []
     try:
         response = rec_table.scan()
@@ -2377,6 +2444,16 @@ def run_surveillance(regime_id: str, surveillance_window: dict,
     # Step 6B: outcome surveillance against OPE baseline. The demo
     # uses observed reward as a proxy; production wires real outcome
     # tracking (A1c trajectories, AKI events, hospitalizations).
+    # TODO (TechWriter): Code review NOTE Finding 11. Rename
+    # observed_reward to avg_predicted_value and clarify in the
+    # comment that this is population-level predicted-value drift
+    # (a coarse proxy detecting patient-mix shift), not
+    # calibration-against-observed-outcomes drift. Real
+    # calibration drift requires joining recommendation predictions
+    # to follow-up observed outcomes and computing per-decision
+    # residuals; the demo proxy detects something closer to
+    # patient-mix drift. See expert review A4 (HIGH) for the
+    # production architecture.
     observed_reward = float(np.mean([
         r.get("recommended_action_value", 0.0) for r in recs
     ])) if recs else 0.0
@@ -2692,6 +2769,27 @@ if __name__ == "__main__":
     #
     # The Bedrock call is mocked at the helper level so the demo
     # runs offline.
+    #
+    # TODO (TechWriter): Code review NOTE Finding 4. Add an
+    # explicit "running offline against unprovisioned tables"
+    # disclaimer here, and reframe the run_full_demo_cycle prints
+    # to describe what each step would do in a provisioned
+    # environment rather than what executes in the offline run.
+    # Persistence calls are wrapped in try/except so the demo
+    # completes; the print messages should not imply state
+    # transitions that did not actually happen. Heavier
+    # alternative: provide DynamoDB-Local + Kinesis-Local + S3-
+    # mock docker-compose so the demo runs end-to-end.
+    # TODO (TechWriter): Code review NOTE Finding 8. Replace
+    # bare except Exception: pass around Kinesis put_record calls
+    # (seven sites: build_trajectories, estimate_behavior_policy,
+    # train_regime, run_ope, _emit_recommendation_event,
+    # record_action_taken, run_surveillance, plus the
+    # narrative_validator_fallback emit) with except Exception
+    # as exc: logger.warning(...). The DynamoDB and S3 paths use
+    # the better pattern; the Kinesis paths swallow failures
+    # silently and a developer with logger.setLevel(WARNING) sees
+    # nothing.
 
     print("=" * 70)
     print("Building synthetic patient (Sara) and seeding demo state...")
@@ -2777,6 +2875,13 @@ if __name__ == "__main__":
         }
 
     globals()["_bedrock_invoke_clinician_narrative"] = _mock_bedrock
+    # TODO (TechWriter): Code review NOTE Finding 7. Add an
+    # explanatory comment for the globals() mock-injection pattern:
+    # this works because the calling functions resolve the
+    # _bedrock_invoke_clinician_narrative name against the module
+    # global namespace at call time, and globals() in __main__
+    # returns this module's dict. Production never bypasses this;
+    # the real Bedrock calls run.
 
     print(f"  Patient: {patient_id} (Sara)")
     print(f"  State: A1c {sara_state['current_a1c']}, "

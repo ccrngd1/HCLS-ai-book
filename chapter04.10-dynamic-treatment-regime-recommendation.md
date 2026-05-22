@@ -373,11 +373,17 @@ The pipeline has seven logical components: a regime catalog component that maint
 
 **The regime catalog is governance, not engineering.** The state definition, the action catalog, the reward function, the decision-point cadence, and the eligibility predicates are clinical-program decisions that the regime-governance committee (clinical informatics, P&T, outcomes research, compliance, ideally with patient-advisory representation) authors and approves. The reward function is the most consequential and most contested item in the catalog, because it encodes the program's tradeoffs (clinical effectiveness versus harm versus burden versus cost). The committee documents the reward weights, the evidence basis for them, and the alternatives considered. Reward changes require a formal review with parallel evaluation against the prior reward to surface what the change implies for the policy's recommendations. The pattern that fails is treating the reward as an engineering parameter; the resulting policy optimizes whatever the engineer's intuition encoded, which is rarely what the clinical program wants.
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Promote reward-function governance from a paragraph in production-gaps to a first-class architectural subsection (300-500 words) specifying: the multi-stage reward-change process (proposal with documented rationale, parallel-evaluation shadow training under both rewards, diff surface showing per-patient changes in recommended action and per-cohort distributional shift in action mix, committee review and approval, post-promotion audit including PROMs sampling and qualitative feedback for reward-driven unintended optimization). Specify reward_function_version persisted separately on every recommendation record so the audit trail can attribute observed changes correctly. Specify required-content validator layer including reward-version disclosure in the clinician narrative. Reference 4.7 governance SLA and 4.9 burden-threshold-as-policy. -->
+
 **The trajectory pipeline is where the data substrate is built.** Each patient's clinical history is represented as a sequence of (state, action, reward, next_state) tuples, with state at each decision point computed from the feature store and the recent observation history, action labeled from the medication, encounter, or procedure record, and reward computed from the outcomes that accumulated between decision points. The trajectory record is the working artifact for everything downstream; quality issues here propagate to every model. Censoring handling (when patients leave the system, change insurers, or are lost to follow-up) is non-trivial and must be done explicitly with appropriate inverse-probability-of-censoring weights. Out-of-catalog actions (the clinician picked something not in the regime's action catalog) are recorded as such; trajectories with high out-of-catalog rates are surfaced to the catalog-governance committee as a signal that the catalog may need expansion.
+
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Specify out-of-catalog rate thresholds (overall, per-cohort, growth-rate) and the escalation policy: catalog inadequacy at the overall threshold triggers a structured catalog-expansion proposal artifact reviewed by the catalog-governance committee; cohort-specific gaps trigger an equity-review cycle in addition to the catalog-governance cycle. Reference 4.7 governance-task SLA pattern for response cadence. -->
 
 **The sequential causal modeling stack is the methodological core.** The protocol mirrors a target trial: specify the regime, eligibility, treatment strategies, outcome definition, censoring, and analytic dataset construction. Multiple estimators (Q-learning as the workhorse, offline RL where the state-action space is high-dimensional, A-learning or outcome-weighted learning as cross-validation) produce candidate regimes. The behavior policy is estimated separately and validated for calibration; a poorly-calibrated behavior policy produces poor importance weights downstream. Disagreements among estimators trigger investigation; agreement is the signal of regime robustness. The training pipeline runs on a scheduled cadence (typically quarterly to annually depending on data drift); each training run produces a candidate regime version that goes through OPE before promotion.
 
 **Off-policy evaluation produces the value estimate that drives deployment decisions.** Multiple OPE estimators (doubly-robust as the workhorse, importance sampling and FQE as complements) produce a value estimate with confidence intervals. Cohort-stratified OPE is non-negotiable: a regime that has a high overall value but a much lower value (or wider intervals) for some cohorts is a regime with a fairness problem before deployment. Sensitivity analysis (E-value, Rosenbaum bounds) bounds how much unmeasured confounding could change the conclusion. The OPE results are the artifact the governance committee reviews; a candidate regime with a confidence interval that does not exclude the prior regime's value is not promoted. The pattern that fails is rushing OPE; the resulting deployment decisions are made on point estimates without the uncertainty discipline that the data demands.
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Specify horizon-versus-OPE-confidence as an explicit deployment constraint. Document the committee's resolution at scoping (deployment-relevant horizon vs OPE-evaluable horizon), the three-response choice when they diverge (deploy with horizon truncation and explicit narrative disclosure; escalate to per-decision IS, weighted IS, or model-based simulation OPE; defer deployment), and persist evaluation_horizon separately on recommendation records so the audit trail attributes OPE confidence correctly. -->
 
 **The regime serving layer produces the recommendation at the patient's decision point.** State construction (from the feature store and trajectory store), eligibility check, OOD check (does the patient's state fall within the support of the training trajectories?), policy evaluation (the regime's recommended action and the alternatives), similar-trajectory retrieval (a small cohort of historical trajectories most similar to the patient's state, with their actions and outcomes), and recommendation persistence. The OOD check is critical and often overlooked; a regime applied to a patient whose state is far from the training distribution produces a recommendation that is extrapolation, not interpolation. Such recommendations should be flagged with explicit OOD warnings or suppressed entirely depending on the regime's risk tier.
 
@@ -386,6 +392,8 @@ The pipeline has seven logical components: a regime catalog component that maint
 **Feedback and surveillance close the loop.** Action-taken events, outcome events, adverse events, and patient feedback append to the patient's trajectory record. Regime adherence tracking shows how often clinicians follow the recommendation, by area, cohort, and recommendation strength; low adherence to high-confidence recommendations is a signal of clinician disagreement that merits review. Outcome surveillance compares observed outcomes against the OPE-estimated regime value; calibration drift is the signal that the regime is no longer optimal for the current population. Cohort-stratified surveillance covers outcome trajectories, regime adherence, and OOD rates by cohort; disparities trigger committee review. Periodic retraining accumulates new trajectories into refresh windows; new regime versions are re-evaluated against the current version with OPE before promotion. The surveillance pipeline is where Recipe 4.10 either becomes a living regime or becomes a static artifact that ages out of relevance.
 
 **Equity instrumentation is built in, not bolted on.** Regime value parity across cohorts, regime adherence parity, OOD-rate parity, outcome-trajectory parity. Each axis is monitored, with thresholds that trigger committee review when crossed. The Obermeyer pattern applies particularly sharply here: a regime that was estimated on data reflecting historical access and prescribing disparities will encode those disparities into the recommended actions. Sara, who has stable insurance and a primary-care relationship, is in the data; the patients who look like Sara but were lost to follow-up after one missed appointment are not in the data, or are in the data with different (and confounded) outcomes. Regime estimation that does not surface and address the data-driven disparities produces a policy that perpetuates them.
+
+<!-- TODO (TechWriter): Expert review S4 (LOW). Promote SDOH-cohort PHI sensitivity from implicit to explicit in the privacy paragraph. Cohort attributes carried through OPE stratification, surveillance metric dimensions, and similar-trajectory retrieval are PHI-promoting; specify minimum-necessary cohort attributes per surface and the elevated audit posture for trajectory-store separate-table-partitioning-by-sensitivity-tier. Reference 4.4-4.9 chapter pattern. -->
 
 **Regulatory posture is set early and reviewed often.** Most production deployments of dynamic treatment regime tools fall within the FDA's SaMD definition and do not meet the criteria for the Cures Act non-device exemption when the clinician cannot independently review the basis of the recommendation. The model risk classification, the predetermined change control plan, and the post-deployment surveillance plan are deliverables of the project, not afterthoughts. The clinical-leadership-and-regulatory-legal review is a recurring meeting, not a one-time gate. <!-- TODO: confirm current FDA SaMD framework, the Predetermined Change Control Plan policy, the 21st Century Cures Act CDS exemption criteria, and the Good Machine Learning Practice principles at the time of build. The regulatory landscape is evolving and the analysis is fact-specific. -->
 
@@ -413,7 +421,11 @@ The pipeline has seven logical components: a regime catalog component that maint
 
 The validator is a four-layer check applied to every narrative: schema and length, fact grounding (every clinical claim traces to a structured element of the recommendation record or the regime catalog), prohibited-language patterns (no recommendation language for treatments not in the regime's action catalog, no probabilistic claims framed as guarantees, no policy-as-directive framing), and required content (uncertainty disclosure, regime-version reference, override-encouragement framing for the clinician narrative; care-plan-linkage and contact-for-questions for the patient narrative). Failed validations regenerate with feedback or fall back to a templated narrative.
 
-Bedrock is HIPAA-eligible under BAA. <!-- TODO: confirm current Bedrock service terms, the eligible-model list, and the data-handling guarantees at the time of build. -->
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Specify the four-layer validator at chapter pattern depth. Inline the regime-narrative-specific prohibited-language pattern set (must include patterns like \bthe regime requires\b, \byou are required to\b, \bmust\s+(?:start|use|prescribe|add|stop)\b plus the chapter-wide \bguaranteed\b and \b100%\s+(?:effective|safe)\b). Specify the required-content rule that the clinician narrative must contain language equivalent to "the regime suggests, the clinician decides" and an explicit override-encouragement clause. Specify the fact-grounding rule that every numeric value cited (recommended_action_value, CIs, alternative values, OOD score) must trace byte-for-byte to a corresponding field. Specify the patient-narrative path-dependence framing rule ("this is the next step given how things have gone, and we will reassess next time") and reading-level enforcement. Reference 4.4-4.9 chapter pattern. -->
+
+<!-- TODO (TechWriter): Expert review A8 (MEDIUM). Promote multi-language patient-narrative architecture from the production-gaps brief mention to a first-class architectural concern: per-language reading-level scoring, per-language approved-claim language, per-language templated fallback, per-language validator dispatch. The path-dependence framing is harder to translate well than single-decision framing; the per-language work is correspondingly more demanding. Reference 4.9 A10 chapter pattern. -->
+
+Bedrock is HIPAA-eligible under BAA. <!-- TODO: confirm current Bedrock service terms, the eligible-model list, and the data-handling guarantees at the time of build. --> <!-- TODO (TechWriter): Expert review N2 (LOW). Note Bedrock cross-region inference profile implications for data residency and BAA scope: cross-region inference may route prompts and completions through regions outside the institution's BAA scope or PHI residency requirements; verify the BAA covers all candidate regions or pin invocations to on-region inference. -->
 
 **AWS Step Functions for training and serving orchestration.** Three workflows: a training workflow (trajectory pipeline, sequential causal modeling, OPE, governance review packaging); a serving workflow (recommendation generation at a decision point); a surveillance workflow (regime adherence, outcome surveillance, drift detection, cohort-stratified monitoring). Step Functions provides the per-stage retry, timeout, and DLQ semantics; all executions are logged to S3 and surfaced in the operational dashboards.
 
@@ -557,7 +569,7 @@ flowchart LR
 | **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially `recommendation-records`, `regime-catalog`, `trajectory-metadata`); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to trajectory, OPE, recommendation-archive, and surveillance-output buckets; `kinesis:PutRecord` on the dtr-events stream; `sagemaker:InvokeEndpoint` on the regime-serving endpoint ARN; `sagemaker:CreateTrainingJob` and Model Registry actions for training-stage Lambdas; `healthlake:SearchWithGet` and related read actions scoped to the relevant data store. Never `*`. <!-- TODO: pair these actions with one or two scoped Resource ARN examples; mirror the chapter-wide pattern. --> |
 | **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: DynamoDB, SageMaker, HealthLake, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, API Gateway, Cognito, QuickSight, KMS. <!-- TODO: confirm Bedrock + selected models, HealthLake, SageMaker components, and any EHR-integration components at the time of build. --> |
 | **Encryption** | DynamoDB: customer-managed KMS at rest (especially `recommendation-records`, `regime-catalog`, `trajectory-metadata`; the recommendation is a clinical decision-support artifact). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker Feature Store and Model Registry: KMS keys. SageMaker Endpoints: KMS for storage and TLS for inference traffic. HealthLake: KMS-encrypted at rest, TLS in transit. Lambda log groups KMS-encrypted. Recommendation rationale text in DynamoDB is PHI-adjacent; treat with full clinical-record encryption posture. |
-| **VPC** | Production: Lambdas in VPC. SageMaker Feature Store online store and Endpoints run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, Step Functions, EventBridge, Glue, Athena, STS, HealthLake, API Gateway, SageMaker. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR integration typically arrives via PrivateLink, Direct Connect, or the institution's existing private network. VPC Flow Logs enabled. |
+| **VPC** | Production: Lambdas in VPC. SageMaker Feature Store online store and Endpoints run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, Step Functions, EventBridge, Glue, Athena, STS, HealthLake, API Gateway, SageMaker. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR integration typically arrives via PrivateLink, Direct Connect, or the institution's existing private network. VPC Flow Logs enabled. <!-- TODO (TechWriter): Expert review N1 / N3 (LOW). State explicitly "no `0.0.0.0/0` egress rules; egress destinations are explicit per AWS service prefix list or per VPC endpoint; outbound DNS scoped to AWS-internal resolvers." Add API Gateway resource policy posture for the recommendation API: private API with VPC endpoint resource policy restricting access to the EHR integration's VPC, AWS WAF rules for SQL injection / command injection / per-principal rate limiting, optional mTLS where the EHR supports it; no public REST endpoint. --> |
 | **CloudTrail** | Enabled with data events on the `regime-catalog`, `trajectory-metadata`, `recommendation-records`, `regime-versions`, and `surveillance-metrics` tables. Data events on the S3 buckets containing source feeds, trajectories, OPE outputs, recommendation archives, and surveillance outputs. Recommendation API invocations logged at the API Gateway and Lambda layers. SageMaker training and inference invocations logged. The audit posture for recommendation artifacts approaches clinical-record audit standards. |
 | **Regime Governance** | Regime governance committee charter (clinical informatics, P&T, outcomes research, compliance, regulatory legal, ideally with patient-advisory representation). Documented model risk classification process. Documented predetermined change control plan. Documented OPE-result review and approval policy. Documented retraining cadence and re-evaluation gating policy. Documented model monitoring and drift-response protocol. Cleared-for-decision-support clearance gate that no recommendation is served to clinicians without committee approval. |
 | **Sample Data** | A starter set of synthetic longitudinal patient trajectories with realistic multi-decision-point clinical histories (Synthea-derived multi-year trajectories, augmented with explicit decision points, action labels, and outcome events). A starter regime catalog covering one or two clinical areas with strong sequential-decision patterns (chronic disease management for diabetes / CKD / hypertension; depression treatment selection; HIV care). For OPE work, a held-out subset of trajectories used as the validation cohort; a randomized subset (where available, e.g., from SMART trials in the literature) used as the gold-standard benchmark. |
@@ -1022,6 +1034,14 @@ FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
     // the patient's trajectory state.
     treatment_relationship_check(calling_clinician_id, patient_id)
     consistency_check(decision_point_id, trajectory_metadata)
+    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
+    // identity-boundary check policy and rejection semantics at the
+    // chapter pattern level: failure modes (clinician_not_authorized,
+    // patient_not_active_in_regime, decision_point_inconsistent),
+    // metric emission on each violation, and the served_to_clinician_id
+    // capture that record_action_taken needs. Mirror 4.4-4.9 chapter
+    // pattern; sharper here because trajectory contamination is a
+    // propagating harm into the next training cycle.
 
     // Step 5C: eligibility check. The regime's eligibility predicates
     // are evaluated against the current state. Patients who fail
@@ -1060,6 +1080,15 @@ FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
     // regime risk tier determines whether OOD-flagged patients still
     // receive a recommendation, receive one with explicit warnings,
     // or are blocked.
+    // TODO (TechWriter): Expert review A3 (HIGH). Specify the OOD
+    // severity bands (NONE/LOW/MODERATE/HIGH thresholds), the routing
+    // policy by regime risk tier (which severity bands serve, warn,
+    // or suppress at each tier), the override semantics (whether a
+    // clinician can request "show recommendation anyway" and how that
+    // event is captured), and the suppressed-for-OOD outcome on the
+    // recommendation record so the audit trail captures the
+    // suppression. Without these the clinical-safety posture is
+    // implementation-defined.
 
     // Step 5E: invoke the regime's policy.
     endpoint_response = SageMaker.InvokeEndpoint(
@@ -1175,6 +1204,16 @@ FUNCTION record_action_taken(recommendation_id, action_taken_payload):
     IF action_taken_payload.clinician_id != rec.served_to_clinician_id:
         log_security_violation(...)
         REJECT
+    // TODO (TechWriter): Expert review S1 (HIGH). Specify the
+    // rejection semantics in chapter pattern style: validate that
+    // action_id is in the recommendation's known action set
+    // (recommended_action plus alternatives, or explicit out-of-
+    // catalog), enforce idempotency on replay (rec.action_taken
+    // already set means treat as replay rather than double-mutate),
+    // and emit metric action_taken_identity_mismatch on rejection.
+    // Trajectory poisoning from a misrouted action-taken event
+    // propagates into the next training cycle; the boundary must
+    // hold.
 
     DynamoDB.UpdateItem("recommendation-records", recommendation_id, {
         action_taken: action_taken_payload.action_id,
@@ -1226,6 +1265,19 @@ FUNCTION run_surveillance(regime_id, surveillance_window):
     outcome_metrics = compute_outcome_metrics(regime_id, surveillance_window)
     drift_results = detect_calibration_drift(regime_id, surveillance_window,
                                               ope_baseline = lookup_ope_baseline(regime_id))
+    // TODO (TechWriter): Expert review A4 (HIGH). Specify the
+    // prediction-versus-outcome pairing: identify recommendations
+    // whose outcome window has closed within the surveillance
+    // window (regime.outcome_window_days), join action-taken events
+    // to observed outcomes computed against the regime's reward
+    // function (matching weights), apply IPCW for patients censored
+    // before the outcome window closed, and compute per-cohort
+    // residuals. Drift severity = |mean residual| / OPE baseline CI
+    // half-width. The implementation must avoid the failure mode of
+    // averaging predicted Q-values across recommendations and
+    // calling that "observed reward"; that signal detects
+    // population-mix drift, not calibration drift, and the
+    // RETRAINING_TRIGGER_THRESHOLD fires on the wrong axis.
 
     // Step 6C: cohort-stratified surveillance. Outcome trajectories
     // by cohort, regime adherence by cohort, OOD-flag rates by
@@ -1243,6 +1295,21 @@ FUNCTION run_surveillance(regime_id, surveillance_window):
                 triggered_at: current UTC timestamp,
                 review_status: "pending"
             })
+    // TODO (TechWriter): Expert review A1 (HIGH). Specify the
+    // cohort-disparity thresholds (REGIME_VALUE_DISPARITY_THRESHOLD,
+    // REGIME_ADHERENCE_DISPARITY_THRESHOLD, OOD_RATE_DISPARITY_THRESHOLD,
+    // OUTCOME_TRAJECTORY_DISPARITY_THRESHOLD) and the per-axis-per-
+    // metric override mechanism. Specify how each disparity is
+    // computed (e.g., regime value disparity = ratio of mean DR-OPE
+    // value worst-cohort vs best-cohort; adherence disparity =
+    // difference in follow-recommendation rate by recommendation
+    // strength tier). Specify MIN_SURVEILLANCE_COHORT_SAMPLE and
+    // chronic-suppression-as-fairness-signal pattern: a cohort whose
+    // sample size is structurally low across windows is itself an
+    // under-representation alert, not silently absorbed into the
+    // disparity calculation. Specify the relationship between the
+    // OPE-stage MIN_COHORT_SAMPLE and the surveillance-stage minimum.
+    // Reference Obermeyer 2019 and the chapter siblings 4.8 A4 / 4.9 A2.
 
     // Step 6D: drift-driven retraining trigger. If calibration drift
     // exceeds threshold, trigger a retraining cycle ahead of the
@@ -1517,7 +1584,11 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Cross-recipe orchestration with Recipes 4.5 through 4.9.** Dynamic treatment regimes depend on signals from prior Chapter 4 recipes: the per-treatment CATE estimates from 4.8 inform the action-catalog and the similar-trajectory retrieval; the personalized care plan from 4.9 is the broader plan in which the regime's recommendation is one component; the adherence and engagement signals from 4.5 and 4.7 affect the state representation. The integration points must be reliable, idempotent, and consistent. Document the integration patterns and the failure-mode handling.
 
+<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Architect cross-recipe orchestration explicitly: the freshness contract for 4.8 CATE estimates consulted at serving time (e.g., flag estimates older than 30 days on the recommendation record), the conflict-detection and reconciliation policy for 4.10 recommendations that conflict with the patient's active 4.9 care plan (surface the conflict to the clinician; do not silently override either system), and the independent-fetch-with-defaults failure mode for 4.5 and 4.7 signals (missing signals recorded as such rather than failing the recommendation). Reference 4.9 cross-recipe-orchestration framing as the chapter pattern. -->
+
 **Regime-deprecation and patient-impact handling.** When a regime version is deprecated (replaced by a newer version, retired due to drift, withdrawn after surveillance findings), the patients with active recommendations under the old version need clear handling: re-recommend under the new version at the next decision point, surface the change to the clinician with the rationale, and avoid silent regime swaps. The deprecation policy is part of the change control plan and should be reviewed by the governance committee.
+
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Architect the deprecation flow explicitly: regime-version continuity in the recommendation record (decision-point N under v3.2.1, decision-point N+1 under v3.3.0 must be visible in the audit trail and in the clinician narrative); version-tagged surveillance partitioning so deprecated-regime outcomes do not silently roll forward into the new regime's surveillance metrics; and the patient-impact-communication pattern when a regime is withdrawn for safety reasons (the institutional analog of FDA-mandated post-market action notifications). Reference 4.9 A9 (clinical-content versioning) for the chapter pattern. -->
 
 **Cost-aware narrative generation.** Bedrock calls per recommendation (one clinician-facing always, one patient-facing when shared) add up at scale. Tiering the model selection (Sonnet for clinician, Haiku for patient where reading-level allows) substantially reduces cost. Caching narrative fragments for repeated content (regime-version-disclosure boilerplate, override-encouragement blocks) reduces token volume. Production deployments should rationalize the narrative-generation topology against actual usage patterns and cost, with the cost monitoring built into the dashboard from day one.
 
