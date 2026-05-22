@@ -116,6 +116,7 @@
 #### Ch 5: Entity Resolution / Record Linkage
 
 * [Preface](chapter05-preface)
+* [5.1 — Internal Duplicate Patient Detection](chapter05.01-internal-duplicate-patient-detection)
 
 ---
 
