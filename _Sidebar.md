@@ -123,6 +123,7 @@
 * [5.3 — Address Standardization and Household Linkage](chapter05.03-address-standardization-household-linkage)
   * [Python Example](chapter05.03-python-example)
 * [5.4 — Insurance Eligibility Matching](chapter05.04-insurance-eligibility-matching)
+  * [Python Example](chapter05.04-python-example)
 
 ---
 
