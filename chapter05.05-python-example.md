@@ -1091,6 +1091,23 @@ def _address_similarity(query_addr: dict, candidate_addr: dict,
         p_street = (prior.get("line1") or "").upper()
         p_zip_match = Decimal("1.0") if q_zip and q_zip == p_zip else Decimal("0.0")
         p_street_sim = _to_decimal(_jaro_winkler(q_street, p_street))
+        # TODO (TechWriter): Code review Finding 1 (WARNING).
+        # The parentheses below put the 0.9 multiplier only on
+        # the street component. Python's operator precedence
+        # binds * tighter than +, so the expression evaluates
+        # as (p_zip_match * 0.5) + ((p_street_sim * 0.5) * 0.9)
+        # rather than ((p_zip_match * 0.5) + (p_street_sim *
+        # 0.5)) * 0.9. The 0.9 "matching prior over current"
+        # penalty therefore does not apply to the zip_match
+        # component and a recently-moved patient who still
+        # lives in the same ZIP gets an inflated prior-address
+        # score. The demo's expected output is unaffected (no
+        # demo trigger exercises the prior-address fallback
+        # path), but the fix is one set of parentheses:
+        #   prior_score = (
+        #       (p_zip_match * Decimal("0.5"))
+        #       + (p_street_sim * Decimal("0.5"))
+        #   ) * Decimal("0.9")
         prior_score = ((p_zip_match * Decimal("0.5"))
                           + (p_street_sim * Decimal("0.5"))
                           # Slight penalty for matching prior over current.
@@ -1459,6 +1476,19 @@ def _build_response_payload(query: dict) -> dict:
     # Discoverability check: in some frameworks, even
     # acknowledging the patient is in our system requires
     # consent.
+    # TODO (TechWriter): Code review Finding 3 (NOTE). The
+    # discoverability-NO_MATCH masking only fires when
+    # decision["reason"] == "consent_does_not_permit". The
+    # consent_expired and consent_registry_unavailable branches
+    # fall through to MATCHED_NOT_RELEASABLE (or
+    # TEMPORARY_UNAVAILABLE), which reveals the patient is in
+    # our system. Pseudocode's intent (also flagged in expert-
+    # review A3) is to apply the discoverability-first masking
+    # before checking specific reason codes. Fix:
+    #   if not consent_summary.get("discoverability_permitted", False):
+    #       return {"match_status": "NO_MATCH"}
+    # placed before any of the reason-specific branches, with a
+    # fail-closed default (False when the field is absent).
     consent_summary = decision.get("consent_state_summary") or {}
     if (decision["reason"] == "consent_does_not_permit"
             and not consent_summary.get("discoverability_permitted")):
@@ -1858,6 +1888,20 @@ def run_demo():
         # 3. Med-confidence path: Alex Johnson with mismatched
         # address (moved). Sensitivity filter blocks
         # behavioral_health_notes.
+        # TODO (TechWriter): Code review Finding 2 (NOTE). This
+        # trigger does not actually exercise the med-confidence
+        # path. The composite score lands at ~0.78 (between
+        # AUTO_REJECT and AUTO_ACCEPT_MED), so the matcher
+        # routes the case to NO_MATCH_DEFERRED_REVIEW and
+        # apply_consent_and_sensitivity short-circuits before
+        # the sensitivity filter ever runs. The closing prose
+        # paragraph correctly identifies this as the deferred-
+        # review path; the inline comment should match. Either
+        # rewrite this comment as a deferred-review trigger,
+        # or change the trigger inputs (current address,
+        # supplied phone) so the composite lands at MED with
+        # behavioral_health_notes in requested categories so
+        # the sensitivity-filter block actually fires.
         {
             "label":          "med-confidence + sensitivity-filter path",
             "source":         "api_gateway_fhir_match",

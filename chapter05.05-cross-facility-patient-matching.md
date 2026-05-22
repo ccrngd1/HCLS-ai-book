@@ -288,6 +288,9 @@ The pipeline has six logical stages: ingest the cross-facility query (or the lin
 
 **Blocking is the first-order architectural choice.** Cross-facility matchers run at scale (millions of records on each side, sometimes billions in national-scale deployments), and naive O(n²) comparison is impossible. Blocking partitions the candidate set so that comparisons happen only within plausibly-related buckets. The blocking-key design is a tradeoff: too tight and true matches get split across buckets; too loose and the bucket sizes blow up. Standard production blockers use multiple complementary blocking keys (last-name-soundex plus year-of-birth, last-name-metaphone, ZIP3-plus-DOB, first-name-plus-DOB-month-day) and union the candidate sets. The matcher then scores each candidate; the final score is the max across blocks (or a composite if you want the consensus signal).
 
+<!-- TODO (TechWriter): Expert review A12 (LOW). Reconcile the phonetic-encoding naming across the architecture diagram, this prose paragraph, and the Step 2 pseudocode. The diagram and prose alternate "soundex" and "metaphone"; the pseudocode uses double_metaphone() and stores in last_name_phonetic. Suggested fix: add one sentence noting "Production matchers typically use Double Metaphone (more accurate for non-Anglo names) rather than Soundex (the original phonetic encoding); the recipe's pseudocode uses Double Metaphone, but the principle is the same." -->
+
+
 **The matcher returns more than a match decision.** The query-time response includes the match confidence, the candidate identifier, the categorical reason for the score (which features matched, which did not), and the data-release decision. The requesting organization uses all of this to decide what to do with the response: accept the match and integrate the data, accept the match but flag it for clinician review, reject the match and continue without the data. Cleanly separating "we matched" from "we released" matters for the audit trail and for correctly reporting to the patient what data was exchanged about them.
 
 **Consent is consulted at release time, not at query time.** A legitimate query for a patient who has not consented to data sharing is not blocked at the entry point; the matcher runs, the identity is determined, and the consent check then constrains what (if anything) is released. This pattern lets the matcher's accuracy not be polluted by consent-driven bias (otherwise, patients who opt out of sharing would systematically not appear in match training data, distorting the matcher's calibration), and it lets the audit log accurately record that a query was made and that consent caused the release to be limited. The requester, depending on the framework, may receive a "consent did not permit release" indicator; in some frameworks, even acknowledging that the patient is in the responder's system requires consent.
@@ -316,9 +319,12 @@ The pipeline has six logical stages: ingest the cross-facility query (or the lin
 
 **Amazon ElastiCache (Redis) for the blocking-index and consent-state cache.** Blocking indices are read on every query and are amenable to caching. The blocking-key-to-candidate-set map is loaded from DynamoDB at warm-up and refreshed incrementally as the MPI changes; the cache holds the most-frequently-queried blocks. Consent state is also read on every query, but consent reads must fall through to the system-of-record on miss (caching consent risks releasing data after revocation). Both caches use TLS in-transit and KMS at-rest encryption. <!-- TODO: confirm ElastiCache HIPAA eligibility and the encryption-at-rest configuration at time of build. -->
 
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Specify the consent-cache invalidation timing on revocation. Synchronous: consent-revocation EventBridge event triggers invalidate-on-event Lambda which (a) deletes the cached consent state, (b) writes consent_revoked_at on the cross-org MPI for the affected patient, (c) emits cross_facility_match_invalidated. In-flight queries that have read the cache but not yet released must re-check consent at release-and-audit against the system-of-record (not the cache), with a 500ms timeout, fail-closed on timeout. Propagation latency budget is 60 seconds from registry emit to release-path effect; CloudWatch alarms on P99 propagation latency > 60s. The fail-closed posture extends through the in-flight-query lifecycle, not just the initial cache-vs-system-of-record read. -->
+
+
 **Amazon SQS for the query queues.** Three queues: a high-priority queue for synchronous query-time matching (with a short visibility timeout and a strict latency budget), a standard queue for asynchronous linkage-submission processing (each new CCD or FHIR Bundle gets matched against the MPI to determine whether it is a new identity or an existing one), and a deferred-review queue for cases where the matcher's confidence falls in the review band. Separating the queues prevents linkage-submission load from delaying query-time matching.
 
-**AWS Lambda for the per-query and per-submission processing.** Lambda is the right substrate because each query is short-lived, mostly I/O-bound (DynamoDB reads plus the matcher computation), and benefits from on-demand scaling for the bursty pattern of clinical-workflow queries. Separate Lambdas per pipeline stage: `normalize-query`, `evaluate-match`, `apply-consent-and-sensitivity`, `release-and-audit`, `process-linkage-submission`. Each is in VPC with VPC endpoints for downstream services. Outbound queries to participating organizations or to HIE intermediaries go through NAT Gateway with an allow-list of known endpoints, with PrivateLink where the partner offers it. <!-- TODO: confirm partner PrivateLink availability at time of build; HIE intermediaries vary in their connectivity options. -->
+**AWS Lambda for the per-query and per-submission processing.** Lambda is the right substrate because each query is short-lived, mostly I/O-bound (DynamoDB reads plus the matcher computation), and benefits from on-demand scaling for the bursty pattern of clinical-workflow queries. Separate Lambdas per pipeline stage: `normalize-query`, `evaluate-match`, `apply-consent-and-sensitivity`, `release-and-audit`, `process-linkage-submission`. Each is in VPC with VPC endpoints for downstream services. Outbound queries to participating organizations or to HIE intermediaries go through NAT Gateway with an allow-list of known endpoints, with PrivateLink where the partner offers it. <!-- TODO: confirm partner PrivateLink availability at time of build; HIE intermediaries vary in their connectivity options. --> <!-- TODO (TechWriter): Networking review N3 (LOW). Add a sentence on the volume-based PrivateLink evaluation criterion: at HIE-scale query volumes (typically a couple million queries per month or higher), evaluate the partner's or HIE intermediary's PrivateLink endpoint where available; the cost trade-off (PrivateLink hourly fee plus per-GB transfer vs NAT Gateway data-transfer) usually favors PrivateLink past that threshold. -->
 
 **Amazon API Gateway plus Lambda for the inbound query endpoint.** Other organizations and HIE intermediaries call the API to query for patients. API Gateway provides authentication via mutual TLS (the HIE participation agreement specifies certificate-based identity for queriers), request logging, request signing verification, and rate limiting per requester. The endpoint exposes both PIX/PDQ (for legacy v2 queries) and FHIR Patient `$match` (for FHIR-native queries) with shared backend logic.
 
@@ -451,7 +457,7 @@ flowchart LR
 | **Consent Registry** | A consent-registry system-of-record that the consent-and-sensitivity filter consults on every release decision. The registry must be highly available (consent-check is on the critical path of every released response); the architecture treats consent-registry unavailability as a fail-closed condition (withhold release rather than release with stale consent state). Consent state changes propagate to the cross-facility match invalidation pipeline. |
 | **Sensitivity Filter Policy** | A policy table encoding the sensitivity-category rules: 42 CFR Part 2, state-specific behavioral health sharing rules, HIV / STI sharing restrictions where applicable, genetic-information rules, reproductive-health rules where legally restricted, and patient-flagged sensitive categories. Maintained by the institution's compliance and legal teams; versioned with deployment governance. |
 | **Sample Data** | Use synthetic patient data that exercises the full range of cross-facility match outcomes, including the cohort-specific patterns the matcher needs to handle. Synthea can generate synthetic patient populations with multi-organization encounter histories. The Sequoia Project and ONC have published patient-matching test datasets for benchmarking. <!-- TODO: confirm Sequoia / ONC test dataset availability at time of build. --> Never use real PHI in development environments. |
-| **Cost Estimate** | At a regional HIE serving fifty participating organizations and processing three million queries per month: AWS infrastructure (S3, DynamoDB, ElastiCache, SQS, Lambda, Step Functions, EventBridge, API Gateway, WAF, Athena, QuickSight, KMS combined) typically $4,000-12,000/month, dominated by DynamoDB (cross-org MPI plus audit log at this volume) and ElastiCache. HIE participation fees vary widely (anywhere from a few thousand to tens of thousands per month per institution) and are usually structured per-query, per-participant, or as a flat institutional fee. TEFCA QHIN fees are still settling. <!-- TODO: replace with verified, current pricing once the implementing team validates against partner quotes and the AWS Pricing Calculator. --> |
+| **Cost Estimate** | At a regional HIE serving fifty participating organizations and processing three million queries per month: AWS infrastructure (S3, DynamoDB, ElastiCache, SQS, Lambda, Step Functions, EventBridge, API Gateway, WAF, Athena, QuickSight, KMS combined) typically $4,000-12,000/month, dominated by DynamoDB (cross-org MPI plus audit log at this volume) and ElastiCache. HIE participation fees vary widely (anywhere from a few thousand to tens of thousands per month per institution) and are usually structured per-query, per-participant, or as a flat institutional fee. TEFCA QHIN fees are still settling. <!-- TODO: replace with verified, current pricing once the implementing team validates against partner quotes and the AWS Pricing Calculator. --> <!-- TODO (TechWriter): Expert review A13 (LOW). Add ElastiCache capacity-sizing guidance: at HIE scale (e.g., fifty participating organizations, populations totaling several million patients), the blocking-index cache is dominated by candidate-set cardinality per blocking key. A typical regional HIE benefits from cache.r6g.xlarge or larger with read replicas for availability and a volatile-lfu eviction policy. Warm-up loads the most-frequently-queried blocks from the prior period's CloudWatch query-rate metrics; subsequent updates flow through DynamoDB Streams. CloudWatch alarms on cache memory > 80% and on cache-miss rate exceeding the institutional threshold. --> |
 
 ### Ingredients
 
@@ -816,6 +822,14 @@ FUNCTION apply_consent_and_sensitivity(query):
         )
     CATCH consent_registry_unavailable:
         // Fail-closed. Audit the failure separately.
+        // TODO (TechWriter): Expert review A3 (HIGH). Set
+        // discoverability_permitted: FALSE on this branch. The
+        // fail-closed posture must extend to discoverability:
+        // when the registry is unreachable we cannot confirm
+        // that discoverability is permitted, so the response
+        // must mask as NO_MATCH (per the corrected check in
+        // Step 5A) rather than fall through to
+        // MATCHED_NOT_RELEASABLE.
         emit_metric("consent_registry_unavailable", 1)
         emit_alarm_if_repeated("consent_registry_outage", 5_in_60s)
         query.release_decision = {
@@ -849,6 +863,28 @@ FUNCTION apply_consent_and_sensitivity(query):
         // not-permitted, with a different reason code so the
         // patient-facing access report can show "consent
         // expired" rather than "consent denied."
+        // TODO (TechWriter): Expert review A3 (HIGH).
+        // Set discoverability_permitted on this branch (and
+        // the consent_registry_unavailable catch below) with
+        // a fail-closed default. The Honest Take's
+        // discoverability paragraph correctly diagnoses the
+        // canonical first-pass failure mode (a query that
+        // returns "matched but consent does not permit
+        // release" leaks the fact that the patient is in our
+        // system); the pseudocode currently sets
+        // discoverability_permitted only on the
+        // consent_does_not_permit branch, which means the
+        // consent-expired and registry-unavailable branches
+        // fall through to MATCHED_NOT_RELEASABLE in Step 5A
+        // and leak fact-of-care. Fix: set
+        // discoverability_permitted to
+        // consent_state.discoverability_permitted when the
+        // field is present and to FALSE otherwise; in Step 5A,
+        // mask as NO_MATCH unless discoverability_permitted is
+        // affirmatively TRUE. Add a paragraph to The
+        // Technology section naming the fail-closed-on-
+        // discoverability posture as the same principle as
+        // fail-closed-on-release.
         query.release_decision = {
             release: FALSE,
             reason: "consent_expired",
@@ -936,6 +972,16 @@ FUNCTION release_and_audit(query):
         // Patient is in our system but consent does not permit
         // release. The framework-specific response indicates
         // "found but not releasable."
+        // TODO (TechWriter): Expert review A3 (HIGH). Change
+        // the discoverability check above from
+        // "discoverability_permitted == FALSE" to
+        // "NOT (discoverability_permitted == TRUE)" so that
+        // missing or null fields fail closed (mask as
+        // NO_MATCH). Currently, the consent-expired and
+        // consent-registry-unavailable branches in Step 4 do
+        // not set discoverability_permitted, and the
+        // FALSE-equality check falls through to
+        // MATCHED_NOT_RELEASABLE, leaking fact-of-care.
         response_payload = {
             match_status: "MATCHED_NOT_RELEASABLE",
             withhold_reason: decision.reason
@@ -1243,6 +1289,9 @@ FUNCTION invalidate_on_event(event):
 - **Enumeration attack surface.** A bad actor with a list of demographic guesses can submit many queries to discover whether specific known persons are in the responder's system. WAF and per-requester rate limits raise the cost; the audit log surfaces suspicious patterns. The mitigation is defense-in-depth, not perfection: rate limits, anomaly detection on query patterns, and an institutional policy that responds to suspected enumeration attempts with credential review and reporting.
 - **Disparity in upstream matcher quality.** When organization A queries organization B and organization B's matcher returns "match, confidence 0.95," organization A has to decide whether to trust that confidence. Organization B's calibration may differ from organization A's expectation. The mitigation is the minimum-acceptable-matcher-quality clauses in HIE participation agreements, periodic cross-organization match-quality benchmarking against shared gold sets, and treating the responder's confidence as one signal among several in the aggregating organization's own decision.
 - **Real-time queries during partner outages.** When a partner organization or HIE intermediary is down, queries to that partner time out. The aggregating layer cannot block; the response degrades to "we have data from these N partners, the others did not respond." The mitigation is the fail-soft pattern: complete the response with whatever was available, log the timeouts, and re-query the unavailable partners asynchronously with the clinician's longitudinal-record-assembler refreshing as responses arrive.
+
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Promote the fail-soft pattern from "Where it struggles" into the General Architecture Pattern paragraph. Specify the per-partner timeout (typically 1.5-2s within the realtime latency budget), the retry policy (one retry within the deadline for transient 5xx, no retry for persistent failures), the late-response refresh contract (late responses flow into the longitudinal-record-assembler via the cross_facility_query_resolved event with a late_response: true flag), and the per-partner CloudWatch alarm threshold (5xx rate > 5% over 5 minutes signals partner outage). Same chapter pattern as 5.4. -->
+
 - **Cohort-specific match disparities.** Patients with non-dominant-culture naming conventions, patients with name changes that did not propagate to all organizations, patients whose households cross multiple participating-organization service areas, all match worse on average. Cohort-stratified accuracy monitoring catches the disparities; per-cohort threshold tuning, expanded synonyms and prior-name handling, and partner-organization quality scorecards are the operational responses.
 - **Linkage-time matcher and query-time matcher drift.** If the linkage-time matcher (which builds the MPI) and the query-time matcher (which evaluates queries against the MPI) use different feature weights or thresholds, the query-time matcher can return inconsistent results across queries that should be equivalent. The mitigation is shared configuration: both matchers read from the same versioned configuration store, and any threshold or weight change deploys atomically to both.
 
@@ -1315,6 +1364,9 @@ Last point, because it is specific to the regulatory context: the 21st Century C
 **TEFCA QHIN exchange.** For institutions participating in TEFCA either directly as a sub-participant or through a Designated QHIN, extend the cross-facility matcher to handle QHIN-to-QHIN queries. The technical changes are small (QHIN exchange uses FHIR-based queries with the addition of QHIN-specific message envelopes and policy assertions), but the governance changes are larger (TEFCA Common Agreement obligations layer on top of the local HIE participation agreement). Recipe 5.9 covers the national-scale dimension in depth.
 
 **Patient-mediated identity resolution.** For patient-facing apps that authenticate via OAuth/OIDC against a known identity provider (the patient's portal account, a trusted aggregator like Apple Health Records, or a CMS-defined identity layer), use the patient's authenticated identity as a strong signal in the matcher. The patient-mediated identity supplements demographic matching: a query that arrives with both demographic data and a verified patient OAuth identity can match more confidently than either signal alone. The architecture extends the recipe with an identity-provider-verification step ahead of normalization.
+
+<!-- TODO (TechWriter): Expert review S7 (LOW). Add a disclosure-policy gate sentence to this variation: before accepting a patient-mediated identity as authoritative for matcher input, review the disclosure policy. The data flowing under the patient's authenticated identity to the third-party app may be governed by separate disclosure-and-consent frameworks (CMS Patient Access API rules, the 21st Century Cures Act information-blocking provisions, state-specific app-disclosure rules in some jurisdictions); the matcher's acceptance of the identity does not automatically authorize the downstream app's data egress. -->
+
 
 **Privacy-preserving cross-facility matching.** For partners that have not signed a BAA or for use cases where direct demographic exchange is not legally available, implement Bloom-filter-based or hash-based matching using the techniques in recipe 5.8. The privacy-preserving path produces match decisions without exchanging raw demographics; accuracy is lower than direct matching but the use case envelope is wider. Particularly relevant for some research and public-health use cases.
 
