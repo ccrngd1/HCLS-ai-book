@@ -139,4 +139,10 @@
 
 ---
 
+#### Ch 10: Speech / Voice AI
+
+* [Preface](chapter10-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
