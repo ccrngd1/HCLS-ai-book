@@ -134,6 +134,7 @@
   * [Python Example](chapter05.08-python-example)
 * [5.9 — National-Scale Patient Matching (TEFCA)](chapter05.09-national-scale-patient-matching)
   * [Python Example](chapter05.09-python-example)
+* [5.10 — Deceased Patient Resolution and Record Reconciliation](chapter05.10-deceased-patient-resolution-reconciliation)
 
 ---
 
