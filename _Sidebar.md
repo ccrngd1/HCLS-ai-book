@@ -152,6 +152,7 @@
   * [Python Example](chapter10.04-python-example)
 * [10.5 — Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant)
   * [Python Example](chapter10.05-python-example)
+* [10.6 — Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation)
 
 ---
 
