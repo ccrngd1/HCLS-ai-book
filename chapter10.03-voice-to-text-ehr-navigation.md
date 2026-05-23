@@ -352,6 +352,8 @@ A voice-to-text EHR navigation system splits cleanly into seven logical stages: 
 └───────────────────────────────────────────────────────────┘
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). The Feedback & Audit stage's telemetry block is structurally underspecified for the recipe's recipe-specific equity stakes. Promote the prose elevation in "Where it Struggles" and the production-gaps "Subgroup-stratified accuracy monitoring with named ownership" item into this stage with: (1) a cohort-dimensions allow-list (per-clinician identifier as the load-bearing axis, per-clinician language-background where opt-in declared at onboarding, accent-group where inferable from ASR diagnostic data, specialty, experience-level, deployment-site); (2) per-cohort metrics including ASR average word confidence, command success rate, disambiguation rate, confirmation rate, retry rate, adoption rate, and abandonment rate; (3) per-cohort sample-size minimums (reliable >=200, noisy 50-199 with wide CI, insufficient <50 aggregated to "all_other"); (4) disparity-alert thresholds at the equity-monitoring committee's monthly review queue; (5) named ownership (cross-functional equity-monitoring committee with rotating clinician seat, quarterly written summary, explicit escalation path on sustained disparities). This is the chapter pattern from Recipe 10.1 Finding A1 and Recipe 10.2 Finding A1 with the recipe-specific per-clinician-language-background dimension and the recipe-specific adoption-correlation dimension. -->
+
 A few cross-cutting design points the architecture has to bake in.
 
 **Activation must be unambiguous.** Whatever activation pattern is chosen (push-to-talk, wake word, foot pedal), the system must give immediate visible or audible feedback that it is listening. Without this, the user does not know whether the system heard them, and the result is repeated commands and frustration. A small LED on the device, a sound effect, or a screen indicator solves this; omitting it is a common MVP mistake.
@@ -360,7 +362,11 @@ A few cross-cutting design points the architecture has to bake in.
 
 **The EHR is the source of truth, not the voice system.** Voice-system context drift (the system thinks patient A is current; the EHR has patient B open) leads to data displayed for the wrong patient. The architecture must re-sync from the EHR's current context before each command, not maintain a parallel context independently.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a cross-cutting design point bounding the check-then-act gap between context re-fetch (Step 4A) and command execution (Step 6). The architecturally-correct pattern is either (a) snapshot preconditions on the EHR API where supported (an If-Match-style precondition on the EHR's current state; the EHR API rejects the command if the snapshot identifier does not match) or (b) immediate re-fetch before each EHR API call with abort-on-context-change semantics, surfacing a "context changed; please re-confirm patient" prompt. The voice system never operates on a resolved context that may have drifted between resolution and execution. Recipe-specific because shared rolling carts let one clinician switch the EHR's active patient between another clinician's resolution and execution. -->
+
 **Audit is non-negotiable.** Every command, every executed action, every confirmation, every cancellation goes into the audit log with the same fidelity as keyboard-driven EHR access. The audit log is not a feature; it is a baseline regulatory requirement.
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add a cross-cutting design point elevating the references-not-content audit discipline: the command audit table records who issued what command against which patient with what outcome by capturing references (transcript_archive_ref, slot_values_archive_ref, ehr_api_calls_archive_ref) plus structural metadata (lengths, hashes, slot_keys_present) plus non-content identifiers (clinician ID, patient ID, command ID, timestamp). The full transcript content, the full slot values, and the full EHR API call detail live in a secure archive (S3 with KMS, lifecycle aligned with the audio-bucket governance). This prevents the audit table from becoming a parallel PHI store with different access boundaries and different retention semantics from the audio archive. -->
 
 **Read commands and write commands have different rigor.** Read commands can execute on confidence; write commands require explicit, typically non-voice, confirmation. The boundary is configuration, not code, so clinical operations can review and adjust.
 
@@ -519,11 +525,11 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon Transcribe (streaming, optionally Transcribe Medical), Amazon Lex, Amazon Bedrock (optional, for LLM fallback), AWS Lambda, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally: AWS Step Functions, Amazon QuickSight. |
 | **External Inputs** | EHR integration surface: SMART on FHIR app launch context (preferred), vendor-specific extension platform (Epic App Orchard, Cerner Code Console, etc.), or UI-automation library (last resort). The day's schedule, the clinician's panel, and the active patient list per device for vocabulary biasing and patient-slot resolution. The clinical-command taxonomy and read-write classification rules, reviewed by clinical operations. A representative validation set of voice commands (ideally collected from pilot clinicians, labeled with intent and slot ground truth). Microphone hardware (beamforming preferred, headset for power users). Activation hardware (push-to-talk button, foot pedal, or wake-word-capable always-on capture). |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The command-executor Lambda has scoped invocation rights for Transcribe streaming sessions, Lex bot invocations, the specific Bedrock model and inference profile, the EHR FHIR endpoints (via Secrets Manager-stored credentials), the session-state and command-audit DynamoDB tables, and the EventBridge events bus. API Gateway-to-Lambda integration with Cognito authorizer pinned to the clinician identity scope. Avoid wildcard actions and resources in production. |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The command-executor Lambda has scoped invocation rights for Transcribe streaming sessions, Lex bot invocations, the specific Bedrock model and inference profile, the EHR FHIR endpoints (via Secrets Manager-stored credentials), the session-state and command-audit DynamoDB tables, and the EventBridge events bus. API Gateway-to-Lambda integration with Cognito authorizer pinned to the clinician identity scope. Avoid wildcard actions and resources in production. <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Specify that the command-executor Lambda's resource-based policy pins the invoking principal to the production API Gateway's stage ARN with the production version. The Lambda rejects invocations from any other API Gateway, any other stage, or any other principal. Add a defense-in-depth event-payload check at the start of the Lambda validating requestContext.apiId against the production constant, with development environments deploying their own development command-executor Lambda. --> |
 | **BAA and Compliance** | AWS BAA signed. Transcribe (and Transcribe Medical), Lex, Bedrock (verify the specific models and regions covered), Lambda, API Gateway, Cognito, DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, EventBridge, Kinesis Firehose, Athena are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference). <!-- TODO: verify; the AWS HIPAA-eligible services list and the specific Bedrock models covered under BAA continues to evolve --> EHR vendor agreements: confirm the EHR vendor's terms permit the SMART on FHIR app pattern with the read and (where applicable) write scopes you intend to use; some vendors restrict third-party app behavior for clinical-grade integrations. Patient-disclosure considerations: the practice may need to disclose to patients (signage in the room, informed-consent language at intake) that the rolling cart includes a voice-activated computing device, even though the device is only listening when activated. Specific disclosure obligations vary by jurisdiction and institutional policy. <!-- TODO: verify; recording-disclosure law for explicitly user-activated, command-only voice systems differs from continuous-recording disclosure law; institutional general counsel is the authoritative source --> |
-| **Encryption** | Audio recordings (when retained): SSE-KMS with customer-managed keys, retention bound to the QA review window (typically a few days to a few weeks), then automatic deletion via lifecycle policy. Audit log archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum and the institution's regulatory floor. DynamoDB tables (session state, command audit, configuration): customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all EHR API calls and all AWS API calls (default). |
+| **Encryption** | Audio recordings (when retained): SSE-KMS with customer-managed keys, retention bound to the QA review window (typically a few days to a few weeks), then automatic deletion via lifecycle policy. Audit log archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum and the institution's regulatory floor. DynamoDB tables (session state, command audit, configuration): customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all EHR API calls and all AWS API calls (default). <!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify retain-briefly with a 7-30 day window as the recommended default for audio recordings, and discard-immediately as the conservative alternative for institutions with strict PHI minimization. The choice is a deployment-time decision documented by clinical-operations and compliance review. The audit log (per S1's references-not-content discipline) is the long-term forensic-reconstruction substrate; audio retention is a short-term QA-and-disagreement-review substrate. --> |
 | **VPC** | Production: Lambdas that call back-office APIs (the EHR integration in particular) run in VPC with subnets that have controlled egress to the EHR's network (often a private peering connection or VPN to the on-premise EHR system). VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, Lex, and Transcribe so the Lambdas do not need NAT for AWS-internal calls. Endpoint policies pin access to the specific resources the pipeline uses. For SMART on FHIR-based integrations against a cloud-hosted EHR, the integration may not require on-premise network connectivity; for on-premise EHRs, the network topology is typically the longest-lead-time portion of the deployment. |
-| **CloudTrail** | Enabled with data events on the audit-log S3 bucket, the DynamoDB audit table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. API Gateway access logs enabled. Lex bot invocations logged. Transcribe streaming session start and stop logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum and the institutional regulatory floor. |
+| **CloudTrail** | Enabled with data events on the audit-log S3 bucket, the DynamoDB audit table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. API Gateway access logs enabled. Lex bot invocations logged. Transcribe streaming session start and stop logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum and the institutional regulatory floor. <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Voice-EHR navigation produces audit records that must be cross-referenced with the EHR's own audit log for forensic reconstruction. Name the audit retention floor as the longest of (HIPAA's six-year minimum, state-specific medical-records-retention rules, the EHR vendor's audit-retention floor so the two records can be cross-referenced for the full lifetime of the EHR's audit, and the institutional regulatory floor). Reference the institutional retention policy as canonical. --> |
 | **Sample Data** | Synthetic command audio for development (text-to-speech generation against scripted command transcripts produces audio with known ground truth). Synthea synthetic patient population for the schedule and patient-index tables. Public-domain medical-vocabulary audio corpora for ASR validation. Never use real clinician audio or real patient names in development; the privacy implications of voice samples are non-trivial. |
 | **Cost Estimate** | At a mid-sized practice scale (50 clinicians, average 40 voice commands per clinician per day, 22 working days per month, average command audio length 4 seconds): Transcribe streaming at typically $0.024 per minute totals approximately $35-50 per month for ASR. Lex bot invocation at typically $0.004 per request totals approximately $175 per month at this volume. Optional Bedrock fallback adds typically $20-100 per month depending on the fraction of commands that fall through. Lambda, API Gateway, DynamoDB, S3, CloudWatch, KMS, Secrets Manager total typically $50-200 per month combined at this scale. Total AWS infrastructure typically $300-600 per month at this scale, dominated by Lex and Lambda. The infrastructure cost is small compared to the per-clinician licensing of comparable commercial voice-navigation products. <!-- TODO: replace with verified pricing once the implementing team validates against the AWS Pricing Calculator. Specific costs depend on per-minute Transcribe streaming pricing in the chosen region and the chosen NLU stack -->|
 
@@ -563,6 +569,13 @@ ON activation_signal(device_id, clinician_session, smart_on_fhir_context):
     // and the SMART on FHIR launch context is fresh.
     // Stale tokens are a security failure mode; reject
     // with a re-launch prompt.
+    // TODO (TechWriter): Expert review A7 (MEDIUM).
+    // SMART on FHIR access tokens typically last
+    // 5-60 minutes; voice-navigation sessions can run
+    // for hours of patient encounters. Specify the
+    // refresh-token flow, pre-emptive refresh window,
+    // refresh-failure handling, and token-storage
+    // discipline (Secrets Manager or in-memory only).
     IF NOT clinician_session.is_valid():
         RETURN error("re-authenticate")
     IF smart_on_fhir_context.is_stale(MAX_AGE_MINUTES):
@@ -694,6 +707,17 @@ FUNCTION parse_command(transcript, session_context):
     // optionally fall back to Bedrock for a second
     // opinion. The fallback is configurable per
     // institution.
+    // TODO (TechWriter): Expert review S2 (MEDIUM).
+    // Add prompt-injection mitigation: wrap the
+    // transcript in explicit delimiters
+    // (e.g., <transcript>...</transcript>) and
+    // instruct the model to treat the transcript as
+    // untrusted user data, not as instructions.
+    // Validate JSON output strictly against the
+    // configured taxonomies. The patient-slot
+    // resolution gate (Step 4B) remains the primary
+    // safety layer; prompt-injection mitigation
+    // bounds what reaches the gate.
     IF intent_confidence < INTENT_CONFIDENCE_THRESHOLD AND
        BEDROCK_FALLBACK_ENABLED:
         bedrock_result = invoke_bedrock_classifier(
@@ -744,6 +768,15 @@ FUNCTION resolve_context(parsed_command, session_context):
     // Step 4A: re-fetch the EHR's current context. The
     // EHR is the authoritative source of truth; voice-
     // system context is a derived view.
+    // TODO (TechWriter): Expert review A2 (MEDIUM).
+    // Bound the check-then-act gap between this
+    // re-fetch and the Step 6 execute. On rolling
+    // carts the EHR's active patient can change
+    // between resolution and execution. Specify
+    // either snapshot-precondition (If-Match-style)
+    // on EHR API calls where supported, or
+    // immediate re-fetch before each API call with
+    // abort-on-context-change semantics.
     ehr_state = ehr_api.get_current_state(
         clinician_id: session_context.clinician_id,
         device_id: session_context.device_id)
@@ -753,6 +786,15 @@ FUNCTION resolve_context(parsed_command, session_context):
 
     // Step 4B: if the command specifies a patient slot,
     // resolve against the day's schedule and the panel.
+    // TODO (TechWriter): Expert review A4 (MEDIUM).
+    // resolve_patient_slot must specify production-
+    // grade matching: phonetic matching (Soundex,
+    // Metaphone, or clinical name-matching libs),
+    // nickname/honorific handling, non-Latin
+    // character and accent normalization, MRN-based
+    // tiebreaker in the disambiguation prompt, and
+    // a broader-index fallback for unscheduled walk-
+    // ins and consults with explicit confirmation.
     IF "patient" in parsed_command.slots:
         candidate_patients = resolve_patient_slot(
             spoken_name: parsed_command.slots["patient"],
@@ -812,6 +854,16 @@ FUNCTION resolve_context(parsed_command, session_context):
 FUNCTION confirm_command(enriched_command, session_context):
     // Step 5A: read-only commands with high confidence
     // execute immediately.
+    // TODO (TechWriter): Expert review A5 (MEDIUM).
+    // Replace the single READ_AUTO_CONFIDENCE_THRESHOLD
+    // with a per-intent threshold matrix: low-stakes
+    // intents (navigate_section, scroll_*, go_back)
+    // tolerate moderate thresholds; medium-stakes
+    // intents (open_patient, show_recent_results)
+    // require higher thresholds; write-class always
+    // require mandatory non-voice confirmation
+    // regardless of confidence. Calibration is
+    // subgroup-stratified per A1.
     IF enriched_command.read_write == "read" AND
        enriched_command.intent_confidence >=
            READ_AUTO_CONFIDENCE_THRESHOLD:
@@ -868,6 +920,23 @@ FUNCTION execute_command(enriched_command, session_context):
     intent = enriched_command.intent
     slots = enriched_command.slots
     patient_id = enriched_command.resolved_patient_id
+
+    // TODO (TechWriter): Expert review A3 (MEDIUM).
+    // Specify per-command idempotency: key composition
+    // (clinician_id, session_id, transcript_hash,
+    // time_window) with a sliding 30-second window.
+    // Session-state holds the recently-executed-
+    // commands list with TTL. On idempotency-match,
+    // return the prior execution result and record a
+    // duplicate-detection event in the audit log
+    // with the prior command_id as the dedup
+    // reference. Read commands are HIPAA-grade
+    // access events: duplicate executions inflate
+    // the EHR's access-record fidelity. For write-
+    // class intents (added in later phases), the
+    // idempotency check must run BEFORE execute, not
+    // after, typically as a conditional DynamoDB
+    // PutItem that fails closed.
 
     execution_log = {
         intent: intent,
@@ -964,6 +1033,26 @@ FUNCTION audit_and_telemetry(enriched_command, confirmation_result, execution_lo
     // Step 7A: write the durable audit record. This is
     // the HIPAA-grade record of who issued what command,
     // against which patient, with what outcome.
+    // TODO (TechWriter): Expert review S1 (HIGH).
+    // Embedding the raw transcript and raw slot values
+    // directly in the DynamoDB command-audit table
+    // creates a parallel PHI store outside the
+    // governance of the audio bucket and the audit-
+    // archive S3 bucket. Restructure this record to
+    // carry only references and structural metadata:
+    // transcript_archive_ref + transcript_length_chars
+    // + transcript_hash, slot_keys_present +
+    // slot_values_archive_ref + slot_values_hash, and
+    // ehr_api_calls_count + ehr_api_calls_archive_ref.
+    // Full transcripts and slot values live in the
+    // secure archive (S3 with KMS) under the same
+    // governance as the audio recordings. The
+    // resolved_patient_id remains because it is the
+    // structurally-necessary key for HIPAA-grade
+    // access auditing. Add a cross-cutting design-
+    // points paragraph elevating the references-not-
+    // content audit discipline. Update the Expected
+    // Results sample audit record below to match.
     audit_record = {
         command_id: generate_uuid(),
         clinician_id: session_context.clinician_id,
@@ -1049,6 +1138,8 @@ FUNCTION audit_and_telemetry(enriched_command, confirmation_result, execution_lo
 ### Expected Results
 
 **Sample command audit record (illustrative):**
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Update this sample to match the references-not-content audit pattern (see TODO at Step 7A): replace the inline `transcript` and `slots` fields with `transcript_archive_ref` + `transcript_length_chars` + `transcript_hash` and `slot_keys_present` + `slot_values_archive_ref` + `slot_values_hash`. Replace the inline `ehr_api_calls` array with `ehr_api_calls_count` + `ehr_api_calls_archive_ref`. -->
 
 ```json
 {
@@ -1136,6 +1227,8 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Clinical operations governance of the intent taxonomy and read-write classification.** The intent set, the read-write classification per intent, and the confidence thresholds are clinical safety artifacts. They need version control, change review by clinical operations (not by the engineering team unilaterally), scheduled refresh cadence, and a documented escalation path when a misexecution surfaces. Treat them with the procedural rigor that implies, not as configuration files maintained by whoever last edited them.
 
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add a Deployment Pattern subsection in the AWS Implementation section specifying the blue-green pattern for Lex bot version aliases, Bedrock inference profiles, classifier prompt definitions, and the intent taxonomy / read-write classification configuration: versioned definitions in source control with commit-SHA-tied builds; canary alias and canary inference profile carrying 5% traffic against a regression evaluation set with subgroup-stratified production metrics (per A1); rollback-on-regression triggers when any subgroup metric drops; held-out evaluation set including accent samples, multi-intent commands, ambiguous-patient-name commands, urgency-keyword phrases against the navigation taxonomy, low-confidence-transcript samples, mixed-language commands; version stamping on every command's audit record (interaction with S1 audit-pattern) including bot_version, classifier_prompt_version, intent_taxonomy_version, read_write_classification_version. -->
+
 **Subgroup-stratified accuracy monitoring with named ownership.** Voice ASR systematically underperforms for some speaker demographics. Per-clinician accuracy metrics (ASR confidence, command success rate, default-to-disambiguation rate) should be visible to the equity-monitoring committee or the clinical-quality officer. Disparities exceeding configured thresholds should alert. The monitoring is not optional analytics; it is the mechanism by which the institution detects whether the system is silently underserving specific clinicians (and, by extension, their patients).
 
 **Patient slot resolution with edge cases.** The patient lookup logic must handle: patients not on the day's schedule (urgent walk-ins, unscheduled consults); patients whose names are spoken as nicknames or honorifics; patients whose names involve non-Latin character sets, accents, or non-standard romanizations; patients with similar names whose disambiguation requires more than first name (date of birth, MRN, clinic location). Pilot the resolution logic against a representative slice of the institution's patient name distribution before launch.
@@ -1150,9 +1243,13 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Disaster recovery and EHR-unavailable handling.** If the EHR API is unreachable (vendor outage, network partition, planned maintenance), voice commands cannot execute. The system must communicate this to the clinician immediately and clearly, and the clinician must be able to fall back to keyboard-and-mouse. Test the failure modes in a staging environment before launch.
 
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Promote this paragraph into an architectural Disaster Recovery Topology subsection in the AWS Implementation section that specifies per-stage failover policy: EHR-unavailable handling with explicit clinician messaging, Streaming Transcribe regional outage with cross-region failover, Lex regional outage with cross-region failover or Bedrock-fallback (gated by S2 prompt-injection mitigation), Bedrock model deprecation with cross-model failover via inference profile abstraction, DynamoDB partition exhaustion with reserved capacity, and quarterly failover testing cadence with synthetic commands. The voice system always degrades gracefully to the keyboard-and-mouse fallback. -->
+
 **On-device or on-premise ASR for air-gapped deployments.** Some hospital environments do not permit clinical audio to leave the institutional network. For those deployments, the cloud-streaming ASR architecture above does not work; an on-premise ASR alternative (or a private cloud connection that satisfies the institution's network policy) is required. Plan the air-gapped variant as a separate architectural track from the cloud variant.
 
 **Multi-language support architecture.** The architecture as described handles English. Adding languages requires per-language Transcribe configurations, per-language Lex bots (or a multilingual NLU layer), per-language intent example utterances, and per-language slot-extraction logic for date and number recognition. Even practices that do not need multilingual support at launch should design the configuration so adding a language later does not require rearchitecting the intent layer.
+
+<!-- TODO (TechWriter): Expert review A10 (MEDIUM). Specify the per-clinician-language-preference dimension as recipe-distinct (the clinician is the speaker, not the patient). Add: language detection at session-open or per-clinician language declaration at onboarding; per-language Transcribe configurations and custom vocabulary lists; per-language Lex bots with shared intent definitions but locale-specific sample utterances; per-language Bedrock prompt templates; per-language slot-extraction with locale-specific date and number canonicalization; mixed-language and code-switched command handling (the language detector returns the dominant language, but the slot extractor handles slot values in either language); per-language patient-name normalization (interaction with A4 patient-resolution edge cases). -->
 
 **Microphone hardware procurement and deployment.** The architecture assumes adequate microphone hardware in the clinical environment. Procurement, installation, and ongoing maintenance of microphone hardware (rolling-cart mounted, room-mounted, or per-clinician headset) is non-trivial operational scope that the engineering organization typically does not own. Identify the operational owner early.
 
