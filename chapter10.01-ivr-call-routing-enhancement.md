@@ -140,11 +140,15 @@ A few practical updates worth knowing.
 
 **Voice biometrics for caller identification is operationally available but operationally fraught.** Modern voice biometric systems can identify a caller from a few seconds of speech. This is tempting for IVR (skip the date-of-birth verification, just listen to who's calling). It's also a substantial privacy and regulatory concern (voiceprints are biometric data, regulated under BIPA and similar state laws), and the false-acceptance and false-rejection rates have to be calibrated carefully. Recipe 10 covers voice-biometrics generally; for IVR specifically, our recommendation is to skip it in MVP and revisit only if there's a clear business case that justifies the regulatory overhead.
 
+<!-- TODO (TechWriter): "Recipe 10 covers voice-biometrics generally" appears to be a placeholder. Replace with the specific recipe number once known (likely 10.5 patient-facing voice assistant or a dedicated voice-biometrics recipe), or rephrase to "Voice biometrics is covered as a variation later in this chapter." -->
+
 ---
 
 ## General Architecture Pattern
 
 A natural-language IVR splits cleanly into five logical stages: telephony ingress (the caller reaches you), speech-to-intent processing (transcribe, classify, extract slots), dialog management (multi-turn state tracking), routing or fulfillment (the action you actually take), and observability (everything that happened, captured for analysis and improvement).
+
+<!-- TODO (TechWriter): Expert review N1 (LOW). Add a brief Carrier-Side Transport prose note in the AWS Implementation section specifying TLS-for-SIP-signaling and SRTP-for-media as the institutional posture for the carrier-to-Connect boundary, with a carrier-BAA framing as the institutional-decision question. The PSTN side cannot be encrypted; the SIP-trunk side can. -->
 
 ```
 ┌──────────────────── TELEPHONY INGRESS ────────────────────┐
@@ -263,6 +267,8 @@ A natural-language IVR splits cleanly into five logical stages: telephony ingres
 └────────────────────────────────────────────────────────────┘
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). The Observability stage names "Subgroup-stratified accuracy" but does not specify the structural elements. Promote the prose elevation from "Where it Struggles" and the Why-This-Isn't-Production-Ready section into this stage with: (1) the cohort-dimensions allow-list (age band, preferred language, geographic region, accent group, primary insurance type as a coarse SES proxy, accessibility flag); (2) per-cohort metrics (containment rate, intent-classification accuracy, time-to-clinical-triage, abandon rate, repeated-low-confidence-turn rate, verification-failure rate); (3) per-cohort sample-size minimums (e.g., reliable >=200 in window, noisy 50-199 with wide CI, insufficient <50 aggregated); (4) disparity-alert thresholds (e.g., containment gap >10 points, accuracy gap >5 points, time-to-triage gap >30 seconds); (5) named ownership by the equity-monitoring committee with monthly review cadence. The IVR's primary equity stake is the accent-and-language disparity, so call out accent-and-language as the recipe's primary equity dimension. -->
+
 A few cross-cutting design points that the architecture has to bake in from the start.
 
 **Patient verification happens at the right moment, not too early.** Asking the caller for their date of birth before knowing what they want is what the legacy IVR did and it's part of why people hate it. The natural-language IVR can identify the intent first, then collect verification slots only for the intents that need them. Asking for the practice's hours? No verification needed. Refilling a prescription? Yes, full verification. The decision of when to verify is intent-dependent and should be configured per intent.
@@ -274,6 +280,8 @@ A few cross-cutting design points that the architecture has to bake in from the 
 **The urgency lexicon is a living document.** Maintain an explicit list of phrases that trigger clinical escalation. Review it quarterly with the clinical operations team. Add new phrases when production calls reveal misses. The list should be transparent, reviewable, and version-controlled.
 
 **Recordings are PHI; treat them accordingly.** Call recordings are PHI, full stop, regardless of whether the caller's name is captured (it usually is, somewhere in the call). The recording infrastructure runs under a BAA, encrypted at rest with customer-managed keys, with access controls that match the rest of the institution's PHI handling.
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add a parallel paragraph elevating transcripts to recordings-equivalent governance: "Transcripts are PHI; they live in the secure transcript archive under the same governance as the recordings, and the audit log carries only references and structural metadata, never the raw content." This pairs with the S1 fix in Step 2A's pseudocode. -->
 
 **The ML pipeline has to degrade gracefully.** If the intent classifier is unavailable for any reason, the system should fall back to a DTMF menu rather than failing. If the ASR vendor is having an outage, the system should detect this and switch to DTMF mode automatically. The IVR is the front door, and a broken front door is much worse than an inelegant one.
 
@@ -435,10 +443,10 @@ flowchart LR
 | **AWS Services** | Amazon Connect, Amazon Lex V2, Amazon Polly, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Glue Data Catalog, Amazon Athena, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail. Optionally: Amazon Transcribe Medical, Amazon Comprehend Medical, Amazon Connect Contact Lens. |
 | **External Inputs** | Direct Inward Dialing (DID) phone numbers for the practice. Existing back-office system APIs for the integrations the IVR fulfills against (EHR, scheduling, e-prescribing, billing). An initial intent set with sample utterances per intent (typically derived from analyzing 1000-5000 historical call transcripts or call notes). A clinical-urgency-keyword lexicon, reviewed by clinical operations. |
 | **IAM Permissions** | Per-Lambda least-privilege roles. The caller-verifier Lambda has scoped read access to the EHR API (or to the patient-index DynamoDB table) and write access to the active-call-context DynamoDB table only. The fulfillment Lambdas have scoped access to the specific back-office API they fulfill against, plus `secretsmanager:GetSecretValue` on the relevant secrets pinned to the current rotation. The intent-router Lambda has `events:PutEvents` on the IVR events bus. The urgency-escalator Lambda has `connect:StartContactStreaming` or equivalent for the triage-routing transfer plus PII-scoped audit-event emission. Connect's service role has scoped access to invoke the Lex bot and Polly. Lex's service role has scoped access to invoke the Lambda fulfillment hook. Avoid wildcard actions and resources in production. |
-| **BAA and Compliance** | AWS BAA signed. Connect, Lex, Polly, Transcribe, Lambda, DynamoDB, S3, Kinesis, KMS, Secrets Manager, CloudWatch Logs, CloudTrail are HIPAA-eligible (verify the current list at build time). Recording-consent disclosure played as the first audio after answer ("This call may be recorded for quality and training purposes" or whatever language the institution's legal team has approved for the jurisdictions you operate in). The disclosure is jurisdiction-aware: some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both. <!-- TODO: verify; state-by-state recording consent requirements and the institutional-policy default disclosure language vary; current authoritative sources include the Reporters Committee for Freedom of the Press tracker and the institution's general counsel. --> |
+| **BAA and Compliance** | AWS BAA signed. Connect, Lex, Polly, Transcribe, Lambda, DynamoDB, S3, Kinesis, KMS, Secrets Manager, CloudWatch Logs, CloudTrail are HIPAA-eligible (verify the current list at build time). <!-- TODO (TechWriter): Expert review A6/F14 (LOW). Explicitly add Connect Contact Lens and Connect Voice ID to the HIPAA-eligible list with the verify-at-build-time hedge; reference the AWS HIPAA Eligible Services Reference URL. --> Recording-consent disclosure played as the first audio after answer ("This call may be recorded for quality and training purposes" or whatever language the institution's legal team has approved for the jurisdictions you operate in). The disclosure is jurisdiction-aware: some U.S. states are one-party-consent, some are all-party-consent, and the disclosure plus continued participation is the standard pattern for satisfying both. <!-- TODO: verify; state-by-state recording consent requirements and the institutional-policy default disclosure language vary; current authoritative sources include the Reporters Committee for Freedom of the Press tracker and the institution's general counsel. --> |
 | **Encryption** | Connect call recordings: SSE-KMS with customer-managed keys, S3 bucket lifecycle to colder storage tiers, retention per institutional and state-specific medical-records-retention requirements. DynamoDB tables: customer-managed KMS at rest. Secrets Manager: customer-managed KMS. Lambda environment variables encrypted at rest with KMS. Lambda log groups: KMS-encrypted. TLS in transit for all back-office API calls. |
-| **VPC** | Production: Lambdas that call back-office APIs run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge so the Lambdas don't need NAT for AWS-internal calls. Connect itself is a managed service that runs outside your VPC; the integration with Lambda and Lex still terminates in your account. |
-| **CloudTrail** | Enabled with data events on the call-recordings S3 bucket, the active-call-context DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Lex bot configuration changes logged (version control your bot definitions). Connect contact flow changes logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records-retention, and the institutional regulatory floor. <!-- TODO: verify; the appropriate audit-log retention floor is institution-specific; HIPAA's six-year minimum applies to specific document types and the state-specific medical-records retention may be longer. --> |
+| **VPC** | Production: Lambdas that call back-office APIs run in VPC with subnets that have controlled egress to the back-office systems' network. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge so the Lambdas don't need NAT for AWS-internal calls. Connect itself is a managed service that runs outside your VPC; the integration with Lambda and Lex still terminates in your account. <!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add Lex Runtime V2, Polly, and Transcribe interface VPC endpoints (`com.amazonaws.<region>.runtime.lex`, `com.amazonaws.<region>.polly`, `com.amazonaws.<region>.transcribe`) for Lambdas that initiate calls into these services from within VPC. --> <!-- TODO (TechWriter): Expert review N2 (LOW). Specify recommended back-office egress topology: VPC peering or Transit Gateway for institutional-network-attached back-office systems; PrivateLink for vendor-managed APIs that expose PrivateLink endpoints; NAT Gateway egress on public Internet as the fallback. --> |
+| **CloudTrail** | Enabled with data events on the call-recordings S3 bucket, the active-call-context DynamoDB table, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. Lex bot configuration changes logged (version control your bot definitions). Connect contact flow changes logged. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longest of HIPAA's six-year minimum, state medical-records-retention, and the institutional regulatory floor. <!-- TODO: verify; the appropriate audit-log retention floor is institution-specific; HIPAA's six-year minimum applies to specific document types and the state-specific medical-records retention may be longer. --> <!-- TODO (TechWriter): Expert review S5 (MEDIUM). Name the IVR-specific audit-log retention floor explicitly: "the longest of HIPAA's six-year minimum, the state-specific call-recording retention (typically 1-7 years), and the institutional regulatory floor," with an institution-decides hedge. --> |
 | **Sample Data** | Synthetic call-transcript data for intent training (Synthea-derived patient demographics combined with synthetic intent utterances; do not use real recordings or real transcripts in development). The Connect sample contact flows (published by AWS) and the Lex sample bots provide working starting templates. Healthcare-specific intent libraries from vendor reference architectures provide a head start. Never use real PHI in development. |
 | **Cost Estimate** | At a mid-sized practice scale (50,000 inbound calls per month, average 90-second IVR interaction, 30% containment): Connect typically $0.018 per minute for inbound calls plus per-minute charges for telephony; Lex typically $0.004 per request for streaming conversation; Polly typically negligible at this volume; Lambda invocations typically $20-100 per month at this volume; DynamoDB typically $50-200 per month; S3 for recordings typically $50-200 per month at this volume; Kinesis, Athena, CloudWatch, KMS typically $100-300 per month combined. Total AWS infrastructure typically $2,000-6,000 per month at this scale, dominated by Connect's per-minute telephony charges. <!-- TODO: replace with verified pricing once the implementing team validates against the AWS Pricing Calculator. Per-minute Connect charges depend on inbound vs outbound, local vs toll-free, and the specific telephony provider. --> |
 
@@ -492,6 +500,13 @@ ON inbound_call(call_id, ani, dnis):
     // The exact wording is institutional and should be
     // approved by general counsel for the jurisdictions
     // you operate in.
+    // TODO (TechWriter): Expert review S6 (LOW).
+    // Hardcoding `consent-disclosure-en-us.wav` doesn't
+    // capture the jurisdiction-aware variation called out
+    // in prose. Specify per-DNIS disclosure lookup with a
+    // conservative all-party-consent default for unknown
+    // jurisdictions; reference the Reporters Committee
+    // for Freedom of the Press tracker.
     play_audio("consent-disclosure-en-us.wav")
 
     // Step 1C: hand off to the Lex bot with an open-ended
@@ -515,6 +530,16 @@ FUNCTION handle_lex_turn(turn_event):
     intent_confidence = turn_event.intent.confidence
     slots = turn_event.intent.slots
 
+    // TODO (TechWriter): Expert review S4 (MEDIUM).
+    // Lambda fulfillment-hook authentication of the Lex
+    // invocation source is not specified. Add a defense-
+    // in-depth guard that validates `turn_event.bot.bot_id`
+    // and `turn_event.bot.bot_alias_id` against the
+    // production constants and rejects mismatches. The
+    // Lambda's resource-based policy should also pin the
+    // invoking principal to the production Lex bot ARN
+    // with the production alias.
+
     // Step 2A: log the turn so we can audit it later
     // regardless of routing outcome.
     audit_log({
@@ -523,6 +548,15 @@ FUNCTION handle_lex_turn(turn_event):
         intent_name: intent_name,
         intent_confidence: intent_confidence,
         transcript: transcript,
+        // TODO (TechWriter): Expert review S1 (HIGH).
+        // Audit log records raw transcript verbatim,
+        // creating a parallel PHI store outside the
+        // recordings-bucket governance. Replace
+        // `transcript` with `transcript_archive_ref`,
+        // `transcript_length_chars`, and `transcript_hash`;
+        // keep the full transcript in the secure transcript
+        // archive only. The Python companion already does
+        // this; the pseudocode here should match.
         timestamp: current UTC timestamp
     })
 
@@ -622,6 +656,15 @@ FUNCTION verify_caller_if_needed(call_id, intent_name):
     // Step 3D: collect verification slots. This is a
     // sub-dialog Lex handles for us once we've
     // declared the verification intent in the bot.
+    // TODO (TechWriter): Expert review S3 (MEDIUM).
+    // The "dob_plus_partial_phone" method is illustrative
+    // and may not meet the production bar for high-impact
+    // intents like prescription release. Specify an
+    // intent-keyed verification-strength matrix (no /
+    // basic / strong / out-of-band) and annotate this
+    // example as illustrative. Reference the institutional
+    // identity-and-access-governance policy as the
+    // canonical source.
     RETURN response_with_sub_dialog(
         "verification_dialog",
         context_hint={
@@ -733,6 +776,18 @@ FUNCTION handle_refill_intent(call_id, slots):
     // Step 4E: queue the refill request. We don't
     // dispense, just queue it for the e-prescribing
     // system's normal flow.
+    // TODO (TechWriter): Expert review S2 (HIGH).
+    // Step 4E has no idempotency key. A Lex retry,
+    // EventBridge replay, or at-least-once Lambda
+    // invocation produces a duplicate refill request.
+    // Promote the (call_id, intent_name, turn_index)
+    // idempotency-key pattern from the production-gaps
+    // section into this pseudocode and require the
+    // e-prescribing API to honor the key. Apply the
+    // same pattern to the appointment-fulfillment path
+    // (Finding A8). Step 4F's EventBridge.PutEvents
+    // should carry the idempotency_key in
+    // `detail.event_id` so consumers can deduplicate.
     refill_request_id =
         e_prescribing.queue_refill_request(
             patient_id=patient_id,
@@ -924,9 +979,17 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Idempotency and retry semantics for fulfillment.** A fulfillment Lambda invoked twice (because the dialog turn was retried, because the EventBridge delivery duplicated) must not double-queue a refill, double-book an appointment, or double-emit an audit record. Use the (call_id, intent_name, turn_index) tuple as an idempotency key for fulfillment; use (call_id, fulfillment_action_id) for the event-emission record. Configure DLQs on every Lambda; alarm on DLQ depth.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Promote the DLQ topology into an architectural primitive in the AWS Implementation section: per-Lambda DLQ (not pooled), maximum-receive-count tuned per Lambda, DLQ-depth alarms (urgency-escalator paged immediately rather than next-business-day), DLQ-redrive runbook with idempotency-key validation, reserved concurrency for the urgency-escalator so it cannot be starved. -->
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a Deployment Pattern subsection in AWS Implementation specifying versioned bot definitions in version control, canary alias with traffic-shift (5% / 25% / 50% / 100%), rollback-on-regression triggered by subgroup-stratified production metrics, and a held-out evaluation set covering accent samples, multi-intent utterances, urgency keywords, and controlled-substance medication names. -->
+
 **Multi-language support architecture.** If you need Spanish (and most U.S. healthcare organizations should), Lex V2 supports multi-language bots, but the operational pattern (one bot with locale-specific training, or one bot per locale, or a router bot that detects language and dispatches) is an architectural decision with real implications. Build for multi-language from the start even if you ship English-first; retrofitting multi-language onto a single-language design is more expensive than designing for it day one.
 
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Specify the recommended pattern (per-locale bot plus router bot) with locale-detection logic at start-of-call (conservative "press 1 / press 2" default; auto-detection optional). Locale-specific evaluation sets and locale-specific lexicon governance as architectural primitives. -->
+
 **Disaster recovery and failover.** The IVR is the front door. When it's down, callers can't reach the practice. The architecture needs an explicit failover path: if Lex is unavailable, drop to a DTMF menu in Connect; if Connect is unavailable, fail over to a backup carrier-side IVR. The recovery testing is institutionally important and is often the part of the architecture that's drawn nicely in slides and never actually exercised; build it and exercise it quarterly.
+
+<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Promote the failover pattern into a Disaster Recovery Topology subsection in AWS Implementation: Lex-failover-within-Connect contact flow branch (degraded DTMF menu handling top intents); Connect-failover-to-backup-carrier-side-IVR; quarterly failover testing with synthetic calls; failover-detection and failover-back triggers automated via Connect/Lex health checks. -->
 
 **Continuous bot improvement workflow.** Production transcripts surface intents you didn't define, slot values you didn't anticipate, and phrasings the model handles poorly. The improvement workflow (review production transcripts weekly, propose bot changes, test against a held-out evaluation set, deploy via versioned bot aliases, monitor for regressions) is a sustained engineering practice, not a launch task. Plan staffing accordingly.
 
@@ -948,7 +1011,7 @@ A third trap is over-eager self-service expansion. The temptation, once the basi
 
 A fourth trap is ignoring the fact that the IVR is a fraud target. Once the IVR can release information (your appointment is on Friday, the lab result is normal, the prescription was sent to your usual pharmacy) or trigger actions (refill submitted, appointment confirmed), it becomes a target for social engineers attempting to obtain information or actions under someone else's identity. The verification discipline matters. The pattern-based anomaly detection (caller making rapid attempts across multiple identities, caller using a phone number that's never appeared before for this patient) matters. The institution that ignores this learns about it from a fraud incident. <!-- TODO: verify; healthcare-IVR fraud patterns have been documented in industry reports but specific incidence rates and pattern signatures are institutional and continue to evolve -->
 
-The thing that surprises people coming from consumer voice-AI backgrounds is how much of the work is in the back-office integrations. The intent classifier is one Lambda. The fulfillment that actually queues a refill against the e-prescribing system, fetches an appointment from the scheduling system, looks up the patient in the EHR, all that touches systems that were never designed to be called from a real-time IVR Lambda. Integration tier-of-evidence latencies, vendor API rate limits, vendor authentication complexity, and the perpetual "what does this field actually mean" calibration with the institution's existing implementation all dominate the engineering effort. A 95% bot-accuracy doesn't help if the fulfillment Lambda times out because the EHR API is having a slow morning.
+The thing that surprises people coming from consumer voice-AI backgrounds is how much of the work is in the back-office integrations. The intent classifier is one Lambda. The fulfillment that actually queues a refill against the e-prescribing system, fetches an appointment from the scheduling system, looks up the patient in the EHR, all that touches systems that were never designed to be called from a real-time IVR Lambda. Integration tier-of-evidence latencies, vendor API rate limits, vendor authentication complexity, and the perpetual "what does this field actually mean" calibration with the institution's existing implementation all dominate the engineering effort. <!-- TODO (TechWriter): "Integration tier-of-evidence latencies" reads as a likely typo or unfamiliar phrasing. Did you mean "tier-of-service latencies" or "tiered SLA latencies" or simply "integration latencies"? Please rephrase. --> A 95% bot-accuracy doesn't help if the fulfillment Lambda times out because the EHR API is having a slow morning.
 
 The thing that surprises people coming from IT-operations backgrounds is how much the patient experience layer matters. The IVR is a patient-facing product. The institution's patients form impressions about the institution from their IVR interactions, often before they ever set foot in the building. Investments in voice-talent for the recorded prompts, in conversational design for the dialog flow, in usability testing with representative patient populations (including patients with hearing impairments, patients with limited English proficiency, patients with cognitive impairments) compound over time into the institutional reputation that drives patient retention and referrals. The IT-operations framing of "we built a system that routes calls correctly" leaves substantial value on the table compared with the patient-experience framing of "we built a front door that respects the patients walking through it."
 
@@ -1065,4 +1128,4 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 
 ---
 
-*← [Chapter 10 Preface](chapter10-preface) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) →*
+*← [Chapter 10 Preface](chapter10-preface) · [Chapter 10 Index](chapter10-index) · [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) →*
