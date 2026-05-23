@@ -339,6 +339,18 @@ def _build_priority_key(urgency_rank, recorded_at_iso):
     attributes via a DynamoDB GSI; the demo collapses them into
     one for simplicity.
     """
+    # TODO (TechWriter): Code review Finding 4 (NOTE). The recipe
+    # text says "Within an urgency level, older messages come
+    # first" but this priority key sorted descending puts newer
+    # messages first within tier, and items_for_queue sorts
+    # descending without flipping intra-tier. Fix one of: (a)
+    # invert the timestamp ((datetime(2099,1,1)-recorded_at)
+    # total seconds with leading zeros) so descending sort
+    # puts older first within tier; (b) change items_for_queue
+    # to a two-key sort (urgency rank desc, recorded_at asc);
+    # (c) split into two attributes and document the production
+    # DynamoDB GSI pattern. Whichever fix, update the in-code
+    # comment to match.
     return f"U#{urgency_rank:03d}#{recorded_at_iso}"
 ```
 
@@ -392,6 +404,19 @@ class MockTranscribeMedical:
         # In production this is a non-blocking API call that returns
         # immediately and runs the transcription in the background.
         # The demo synthesizes the result inline.
+        # TODO (TechWriter): Code review Finding 1 (ERROR). The
+        # fixtures are keyed by literal demo names ("vm-fixture-
+        # refill" etc.) but voicemail_id is generated dynamically
+        # in ingest_voicemail() as "vm-" + uuid.uuid4().hex[:12].
+        # Every scenario other than the pocket-dial short-circuit
+        # falls through to the "no fixture available" default,
+        # the ASR gate fires on empty word_confidences, and the
+        # rule layer / classifier / SNS-emergent path are never
+        # exercised. Recommended fix (Option B from the review):
+        # have ingest_voicemail() accept an optional
+        # "voicemail_id_override" from source_event so each
+        # scenario can pass its fixture id deterministically; the
+        # override is documented as demo-only.
         fixture = self._fixtures.get(voicemail_id, {
             "transcript_text": "no fixture available for this voicemail",
             "items": [],
@@ -426,6 +451,17 @@ class MockBedrock:
     fixture-driven response keyed by transcript text so the
     classification is reproducible across runs.
     """
+    # TODO (TechWriter): Code review Finding 5 (NOTE). The mock's
+    # parameter name is snake_case (model_id) while the real
+    # bedrock_runtime.invoke_model uses camelCase (modelId). The
+    # production-comment skeletons elsewhere in this file use the
+    # real-API casing. To keep the demo internally consistent,
+    # either restructure the mocks to accept the real API's
+    # keyword arguments (e.g. invoke_model(self, modelId, body,
+    # contentType=None, accept=None)) or note the snake_case-to-
+    # camelCase translation at every call site. Same pattern in
+    # MockTranscribeMedical (job_name vs MedicalTranscriptionJobName,
+    # etc.).
     def __init__(self, classification_fixtures):
         self._fixtures = classification_fixtures
 
@@ -656,6 +692,14 @@ event_bus            = MockEventBus()
 cloudwatch           = MockCloudWatch()
 # transcribe, bedrock, and comprehend_medical mocks are wired
 # up in run_demo() with fixture data tailored to each scenario.
+# TODO (TechWriter): Code review Finding 7 (NOTE). These three
+# globals are None until run_demo executes; importing the module
+# and calling process_voicemail directly will fail with
+# AttributeError. Either initialize them at module load with
+# empty-fixture defaults (and let run_demo reassign them with
+# populated fixtures), or refactor the pipeline-stage functions
+# to receive the mock instances as arguments rather than reading
+# them from module globals.
 transcribe_mock      = None
 bedrock_mock         = None
 comprehend_mock      = None
@@ -1232,9 +1276,30 @@ def classify_voicemail(stage_input):
     rule_layer_urgency_floor = rule_match["level"] if rule_match else None
     rule_layer_phrase        = rule_match["phrase"] if rule_match else None
 
+    # TODO (TechWriter): Code review Finding 6 (NOTE). The
+    # main recipe pseudocode (Step 4B) and the prose overview
+    # at the top of this file describe the LLM classifier and
+    # the entity extractor running in parallel
+    # (invoke_model_async + detect_entities_v2_async + await).
+    # The demo runs them sequentially below for readability.
+    # In a real Lambda, run them in parallel with a
+    # ThreadPoolExecutor (or via two parallel branches in the
+    # Step Functions state machine). Add an inline comment or
+    # rephrase the prose overview to match the demo's
+    # simplification.
+
     # Step 4B: LLM-based classifier. In production this is a
     # Bedrock InvokeModel call against a pinned model and
     # inference profile. The demo uses MockBedrock.
+    # TODO (TechWriter): Code review Finding 3 (NOTE).
+    # BEDROCK_INFERENCE_PROFILE_ARN is defined and asserted at
+    # module load but never referenced. Add a production-comment
+    # skeleton above this call that shows
+    # bedrock_runtime.invoke_model(modelId=BEDROCK_INFERENCE_PROFILE_ARN,
+    # body=..., contentType="application/json",
+    # accept="application/json") so the inference-profile-as-
+    # modelId pattern is visible to a learner translating the
+    # demo to production.
     classifier_prompt = _build_classifier_prompt(transcript_text)
     classifier_response = bedrock_mock.invoke_model(
         model_id=BEDROCK_CLASSIFIER_MODEL_ID,
@@ -1280,6 +1345,20 @@ def classify_voicemail(stage_input):
                        else "classifier")
 
     # Step 4E: medical entity extraction.
+    # TODO (TechWriter): Code review Finding 2 (WARNING) and
+    # Expert review S1 (HIGH). The fixture data and the list
+    # comprehensions below imply that detect_entities_v2
+    # returns RxNorm/ICD-10 concepts on each entity. It does
+    # not. Production pipelines call DetectEntitiesV2 to get
+    # entities, then InferRxNorm / InferICD10CM / InferSNOMEDCT
+    # in parallel and merge the ontology codes by text-offset.
+    # Either (a) extend the demo to call (and mock) the Infer-*
+    # APIs alongside DetectEntitiesV2 with a merge step, or
+    # (b) drop the rxnorm_codes/icd10_codes fields from this
+    # path and add a comment that ontology linking is a
+    # separate API surface (the medication_alignment cross-
+    # reference in enrich_voicemail already falls back to
+    # text-based matching).
     entity_response = comprehend_mock.detect_entities_v2(
         text=transcript_text)
     raw_entities = entity_response.get("Entities", [])
@@ -2027,6 +2106,17 @@ def run_demo():
             # (classifier, entities) can find them. In a real
             # pipeline, the transcript IS the input to those
             # stages; the demo keys the mocks for clarity.
+            # TODO (TechWriter): Code review Finding 1 (ERROR).
+            # The pass below is a literal no-op; the comment
+            # describes the fix but it is not implemented. By
+            # the time this point is reached, process_voicemail
+            # has already submitted the ASR job using vm_id, so
+            # re-keying after the fact does not help. Adopt
+            # Option B from the code review: in ingest_voicemail,
+            # honor source_event.get("voicemail_id_override")
+            # when present (demo-only) and pass each scenario's
+            # fixture_id through the source_event. Then this
+            # block can go away entirely.
             pass
         processed_voicemail_ids.append(vm_id)
 
