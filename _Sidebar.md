@@ -147,6 +147,7 @@
 * [10.2 — Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification)
   * [Python Example](chapter10.02-python-example)
 * [10.3 — Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation)
+  * [Python Example](chapter10.03-python-example)
 
 ---
 
