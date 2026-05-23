@@ -142,6 +142,7 @@
 #### Ch 10: Speech / Voice AI
 
 * [Preface](chapter10-preface)
+* [10.1 — IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement)
 
 ---
 
