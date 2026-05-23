@@ -150,6 +150,7 @@
   * [Python Example](chapter10.03-python-example)
 * [10.4 — Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation)
   * [Python Example](chapter10.04-python-example)
+* [10.5 — Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant)
 
 ---
 
