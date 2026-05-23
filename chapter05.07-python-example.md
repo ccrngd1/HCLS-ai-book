@@ -972,6 +972,24 @@ def detect_name_change_candidate(trigger_event: dict) -> dict:
         "reference_data_versions":  reference_data.versions_used(),
         "matcher_config_version":   MATCHER_CONFIG_VERSION,
         "trigger_event_id":         trigger_event.get("event_id"),
+        # TODO (TechWriter): Code review Finding 1 (ERROR). The
+        # detection envelope must propagate `explicit_sensitivity_class`
+        # from the trigger event so `_classify_sensitivity` (which reads
+        # `candidate.get("explicit_sensitivity_class")`) can see it.
+        # Without this line, Trigger 4's GENDER_AFFIRMING path silently
+        # defaults to GENERAL: the envelope's permitted_display_contexts
+        # collapses to [] under the patient's masked preference, audit
+        # rules retain the GENERAL defaults, and propagate_to_dependents
+        # selects the 9-consumer GENERAL fan-out instead of the
+        # 6-consumer restricted fan-out. Add:
+        #   "explicit_sensitivity_class":
+        #       trigger_event.get("explicit_sensitivity_class"),
+        # then re-run the demo and verify Trigger 4's printed
+        # sensitivity_class is GENDER_AFFIRMING, permitted_display_contexts
+        # is ['treatment_with_clinical_relevance'], audit_rules include
+        # every_disclosure_logged: True and every_query_logged: True,
+        # and the consumer fan-out is the 6-consumer restricted set
+        # including audit_summary_to_patient.
         "detected_at":              _now_iso(),
     }
 ```
@@ -1358,6 +1376,33 @@ def persist_resolved_name_change(resolution_envelope: dict,
     try:
         # In production: dynamodb.meta.client.transact_write_items(...).
         # The demo writes per table for readability.
+        # TODO (TechWriter): Code review Finding 2 (WARNING). The
+        # ConditionExpression below references `expected_event_version`,
+        # which is not an attribute on either the new item or any
+        # existing item at the same primary key (the actual attribute
+        # is `event_version` on the new item, and the IDENTITY_TABLE
+        # row carries `current_event_version`). Combined with
+        # `attribute_not_exists(event_id) AND ...`, this evaluates to
+        # false on every put_item, so production calls would always
+        # raise ConditionalCheckFailedException; the bug is masked in
+        # the demo by the broad `except Exception` swallow below.
+        # Two corrections (pick the intent that matches the
+        # architectural design):
+        #   (a) For "this (identity_id, event_version) row is new"
+        #       on the EVENT_HISTORY_TABLE: use
+        #         ConditionExpression="attribute_not_exists(identity_id)"
+        #       and drop the ExpressionAttributeValues.
+        #   (b) For optimistic concurrency on the IDENTITY_TABLE
+        #       computed-current-state row: move the version check
+        #       to the IDENTITY_TABLE put with
+        #         ConditionExpression="current_event_version = :ev"
+        #       (the actual attribute name) and use
+        #         attribute_not_exists(identity_id) on the
+        #       EVENT_HISTORY_TABLE put for append-only enforcement.
+        # Code review Finding 5 (NOTE): the four put_item calls are
+        # not atomic; production wraps them in TransactWriteItems so
+        # the event log, search index, identity table, and outbox
+        # stay consistent on partial failure.
         dynamodb.Table(EVENT_HISTORY_TABLE).put_item(
             Item=identity_event_record,
             ConditionExpression=(
@@ -1962,6 +2007,8 @@ if __name__ == "__main__":
 ```
 
 Expected console output (the SQS / EventBridge / S3 / DynamoDB / CloudWatch warnings appear in demo mode because the resources do not exist; they are harmless):
+
+<!-- TODO (TechWriter): Code review Finding 3 (WARNING). The detection_score values printed below diverge from what the toy scoring functions actually compute (Trigger 1: documented 0.943 vs actual ~0.892; Trigger 2: documented 0.808 vs actual ~0.779; Trigger 3: documented 0.879 vs actual ~0.819; Trigger 4: documented 0.951 vs actual ~0.883). The threshold-band routing outcomes still match because the actual scores cross the right thresholds, but the documented numbers do not correspond to the implemented math. Two paths to reconcile: (a) re-run the demo, capture actual values, and replace the documented scores; or (b) adjust the toy scoring functions (raise the family-name pattern detection's `maiden_to_married_or_replacement` weight from 0.6 or the given-name first-letter fallback from 0.30) to reach the documented values. Same divergence applies to the Expected Results JSON in the main recipe file. Reconcile in one pass. -->
 
 ```
 ======================================================================
