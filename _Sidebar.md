@@ -131,6 +131,7 @@
 * [5.7 — Longitudinal Patient Matching Across Name Changes](chapter05.07-longitudinal-patient-matching-name-changes)
   * [Python Example](chapter05.07-python-example)
 * [5.8 — Privacy-Preserving Record Linkage](chapter05.08-privacy-preserving-record-linkage)
+  * [Python Example](chapter05.08-python-example)
 
 ---
 
