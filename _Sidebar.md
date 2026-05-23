@@ -155,6 +155,7 @@
 * [10.6 — Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation)
   * [Python Example](chapter10.06-python-example)
 * [10.7 — Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation)
+  * [Python Example](chapter10.07-python-example)
 
 ---
 
