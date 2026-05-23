@@ -6,7 +6,7 @@
 
 ## The Problem
 
-It is 4:50 p.m. on a Friday at a mid-sized internal medicine practice. The clinical-support phone line has been forwarded to voicemail since the front desk left for the day. Over the next sixteen hours, until someone arrives Monday morning, the practice's voicemail box accumulates forty-seven new messages.
+It is 4:50 p.m. on a Friday at a mid-sized internal medicine practice. The clinical-support phone line has been forwarded to voicemail since the front desk left for the day. Over the next sixty-four hours, until someone arrives Monday morning, the practice's voicemail box accumulates forty-seven new messages.
 
 Most of those messages are routine. Mrs. Petrosian wants to confirm her Wednesday appointment. A pharmacy is calling about a prior-authorization fax that the practice already sent. Mr. Davis would like to know whether his blood-test results came back. A vendor wants to schedule a sales call. The IT contractor left a voicemail wishing the office a nice weekend.
 
