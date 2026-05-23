@@ -129,6 +129,7 @@
 * [5.6 — Claims-to-Clinical Data Linkage](chapter05.06-claims-to-clinical-data-linkage)
   * [Python Example](chapter05.06-python-example)
 * [5.7 — Longitudinal Patient Matching Across Name Changes](chapter05.07-longitudinal-patient-matching-name-changes)
+  * [Python Example](chapter05.07-python-example)
 
 ---
 
