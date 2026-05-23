@@ -106,6 +106,9 @@ Diarization is the central engineering problem of in-person ambient documentatio
 
 **Speaker enrollment for the clinician.** A meaningful improvement in diarization comes from enrolling the clinician's voice ahead of time. The system stores a voiceprint for the clinician (typically derived from a brief enrollment recording or accumulated from prior encounters with explicit consent). At encounter time, the system uses the enrolled voiceprint to confidently label clinician segments, and clusters the remaining audio into "everyone else" (the patient and any others). This biometric handling has its own governance overhead (the voiceprint is a biometric identifier; institutional policy on biometric data applies; some jurisdictions like Illinois under BIPA have specific consent and disclosure requirements <!-- TODO: verify; the Illinois Biometric Information Privacy Act and similar state laws have specific consent, retention, and disclosure requirements for voiceprints; states with similar statutes include Texas and Washington -->), but for clinicians who do many ambient-documented encounters per day, the enrollment-based diarization is meaningfully more reliable than purely acoustic diarization.
 
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Promote clinician voiceprint enrollment from passing reference to architectural primitive. Add a "Clinician Voiceprint Enrollment and BIPA-Grade Governance" subsection (in Cross-Cutting Design Points) that specifies: biometric-data consent at clinician onboarding with written disclosure of purpose, collection method, retention period, and deletion timeline; voiceprint storage as embeddings in a separate KMS-encrypted store with biometric-data-classification access controls (never co-mingled with patient-side audio); deletion-on-departure mandatory with deletion-verification logged; disclosure-accounting log per use; per-state regulatory profile (BIPA, Texas CUBI, Washington biometric-data law). Update Step 1E pseudocode to capture clinician_voiceprint_consent_version and clinician_jurisdiction_for_biometric_compliance. Update Step 7 audit_record to include voiceprint_used, voiceprint_consent_version, biometric_jurisdiction. Add a Production-Gaps subsection naming the privacy officer plus medical-staff-services as canonical owners. -->
+
+
 **Patient and family-member identification.** Patient-side voice enrollment is rare for two reasons: most patients see a given clinician infrequently (so the per-patient enrollment cost is high relative to the per-encounter benefit), and patient voiceprint storage adds biometric-data-handling obligations that institutions usually prefer to avoid. Most production systems treat the patient as the largest non-clinician cluster and label it accordingly, falling back to "speaker A" / "speaker B" labels when ambiguity is high.
 
 **Role assignment from clustering plus context.** Diarization tells the system that there are N distinct speakers. Role assignment is the additional step of mapping each speaker cluster to a role (clinician, patient, family member, student, other). The mapping uses several signals:
@@ -130,7 +133,7 @@ The pragmatic position: enroll the clinician for high-volume users; rely on cont
 
 **Joint ASR-and-diarization architectures.** The newer pattern, used by HealthScribe and several leading commercial vendors, processes ASR and diarization together rather than as separate stages. The advantage: the model can leverage acoustic cues for both transcription and speaker discrimination simultaneously, which improves quality on the harder cases (overlap, similar voices, movement). The disadvantage: the output is harder to debug, and the diarization quality is coupled to ASR quality in ways that the separate-stage architecture avoids.
 
-**Diarization on the in-room audio is harder than diarization on telehealth audio.** Telehealth often allows per-channel separation (each participant on their own audio stream), which makes diarization trivially trivial. In-person ambient documentation captures all speakers on the same audio stream (the room microphone hears everyone), so diarization has to work acoustically without channel separation. Even with movement-robust embeddings and clinician enrollment, the in-room diarization problem is the harder one, and the institution should expect to invest more in evaluation, monitoring, and per-cohort tuning than they would for the telehealth equivalent.
+**Diarization on the in-room audio is harder than diarization on telehealth audio.** Telehealth often allows per-channel separation (each participant on their own audio stream), which makes diarization nearly trivial. In-person ambient documentation captures all speakers on the same audio stream (the room microphone hears everyone), so diarization has to work acoustically without channel separation. Even with movement-robust embeddings and clinician enrollment, the in-room diarization problem is the harder one, and the institution should expect to invest more in evaluation, monitoring, and per-cohort tuning than they would for the telehealth equivalent.
 
 ### Clinical-Versus-Social Talk Classification
 
@@ -441,11 +444,20 @@ A few cross-cutting design points that the architecture has to bake in.
 
 **Faithfulness checks gate the LLM-generated note.** The same layered faithfulness program from recipe 2.8 (citation grounding, LLM-judge scoring, contradiction detection, sampled review) applies here. Faithfulness checks run before the draft is shown to the clinician; failed checks either block the draft or surface as warnings. Recipe 2.8 covers the faithfulness program in detail.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Promote the faithfulness check from a single opaque function call (Step 4E) to a layered architecture stage. Specify Layer 1 (citation grounding verification, structured-output schema validation, exam-finding-fabrication detection); Layer 2 (LLM-judge faithfulness scoring, clinical-rule-based contradiction detection); Layer 3 (offline sampling review with per-specialty / per-room / per-audio-quality-band sample stratification). Per-layer disposition policy-driven with tighter thresholds for the behavioral-health profile. Per-cohort faithfulness-failure-rate as launch and operational gate. Named ownership at clinical-quality officer. Update the architecture diagram to show three faithfulness components rather than one. The recipe defers to 2.8 for the LLM-driven generation specifics; the architecture-pattern layer ordering still needs to be specified at this recipe's level. -->
+
+
 **Clinician review is the legal-medical-record boundary.** The signed note is the legal record. The transcript is supporting documentation. The audio is at most ephemeral. The architecture is explicit about which artifacts are part of the medical record (the signed note, the structured chart updates), which are supporting documentation (the transcript), and which are operational data (the audio).
 
 **Per-cohort accuracy monitoring is a launch gate.** Per-language, per-specialty, per-clinician, per-patient-demographic, per-audio-quality-band cohorts each have minimum accuracy thresholds that the system must meet before launching to that cohort. Per-cohort drift alerts trigger reviews. Recipe 10.6 covers the per-cohort monitoring discipline in detail; the same expectations apply here, with audio-quality-band particularly important for in-person ambient documentation given the room-acoustics variability.
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Promote per-cohort monitoring from prose to architectural primitive. Specify single-axis cohorts (language, specialty, clinician, audio-quality-band, age-band, visit-type, room, device-type) and two-axis cohorts (language-by-audio-quality, room-by-time-of-day, device-by-specialty). Per-room and per-device-type cohort axes are recipe-distinct (in-person rooms vary substantially in acoustics independently of patient demographics). Specify per-cohort sample-size minimums, per-cohort threshold metrics including sustained-adoption rate at 30/90/180 days, launch gate (every cohort must meet threshold; institution-wide average is informational only), per-cohort drift detection. Add audio-quality-band as a per-encounter feature driving lower confidence threshold for poor-audio encounters and audio-quality-warning surfaced in the clinician review interface. Add per-room remediation playbook (acoustic treatment, microphone repositioning, dedicated-capture-hardware deployment). -->
+
+
 **Behavioral-health-specific handling.** Behavioral-health visits have stricter retention windows, narrower access controls, and per-encounter explicit consent. Some institutions exclude behavioral-health from ambient documentation entirely. The architecture supports a behavioral-health profile that the institution can apply per visit type or per clinician. Recipe 2.8 and recipe 10.6 cover the behavioral-health profile pattern in detail.
+
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add a recipe-distinct "Behavioral-Health and 42 CFR Part 2 Profile in In-Person Setting" subsection that defers to recipe 2.8 for the LLM-driven generation and EHR write-back specifics but specifies the in-person-distinct dimensions: in-encounter pause-and-resume affordance with hard-pause (audio capture stops at device) versus soft-pause (audio captured but tagged off-the-record) options; in-room bystander consent capture for behavioral-health visits with explicit Part-2 disclosure where applicable; visit-type-flag-based exclusion enforcement at scheduling time with clinician-side override requiring stricter consent; per-room device configuration for behavioral-health rooms with shorter retention defaults; per-state regulatory profile (recipe-acute for in-person because the clinic's location governs unambiguously). -->
+
 
 **Bystander handling.** Family members, caregivers, students, and other bystanders are routine in clinical encounters. The system must capture their consent (where applicable) and handle their audio appropriately. In one-party-consent jurisdictions, the patient's consent typically suffices for the recording; in all-party-consent jurisdictions, all bystanders must consent. The clinician's confirmation at encounter start of who is in the room ("Mr. Johnson, your daughter Sarah is with you today; is it okay with both of you that this conversation is being captured for documentation?") is the workflow-friendly approach for most encounters.
 
@@ -470,6 +482,9 @@ A few cross-cutting design points that the architecture has to bake in.
 **Amazon Comprehend Medical for structured entity extraction.** After the transcript is produced, Comprehend Medical extracts clinical entities (medications, conditions, anatomy, procedures) with RxNorm and ICD-10 coding. The extracted entities support the must-include validation (are the entities in the transcript also in the note?) and the structured medication and problem-list reconciliation with the EHR.
 
 **Amazon Chime SDK or third-party device integration for in-room audio capture.** For the device-in-the-room workflow, several patterns are deployed. A clinician's iPad or iPhone with a vendor app that captures audio and streams to the cloud (works with the device's built-in microphone). A dedicated capture hardware device (a wall-mount or desk-mount with a microphone array, beamforming DSP, and network connectivity) that streams to the cloud. An EHR-embedded experience that uses the clinician's workstation microphone or a paired Bluetooth-connected microphone array. Chime SDK supports browser-based and mobile-app-based audio capture for institution-built experiences; for institutions deploying commercial hardware, the device's vendor SDK handles the capture and networking. The audio path between the device and the cloud ASR is the integration responsibility.
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add an "In-Room Device-to-Cloud Audio Path" paragraph specifying the per-device-pattern data-in-transit posture: TLS-in-transit minimum, mTLS preferred for dedicated-capture-hardware, per-encounter session tokens scoped to the visit. Specify per-pattern BAA scope: phone-or-tablet vendor app pattern requires the vendor's BAA covers audio data-in-transit and at-rest within the vendor pipeline; dedicated-capture-hardware pattern requires the hardware vendor's BAA covers device firmware and update channel; EHR-embedded pattern requires the EHR vendor's BAA covers audio capture and transit. Reference platform-specific certification (HITRUST, SOC 2 Type II) for each pattern. -->
+
 
 **AWS Lambda for orchestration and integration.** Per-stage Lambdas handle the pipeline orchestration: encounter-start handler, audio-capture coordination, batch reprocessing trigger, note-generation invocation, structured-field extraction, EHR write-back. Each Lambda has scoped IAM permissions for the specific external integrations it touches.
 
@@ -640,9 +655,9 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | AWS HealthScribe (primary), Amazon Transcribe Medical (alternative or complement), Amazon Bedrock (with Guardrails), Amazon Comprehend Medical, AWS Lambda, AWS Step Functions, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally: Amazon Chime SDK (for institution-built capture experiences), AWS HealthLake (for FHIR-based EHR integration), Amazon QuickSight (for dashboards). |
 | **External Inputs** | In-room audio capture device. Options include clinician smartphone or tablet with vendor app, dedicated capture hardware (wall-mount or desk-mount with microphone array), or EHR-embedded experience with workstation microphone or Bluetooth-paired microphone array. EHR FHIR write surface for clinical notes (DocumentReference resource), structured-chart updates (MedicationRequest, Condition, Observation), and patient portal communications. Per-specialty note templates curated by clinical informatics. Per-clinician style preferences (where supported). Institutional formulary, common-conditions list, common-orders list for custom-vocabulary tuning. Per-language ASR configuration where multilingual support is required. Validation set of representative in-clinic audio across speakers, audio qualities, encounter types, and visit lengths. <!-- TODO: verify validation-set sourcing options; commercial ambient-documentation vendors typically have proprietary benchmarks; institutions often build their own validation sets through synthetic and consented real-encounter collection --> |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The streaming-pipeline Lambdas have HealthScribe (Transcribe) streaming permissions and access to the per-encounter audio path only. The batch-pipeline Lambdas have HealthScribe batch permissions and S3 read for the audio path, plus Step Functions execution. The note-generation Lambdas have Bedrock invoke permissions for the specific models in use, plus Comprehend Medical permissions. The EHR write-back Lambda has Secrets Manager access for EHR credentials and the EHR-specific egress path only. Avoid wildcard actions and resources in production. |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The streaming-pipeline Lambdas have HealthScribe (Transcribe) streaming permissions and access to the per-encounter audio path only. The batch-pipeline Lambdas have HealthScribe batch permissions and S3 read for the audio path, plus Step Functions execution. The note-generation Lambdas have Bedrock invoke permissions for the specific models in use, plus Comprehend Medical permissions. The EHR write-back Lambda has Secrets Manager access for EHR credentials and the EHR-specific egress path only. Avoid wildcard actions and resources in production. <!-- TODO (TechWriter): Expert review S5 (MEDIUM). Add invocation-authentication boundary: each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Step Functions state-machine ARN, or the production EventBridge rule ARN as appropriate. Defense-in-depth event-payload validation guard at the start of each Lambda verifying the invoking context against production constants. --> |
 | **BAA and Compliance** | AWS BAA signed. AWS HealthScribe, Amazon Transcribe (general and Medical), Amazon Bedrock (verify the specific models and regions covered), Amazon Comprehend Medical, Lambda, Step Functions, API Gateway, Cognito, DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Chime SDK are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference). <!-- TODO: verify; the AWS HIPAA-eligible services list and the specific Bedrock models covered under BAA continue to evolve --> EHR vendor agreements: confirm the EHR vendor's terms permit the chart-write patterns the pipeline uses. State-by-state recording-consent compliance: an explicit consent disclosure plays before recording for all-party-consent jurisdictions; consent at intake suffices for one-party-consent jurisdictions but is institution-policy-driven. Behavioral-health visits may have additional state-level confidentiality requirements (42 CFR Part 2 for substance-use treatment records); the architecture supports a behavioral-health profile with stricter retention and access controls. Biometric-data law (Illinois BIPA, Texas, Washington) applies if the institution stores clinician voiceprints for diarization-enrollment. Audio retention policy reviewed by the privacy officer. |
-| **Encryption** | Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically hours to a few days post-signing) then automatic deletion via lifecycle policy. Transcripts: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Generated notes: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all external integration calls (default). |
+| **Encryption** | Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically hours to a few days post-signing) then automatic deletion via lifecycle policy. Transcripts: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Generated notes: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all external integration calls (default). <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Name the audit-log retention floor as the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules (which for pediatric records can extend to age-of-majority-plus-multiple-years), the EHR vendor's audit-retention floor, the 42 CFR Part 2 disclosure-accounting log retention for Part-2-eligible visits, and the institutional regulatory floor. Note that biometric records (voiceprint disclosure-accounting log per S1) follow a separate retention regime. --> <!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify retain-briefly with configurable per-visit-type and per-room retention window: defaults of 24-72 hours for primary care, 24-48 hours for behavioral-health, 24 hours for 42-CFR-Part-2-eligible. Per-visit-type and per-room retention enforced through S3 lifecycle policies on per-prefix definitions. --> <!-- TODO (TechWriter): Expert review S7 (LOW). Add a paragraph: audio retention deletion is verified by a periodic audit job that lists the audio bucket's contents older than the retention window and confirms the lifecycle policy is removing them; deletion-verification events logged to CloudTrail and surfaced in the audit-archive analytics. --> |
 | **VPC** | Production: Lambdas that call back-office APIs (EHR FHIR, patient portal) run in VPC with subnets that have controlled egress to those systems (often through VPC endpoints, PrivateLink where the vendor offers it, or VPN/Direct Connect to on-premise systems). VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, Comprehend Medical, Transcribe, Lambda. Endpoint policies pin access to the specific resources the pipeline uses. |
 | **CloudTrail** | Enabled with data events on the audio S3 bucket, the transcript bucket, the audit-archive bucket, the DynamoDB tables, the Secrets Manager secrets, and the customer-managed KMS keys. HealthScribe and Transcribe invocations logged. Bedrock invocations logged with metadata only (not full input/output, to avoid persisting PHI in CloudTrail). Comprehend Medical invocations logged. Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. |
 | **Sample Data** | Synthetic patient-clinician conversation audio for development. Public clinical-vocabulary lists (RxNorm, ICD-10) for custom-vocabulary seeding of Transcribe. Synthea-generated patient context for the EHR integration in development. Public ambient-documentation evaluation datasets (MTS-Dialog, Primock57) for early evaluation; both have specific licensing terms that should be reviewed before use. <!-- TODO: verify MTS-Dialog and Primock57 dataset URLs and current access terms before integration --> Never use real patient encounter audio in development without explicit consent and IRB or institutional review; voice samples are biometric and PHI-bearing data with non-trivial governance implications. |
@@ -798,6 +813,16 @@ FUNCTION stream_audio_to_healthscribe(session_id):
         // HealthScribe expects role labels (CLINICIAN,
         // PATIENT, FAMILY, OTHER) rather than generic
         // speaker IDs.
+        // TODO (TechWriter): Code review W2 (WARNING).
+        // max_speaker_labels is not a valid parameter on
+        // Transcribe streaming start_stream_transcription;
+        // the expected-speaker-count signal flows through
+        // the batch HealthScribe Settings.MaxSpeakerLabels
+        // (range 2-30) and through HealthScribe streaming
+        // via MedicalScribeConfigurationEvent channel
+        // definitions. Drop max_speaker_labels here or
+        // reframe as a configuration-event for HealthScribe
+        // streaming.
         max_speaker_labels: state.expected_speaker_count,
         // Where the clinician has an enrolled voiceprint,
         // pass the enrollment hint so that the clinician
@@ -922,6 +947,17 @@ FUNCTION run_batch_healthscribe(session_id):
             channel_identification: false,
             vocabulary_name: INSTITUTIONAL_VOCABULARY,
             clinical_note_generation_settings: {
+                // TODO (TechWriter): Expert review A4
+                // (MEDIUM) and code review W1 (WARNING).
+                // The HealthScribe NoteTemplate field
+                // accepts a fixed enum
+                // (HISTORY_AND_PHYSICAL, GIRPP, BIRP,
+                // SIRP, DAP, BH_SOAP, PH_SOAP), not custom
+                // institutional template IDs. Pass the
+                // closest-fit built-in enum here (default
+                // HISTORY_AND_PHYSICAL); institutional
+                // formatting happens at the Bedrock-
+                // rendering step (Step 4).
                 note_template: select_template(
                     visit_type: state.visit_type,
                     specialty: state.clinician_specialty)
@@ -980,6 +1016,20 @@ FUNCTION render_institutional_note(session_id,
         canonical_transcript)
 
     // Step 4D: invoke Bedrock to render the note.
+    // TODO (TechWriter): Expert review S3 (MEDIUM).
+    // Add prompt-injection mitigation: wrap transcript,
+    // EHR context, and clinician style preferences in
+    // delimited input markers (<transcript>...,
+    // <ehr_context>..., <clinician_style>...); system
+    // prompt instructs the model to treat all delimited
+    // content as untrusted patient or historical data,
+    // not as instructions; require strict structured
+    // output validated by the orchestration before the
+    // draft is treated as such; the faithfulness check
+    // (Step 4E) is the secondary safety layer; Bedrock
+    // Guardrails is the tertiary safety layer. Add a
+    // Production-Gaps paragraph on EHR-context retrieved-
+    // content supply-chain integrity.
     rendering_prompt = build_rendering_prompt(
         transcript_block: transcript_block,
         ehr_context: ehr_context,
@@ -1132,6 +1182,18 @@ FUNCTION extract_structured_fields(session_id,
 
     // Step 5C: persist all extractions for clinician
     // confirmation.
+    // TODO (TechWriter): Expert review A3 (MEDIUM).
+    // The structured extractions and their context_snippet
+    // PHI content are persisted here in the note-state
+    // DynamoDB table outside the archive-reference
+    // discipline used at Steps 2C and 4F. Adopt the
+    // archive-reference pattern: write the extractions
+    // (with context_snippets) to a draft-extractions
+    // archive in S3 with the same KMS key class as the
+    // note-draft archive; store only
+    // extractions_archive_ref, extraction_count,
+    // confirmation_status, and per-category counts in the
+    // note-state table.
     note_state_table.update(
         session_id: session_id,
         action: "store_structured_extractions",
@@ -1225,6 +1287,14 @@ ON clinician_sign(session_id, clinician_id):
 
     // Apply confirmed structured-field updates to the
     // chart.
+    // TODO (TechWriter): Expert review A5 (MEDIUM).
+    // Specify per-confirmed-extraction idempotency key
+    // (encounter_id, extraction_id, extraction_type) for
+    // each chart update; specify FHIR conditional-create
+    // (If-None-Exist header) where the EHR vendor
+    // supports it; specify the duplicate-detection flow
+    // on idempotency-match returning the prior
+    // submission's resource id.
     FOR confirmed IN final_note.confirmed_extractions:
         write_structured_chart_update(
             patient_id: lookup_patient_id(
@@ -1600,7 +1670,11 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Faithfulness regression testing on prompt and model updates.** The note-rendering LLM and the faithfulness-checker model are versioned components. Each model update or prompt update can change faithfulness behavior in subtle ways. Build a regression test suite: held-out set of representative encounter transcripts with known good notes, automated faithfulness scoring on the regression set after every prompt or model change, manual review of the regression diffs before promoting changes to production. Promote changes through canary inference profiles with traffic shift, with rollback-on-regression triggers tied to the faithfulness regression metrics.
 
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add a "Deployment Pattern" subsection specifying versioned model, prompt, template, rule-catalog, and per-language asset definitions in version control; canary inference profile with traffic shift; rollback-on-regression; held-out evaluation set with per-language, per-specialty, per-audio-quality-band, per-room-acoustics-band, faithfulness-edge-case, structured-extraction-edge-case, and prompt-injection coverage; version stamping on every encounter audit record (already partially correct at Step 4F; extend to all artifact versions). -->
+
 **Disaster recovery and degraded-mode operation.** When upstream dependencies fail (HealthScribe outage, Bedrock outage, Comprehend Medical outage, EHR API outage, in-room device failure), the system must degrade gracefully. Document the per-mode behavior: complete failure of the ambient feature should fall back to clinician manual documentation, never to a dead end. Test the failure modes in staging. Quarterly DR exercises should validate the failover paths.
+
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Add a "Disaster Recovery Topology" subsection specifying per-stage failover policy: HealthScribe outage with cross-region fallback or degraded-mode-record-only; Bedrock unavailability with HealthScribe-default-template fallback or manual; Comprehend Medical unavailability with LLM-only structured-extraction; EHR API unreachable with durable note storage and retry; in-room device failure with per-room backup device or manual documentation. Specify the failover-detection-and-failover-back triggers and the quarterly testing cadence. -->
 
 **Performance under burst load.** Encounter volume has strong diurnal and weekly patterns. Monday mornings spike. The system must hold its latency budget under burst. HealthScribe session quotas, Bedrock model invocation quotas, downstream EHR API rate limits all need provisioning headroom and burst-capacity planning. Load test against realistic peak profiles before launch.
 
@@ -1667,6 +1741,8 @@ Ambient clinical documentation, done well, gives clinicians their evenings back.
 **Procedure-room ambient documentation.** Outpatient procedure rooms (minor surgeries, dermatology procedures, colonoscopies, GI endoscopies) have specific procedure-note requirements (indication, consent, anesthesia, technique, findings, complications, estimated blood loss). The clinician's procedure narration during the procedure provides much of the documentation content; the system structures it into the procedure-note template. The quality bar is higher because procedure notes carry direct billing weight and direct legal weight.
 
 **Multi-language support.** Extend ASR and note generation to handle encounters conducted in Spanish, Mandarin, or other common languages. The transcript remains in the encounter language; the note may be generated in the encounter language or in English depending on institutional preference. Recipe 10.10 (multilingual real-time medical interpretation) covers the deeper multilingual patterns.
+
+<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Multi-language support is currently framed as a Variation, but the recipe's own Where-it-Struggles list includes "multilingual visits where the configured language differs from the actual visit language" as a baseline failure mode. Specify the per-language pipeline pattern as a build-for-day-one architectural primitive: per-language ASR configuration with custom vocabulary; per-language note-generation prompt with native-speaker clinical-informatics input; per-language template definitions; per-language faithfulness rule catalogs; per-language diarization tuning; per-language structured-extraction approach where Comprehend Medical does not directly support the language. Cross-reference recipe 10.10. -->
 
 **Real-time clinical-decision-support integration.** During the encounter, the live transcript triggers clinical-decision-support prompts to the clinician on a discreet display. The patient mentions a medication; the system surfaces drug-interaction warnings against the patient's current medication list. The patient describes symptoms; the system surfaces relevant differential diagnoses. The architectural extension is the streaming-transcript-to-CDS connector and the in-encounter discreet display. This is a higher-stakes feature than basic transcription because the suggestions can influence clinical decisions in real time. Recipe 2.9 (clinical decision support synthesis) covers the LLM-driven CDS pattern.
 

@@ -688,4 +688,678 @@ Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool:
 [38;5;8m
  ▸ Credits: 2.65 • Time: 37s
 
-[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "The review meets all three pass criteria. (1) API correctness is thoroughly verified via an explicit AWS SDK Accuracy table walking through Athena (start/get_query_execution), SageMaker (create/describe_transform_job), Feature Store Runtime (put_record), Bedrock Runtime (anthropic Messages API on Bedrock with correct anthropic_version, content[0].text shape), DynamoDB (get_item/put_item/update_item/batch_writer), Kinesis (put_record), CloudWatch (put_metric_data), and S3 URI handling. (2) Issues are identified with explicit severity ratings (1 ERROR, 7 NOTEs) and an unambiguous FAIL verdict tied to the persona rule. The ERROR (ConditionExpression references undefined [38;5;10m:zero[0m placeholder while only [38;5;10m:neg[0m is declared in ExpressionAttributeValues) is verified against the source — it is a genuine boto3 ValidationException that the broad [38;5;10mexcept Exception[0m would silently swallow, and the contact-cap reconciliation would never decrement. The seven NOTEs are also verifiable: unused [38;5;10mpolicy_weights[0m parameter on [38;5;10mallocate_heterogeneous[0m, four inline [38;5;10mimport re as _re[0m statements, divergent [38;5;10m_now_iso()[0m evaluations between [38;5;10mevent_id[0m and stored [38;5;10mtimestamp[0m on missing-timestamp events, per-patient serial GetItem fan-out in [38;5;10m_compute_regimen_features[0m, single-row-type normalization yielding 0 instead of a neutral value in [38;5;10mcompute_priority[0m, [38;5;10mdatetime.date.today()[0m vs UTC inconsistency in [38;5;10m_compute_target_window[0m, and [38;5;10mdict.get(key, default)[0m returning None which stringifies to 'None' in CloudWatch dimensions. (3) Each finding includes a concrete suggested fix with code snippets (e.g., the corrected ExpressionAttributeValues with both [38;5;10m:neg[0m and [38;5;10m:zero[0m, the consolidated [38;5;10mre[0m import with extracted [38;5;10m_extract_json_from_completion[0m helper, the unified [38;5;10mevent_ts[0m computation, the BatchGetItem chunking pattern, the 0.5 neutral fallback for spread=0, the UTC-based target window, and the [38;5;10mor 'unknown'[0m cohort normalization). Healthcare-specific concerns (PHI logging discipline, identity-boundary checks, tracking-ID PHI leakage, Decimal-at-boundary, Bedrock de-identification, eligibility as hard constraints, cohort-feature sensitivity, KMS posture, outreach validators) are explicitly walked through. A re-review checklist enumerates all eight items by severity. The review is rigorous, specific, and actionable."}
+[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "The review meets all three pass criteria. (1) API correctness is thoroughly verified via an explicit AWS SDK Accuracy table walking through Athena (start/get_query_execution), SageMaker (create/describe_transform_job), Feature Store Runtime (put_record), Bedrock Runtime (anthropic Messages API on Bedrock with correct anthropic_version, content[0].text shape), DynamoDB (get_item/put_item/update_item/batch_writer), Kinesis (put_record), CloudWatch (put_metric_data), and S3 URI handling. (2) Issues are identified with explicit severity ratings (1 ERROR, 7 NOTEs) and an unambiguous FAIL verdict tied to the persona rule. The ERROR (ConditionExpression references undefined [38;5;10m:zero[0m placeholder while only [38;5;10m:neg[0m is declared in ExpressionAttributeValues) is verified against the source — it is a genuine boto3 ValidationException that the broad [38;5;10mexcept Exception[0m would silently swallow, and the contact-cap reconciliation would never decrement. The seven NOTEs are also verifiable: unused [38;5;10mpolicy_weights[0m parameter on [38;5;10mallocate_heterogeneous[0m, four inline [38;5;10mimport re as _re[0m statements, divergent [38;5;10m_now_iso()[0m evaluations between [38;5;10mevent_id[0m and stored [38;5;10mtimestamp[0m on missing-timestamp events, per-patient serial GetItem fan-out in [38;5;10m_compute_regimen_features[0m, single-row-type normalization yielding 0 instead of a neutral value in [38;5;10mcompute_priority[0m, [38;5;10mdatetime.date.today()[0m vs UTC inconsistency in [38;5;10m_compute_target_window[0m, and [38;5;10mdict.get(key, default)[0m returning None which stringifies to 'None' in CloudWatch dimensions. (3) Each finding includes a concrete suggested fix with code snippets (e.g., the corrected ExpressionAttributeValues with both [38;5;10m:neg[0m and [38;5;10m:zero[0m, the consolidated [38;5;10mre[0m import with extracted [38;5;10m_extract_json_from_completion[0m helper, the unified [38;5;10mevent_ts[0m computation, the BatchGetItem chunking pattern, the 0.5 neutral fallback for spread=0, the UTC-based target window, and the [38;5;10mor 'unknown'[0m cohort normalization). Healthcare-specific concerns (PHI logging discipline, identity-boundary checks, tracking-ID PHI leakage, Decimal-at-boundary, Bedrock de-identification, eligibility as hard constraints, cohort-feature sensitivity, KMS posture, outreach validators) are explicitly walked through. A re-review checklist enumerates all eight items by severity. The review is rigorous, specific, and actionable."}[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1187 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.31s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-code-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-expert-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m181684 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m32280 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-code-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m96248 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-expert-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.2s[0m
+
+Searching for: [38;5;141m—[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m```$|```\s[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m19 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+I will run the following command: [38;5;141mcd /d "C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book" && powershell -Command "Select-String -Path 'chapter10.07-ambient-clinical-documentation.md' -Pattern '^```' | ForEach-Object { $_.LineNumber.ToString() + ': ' + $_.Line }"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check fenced code block language tags
+
+At line:1 char:71
++ ... sers\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book" && powersh ...
++                                                                ~~
+The token '&&' is not a valid statement separator in this version.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : InvalidEndOfLine
+ 
+[38;5;244m - Completed in 0.495s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Set-Location 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book'; Select-String -Path 'chapter10.07-ambient-clinical-documentation.md' -Pattern '^```' | ForEach-Object { $_.LineNumber.ToString() + ': ' + $_.Line }"[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check fenced code block language tags
+
+At line:1 char:202
++ ... on.md' -Pattern '^`' | ForEach-Object { .LineNumber.ToString() + ': ' ...
++                                                                  ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+ 
+[38;5;244m - Completed in 0.691s[0m
+
+Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141m^```[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '^```' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141m```[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 22 matches for pattern '```' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.06-speech-to-text-telehealth-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.06-speech-to-text-telehealth-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me check for any voice or grammar issues that need inline fixing:[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141mtrivially trivial[0m
+↱ Operation 2: Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141mthe the |a a |of of |in in |to to |is is [0m
+↱ Operation 3: Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141mwe are excited|this recipe demonstrates[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'trivially trivial' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'the the |a a |of of |in in |to to |is is ' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern 'We are excited|This recipe demonstrates' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mFound a typo: "trivially trivial" — clearly a doubled word. Let me fix it inline:[0m[0m
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Fix doubled-word typo "trivially trivial" -> "nearly trivial"
+
+[48;2;79;40;40m[39m- 133     [0m:[39m[48;2;36;25;28m [38;2;235;203;139m**[38;2;235;203;139mDiarization on the in-room audio is harder than diarization on telehealth audio.[38;2;235;203;139m**[38;2;192;197;206m Telehealth often allows per-channel separation (each participant on their own audio stream), which makes diarization trivially trivial.[K
+[0m[48;2;40;67;43m[39m+      133[0m:[39m[48;2;24;38;30m [38;2;235;203;139m**[38;2;235;203;139mDiarization on the in-room audio is harder than diarization on telehealth audio.[38;2;235;203;139m**[38;2;192;197;206m Telehealth often allows per-channel separation (each participant on their own audio stream), which makes diarization nearly trivial.[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141mconsitent|recieve|reciept|seperate|occured|teh |  +[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'consitent|recieve|reciept|seperate|occured|teh |  +' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m for pattern: [38;5;141m^### |^## |^# [0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '^### |^## |^# ' in C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141m^#+ [0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m25 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m^#+ [0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m25 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at key locations where I need to add TODO markers for the unresolved HIGH and MEDIUM review findings:[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m105[0m to [38;5;141m122[0m
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m165[0m to [38;5;141m178[0m
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m433[0m to [38;5;141m460[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4229 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3189 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4767 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.3s[0m
+
+[38;5;141m> [0mNow I'll add TODO markers for the unresolved HIGH and MEDIUM findings, placing each near the location where the fix would land:[0m[0m
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for S1 (HIGH) - biometric voiceprint enrollment under BIPA
+
+[48;2;43;48;59m[39m  107, 107[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mSpeaker enrollment for the clinician.[38;2;235;203;139m**[38;2;192;197;206m A meaningful improvement in diarization comes from enrolling the clinician's voice ahead of time. The system stores a voiceprint for the clinician (typically derived from a brief enrollment recording or accumulated from prior encounters with explicit consent). At encounter time, the system uses the enrolled voiceprint to confidently label clinician segments, and clusters the remaining audio into "everyone else" (the patient and any others). This biometric handling has its own governance overhead (the voiceprint is a biometric identifier; institutional policy on biometric data applies; some jurisdictions like Illinois under BIPA have specific consent and disclosure requirements [38;2;101;115;126m<!--[38;2;101;115;126m TODO: verify; the Illinois Biometric Information Privacy Act and similar state laws have specific consent, retention, and disclosure requirements for voiceprints; states with similar statutes include Texas and Washington [38;2;101;115;126m-->[38;2;192;197;206m), but for clinicians who do many ambient-documented encounters per day, the enrollment-based diarization is meaningfully more reliable than purely acoustic diarization.[K
+[0m[48;2;40;67;43m[39m+      108[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      109[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review S1 (HIGH). Promote clinician voiceprint enrollment from passing reference to architectural primitive. Add a "Clinician Voiceprint Enrollment and BIPA-Grade Governance" subsection (in Cross-Cutting Design Points) that specifies: biometric-data consent at clinician onboarding with written disclosure of purpose, collection method, retention period, and deletion timeline; voiceprint storage as embeddings in a separate KMS-encrypted store with biometric-data-classification access controls (never co-mingled with patient-side audio); deletion-on-departure mandatory with deletion-verification logged; disclosure-accounting log per use; per-state regulatory profile (BIPA, Texas CUBI, Washington biometric-data law). Update Step 1E pseudocode to capture clinician_voiceprint_consent_version and clinician_jurisdiction_for_biometric_compliance. Update Step 7 audit_record to include voiceprint_used, voiceprint_consent_version, biometric_jurisdiction. Add a Production-Gaps subsection naming the privacy officer plus medical-staff-services as canonical owners. [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for A1 (HIGH) - faithfulness check layered structure
+
+[48;2;43;48;59m[39m  445, 445[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mFaithfulness checks gate the LLM-generated note.[38;2;235;203;139m**[38;2;192;197;206m The same layered faithfulness program from recipe 2.8 (citation grounding, LLM-judge scoring, contradiction detection, sampled review) applies here. Faithfulness checks run before the draft is shown to the clinician; failed checks either block the draft or surface as warnings. Recipe 2.8 covers the faithfulness program in detail.[K
+[0m[48;2;40;67;43m[39m+      446[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      447[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review A1 (HIGH). Promote the faithfulness check from a single opaque function call (Step 4E) to a layered architecture stage. Specify Layer 1 (citation grounding verification, structured-output schema validation, exam-finding-fabrication detection); Layer 2 (LLM-judge faithfulness scoring, clinical-rule-based contradiction detection); Layer 3 (offline sampling review with per-specialty / per-room / per-audio-quality-band sample stratification). Per-layer disposition policy-driven with tighter thresholds for the behavioral-health profile. Per-cohort faithfulness-failure-rate as launch and operational gate. Named ownership at clinical-quality officer. Update the architecture diagram to show three faithfulness components rather than one. The recipe defers to 2.8 for the LLM-driven generation specifics; the architecture-pattern layer ordering still needs to be specified at this recipe's level. [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for A2 (HIGH) - per-cohort monitoring with launch gates
+
+[48;2;43;48;59m[39m  452, 452[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mPer-cohort accuracy monitoring is a launch gate.[38;2;235;203;139m**[38;2;192;197;206m Per-language, per-specialty, per-clinician, per-patient-demographic, per-audio-quality-band cohorts each have minimum accuracy thresholds that the system must meet before launching to that cohort. Per-cohort drift alerts trigger reviews. Recipe 10.6 covers the per-cohort monitoring discipline in detail; the same expectations apply here, with audio-quality-band particularly important for in-person ambient documentation given the room-acoustics variability.[K
+[0m[48;2;40;67;43m[39m+      453[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      454[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review A2 (HIGH). Promote per-cohort monitoring from prose to architectural primitive. Specify single-axis cohorts (language, specialty, clinician, audio-quality-band, age-band, visit-type, room, device-type) and two-axis cohorts (language-by-audio-quality, room-by-time-of-day, device-by-specialty). Per-room and per-device-type cohort axes are recipe-distinct (in-person rooms vary substantially in acoustics independently of patient demographics). Specify per-cohort sample-size minimums, per-cohort threshold metrics including sustained-adoption rate at 30/90/180 days, launch gate (every cohort must meet threshold; institution-wide average is informational only), per-cohort drift detection. Add audio-quality-band as a per-encounter feature driving lower confidence threshold for poor-audio encounters and audio-quality-warning surfaced in the clinician review interface. Add per-room remediation playbook (acoustic treatment, microphone repositioning, dedicated-capture-hardware deployment). [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for S2 (MEDIUM) - 42 CFR Part 2 in-person profile
+
+[48;2;43;48;59m[39m  457, 457[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mBehavioral-health-specific handling.[38;2;235;203;139m**[38;2;192;197;206m Behavioral-health visits have stricter retention windows, narrower access controls, and per-encounter explicit consent. Some institutions exclude behavioral-health from ambient documentation entirely. The architecture supports a behavioral-health profile that the institution can apply per visit type or per clinician. Recipe 2.8 and recipe 10.6 cover the behavioral-health profile pattern in detail.[K
+[0m[48;2;40;67;43m[39m+      458[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      459[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review S2 (MEDIUM). Add a recipe-distinct "Behavioral-Health and 42 CFR Part 2 Profile in In-Person Setting" subsection that defers to recipe 2.8 for the LLM-driven generation and EHR write-back specifics but specifies the in-person-distinct dimensions: in-encounter pause-and-resume affordance with hard-pause (audio capture stops at device) versus soft-pause (audio captured but tagged off-the-record) options; in-room bystander consent capture for behavioral-health visits with explicit Part-2 disclosure where applicable; visit-type-flag-based exclusion enforcement at scheduling time with clinician-side override requiring stricter consent; per-room device configuration for behavioral-health rooms with shorter retention defaults; per-state regulatory profile (recipe-acute for in-person because the clinic's location governs unambiguously). [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.6s[0m
+
+[38;5;141m> [0mNow let me look at the AWS Implementation section, the Step pseudocode locations, and the Production-Gaps section to add the remaining markers:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m458[0m to [38;5;141m480[0m
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m638[0m to [38;5;141m656[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4665 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4107 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.2s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m470[0m to [38;5;141m478[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2015 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141mAmazon Chime SDK or third-party device integration[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m482[0m to [38;5;141m488[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2142 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I'll add the marker for Finding N1 (in-room device-to-cloud audio path authentication):[0m[0m
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for N1 (MEDIUM) - in-room device-to-cloud audio path auth
+
+[48;2;43;48;59m[39m  484, 484[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mAmazon Chime SDK or third-party device integration for in-room audio capture.[38;2;235;203;139m**[38;2;192;197;206m For the device-in-the-room workflow, several patterns are deployed. A clinician's iPad or iPhone with a vendor app that captures audio and streams to the cloud (works with the device's built-in microphone). A dedicated capture hardware device (a wall-mount or desk-mount with a microphone array, beamforming DSP, and network connectivity) that streams to the cloud. An EHR-embedded experience that uses the clinician's workstation microphone or a paired Bluetooth-connected microphone array. Chime SDK supports browser-based and mobile-app-based audio capture for institution-built experiences; for institutions deploying commercial hardware, the device's vendor SDK handles the capture and networking. The audio path between the device and the cloud ASR is the integration responsibility.[K
+[0m[48;2;40;67;43m[39m+      485[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+      486[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review N1 (MEDIUM). Add an "In-Room Device-to-Cloud Audio Path" paragraph specifying the per-device-pattern data-in-transit posture: TLS-in-transit minimum, mTLS preferred for dedicated-capture-hardware, per-encounter session tokens scoped to the visit. Specify per-pattern BAA scope: phone-or-tablet vendor app pattern requires the vendor's BAA covers audio data-in-transit and at-rest within the vendor pipeline; dedicated-capture-hardware pattern requires the hardware vendor's BAA covers device firmware and update channel; EHR-embedded pattern requires the EHR vendor's BAA covers audio capture and transit. Reference platform-specific certification (HITRUST, SOC 2 Type II) for each pattern. [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;141m> [0mNow I'll add markers in the Prerequisites table for S4, S5, A8 by appending TODO markers in adjacent paragraphs (since modifying inside table cells is awkward):[0m[0m
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for S5 (MEDIUM) - Lambda invocation authentication
+
+[48;2;79;40;40m[39m- 658     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mIAM Permissions[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Per-Lambda least-privilege roles. The streaming-pipeline Lambdas have HealthScribe (Transcribe) streaming permissions and access to the per-encounter audio path only. The batch-pipeline Lambdas have HealthScribe batch permissions and S3 read for the audio path, plus Step Functions execution. The note-generation Lambdas have Bedrock invoke permissions for the specific models in use, plus Comprehend Medical permissions. The EHR write-back Lambda has Secrets Manager access for EHR credentials and the EHR-specific egress path only. Avoid wildcard actions and resources in production.[K
+[0m[48;2;40;67;43m[39m+      658[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mIAM Permissions[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Per-Lambda least-privilege roles. The streaming-pipeline Lambdas have HealthScribe (Transcribe) streaming permissions and access to the per-encounter audio path only. The batch-pipeline Lambdas have HealthScribe batch permissions and S3 read for the audio path, plus Step Functions execution. The note-generation Lambdas have Bedrock invoke permissions for the specific models in use, plus Comprehend Medical permissions. The EHR write-back Lambda has Secrets Manager access for EHR credentials and the EHR-specific egress path only. Avoid wildcard actions and resources in production. <!-- TODO (TechWriter): Expert review S5 (MEDIUM). Add invocation-authentication boundary: each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Step Functions state-machine ARN, or the production EventBridge rule ARN as appropriate. Defense-in-depth event-payload validation guard at the start of each Lambda verifying the invoking context against production constants. -->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.5s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m644[0m to [38;5;141m656[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m883 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141mEncryption.*Audio recordings: SSE-KMS[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.2s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m660[0m to [38;5;141m663[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2652 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO markers for S4, A8, S7 (audit retention floor + per-visit-type retention + deletion verification)
+
+[48;2;79;40;40m[39m- 660     [0m:[39m[48;2;36;25;28m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mEncryption[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically hours to a few days post-signing) then automatic deletion via lifecycle policy. Transcripts: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Generated notes: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all external integration calls (default). [38;2;192;197;206m|[K
+[0m[48;2;40;67;43m[39m+      660[0m:[39m[48;2;24;38;30m [38;2;192;197;206m|[38;2;192;197;206m [38;2;235;203;139m**[38;2;235;203;139mEncryption[38;2;235;203;139m**[38;2;192;197;206m [38;2;192;197;206m|[38;2;192;197;206m Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically hours to a few days post-signing) then automatic deletion via lifecycle policy. Transcripts: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Generated notes: SSE-KMS with customer-managed keys, retention aligned with the medical-record retention. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all external integration calls (default). <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Name the audit-log retention floor as the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules (which for pediatric records can extend to age-of-majority-plus-multiple-years), the EHR vendor's audit-retention floor, the 42 CFR Part 2 disclosure-accounting log retention for Part-2-eligible visits, and the institutional regulatory floor. Note that biometric records (voiceprint disclosure-accounting log per S1) follow a separate retention regime. --> <!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify retain-briefly with configurable per-visit-type and per-room retention window: defaults of 24-72 hours for primary care, 24-48 hours for behavioral-health, 24 hours for 42-CFR-Part-2-eligible. Per-visit-type and per-room retention enforced through S3 lifecycle policies on per-prefix definitions. --> <!-- TODO (TechWriter): Expert review S7 (LOW). Add a paragraph: audio retention deletion is verified by a periodic audit job that lists the audio bucket's contents older than the retention window and confirms the lifecycle policy is removing them; deletion-verification events logged to CloudTrail and surfaced in the audit-archive analytics. --> [38;2;192;197;206m|[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;141m> [0mNow let me look at and add markers for the pseudocode steps. First, let me find Step 2A, Step 3C, Step 4D, Step 4E, Step 5C, Step 6C:[0m[0m
+Searching for: [38;5;141mStep 2A|Step 3C|Step 4D|Step 4E|Step 5C|Step 6C|Step 7A[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m8 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m800[0m to [38;5;141m845[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1881 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mStep 2A pseudocode contains the [38;5;10mmax_speaker_labels[0m issue (Code Review W2). Per editor instructions, I should use [38;5;10m// TODO[0m syntax inside fenced code blocks:[0m[0m
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline TODO at Step 2A for Code Review W2 (max_speaker_labels not valid for streaming)
+
+[48;2;43;48;59m[39m  813, 813[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        // HealthScribe expects role labels (CLINICIAN,[K
+[0m[48;2;43;48;59m[39m  814, 814[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        // PATIENT, FAMILY, OTHER) rather than generic[K
+[0m[48;2;43;48;59m[39m  815, 815[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        // speaker IDs.[K
+[0m[48;2;40;67;43m[39m+      816[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // TODO (TechWriter): Code review W2 (WARNING).[K
+[0m[48;2;40;67;43m[39m+      817[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // max_speaker_labels is not a valid parameter on[K
+[0m[48;2;40;67;43m[39m+      818[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // Transcribe streaming start_stream_transcription;[K
+[0m[48;2;40;67;43m[39m+      819[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // the expected-speaker-count signal flows through[K
+[0m[48;2;40;67;43m[39m+      820[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // the batch HealthScribe Settings.MaxSpeakerLabels[K
+[0m[48;2;40;67;43m[39m+      821[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // (range 2-30) and through HealthScribe streaming[K
+[0m[48;2;40;67;43m[39m+      822[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // via MedicalScribeConfigurationEvent channel[K
+[0m[48;2;40;67;43m[39m+      823[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // definitions. Drop max_speaker_labels here or[K
+[0m[48;2;40;67;43m[39m+      824[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // reframe as a configuration-event for HealthScribe[K
+[0m[48;2;40;67;43m[39m+      825[0m:[39m[48;2;24;38;30m [38;2;192;197;206m        // streaming.[K
+[0m[48;2;43;48;59m[39m  816, 826[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        max_speaker_labels: state.expected_speaker_count,[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow Step 3C for Finding A4 / Code Review W1 (NoteTemplate enum):[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m920[0m to [38;5;141m945[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1029 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m945[0m to [38;5;141m962[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m760 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline TODO at Step 3C for A4 / W1 - NoteTemplate enum constraint
+
+[48;2;43;48;59m[39m  949, 949[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            clinical_note_generation_settings: {[K
+[0m[48;2;40;67;43m[39m+      950[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // TODO (TechWriter): Expert review A4[K
+[0m[48;2;40;67;43m[39m+      951[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // (MEDIUM) and code review W1 (WARNING).[K
+[0m[48;2;40;67;43m[39m+      952[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // The HealthScribe NoteTemplate field[K
+[0m[48;2;40;67;43m[39m+      953[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // accepts a fixed enum[K
+[0m[48;2;40;67;43m[39m+      954[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // (HISTORY_AND_PHYSICAL, GIRPP, BIRP,[K
+[0m[48;2;40;67;43m[39m+      955[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // SIRP, DAP, BH_SOAP, PH_SOAP), not custom[K
+[0m[48;2;40;67;43m[39m+      956[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // institutional template IDs. Pass the[K
+[0m[48;2;40;67;43m[39m+      957[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // closest-fit built-in enum here (default[K
+[0m[48;2;40;67;43m[39m+      958[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // HISTORY_AND_PHYSICAL); institutional[K
+[0m[48;2;40;67;43m[39m+      959[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // formatting happens at the Bedrock-[K
+[0m[48;2;40;67;43m[39m+      960[0m:[39m[48;2;24;38;30m [38;2;192;197;206m                // rendering step (Step 4).[K
+[0m[48;2;43;48;59m[39m  950, 961[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                note_template: select_template([K
+[0m[48;2;43;48;59m[39m  951, 962[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                    visit_type: state.visit_type,[K
+[0m[48;2;43;48;59m[39m  952, 963[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                    specialty: state.clinician_specialty)[K
+[0m[48;2;43;48;59m[39m  953, 964[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            }[K
+[0m[48;2;43;48;59m[39m  954, 965[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        })[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;141m> [0mNow Step 4D for prompt-injection mitigation (S3):[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m1000[0m to [38;5;141m1040[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1531 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline TODO at Step 4D for S3 (prompt-injection mitigation)
+
+[48;2;43;48;59m[39m  1018, 1018[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    // Step 4D: invoke Bedrock to render the note.[K
+[0m[48;2;40;67;43m[39m+       1019[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // TODO (TechWriter): Expert review S3 (MEDIUM).[K
+[0m[48;2;40;67;43m[39m+       1020[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // Add prompt-injection mitigation: wrap transcript,[K
+[0m[48;2;40;67;43m[39m+       1021[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // EHR context, and clinician style preferences in[K
+[0m[48;2;40;67;43m[39m+       1022[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // delimited input markers (<transcript>...,[K
+[0m[48;2;40;67;43m[39m+       1023[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // <ehr_context>..., <clinician_style>...); system[K
+[0m[48;2;40;67;43m[39m+       1024[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // prompt instructs the model to treat all delimited[K
+[0m[48;2;40;67;43m[39m+       1025[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // content as untrusted patient or historical data,[K
+[0m[48;2;40;67;43m[39m+       1026[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // not as instructions; require strict structured[K
+[0m[48;2;40;67;43m[39m+       1027[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // output validated by the orchestration before the[K
+[0m[48;2;40;67;43m[39m+       1028[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // draft is treated as such; the faithfulness check[K
+[0m[48;2;40;67;43m[39m+       1029[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // (Step 4E) is the secondary safety layer; Bedrock[K
+[0m[48;2;40;67;43m[39m+       1030[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // Guardrails is the tertiary safety layer. Add a[K
+[0m[48;2;40;67;43m[39m+       1031[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // Production-Gaps paragraph on EHR-context retrieved-[K
+[0m[48;2;40;67;43m[39m+       1032[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // content supply-chain integrity.[K
+[0m[48;2;43;48;59m[39m  1019, 1033[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    rendering_prompt = build_rendering_prompt([K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow find Step 5C (extractions storage in DynamoDB):[0m[0m
+Searching for: [38;5;141mStep 5C|store_structured_extractions[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.2s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m1180[0m to [38;5;141m1205[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1337 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline TODO at Step 5C for A3 (working-store extractions PHI minimization)
+
+[48;2;43;48;59m[39m  1183, 1183[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    // Step 5C: persist all extractions for clinician[K
+[0m[48;2;43;48;59m[39m  1184, 1184[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    // confirmation.[K
+[0m[48;2;40;67;43m[39m+       1185[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // TODO (TechWriter): Expert review A3 (MEDIUM).[K
+[0m[48;2;40;67;43m[39m+       1186[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // The structured extractions and their context_snippet[K
+[0m[48;2;40;67;43m[39m+       1187[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // PHI content are persisted here in the note-state[K
+[0m[48;2;40;67;43m[39m+       1188[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // DynamoDB table outside the archive-reference[K
+[0m[48;2;40;67;43m[39m+       1189[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // discipline used at Steps 2C and 4F. Adopt the[K
+[0m[48;2;40;67;43m[39m+       1190[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // archive-reference pattern: write the extractions[K
+[0m[48;2;40;67;43m[39m+       1191[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // (with context_snippets) to a draft-extractions[K
+[0m[48;2;40;67;43m[39m+       1192[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // archive in S3 with the same KMS key class as the[K
+[0m[48;2;40;67;43m[39m+       1193[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // note-draft archive; store only[K
+[0m[48;2;40;67;43m[39m+       1194[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // extractions_archive_ref, extraction_count,[K
+[0m[48;2;40;67;43m[39m+       1195[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // confirmation_status, and per-category counts in the[K
+[0m[48;2;40;67;43m[39m+       1196[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // note-state table.[K
+[0m[48;2;43;48;59m[39m  1185, 1197[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    note_state_table.update([K
+[0m[48;2;43;48;59m[39m  1186, 1198[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        session_id: session_id,[K
+[0m[48;2;43;48;59m[39m  1187, 1199[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        action: "store_structured_extractions",[K
+[0m[48;2;43;48;59m[39m  1188, 1200[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        extractions: {[K
+[0m[48;2;43;48;59m[39m  1189, 1201[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            medications: coded_medications,[K
+[0m[48;2;43;48;59m[39m  1190, 1202[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            conditions: coded_conditions,[K
+[0m[48;2;43;48;59m[39m  1191, 1203[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            higher_level: higher_level.content,[K
+[0m[48;2;43;48;59m[39m  1192, 1204[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            confirmation_status: "pending_clinician_review"[K
+[0m[48;2;43;48;59m[39m  1193, 1205[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        })[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow Step 6C for Finding A5 (idempotency per-extraction):[0m[0m
+Searching for: [38;5;141midempotency_key|build_idempotency_key[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m1262[0m to [38;5;141m1305[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1691 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add inline TODO at Step 6C for A5 (per-extraction idempotency)
+
+[48;2;43;48;59m[39m  1288, 1288[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    // Apply confirmed structured-field updates to the[K
+[0m[48;2;43;48;59m[39m  1289, 1289[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    // chart.[K
+[0m[48;2;40;67;43m[39m+       1290[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // TODO (TechWriter): Expert review A5 (MEDIUM).[K
+[0m[48;2;40;67;43m[39m+       1291[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // Specify per-confirmed-extraction idempotency key[K
+[0m[48;2;40;67;43m[39m+       1292[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // (encounter_id, extraction_id, extraction_type) for[K
+[0m[48;2;40;67;43m[39m+       1293[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // each chart update; specify FHIR conditional-create[K
+[0m[48;2;40;67;43m[39m+       1294[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // (If-None-Exist header) where the EHR vendor[K
+[0m[48;2;40;67;43m[39m+       1295[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // supports it; specify the duplicate-detection flow[K
+[0m[48;2;40;67;43m[39m+       1296[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // on idempotency-match returning the prior[K
+[0m[48;2;40;67;43m[39m+       1297[0m:[39m[48;2;24;38;30m [38;2;192;197;206m    // submission's resource id.[K
+[0m[48;2;43;48;59m[39m  1290, 1298[0m:[39m[48;2;43;48;59m [38;2;192;197;206m    FOR confirmed IN final_note.confirmed_extractions:[K
+[0m[48;2;43;48;59m[39m  1291, 1299[0m:[39m[48;2;43;48;59m [38;2;192;197;206m        write_structured_chart_update([K
+[0m[48;2;43;48;59m[39m  1292, 1300[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            patient_id: lookup_patient_id([K
+[0m[48;2;43;48;59m[39m  1293, 1301[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                state.patient_id_hash),[K
+[0m[48;2;43;48;59m[39m  1294, 1302[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            update: confirmed,[K
+[0m[48;2;43;48;59m[39m  1295, 1303[0m:[39m[48;2;43;48;59m [38;2;192;197;206m            access_token: lookup_clinician_credentials([K
+[0m[48;2;43;48;59m[39m  1296, 1304[0m:[39m[48;2;43;48;59m [38;2;192;197;206m                clinician_id))[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow Production-Gaps section for A6 (foundation-model versioning) and A9 (DR topology). Also Variations for A7 (multi-language):[0m[0m
+Searching for: [38;5;141mFaithfulness regression testing|Disaster recovery and degraded-mode[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m3 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m1668[0m to [38;5;141m1685[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO markers for A6 (foundation-model versioning) and A9 (DR topology)
+
+[48;2;43;48;59m[39m  1671, 1671[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mFaithfulness regression testing on prompt and model updates.[38;2;235;203;139m**[38;2;192;197;206m The note-rendering LLM and the faithfulness-checker model are versioned components. Each model update or prompt update can change faithfulness behavior in subtle ways. Build a regression test suite: held-out set of representative encounter transcripts with known good notes, automated faithfulness scoring on the regression set after every prompt or model change, manual review of the regression diffs before promoting changes to production. Promote changes through canary inference profiles with traffic shift, with rollback-on-regression triggers tied to the faithfulness regression metrics.[K
+[0m[48;2;43;48;59m[39m  1672, 1672[0m:[39m[48;2;43;48;59m [K
+[0m[48;2;40;67;43m[39m+       1673[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review A6 (MEDIUM). Add a "Deployment Pattern" subsection specifying versioned model, prompt, template, rule-catalog, and per-language asset definitions in version control; canary inference profile with traffic shift; rollback-on-regression; held-out evaluation set with per-language, per-specialty, per-audio-quality-band, per-room-acoustics-band, faithfulness-edge-case, structured-extraction-edge-case, and prompt-injection coverage; version stamping on every encounter audit record (already partially correct at Step 4F; extend to all artifact versions). [38;2;101;115;126m-->[K
+[0m[48;2;40;67;43m[39m+       1674[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;43;48;59m[39m  1673, 1675[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mDisaster recovery and degraded-mode operation.[38;2;235;203;139m**[38;2;192;197;206m When upstream dependencies fail (HealthScribe outage, Bedrock outage, Comprehend Medical outage, EHR API outage, in-room device failure), the system must degrade gracefully. Document the per-mode behavior: complete failure of the ambient feature should fall back to clinician manual documentation, never to a dead end. Test the failure modes in staging. Quarterly DR exercises should validate the failover paths.[K
+[0m[48;2;40;67;43m[39m+       1676[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+       1677[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review A9 (MEDIUM). Add a "Disaster Recovery Topology" subsection specifying per-stage failover policy: HealthScribe outage with cross-region fallback or degraded-mode-record-only; Bedrock unavailability with HealthScribe-default-template fallback or manual; Comprehend Medical unavailability with LLM-only structured-extraction; EHR API unreachable with durable note storage and retry; in-room device failure with per-room backup device or manual documentation. Specify the failover-detection-and-failover-back triggers and the quarterly testing cadence. [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow Variations section for A7 (multi-language):[0m[0m
+Searching for: [38;5;141mMulti-language support|Inpatient progress notes[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m4 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.2s[0m
+
+I'll modify the following file: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add TODO marker for A7 (multi-language build-for-day-one)
+
+[48;2;43;48;59m[39m  1743, 1743[0m:[39m[48;2;43;48;59m [38;2;235;203;139m**[38;2;235;203;139mMulti-language support.[38;2;235;203;139m**[38;2;192;197;206m Extend ASR and note generation to handle encounters conducted in Spanish, Mandarin, or other common languages. The transcript remains in the encounter language; the note may be generated in the encounter language or in English depending on institutional preference. Recipe 10.10 (multilingual real-time medical interpretation) covers the deeper multilingual patterns.[K
+[0m[48;2;40;67;43m[39m+       1744[0m:[39m[48;2;24;38;30m [K
+[0m[48;2;40;67;43m[39m+       1745[0m:[39m[48;2;24;38;30m [38;2;101;115;126m<!--[38;2;101;115;126m TODO (TechWriter): Expert review A7 (MEDIUM). Multi-language support is currently framed as a Variation, but the recipe's own Where-it-Struggles list includes "multilingual visits where the configured language differs from the actual visit language" as a baseline failure mode. Specify the per-language pipeline pattern as a build-for-day-one architectural primitive: per-language ASR configuration with custom vocabulary; per-language note-generation prompt with native-speaker clinical-informatics input; per-language template definitions; per-language faithfulness rule catalogs; per-language diarization tuning; per-language structured-extraction approach where Comprehend Medical does not directly support the language. Cross-reference recipe 10.10. [38;2;101;115;126m-->[K
+[0m[K
+Updating: [38;5;141mchapter10.07-ambient-clinical-documentation.md[0m
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNow let me verify all changes look good and re-confirm em dash count is still zero:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141mTODO \(TechWriter\)|TODO \(S\d|TODO \(A\d|TODO \(W\d|TODO \(N\d|TODO \(V\d[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m15 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.3s[0m
+
+Searching for: [38;5;141mTODO[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m34 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me verify the changes look good by viewing a critical section:[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m433[0m to [38;5;141m462[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7088 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mMarkers placed correctly. Let me do a final verification on the file structure and confirm the change list:[0m[0m
+Searching for: [38;5;141mExpert review (S|A|N|V|W)\d+[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m14 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.2s[0m
+
+Searching for: [38;5;141mcode review (W|S|A|N|V)\d+[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mLet me verify the table format hasn't been broken by my edits:[0m[0m
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m658[0m to [38;5;141m663[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m6318 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe table format is preserved (TODOs are inline within table cells using HTML comments). Let me do a final review summary by listing all changes:[0m[0m
+[0m[0m
+[38;5;252m[1m## Summary of editorial changes[0m[0m
+[0m[0m
+[1mInline grammar fix:[22m[0m[0m
+- Fixed doubled-word typo: "trivially trivial" → "nearly trivial" (line 133)[0m[0m
+[0m[0m
+[1mTODO markers added for unresolved review findings (16 finding-tagged markers):[22m[0m[0m
+[0m[0m
+HIGH findings (3) from expert review:[0m[0m
+- S1 (biometric clinician voiceprint enrollment under BIPA-grade governance): placed at "Speaker enrollment for the clinician" paragraph[0m[0m
+- A1 (faithfulness check layered architecture): placed at Cross-Cutting Design Points "Faithfulness checks gate the LLM-generated note"[0m[0m
+- A2 (per-cohort monitoring with audio-quality-band, per-room, per-device launch gates): placed at Cross-Cutting Design Points "Per-cohort accuracy monitoring is a launch gate"[0m[0m
+[0m[0m
+MEDIUM findings (12) from expert review:[0m[0m
+- S2 (42 CFR Part 2 in-person profile): Cross-Cutting Design Points behavioral-health paragraph[0m[0m
+- S3 (prompt-injection mitigation): inline at Step 4D pseudocode[0m[0m
+- S4 (audit-log retention floor with pediatric/EHR-vendor/biometric/Part-2 floors): Encryption row[0m[0m
+- S5 (Lambda invocation authentication boundary): IAM Permissions row[0m[0m
+- A3 (Step 5C extractions PHI minimization via archive-reference): inline at Step 5C[0m[0m
+- A4 + Code Review W1 (HealthScribe NoteTemplate enum constraint): inline at Step 3C[0m[0m
+- A5 (per-extraction idempotency for EHR write-back): inline at Step 6C[0m[0m
+- A6 (foundation-model and prompt versioning via inference profiles): Production-Gaps faithfulness regression paragraph[0m[0m
+- A7 (multi-language as build-for-day-one): Variations multi-language item[0m[0m
+- A8 (audio retention per-visit-type and per-room): Encryption row[0m[0m
+- A9 (DR topology per-stage failover policy): Production-Gaps disaster recovery paragraph[0m[0m
+- N1 (in-room device-to-cloud audio path authentication per-pattern): Why-These-Services Chime SDK paragraph[0m[0m
+[0m[0m
+Code Review (1, in addition to W1 above):[0m[0m
+- W2 (max_speaker_labels not valid for streaming): inline at Step 2A pseudocode[0m[0m
+[0m[0m
+LOW finding (1) from expert review:[0m[0m
+- S7 (audio retention deletion verification): Encryption row[0m[0m
+[0m[0m
+[1mVerifications:[22m[0m[0m
+- Em dash count: 0 (preserved)[0m[0m
+- Header hierarchy: H1 only for title, H2 for major sections, H3 for subsections, H4 only for #### Walkthrough under ### Code (correct)[0m[0m
+- Existing [38;5;10m<!-- TODO: verify; ... -->[0m markers from TechWriter: all preserved[0m[0m
+- Table markdown formatting: preserved[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 58.95 • Time: 6m 14s
+
+[0m[1G[0m[0m[?25h- Code fence language tags: pseudocode blocks use bare [38;5;10m[0m[38;5;10m consistent with chapter convention (10.06 verified to use same pattern); JSON blocks correctly tagged [0m[38;5;10m[0mjson; mermaid block correctly tagged [38;5;10m[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book[0m [38;5;244m(showing 1000 of 1193 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.41s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-code-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-expert-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m192936 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m32280 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-code-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m96248 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\reviews\chapter10.07-expert-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.2s[0m
+
+Searching for files: [38;5;141m**/STYLE-GUIDE*[0m[38;5;244m (using tool: glob)[0mSearching for: [38;5;141m—[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 files[0m under current directory
+[38;5;244m - Completed in 0.133s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\STYLE-GUIDE.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m^#+\s[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m25 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.1s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for: [38;5;141m^```$[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m19 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m^```.+[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m3 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+[38;5;244m - Completed in 0.1s[0m
+
+Batch fs_read operation with [38;5;141m4[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m205[0m to [38;5;141m215[0m
+↱ Operation 2: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m695[0m to [38;5;141m705[0m
+↱ Operation 3: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m795[0m to [38;5;141m805[0m
+↱ Operation 4: Reading file: [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md[0m, from line [38;5;141m985[0m to [38;5;141m1000[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1555 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m805 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m933 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1242 bytes[0m from C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 4 operations processed, 4 successful, 0 failed
+[38;5;244m - Completed in 0.4s[0m
+
+Searching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.06-speech-to-text-telehealth-documentation.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m^```[0m in [38;5;141mC:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.04-medical-transcription-dictation.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m22 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.06-speech-to-text-telehealth-documentation.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m26 matches[0m in [38;5;244m1 files[0m under C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.04-medical-transcription-dictation.md (result is truncated)
+[38;5;244m - Completed in 0.2s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "Select-String -Path 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md' -Pattern '^#+\s' | ForEach-Object { $_.LineNumber.ToString() + ': ' + $_.Line }"[0m[38;5;244m (using tool: shell)[0m
+Purpose: List all headers with line numbers
+
+At line:1 char:189
++ ... md' -Pattern '^#+\s' | ForEach-Object { .LineNumber.ToString() + ': ' ...
++                                                                  ~
+An expression was expected after '('.
+    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+    + FullyQualifiedErrorId : ExpectedExpression
+ 
+[38;5;244m - Completed in 0.759s[0m
+
+I will run the following command: [38;5;141mpowershell -Command "(Get-Content 'C:\Users\lawsnic\OneDrive - amazon.com\Documents\HCLS-ai-book\chapter10.07-ambient-clinical-documentation.md') | Select-String -Pattern '^#+\s'"[0m[38;5;244m (using tool: shell)[0m
+Purpose: List headers
+
+
+## The Problem
+## The Technology: In-Room Conversational Audio That Writes the Note
+### What Makes In-Person Ambient Documentation Distinct
+### The In-Room Audio Path
+### Multi-Speaker Diarization with Movement
+### Clinical-Versus-Social Talk Classification
+### LLM-Driven Note Generation
+### Where the Field Has Moved
+## General Architecture Pattern
+## The AWS Implementation
+### Why These Services
+### Architecture Diagram
+### Prerequisites
+### Ingredients
+### Code
+#### Walkthrough
+### Expected Results
+## Why This Isn't Production-Ready
+## The Honest Take
+## Variations and Extensions
+## Related Recipes
+## Additional Resources
+## Estimated Implementation Time
+## Tags
+
+
+[38;5;244m - Completed in 0.741s[0m
+
+[38;5;141m> [0mBased on my review of the artifacts:[0m[0m
+[0m[0m
+[1mStyle guide compliance:[22m[0m[0m
+- Em dash count: 0 (verified by raw-byte search against U+2014)[0m[0m
+- Voice consistent with STYLE-GUIDE.md (CC voice, 70/30 vendor balance, vignettes earn their position)[0m[0m
+- Header hierarchy correct: [38;5;10m#[0m → [38;5;10m##[0m → [38;5;10m###[0m → [38;5;10m####[0m (no skipped levels)[0m[0m
+- Code blocks: [38;5;10mmermaid[0m and [38;5;10mjson[0m blocks have language tags; ASCII-art architecture diagrams and pseudocode blocks use bare [38;5;10m[0m[38;5;10m consistently with the established pattern in adjacent approved recipes (10.04, 10.06)
+
+**HIGH/MEDIUM technical findings incorporated as TODOs:**
+- Expert review HIGHs (S1 voiceprint/BIPA, A1 faithfulness layering, A2 per-cohort monitoring) — all 3 flagged as TODO markers
+- Expert review MEDIUMs (S2 behavioral-health 42 CFR Part 2, S3 prompt-injection, S4 audit-log retention floor, S5 Lambda invocation auth, A3 Step 5C extractions archive, A4 NoteTemplate enum, A5 idempotency, A6 versioning, A7 multi-language, A8 audio retention, A9 DR topology, N1 device-to-cloud auth) — all flagged as TODOs
+- Code review WARNINGs (W1 NoteTemplate enum, W2 max_speaker_labels) — both flagged as TODOs in pseudocode
+
+**Reviewer verdicts:** Expert review PASS (3 HIGH at threshold, not exceeding), code review PASS (0 ERROR, 2 WARNING).
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 12.78 • Time: 1m 28s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Em dash count is 0 (verified). Header hierarchy is correct (# → ## → ### → ####). Mermaid/JSON code blocks have language tags; ASCII-art and pseudocode blocks use bare [0m[38;5;10m[0m consistent with established pattern in approved adjacent recipes (10.04, 10.06). Voice matches STYLE-GUIDE.md (CC register, 70/30 vendor balance, vignettes well-paced). All 3 HIGH expert findings (S1 voiceprint/BIPA, A1 faithfulness layering, A2 per-cohort monitoring) and all 12 MEDIUM expert findings are explicitly flagged as TODO markers for the TechWriter at the relevant locations in the recipe. Both code review WARNINGs (W1 NoteTemplate enum, W2 max_speaker_labels) are flagged as TODOs in the Step 3 pseudocode. Expert review verdict PASS, code review verdict PASS."}
