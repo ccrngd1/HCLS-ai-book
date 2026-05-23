@@ -90,6 +90,22 @@ BOTO3_RETRY_CONFIG = Config(
 
 # Module-level clients. Reused across Lambda invocations in warm
 # containers so each invocation does not pay the connection cost.
+# These boto3 clients are declared at module level so a real Lambda
+# deployment reuses them across warm invocations. The demo below
+# uses Mock* classes instead; the real clients are never invoked here.
+# TODO (TechWriter): Code review W1 (WARNING). Streaming Transcribe
+# Medical does not run through the boto3 transcribe client. The
+# StartMedicalStreamTranscription operation is HTTP/2 and is wrapped
+# by the standalone amazon-transcribe-streaming-sdk Python package
+# (TranscribeStreamingClient.start_medical_stream_transcription),
+# which is separate from boto3. Either rename `transcribe_client`
+# below to `transcribe_batch_client` (keeping it for batch and
+# vocabulary-management operations only) or remove it, and add a
+# Setup-section line noting that streaming Transcribe Medical
+# requires `pip install amazon-transcribe`. Update the comments in
+# Step 1E and Step 2A and the "Real Transcribe Medical streaming
+# wiring" paragraph in the Gap section to clarify the streaming-
+# SDK dependency rather than implying the boto3 client.
 REGION = "us-east-1"
 dynamodb              = boto3.resource("dynamodb", region_name=REGION,
                                           config=BOTO3_RETRY_CONFIG)
@@ -1520,6 +1536,19 @@ def format_and_structure(disambiguated, asr_result, session_context):
     template   = session_context["template"]
     verbatim   = asr_result["verbatim"]
 
+    # TODO (TechWriter): Code review W2 (WARNING). The pseudocode's
+    # Step 4B applies disambiguated["structural_events"] (navigation
+    # commands like "new paragraph", "go to section X") to a section
+    # cursor that decides which template field each content segment
+    # lands in. This Python collapses everything into the rule-based
+    # section-header detector and never reads structural_events,
+    # which leaves a meaningful pseudocode-to-Python gap. Either add
+    # a small apply_structural_events helper that walks events in
+    # time order and routes content into template sections, or add
+    # an explicit comment here that the demo intentionally uses only
+    # the rule-based path while production drives a section cursor
+    # off structural_events. See main recipe Step 4B for the full
+    # pattern.
     # Step 4A: rule-based formatting pass. Punctuation inference,
     # capitalization, number-and-date canonicalization, section
     # header detection. Lower latency than the LLM, deterministic.

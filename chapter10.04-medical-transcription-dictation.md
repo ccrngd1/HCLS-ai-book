@@ -394,6 +394,20 @@ A few cross-cutting design points the architecture has to bake in.
 
 **Critical-error detection is not the same as overall accuracy monitoring.** Word error rate measures aggregate accuracy. Critical-error rate measures clinically-meaningful errors. The system needs explicit detection for the dangerous error classes: laterality flips, negation flips ("no" vs "not"), drug-name confusions among similar-sounding pairs, dose-by-order-of-magnitude errors, and domain-specific high-stakes substitutions. These deserve their own monitoring and their own alerts.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Promote critical-error
+detection from prose into the architecture pattern. Add an explicit
+critical-error-detection stage to the eight-stage decomposition (between
+formatting and read-edit-sign, or as a parallel pass invoked from
+read-edit-sign). Specify per-specialty high-risk-substitution catalogs
+(laterality, negation, drug-name confusables, dose-by-order-of-magnitude)
+as version-controlled clinical-safety documents owned by the
+clinical-quality officer. Specify detection thresholds, severity tiers,
+and the high-severity disposition (explicit clinician confirmation
+required before signature). Add an aggregate detection-rate metric to
+CloudWatch with named ownership and review cadence. The recipe's own
+prose names this as "the single most important production gap"; the
+architecture should match the prose. -->
+
 **Voice commands and dictation content require unambiguous separation.** The boundary between content and commands is one of the highest-stakes design decisions in the recipe. Ambiguous decisions produce notes with command artifacts in them ("new paragraph" appearing as text in the note) or commands silently ignored (the clinician said "delete that sentence" but the system treated it as content). The recipes that handle this well use explicit modal switching (push-to-command, or a clear command prefix); the recipes that struggle use heuristic disambiguation that occasionally gets it wrong in obvious ways.
 
 **Structured-field extraction is a draft, never a fact.** Extracting a medication-list update from a dictation and silently applying it to the patient's structured chart is dangerous. The clinician must explicitly confirm each structured-field change. The architecture treats extracted entities as suggestions, never as durable updates.
@@ -421,6 +435,23 @@ A few cross-cutting design points the architecture has to bake in.
 **AWS Lambda for orchestration.** The pipeline orchestration (initiate dictation session, route audio to Transcribe Medical, post-process with Bedrock and Comprehend Medical, hand off to EHR integration, capture user corrections, update adaptation telemetry) runs in Lambda functions. Per-stage isolation matches the pipeline structure and the per-stage retry semantics.
 
 **Amazon API Gateway for the client-facing endpoint.** The dictation client (browser-based EHR plugin, native desktop app, mobile app) communicates with the back end through API Gateway. WebSocket APIs handle the streaming-audio path; REST APIs handle batch dictation submission and final note submission.
+
+<!-- TODO (TechWriter): Networking review N1 (LOW). Add a WebSocket
+Audio Streaming paragraph specifying connection-time authentication
+(Lambda authorizer with the clinician's Cognito token), account-level
+concurrent-connection limits with quota-increase as a deployment-time
+activity, idle-timeout interaction with long-form dictation (consider
+extending the idle timeout or implementing a keep-alive ping so a
+clinician's pause does not drop the connection mid-dictation), and
+the binary-message-type frame format. -->
+
+<!-- TODO (TechWriter): Networking review N3 (LOW). Add a Device-to-
+Cloud Transport Posture paragraph for the activation and audio capture
+stage: TLS-encrypted WebSocket with institutional certificate pinning,
+clinical-device VLAN network segmentation, and device-identity
+authentication via mutual TLS or device certificates. Reference
+institutional clinical-device-management ownership for per-device-fleet
+certificate provisioning. -->
 
 **Amazon Cognito (or institutional IdP via OIDC/SAML) for authentication.** Clinician identity is the audit-and-permissions backbone. The dictation session must be tied to an authenticated clinician, and the audit trail must reflect that identity through every stage.
 
@@ -569,12 +600,12 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon Transcribe Medical (streaming and batch), Amazon Bedrock, Amazon Comprehend Medical, AWS Lambda, Amazon API Gateway, Amazon Cognito, Amazon DynamoDB, Amazon S3, AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, AWS Step Functions, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally: Amazon SageMaker (for custom adaptation), Amazon QuickSight (for dashboards), Amazon ElastiCache (for low-latency vocabulary lookup). |
 | **External Inputs** | EHR integration surface: SMART on FHIR app launch context (preferred), vendor-specific extension platform (Epic App Orchard, Cerner Code Console, etc.) for note creation and signing. Per-specialty note templates, reviewed by clinical operations. Institutional formulary, provider directory, and specialty-specific term lists for custom vocabulary. Per-clinician baseline configuration (specialty, default templates, initial macro library). Microphone hardware (headset, handheld dictation mic, or workstation mounted), procured and supported by IT operations. Validation set of dictated notes with reference transcripts for accuracy benchmarking, ideally per specialty. <!-- TODO: verify validation-set sourcing options; commercial dictation vendors typically have proprietary benchmarks, while open-source healthcare-speech datasets remain limited; check current sources at build time --> |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The session-orchestrator Lambda has scoped permissions for Transcribe Medical streaming session creation, Bedrock model invocation (specific model and inference profile), Comprehend Medical inference, the specific DynamoDB tables, and the EventBridge events bus. The EHR-handoff Lambda has scoped permissions for Secrets Manager (specific secret only), the EHR FHIR API endpoints, and the dictation-metadata table updates. API Gateway-to-Lambda integration with Cognito authorizer pinned to the clinician identity scope. Avoid wildcard actions and resources in production. |
-| **BAA and Compliance** | AWS BAA signed. Transcribe Medical, Bedrock (verify the specific models and regions covered), Comprehend Medical, Lambda, API Gateway, Cognito, DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, EventBridge, Step Functions, Kinesis Firehose, Athena, SageMaker are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference). <!-- TODO: verify; the AWS HIPAA-eligible services list and the specific Bedrock models covered under BAA continue to evolve --> EHR vendor agreements: confirm the EHR vendor's terms permit the dictation integration pattern (note creation, draft management, signature capture) with the appropriate scopes. Audio retention policy must be reviewed by the privacy officer; the institutional default should be conservative (retain briefly for QA only, then discard) unless there is explicit consent and operational need for longer retention. |
-| **Encryption** | Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically a few days to a few weeks for institutional adaptation feedback) then automatic deletion via lifecycle policy. Signed notes: stored in the EHR per its native encryption policy; if archived in S3 for backup, SSE-KMS with customer-managed keys. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all EHR API calls (default). |
-| **VPC** | Production: Lambdas that call back-office APIs (the EHR integration in particular) run in VPC with subnets that have controlled egress to the EHR's network (often a private peering connection or VPN to the on-premise EHR system). VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, Comprehend Medical, and Transcribe Medical so the Lambdas do not need NAT for AWS-internal calls. Endpoint policies pin access to the specific resources the pipeline uses. For SMART on FHIR-based integrations against a cloud-hosted EHR, the integration may not require on-premise network connectivity; for on-premise EHRs, the network topology is typically the longest-lead-time portion of the deployment. |
-| **CloudTrail** | Enabled with data events on the audio S3 bucket, the audit-archive S3 bucket, the DynamoDB dictation tables, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. API Gateway access logs enabled. Step Functions execution logs enabled. Transcribe Medical streaming session starts and stops logged. Bedrock invocations logged with input and output captured per institutional policy (be cautious about input/output capture if the prompts or responses include PHI; many institutions choose to log metadata only). CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, the EHR vendor's audit-retention floor, and the institutional regulatory floor. |
-| **Sample Data** | Synthetic dictated audio for development. Text-to-speech generation of realistic clinical-text prompts produces audio with known ground truth. Synthea-generated patient context for the SMART on FHIR integration. Public clinical-vocabulary lists (RxNorm, ICD-10, SNOMED, LOINC) for custom-vocabulary seeding. Never use real clinician audio or real patient names in development; voice samples are biometric and PHI-bearing data with non-trivial governance implications. <!-- TODO: verify; public-domain dictated-clinical-text audio corpora are limited; common sources include the MIMIC-III dataset (text only) and select academic datasets, but most production benchmarks use proprietary data --> |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The session-orchestrator Lambda has scoped permissions for Transcribe Medical streaming session creation, Bedrock model invocation (specific model and inference profile), Comprehend Medical inference, the specific DynamoDB tables, and the EventBridge events bus. The EHR-handoff Lambda has scoped permissions for Secrets Manager (specific secret only), the EHR FHIR API endpoints, and the dictation-metadata table updates. API Gateway-to-Lambda integration with Cognito authorizer pinned to the clinician identity scope. Avoid wildcard actions and resources in production. <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Specify the orchestrator Lambda's resource-based policy: pin the invoking principal to the production API Gateway stage ARN; reject invocations from any other API Gateway, stage, or principal; add a defense-in-depth event-payload validation that verifies requestContext.apiId against the production constant. --> |
+| **BAA and Compliance** | AWS BAA signed. Transcribe Medical, Bedrock (verify the specific models and regions covered), Comprehend Medical, Lambda, API Gateway, Cognito, DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, CloudTrail, EventBridge, Step Functions, Kinesis Firehose, Athena, SageMaker are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference). <!-- TODO: verify; the AWS HIPAA-eligible services list and the specific Bedrock models covered under BAA continue to evolve --> <!-- TODO (TechWriter): Expert review A12 (LOW). Add a default-model recommendation for Bedrock (Claude family typical for healthcare due to longer-standing HIPAA-eligible-on-Bedrock track record) with the verify-at-build-time hedge; reference the AWS HIPAA Eligible Services Reference URL. --> EHR vendor agreements: confirm the EHR vendor's terms permit the dictation integration pattern (note creation, draft management, signature capture) with the appropriate scopes. Audio retention policy must be reviewed by the privacy officer; the institutional default should be conservative (retain briefly for QA only, then discard) unless there is explicit consent and operational need for longer retention. |
+| **Encryption** | Audio recordings: SSE-KMS with customer-managed keys, retention bound to the QA review window (typically a few days to a few weeks for institutional adaptation feedback) then automatic deletion via lifecycle policy. <!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify the audio-retention configuration mechanism explicitly: retain-briefly with a 7-30-day window (KMS-encrypted, lifecycle-policy-deletion, access-logged through CloudTrail) as the recommended default; discard-immediately as the conservative alternative for institutions with strict PHI-minimization requirements; retain-longer requires explicit clinician consent at onboarding and a documented retention purpose. Reference the audit log (per Finding S1) as the long-term forensic-reconstruction substrate; audio retention is short-term QA-and-adaptation. --> Signed notes: stored in the EHR per its native encryption policy; if archived in S3 for backup, SSE-KMS with customer-managed keys. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, and the institutional regulatory floor. DynamoDB tables: customer-managed KMS at rest. Lambda environment variables: KMS-encrypted. Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all EHR API calls (default). |
+| **VPC** | Production: Lambdas that call back-office APIs (the EHR integration in particular) run in VPC with subnets that have controlled egress to the EHR's network (often a private peering connection or VPN to the on-premise EHR system). VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, Comprehend Medical, and Transcribe Medical so the Lambdas do not need NAT for AWS-internal calls. Endpoint policies pin access to the specific resources the pipeline uses. For SMART on FHIR-based integrations against a cloud-hosted EHR, the integration may not require on-premise network connectivity; for on-premise EHRs, the network topology is typically the longest-lead-time portion of the deployment. <!-- TODO (TechWriter): Networking review N2 (LOW). Add PrivateLink-preferred-for-EHR-vendor-APIs framing; egress hierarchy is PrivateLink (preferred where available) > private peering / Direct Connect / Transit Gateway > VPN > public-Internet-with-TLS. --> |
+| **CloudTrail** | Enabled with data events on the audio S3 bucket, the audit-archive S3 bucket, the DynamoDB dictation tables, the Secrets Manager secrets, and the customer-managed KMS keys. Lambda invocations logged. API Gateway access logs enabled. Step Functions execution logs enabled. Transcribe Medical streaming session starts and stops logged. Bedrock invocations logged with input and output captured per institutional policy (be cautious about input/output capture if the prompts or responses include PHI; many institutions choose to log metadata only). CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. Audit retention sized to the longer of HIPAA's six-year minimum, state medical-records-retention rules, the EHR vendor's audit-retention floor, and the institutional regulatory floor. <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Name the dictation-specific audit-log retention floor as the longest of HIPAA's six-year minimum, state-specific medical-records-retention rules (which for certain patient populations such as pediatric records can extend to age-of-majority-plus-multiple-years), the EHR vendor's audit-retention floor, the longest-retained signed note's retention period (the audit trail must outlive the signed note it documents), and the institutional regulatory floor. --> |
+| **Sample Data** | Synthetic dictated audio for development. Text-to-speech generation of realistic clinical-text prompts produces audio with known ground truth. Synthea-generated patient context for the SMART on FHIR integration. Public clinical-vocabulary lists (RxNorm, ICD-10, SNOMED, LOINC) for custom-vocabulary seeding. Never use real clinician audio or real patient names in development; voice samples are biometric and PHI-bearing data with non-trivial governance implications. <!-- TODO: verify; public-domain dictated-clinical-text audio corpora are limited; common sources include the MIMIC-III dataset (text only) and select academic datasets, but most production benchmarks use proprietary data --> <!-- TODO (TechWriter): Expert review S5 (LOW). Add a Voice Biometric Data Governance paragraph specifying clinician consent at onboarding, separation of biometric retention from general dictation retention, per-clinician right-to-deletion, and cross-jurisdictional considerations (BIPA in Illinois, GIPA in Texas, similar state laws). Reference the institutional employment-and-compliance team for the per-jurisdiction policy. --> |
 | **Cost Estimate** | At a mid-sized practice scale (200 clinicians, average 8 dictations per day per clinician, average 90 seconds of audio per dictation, 22 working days per month): Transcribe Medical streaming at typically $0.075 per minute totals approximately $4,000-5,000 per month. Bedrock LLM post-processing at typically $0.001-0.01 per dictation totals approximately $400-3,500 per month depending on model choice and prompt size. Comprehend Medical at typically $0.0014 per Unit (100 characters) totals approximately $200-500 per month. Lambda, Step Functions, API Gateway, DynamoDB, S3, CloudWatch, KMS, Secrets Manager total approximately $500-1,500 per month combined. Total AWS infrastructure typically $5,000-10,000 per month at this scale, dominated by Transcribe Medical. The infrastructure cost is comparable to or slightly cheaper than per-clinician licensing of major commercial dictation products at the same scale, though the engineering and operational overhead of operating a custom build is non-trivial and usually tilts the build-versus-buy economics toward buying for institutions of this size. <!-- TODO: replace with verified pricing once the implementing team validates against the AWS Pricing Calculator. Specific costs depend on per-minute Transcribe Medical pricing in the chosen region and the chosen Bedrock model -->|
 
 ### Ingredients
@@ -613,6 +644,15 @@ ON dictation_start_request(clinician_session, note_context):
     // Step 1A: validate the clinician session is current
     // and the SMART on FHIR launch context (if present) is
     // fresh.
+    // TODO (TechWriter): Expert review A7 (MEDIUM). Specify the
+    // SMART on FHIR token lifecycle for hours-long dictation
+    // sessions: pre-emptive refresh window, refresh-failure handling
+    // (graceful prompt for re-authentication on signature
+    // submission), token storage in Secrets Manager with a short-
+    // TTL cache rather than DynamoDB, and audit events on token-
+    // lifecycle transitions. Dictation lifecycles can span hours
+    // from start to EHR submission, so the architecture must handle
+    // mid-workflow token expiry without losing dictated audio.
     IF NOT clinician_session.is_valid():
         RETURN error("re-authenticate")
 
@@ -737,6 +777,15 @@ FUNCTION stream_audio_to_asr(session_id, audio_stream):
     // Step 2C: persist the verbatim transcript and the
     // per-word details for the formatting and review
     // stages.
+    // TODO (TechWriter): Expert review S1 (HIGH). Rewrite Step 2C
+    // and Step 7C so PHI content (verbatim transcript, word-level
+    // results, EHR API responses) lives in a secure transcript
+    // archive (S3 with KMS, same governance as the audio bucket)
+    // and only references, hashes, and structural metadata land in
+    // dictation_metadata. The audit record at Step 8A already uses
+    // archive references; the upstream working store must adopt the
+    // same discipline. Add a cross-cutting design point on
+    // references-not-content for all PHI-handling stages.
     dictation_metadata_table.put({
         session_id: session_id,
         verbatim_transcript: verbatim_transcript,
@@ -858,6 +907,25 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
     // draft; it returns a refined draft and a set of
     // structured-field suggestions. Treat the output
     // as a draft, never as authoritative.
+    // TODO (TechWriter): Expert review S2 (MEDIUM). Specify
+    // prompt-injection mitigation for the LLM formatter: wrap the
+    // verbatim transcript in explicit delimiters
+    // (e.g., <verbatim_transcript>...</verbatim_transcript>),
+    // instruct the model to treat the transcript as untrusted user
+    // data and not as instructions, request strict structured output
+    // (JSON schema or XML tag boundaries) that the orchestrator
+    // validates before accepting, and add prompt-injection
+    // monitoring that flags structural divergence between the
+    // LLM draft and the rule-based draft for operational review.
+    // TODO (TechWriter): Expert review A6 (MEDIUM). Specify a
+    // foundation-model-and-prompt versioning pattern: versioned
+    // model identifiers, prompt versions, rule-catalog versions,
+    // and per-specialty configuration versions in source control;
+    // canary inference profile with traffic-shift; rollback-on-
+    // regression gated by a held-out evaluation set with specialty,
+    // accent, and high-risk-substitution coverage; version stamps
+    // on every dictation audit record so a forensic review can
+    // reconstruct which calibration produced a given note.
     IF LLM_POST_PROCESSING_ENABLED:
         llm_response = bedrock.invoke_model(
             model_id: CLINICAL_FORMATTER_MODEL,
@@ -876,6 +944,21 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
         // surfaced for clinician review; the LLM output
         // is never silently substituted for the rule-
         // based draft when faithfulness is suspect.
+        // TODO (TechWriter): Expert review A3 (MEDIUM). Specify the
+        // faithfulness-check architecture concretely: claim
+        // extraction over verbatim transcript and LLM draft, claim-
+        // by-claim semantic-equivalence comparison, severity-tier
+        // classification of warnings (clinical-claim addition,
+        // negation flip, dose change, hedging removal on a clinical
+        // assertion as high-severity; minor stylistic divergence as
+        // low-severity), high-severity-triggers-rule-based-fallback
+        // disposition, and a paired offline Faithfulness Program
+        // (held-out evaluation set per specialty, regression gate on
+        // model updates, named ownership at the clinical-quality
+        // officer). Cross-reference the critical-error-detection
+        // primitive (Finding A1) and the prompt-injection mitigation
+        // (Finding S2) as the recipe's combined LLM-clinical-safety
+        // substrate.
         faithfulness_check = check_faithfulness(
             verbatim_transcript: verbatim_transcript,
             llm_draft: llm_response.formatted_note)
@@ -900,6 +983,16 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
 FUNCTION extract_structured_fields(verbatim_transcript, formatted_note, patient_context):
     // Step 5A: run Comprehend Medical to extract
     // coded clinical entities.
+    // TODO (TechWriter): Expert review A11 (MEDIUM). The Comprehend
+    // Medical API surface is split: detect_entities_v2 returns
+    // categorized entities without ontology codes; infer_rx_norm,
+    // infer_icd10_cm, and (where the institution stores SNOMED)
+    // infer_snomed_ct return ontology-linked entities. Specify the
+    // multi-call pattern explicitly with merge-by-character-offset
+    // and update the cost estimate to reflect the multi-call
+    // overhead. The pseudocode's lookup_rxnorm and lookup_icd10
+    // helpers should be implemented as infer_rx_norm and
+    // infer_icd10_cm calls in production.
     comp_med_result = comprehend_medical.detect_entities_v2(
         text: verbatim_transcript)
 
@@ -1071,6 +1164,16 @@ FUNCTION render_review_view(session_id, formatted_note, structured_suggestions, 
 ```
 FUNCTION handoff_to_ehr(session_id, signed_note, structured_decisions, patient_context, clinician_session):
     // Step 7A: create the note in the EHR.
+    // TODO (TechWriter): Expert review A5 (MEDIUM). Specify the
+    // idempotency-key composition for dictation submission:
+    // (clinician_id, session_id, encounter_id, signature_timestamp).
+    // The dictation-metadata table holds the recently-submitted-
+    // notes list; on submission, the architecture checks for a
+    // prior submission with the same key and returns the prior
+    // note_id on match. Also prefer the FHIR API's idempotency
+    // headers where the EHR vendor's API supports them. On
+    // duplicate-detection, record both the original submission and
+    // the duplicate-detection event in the audit.
     note_creation_response = fhir_client.create_note(
         patient_id: patient_context.patient_id,
         encounter_id: patient_context.encounter_id,
@@ -1204,6 +1307,18 @@ FUNCTION audit_archive_and_adapt(session_id, signed_note, corrections, structure
     // the per-clinician custom vocabulary and, when
     // applicable, for the per-clinician acoustic model
     // adaptation.
+    // TODO (TechWriter): Expert review A4 (MEDIUM). Architect the
+    // per-clinician adaptation pipeline beyond event publication:
+    // default cadence (weekly batch for vocabulary, quarterly batch
+    // for acoustic), default scope (vocabulary-only as institutional
+    // default; acoustic adaptation as opt-in via SageMaker), held-
+    // out per-clinician validation set with regression gate (5%
+    // deterioration on per-clinician corrections-per-note or ASR
+    // confidence triggers automatic rollback), per-clinician model
+    // versioning, and a privacy-preserving aggregation pattern
+    // (federated learning or differentially private aggregation)
+    // for institution-wide vocabulary improvements that does not
+    // leak per-clinician corrections.
     FOR correction IN corrections:
         adaptation_event = {
             clinician_id: audit_record.clinician_id,
@@ -1240,6 +1355,20 @@ FUNCTION audit_archive_and_adapt(session_id, signed_note, corrections, structure
         metric_name: "ASRAvgConfidence",
         value: metadata.avg_confidence,
         dimensions: { specialty: metadata.specialty })
+    // TODO (TechWriter): Expert review A2 (HIGH). Promote
+    // cohort-stratified accuracy monitoring from prose into the
+    // architecture pattern. Specify the cohort-dimensions allow-list
+    // (per-clinician identifier as load-bearing axis, plus opt-in
+    // language background, inferred accent group, specialty,
+    // experience level, deployment site), per-cohort metrics
+    // (corrections-per-note, time-to-sign, adoption rate,
+    // abandonment rate, critical-error rate), per-cohort sample-size
+    // minimums, and disparity-alert thresholds. Name ownership at
+    // the equity-monitoring committee with monthly review cadence
+    // and at the clinical-quality officer for critical-error-rate
+    // cohort disparities. Use cohort-axis-hash labels for sensitive
+    // dimensions in CloudWatch metrics; route demographic-stratified
+    // analytics through Athena over the audit archive.
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter10.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -1421,6 +1550,16 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Disaster recovery and partial-failure handling.** When Transcribe Medical is unavailable, when Bedrock is unavailable, when the EHR API is unreachable, the dictation system must degrade gracefully. Test the failure modes in a staging environment. Document the fallback behavior the clinician should expect in each failure mode (e.g., "if real-time transcription fails, the system will offer batch transcription on retry; you can also fall back to typing"). The clinician should never lose dictated audio because of a downstream component failure.
 
+<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Promote disaster
+recovery from production-gaps prose into the architecture pattern: a
+Disaster Recovery Topology subsection with per-stage failover policy
+(Transcribe Medical regional outage with cross-region failover or
+batch-mode fallback, Bedrock model unavailability with rule-based
+formatter fallback, Comprehend Medical unavailability with manual
+structured-field-entry fallback, EHR API unreachable with signed-note-
+queue-for-retry that preserves the signed note), failover-detection
+and failover-back triggers, and quarterly DR-test cadence. -->
+
 **Idempotency and retry semantics.** A dictation submitted twice (because of a network blip, or because the clinician thought the system did not receive it) must not produce two notes in the EHR. Idempotency keys per dictation session, conditional writes on the EHR side where supported, and explicit duplicate-detection logging are required.
 
 **Performance under load and burst.** The latency budget for streaming dictation is tight; the system must hold the budget under load. Transcribe Medical streaming session limits, Bedrock invocation throughput, EHR API rate limits, all need provisioning headroom. Load test before launch; reserve concurrency where the latency-sensitive Lambdas would otherwise be starved.
@@ -1477,7 +1616,7 @@ The last thing, because it is the easiest one to get wrong: medical dictation pr
 
 **Specialty-specific subdialect tuning.** Beyond Transcribe Medical's built-in specialty types, deeper tuning is possible: a custom-trained acoustic model for an underserved specialty (e.g., dermatology, ophthalmology, vascular surgery), specialty-specific vocabulary lists curated by domain experts, specialty-specific note templates with embedded macros, and specialty-specific LLM prompts. The architectural extension is the per-specialty configuration management and the per-specialty validation pipeline.
 
-**Multilingual dictation.** Add support for Spanish, French, Mandarin, or other languages relevant to the institution's clinician demographics. Per-language Transcribe Medical configurations (where supported), per-language custom vocabularies, per-language LLM prompts, per-language formatting and structuring rules. Even within a single language, regional variants matter (US English vs UK English vs Indian English clinical vocabulary differs in non-trivial ways).
+**Multilingual dictation.** Add support for Spanish, French, Mandarin, or other languages relevant to the institution's clinician demographics. Per-language Transcribe Medical configurations (where supported), per-language custom vocabularies, per-language LLM prompts, per-language formatting and structuring rules. Even within a single language, regional variants matter (US English vs UK English vs Indian English clinical vocabulary differs in non-trivial ways). <!-- TODO (TechWriter): Expert review A10 (MEDIUM). Specify the per-language pipeline pattern as build-for-day-one even when shipping English-first: per-clinician language declared at onboarding; per-language Transcribe Medical configuration and custom vocabulary; per-language LLM-formatter prompts; per-language formatting rules. The configuration scaffolding should not assume a single language at the architecture level. -->
 
 **Front-end versus back-end dictation modes.** The architecture above defaults to front-end (real-time streaming with the words appearing as the clinician dictates). Some clinicians prefer back-end (dictate the full note, then review the transcript later, with possible human QA in between). The architecture supports both modes through the same Transcribe Medical service (streaming and batch), with different orchestration paths through Step Functions and different review-pane UX.
 
