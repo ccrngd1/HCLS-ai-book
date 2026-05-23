@@ -145,6 +145,7 @@
 * [10.1 — IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement)
   * [Python Example](chapter10.01-python-example)
 * [10.2 — Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification)
+  * [Python Example](chapter10.02-python-example)
 
 ---
 
