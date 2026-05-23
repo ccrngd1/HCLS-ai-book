@@ -148,6 +148,7 @@
   * [Python Example](chapter10.02-python-example)
 * [10.3 — Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation)
   * [Python Example](chapter10.03-python-example)
+* [10.4 — Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation)
 
 ---
 
