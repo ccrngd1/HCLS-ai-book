@@ -165,4 +165,10 @@
 
 ---
 
+#### Ch 11: Conversational AI / Virtual Assistants
+
+* [Preface](chapter11-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
