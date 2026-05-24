@@ -103,6 +103,18 @@ dynamodb            = boto3.resource("dynamodb", region_name=REGION,
                                        config=BOTO3_RETRY_CONFIG_ASYNC)
 s3_client           = boto3.client("s3", region_name=REGION,
                                        config=BOTO3_RETRY_CONFIG_ASYNC)
+# TODO (TechWriter): Code review E1 (ERROR). The next line raises
+# botocore.exceptions.UnknownServiceError at module import: there
+# is no "transcribe-streaming" service in boto3. Amazon Transcribe
+# streaming uses HTTP/2 and is exposed through the separate
+# `amazon-transcribe` package (the Amazon Transcribe Streaming SDK
+# for Python), not through boto3.client(). The `transcribe` service
+# in boto3 is the batch-jobs API only. Either guard with
+# `try/except ImportError` around `from amazon_transcribe.client
+# import TranscribeStreamingClient`, or drop this module-level
+# client entirely (the demo only exercises MockTranscribeStreaming
+# below). The Setup section already references the streaming SDK
+# correctly; this line is the only inconsistent surface.
 transcribe_streaming = boto3.client(
     "transcribe-streaming", region_name=REGION,
     config=BOTO3_RETRY_CONFIG_REALTIME)
@@ -544,6 +556,22 @@ class MockTranslate:
             "applied_terminologies":
                 fixture.get(
                     "applied_terminologies", []),
+            # TODO (TechWriter): Code review W1 (WARNING).
+            # Real `translate_client.translate_text` does NOT
+            # return per-translation confidence. The response
+            # has TranslatedText, SourceLanguageCode,
+            # TargetLanguageCode, AppliedTerminologies, and
+            # AppliedSettings (Formality/Profanity/Brevity).
+            # Either rename this field to `demo_confidence`
+            # with a comment that production runs a separate
+            # quality-estimation step (COMET-QE, a fine-tuned
+            # quality-estimation model, or a secondary verifier
+            # model) on each translated segment, or drop the
+            # field and source per-utterance confidence from a
+            # dedicated quality-estimation function. As written,
+            # a learner replacing the mock with the real client
+            # silently loses confidence-based escalation
+            # (every utterance falls back to the 0.85 default).
             "applied_settings_confidence":
                 fixture.get("confidence", Decimal("0.85")),
         }
@@ -1864,6 +1892,8 @@ def synthesize_translated_audio(encounter_id,
         "end_to_end_latency_ms":   end_to_end_latency_ms,
     }
 ```
+
+<!-- TODO (TechWriter): Code review W2 (WARNING). The conversational state machine never transitions out of `"translating"` or into `"playing_translation"`. After translation completes in `asr_finalized_transcript` and audio is delivered in `synthesize_translated_audio`, the state stays at `"translating"`, so every subsequent `vad_event(... "speech_start")` from the other speaker triggers a spurious BARGE_IN audit event. The six-utterance demo emits five spurious BARGE_IN events. Minimum fix: add `transition_to_state(encounter_id, "idle")` at the end of `synthesize_translated_audio` (after the `cloudwatch.put_metric` call, before `return`). Equivalent reset belongs at the end of `execute_escalation` once audio routes to the human interpreter. Populate `in_flight_translation` when the state enters `"translating"` so legitimate barge-ins (when the demo gets extended) record meaningful translation IDs rather than `None`. -->
 
 ---
 
