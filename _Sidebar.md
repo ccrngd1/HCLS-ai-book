@@ -172,6 +172,7 @@
   * [Python Example](chapter11.01-python-example)
 * [11.2 — Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot)
   * [Python Example](chapter11.02-python-example)
+* [11.3 — Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot)
 
 ---
 
