@@ -169,6 +169,7 @@
 
 * [Preface](chapter11-preface)
 * [11.1 — FAQ Chatbot](chapter11.01-faq-chatbot)
+  * [Python Example](chapter11.01-python-example)
 
 ---
 
