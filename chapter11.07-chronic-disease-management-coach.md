@@ -2118,6 +2118,14 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 <!-- TODO (TechWriter): Expert review S7 (MEDIUM). Specify biometric-data integrity verification including device-API authentication, per-device data-validation rules, anomaly detection for impossible readings, audit logging of all biometric-data ingestion events, and patient-notification when device data is missing for extended periods. -->
 
+<!-- TODO (TechWriter): Expert review S8 (LOW). Specify cohort-axis-hash labels for fine-grained intersections in CloudWatch metric dimensions to mitigate demographic-re-derivability in low-volume cohorts (long-tail-language by condition by social-determinant-flag intersections); analytics layer (Athena) preserves human-readable cohort labels with broader access-control surface. -->
+
+<!-- TODO (TechWriter): Expert review N2 (LOW). Specify the PrivateLink egress hierarchy for institutional integrations: PrivateLink preferred where vendor and integrations support it (vendor-hosted EHR endpoints, biometric-vendor APIs, care-team-workflow systems, pharmacy systems, care-navigation systems); Direct Connect or VPN as second tier; public-Internet-with-TLS as tertiary with per-vendor TLS posture verified. -->
+
+<!-- TODO (TechWriter): Expert review N3 (LOW). Add a brief paragraph in the Disaster Recovery Topology subsection (paired with A6) covering cross-region failover for Bedrock, Bedrock Agents, Bedrock Knowledge Bases, Lambda, DynamoDB, Step Functions, Pinpoint, Connect (where used), and the institutional integrations (EHR, biometric-vendor APIs, care-team-workflow, pharmacy, care-navigation). -->
+
+<!-- TODO (TechWriter): Code review N7/W1 alignment (LOW). Coordinate the Step 4 receive_message pseudocode and the Python companion's coach_full_pipeline so receive_message returns only the loaded longitudinal context (session_id, patient_id, longitudinal_context) and the orchestrator invokes Step 5 handle_conversation exactly once. The current Python companion calls handle_conversation twice per turn, doubling tool-call-ledger writes and (in production) LLM cost. -->
+
 ---
 
 ## The Honest Take
