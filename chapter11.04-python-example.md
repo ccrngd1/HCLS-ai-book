@@ -247,6 +247,19 @@ PROTOCOL_LIBRARY = {
              "category": "allergy_reconciliation"},
             {"id": "screener_phq2",          "category": "screener",
              "screener_id": "PHQ-2"},
+            # TODO (TechWriter): Code review E2 (ERROR). PHQ-2
+            # is a two-item screener but the protocol declares
+            # it as a single state-machine entry with no
+            # item_id. Combined with the silent items[0]
+            # default in screener_administer_tool_capture_item,
+            # only phq2_q1 is ever asked; the demo's second
+            # "not at all" gets captured as the closing-
+            # confirmation answer. Expand to per-item entries
+            # ({"id": "phq2_q1", ..., "item_id": "phq2_q1"};
+            # {"id": "phq2_q2", ..., "item_id": "phq2_q2"})
+            # plus a screener-finalize step that calls
+            # _compute_screener_score and appends a record to
+            # session.screener_records (W1).
             {"id": "closing_confirmation",   "category": "closing"},
         ],
         "screener_bundle_version":
@@ -257,6 +270,21 @@ PROTOCOL_LIBRARY = {
             # cardiac history with extra detail. Branches are
             # keyed by triggering finding and lead to additional
             # questions inserted into the flow.
+            #
+            # TODO (TechWriter): Code review E3 (ERROR). Branch
+            # questions are appended to the END of the
+            # full_flow in _question_flow_state_machine, after
+            # closing_confirmation, rather than inserted at the
+            # right protocol position. The chest-symptoms
+            # branch's hpi_severity and hpi_alleviating
+            # questions therefore land after the bot has
+            # already wrapped up. Add an `insert_after` field
+            # to each branch (e.g., "insert_after":
+            # "hpi_associated") and update
+            # _question_flow_state_machine to splice branch
+            # questions in at the declared position rather
+            # than appending. The demo's user-message count
+            # will need adjustment after the fix.
             "chest_symptoms": {
                 "trigger_keywords":
                     ["chest", "tightness", "pressure"],
@@ -1340,6 +1368,17 @@ def _handle_intake_message(session_id: str,
     if session.get("intake_paused"):
         # Conversation was paused (typically by a crisis flag);
         # do not advance protocol state.
+        # TODO (TechWriter): Code review W3 (WARNING). This
+        # branch (and the ask_clarifying early return inside
+        # _conduct_intake_turn) skip _append_turn entirely,
+        # so the assistant's reply is never persisted to the
+        # conversation log. The audit record's turn_count
+        # undercounts the bot's actual messages, and a
+        # reviewer pulling the conversation in QA sees the
+        # user message with no response shown. Centralize
+        # assistant-turn writes through a single helper that
+        # handles append-plus-(optional)-screen-plus-reply, so
+        # every assistant message lands in the audit log.
         return _build_chat_reply(
             session_id=session_id,
             response_text=(
@@ -1566,6 +1605,17 @@ def _conduct_intake_turn(session_id: str,
         session=session)
 
     # Persist partial state for resume.
+    # TODO (TechWriter): Code review W2 (WARNING). This
+    # _persist_partial_state call runs BEFORE
+    # protocol_position is updated below, so the persisted
+    # row carries the OLD position (the question just
+    # answered) rather than the next position. On resume,
+    # the bot re-asks the just-answered question. Reorder so
+    # the protocol_position and in_flight_question
+    # _update_session_field calls happen FIRST, then call
+    # _persist_partial_state. Also extend _persist_partial_state
+    # to include `in_flight_question` so the resumed bot
+    # picks up exactly where the patient left off.
     _persist_partial_state(_session_state(session_id))
 
     if next_step.get("action") == "complete":
@@ -2054,6 +2104,17 @@ def _acuity_pattern_detection(captured_findings: dict,
 def _pattern_matches(pattern: dict,
                        findings: dict) -> bool:
     """All trigger keys must have at least one keyword match."""
+    # TODO (TechWriter): Code review E1 (ERROR). The joined-text
+    # construction below filters with `isinstance(v, str)` and
+    # so excludes list-typed fields like `tags`. The cardiac
+    # acuity pattern's `history_family_cardiac` trigger requires
+    # keyword "early" or "before_60", which only appear inside
+    # the finding's `tags` list (set by history_extraction_tool
+    # for ages < 60). The matcher therefore never fires for
+    # the headline Marisol scenario. Either flatten list
+    # elements into the joined text, or extend the trigger
+    # schema so each pattern declares which finding fields to
+    # check (production design preferred).
     triggers = pattern.get("triggers", {})
     if not triggers:
         return False
@@ -2261,6 +2322,16 @@ def screener_administer_tool_capture_item(
         # When no item_id is provided, default to the first
         # item. Production tracks per-screener item progress
         # explicitly; the demo administers one item per turn.
+        #
+        # TODO (TechWriter): Code review E2 / N2 (ERROR /
+        # NOTE). Silent items[0] fallback is the mechanism
+        # by which the demo never advances past PHQ-2 q1.
+        # Combined with the protocol's single screener_phq2
+        # entry, only the first item is ever administered.
+        # After the protocol fix (per-item entries), this
+        # branch should either log a warning, refuse to
+        # default, or be removed entirely so the missing
+        # item_id surfaces at call time.
         item = items[0]
 
     if not item:
@@ -2320,6 +2391,22 @@ def _match_response_value(item: dict,
 def _compute_screener_score(screener_id: str,
                               item_responses: list) -> dict:
     """Compute the score for a completed screener."""
+    # TODO (TechWriter): Code review W1 (WARNING). This
+    # function is defined but never called. session
+    # ["screener_records"] is initialized to [] in
+    # _get_or_resume_session but no orchestration code
+    # appends a record. The packet's `screeners` field is
+    # therefore always empty, the closing summary's screener-
+    # score line never appears, and the audit record's
+    # screener_records_summary is always empty. After the E2
+    # protocol fix expands screener entries into per-item
+    # questions, add a screener-finalize step (or a substate
+    # in _conduct_intake_turn) that gathers all
+    # `screener_item_response` findings for the completed
+    # screener, calls _compute_screener_score, builds a
+    # screener_record dict, and appends to
+    # session.screener_records before the state machine
+    # advances past the screener bundle.
     screener = SCREENER_LIBRARY.get(screener_id, {})
     scoring = screener.get("scoring", {})
     if scoring.get("method") != "sum":
@@ -2982,6 +3069,18 @@ def hpi_extraction_tool(hpi_dimension: Optional[str],
     question text as context plus a structured-output schema;
     the demo uses a simple text-capture pattern.
     """
+    # TODO (TechWriter): Code review N1 (NOTE). Per-category
+    # extraction tools (HPI / ROS / medication / allergy /
+    # history) here only return ask_clarification on empty
+    # text. Every non-empty answer is captured regardless of
+    # quality, even "uhh" or "what?". Production tools
+    # produce a confidence score, compare against
+    # EXTRACTION_CONFIDENCE_THRESHOLD, and return
+    # ask_clarification when below threshold. Apply the same
+    # treatment to ros_extraction_tool,
+    # medication_reconciliation_capture_tool,
+    # allergy_reconciliation_capture_tool, and
+    # history_extraction_tool below.
     text = (answer_text or "").strip()
     if not text:
         return {"action": "ask_clarification",
