@@ -178,6 +178,7 @@
   * [Python Example](chapter11.04-python-example)
 * [11.5 — Insurance Benefits Navigator](chapter11.05-insurance-benefits-navigator)
   * [Python Example](chapter11.05-python-example)
+* [11.6 — Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot)
 
 ---
 
