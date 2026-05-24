@@ -1110,6 +1110,12 @@ def _handle_benefits_message(session_id: str,
         # questions. Unauthenticated members can still ask
         # general questions; the intent-classification step
         # handles that pathway.
+        # TODO (N1): This block is a no-op. The actual gating
+        # happens in _classify_and_route via the
+        # MEMBER_SPECIFIC_INTENTS check against
+        # verified_member_id. Either delete this block or
+        # convert it into an explicit early-return guard so
+        # readers do not see a dead conditional.
         pass
 
     if (session.get("verified_member_id")
@@ -1906,6 +1912,12 @@ def _handle_claim_explanation(session_id: str,
     claim = matches[0]
 
     # Step 6B: translate CARC/RARC for adjustments.
+    # TODO (N6): Wrap each carc_rarc_translation_tool call in
+    # _audit_tool_call so that the tool-call ledger captures the
+    # per-adjustment translation calls alongside claim_lookup.
+    # The recipe's sample audit record explicitly shows
+    # carc_rarc_translation in tool_calls_summary; the demo
+    # currently omits it.
     code_translations = []
     for adj in claim.get("adjustments", []):
         translation = carc_rarc_translation_tool(
@@ -2532,6 +2544,28 @@ def _screen_output(session_id: str,
         # constrained to current-year retrievals.
         citations = [c for c in citations
                       if c not in inconsistent]
+
+    # TODO (TechWriter): Code review W2 (WARNING). Add a
+    # regulatory-disclosure-presence verifier here that
+    # recomputes applicable disclosures via
+    # _applicable_disclosures and checks each required
+    # disclosure's phrasing is present in response_text;
+    # missing-disclosure case returns
+    # action="augment_with_disclosures" with the missing
+    # phrasings appended. Today the disclosures are added
+    # inline in each handler before screening, which is a
+    # weaker guarantee than a screening-stage verifier.
+
+    # TODO (TechWriter): Code review W3 (WARNING). Add a
+    # persona-and-tone check here corresponding to pseudocode
+    # Step 8F. Detect distress signals in the recent user
+    # message (financial distress, behavioral-health content,
+    # denial vocabulary) plus procedural tone in the response;
+    # return action="regenerate_with_persona_correction" with
+    # empathetic-tone guidance when the two coincide. Even a
+    # keyword-based heuristic in the demo demonstrates the
+    # pattern; production uses an LLM-as-judge evaluator with
+    # structured-output schema validation.
 
     return {
         "action":         "deliver",
@@ -3320,6 +3354,17 @@ class MockTable:
     def query(self, KeyConditionExpression,
               ScanIndexForward=True, Limit=None,
               IndexName=None):
+        # TODO (TechWriter): Code review W1 (WARNING). The
+        # KeyConditionExpression's _values tuple is
+        # (Key("session_id"), session_id_string); index [0] is
+        # the Key attribute object, not the string, so every
+        # range-query against conversation_metadata,
+        # tool-call-ledger, and decision-record tables silently
+        # returns an empty list. Fix: change the index to [1],
+        # or replace the private-attribute access with an
+        # explicit query_by_session_id(session_id, ...) helper
+        # that does not depend on boto3 internals. Carry-forward
+        # bug from 11.01 N2 through 11.02-11.04.
         sid = list(KeyConditionExpression._values)[0]
         items = list(self.range_items.get(sid, []))
         items.sort(
