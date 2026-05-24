@@ -183,6 +183,7 @@
 * [11.7 — Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach)
   * [Python Example](chapter11.07-python-example)
 * [11.8 — Mental Health Support Bot](chapter11.08-mental-health-support-bot)
+  * [Python Example](chapter11.08-python-example)
 
 ---
 
