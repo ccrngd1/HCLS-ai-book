@@ -158,6 +158,7 @@
   * [Python Example](chapter10.07-python-example)
 * [10.8 — Voice Biomarker Detection](chapter10.08-voice-biomarker-detection)
   * [Python Example](chapter10.08-python-example)
+* [10.9 — Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring)
 
 ---
 
