@@ -177,6 +177,7 @@
 * [11.4 — Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot)
   * [Python Example](chapter11.04-python-example)
 * [11.5 — Insurance Benefits Navigator](chapter11.05-insurance-benefits-navigator)
+  * [Python Example](chapter11.05-python-example)
 
 ---
 
