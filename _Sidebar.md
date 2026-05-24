@@ -175,6 +175,7 @@
 * [11.3 — Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot)
   * [Python Example](chapter11.03-python-example)
 * [11.4 — Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot)
+  * [Python Example](chapter11.04-python-example)
 
 ---
 
