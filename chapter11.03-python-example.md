@@ -556,6 +556,22 @@ PHI_PATTERNS = {
     "mrn_prefix":   re.compile(r"\bMRN\s*[:#]?\s*\d{4,}\b",
                                 re.IGNORECASE),
 }
+# TODO (TechWriter): Code review W2 (WARNING). Same root cause as
+# 11.01 / 11.02: the `account_long` 9-16-digit pattern matches any
+# standalone digit run, including a phone number the bot just asked
+# the patient to provide for identity verification. The contradictory
+# loop is masked in 11.03 because REQUIRE_AUTHENTICATED_FOR_REFILL
+# gates refill-action intents to authenticated sessions, but a
+# deployment that flips that flag for status-check or
+# medication-question intents over an unauthenticated channel hits
+# the same loop documented in 11.02. Phase-gate the `account_long`
+# check on the conversation phase (skip when the last assistant turn
+# was an `ask_for_identifiers` / `ask_for_phone` / `step_up_requested`
+# action), or tighten the pattern to require an account-context cue
+# (e.g., (?:account|member|insurance)) within a small window. While
+# editing, also extend `_redact_pii_for_logging` to cover ISO and
+# slash-formatted dates of birth so the audit pipeline does not carry
+# the patient's DOB in plain text after redaction.
 ```
 
 ---
@@ -826,6 +842,15 @@ def _get_or_create_session(channel: str,
             int(item.get("message_count", 0)) + 1)
         table.put_item(Item=_to_decimal(item))
         return _from_decimal(item)
+    # TODO (TechWriter): Code review N2 (NOTE). The
+    # read-modify-write above is a tutorial-grade race condition.
+    # Two messages from the same channel arriving close together
+    # both read message_count = N, both increment to N + 1, and the
+    # last write wins, so message_count ends at N + 1 instead of
+    # N + 2. The DynamoDB-native pattern is `update_item` with
+    # UpdateExpression "SET #la = :ts ADD #mc :one"; switch to that
+    # in production (and update the demo's mock to support
+    # multi-attribute UpdateExpression and ADD; see N3).
 
     # Brand-new session.
     new_session = {
@@ -1548,6 +1573,16 @@ def _collect_identifiers_from_message(user_message: str,
     conf_match = re.search(
         r"(?<!\d)(\d{4})(?!\d)", combined)
     confirmation = conf_match.group(1) if conf_match else None
+    # TODO (TechWriter): Code review W1 (WARNING). Same root cause as
+    # 11.01 / 11.02: this regex returns the FIRST standalone 4-digit
+    # sequence, which on the canonical "Marcus Chen, 1979-03-14, 7842"
+    # input picks "1979" (the DOB year) instead of "7842" (the
+    # last-four-of-phone the bot's prompt asked for). The bug is masked
+    # in 11.03 because REQUIRE_AUTHENTICATED_FOR_REFILL gates the
+    # refill-action intents to authenticated sessions, but the bug fires
+    # immediately if a deployment turns that flag off. Use re.findall
+    # and pick the LAST match, ideally as a shared helper across the
+    # 11.01-11.04 recipes so the fix lands once.
 
     complete = bool(name and dob and confirmation)
     return {
@@ -3005,6 +3040,21 @@ def screen_output(session_id: str, response_text: str) -> dict:
     each call _append_turn directly with pre-built strings, so
     the demo applies this at the boundary in run_demo.
     """
+    # TODO (TechWriter): Code review W3 (WARNING). The refill-claim
+    # verification, medication-list integrity check, and
+    # controlled-substance language detection below are the
+    # load-bearing safety primitive the main recipe sells. Today,
+    # most assistant turns are appended via _append_turn directly
+    # inside helper functions like _execute_auto_approve, which
+    # captures the unscreened text in the audit metadata; only the
+    # run_demo wrapper calls screen_output before delivery, so the
+    # audit log holds the unverified claim while the user sees the
+    # safe replacement. Centralize assistant-turn writes through a
+    # single helper that runs screen_output first, then appends the
+    # (possibly replaced) turn, then returns the chat-reply payload,
+    # so the prescription-ID claim in the auto-approval confirmation
+    # goes through the screen exactly once and the audit metadata
+    # always matches the delivered text.
     # Step 9A: standard scope-drift check on the generated text.
     violations = _check_response_scope(response_text)
     if violations:
@@ -3316,6 +3366,26 @@ def close_conversation_and_archive(session_id: str,
             bool(state.get("crisis_detected", False)),
         "scope_violation_count":
             int(state.get("scope_violation_count", 0)),
+        # TODO (TechWriter): Code review W4 (WARNING). The
+        # scope_violation_count, handoffs_offered, and
+        # handoffs_accepted counters are initialized to 0 in
+        # _get_or_create_session and read here at archive time, but no
+        # code path increments them. CloudWatch metrics fire
+        # independently (HandoffOffered, OutputScopeViolation,
+        # UnsupportedRefillClaim, MedicationNotOnPatientList,
+        # ControlledSubstanceAutoApprovalAttempted) so the per-cohort
+        # dashboards work, but the per-conversation audit record always
+        # shows 0 and the close_conversation_and_archive
+        # final_disposition logic never lands at "escalated" for
+        # discontinuation-handoff or other handoff-accepted cases.
+        # Add an _increment_session_counter helper (using DynamoDB ADD
+        # in production; the demo's MockTable.update_item only handles
+        # single-attribute SET expressions, so update the mock or use
+        # an explicit read-modify-write with a comment) and call it at
+        # each emission site (handoffs_offered after _put_metric
+        # "HandoffOffered" in _handle_in_scope_message;
+        # scope_violation_count when screen_output detects a violation;
+        # handoffs_accepted via a new record_user_feedback hook).
         "refills_auto_approved":
             int(state.get("refills_auto_approved", 0)),
         "refills_routed":
@@ -3539,6 +3609,19 @@ def protocol_evaluate_tool(patient_id: Optional[str],
     clinical leadership; the demo runs the protocol from
     REFILL_PROTOCOL.
     """
+    # TODO (TechWriter): Code review N1 (NOTE). request_context carries
+    # `refills_remaining` from _evaluate_protocol but this function
+    # never consults it. A patient with refills_remaining = 0 (Eleanor's
+    # metformin in the recipe narrative) is treated identically to a
+    # patient with refills authorized as long as the early-refill,
+    # monitoring, and interaction checks pass. The narrative implies
+    # the bot handles the refills_remaining = 0 case by deferring to
+    # the prescriber under standing-order delegation. Either consume
+    # `refills_remaining` here (e.g., a separate `route_for_renewal`
+    # disposition when refills_remaining == 0 and the protocol's
+    # standing-order rules require it), or stop packaging it into
+    # request_context with a comment that standing-order renewal is
+    # out of scope for the demo.
     name_lower = (medication.get("name") or "").lower()
     entry = REFILL_PROTOCOL.get(name_lower, {})
 
@@ -3744,6 +3827,15 @@ def knowledge_base_retrieve_and_answer(question: str,
     Knowledge Bases' retrieve-and-generate flow with the
     medication-information corpus as the source.
     """
+    # TODO (TechWriter): Code review N4 (NOTE). The demo wires this
+    # to MockKnowledgeBase, but the bedrock_agent_runtime client
+    # constructed at module load is never invoked, so a reader does
+    # not see the production API surface. Either include the real
+    # `bedrock_agent_runtime.retrieve_and_generate(...)` call here
+    # (with the mock taking over via the same boto3-client
+    # substitution pattern used elsewhere) or add an explicit
+    # "this is what the production call looks like" code-comment
+    # block referencing recipe 11.1's pattern.
     return knowledge_base.retrieve_and_answer(
         question=question,
         medication=medication,
@@ -3786,6 +3878,15 @@ class MockTable:
     def update_item(self, Key, UpdateExpression,
                     ExpressionAttributeNames=None,
                     ExpressionAttributeValues=None):
+        # TODO (TechWriter): Code review N3 (NOTE). This regex only
+        # handles a single-attribute `SET <name> = <val>` UpdateExpression.
+        # Multi-attribute SETs ("SET #a = :a, #b = :b") and ADD/REMOVE
+        # actions silently no-op, which is the wrong default for a
+        # teaching example because a learner extending the demo to
+        # increment a counter via "ADD #c :one" (the natural fix for
+        # W4) sees no error and no state change. Split the expression
+        # on action tokens and apply each piece in turn, or at minimum
+        # log a warning when the regex does not match.
         key = Key[self.key_attr]
         existing = self.items.get(key, dict(Key))
         match = re.match(r"\s*SET\s+(\S+)\s*=\s*(\S+)\s*$",
@@ -3980,6 +4081,23 @@ class MockEHR:
             },
         }
         # Synthetic medication lists per patient.
+        # TODO (TechWriter): Code review E1 (ERROR). Eleanor's metformin
+        # fixture has `days_since_last_fill: 31` against a 90-day supply
+        # with the protocol's `early_refill_threshold_days: 7`, so the
+        # protocol's early-refill check fires (31 < 90 - 7 = 83) and
+        # routes the request to clinical instead of auto-approving.
+        # That contradicts the recipe's headline "Sample conversation"
+        # narrative (Eleanor's ninety-second metformin auto-approval
+        # with confirmation number RX-2026-7798231). Bump
+        # days_since_last_fill on the metformin entry to a value past
+        # the early-refill threshold (e.g., 92) so the headline
+        # `happy_path_auto_approve` scenario actually exercises the
+        # auto-approval path and the demo output matches the recipe's
+        # sample audit record. Same fixture mismatch affects
+        # Eleanor's lisinopril (`days_since_last_fill: 20` is also
+        # below the 83-day threshold for a 90-day supply); bump to
+        # something like 85 so both maintenance medications align
+        # with the narrative.
         self.medications = {
             "patient-internal-eleanor": [
                 {
