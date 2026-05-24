@@ -171,6 +171,7 @@
 * [11.1 — FAQ Chatbot](chapter11.01-faq-chatbot)
   * [Python Example](chapter11.01-python-example)
 * [11.2 — Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot)
+  * [Python Example](chapter11.02-python-example)
 
 ---
 
