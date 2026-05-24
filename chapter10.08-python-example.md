@@ -687,8 +687,13 @@ class MockComprehendMedical:
         self._fixtures = entity_fixtures
         self.invocations = []
 
-    def detect_entities(self, text):
-        self.invocations.append({"type":     "detect_entities",
+    def detect_entities_v2(self, text):
+        # Real boto3: comprehend_medical.detect_entities_v2(Text=text).
+        # The capitalized Text= keyword on the production
+        # client; the demo uses lowercase text= for Pythonic
+        # readability. detect_entities (without _v2) is
+        # deprecated; new integrations should use _v2.
+        self.invocations.append({"type":     "detect_entities_v2",
                                   "text_len": len(text)})
         return self._fixtures.get(text,
                                     {"Entities": []})
@@ -1578,9 +1583,14 @@ def route_to_clinical_review(session_id, clinical_entities):
     """
     Route incidentally-mentioned actionable clinical content
     to the clinical-review workflow regardless of the
-    biomarker output. Production creates an EHR alert;
-    the demo records an event.
+    biomarker output. Production creates an EHR alert; this
+    demo only records an audit event. A real deployment calls
+    something like ehr_cds.create_alert(...) with a
+    "spontaneous_speech_incidental" priority so the alert
+    reaches a clinician synchronously.
     """
+    # TODO (TechWriter): production should create an EHR
+    # decision-support alert here, not just audit-log it.
     audit_log({
         "event_type":      "INCIDENTAL_CLINICAL_CONTENT",
         "session_id":      session_id,
@@ -1603,6 +1613,14 @@ def extract_features(session_id):
     features for each captured task segment, with bandwidth
     and codec-aware processing. Persist the resulting
     feature set to S3 and update the capture-session record.
+
+    Note: production runs voice-activity detection and task-
+    specific segmentation on each captured audio_ref before
+    the feature pipeline. The demo assumes captured segments
+    are already trimmed and task-segmented; a real
+    implementation calls a VAD service (a custom Lambda
+    running webrtcvad or silero-vad, or a SageMaker endpoint
+    hosting a VAD model) at this point.
     """
     state = capture_session_table.get(session_id)
     indication = state.get("indication")
@@ -1656,7 +1674,7 @@ def extract_features(session_id):
 
             if task_def.get("is_spontaneous_speech"):
                 clinical_entities = (
-                    comprehend_mock.detect_entities(
+                    comprehend_mock.detect_entities_v2(
                         text=transcript))
                 if has_actionable_clinical_content(
                         clinical_entities):
@@ -1870,6 +1888,13 @@ def summarize_ineligibility(elig):
     """Produce a short, human-readable list of ineligibility
     reasons for the result payload."""
     reasons = []
+    # Handle the simplified "no model card available" shape
+    # produced by check_eligibility when an indication has no
+    # model card. Without this guard, the chained dict lookups
+    # below would raise KeyError mid-loop and crash scoring
+    # for every other indication in the same session.
+    if "reason" in elig and "demographic_fit" not in elig:
+        return [elig["reason"]]
     if not elig["demographic_fit"]["eligible"]:
         if not elig["demographic_fit"]["age_eligible"]:
             reasons.append("age_outside_validation")
@@ -2069,16 +2094,12 @@ def apply_calibration(raw_score, calibration_curve):
         if z < Decimal("-4"):
             return Decimal("0.02")
         # Linear approximation around 0; close enough for
-        # illustration. Production uses real sigmoid.
-        return (Decimal("0.5")
-                  + z * Decimal("0.18")).max(
-                      Decimal("0.01")).min(
-                      Decimal("0.99")) \
-            if hasattr(Decimal, "max") else \
-            min(Decimal("0.99"),
-                  max(Decimal("0.01"),
-                        Decimal("0.5") + z
-                        * Decimal("0.18")))
+        # illustration. Production uses real sigmoid (math.exp
+        # via float, then convert back to Decimal).
+        return min(Decimal("0.99"),
+                     max(Decimal("0.01"),
+                           Decimal("0.5") + z
+                           * Decimal("0.18")))
     if isinstance(calibration_curve, dict) and \
        calibration_curve.get("curve") == "isotonic":
         knots = calibration_curve.get("knot_points", [])
@@ -2196,6 +2217,12 @@ def score_biomarkers(session_id):
         # Step 4B: invoke the SageMaker endpoint. Real-time
         # endpoints serve in-encounter scoring; asynchronous
         # endpoints serve longitudinal-monitoring batches.
+        # Real boto3 uses PascalCase keyword arguments:
+        #     sagemaker_runtime.invoke_endpoint(
+        #         EndpointName=endpoint_name,
+        #         Body=json.dumps(model_input).encode("utf-8"),
+        #         ContentType="application/json")
+        # The mock uses snake_case to keep the demo readable.
         if model_card.get("inference_mode") == "real_time":
             raw_response = sagemaker_mock.invoke_endpoint(
                 endpoint_name=endpoint_name,
@@ -2204,6 +2231,19 @@ def score_biomarkers(session_id):
         else:
             # Production writes the input payload to S3 and
             # passes the S3 URI to invoke_endpoint_async.
+            # In production: invoke_endpoint_async returns
+            # immediately with OutputLocation, InferenceId,
+            # and FailureLocation; the actual model output
+            # is written to OutputLocation asynchronously
+            # (tens of seconds to minutes for voice biomarker
+            # workloads). Poll S3 for the output object, or
+            # use the endpoint's SNS notification topic
+            # (the preferred production pattern), then
+            # s3.get_object on the OutputLocation. A long-
+            # blocking Lambda is not appropriate here; Step
+            # Functions handles this with a Wait + GetObject
+            # loop, or EventBridge handles the SNS-driven
+            # completion event.
             input_object = s3_store.put_object(
                 bucket=FEATURE_BUCKET,
                 key=(f"async-input/{session_id}/"
@@ -2374,9 +2414,7 @@ def compute_patient_baseline(prior_samples,
     if len(scores) > 1:
         variance = (sum((sc - mean) ** 2 for sc in scores)
                      / Decimal(str(len(scores) - 1)))
-        std = variance.sqrt() \
-            if hasattr(Decimal, "sqrt") else (
-                Decimal(str(float(variance) ** 0.5)))
+        std = variance.sqrt()
     else:
         std = Decimal("0.05")
     return {
@@ -2490,6 +2528,18 @@ def package_interpretation(session_id):
             confound_flags=score.get("confound_flags", []))
 
         # Step 5C: clinician-facing summary via Bedrock.
+        # In production: real bedrock_runtime.invoke_model
+        # returns a StreamingBody under the "body" key, so
+        # the parse is:
+        #     body_text = response["body"].read().decode("utf-8")
+        #     parsed = json.loads(body_text)
+        # The request body for Anthropic Claude on Bedrock is
+        # the Anthropic Messages API shape (messages, system,
+        # max_tokens, anthropic_version, optionally tools +
+        # tool_choice for structured output via tool-use). The
+        # pseudocode's response_format / json_schema field in
+        # the main recipe is OpenAI-style; the Anthropic
+        # equivalent on Bedrock is forcing a tool call.
         summary_response = (
             bedrock_mock.render_clinician_summary(
                 session_id=session_id,
@@ -2725,6 +2775,13 @@ def deliver_to_workflow(session_id):
         observation_response = healthlake.create_observation(
             datastore_id=HEALTHLAKE_DATASTORE_ID,
             observation=observation)
+        # Real boto3:
+        #   healthlake_client.create_resource(
+        #       DatastoreId=HEALTHLAKE_DATASTORE_ID,
+        #       ResourceType="Observation",
+        #       Resource=json.dumps(observation))
+        # The Resource parameter is a JSON-encoded string,
+        # not a dict; the mock takes the dict for readability.
 
         # Step 6B: surface the result per the clinical-action
         # mapping. Indeterminate results route to clinician
