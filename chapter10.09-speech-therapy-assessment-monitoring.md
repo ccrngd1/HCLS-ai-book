@@ -348,13 +348,21 @@ A few cross-cutting design points the architecture has to bake in.
 
 **School-context deployments have specific privacy considerations.** School-based SLP work falls under FERPA in addition to HIPAA where applicable. Consent for minors requires parent or guardian authorization, and the school's existing processes for educational records apply. The architecture supports school-context configurations with appropriate consent and storage segregation.
 
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add a "Pediatric, FERPA, COPPA, and School-Context Profile" subsection specifying four overlapping deployment contexts (clinic-based pediatric, school-based pediatric, direct-to-child interface, adult speech-therapy) with per-profile differences in consent flow (FERPA-aligned with per-state educational-records retention; COPPA-aligned verifiable parental consent; HIPAA-aligned), access control (FERPA-aligned with school-employee-legitimate-educational-interest plus parent-access-by-default; HIPAA-aligned with treating-provider plus patient/legal-representative; dual-jurisdiction handling for billed school services), documentation generation (IEP-aligned for school deployments; HIPAA-aligned standard for clinic deployments), age-of-majority handoff (per-state age detection, notice generation, consent-authority transition from parent-on-behalf to patient-on-own-behalf), and the pediatric-assent-versus-parent-consent gradient for older pediatric patients. Update Step 1C consent capture and audit_record at Step 8 with deployment-context flags. -->
+
+
 **Telepractice audio differs from in-clinic audio.** Telepractice introduces video-call codec compression, network packet loss, ambient home noise, and microphone variability. The acoustic models, the quality assessment, and the eligibility gating all need telepractice-specific configuration. The system either constrains the telepractice capture (specific recommended apps, microphone guidance) or validates broadly across realistic telepractice conditions.
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add a "Per-Device-Pattern Audio Path Authentication and Encryption" paragraph specifying per-device-pattern data-in-transit posture (TLS-in-transit minimum; mTLS preferred for in-clinic dedicated microphones; per-encounter session tokens; device-attestation for mobile-app and home-practice patterns; verifiable parental consent for pediatric direct-to-child interfaces per Finding S3; parent-co-presence verification for pediatric telepractice; per-session patient-pairing under FERPA-aligned access controls for school-based shared equipment), per-device-pattern BAA scope, per-device-class certification (HITRUST, SOC 2 Type II, FDA SaMD where applicable), and audit-record propagation of the device-attestation context. -->
 
 **Home-practice and parent-coaching applications are different products from clinical assessment.** A child practicing target sounds at home with a mobile app, with the system providing immediate feedback, is a different product context from an SLP performing an annual reassessment. The architecture supports both with shared infrastructure but distinct workflow surfaces and distinct clinical-action mappings.
 
 **Multilingual speakers warrant language-aware pipelines, not just translated stimuli.** A bilingual Spanish-English child has phonological-pattern profiles that differ from monolingual English children. Articulation assessment in bilingual populations requires bilingual-aware norms, language-specific phoneme models, and explicit handling of code-switching during assessment. Translating the stimulus list is not enough.
 
 **Audio retention policy is bounded by consent and protected by encryption.** Voice samples from speech-therapy assessment are biometric data. Retention is bounded to what consent supports and what clinical and regulatory needs require. Audio retention beyond the immediate scoring window benefits the longitudinal-comparison and model-improvement workflows; the institution's privacy officer reviews the retention policy explicitly.
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Promote voice-as-biometric-data governance from passing reference to architectural primitive. Add a "Voice-as-Biometric-Data Governance Scaffolding with Pediatric-Records, FERPA, and COPPA Layering" subsection specifying: per-jurisdiction biometric-data consent at collection (BIPA, CUBI, Washington biometric-data law, GDPR Article 9 for EU patients) with parent-on-behalf authority for minors and patient-on-own-behalf handoff at age of majority; disclosure-accounting log per use; right-to-deletion workflow with deletion-propagation across audio, feature vectors, per-item scores, longitudinal trajectory, goal-attainment data, and disclosure-accounting log entries; per-jurisdiction key-management with cryptographic erasure as deletion primitive; feature-vector biometric classification; pediatric-records-extending-to-age-of-majority-plus-X retention as architectural primitive (per-state variation); synthetic-voice-detection / voice-cloning defense with pediatric-amplification; FERPA-aligned access controls for school deployments; COPPA-aligned verifiable parental consent for direct-to-child interfaces. Update Step 1C consent capture and subsequent steps to append disclosure-accounting log entries. Add a Step 9 deletion-propagation pseudocode pattern with parent-on-behalf-to-patient-on-own-behalf authority handoff. Add a Production-Gaps subsection naming privacy officer plus institutional-records-management plus FERPA records-officer as canonical owners. -->
+
 
 ---
 
@@ -534,11 +542,11 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, Amazon SageMaker (real-time and asynchronous endpoints, Model Monitor, Clarify), AWS Lambda, AWS Step Functions, Amazon Transcribe Medical, Amazon Bedrock (with Guardrails), AWS HealthLake, Amazon DynamoDB, Amazon API Gateway, Amazon Cognito, AWS KMS, AWS Secrets Manager, Amazon EventBridge, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena. Optionally Amazon QuickSight for dashboards. |
-| **Validated Models** | Disordered-speech-aware acoustic models per target population (pediatric articulation, adult dysarthria, fluency, voice quality). For most institutions this means selecting commercial vendors with appropriate validation evidence rather than building from scratch. Building requires multi-year clinical-research validation studies, IRB-approved cohort development, and SLP-graded labeled data. The architecture supports either pattern: third-party model integration through SageMaker endpoint or vendor API; institutionally-built models hosted on SageMaker endpoints. |
+| **Validated Models** | Disordered-speech-aware acoustic models per target population (pediatric articulation, adult dysarthria, fluency, voice quality). For most institutions this means selecting commercial vendors with appropriate validation evidence rather than building from scratch. Building requires multi-year clinical-research validation studies, IRB-approved cohort development, and SLP-graded labeled data. The architecture supports either pattern: third-party model integration through SageMaker endpoint or vendor API; institutionally-built models hosted on SageMaker endpoints. <!-- TODO (TechWriter): Expert review N2 (MEDIUM). For vendor-API integrations (where audio or feature vectors cross the institutional-vendor boundary as a biometric-data export event), specify: vendor API authentication via mTLS or API key + scoped IAM credentials with per-call rotation; TLS-in-transit minimum with certificate pinning where supported; per-call disclosure-accounting log entry per Finding S1; vendor BAA scope covering audio data-in-transit, at-rest within the vendor pipeline, and within the vendor's subprocessors; vendor data-residency commitment aligned with the patient's jurisdiction (e.g., EU patients route to EU-resident vendor endpoints under GDPR Article 9); egress hierarchy PrivateLink > Direct Connect / VPN > public-Internet-with-TLS. --> |
 | **External Inputs** | Stimulus sets per assessment instrument (Goldman-Fristoe-aligned, Hodson-aligned, SSI-aligned, CAPE-V protocols, etc.); these are typically licensed from the assessment-instrument publishers. Population norms per age band, sex, and language background. SLP-labeled validation data per assessment instrument and per population. EHR or SIS write surface for assessment results. |
-| **IAM Permissions** | Per-Lambda least-privilege roles. The session-ingest Lambda has S3 write to the audio bucket only and Step Functions or EventBridge publish for the pipeline trigger. The feature-extraction Lambda has S3 read on the audio bucket and write on the feature bucket plus Transcribe Medical permissions and SageMaker invoke-endpoint for the alignment, phoneme-classification, fluency-detection, and voice-quality endpoints. The scoring Lambda has DynamoDB read access to norms tables and write access to per-session scoring tables. The documentation Lambda has Bedrock invoke-model permissions, S3 write to the report archive, and HealthLake write permissions. The EHR or SIS integration Lambda has Secrets Manager access for credentials and the system-specific egress. Avoid wildcard actions and resources in production. |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The session-ingest Lambda has S3 write to the audio bucket only and Step Functions or EventBridge publish for the pipeline trigger. The feature-extraction Lambda has S3 read on the audio bucket and write on the feature bucket plus Transcribe Medical permissions and SageMaker invoke-endpoint for the alignment, phoneme-classification, fluency-detection, and voice-quality endpoints. The scoring Lambda has DynamoDB read access to norms tables and write access to per-session scoring tables. The documentation Lambda has Bedrock invoke-model permissions, S3 write to the report archive, and HealthLake write permissions. The EHR or SIS integration Lambda has Secrets Manager access for credentials and the system-specific egress. Avoid wildcard actions and resources in production. <!-- TODO (TechWriter): Expert review S7 (MEDIUM). Specify that each Lambda's resource-based policy pins the invoking principal to the production API Gateway stage ARN, the production Step Functions state-machine ARN, or the production EventBridge rule ARN as appropriate; add a defense-in-depth event-payload validation guard at the start of each Lambda that verifies the invoking context against the production constants. --> |
 | **BAA and Compliance** | AWS BAA signed. Amazon S3, SageMaker, Lambda, Step Functions, Transcribe Medical, Bedrock (verify the specific models and regions covered), HealthLake, DynamoDB, API Gateway, Cognito, KMS, Secrets Manager, EventBridge, CloudWatch Logs, CloudTrail, Kinesis Firehose, Glue, Athena are HIPAA-eligible (verify the current list at build time against the AWS HIPAA Eligible Services Reference). <!-- TODO: verify; the AWS HIPAA-eligible services list and the specific Bedrock models covered under BAA continue to evolve --> Voice samples are biometric data; biometric-data law (Illinois BIPA, Texas, Washington) applies in addition to HIPAA where the patient's jurisdiction triggers it. School deployments add FERPA considerations. Pediatric deployments add COPPA considerations for any direct-to-child interface elements. SaMD regulatory consideration for any model that produces autonomous diagnostic claims; pre-deployment FDA strategy review for indications where a SaMD pathway is relevant. IRB or institutional review for research-track deployments and for cohort-development data collection. |
-| **Encryption** | Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically days to weeks for active therapy support, optionally longer with explicit consent). Feature vectors: SSE-KMS with separate customer-managed keys, retention as needed for longitudinal analysis and model improvement. Assessment reports and scoring records: SSE-KMS with customer-managed keys, retention aligned with medical-record retention or educational-record retention as applicable. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, biometric-data law retention requirements, FERPA educational-record retention where applicable, state medical-records-retention rules including pediatric-extending-to-age-of-majority-plus-X, and institutional regulatory floor. DynamoDB tables, HealthLake datastore, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls. |
+| **Encryption** | Audio samples: SSE-KMS with customer-managed keys, retention bound to the consent terms (typically days to weeks for active therapy support, optionally longer with explicit consent). Feature vectors: SSE-KMS with separate customer-managed keys, retention as needed for longitudinal analysis and model improvement. Assessment reports and scoring records: SSE-KMS with customer-managed keys, retention aligned with medical-record retention or educational-record retention as applicable. Audit archive: SSE-KMS with customer-managed keys, retention sized to the longer of HIPAA's six-year minimum, biometric-data law retention requirements, FERPA educational-record retention where applicable, state medical-records-retention rules including pediatric-extending-to-age-of-majority-plus-X, and institutional regulatory floor. <!-- TODO (TechWriter): Expert review S6 (MEDIUM). Name the audit-log retention floor explicitly as the longest of: HIPAA's six-year minimum; state-specific medical-records-retention rules including pediatric-extending-to-age-of-majority-plus-X (per-state variation: California age-of-majority-plus-1-year; New York 6 years from majority; Texas age-25; etc.); per-jurisdiction biometric-records retention (BIPA, CUBI, Washington's biometric-data law, GDPR Article 9 for EU patients); FERPA educational-record retention for school-based deployments (per-state variation); COPPA-related retention boundary for direct-to-child interface elements; FDA SaMD post-market surveillance retention for cleared devices; institutional regulatory floor. Note that the disclosure-accounting log per Finding S1 follows a separate retention regime. --> DynamoDB tables, HealthLake datastore, Lambda environment variables, and Lambda log groups: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all API calls. |
 | **VPC** | Production: Lambdas that call back-office APIs (EHR FHIR, SIS systems, patient portal) run in VPC with controlled egress. VPC endpoints for S3, DynamoDB, KMS, Secrets Manager, CloudWatch Logs, EventBridge, SageMaker Runtime, Transcribe Medical, Bedrock, Lambda. Endpoint policies pin access to the specific resources the pipeline uses. SageMaker endpoints in VPC mode where supported by the chosen container. |
 | **CloudTrail** | Enabled with data events on the audio bucket, the feature bucket, the report archive bucket, the audit archive bucket, the DynamoDB tables, the Secrets Manager secrets, and the customer-managed KMS keys. SageMaker invocations logged. Bedrock invocations logged with metadata only (not full input/output, to avoid persisting biometric or PHI content in CloudTrail). Lambda invocations logged. API Gateway access logs enabled. CloudTrail logs in a dedicated S3 bucket with Object Lock in Compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. |
 | **Sample Data** | Public disordered-speech corpora for development and feature-pipeline validation. Examples include the TORGO database (dysarthric speech), the UASpeech corpus (cerebral-palsy-related speech), the FluencyBank corpus (stuttering), the AphasiaBank corpus (post-stroke aphasia), and the LANNA pediatric speech corpus; each has its own access terms that must be reviewed before integration. <!-- TODO: verify dataset URLs, current availability, and license terms before integration; the public disordered-speech dataset landscape evolves --> Synthetic capture-quality test signals for the audio QA pipeline. Never use uncoded production patient voice samples in development without explicit consent and IRB or institutional review. |
@@ -883,6 +891,17 @@ FUNCTION extract_features(session_id):
             // should be handled asynchronously via
             // Step Functions wait-for-callback rather
             // than blocking inside this Lambda.
+            // TODO (TechWriter): Expert review A7 (MEDIUM).
+            // Decompose this step into two Step Functions
+            // states: Lambda-invokes-start_job-and-returns,
+            // then Step Functions waits for the Transcribe
+            // job-completion event (or polls with backoff),
+            // then a separate Lambda step retrieves the
+            // transcript and runs extract_linguistic_features.
+            // Update the architecture diagram to show the
+            // two-step decomposition and remove the
+            // synchronous wait inside the feature-extraction
+            // Lambda.
             wait_for_transcribe(transcript_job.job_name)
             transcript_text = retrieve_transcript(
                 transcript_job.job_name)
@@ -970,7 +989,7 @@ FUNCTION score_instruments(session_id):
             IF i.slp_review_flag
         ]
         auto_summary = compute_instrument_summary(
-            scoring_method:
+            summary_method:
                 instrument_def.summary_method,
             items: auto_scored_items)
 
@@ -1026,6 +1045,24 @@ FUNCTION score_instruments(session_id):
         scoring_completed_at: now(),
         status: "scored")
 
+    // TODO (TechWriter): Expert review S2 (HIGH). Adopt
+    // archive-reference discipline uniformly. Per-instrument
+    // score content (per_item_scores with per-phoneme
+    // expected_target / observed / score_value /
+    // supporting_evidence) is biometric-derived data
+    // classified as PHI; write the full instrument_scores
+    // structure to a per-session score-archive S3 bucket
+    // with the biometric-derived KMS key class and persist
+    // only the archive ref plus structural metadata in the
+    // session_table. Apply the same pattern to the Step 5D
+    // longitudinal / goal_progress / trajectory_patterns
+    // writes and the Step 6C edited_scores / final_summaries
+    // / edit_history (with free-text slp_reasoning) /
+    // clinical_record (with free-text free_text_observations)
+    // writes. Classify the longitudinal_table as a biometric-
+    // derived data store with the pediatric-records-
+    // extending-to-age-of-majority retention floor per
+    // Finding S1.
     RETURN scores
 ```
 
@@ -1190,7 +1227,7 @@ ON slp_submits_review(session_id, slp_id, edits,
         instrument_def = lookup_instrument_definition(
             instrument_id)
         final_summary = compute_instrument_summary(
-            scoring_method:
+            summary_method:
                 instrument_def.summary_method,
             items: scores.per_item_scores)
         final_norm_comparison = apply_norms(
@@ -1285,6 +1322,25 @@ FUNCTION generate_documentation(session_id):
         },
         max_tokens: 3000)
 
+    // TODO (TechWriter): Expert review S5 (MEDIUM) and
+    // A2 (MEDIUM). Add prompt-injection mitigation and
+    // a faithfulness check between Bedrock generation
+    // and documentation persistence. Delimit patient-
+    // speech content, SLP free-text content
+    // (clinical_record, edit_history with slp_reasoning),
+    // and structured scoring output in the prompt with
+    // explicit tags (<patient_speech>, <slp_clinical_text>)
+    // and instruct the model to treat all delimited
+    // content as untrusted source material to be
+    // summarized, not as instructions. Add a
+    // run_report_faithfulness_check that validates the
+    // output against the structured scoring data with
+    // citation grounding, schema validation, contradiction
+    // detection, and (for family-summary) reading-level
+    // validation. On block, fall back to
+    // render_structured_report. Track per-population
+    // faithfulness-failure-rate as a launch gate per A1.
+
     // Step 7B: parent-and-patient-friendly summary.
     family_summary_input = {
         session_metadata: extract_metadata(state),
@@ -1338,6 +1394,16 @@ FUNCTION generate_documentation(session_id):
             healthlake_client.create_resource(
                 resource_type: resource.resource_type,
                 resource: resource.body)
+    // TODO (TechWriter): Expert review A3 (MEDIUM). Specify
+    // per-resource-type idempotency key for HealthLake FHIR
+    // write-back: Observation (session_id, instrument_id);
+    // Goal (session_id, goal_id, modification_type);
+    // CarePlan (session_id, careplan_revision);
+    // DocumentReference (session_id, document_type). Hold
+    // a recently-submitted-writes list per patient and
+    // return prior resource_id on idempotency-match. Use
+    // FHIR conditional-create (If-None-Exist) where
+    // HealthLake supports it.
     ELIF state.deployment_context.documentation_target ==
          "school_sis":
             sis_integration.write_assessment(
@@ -1453,6 +1519,27 @@ FUNCTION audit_and_surveillance(session_id):
                     audit_record.patient_population_profile
             })
 
+    // TODO (TechWriter): Expert review A1 (HIGH). Promote
+    // per-population accuracy monitoring with launch-gate
+    // discipline from prose to architectural primitive.
+    // Specify single-axis populations (age-band, sex,
+    // language, dialect, deployment-context, severity-band,
+    // instrument, clinical-population) and two-axis
+    // populations (language-by-age-band, severity-by-
+    // instrument, deployment-context-by-population, dialect-
+    // by-instrument). Specify per-population minimum sample
+    // size (typically N=100+ over the monitoring window),
+    // per-population threshold metrics (per-item agreement
+    // with SLP gold-standard, SLP-review-flag rate, SLP edit
+    // rate, cross-population generalization gap, sustained-
+    // utilization rate, per-instrument score-distribution
+    // drift), launch-gate logic (every population must meet
+    // its threshold; institution-wide average is
+    // informational only), and a population-disabled-feature
+    // workflow when a population drifts below threshold.
+    // Tighter thresholds for severe-impairment and pediatric
+    // populations per the recipe's own central-trap diagnoses.
+
     // Step 8C: SageMaker Model Monitor and Clarify
     // jobs run on a scheduled cadence against the
     // inference traffic. SLP edit data feeds back as
@@ -1484,6 +1571,8 @@ FUNCTION audit_and_surveillance(session_id):
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter10.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+<!-- TODO (TechWriter): Code review W1 (WARNING). The pseudocode here was renamed so `compute_instrument_summary` takes `summary_method` rather than `scoring_method`. Sync the Python companion to match: rename the parameter at both call sites in `score_instruments` and `slp_submits_review`, rename the function parameter, and update the dispatch. Without the rename the connected-speech instrument silently produces `summary_value: 0` because the dispatcher matches no branch. -->
 
 ---
 
@@ -1659,7 +1748,7 @@ FUNCTION audit_and_surveillance(session_id):
 
 - **Home-practice context.** Home-practice apps capture audio outside the structured assessment context. Background noise, family member speech, the patient practicing without supervision and possibly incorrectly all contaminate the audio. Mitigations: home-practice-specific quality assessment, speaker-only verification, simpler scoring rubrics for home-practice (target/not-target rather than full instrument scoring), explicit framing as practice rather than assessment.
 
-- **Stimulus-set licensing and IP.** Established assessment instruments are often copyrighted and licensed by their publishers. Building a system that uses a specific instrument requires licensing or a clearly-distinct stimulus set with separate norm validation. Mitigations: licensing agreements with instrument publishers where the system uses copyrighted instruments, institutionally-validated alternative stimulus sets where licensing is not available, transparent disclosure of which instrument is used and any deviations from the published version.
+- **Stimulus-set licensing and IP.** Established assessment instruments are often copyrighted and licensed by their publishers. Building a system that uses a specific instrument requires licensing or a clearly-distinct stimulus set with separate norm validation. Mitigations: licensing agreements with instrument publishers where the system uses copyrighted instruments, institutionally-validated alternative stimulus sets where licensing is not available, transparent disclosure of which instrument is used and any deviations from the published version. <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Add an architectural "Stimulus-Set IP and License Attribution" subsection specifying per-stimulus license-attribution log appended to the disclosure-accounting log per S1, per-instrument-version-tracking with version-mismatch detection at session-setup, per-norm-reference licensing distinction, deviation-from-published-stimulus tracking at customize_stimuli, license-key management via Secrets Manager, and an institutional-license-compliance audit surface in the analytics layer. -->
 
 - **Norm-reference availability and currency.** Population norms are central to the clinical interpretation. Norms vary by age band, sex, language, dialect, and clinical population, and they are updated periodically. Norms for some populations (especially non-English-speaking, multi-dialect, and rare clinical populations) may not exist or may be outdated. Mitigations: explicit norm-reference disclosure on every result, conservative classification when norms are not well-established for the patient profile, ongoing investment in norm development for underserved populations.
 
@@ -1697,15 +1786,21 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Faithfulness and grounding for LLM-generated reports.** The Bedrock-generated SLP report and family summary need explicit faithfulness checks: structured-output validation against the schema, citation grounding to the underlying scoring data, secondary checks that verify the report does not invent items or scores beyond what the system measured. Family-facing summaries also need reading-level validation and Guardrails coverage.
 
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add a "Deployment Pattern" subsection specifying versioned model and prompt and stimulus-set and per-population-norm-reference and per-population-threshold definitions in version control with commit-SHA-tied builds, SageMaker endpoint canary deployment with traffic-shift, Bedrock inference profile for prompt-and-model versioning with rollback-on-regression, held-out evaluation set with per-population coverage and prompt-injection test cases, version stamping on every assessment session audit record (extend beyond scoring_model_versions to include stimulus_set_version, per_population_norm_reference_version, per_population_threshold_version, clinical_action_mapping_version, slp_report_prompt_version, family_summary_prompt_version), and SaMD-specific change-management discipline for clearance-affected versions. -->
+
 **Clinical-quality review cadence for ongoing deployment.** Voice biomarker work in recipe 10.8 covered the post-deployment surveillance discipline; the same applies here. Per-population accuracy against SLP gold-standard scoring, drift detection over time, re-validation triggers, and clinical-quality review meetings on a regular cadence are operational requirements rather than nice-to-haves. Plan a quarterly per-instrument clinical-quality review meeting at minimum.
 
 **Multilingual deployment.** Monolingual English deployment is the easier starting point; multilingual deployment requires per-language acoustic models, per-language norm references, per-language stimulus sets, per-language linguistic-feature extraction, per-language Bedrock prompting, and per-language clinical validation. Multilingual deployment is a substantial expansion, not a configuration toggle.
+
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Specify the per-language pipeline pattern explicitly: per-language acoustic-feature calibration data; per-language linguistic-feature LLM-judge prompts with native-speaker SLP-clinical input; per-language template definitions for SLP-report and family-summary; per-language faithfulness rule catalogs; per-language validation cohort with appropriate demographic representation; per-language consent disclosure language across HIPAA, FERPA, COPPA, and biometric-data-law surfaces; per-language stimulus-set licensing per Finding S4; per-dialect calibration within each language; code-switching handling during assessment. Reference build-for-day-one even when shipping English-first; per-language deployment is gated on per-language assets meeting institutional thresholds and per-population validation per Finding A1. -->
 
 **Home-practice and parent-coaching applications.** When the system extends beyond clinical assessment into home-practice apps and parent-coaching tools, the consent, workflow, scoring rubric, and clinical-action mapping all change. A home-practice app deployed with assessment-grade scoring rubrics will produce frustrating false positives; a home-practice app with appropriate practice-grade rubrics is a different product than the assessment system, sharing infrastructure but with distinct user experience and clinical positioning.
 
 **Outcome-tracking and value-based-care alignment.** Speech-therapy reimbursement is increasingly tied to outcomes data. Production deployment benefits from explicit alignment with the relevant outcome measures (FOTO, NOMS, school-district progress-monitoring requirements, IEP goal-attainment measures). The outcome-measure integration is part of the workflow value, not just the clinical value.
 
 **Disaster recovery and degraded-mode operation.** When upstream services fail (SageMaker endpoint outage, Bedrock outage, HealthLake outage), the SLP must be able to continue clinical work. The system must degrade gracefully: pure manual capture and SLP-only documentation when the AI is unavailable, durable session state that survives transient failures, queued processing for delayed scoring when the inference pipeline is degraded.
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add an explicit "Disaster Recovery Topology" subsection specifying per-stage failover policy: SageMaker endpoint outage with cross-region fallback or graceful "scoring not currently available, continue with SLP-only assessment" response; Bedrock unavailability with structured-output-only rendering of SLP-report and family-summary; Transcribe Medical unavailability with linguistic-feature pipelines disabled and connected-speech-task instrument scoring failing with clear status; HealthLake unavailability with durable result storage in the longitudinal_table or score-archive bucket and retry; SIS-integration unavailability for school deployments with durable storage and retry; EHR API unreachable with durable storage and retry. Specify failover-detection-and-failover-back triggers and quarterly testing cadence. -->
 
 ---
 
