@@ -669,6 +669,24 @@ def _get_or_create_session(channel: str,
         "handoffs_accepted":   0,
         "feedback_history":    [],
     }
+    # TODO (TechWriter): Code review W2 (WARNING). The counters
+    # initialized here (scope_violation_count, hallucination_count,
+    # handoffs_offered, handoffs_accepted, feedback_history) are
+    # never incremented by any downstream code path. screen_output
+    # emits OutputScopeViolation and HallucinationCaught CloudWatch
+    # metrics but does not bump the session-level counters;
+    # _handle_in_scope_message emits HandoffOffered but does not
+    # bump handoffs_offered. close_conversation_and_archive then
+    # reads these counters to compute final_disposition, which
+    # collapses to "contained" or "other" for every scenario. Add
+    # an _increment_session_counter helper that updates the row at
+    # session_key with ADD :one and call it from screen_output
+    # (scope_violation_count and hallucination_count) and from
+    # _handle_in_scope_message (handoffs_offered). Add a
+    # record_user_feedback entrypoint that bumps handoffs_accepted
+    # and appends to feedback_history, and have run_demo simulate
+    # the user's accept on the handoff scenarios so the audit
+    # record's final_disposition flips to "escalated".
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
@@ -948,6 +966,23 @@ def _update_session_flag(session_id: str,
         # In a real schema the partition key is session_key, not
         # session_id; this helper assumes a GSI or equivalent
         # lookup-by-session-id. The demo keeps it simple.
+        # TODO (TechWriter): Code review W1 (WARNING). The session
+        # row was created at session_key=f"{channel}#{channel_session_id}",
+        # but this update targets f"_id#{session_id}", a different
+        # partition-key namespace that no other code path writes
+        # to. The MockTable.update_item creates a brand-new
+        # orphaned row at that key on the first call, and every
+        # crisis flag, scope-violation count, and version stamp
+        # set this way lands in the orphan rather than the actual
+        # session. close_conversation_and_archive then reads from
+        # the orphan, so the audit record is missing channel,
+        # language, started_at, duration_seconds, and all version
+        # stamps. Replace the f"_id#{session_id}" key construction
+        # with a _resolve_session_key(session_id) helper that scans
+        # the in-memory state table (or, in production, queries a
+        # GSI on session_id) and returns the real session_key.
+        # Update both _update_session_flag and
+        # close_conversation_and_archive to resolve the key first.
         table.update_item(
             Key={"session_key": f"_id#{session_id}"},
             UpdateExpression="SET #f = :v",
@@ -1917,6 +1952,22 @@ def close_conversation_and_archive(session_id: str,
     # Pull the session state. In production the session_state row
     # is keyed by session_key, not session_id; this helper assumes
     # a GSI for session_id lookup.
+    # TODO (TechWriter): Code review W1 (WARNING). Same root cause
+    # as the W1 marker on _update_session_flag: this lookup uses
+    # f"_id#{session_id}" as the partition key, but the session
+    # row was created at f"{channel}#{channel_session_id}". The
+    # get_item returns nothing (or returns the orphaned row that
+    # _update_session_flag created for crisis flags), and the
+    # downstream audit_record fields read from `state` collapse
+    # to None/0/now() defaults. Fix by introducing a
+    # _resolve_session_key(session_id) helper (in production, a
+    # Query against a session_id GSI) and resolving the key
+    # before the get_item. After the fix, the audit_record's
+    # active_versions block will populate model_id, prompt_version,
+    # kb_id, guardrail_id, guardrail_version, scope_rules_version,
+    # and crisis_lexicon_version rather than seven None values,
+    # and channel/language/started_at/duration_seconds will be
+    # populated for every scenario.
     try:
         state_response = state_table.get_item(
             Key={"session_key": f"_id#{session_id}"})
