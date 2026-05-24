@@ -160,6 +160,7 @@
   * [Python Example](chapter10.08-python-example)
 * [10.9 — Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring)
   * [Python Example](chapter10.09-python-example)
+* [10.10 — Multilingual Real-Time Medical Interpretation](chapter10.10-multilingual-realtime-medical-interpretation)
 
 ---
 
