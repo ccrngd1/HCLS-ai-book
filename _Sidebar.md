@@ -181,6 +181,7 @@
 * [11.6 — Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot)
   * [Python Example](chapter11.06-python-example)
 * [11.7 — Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach)
+  * [Python Example](chapter11.07-python-example)
 
 ---
 
