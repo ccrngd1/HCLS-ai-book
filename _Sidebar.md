@@ -190,6 +190,7 @@
 #### Ch 12: Time Series Analysis / Forecasting
 
 * [Preface](chapter12-preface)
+* [12.1 — Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting)
 
 ---
 
