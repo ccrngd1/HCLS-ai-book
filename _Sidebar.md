@@ -187,4 +187,10 @@
 
 ---
 
+#### Ch 12: Time Series Analysis / Forecasting
+
+* [Preface](chapter12-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
