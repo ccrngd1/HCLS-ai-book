@@ -200,6 +200,8 @@
   * [Python Example](chapter12.02-python-example)
 * [12.3 — ED Arrival Forecasting](chapter12.03-ed-arrival-forecasting)
   * [Python Example](chapter12.03-python-example)
+* [12.4 — Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis)
+  * [Python Example](chapter12.04-python-example)
 
 ---
 
