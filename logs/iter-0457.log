@@ -147,3 +147,382 @@ Purpose: Clean up temporary script
 
 [38;5;244m - Completed in 0.598s[0m
 
+I'll create the following file: [38;5;141mC:\tmp\ralph-worktrees\iter-457\reviews\chapter12.03-expert-review.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Expert Review: Recipe 12.3 - ED Arrival Forecasting
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Reviewed by:** Technical Expert Panel (Security, Architecture, Networking, Voice)
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m **Date:** 2026-05-25
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m **Recipe file:** `chapter12.03-ed-arrival-forecasting.md`
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m ## Overall Assessment
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m **Verdict: PASS**
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m This is the third recipe in Chapter 12 (Time Series Analysis / Forecasting) and the first to surface ED-specific operational complexity on top of the chapter's forecasting machinery. The recipe inherits the SageMaker-plus-S3-plus-Step-Functions backbone from 12.1 and 12.2 and earns its independence by tackling the recipe-distinct primitives that genuinely differ from generic time-series forecasting: count data on a fast clock with multiple seasonalities, the ESI-based acuity-mix-on-top-of-volume two-track forecasting problem, the streaming ADT ingest path, the prediction-interval-as-operational-primitive framing, and the integration target (charge-nurse dashboards plus surge-plan triggers plus staffing schedulers). The opening 17:42-Wednesday-in-February vignette (thirty-one in the waiting room, two ambulance bays full, a flu surveillance signal nobody read, a basketball tournament downtown, a cold front, an inpatient floor at 96% holding ED boarders) earns its position and frames the operational stakes at exactly the right "this is what the charge nurse actually sees" register.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m The Technology section is the recipe's strongest single piece. The five-bullet "Why ED Arrivals Are a Different Beast" framing (count data on a fast clock; acuity matters as much as volume; genuinely hourly with stacked seasonalities; exogenous drivers actually drive; the decisions depend on the tail) accurately enumerates what makes this problem different from appointment volume or supply-inventory forecasting. The three method families (GLM with calendar features for the simple-and-interpretable baseline; classical SARIMA / Holt-Winters / TBATS for clean history with a single dominant seasonality; modern Prophet / DeepAR / TFT for richer history and exogenous drivers) are correctly named and correctly bounded. The "for a single ED, a sensible starting architecture is a Poisson regression with calendar and weather features for volume, plus a separate multinomial classifier for acuity mix" recommendation lands at the right level of opinionated specificity. The acuity-mix problem decomposition (joint volume-and-mix per ESI level vs. volume forecast plus separate multinomial classifier) is operationally accurate and correctly flags the second approach as the practical default for sample efficiency.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m The seven-bullet "Why This Is Harder Than It Looks" section (walkouts and LWBS distortions; diversion events; acuity drift over time; holidays and special events; weather and respiratory virus seasonality; forecast horizon and uncertainty; boarding and downstream coupling) is the recipe's clearest operational stake-setting and ties each concern to either a data primitive (LWBS, diversion windows, holiday calendar, weather) or an architectural primitive (forecast horizon, boarding coupling). The honest acknowledgment that "the reassuring news: a basic Poisson regression with hour-of-day, day-of-week, holiday, and weather features routinely achieves 10-20% MAPE on hourly volume forecasts at a 4-hour horizon, and 15-30% at a 24-hour horizon" is the correct industry-baseline framing.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m The five-stage architecture (ED ADT / Registration Stream -> Feature Engineering and Aggregation -> Volume + Acuity Models -> Forecast Generation -> ED Operational Consumers) is the right shape. The Kinesis-or-HealthLake split for ADT ingestion is correctly framed (Kinesis is simpler when the workload is just hourly counts; HealthLake earns its keep when other recipes need the patient timeline). The DynamoDB serving access pattern (partition key `ed_id`, sort key composed of `forecast_for_hour + "#" + generated_at`, optional `CURRENT` record per `(ed_id, forecast_for_hour)`) is correctly factored for both latest-forecast retrieval and after-action-review queries. The Amazon Forecast deprecation note is accurate and correctly hedged with a TODO-verify (N1).
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m The Honest Take is publication-ready. The four observations earn the recipe's voice: model-selection-gets-too-much-attention-relative-to-data-plumbing; the-charge-nurse-actually-wants-the-decision-not-the-volume; acuity-is-harder-than-volume; concept-drift-is-real-and-faster-than-you-think. The closing observation that "the prediction interval, not the point estimate, is the operational primitive" is the recipe's clearest articulation of why probabilistic forecasting earns its keep over point forecasts in a staffing context.
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m That said, two correctness gaps at HIGH severity need attention before publication. First, the encryption posture in the Prerequisites table specifies "SSE-KMS" without naming customer-managed keys per data class, and the architectural treatment of KMS keys across the ADT / arrivals-hourly bucket, the model-artifacts bucket, the forecasts bucket, the DynamoDB serving table, the Kinesis stream, the SageMaker training output, and the CloudWatch logs is generic rather than per-class. ADT messages contain direct PHI (patient identifiers, demographics, chief complaint), so the per-data-class CMK posture is more important here than in 12.2 where the consumption data was PHI-by-association. Second, the late-record-and-watermark problem is correctly elevated in "Why This Isn't Production-Ready" but is not architecturally specified, and without it the most recent hour's count is systematically biased downward, which compounds into biased model training over time. The recipe correctly diagnoses the failure mode in prose; the architecture should specify the discipline.
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m Six MEDIUM findings cluster on architectural specificity (Step Functions retry-and-DLQ semantics for the hourly inference cycle and the weekly retraining cycle; CloudTrail data events on PHI-bearing buckets, tables, and KMS keys; VPC endpoint enumeration incomplete and endpoint-type not distinguished; time zone and DST handling implicit in "local time at the ED, not UTC"; diversion-window handling architecturally implicit despite explicit prose elevation; the `esi_unknown` placeholder in Step 1 introduces an undefined data flow into the acuity classifier).
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m Three LOW findings: the BAA framing in the Prerequisites table reads "PHI-adjacent" which understates the case for ADT data; TLS minimum version and external-feed egress not specified; four inline TODO-verify markers (N1, N2, N3, N4, V1, A1) should be tracked through to publication.
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m Voice is excellent. **Em dash count: 0** (verified by U+2014 codepoint scan). En dash count: 13 (used appropriately in numeric ranges and date ranges; en dashes are not forbidden by STYLE-GUIDE.md). The 70/30 vendor balance is maintained: AWS service names appear first in the AWS Implementation section after The Problem, The Technology, and General Architecture Pattern have been specified vendor-agnostically. CC voice is consistent throughout. The cross-recipe links (12.1 for forecasting machinery, 12.5 for hospital census, 12.7 for vital sign monitoring, 14.2 for nurse staffing optimization, 3.10 for outbreak detection) are well-chosen and frame the dependency surface accurately.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m Priority breakdown: 0 CRITICAL, 2 HIGH, 6 MEDIUM, 3 LOW. **Verdict: PASS** because there are 0 CRITICAL findings and HIGH count (2) is below the > 3 = FAIL threshold.
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m ## Stage 1: Independent Expert Reviews
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m ### Security Expert Review (OWASP, CIS, NIST SP 800-66 for HIPAA)
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m #### What's Done Well
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m - BAA called out explicitly: "AWS BAA signed. ADT messages contain PHI directly (patient identifiers, demographics, chief complaints). Even aggregated hourly counts are derived from PHI and should be treated under the BAA." This is the correct affirmative posture; ADT messages are pure PHI and the recipe does not hedge on this.
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m - Encryption at rest specified for S3 (SSE-KMS), DynamoDB (encryption at rest enabled by default), Kinesis (server-side encryption with KMS), SageMaker training and inference (encrypted EBS volumes, KMS-encrypted output), and CloudWatch log groups (configure KMS encryption explicitly). The explicit elevation of CloudWatch log-group KMS configuration is the right call out.
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m - VPC enforcement framed correctly for production: "SageMaker training and inference in VPC with VPC endpoints for S3, Kinesis, CloudWatch Logs, and KMS. Required for HIPAA workloads."
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m - CloudTrail enabled with the correct enumeration: "log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail."
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m - Synthetic-data discipline in the Sample Data row: "Never use real ED arrival data in dev." The MIMIC-IV-ED reference is correctly hedged with credentialed-access framing, and the synthetic-data generation guidance ("Poisson with hour-of-day intensity plus weekly seasonality plus weather effects plus noise") is the right shape for healthcare-realistic prototyping.
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m - IAM permissions list includes the right action set (`sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `kinesis:GetRecords`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `dynamodb:BatchWriteItem`, `kms:Decrypt`).
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m - Diversion-window handling correctly flagged as a security-and-correctness concern in addition to a forecasting concern: "Production systems mark diversion windows in the data and either exclude them or model the effect explicitly."
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m #### Finding S1: Customer-Managed KMS Keys Per Data Class Not Specified
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m - **Expert:** Security (key custody, blast-radius containment, regulatory)
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m - **Location:** Prerequisites Encryption row: "S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); Kinesis: server-side encryption with KMS; SageMaker training and inference: encrypted EBS volumes and KMS-encrypted output; CloudWatch log groups: configure KMS encryption explicitly."
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m - **Problem:** The encryption row says SSE-KMS for S3 and KMS for Kinesis but does not specify customer-managed keys versus AWS-managed keys, and does not differentiate keys per data class. ADT messages are pure PHI (patient identifiers, demographics, chief complaints), making the per-data-class CMK posture more important here than in 12.2 where the consumption data was PHI-by-association. A single AWS-managed key for the Kinesis stream, the arrivals-hourly bucket, the model-artifacts bucket, the forecasts bucket, the DynamoDB serving table, the SageMaker training output, and the CloudWatch logs creates a blast-radius problem: a single compromised IAM principal that has `kms:Decrypt` on the shared key gets every data class. The data classes for this recipe are: (a) raw ADT stream and arrivals-hourly bucket (direct PHI), (b) weather, flu-index, and event-calendar buckets (operational, no PHI), (c) model artifacts (no PHI but high integrity-and-availability concern; a tampered model produces wrong staffing decisions), (d) forecast outputs and DynamoDB serving table (operational, no direct PHI but downstream-sensitive), (e) CloudWatch logs (may contain payload fragments and ADT message snippets).
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m - **Fix:** Update the Encryption row to specify customer-managed keys (CMKs) per data class:
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m   > "All buckets, tables, streams, and log groups: SSE-KMS with customer-managed KMS keys. Separate CMKs per data class for blast-radius containment: a CMK for the Kinesis stream and the arrivals-hourly bucket (direct PHI), a CMK for the weather / flu-index / event-calendar buckets (operational, no PHI), a CMK for the model-artifacts bucket, a CMK for the forecasts bucket and the DynamoDB serving table, a CMK for the SageMaker training output, a CMK for CloudWatch log groups. Key policies grant decrypt only to the IAM principals that have a need-to-know for each data class. The Bedrock-or-Lambda explanation-generation step (when enabled) routes its prompt-and-response logging to a destination encrypted to the same standard."
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m   Add to the IAM permissions row: "Per-Lambda least-privilege execution roles. The DynamoDB-loader Lambda has `kms:Decrypt` on only the forecasts-and-DynamoDB CMK. The training-job role has `kms:Decrypt` on the arrivals-hourly CMK and `kms:Encrypt` on the model-artifacts CMK. The Glue ETL role has `kms:Decrypt` on the Kinesis-and-arrivals CMK and `kms:Encrypt` on the same CMK for the cleaned hourly aggregates. Cross-class permissions are not granted at the IAM-policy level."
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m #### Finding S2: CloudTrail Data Events Not Specified
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m - **Expert:** Security (audit trail, forensic reconstruction)
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m - **Location:** Prerequisites CloudTrail row: "Enabled: log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail."
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m - **Problem:** "Log all SageMaker, S3, DynamoDB, and Kinesis API calls" reads as management-event coverage but does not specify CloudTrail data events on the S3 buckets, the DynamoDB tables, or the KMS keys. CloudTrail data events are required to reconstruct who-read-what-when on PHI-bearing buckets and tables; management-events alone log the bucket and table creation but not the GetObject and GetItem calls. This matters more for ED arrival forecasting than for inventory forecasting because the underlying ADT stream contains direct patient identifiers.
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m - **Fix:** Update the CloudTrail row: "Enabled at the account level. Data events enabled on the arrivals-hourly S3 bucket, the model-artifacts S3 bucket, the forecasts S3 bucket, the DynamoDB serving table, the Kinesis stream, and the customer-managed KMS keys. Management events for SageMaker, Glue, Step Functions, EventBridge, and Lambda. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days."
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m #### Finding S3: BAA Framing Reads "PHI-Adjacent" Which Understates the Case
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m - **Expert:** Security (regulatory)
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m - **Location:** "Why These Services" paragraph on Amazon S3: "SSE-KMS encryption is mandatory for the arrival data, which is PHI-adjacent (linked to specific patient encounters even when aggregated to counts)."
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m - **Problem:** "PHI-adjacent" understates the case. The raw ADT stream contains direct PHI (patient identifiers, demographics, chief complaint, ESI level), not "PHI-adjacent" data. Even the hourly aggregates are derived from PHI and should be treated under the BAA per the recipe's own (correct) Prerequisites BAA row. The "PHI-adjacent" framing in the prose is inconsistent with the affirmative BAA posture in the table and could confuse a reader scoping the data-handling boundaries.
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m - **Fix:** Replace "PHI-adjacent" with "derived from PHI" or "PHI-by-association" in the Amazon S3 paragraph. Consider rewriting as: "SSE-KMS encryption is mandatory for the arrival data. The raw ADT stream contains direct PHI (patient identifiers, demographics, chief complaint); even hourly aggregates are derived from PHI and require BAA-covered handling."
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m ### Architecture Expert Review
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m #### What's Done Well
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m - The five-stage architecture (ED ADT / Registration Stream -> Feature Engineering and Aggregation -> Volume + Acuity Models -> Forecast Generation -> ED Operational Consumers) is the correct shape for an hourly streaming forecast pipeline with a separate weekly retraining loop.
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m - The Kinesis-or-HealthLake split for ADT ingestion is correctly framed: Kinesis is the lighter-weight choice when the workload is just hourly counts, HealthLake is the right choice when other recipes (12.5 hospital census, 12.7 vital signs) need the patient timeline.
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m - The two-tier orchestration (hourly inference cycle plus weekly retraining cycle) is the correct pattern. The architecture diagram correctly shows two separate EventBridge schedules driving two separate Step Functions state machines.
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m - The DynamoDB access pattern is correctly factored: partition key `ed_id`, sort key composed of `forecast_for_hour + "#" + generated_at` so the dashboard can query for the latest forecast per hour and the after-action-review can query the full forecast history per (ed_id, forecast_for_hour).
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m - The optional `CURRENT` record per (ed_id, forecast_for_hour) is the right access-pattern primitive for single-GetItem latest-forecast retrieval, avoiding client-side sorting.
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m - The volume-and-acuity two-track decomposition (count regression for total volume + multinomial classifier for ESI share, multiplied at forecast time) correctly chooses the more sample-efficient approach over the joint-per-ESI-Poisson approach for a Simple/MVP recipe.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m - The forecast-quality gate in Step 3 ("Reject the new model if it materially regresses against the current production model ... volume_mape > current_volume_mape * 1.20 OR acuity_logloss > current_acuity_logloss * 1.20") is the correct shape for a quality-gate primitive. The 20% regression threshold is consistent with the chapter pattern from 12.2.
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m - The "Why This Isn't Production-Ready" section correctly surfaces eight structural production gaps (real-time data freshness and the late-record problem; forecast monitoring and drift detection; acuity-level timing; diversion window handling; charge-nurse override and feedback; surge plan trigger logic; coupling to inpatient census; idempotency and rerun safety). Each is operationally accurate.
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m - The variations section (sub-hourly granularity, coupled ED-and-inpatient forecasting, acuity-specific uncertainty for high-stakes levels, real-time updating with current-shift signals, multi-ED hierarchical forecasting) is well-scoped and frames each extension at the right grain.
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m #### Finding A1: Late-Record and Watermark Problem Architecturally Implicit Despite Explicit Prose Elevation
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m - **Expert:** Architecture (streaming correctness, operational discipline)
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m - **Location:** "Why This Isn't Production-Ready" section, "Real-time data freshness and the late-record problem" paragraph: "ADT messages do not always arrive in order. A registration that happened at 14:32 might land in your stream at 14:45 because of EHR queue delays. Hourly aggregation needs an explicit watermark and a late-record reconciliation pass. Without this, the most recent hour's count is always wrong, and the model sees biased recent history."
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m - **Problem:** The recipe correctly diagnoses the failure mode but does not architecturally specify the watermark-and-reconciliation discipline. The downstream consequence is sharp and recurrent: every hourly inference cycle uses an under-counted "current hour" feature, which biases the lag-1h feature low, which biases the volume forecast low, which biases the staffing decision toward understaffing on busy hours. Step 1's pseudocode (`aggregate_arrivals_to_hourly`) bucketizes records as they arrive without any watermark or late-record handling, and Step 4's pseudocode uses `lag features (using actual past values for lags <= h, predicted for lags > h)` without specifying that lag-1h is itself an estimate that may be revised. This is the single most consequential failure mode for the entire pipeline because it compounds: every hourly cycle inherits the bias from the previous cycle's biased lag features. Recipe 12.1 (Appointment Volume Forecasting) does not have this problem because appointment volume is daily-aggregated batch data; ED arrivals are streaming data and the streaming-correctness contract has to be specified.
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m - **Fix:** Add a "Late-Record-and-Watermark" architectural primitive to the General Architecture Pattern with named ownership in Step 1:
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m   1. **Watermark contract.** Step 1's `aggregate_arrivals_to_hourly` defines a watermark policy: hourly counts for hour H are considered "preliminary" until the watermark threshold (typically 30 to 90 minutes after H closes) is reached, after which they are considered "final." The Glue job (or equivalent) emits two outputs per hour: a preliminary hourly count written immediately after the hour closes for the inference pipeline, and a final hourly count written after the watermark for the training pipeline.
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m   2. **Late-record reconciliation pass.** A separate Step Functions state machine runs at the watermark boundary, reconciles preliminary against final counts for the closing hour, and emits a CloudWatch metric `late_record_count_per_hour` so the ML engineer can monitor late-record volume.
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m   3. **Inference-time lag-feature handling.** Step 4's lag-1h feature uses the preliminary count for the most recent closed hour, with an explicit `lag_1h_is_preliminary: true/false` flag in the feature row. The model is trained on final counts and evaluated against actuals using the preliminary-vs-final delta as a known noise floor. Forecasts generated against preliminary lag features stamp the DynamoDB record with `forecast_freshness: "preliminary" | "final"` so operational consumers can distinguish.
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m   4. **Training-data filtering.** The weekly retraining pipeline filters its training data to use only final counts, never preliminary counts, so the model is trained on a consistent ground truth.
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m   5. **Watermark threshold tunable.** The watermark threshold is configurable per ED based on the local EHR's typical late-record distribution. The default 30-to-90-minute range is reasonable for most academic and community EDs.
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m   Add to the architecture diagram explicitly: a "Watermark Reconciliation" Step Functions state machine triggered by EventBridge at the watermark boundary, a CloudWatch metric `late_record_count_per_hour`, and a flag `forecast_freshness` on the DynamoDB record schema.
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m #### Finding A2: Customer-Managed KMS Keys Per Data Class Not Specified
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m (See Finding S1 in the Security review. This is an architecture finding as well because the per-data-class CMK posture is part of the architectural primitive set, not just a configuration setting.)
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m #### Finding A3: Step Functions Retry, DLQ, and Failure Routing Not Specified
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m - **Expert:** Architecture (orchestration, error handling, distributed systems)
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m - **Location:** Architecture Diagram Mermaid block: `H[EventBridge Schedule<br/>hourly] -->|Trigger| I[Step Functions<br/>inference-pipeline]` and `R[EventBridge Schedule<br/>weekly] -->|Trigger| S[Step Functions<br/>retraining-pipeline]`. The "AWS Step Functions for orchestration" paragraph in "Why These Services" mentions "explicit retry logic" but the diagram and pseudocode do not specify retry counts, backoff, DLQ routing, or failure-tolerance. The diagram includes `I -->|Errors| Z[CloudWatch Alarms<br/>SNS Topic]` but does not specify per-step retry policy.
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m - **Problem:** The hourly inference cycle has multiple steps that can fail transiently: SageMaker endpoint InvokeEndpoint can throttle or return 5xx, DynamoDB BatchWriteItem can return UnprocessedItems, the Glue feature-join job can fail on a bad weather feed, the Lambda DynamoDB loader can time out. Without explicit retry-and-DLQ policy at each step, transient failures abort the entire hourly cycle and the dashboard shows stale forecasts for hours until the next cycle (or longer if the failure recurs). The weekly retraining cycle has its own failure modes (SageMaker training job interruption, model-artifact upload failure, quality-gate rejection) that should route through the retraining-pipeline-specific recovery path. The 20%-MAPE-regression rejection in Step 3 ("REJECT both models; alert the ML engineer") should also specify whether rejection blocks the pipeline or allows it to continue with the prior production model.
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m - **Fix:** Specify per-step retry, error-catch, and DLQ semantics in both Step Functions state machines:
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m   1. **Inference pipeline per-step retry.** Each step retries on transient errors (`States.TaskFailed`, `Lambda.TooManyRequestsException`, `Sagemaker.SagemakerException`, `Dynamodb.ProvisionedThroughputExceededException`) up to 3 times with exponential backoff (initial 30s, multiplier 2.0, max 300s).
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m   2. **Catch-and-route on persistent failure.** After retries are exhausted, the failed step routes to a fail-soft state that emits a CloudWatch metric (`inference_pipeline_failed_step`), logs the failure with the step name and error code, and routes to an SNS topic for the on-call ML engineer.
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m   3. **Retraining pipeline rejection routing.** When the quality gate rejects a new model, the rejection emits a CloudWatch metric, routes the rejection to an SNS topic for ML-engineer review, and the pipeline terminates without deploying. The previous production model continues to serve.
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m   4. **Inference pipeline DLQ semantics.** The DynamoDB-loader Lambda's failures route to an SQS DLQ keyed by `(ed_id, forecast_for_hour)` so a transient failure does not lose the forecast permanently; a separate Lambda processes the DLQ on a schedule.
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m   5. **Pipeline-level success indicator.** The state machine's terminal output includes a `success: true/false` flag and the dashboard checks this flag plus the `generated_at` timestamp before displaying a forecast as current.
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m   Add this to the architecture diagram explicitly: an SQS DLQ box wired from the DynamoDB-loader Lambda's catch path, the SNS topic for ML-engineer alerts (already shown), and CloudWatch alarms on `inference_pipeline_failed_step` and `quality_gate_rejection`.
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m #### Finding A4: Time Zone and DST Handling Implicit
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m - **Expert:** Architecture (correctness, cross-cutting concerns)
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m - **Location:** Step 1 pseudocode `aggregate_arrivals_to_hourly`: "Hour boundaries are local time at the ED, not UTC. ED operations are local. Mixing time zones here will produce subtle but real bugs." Also Step 4's `forecast_for_hour: "2026-04-15T18:00:00-05:00"` example output.
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m - **Problem:** The pseudocode correctly identifies that hour boundaries are local time at the ED. It does not specify (a) how the local time zone is stored per ED (an `ed_local_tz` field on each ADT record? An ED metadata table? An IANA time zone identifier or a fixed UTC offset?), (b) how DST transitions are handled (the spring-forward hour is missing one local hour; the fall-back hour has two of the same local hour; the model needs to handle both cases without producing duplicate or missing rows), (c) how multi-ED health-system deployments handle EDs in different time zones (the inference pipeline runs hourly in UTC but each ED's "current hour" is offset; the schedule needs to either run more frequently or use per-ED scheduling), (d) how the forecast-output `forecast_for_hour` is serialized (the example uses an ISO-8601 with offset `-05:00` which is correct but does not preserve the IANA tz identifier so the consumer cannot disambiguate `-05:00` between EST and CDT). Production hourly forecasting systems hit this in their first DST transition.
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m - **Fix:** Specify the time zone discipline:
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m   1. **Per-ED IANA tz identifier in metadata.** An ED metadata table (DynamoDB or Glue Catalog) stores `ed_id -> iana_tz` (e.g., `"America/Chicago"`). The Glue ETL job joins this metadata into every record before bucketing.
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m   2. **DST transition handling.** Step 1's bucketization uses IANA tz arithmetic (via Python's `zoneinfo` or Java's `java.time.ZoneId`) which correctly handles spring-forward (one missing hour, no row emitted) and fall-back (two hours with the same local representation, distinguished by UTC offset). The fall-back case is encoded as two distinct rows with distinct `(ed_id, local_hour, utc_offset)` keys.
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m   3. **Forecast output serialization.** The `forecast_for_hour` field is serialized as both an ISO-8601 with offset (for display) and an `iana_tz` plus `utc_offset` pair (for unambiguous reconstruction). Example: `{ "forecast_for_hour": "2026-04-15T18:00:00-05:00", "iana_tz": "America/Chicago", "utc_offset_minutes": -300 }`.
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m   4. **Multi-ED scheduling.** The inference pipeline runs every UTC hour and computes per-ED current-hour locally; alternatively, a per-ED scheduler triggers each ED's pipeline on its local hour boundary. The latter is the cleaner pattern at scale.
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m   Add a sentence to Step 1's prose: "Time zones are stored per ED as IANA identifiers (e.g., `America/Chicago`), not as fixed UTC offsets, so the bucketization correctly handles DST transitions."
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m #### Finding A5: Diversion-Window Handling Architecturally Implicit
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m - **Expert:** Architecture (operational discipline, training-data correctness)
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m - **Location:** "Why This Isn't Production-Ready" section, "Diversion window handling" paragraph: "When the ED goes on diversion (ambulances are routed elsewhere because the ED is overwhelmed), the arrival count drops artificially. The pipeline needs a maintained diversion log (often manually entered, sometimes inferred from EMS data) and the training pipeline must either exclude diversion windows or model them with an explicit indicator."
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m - **Problem:** The recipe correctly elevates diversion-window handling as a production concern but does not architecturally specify it. The downstream consequence is real: a model trained on diversion-affected history under-predicts true demand by a meaningful margin (5 to 15% volume undercount during diversion windows that comprise 1 to 5% of training data, depending on the ED). The recipe correctly diagnoses the failure mode in prose; the architecture should specify the data ownership and the modeling discipline.
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m - **Fix:** Add a "Diversion-Log" architectural primitive to the General Architecture Pattern:
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m   1. **Diversion log as a first-class data source.** A diversion log table in DynamoDB or S3 stores `(ed_id, diversion_start, diversion_end, diversion_reason)` records, populated either manually from the ED's diversion-tracking system or inferred from EMS routing data. The diversion log is treated as a data source on par with weather, flu-index, and event-calendar feeds.
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m   2. **Feature engineering with a diversion flag.** Step 2's feature table joins the diversion log and adds a `was_on_diversion` flag and a `diversion_pct_of_hour` continuous feature (the fraction of the hour the ED was on diversion).
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m   3. **Training-data filtering or modeling.** The retraining pipeline's training-data preparation either excludes diversion-heavy hours (where `diversion_pct_of_hour > 0.5`) from training, or includes them with the explicit diversion features. The choice is configurable per ED based on diversion frequency.
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m   4. **Inference-time exclusion.** When the ED is currently on diversion at inference time, the dashboard surfaces a "diversion-affected forecast" warning so the charge nurse interprets the forecast accordingly.
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m #### Finding A6: ESI-Unknown Placeholder Introduces Undefined Data Flow
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m - **Expert:** Architecture (data correctness, model contract)
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m - **Location:** Step 1 pseudocode `aggregate_arrivals_to_hourly`: "IF record.esi_level is null: hourly_buckets[bucket_key].esi_unknown += 1 ELSE: hourly_buckets[bucket_key]['esi_' + record.esi_level] += 1". Step 4 pseudocode `generate_hourly_forecasts` then uses `for each esi_level in 1..5` without referencing `esi_unknown`.
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m - **Problem:** Step 1 emits records with six ESI buckets (1, 2, 3, 4, 5, unknown), but Step 4's forecast generation iterates only over 1 through 5. The fate of the `esi_unknown` bucket is undefined in the pseudocode and the prose. The recipe's "Why This Isn't Production-Ready" section has an "Acuity-level timing" paragraph that mentions a "second-pass reconciliation that updates ESI levels as triage data arrives" but does not architecturally specify the second-pass discipline. Without it, the acuity classifier's training data has a mix of records with `esi_unknown = 0` (triage completed before bucketization) and `esi_unknown > 0` (triage incomplete), and the classifier learns a slightly distorted mapping. The volume forecast also ignores the `esi_unknown` count when computing the per-acuity multiplier in Step 4, undercounting the per-acuity totals by the unknown share.
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m - **Fix:** Specify the unknown-handling discipline in two places:
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m   1. **Second-pass reconciliation in Step 1.** The hourly aggregation runs in two passes: a primary pass that emits the preliminary hourly count immediately, and a reconciliation pass (typically 6 to 24 hours later) that re-runs the aggregation with the fully-triaged ESI levels and updates the `esi_1` through `esi_5` buckets while zeroing `esi_unknown`. The training pipeline uses only reconciled counts.
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m   2. **Inference-time unknown handling.** Step 4's per-acuity multiplier is applied to `(volume_point - esi_unknown_estimate)` if a meaningful unknown share is expected at the forecast horizon, with the unknown share itself estimated from history. For short-horizon forecasts (1 to 4 hours), the unknown share is typically negligible; for longer horizons, it is effectively zero.
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m   3. **Document the contract.** Add a sentence to Step 1's prose: "The `esi_unknown` bucket is a transient placeholder; the reconciliation pass redistributes it to `esi_1` through `esi_5` based on completed triage data. The classifier and the per-acuity multiplier in Step 4 operate only on reconciled counts."
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m ### Networking Expert Review
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m #### What's Done Well
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m - VPC enforcement framed correctly: "Production: SageMaker training and inference in VPC with VPC endpoints for S3, Kinesis, CloudWatch Logs, and KMS. Required for HIPAA workloads."
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m - The Kinesis-vs-HealthLake decision is correctly framed at the network-architecture level: HealthLake is a managed FHIR-aware store with its own ingestion endpoint; Kinesis is a generic stream that the pipeline reads via VPC endpoint.
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m #### Finding N1: VPC Endpoint Enumeration Incomplete and Endpoint-Type Not Distinguished
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m - **Expert:** Networking
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m - **Location:** Prerequisites VPC row: "SageMaker training and inference in VPC with VPC endpoints for S3, Kinesis, CloudWatch Logs, and KMS."
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m - **Problem:** The list omits VPC endpoints for SageMaker (API and Runtime), DynamoDB, Step Functions, EventBridge, Glue, Lambda, and Secrets Manager (where used for external API credentials such as the weather feed). It also does not distinguish gateway endpoints (S3 and DynamoDB; free) from interface endpoints (everything else; per-AZ-per-endpoint pricing). A reader copying the list creates only the four named endpoints and discovers at deploy time that SageMaker training jobs cannot pull container images, that the DynamoDB-loader Lambda cannot reach DynamoDB without a NAT or a gateway endpoint, that Step Functions cannot start the Glue ETL job without a Glue API endpoint, and that the weather-feed Lambda cannot reach Secrets Manager to retrieve the API credentials.
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m - **Fix:** Update the VPC row to enumerate the full set with endpoint type:
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m   > "Production: All compute (SageMaker training, SageMaker inference, Lambda, Glue) deployed inside a VPC with no internet egress for PHI-bearing paths. Gateway endpoints for S3 and DynamoDB (free, no per-AZ cost). Interface endpoints (per-AZ-per-endpoint cost) for SageMaker (API), SageMaker (Runtime), Kinesis, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (for external API credentials). Required for HIPAA workloads."
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m #### Finding N2: TLS Minimum Version and External-Feed Egress Not Specified
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m - **Expert:** Networking
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m - **Location:** Prerequisites VPC row and the architecture diagram's external feeds (Weather API, CDC FluView, Local Events).
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m - **Problem:** The recipe does not specify TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary, and does not specify the egress path for the external feeds (the weather API, the CDC FluView feed, the local-events calendar). A weather-feed Lambda inside the VPC must reach a public weather API; the egress path is either through a NAT gateway (with logging), through an interface endpoint to a partner-VPC peering connection, or through a PrivateLink to the weather vendor's hosted offering (where available). The recipe correctly identifies that the weather and surveillance feeds are exogenous but does not specify the network discipline for reaching them.
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m - **Fix:** Add a sentence to the VPC row: "TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary." Add a sentence to the "Why These Services" architecture prose: "External feeds (weather, CDC FluView, local events) are reached via a NAT gateway with egress logging; the credentials for authenticated APIs are stored in Secrets Manager and retrieved through a Secrets Manager VPC interface endpoint. PrivateLink endpoints are preferred when the vendor offers them."
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m ### Voice Reviewer (STYLE-GUIDE.md, RECIPE-GUIDE.md)
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m **Em dash count: 0** (verified by U+2014 codepoint scan).
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m **En dash count: 13** (used appropriately in numeric ranges like "$200-$700 per month," "8 to 25 arrivals per hour," "10-20% MAPE," "8-12 weeks," and date ranges; en dashes are not forbidden by STYLE-GUIDE.md, only em dashes).
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m **TODO-verify markers: 6** (N1 Amazon Forecast deprecation, N2 reference-implementation links, N3 Python companion existence, N4 external-link audit, V1 SageMaker / Kinesis / DynamoDB pricing, A1 accuracy benchmarks). All are appropriately scoped to verifiable factual claims. These are author hedges, not blocking issues.
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m **Voice consistency:** The 17:42-Wednesday-in-February vignette (thirty-one in the waiting room, two ambulance bays full, the flu surveillance signal nobody read, the basketball tournament downtown, the cold front, the inpatient floor at 96% holding ED boarders, the 18-minute shift change, the on-call attending who already declined) earns its position at exactly the right "this is what the charge nurse actually sees" register. The "ED arrivals are surprisingly predictable in aggregate" framing is the recipe's clearest operational stake-setting. The Honest Take's four observations land cleanly in CC's voice: "the model selection question gets way more attention than it deserves"; "the forecast that the charge nurse actually wants is not the volume forecast ... it's the answer to 'do I need to call someone in?'"; "acuity is harder than volume"; "concept drift is real and faster than you think." The closing observation that "the prediction interval, not the point estimate, is the operational primitive" is the recipe's clearest articulation of why probabilistic forecasting earns its keep over point forecasts in a staffing context.
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m **Vendor-balance (70/30):** Maintained. The Problem and Technology sections are 100% vendor-agnostic. The General Architecture Pattern is vendor-agnostic. AWS service names appear first in "The AWS Implementation" section as expected. The 30% AWS-specific content covers the implementation in appropriate depth without becoming a service-name-soup.
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m **Healthcare-domain accuracy:** High. ESI levels 1 through 5 with the operational framing (level 1 immediate physician, level 2 emergent, level 3 urgent, levels 4 and 5 fast-track-eligible) is accurate. The 130-million-ED-visits figure is correct for the US (CDC NHAMCS reports 131 million ED visits in 2018-2019, the most recent comparable year). The "roughly five thousand EDs" figure is approximately correct (the 2022 CDC count is 4,927 EDs). The LWBS-rates-above-5%-are-common framing is accurate for community EDs; LWBS-spike-above-12%-on-bad-nights is a high but realistic figure for overwhelmed EDs. The Christmas-day-quiet-and-day-after-surge pattern is operationally well-known. The Memorial-Day-trauma-uptick pattern is accurate. The CDC FluView reference is correctly framed (national and regional respiratory virus surveillance, lags by about a week). The MIMIC-IV-ED reference is correctly hedged (de-identified ED visits from a Boston academic medical center, requires PhysioNet credentialing). Prophet, DeepAR, TBATS, and Temporal Fusion Transformer are correctly framed for their respective use cases. The Poisson-with-overdispersion-implies-negative-binomial framing is the standard textbook treatment.
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m #### Finding V1: TODO-Verify Markers Should Be Tracked Through Publication
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m - **Expert:** Voice
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m - **Location:** Inline `<!-- TODO (TechWriter): ... -->` comments at N1 (Amazon Forecast deprecation status), V1 (SageMaker / Kinesis / DynamoDB pricing), N2 (reference-implementation links), N3 (Python companion existence), A1 (accuracy benchmarks), N4 (external-link audit).
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m - **Problem:** Six TODO-verify markers should be resolved (or accepted-as-hedge with reviewer signoff) during the TechEditor pass. They are appropriate hedges for the draft stage but should not survive into publication. The N3 marker specifically calls out that the Python companion file (`chapter12.03-python-example.md`) does not yet exist in this branch; the publication blocker is the companion file, not the TODO marker itself.
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m - **Fix:** During the TechEditor pass, resolve each TODO by verifying the underlying claim, removing the TODO, and either confirming the prose or updating it. The pricing claim (V1) and the external-link audit (N4) are the most likely to need updates given the natural drift of AWS pricing pages and link targets. The Python companion (N3) must be drafted, code-reviewed, and edited before this recipe publishes.
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m ## Stage 2: Expert Discussion
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m The four reviewers do not have conflicting findings. The Security and Architecture experts overlap on the customer-managed KMS keys per data class (Finding S1 / A2) which is the same finding viewed through two lenses. The late-record-and-watermark problem (Finding A1) is a streaming-correctness concern that the Architecture expert surfaced; the Security expert did not flag it because it is not a security-or-compliance issue (the data is correctly encrypted and audited; it is just systematically biased). The CloudTrail data events finding (S2) intersects with the customer-managed-KMS-keys finding (S1) since the audit-trail integrity contract depends on per-data-class KMS keys for proper attribution. The Networking expert's VPC-endpoint enumeration (Finding N1) is the same chapter-pattern finding from 12.2 and reinforces the chapter-editor's job of consolidating these primitives.
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m **Priority ordering:** A1 (late-record and watermark) before S1 / A2 (customer-managed KMS keys per data class) because the streaming-correctness contract is the foundational discipline for an hourly forecasting pipeline; without it, the model's training data and inference-time features are systematically biased and no amount of encryption hygiene fixes that. The customer-managed-KMS-keys finding is the regulatory baseline that must be correct on day one and is similarly elevated to HIGH. The remaining MEDIUM findings cluster around production-readiness gaps that the recipe correctly elevates in "Why This Isn't Production-Ready" but does not architecturally specify.
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m **Chapter-pattern consolidation note:** Recipe 12.3 is the third recipe in Chapter 12 and the second to be expert-reviewed (12.2's expert review is in `reviews/chapter12.02-expert-review.md`; 12.1's expert review has not yet been written). The customer-managed-KMS-keys-per-data-class pattern, the Step-Functions-retry-and-DLQ pattern, and the VPC-endpoint enumeration pattern are repeated findings between 12.2 and 12.3; the chapter editor should plan to consolidate these into a chapter-level architectural baseline rather than restating them in each recipe. The late-record-and-watermark pattern is specific to streaming recipes (12.3 is the first in the chapter; 12.4 lab result trends and 12.7 vital sign trajectories will likely have similar surfaces) and the time-zone-and-DST handling pattern is specific to hourly-or-finer-granularity recipes (also 12.3, 12.7, plus parts of 12.5).
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m ## Stage 3: Synthesized Feedback
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m ### CRITICAL Findings
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m **(None.)**
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m ### HIGH Findings
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m **H1. Late-record-and-watermark problem architecturally implicit despite explicit prose elevation.** (Architecture, Finding A1) The hourly aggregation in Step 1 does not specify a watermark, the lag-1h feature in Step 4 silently uses biased preliminary counts, and the training pipeline does not filter to final counts only. Without architectural specification, every hourly cycle inherits the previous cycle's bias. **Fix:** Specify a watermark contract (preliminary-vs-final hourly counts), a late-record reconciliation Step Functions state machine, an inference-time `lag_1h_is_preliminary` flag, training-data filtering to final counts only, and a `forecast_freshness` flag on the DynamoDB record. See Finding A1.
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m **H2. Customer-managed KMS keys per data class not specified.** (Security / Architecture, Finding S1 / A2) Prerequisites Encryption row says "SSE-KMS" without naming customer-managed keys per data class. ADT data is direct PHI, making the per-data-class CMK posture more important here than in 12.2. **Fix:** Specify CMKs per data class (Kinesis-and-arrivals, weather-and-flu-and-events, model-artifacts, forecasts-and-DynamoDB, SageMaker output, CloudWatch logs) with key-policy scoping per IAM principal. See Finding S1.
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m ### MEDIUM Findings
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m **M1. CloudTrail data events not specified on PHI-bearing buckets, tables, streams, and KMS keys.** (Security, Finding S2) **Fix:** Update CloudTrail row to enumerate data events on arrivals-hourly, model-artifacts, forecasts S3 buckets, the DynamoDB serving table, the Kinesis stream, and customer-managed KMS keys.
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m **M2. Step Functions retry, DLQ, and failure routing not specified.** (Architecture, Finding A3) The hourly inference cycle and the weekly retraining cycle both lack explicit retry-and-DLQ semantics, and the quality-gate rejection in Step 3 does not specify whether rejection blocks the pipeline or routes to alerting. **Fix:** Specify per-step retry policy with exponential backoff, catch-and-route on persistent failure to SNS-and-DLQ, quality-gate rejection routing, and a pipeline-level `success` flag on the state machine output. See Finding A3.
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m **M3. Time zone and DST handling implicit.** (Architecture, Finding A4) The pseudocode says "local time at the ED, not UTC" but does not specify per-ED IANA tz storage, DST transition handling, or multi-ED scheduling. **Fix:** Store IANA tz per ED in metadata, use IANA tz arithmetic for bucketization, serialize forecasts with both ISO-8601-with-offset and IANA-tz-plus-utc-offset for unambiguous reconstruction, and specify the per-ED scheduling pattern for multi-ED deployments. See Finding A4.
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m **M4. Diversion-window handling architecturally implicit despite explicit prose elevation.** (Architecture, Finding A5) **Fix:** Add a diversion-log table as a first-class data source, a `was_on_diversion` and `diversion_pct_of_hour` feature, training-data filtering or modeling discipline, and an inference-time "diversion-affected forecast" warning surface to the dashboard. See Finding A5.
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m **M5. ESI-unknown placeholder introduces undefined data flow.** (Architecture, Finding A6) Step 1 emits an `esi_unknown` bucket; Step 4 ignores it. **Fix:** Specify a second-pass reconciliation in Step 1 that redistributes `esi_unknown` to `esi_1` through `esi_5` based on completed triage data, and specify that the classifier and per-acuity multiplier operate only on reconciled counts. See Finding A6.
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m **M6. VPC endpoint enumeration incomplete and endpoint-type not distinguished.** (Networking, Finding N1) **Fix:** Enumerate the full endpoint set (gateway: S3, DynamoDB; interface: SageMaker API, SageMaker Runtime, Kinesis, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, Secrets Manager). See Finding N1.
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m ### LOW Findings
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m **L1. BAA framing reads "PHI-adjacent" which understates the case.** (Security, Finding S3) The Amazon S3 paragraph in "Why These Services" calls arrival data "PHI-adjacent." ADT messages are direct PHI. **Fix:** Replace "PHI-adjacent" with "derived from PHI" or "PHI-by-association" and align with the affirmative BAA posture in the Prerequisites table.
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m **L2. TLS minimum version and external-feed egress not specified.** (Networking, Finding N2) **Fix:** Specify TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary and the egress path for the weather, CDC FluView, and local-events feeds.
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m **L3. TODO-verify markers should be tracked through publication.** (Voice, Finding V1) Six TODO markers (N1, N2, N3, N4, V1, A1) are appropriate draft hedges; resolve during the TechEditor pass. The Python companion file (N3) is a publication blocker that must be drafted, code-reviewed, and edited before this recipe publishes.
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m ## Summary Table
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m | Severity | Count | Action |
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m |----------|-------|--------|
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m | CRITICAL | 0     | None. |
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m | HIGH     | 2     | Late-record-and-watermark contract; customer-managed KMS keys per data class. |
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m | MEDIUM   | 6     | CloudTrail data events; Step Functions retry-and-DLQ; time zone and DST handling; diversion-window handling; ESI-unknown reconciliation; VPC endpoint enumeration. |
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m | LOW      | 3     | BAA "PHI-adjacent" phrasing; TLS minimum and external-feed egress; TODO marker resolution and Python companion completion. |
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m **Verdict: PASS** (0 CRITICAL findings; HIGH count of 2 is below the > 3 = FAIL threshold).
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m ## Recommended Next Steps
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m 1. TechWriter or TechEditor addresses HIGH findings H1 (late-record-and-watermark contract) and H2 (customer-managed KMS keys per data class) before publication. H1 in particular is the foundational streaming-correctness discipline for the recipe and should be incorporated into the General Architecture Pattern, not only into "Why This Isn't Production-Ready."
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m 2. MEDIUM findings M1 through M6 are correctness-and-discipline gaps that should be addressed before publication; most can be incorporated as architecture-text additions without restructuring the recipe. M3 (time zone and DST handling) and M5 (ESI-unknown reconciliation) are recipe-specific and warrant inline pseudocode updates.
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m 3. LOW findings are editorial and can be folded into the TechEditor pass. L3 (Python companion completion) is a publication blocker tracked via the N3 TODO.
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m 4. The chapter editor should plan for chapter-wide consolidation of the customer-managed-KMS-keys-per-data-class pattern (now confirmed across 12.2 and 12.3), the Step-Functions-retry-and-DLQ pattern (12.2 Map state, 12.3 hourly inference cycle), and the VPC-endpoint enumeration pattern (12.2 and 12.3) as more chapter-12 recipes accumulate expert reviews.
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m 5. The late-record-and-watermark pattern (this recipe's H1) and the time-zone-and-DST handling pattern (this recipe's M3) are streaming-and-hourly-specific architectural primitives that should be flagged for 12.4 (lab result trends), 12.5 (hospital census, where streaming admission and discharge events have similar surfaces), and 12.7 (vital sign trajectories) as those recipes are drafted.
+[0m[K
+Creating: [38;5;141mC:\tmp\ralph-worktrees\iter-457\reviews\chapter12.03-expert-review.md[0m
+[38;5;244m - Completed in 0.25s[0m
+
+I will run the following command: [38;5;141mdir C:\tmp\ralph-worktrees\iter-457\reviews\chapter12.03-expert-review.md[0m[38;5;244m (using tool: shell)[0m
+Purpose: Verify file was created
+
+
+
+    Directory: C:\tmp\ralph-worktrees\iter-457\reviews
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+-a----         5/25/2026  11:38 PM          50758 chapter12.03-expert-review.md                                        
+
+
+[38;5;244m - Completed in 1.336s[0m
+
+[38;5;141m> [0mExpert review completed for Recipe 12.3 (ED Arrival Forecasting).[0m[0m
+[0m[0m
+[1mVerdict: PASS[22m (0 CRITICAL, 2 HIGH, 6 MEDIUM, 3 LOW)[0m[0m
+[0m[0m
+Output: [38;5;10mreviews/chapter12.03-expert-review.md[0m[0m[0m
+[0m[0m
+Summary of findings:[0m[0m
+[0m[0m
+[1mHIGH (2):[22m[0m[0m
+- H1 (Architecture): Late-record and watermark problem is correctly diagnosed in prose but architecturally implicit. Streaming hourly aggregation needs an explicit watermark contract, late-record reconciliation, preliminary-vs-final flagging on lag features, and training-data filtering. Without it, every cycle inherits biased lag features.[0m[0m
+- H2 (Security/Architecture): Customer-managed KMS keys per data class not specified. ADT data is direct PHI, raising the importance over 12.2's PHI-by-association posture.[0m[0m
+[0m[0m
+[1mMEDIUM (6):[22m CloudTrail data events; Step Functions retry/DLQ semantics; time zone and DST handling (per-ED IANA tz, fall-back hour duplication); diversion-window handling architecturally implicit; ESI-unknown placeholder creates undefined data flow into Step 4; VPC endpoint enumeration incomplete.[0m[0m
+[0m[0m
+[1mLOW (3):[22m "PHI-adjacent" phrasing in S3 paragraph understates ADT data; TLS minimum and external-feed egress unspecified; six TODO-verify markers and the missing Python companion file (N3) need resolution before publication.[0m[0m
+[0m[0m
+[1mVoice check:[22m Em dash count 0 (verified by U+2014 codepoint scan). En dash count 13, used in numeric ranges only. CC voice consistent throughout. 70/30 vendor balance maintained. Healthcare-domain claims verified (130M ED visits, 5K EDs, ESI levels, CDC FluView lag, MIMIC-IV-ED) all accurate.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...[2K[1G[?25l[?25l⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...[2K[1G[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 14.21 • Time: 13m 43s
+
+[1mChapter-pattern note:[22m H2 and M6 repeat findings from 12.2's expert review and should be consolidated at the chapter level; H1 and M3 are streaming-specific patterns that will recur in 12.4, 12.5, and 12.7.[0m[1G[0m[0m[?25h[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Searching for files: [38;5;141m**/12*forecast*[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/12.3*[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/ch12*[0m[38;5;244m (using tool: glob)[0m
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/12*forecast*[0m under current directory
+[38;5;244m - Completed in 0.16s[0m
+
+
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/12.3*[0m under current directory
+[38;5;244m - Completed in 0.14s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m51 files[0m under current directory
+[38;5;244m - Completed in 0.15s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\tmp\ralph-worktrees\iter-457\specs\ch12-r03-expert-review.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\tmp\ralph-worktrees\iter-457\specs\ch12-r03-draft.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m824 bytes[0m from C:\tmp\ralph-worktrees\iter-457\specs\ch12-r03-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m837 bytes[0m from C:\tmp\ralph-worktrees\iter-457\specs\ch12-r03-draft.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+Searching for files: [38;5;141m**/chapter12.03*[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/reviews/chapter12.03*[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 files[0m under current directory
+[38;5;244m - Completed in 0.13s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 files[0m under current directory
+[38;5;244m - Completed in 0.14s[0m
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141mC:\tmp\ralph-worktrees\iter-457\reviews\chapter12.03-expert-review.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141mC:\tmp\ralph-worktrees\iter-457\chapter12.03-ed-arrival-forecasting.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m50757 bytes[0m from C:\tmp\ralph-worktrees\iter-457\reviews\chapter12.03-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m53658 bytes[0m from C:\tmp\ralph-worktrees\iter-457\chapter12.03-ed-arrival-forecasting.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;252m[0m[?25l[?25l[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 1.28 • Time: 25s
+
+[0m[1G[0m[0m[?25h[38;5;141m> [0m{"verdict": "pass", "rationale": "The review at reviews/chapter12.03-expert-review.md is thorough and well-structured across all required dimensions. Clinical accuracy is validated (ESI 1-5 framing, ~130M annual ED visits, ~5,000 EDs, LWBS rates, MIMIC-IV-ED hedging, CDC FluView lag, Poisson/negative-binomial overdispersion, Christmas/Memorial Day patterns). Architectural soundness is examined (5-stage Kinesis-or-HealthLake/Glue/SageMaker/Step Functions/DynamoDB pipeline, two-track volume+acuity decomposition, 20% MAPE quality gate, hourly vs weekly cadence, DynamoDB key design with CURRENT record). Security is rigorously covered through a dedicated Security Expert section against OWASP/CIS/NIST SP 800-66 (BAA, per-data-class CMKs, CloudTrail data events, VPC endpoints, TLS minimums, synthetic-data discipline, IAM least privilege). Findings are prioritized with explicit counts (0 CRITICAL, 2 HIGH, 6 MEDIUM, 3 LOW) and each carries severity, expert lens, location, problem, and concrete fix (e.g., H1 watermark contract with preliminary/final counts, reconciliation state machine, lag_1h_is_preliminary flag, forecast_freshness; H2 per-data-class CMK enumeration with IAM scoping; M2 retry/backoff/DLQ semantics; M3 IANA tz handling for DST; M5 esi_unknown reconciliation pass). The review also includes Stage 2 cross-expert discussion, Stage 3 synthesis, a summary table, and recommended next steps with chapter-level consolidation guidance."}
