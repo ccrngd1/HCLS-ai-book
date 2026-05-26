@@ -1,6 +1,6 @@
 # Recipe 11.10: Clinical Trial Recruitment Conversationalist
 
-**Complexity:** Complex · **Phase:** Regulated · **Estimated Cost:** ~$8-25 per qualified prescreen, varying widely with trial complexity, channel mix, model choice, eligibility-criteria depth, and coordinator-handoff volume
+**Complexity:** Complex · **Phase:** Regulated · **Estimated Cost:** ~$8-25 per qualified prescreen (depends on trial complexity, channel mix, model choice, eligibility-criteria depth, and coordinator-handoff volume)
 
 ---
 
