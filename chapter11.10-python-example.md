@@ -3306,6 +3306,28 @@ def chat_handler(*,
         state = _from_decimal(state)
         funnel_stage = state.get("funnel_stage")
         prescreen_state = state.get("prescreen_state")
+        # TODO (TechWriter): Code review Issue 1 (WARNING).
+        # The state's prescreen_state can be "IN_PROGRESS"
+        # (set by tool_eligibility_response_capture) when
+        # the LLM never calls prescreen_save_progress before
+        # requesting handoff. The `or DISPOSITION_LIKELY_ELIGIBLE`
+        # fallback only triggers when prescreen_state is
+        # empty/None, not the string "IN_PROGRESS", which
+        # results in a recruitment-decision record persisted
+        # with disposition="IN_PROGRESS" outside the
+        # documented vocabulary. Fix options: (a) add an
+        # aggregator helper that the chat-handler calls
+        # before persisting (compute_prescreen_disposition
+        # _from_responses), normalizing per-criterion
+        # evaluations into a final DISPOSITION_* value; or
+        # (b) gate the `disposition=prescreen_state or ...`
+        # logic on `prescreen_state in DISPOSITIONS` and
+        # otherwise fall back to a documented default; or
+        # (c) make the orchestration prompt require the LLM
+        # to call prescreen_save_progress before requesting
+        # the handoff. Option (a) matches the
+        # deterministic-engine-owns-disposition discipline
+        # the prose advocates.
         if funnel_stage == FUNNEL_STAGE_HANDOFF_SCHEDULED:
             persist_recruitment_decision(
                 session_id=session_id,
@@ -3553,6 +3575,31 @@ def _seed_demo_trial():
 def _seed_scripted_model_responses(trial_id):
     """Queue mock model responses for the demo turns. Real
     deployments use the real bedrock-runtime client."""
+    # TODO (TechWriter): Code review Issue 2 (WARNING).
+    # The mock currently queues six scripted responses
+    # across four turns, but only Turns 0 and 3 cleanly
+    # bracket the tool call with a corresponding end-of-turn
+    # text response. Turns 1 (logistics question -> FAQ
+    # retrieval) and 2 (age 52 capture -> eligibility
+    # response capture) fire tool calls then fall through
+    # to the default mock response, which is the unrelated
+    # coordinator-handoff fallback ("I appreciate your
+    # interest. I'd like to connect you with a research
+    # coordinator..."). The pedagogy issue: a learner
+    # reading the demo output sees a tool call name
+    # followed by a coordinator-handoff message that has
+    # nothing to do with the tool's purpose, and may infer
+    # that this is how the loop is supposed to work.
+    # Fix: either queue end-of-turn responses for Turns 1
+    # and 2 that actually reference the tool result (for
+    # example, "Visits run about 90 minutes over 12 months"
+    # after the FAQ retrieval, or "You're in the eligible
+    # age range" after capturing age 52), or restructure
+    # the demo so the scripted responses cleanly bracket
+    # each turn's tool call with the corresponding
+    # end-of-turn text. Two additional bedrock_runtime
+    # .queue_response({...}) calls in this function close
+    # the gap.
     bedrock_runtime.queue_response({
         "stop_reason": "tool_use",
         "content": [
