@@ -1866,6 +1866,18 @@ def _schedule_engagement(*, patient_id, trigger):
     quiet-hours discipline, and TCPA/10DLC compliance for
     SMS; the demo records the engagement.
     """
+    # TODO (TechWriter): Code review Issue 2 (WARNING). In
+    # real Pinpoint, the keys of MessageRequest.Addresses
+    # are the actual delivery addresses (phone number for
+    # SMS, email for EMAIL, device token for APNS/GCM,
+    # endpoint ID for IN_APP), not opaque patient_ids. As
+    # written this will not deliver in production. Either
+    # switch to the EndpointIds shape (preferred for
+    # healthcare bots that resolve patient -> endpoint via
+    # the Pinpoint endpoint registry on enrollment), or
+    # replace patient_id with a placeholder address and
+    # add an explicit "in production, look up via Pinpoint
+    # endpoint registry" comment.
     pinpoint_client.send_messages(
         ApplicationId=PINPOINT_APPLICATION_ID,
         MessageRequest={
@@ -3748,6 +3760,15 @@ def run_demo():
 
     # Out-of-scope (dose titration). The bot should replace
     # with the dose-titration safe template.
+    # TODO (TechWriter): Code review Issue 1 (WARNING). The
+    # mock LLM checks "furosemide" before the dose-titration
+    # phrases, so this test never exercises the
+    # OUT_OF_SCOPE_DOSE_TITRATION safe template. Either
+    # reorder MockBedrockRuntime.invoke_response so the
+    # dose-titration check fires first, or change this
+    # message to remove "furosemide" (e.g., "should i lower
+    # my heart medication tonight?") so the chained checks
+    # reach the dose-titration branch.
     print("\n--- Out-of-scope (dose titration) ---")
     msg = "should i lower my furosemide dose tonight?"
     print(f"  Patient: {msg}")
