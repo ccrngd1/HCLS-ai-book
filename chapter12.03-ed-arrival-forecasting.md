@@ -26,7 +26,7 @@ Let's get into how this works.
 
 If you've read Recipe 12.1, you know the basic time-series forecasting machinery. ED arrivals use the same toolbox, but the data has a few personality traits that change which methods work and what you have to model carefully.
 
-**ED arrivals are count data on a fast clock.** Hourly counts, sometimes every fifteen minutes for trauma centers. The numbers are smaller (a busy community ED might see 8 to 25 arrivals per hour) which means individual hours have more relative variability than daily appointment counts. The Poisson-ish nature of arrivals matters: the variance is roughly proportional to the mean, so methods that assume constant variance need adjustment.
+**ED arrivals are count data on a fast clock.** Hourly counts, sometimes every fifteen minutes for trauma centers. The numbers are smaller (a busy community ED might see 8 to 25 arrivals per hour), which means individual hours have more relative variability than daily appointment counts. The Poisson-ish nature of arrivals matters: the variance is roughly proportional to the mean, so methods that assume constant variance need adjustment.
 
 **Patient acuity matters as much as patient count.** A forecast that says "fifteen patients are arriving in the next hour" is operationally useless if you don't know whether those are fifteen ankle sprains or fifteen chest pains. ED resourcing is acuity-driven. The Emergency Severity Index (ESI) classifies arrivals from level 1 (resuscitation, immediate physician needed) to level 5 (routine, can wait). Levels 1 and 2 demand immediate room and physician attention. Levels 4 and 5 can be handled in a fast-track lane with an advanced practice provider. The acuity mix changes throughout the day (high-acuity skews early morning and late evening, low-acuity skews midday) and across seasons. A complete forecast predicts both volume and mix.
 
@@ -42,11 +42,13 @@ Three families of methods cover most practical ED arrival forecasting.
 
 **Generalized linear models with calendar features (Poisson regression, negative binomial regression).** The simplest serious approach. Treat hourly arrival count as a Poisson (or, if overdispersed, negative binomial) distributed variable, and regress it against a set of features: hour of day, day of week, week of year, holiday flags, weather, lagged values, and so on. These models are fast, interpretable, easy to explain to a medical director, and surprisingly hard to beat on volume forecasting. They naturally produce prediction intervals that respect the count nature of the data. Statsmodels and scikit-learn both implement this directly.
 
-**Classical time-series methods (SARIMA, Holt-Winters with multiple seasonalities, TBATS).** ARIMA and exponential smoothing extend to multiple seasonal periods, but the math gets gnarly. [TBATS](https://otexts.com/fpp3/complexseasonality.html#tbats-models) (Trigonometric, Box-Cox, ARMA, Trend, Seasonal) was designed specifically for series with multiple seasonalities. It handles hourly data with daily, weekly, and annual cycles in one model. It's slower to fit than GLM approaches and harder to incorporate exogenous variables into, but it's a strong baseline if you have clean history without much in the way of weather or event drivers.
+**Classical time-series methods (SARIMA, Holt-Winters with multiple seasonalities, TBATS).** ARIMA and exponential smoothing extend to multiple seasonal periods, but the math gets gnarly. [TBATS](https://otexts.com/fpp3/complexseasonality.html#tbats-models) (Trigonometric, Box-Cox, ARMA, Trend, Seasonal) was designed specifically for series with multiple seasonalities. It handles hourly data with daily, weekly, and annual cycles in one model. It's slower to fit than GLM approaches and harder to extend with exogenous variables, but it's a strong baseline if you have clean history without much in the way of weather or event drivers.
 
 **Modern decomposition and ML methods (Prophet, DeepAR, Temporal Fusion Transformer).** [Prophet](https://facebook.github.io/prophet/) handles multiple seasonalities and holidays gracefully, and it accepts external regressors (weather, flu index, event calendar) as additional inputs. It's a solid pragmatic default for ED hourly forecasting. Amazon's [DeepAR](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html), a SageMaker built-in algorithm, learns jointly across many related series, which earns its keep when you're forecasting across multiple EDs in a health system. Temporal Fusion Transformer (TFT) and similar attention-based models are state-of-the-art on accuracy but require enough history and engineering investment that they rarely win on a single-ED problem.
 
 For a single ED, a sensible starting architecture is a Poisson regression with calendar and weather features for volume, plus a separate multinomial classifier for acuity mix. That gets you 80% of the available accuracy with a model the medical director can interrogate. Prophet is a strong second choice when you have several years of history and want to capture seasonality without engineering all the features by hand. DeepAR makes sense at scale, when you're standing up a forecast across dozens of EDs in a health system and want to share strength across them.
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add a paragraph that names the iterated-versus-direct multi-step trade-off explicitly: Poisson regression with engineered lag features as described in Step 4 is iterated multi-step (errors compound across horizons); DeepAR is direct multi-step by construction. For 4-hour horizons the two perform comparably; for 24-hour and 7-day horizons direct is meaningfully more accurate. The recipe should call this out so readers pick consciously. -->
 
 ### The Acuity Mix Problem
 
@@ -103,6 +105,10 @@ At a conceptual level, the pipeline looks like this:
 
 **ED Operational Consumers.** The forecasts feed into the charge nurse dashboard, the staffing scheduler, the surge plan trigger logic, and the patient flow management system. The integration is usually a structured table or API. The dashboard shows projected arrivals by hour with prediction intervals overlaid on actuals, plus a per-acuity breakdown.
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Promote the late-record / out-of-order ADT handling from production-gaps prose into an architectural primitive in the General Architecture Pattern. Specifically: (1) explicit event-time watermark on hourly aggregation with configurable lateness tolerance (15 min default); (2) scheduled reconciliation pass (every 4-6 hours) that re-aggregates the prior 24 hours and writes delta records with a `revision` attribute; (3) inference reads only watermarked hours (current hour H consumes lag_1h from H-1, which is finalized); (4) backfill of corrected forecasts when reconciled deltas exceed threshold; (5) CloudWatch metrics on `late_records_per_hour` and `reconciliation_delta_distribution`. Without this, lag features are systematically biased near the trailing edge at hourly cadence. -->
+
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add Diversion-Log Integration and ESI-Reconciliation Second Pass as architectural primitives. The diversion log (manually entered or inferred from EMS) joins into the feature table as a per-hour boolean indicator; training either excludes diversion-affected hours or includes them with the indicator as a feature. The ESI-reconciliation second pass sweeps the prior 24 hours, finds placeholder esi_unknown values, queries the EHR for triage updates, and writes corrections with a `revision` attribute. Same shape as the late-record reconciliation in A2; consolidate as a single reusable primitive in the chapter. -->
+
 That's the whole concept. Stream, features, model, forecast, deliver. The real complexity is in the feature engineering and the operational integration, not in the modeling itself.
 
 ---
@@ -131,6 +137,8 @@ The AWS implementation borrows heavily from Recipes 12.1 and 12.2; the platform 
 
 **Amazon Bedrock or AWS Lambda for explanation generation (optional).** ED leadership often wants a one-line explanation accompanying each forecast spike: "Volume forecast 22% above seasonal baseline; main drivers: cold front arriving 18:00, increased flu surveillance signal in surrounding zip codes, basketball tournament downtown." Generating that text from the model's feature contributions is an optional Bedrock-or-Lambda step that adds significant value to the dashboard.
 
+<!-- TODO (TechWriter): Expert review S3 (LOW). Specify HIPAA-eligible Bedrock model selection (consult the AWS HIPAA Eligible Services list at deployment time), confirm BAA coverage at the account level, configure model-invocation logging to a destination encrypted with the model-artifacts CMK, and treat the prompt-construction layer as PHI-adjacent: feature contributions like "flu surveillance for zip codes [list]" are PHI-by-association even when the resulting one-line explanation does not name a patient. -->
+
 ### Architecture Diagram
 
 ```mermaid
@@ -156,6 +164,10 @@ flowchart LR
     style M fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). The Step Functions hourly inference pipeline lacks retry, DLQ, and partial-failure semantics; the diagram's `Errors -> CloudWatch Alarms / SNS Topic` reads as alarm-only, which is the wrong response for a clinical-operational system. Specify: (1) per-stage retry policy (3 retries, exponential backoff, ~8-min stage budget); (2) catch-and-route on persistent failure to an SQS DLQ plus CloudWatch metric `inference_stage_failed`; (3) explicit `model_freshness: "stale"` record write to DynamoDB on missed cycles so the dashboard renders staleness explicitly; (4) bounded BatchWriteItem `UnprocessedItems` retry with metric; (5) two-tier alarms (page on-call on any failure, escalate to medical informatics director after consecutive failures). Add DLQ box and stale-write path to the Mermaid diagram. -->
+
+<!-- TODO (TechWriter): Expert review N2 (LOW). Add a paragraph specifying the external-feed egress posture: weather-API, CDC FluView, state-surveillance, and event-calendar puller Lambdas run inside the VPC with egress through a NAT gateway in a public subnet; NAT flow logs enabled; API keys stored in Secrets Manager with 90-day rotation; TLS 1.2 minimum (TLS 1.3 preferred); puller IAM permissions scoped to write only to the destination S3 bucket and prefix per feed. -->
+
 ### Prerequisites
 
 | Requirement | Details |
@@ -168,6 +180,16 @@ flowchart LR
 | **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail. |
 | **Sample Data** | Synthetic ED arrival data. The [MIMIC-IV-ED](https://physionet.org/content/mimic-iv-ed/) database (de-identified ED visits from a Boston academic medical center) is a strong public dataset with permission via PhysioNet credentialing. For lighter-weight prototyping, generate synthetic data from a known process (Poisson with hour-of-day intensity plus weekly seasonality plus weather effects plus noise) and validate the pipeline against ground truth. Never use real ED arrival data in dev. |
 | **Cost Estimate** | SageMaker hourly inference (small endpoint): ~$50/month. Weekly retraining: ~$5/month. Kinesis ingest (low volume): ~$30/month. S3, DynamoDB, Step Functions, Lambda, Glue: under $50/month combined. Total: $200–$700/month per ED, depending on retraining frequency and inference volume. |
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Update the Encryption row to specify customer-managed KMS keys (CMKs) per data class for blast-radius containment. Recommended split: a CMK for the ADT stream and arrivals-hourly bucket (PHI), a CMK for weather/flu-index/event-calendar buckets (operational, no PHI), a CMK for the model-artifacts bucket, a CMK for the forecasts bucket and DynamoDB serving table, a CMK for SageMaker training output, a CMK for CloudWatch log groups. Update the IAM permissions row to grant per-Lambda least-privilege `kms:Decrypt` only on the relevant CMK; do not grant cross-class decrypt at the IAM-policy level. Mirrors S1 in the 12.2 expert review and should be consolidated at the chapter level. -->
+
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Update the CloudTrail row to specify data events on PHI-bearing buckets, tables, streams, and CMKs: "Enabled at the account level. Data events enabled on the arrivals-hourly bucket, model-artifacts bucket, forecasts bucket, the DynamoDB serving table, the Kinesis stream, and the customer-managed KMS keys. Management events for SageMaker, Kinesis, Glue, Step Functions, EventBridge, DynamoDB, and Lambda. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days." -->
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Update the VPC row to enumerate the full endpoint set with type. Gateway endpoints for S3 and DynamoDB (free, no per-AZ cost). Interface endpoints (per-AZ cost) for SageMaker (API), SageMaker (Runtime), Kinesis Streams, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (if used for weather-API or EHR-integration credentials). Mirrors N1 in the 12.2 expert review. -->
+
+<!-- TODO (TechWriter): Expert review N3 (LOW). Append to the VPC row: "TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary, including the SageMaker endpoint, the DynamoDB query path from the dashboard, and all external-feed puller calls." -->
+
+<!-- TODO (TechWriter): Expert review V2 (LOW). Decompose the Cost Estimate row by ED size. The $200-$700/month range assumes a 30,000-80,000-annual-visit community-to-mid-size ED with hourly inference and weekly retraining. A high-volume Level I trauma center (150,000+ annual visits) with 15-minute-bucket forecasting and continuous retraining can reach $1,500-$3,000/month. Multi-ED health-system deployments amortize the retraining cost across EDs when a shared model is used (DeepAR pattern), reducing per-ED cost meaningfully at scale. -->
 
 <!-- TODO (TechWriter): V1. Verify SageMaker, Kinesis, and DynamoDB pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
 
@@ -199,6 +221,8 @@ flowchart LR
 #### Walkthrough
 
 **Step 1: Aggregate the ADT stream to hourly counts.** The pipeline starts by consuming raw ADT registration messages from the streaming layer and bucketing them into hourly counts per ED per ESI level. Each registration record at minimum has an arrival timestamp, an ED identifier, and an ESI level (if triage has occurred by the time the record is captured). For records that arrive before triage assignment, you have two options: assign a placeholder ESI level and update later, or wait until triage completes before counting. The wait approach is cleaner but introduces a lag that hurts short-horizon forecasts. Most production systems take the placeholder approach and reconcile in a second pass.
+
+<!-- TODO (TechWriter): Expert review V3 (LOW). The pseudocode comment correctly flags local-time-zone bucketing but does not address daylight-saving transitions (duplicated 01:00-02:00 hour in fall, missing 02:00-03:00 hour in spring). Use a time-zone-aware library (zoneinfo in Python 3.9+) and key on the UTC instant plus a local-time label string with offset (e.g., 2026-04-15T18:00:00-05:00) so the fall-back duplicated hour disambiguates. For the spring-forward missing hour, emit a zero-arrival record with an explicit `dst_transition: "spring_forward"` flag the model can ignore at training time. -->
 
 ```text
 FUNCTION aggregate_arrivals_to_hourly(adt_stream_records):
@@ -396,6 +420,8 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
     RETURN count of records written
 ```
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Specify the DynamoDB write idempotency contract in Step 5: (1) `generated_at` is computed once at pipeline start and propagated through the Step Functions state, not recomputed per Lambda; (2) the `CURRENT` upsert uses a conditional write `ConditionExpression: attribute_not_exists(generated_at) OR generated_at < :new_generated_at` so a stale upsert cannot overwrite a newer pointer; (3) the EventBridge trigger uses a `pipeline_run_id` derived from the schedule's invocation ID so at-least-once trigger delivery produces idempotent runs; (4) BatchWriteItem `UnprocessedItems` retry is bounded (5 retries with exponential backoff) and surfaces a metric on the unprocessed count; (5) backfill writes from reconciliation use a `revision` attribute and the same `CURRENT` conditional-write logic. Mirrors A5 in the 12.2 expert review. -->
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and a forecasting library like statsmodels or Prophet, check out the [Python Example](chapter12.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 <!-- TODO (TechWriter): N3. The Python companion file (chapter12.03-python-example.md) is referenced here but does not yet exist in this branch. Confirm it has been drafted before publishing this recipe. -->
@@ -450,6 +476,8 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **Real-time data freshness and the late-record problem.** ADT messages do not always arrive in order. A registration that happened at 14:32 might land in your stream at 14:45 because of EHR queue delays. Hourly aggregation needs an explicit watermark and a late-record reconciliation pass. Without this, the most recent hour's count is always wrong, and the model sees biased recent history.
 
 **Forecast monitoring and drift detection.** Track forecast error against actuals on a rolling basis at each horizon. Alert when MAPE exceeds tolerance for two consecutive cycles. Retrain on a schedule (weekly is the practical default) and on demand when drift is detected. ED arrival patterns shift faster than ambulatory ones because the catchment is more dynamic; treat retraining cadence as a tighter knob.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Drift detection is correctly elevated as a production concern but is not architecturally specified. Add a separate horizon-aware drift-detection Lambda (or Step Functions step) invoked from EventBridge after each cycle's actuals are available at each horizon. It joins the prior cycle's forecasts at that horizon against actuals, computes per-ED and per-horizon MAPE plus prediction-interval-coverage rate (the share of actuals that fell inside the 80% interval), writes the metrics to CloudWatch with dimensions `(ed_id, horizon_hours)`, and alerts on two-consecutive-cycle threshold breaches at any horizon. Mirrors A4 in the 12.2 expert review. -->
 
 **Acuity-level timing.** ESI assignment happens at triage, which can be minutes to hours after arrival. The placeholder approach in Step 1 keeps the pipeline running but biases acuity counts in the most recent windows. A second-pass reconciliation that updates ESI levels as triage data arrives keeps the historical record clean. Without it, the acuity classifier learns a slightly distorted mapping.
 
