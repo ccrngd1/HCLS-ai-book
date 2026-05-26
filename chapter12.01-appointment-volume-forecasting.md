@@ -15,6 +15,24 @@ Editor notes (ch12-r01-edit, iter-435):
   four pseudocode FUNCTION blocks (prepare_training_data,
   train_forecast_model, generate_forecast, load_forecasts_to_dynamodb).
   No content changed; only the opening fence lines.
+
+Editor notes (ch12-r01-edit, iter-443):
+- Editorial verification pass. Confirmed iter-435 language-tag fix is intact
+  (all 7 fenced opens carry tags: text x5, mermaid x1, json x1). Re-ran the
+  full editorial checklist:
+  * Em dashes (U+2014): zero, confirmed by grep.
+  * Header hierarchy: H1 once, H2 for the 10 major sections, H3 for
+    subsections under Technology and AWS Implementation, one H4 under
+    `### Code` (`#### Walkthrough`). No skipped levels.
+  * Voice drift: no documentation-voice ("This recipe demonstrates"),
+    no announcement language, no LinkedIn-influencer phrasing. Tone matches
+    STYLE-GUIDE.md and the chapter01 reference.
+  * Vendor balance: Problem and Technology sections are vendor-agnostic;
+    AWS service names appear in Why These Services, Architecture Diagram,
+    Prerequisites, Ingredients, and Code as expected.
+  * TODO markers (N1, V1, N2, N3, A1, N4) are intact and carry finding IDs
+    on the same line so the follow-up task generator can track them.
+- No content changes in this iteration.
 -->
 
 # Recipe 12.1: Appointment Volume Forecasting ⭐
