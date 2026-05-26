@@ -202,6 +202,8 @@
   * [Python Example](chapter12.03-python-example)
 * [12.4 — Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis)
   * [Python Example](chapter12.04-python-example)
+* [12.5 — Hospital Census Forecasting](chapter12.05-hospital-census-forecasting)
+  * [Python Example](chapter12.05-python-example)
 
 ---
 
