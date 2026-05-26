@@ -186,6 +186,8 @@
   * [Python Example](chapter11.08-python-example)
 * [11.9 — Care Coordination Assistant](chapter11.09-care-coordination-assistant)
   * [Python Example](chapter11.09-python-example)
+* [11.10 — Clinical Trial Recruitment Conversationalist](chapter11.10-clinical-trial-recruitment-conversationalist)
+  * [Python Example](chapter11.10-python-example)
 
 ---
 
