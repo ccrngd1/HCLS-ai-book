@@ -196,6 +196,8 @@
 * [Preface](chapter12-preface)
 * [12.1 — Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting)
   * [Python Example](chapter12.01-python-example)
+* [12.2 — Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting)
+  * [Python Example](chapter12.02-python-example)
 
 ---
 
