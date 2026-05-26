@@ -108,6 +108,16 @@ sagemaker_runtime  = boto3.client("sagemaker-runtime",
 lambda_client      = boto3.client("lambda",
                                   region_name=REGION,
                                   config=BOTO3_RETRY_CONFIG)
+# TODO (TechWriter): Code review NOTE 5. The `sagemaker_runtime` and
+# `lambda_client` handles above are constructed but never exercised, even
+# by commented-out code. The "production wiring is a one-line swap" claim
+# is misleading: production runs the curve fitting as a SageMaker training
+# job (control plane, which would use `boto3.client("sagemaker")`, not
+# `sagemaker-runtime`), and the Monte Carlo Lambda would be invoked by Step
+# Functions, not by orchestration code in this file. Either remove the
+# unused clients, replace `sagemaker_runtime` with `sagemaker`, or extend
+# the surrounding comment to spell out exactly which production path each
+# client is staged for.
 
 # --- Resource Names ---
 # Fill these in with your actual resource names. The demo prints
@@ -269,6 +279,10 @@ def _to_decimal(value):
     if isinstance(value, Decimal):
         return value
     if isinstance(value, bool):
+        # bool is a subclass of int in Python; intercept before
+        # the int/float branch so True does not silently coerce
+        # to Decimal('1'). DynamoDB has a native BOOL type that
+        # accepts Python bool directly.
         return value
     if isinstance(value, (int, float)):
         return Decimal(str(round(float(value), 6)))
@@ -630,6 +644,13 @@ def harmonize_ar_records(raw_remits, s3, bucket):
     """
     harmonized = []
     quarantined = 0
+    # TODO (TechWriter): Code review NOTE 7. The `as_of` field on each
+    # harmonized record is re-evaluated as `datetime.now(timezone.utc)`
+    # inside the loop, so every record in a single harmonization batch
+    # carries a microsecond-different timestamp instead of the single
+    # run timestamp. Hoist the timestamp out of the loop (or accept it
+    # as a parameter, matching the discipline in `simulate_cash_flow`
+    # and `fit_payer_payment_curves`).
     for raw in raw_remits:
         if raw["payer_id"] not in PAYER_CATALOG:
             logger.warning("unknown payer id: %s", raw["payer_id"])
@@ -921,6 +942,19 @@ def simulate_claim_payment(claim, curve, payer_catalog,
     # for the headline simulation and only carves out the denial
     # path explicitly when the curve is not informative.
 
+    # TODO (TechWriter): Code review W1 (WARNING). The denial-and-appeal
+    # sub-process below double-counts the denied-recovered cohort that
+    # the Kaplan-Meier curve already absorbs (for the National commercial
+    # plan ~6% extra long-tail mass; for Medicare ~2%). The comment block
+    # above promises a "carves out only when the curve is not informative"
+    # guard, but that guard is not implemented; the explicit denial branch
+    # always fires. Also: claim["denial_flag"] is ignored, so a known-denied
+    # open claim gets the same fresh-Bernoulli draw as a clean claim. Fix
+    # options: (a) drop the explicit denial sub-process and use the curve
+    # directly with a one-paragraph prose update; or (b) fit on
+    # denial_flag=False records only and compose the two distributions
+    # explicitly. Option (a) is the lighter touch.
+
     # Sample the first-pass adjudication outcome.
     denied_first_pass = (rng.random() < payer["first_pass_denial_rate"])
 
@@ -933,6 +967,11 @@ def simulate_claim_payment(claim, curve, payer_catalog,
         if not recovered:
             return (None, 0.0)
 
+        # TODO (TechWriter): Code review NOTE 3. The `or 30` fallback below
+        # papers over the curve being uninformative for the denial sub-path
+        # by hardcoding 30 days as the first-pass lag. Either fix W1 (which
+        # dissolves this branch) or replace with a sample from a proper
+        # first-pass-timing distribution (e.g., the curve's median lag).
         first_lag    = curve["estimator"].sample_payment_day(horizon_days, rng) or 30
         appeal_extra = max(7, int(rng.gauss(payer["appeal_lag_days_mean"],
                                             payer["appeal_lag_days_sd"])))
@@ -1003,6 +1042,13 @@ def simulate_cash_flow(open_ar, payer_curves, payer_catalog,
             # Payer with insufficient training history; fall back
             # to a conservative payer-class-average curve in
             # production. The demo skips these claims.
+            # TODO (TechWriter): Code review NOTE 4. Silent skips here mean
+            # if 5% of the open-AR ledger is dropped because their payers
+            # have insufficient training history, the all-payer aggregate
+            # under-reports by 5% with no signal to the operator. Either
+            # accumulate a `dropped_claim_count` and log/emit-CloudWatch/
+            # surface-in-EventBridge it, or implement the payer-class-average
+            # fallback inline.
             continue
         bucket = _ar_aging_bucket(claim["submitted_date"], as_of_dt)
         aging_summary[bucket][claim["payer_id"]] += claim.get(
@@ -1025,6 +1071,20 @@ def simulate_cash_flow(open_ar, payer_curves, payer_catalog,
 ```
 
 ---
+
+<!-- TODO (TechWriter): Expert review / Code review W2 (WARNING). The Step 4
+section header below ("Aggregate to Per-Week Cash Flow Forecasts") does not
+match what the file's preamble promises Step 4 does ("apply seasonality,
+denial-and-appeal cycle adjustments, and patient-responsibility tail
+modeling"). Seasonality is actually applied in Step 3 (inside
+`simulate_cash_flow`), denial-and-appeal is applied in Step 3 (inside
+`simulate_claim_payment`), and patient-responsibility tail modeling is not
+implemented at all. Fix the preamble paragraph at the top of this file
+(near "the code maps to the five pseudocode steps") so Step 3 = "simulate
+per-claim payments with seasonality and denial-and-appeal sub-process
+applied per sample" and Step 4 = "aggregate sample-wise to per-week,
+per-payer percentiles," with patient-responsibility tail modeling moved to
+Gap to Production. -->
 
 ## Step 4: Aggregate to Per-Week Cash Flow Forecasts
 
@@ -1065,6 +1125,14 @@ def aggregate_forecasts(per_week_samples, aging_summary,
                 continue
             mean_v   = sum(samples) / len(samples)
             sorted_s = sorted(samples)
+            # TODO (TechWriter): Code review NOTE 9. The percentile selection
+            # below uses index truncation (`sorted_s[int(0.10 * len(...))]`)
+            # rather than interpolation. For 1000 samples the difference is
+            # negligible; for 100 samples it can shift reported p10 noticeably.
+            # Either use `statistics.quantiles(samples, n=10)` (Hazen-like
+            # interpolation) or add a comment that this is an index-truncation
+            # approximation valid for large sample sets and production should
+            # use `numpy.percentile` or `statistics.quantiles`.
             p10 = sorted_s[int(0.10 * len(sorted_s))]
             p50 = sorted_s[int(0.50 * len(sorted_s))]
             p90 = sorted_s[int(0.90 * len(sorted_s))]
@@ -1139,6 +1207,13 @@ def deliver_forecasts(forecasts, aging_block, table, event_bus,
     """
     written = 0
     chunk = 25
+    # TODO (TechWriter): Code review NOTE 6. The boto3 resource-level
+    # `batch_writer()` already chunks into 25-item batches automatically and
+    # handles `UnprocessedItems` retry internally, so the outer chunk loop
+    # below is redundant. Production opens a single `batch_writer()` context
+    # for the entire list and lets the SDK handle chunking. Same finding
+    # landed in 12.04. Collapse to one batch_writer context with an inline
+    # comment that the SDK handles chunk and UnprocessedItems retry.
     for i in range(0, len(forecasts), chunk):
         batch = forecasts[i:i + chunk]
         with table.batch_writer() as bw:
@@ -1183,6 +1258,12 @@ def deliver_forecasts(forecasts, aging_block, table, event_bus,
     # next-week cash if we lose the BCBS contract?").
     s3_key = (f"trajectories/run_id={run_id}/"
               f"date={datetime.now(timezone.utc).strftime('%Y-%m-%d')}.json")
+    # TODO (TechWriter): Code review NOTE 2. The dict comprehension below is
+    # a no-op (the conditional returns `v` in both branches). Either collapse
+    # to `Body=json.dumps(forecasts)` or implement the intended transform
+    # (most likely candidate: drop per-record `pipeline_version` and
+    # `contract_version` since those would be tagged once on the trajectory
+    # file, not per-row).
     s3.put_object(Bucket=sample_trajectory_bucket, Key=s3_key,
                   Body=json.dumps([
                       {k: (v if k != "generated_at" else v) for k, v in f.items()}
@@ -1271,6 +1352,15 @@ def run_cash_flow_pipeline(table, event_bus, cloudwatch, s3, as_of_dt=None):
 
     # --- Step 1: Harmonize ---
     print("\n[step 1] harmonize_ar_records")
+    # TODO (TechWriter): Code review NOTE 1. The two calls below re-harmonize
+    # the same right-censored records into the same S3 keys (idempotent on
+    # claim_id, but wasted work and misleading about production data flow).
+    # In production the harmonized AR ledger comes from a Glue job consuming
+    # the 837/835 stream once, and the open-AR pull comes from a separate
+    # practice-management read. Either drop the second call and filter
+    # `harmonized` to derive `open_harmonized`, or add a comment that the
+    # second call models the production pull from the practice management
+    # system and is structurally distinct from the historical Glue ingestion.
     harmonized = harmonize_ar_records(
         raw_history, s3, HARMONIZED_AR_BUCKET)
     open_harmonized = harmonize_ar_records(
@@ -1400,7 +1490,7 @@ if __name__ == "__main__":
 
 ## Sample Output
 
-Running the demo against the in-memory mocks produces output like this. Numbers vary because of the synthetic-data noise but the per-payer payment-curve shapes, the per-week aggregation, and the prediction intervals are the structurally interesting outputs.
+Running the demo against the in-memory mocks produces output like this. Output is deterministic given the fixed seed (`SYNTHETIC_RANDOM_SEED = 42`); the per-payer payment-curve shapes, the per-week aggregation, and the prediction intervals are the structurally interesting outputs.
 
 ```text
 === Revenue Cycle Cash Flow Forecast run_id=8f3a... ===
