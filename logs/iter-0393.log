@@ -267,3 +267,461 @@ Creating: [38;5;141mC:\tmp\ralph-worktrees\iter-393\chapter11.09-care-coordinat
 [38;5;244m - Completed in 0.11s[0m
 
 [38;5;141m> [0mNow let me append the General Architecture section:[0m[0m
+I'll append content to file: [38;5;141mchapter11.09-care-coordination-assistant.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Append General Architecture Pattern section
+
+[49m[38;5;10m+    200[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m ## General Architecture Pattern
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m A healthcare care coordination assistant decomposes into ten logical stages: enrollment and consent (with cross-organization data-sharing posture), longitudinal-store and journey-state initialization, channel entry with disclosure, input safety screening with continuous escalation screening, identity-and-context loading with cross-organization data integration, conversation handling with coordination-grounded responses, output safety screening with scope and message-sending verification, escalation routing to human navigators or care team, care-team reporting with consent enforcement, and audit logging with coordination-specific retention discipline. The cross-cutting concerns from recipes 11.1 through 11.8 carry forward; this recipe adds five new ones (cross-organization data integration with consent-tracking as architectural primitive, referral-lifecycle tracking with deterministic state machines, care-transition protocol governance with clinical-leadership ownership, message-drafting workflow with human-review gating, and care-navigation handoff infrastructure).
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m ┌────────── ENROLLMENT + CONSENT ──────────────────────────┐
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m │   [Patient enrolled by care team into coordination       │
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m │    program for specific journey or journey set]          │
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m │    - Documented coordination plan with named journey      │
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m │      type (oncology, post-discharge, complex-condition,   │
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m │      surgical episode, pregnancy, others)                 │
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m │    - Documented consent for cross-organization data       │
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m │      sharing with named organizations and named data      │
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m │      classes                                              │
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m │    - Documented consent for caregiver-mediated access     │
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m │      where applicable                                     │
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m │    - State-specific consent variations enforced where     │
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m │      enhanced privacy protections apply                   │
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m │    - 42 CFR Part 2 consent collected separately for       │
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m │      substance-use treatment data                         │
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m │    - Consent revocable; revocation propagates to all      │
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m │      data integrations                                    │
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m │   [Output: signed consent record with cross-organization │
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m │    integration scope; coordination-plan instantiation]   │
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m ┌────────── LONGITUDINAL STORE + JOURNEY STATE INIT ───────┐
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m │   [Patient-coordination longitudinal store]              │
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m │    - Active conditions on the problem list                │
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m │    - Current medications                                  │
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m │    - Coordination plan reference                          │
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m │    - Active journey type(s) with current stage            │
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m │    - Open referral queue with lifecycle state             │
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m │    - Scheduled appointments across facilities             │
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m │    - Open prior authorizations                            │
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m │    - Recent care-transition events                        │
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m │    - Recent results awaiting follow-up                    │
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m │    - Stated patient preferences (channel, language,       │
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m │      quiet hours, opt-out granularity)                    │
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m │    - Caregiver-access posture                             │
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m │    - Conversation history (initially empty)               │
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m │    - Consent posture per data class and per source        │
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m │      organization                                         │
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m │   [Cross-organization integration registry]              │
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m │    - HIE participation flags                              │
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m │    - QHIN connectivity flags                              │
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m │    - Affiliated-organization direct integrations          │
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m │    - Payer integrations for PA-status visibility          │
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m │    - Pharmacy integrations for prescription-status        │
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m │      visibility                                           │
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m │    - Direct messaging endpoints                           │
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m │   [Output: longitudinal store ready for coordination     │
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m │    conversations; journey state initialized]             │
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m ┌────────── CHANNEL ENTRY WITH DISCLOSURE ─────────────────┐
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m │   [Patient-initiated entry]                               │
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m │    - In-app chat (most common)                            │
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m │    - SMS (with mental-health-aware sensitivity)           │
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m │    - Web chat                                             │
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m │    - Voice channel (where supported)                      │
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m │    - Email (asynchronous-only, no crisis pathway)         │
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m │   [Bot-initiated entry per coordination plan]            │
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m │    - Scheduled milestone reminders (procedure prep,       │
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m │      appointment day-of, post-procedure check-in)         │
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m │    - Referral-lifecycle-overdue triggers                  │
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m │    - Prior-auth-status-change triggers                    │
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m │    - Care-transition triggers (admit, discharge,          │
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m │      transfer)                                            │
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m │    - Result-arrived triggers                              │
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m │    - Bot-initiation respects engagement policy            │
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m │      (quiet hours, opt-outs, channel preferences)         │
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m │   [Disclosure refresh per session or defined cadence]    │
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m │    - "I'm a coordination tool, not a person"              │
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m │    - "I help with logistics, scheduling, and what comes   │
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m │      next; I can't interpret clinical results or give     │
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m │      medical advice"                                      │
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m │    - "If something is urgent, here's how to reach a       │
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m │      person"                                              │
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m │    - Patient acknowledges or continues                    │
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m │   [Conversation session bootstrap]                        │
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m │    - Generate session_id                                  │
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m │    - Capture channel, authentication context, caregiver   │
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m │      proxy context where applicable                       │
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m │   [Output: session_id, channel, auth context, disclosure  │
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m │    acknowledged]                                          │
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m ┌────────── INPUT SAFETY + ESCALATION SCREENING ───────────┐
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m │   [Standard input safety primitives from recipe 11.1]     │
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m │    - Prompt-injection detection                           │
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m │    - PHI minimization for cross-organization references   │
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m │   [Continuous emergency screening (inherited from 11.6)] │
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m │    - Acute medical symptoms requiring triage              │
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m │    - Crisis screening (suicidal ideation, self-harm,      │
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m │      etc., inherited from 11.8)                           │
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m │   [Coordination-specific escalation screening]           │
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m │    - Severe coordination distress / overwhelm signals     │
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m │    - Disclosure of access barriers (transportation,       │
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m │      financial, language, safety) requiring care-         │
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m │      navigation handoff                                   │
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m │    - Sensitive disclosures triggering mandatory-          │
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m │      reporting routing (inherited from 11.8)              │
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m │    - Patient statement that care is going wrong (e.g.,    │
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m │      "no one has called me back in three weeks")          │
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m │      flagged for care-team awareness                      │
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m │   [Output: input passes / blocked / triage pathway /      │
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m │    crisis pathway / coordination-distress flagged for    │
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m │    handoff]                                               │
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m ┌────────── IDENTITY + CROSS-ORG CONTEXT LOADING ──────────┐
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m │   [Authenticated session]                                 │
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m │    - Patient logged in via institution app or portal      │
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m │    - Caregiver-proxy authentication where applicable      │
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m │    - Session conveys verified patient_id and access scope │
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m │   [Internal-system context retrieval]                     │
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m │    - Active conditions, medications, allergies            │
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m │    - Coordination plan content                            │
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m │    - Open-referral queue with lifecycle state             │
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m │    - Scheduled appointments at institution facilities     │
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m │    - Recent results from institution labs                 │
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m │    - Recent encounter history                             │
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m │    - Patient-stated preferences                           │
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m │   [Cross-organization context retrieval]                  │
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m │    - HIE/QHIN-mediated record fetches (consent-gated)     │
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m │    - Direct affiliated-organization integrations          │
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m │      (consent-gated)                                      │
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m │    - Payer integration for PA status (consent-gated)      │
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m │    - Pharmacy integrations for prescription status        │
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m │      (consent-gated)                                      │
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m │    - Outside appointment calendar where visibility        │
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m │      permits                                              │
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m │    - Outside results returning to the institution         │
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m │   [Journey-state computation]                             │
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m │    - Current journey stage                                │
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m │    - Open milestones with expected windows                │
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m │    - Overdue items requiring attention                    │
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m │    - Recently-completed items                             │
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m │   [Long-term-summary integration]                         │
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m │    - Periodically-refreshed journey summary               │
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m │    - Reduces token-budget pressure for long histories     │
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m │   [Output: full journey-aware context payload]            │
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m ┌────────── CONVERSATION HANDLING ─────────────────────────┐
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m │   [LLM-orchestrated conversation with tool use]           │
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m │    - System prompt with explicit coordination scoping,    │
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m │      patient preferences, journey-state context,          │
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m │      institution-specific protocol references             │
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m │    - User message plus recent-conversation context        │
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m │    - Tool surface:                                        │
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m │      - referral_status_retrieve                           │
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m │      - appointment_calendar_retrieve                      │
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m │      - prior_auth_status_retrieve                         │
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m │      - results_pending_retrieve                           │
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m │      - prep_instruction_retrieve                          │
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m │      - care_transition_protocol_retrieve                  │
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m │      - provider_directory_search                          │
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m │      - care_navigation_resource_retrieve                  │
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m │      - message_to_provider_draft_propose                  │
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m │      - care_team_alert_propose                            │
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m │      - human_navigator_handoff_propose                    │
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m │      - sdoh_resource_retrieve                             │
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m │      - conversation_history_retrieve                      │
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m │      - clinical_rule_compute (where applicable)           │
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m │   [Scope discipline]                                      │
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m │    - Within-scope: coordination logistics, journey-       │
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m │      stage status, who-does-what, what-comes-next, prep   │
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m │      instructions, results-arrived next steps,            │
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m │      appointment management, referral tracking, PA        │
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m │      status, care-transition protocol delivery,           │
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m │      provider-directory queries, social-determinants      │
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m │      navigation                                           │
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m │    - Outside-scope (route appropriately): clinical        │
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m │      interpretation, diagnosis, medication adjustment,    │
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m │      acute symptom triage (route to recipe 11.6),         │
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m │      mental-health crisis (route to recipe 11.8),         │
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m │      benefits-determination disputes (route to recipe     │
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m │      11.5), billing-dispute resolution                    │
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m │   [Citation discipline]                                   │
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m │    - Prep instructions grounded in cited library item    │
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m │      with version stamp                                   │
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m │    - Care-transition protocol guidance grounded in        │
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m │      cited protocol with version stamp                    │
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m │    - Provider-directory results grounded in cited         │
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m │      directory entry with date stamp                      │
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m │    - Cross-organization data attributed to source         │
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m │      organization with timestamp                          │
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m │   [Message-drafting workflow]                             │
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m │    - When patient asks "tell my urologist that...,"       │
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m │      the assistant drafts the message                     │
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m │    - Drafted messages route per institutional policy:     │
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m │      patient-review-and-send, care-team-review-and-send,  │
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m │      or structured-channel automated send with audit      │
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m │    - Drafts are not sent autonomously                     │
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m │   [Output: composed response with citations, tool-call    │
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m │    audit trail, drafted messages where applicable]        │
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m ┌────────── OUTPUT SAFETY + SCOPE VERIFICATION ────────────┐
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m │   [Standard output safety primitives from recipe 11.1]    │
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m │    - Scope filter (no clinical interpretation; no         │
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m │      diagnosis; no medication recommendations)            │
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m │    - Vendor-managed guardrail layer                       │
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m │   [Coordination-specific verification]                    │
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m │    - Cross-organization data attributed to source         │
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m │    - Prep instructions grounded in cited library item     │
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m │    - Care-transition protocol guidance grounded in        │
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m │      cited protocol                                       │
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m │    - Provider-directory results within network and        │
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m │      geography                                            │
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m │    - Drafted messages comply with institutional policy    │
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m │      (recipient appropriate, content appropriate, tone    │
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m │      appropriate, send-pathway appropriate)               │
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m │    - Conservative-bias check: where the response could    │
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m │      plausibly be clinical interpretation, did the        │
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m │      response defer to the care team?                     │
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m │    - Within-scope check                                   │
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m │    - Citation-coverage check                              │
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m │   [Output: response cleared for delivery, replaced with   │
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m │    safer template, or regenerated with corrections]       │
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m ┌────────── ESCALATION + NAVIGATOR HANDOFF ────────────────┐
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m │   [Escalation triggers]                                   │
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m │    - Acute medical symptom (route to triage, recipe 11.6) │
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m │    - Mental-health crisis (route to crisis pathway,       │
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m │      recipe 11.8)                                         │
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m │    - Coordination distress / overwhelm signals            │
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m │    - Access-barrier disclosure (transportation, food,     │
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m │      housing, language, financial, safety)                │
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m │    - Referral-lifecycle stalled past escalation           │
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m │      threshold                                            │
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m │    - Care-transition step not happening on time           │
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m │    - PA denial requiring care-team support                │
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m │    - Patient explicit request for a human                 │
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m │    - Bot confidence below threshold                       │
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m │   [Handoff targets]                                       │
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m │    - Acute medical: triage workflow then 911 if           │
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m │      indicated                                            │
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m │    - Crisis: 988 plus institutional crisis line plus      │
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m │      warm handoff to platform clinician (recipe 11.8)     │
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m │    - Coordination distress / access barriers: care-       │
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m │      navigation team (RN navigator, social worker)        │
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m │    - Referral stalled / PA stalled: care-team alert       │
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m │    - Care-transition issue: discharge-coordination team   │
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m │    - Patient request for person: care-management or       │
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m │      navigator queue                                      │
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m │   [Warm-handoff payload]                                  │
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m │    - Recent conversation transcript                       │
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m │    - Active conditions and medications                    │
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m │    - Coordination plan                                    │
+[0m[49m[38;5;10m+    501[0m:[38;5;10m[49m │    - Open referral queue                                  │
+[0m[49m[38;5;10m+    502[0m:[38;5;10m[49m │    - Recent care-transition events                        │
+[0m[49m[38;5;10m+    503[0m:[38;5;10m[49m │    - Trigger reason and journey-state context             │
+[0m[49m[38;5;10m+    504[0m:[38;5;10m[49m │    - Patient's preferred contact method                   │
+[0m[49m[38;5;10m+    505[0m:[38;5;10m[49m │    - Patient's stated preferences                         │
+[0m[49m[38;5;10m+    506[0m:[38;5;10m[49m │    - Bot's structured journey summary                     │
+[0m[49m[38;5;10m+    507[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    508[0m:[38;5;10m[49m │   [Bridge-and-stay pattern]                               │
+[0m[49m[38;5;10m+    509[0m:[38;5;10m[49m │    - Bot does not just hand patient a phone number        │
+[0m[49m[38;5;10m+    510[0m:[38;5;10m[49m │    - Bot bridges to human within the platform when        │
+[0m[49m[38;5;10m+    511[0m:[38;5;10m[49m │      capacity is available                                │
+[0m[49m[38;5;10m+    512[0m:[38;5;10m[49m │    - Bot stays present until human has joined             │
+[0m[49m[38;5;10m+    513[0m:[38;5;10m[49m │    - Patient does not start over                          │
+[0m[49m[38;5;10m+    514[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    515[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    516[0m:[38;5;10m[49m │   [Output: handoff event with structured payload to       │
+[0m[49m[38;5;10m+    517[0m:[38;5;10m[49m │    appropriate target, conversation continuity preserved] │
+[0m[49m[38;5;10m+    518[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    519[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    520[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    521[0m:[38;5;10m[49m ┌────────── CARE-TEAM REPORTING (CONSENT-GATED) ───────────┐
+[0m[49m[38;5;10m+    522[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    523[0m:[38;5;10m[49m │   [Real-time alerts]                                      │
+[0m[49m[38;5;10m+    524[0m:[38;5;10m[49m │    - Referral-lifecycle stalled past threshold            │
+[0m[49m[38;5;10m+    525[0m:[38;5;10m[49m │    - Care-transition step not happening on time           │
+[0m[49m[38;5;10m+    526[0m:[38;5;10m[49m │    - PA denial detected                                   │
+[0m[49m[38;5;10m+    527[0m:[38;5;10m[49m │    - Patient distress requiring human attention           │
+[0m[49m[38;5;10m+    528[0m:[38;5;10m[49m │    - Patient appointment-pattern concerns                 │
+[0m[49m[38;5;10m+    529[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    530[0m:[38;5;10m[49m │   [Periodic reports (consent-gated)]                      │
+[0m[49m[38;5;10m+    531[0m:[38;5;10m[49m │    - Weekly digest per patient (open items, recent        │
+[0m[49m[38;5;10m+    532[0m:[38;5;10m[49m │      coordination activity, patient-engagement metrics,   │
+[0m[49m[38;5;10m+    533[0m:[38;5;10m[49m │      pending escalations)                                 │
+[0m[49m[38;5;10m+    534[0m:[38;5;10m[49m │    - Monthly summary per patient                          │
+[0m[49m[38;5;10m+    535[0m:[38;5;10m[49m │    - Per-care-team-panel coordination dashboard           │
+[0m[49m[38;5;10m+    536[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    537[0m:[38;5;10m[49m │   [Care-team feedback loop]                               │
+[0m[49m[38;5;10m+    538[0m:[38;5;10m[49m │    - Care team marks alerts as actioned                   │
+[0m[49m[38;5;10m+    539[0m:[38;5;10m[49m │    - Care team flags inappropriate bot responses for      │
+[0m[49m[38;5;10m+    540[0m:[38;5;10m[49m │      review                                               │
+[0m[49m[38;5;10m+    541[0m:[38;5;10m[49m │    - Care team requests changes to coordination plan      │
+[0m[49m[38;5;10m+    542[0m:[38;5;10m[49m │      that the bot picks up on next refresh                │
+[0m[49m[38;5;10m+    543[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    544[0m:[38;5;10m[49m │   [Outcome-correlation pipeline (longer time horizon)]    │
+[0m[49m[38;5;10m+    545[0m:[38;5;10m[49m │    - Referral-completion rate per cohort                  │
+[0m[49m[38;5;10m+    546[0m:[38;5;10m[49m │    - Time-to-next-appointment after referral              │
+[0m[49m[38;5;10m+    547[0m:[38;5;10m[49m │    - Prior-authorization-completion rate                  │
+[0m[49m[38;5;10m+    548[0m:[38;5;10m[49m │    - Post-discharge-follow-up rate                        │
+[0m[49m[38;5;10m+    549[0m:[38;5;10m[49m │    - 30-day readmission rate during active                │
+[0m[49m[38;5;10m+    550[0m:[38;5;10m[49m │      coordination episodes                                │
+[0m[49m[38;5;10m+    551[0m:[38;5;10m[49m │    - ED-visit rate during active coordination             │
+[0m[49m[38;5;10m+    552[0m:[38;5;10m[49m │    - Patient-reported coordination experience             │
+[0m[49m[38;5;10m+    553[0m:[38;5;10m[49m │    - Downstream cost (with appropriate caution about      │
+[0m[49m[38;5;10m+    554[0m:[38;5;10m[49m │      attribution)                                         │
+[0m[49m[38;5;10m+    555[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    556[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    557[0m:[38;5;10m[49m │   [Output: care-team visibility into coordination         │
+[0m[49m[38;5;10m+    558[0m:[38;5;10m[49m │    activities (consent-gated); outcome metrics for        │
+[0m[49m[38;5;10m+    559[0m:[38;5;10m[49m │    clinical, operational, and value-based contract        │
+[0m[49m[38;5;10m+    560[0m:[38;5;10m[49m │    review]                                                │
+[0m[49m[38;5;10m+    561[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    562[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    563[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    564[0m:[38;5;10m[49m ┌────────── AUDIT, LOG, AND POST-MARKET SURVEILLANCE ──────┐
+[0m[49m[38;5;10m+    565[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    566[0m:[38;5;10m[49m │   [Durable conversation record]                           │
+[0m[49m[38;5;10m+    567[0m:[38;5;10m[49m │    - User utterances                                      │
+[0m[49m[38;5;10m+    568[0m:[38;5;10m[49m │    - Tool calls with arguments and results (including     │
+[0m[49m[38;5;10m+    569[0m:[38;5;10m[49m │      cross-organization data fetches)                     │
+[0m[49m[38;5;10m+    570[0m:[38;5;10m[49m │    - Generated bot responses                              │
+[0m[49m[38;5;10m+    571[0m:[38;5;10m[49m │    - Active model and prompt versions                     │
+[0m[49m[38;5;10m+    572[0m:[38;5;10m[49m │    - Active prep-instruction-library version              │
+[0m[49m[38;5;10m+    573[0m:[38;5;10m[49m │    - Active care-transition-protocol version              │
+[0m[49m[38;5;10m+    574[0m:[38;5;10m[49m │    - Final disposition                                    │
+[0m[49m[38;5;10m+    575[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    576[0m:[38;5;10m[49m │   [Cross-organization data provenance]                    │
+[0m[49m[38;5;10m+    577[0m:[38;5;10m[49m │    - Source organization for each retrieved data element  │
+[0m[49m[38;5;10m+    578[0m:[38;5;10m[49m │    - Timestamp of source data and retrieval               │
+[0m[49m[38;5;10m+    579[0m:[38;5;10m[49m │    - Consent record reference for each retrieval          │
+[0m[49m[38;5;10m+    580[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    581[0m:[38;5;10m[49m │   [Coordination-specific retention discipline]            │
+[0m[49m[38;5;10m+    582[0m:[38;5;10m[49m │    - Retention sized to longest of HIPAA's six-year       │
+[0m[49m[38;5;10m+    583[0m:[38;5;10m[49m │      minimum, state-specific medical-record retention     │
+[0m[49m[38;5;10m+    584[0m:[38;5;10m[49m │      rules, FDA SaMD post-market obligations where        │
+[0m[49m[38;5;10m+    585[0m:[38;5;10m[49m │      applicable, and any litigation-hold obligations      │
+[0m[49m[38;5;10m+    586[0m:[38;5;10m[49m │    - Cross-organization data subject to source-           │
+[0m[49m[38;5;10m+    587[0m:[38;5;10m[49m │      organization retention rules where contract          │
+[0m[49m[38;5;10m+    588[0m:[38;5;10m[49m │      obligates                                            │
+[0m[49m[38;5;10m+    589[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    590[0m:[38;5;10m[49m │   [Outcome correlation as long-time-horizon commitment]   │
+[0m[49m[38;5;10m+    591[0m:[38;5;10m[49m │    - Multi-quarter to multi-year implementation           │
+[0m[49m[38;5;10m+    592[0m:[38;5;10m[49m │    - Owned jointly by care-management leadership,         │
+[0m[49m[38;5;10m+    593[0m:[38;5;10m[49m │      operations, and data science                         │
+[0m[49m[38;5;10m+    594[0m:[38;5;10m[49m │    - Per-journey, per-cohort tracking                     │
+[0m[49m[38;5;10m+    595[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    596[0m:[38;5;10m[49m │   [Operational telemetry]                                 │
+[0m[49m[38;5;10m+    597[0m:[38;5;10m[49m │    - Engagement rate per journey type and cohort          │
+[0m[49m[38;5;10m+    598[0m:[38;5;10m[49m │    - Attrition rate per journey type and cohort           │
+[0m[49m[38;5;10m+    599[0m:[38;5;10m[49m │    - Referral-completion rate per cohort                  │
+[0m[49m[38;5;10m+    600[0m:[38;5;10m[49m │    - Time-to-next-appointment after referral              │
+[0m[49m[38;5;10m+    601[0m:[38;5;10m[49m │    - Prior-authorization-completion rate                  │
+[0m[49m[38;5;10m+    602[0m:[38;5;10m[49m │    - Post-discharge-follow-up rate                        │
+[0m[49m[38;5;10m+    603[0m:[38;5;10m[49m │    - Care-transition-protocol-completion rate             │
+[0m[49m[38;5;10m+    604[0m:[38;5;10m[49m │    - Citation-coverage rate                               │
+[0m[49m[38;5;10m+    605[0m:[38;5;10m[49m │    - Cross-organization-data-fetch failure rate           │
+[0m[49m[38;5;10m+    606[0m:[38;5;10m[49m │    - Per-cohort metric slices (language, channel,         │
+[0m[49m[38;5;10m+    607[0m:[38;5;10m[49m │      journey type, age cohort, sex, social-determinant    │
+[0m[49m[38;5;10m+    608[0m:[38;5;10m[49m │      flags, payer)                                        │
+[0m[49m[38;5;10m+    609[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    610[0m:[38;5;10m[49m │   [Sampled clinical-quality review]                       │
+[0m[49m[38;5;10m+    611[0m:[38;5;10m[49m │    - Random sample plus targeted sample of escalations,   │
+[0m[49m[38;5;10m+    612[0m:[38;5;10m[49m │      handoffs, and low-confidence interactions            │
+[0m[49m[38;5;10m+    613[0m:[38;5;10m[49m │    - Reviewers (RN navigators, care managers) tag         │
+[0m[49m[38;5;10m+    614[0m:[38;5;10m[49m │      failure modes (out-of-scope, missed-escalation,      │
+[0m[49m[38;5;10m+    615[0m:[38;5;10m[49m │      stale-data, wrong-prep, citation-gap, scope-         │
+[0m[49m[38;5;10m+    616[0m:[38;5;10m[49m │      violation, cross-org-error)                          │
+[0m[49m[38;5;10m+    617[0m:[38;5;10m[49m │    - Protocol revisions driven by review findings with    │
+[0m[49m[38;5;10m+    618[0m:[38;5;10m[49m │      clinical-leadership sign-off                         │
+[0m[49m[38;5;10m+    619[0m:[38;5;10m[49m │           │                                               │
+[0m[49m[38;5;10m+    620[0m:[38;5;10m[49m │           ▼                                               │
+[0m[49m[38;5;10m+    621[0m:[38;5;10m[49m │   [Output: audit trail, telemetry, learning signals,      │
+[0m[49m[38;5;10m+    622[0m:[38;5;10m[49m │    protocol-revision proposals]                           │
+[0m[49m[38;5;10m+    623[0m:[38;5;10m[49m │                                                           │
+[0m[49m[38;5;10m+    624[0m:[38;5;10m[49m └───────────────────────────────────────────────────────────┘
+[0m[49m[38;5;10m+    625[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    626[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    627[0m:[38;5;10m[49m A few cross-cutting design points specific to the care coordination assistant.
+[0m[49m[38;5;10m+    628[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    629[0m:[38;5;10m[49m **Cross-organization data integration as architectural primitive.** The integrations are the architectural floor; without them, the assistant has no actual coordination data. HIE participation, QHIN connectivity, payer integrations, pharmacy integrations, affiliated-organization direct integrations, and Direct messaging endpoints are all part of the deployment architecture. Consent posture is operationally enforced.
+[0m[49m[38;5;10m+    630[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    631[0m:[38;5;10m[49m **Referral-lifecycle tracking with deterministic state machines.** The referral lifecycle is encoded as a state machine with stages and expected windows per stage. The state machine is defined by clinical operations and care-management leadership; the assistant proactively engages when a stage is overdue.
+[0m[49m[38;5;10m+    632[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    633[0m:[38;5;10m[49m **Care-transition protocol governance with clinical-leadership ownership.** The protocols for hospital admission, discharge, post-acute placement, and ED follow-up are clinical content owned by clinical leadership, version-controlled, reviewed annually, and signed off by clinical leadership.
+[0m[49m[38;5;10m+    634[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    635[0m:[38;5;10m[49m **Prep-instruction library governance.** The library is owned by clinical leadership in partnership with the procedural specialties. Each piece has a defined indication, a target patient population, and a version stamp.
+[0m[49m[38;5;10m+    636[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    637[0m:[38;5;10m[49m **Message-drafting workflow with human-review gating.** The assistant does not autonomously send messages on the patient's behalf to outside organizations.
+[0m[49m[38;5;10m+    638[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    639[0m:[38;5;10m[49m **Care-navigation handoff infrastructure.** The institution maintains a navigator workforce (typically RN navigators or social workers on the care-management team) for warm handoff. Capacity is sized to expected handoff volume.
+[0m[49m[38;5;10m+    640[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    641[0m:[38;5;10m[49m **Citation discipline as architectural primitive.** Every prep-instruction delivery, every protocol-step surfacing, every cross-organization data reference, every provider-directory result is grounded in a cited source with version preserved.
+[0m[49m[38;5;10m+    642[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    643[0m:[38;5;10m[49m **Conservative-bias-default policy.** When the assistant is uncertain, when the patient asks for clinical interpretation, when the conversation drifts toward diagnosis or therapy, the response defaults to "let me connect you with the care team."
+[0m[49m[38;5;10m+    644[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    645[0m:[38;5;10m[49m **Per-cohort monitoring is non-negotiable.** Metrics vary by language, channel, journey type, age cohort, sex, social-determinant flags, and payer. Per-cohort dashboards reviewed by clinical leadership, operations, compliance, and patient-experience teams.
+[0m[49m[38;5;10m+    646[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    647[0m:[38;5;10m[49m **Disaster-recovery topology.** When cross-organization integrations fail, when the prep-instruction store is unreachable, when navigator capacity is exhausted, the assistant degrades gracefully with clear messaging about what is and is not available, and with direct contact paths for the care team. The graceful degradation paths are exercised in tabletop drills.
+[0m[49m[38;5;10m+    648[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    649[0m:[38;5;10m[49m ---
+[0m[K
+Appending to: [38;5;141mchapter11.09-care-coordination-assistant.md[0m
+[38;5;244m - Completed in 0.35s[0m
+
+[38;5;141m> [0mNow let me append the AWS Implementation section (services and architecture diagram):[0m[0m
