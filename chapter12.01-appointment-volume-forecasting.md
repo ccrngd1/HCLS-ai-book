@@ -7,6 +7,14 @@ Editor notes (ch12-r01-edit, iter-433):
   forecasting concepts and durable AWS services.
 - TODO markers below flag items that a TechWriter follow-up should verify
   or expand once upstream artifacts exist.
+
+Editor notes (ch12-r01-edit, iter-435):
+- Quality-review verdict from iter-433 flagged 5 unlabeled fenced code blocks
+  as failing the "all code blocks have language tags" pass condition. Added
+  `text` language hints to the General Architecture flow diagram and the
+  four pseudocode FUNCTION blocks (prepare_training_data,
+  train_forecast_model, generate_forecast, load_forecasts_to_dynamodb).
+  No content changed; only the opening fence lines.
 -->
 
 # Recipe 12.1: Appointment Volume Forecasting ⭐
@@ -81,7 +89,7 @@ The good news: for appointment volume at a single clinic with two or more years 
 
 At a conceptual level, the pipeline looks like this:
 
-```
+```text
 [Historical Data] → [Feature Engineering] → [Model Training] → [Forecast Generation] → [Operational Consumers]
 ```
 
@@ -178,7 +186,7 @@ flowchart LR
 
 **Step 1: Pull and shape the historical data.** The appointment history lives in the practice management system or EHR. The training pipeline starts by pulling the last several years of daily counts into a clean tabular format: date, count, and any known categorical attributes (clinic, provider, appointment type). The shape that forecasting libraries expect is one row per time step per series, with explicit holiday and calendar features. This step is usually 60% of the work in a forecasting project, and it's the part that determines whether the model has anything useful to learn from. Skip it or do it sloppily, and your model will faithfully predict garbage in production.
 
-```
+```text
 FUNCTION prepare_training_data(raw_history, holiday_calendar):
     // Group raw appointment records into a daily count time series.
     // The forecasting model expects regular intervals: one row per day per series.
@@ -205,7 +213,7 @@ FUNCTION prepare_training_data(raw_history, holiday_calendar):
 
 **Step 2: Train the forecasting model.** This step fits the model on history. The first decision is which model family to use. For a single clinic with two-plus years of daily counts, Prophet is the pragmatic default: it handles seasonality, holidays, and missing data with little tuning. For a health system with many related series (per-clinic, per-provider), DeepAR's joint-training approach earns its keep. The training step holds out the most recent 90 days as a validation window, fits the model on everything before that, and computes prediction error on the held-out window. The error metric drives the decision of whether to deploy this model or fall back to the previous one.
 
-```
+```text
 FUNCTION train_forecast_model(daily_counts):
     // Hold out the most recent 90 days of history to evaluate the model
     // against actual outcomes. This is the only honest way to know if
@@ -237,7 +245,7 @@ FUNCTION train_forecast_model(daily_counts):
 
 **Step 3: Generate the forecast.** With a trained model, the inference step produces forecasts at the operational horizons consumers need. For appointment staffing, that's typically a 14-day daily forecast (for next-week staffing decisions) and a 90-day weekly aggregate (for capacity planning). Each forecast comes with a prediction interval: a lower and upper bound that captures forecast uncertainty. The interval is what lets a clinic manager say "I'm scheduling for the upper bound on Mondays and the lower bound on Fridays" instead of staffing to a single point estimate that's wrong half the time.
 
-```
+```text
 FUNCTION generate_forecast(model, forecast_horizon_days):
     // Build the date range to forecast over: from tomorrow forward.
     forecast_dates = list of dates from (today + 1) for forecast_horizon_days days
@@ -266,7 +274,7 @@ FUNCTION generate_forecast(model, forecast_horizon_days):
 
 **Step 4: Deliver the forecast to operational systems.** The forecast is useless if it sits in an S3 bucket. This step writes each forecast record to DynamoDB keyed by clinic-and-date so the staffing tool, the capacity dashboard, and any other downstream consumer can query forecasts at low latency. DynamoDB's `BatchWriteItem` API handles bulk loads efficiently. The write is idempotent (forecast for clinic A on date D overwrites any prior forecast for the same key) so re-running the pipeline produces consistent state.
 
-```
+```text
 FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
     // DynamoDB BatchWriteItem accepts up to 25 items per call.
     // Chunk the forecast records into batches and write each batch.
