@@ -208,6 +208,7 @@
   * [Python Example](chapter12.06-python-example)
 * [12.8 — Disease Progression Trajectory Modeling](chapter12.08-disease-progression-trajectory-modeling)
   * [Python Example](chapter12.08-python-example)
+* [12.9 — Epidemic Forecasting](chapter12.09-epidemic-forecasting)
 
 ---
 
