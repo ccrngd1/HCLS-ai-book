@@ -198,6 +198,8 @@
   * [Python Example](chapter12.01-python-example)
 * [12.2 — Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting)
   * [Python Example](chapter12.02-python-example)
+* [12.3 — ED Arrival Forecasting](chapter12.03-ed-arrival-forecasting)
+  * [Python Example](chapter12.03-python-example)
 
 ---
 
