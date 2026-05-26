@@ -204,6 +204,8 @@
   * [Python Example](chapter12.04-python-example)
 * [12.5 — Hospital Census Forecasting](chapter12.05-hospital-census-forecasting)
   * [Python Example](chapter12.05-python-example)
+* [12.6 — Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting)
+  * [Python Example](chapter12.06-python-example)
 
 ---
 
