@@ -692,3 +692,753 @@ A few cross-cutting design points specific to the care coordination assistant.
 **Disaster-recovery topology.** When the integration layer, the protocol corpus, the coordination-state store, or any escalation pathway is unreachable, the assistant degrades gracefully. The minimum behavior is "I'm having trouble pulling that data right now; for anything urgent please contact your care team at [number]." The graceful-degradation paths are exercised in tabletop drills.
 
 ---
+
+## The AWS Implementation
+
+### Why These Services
+
+**Amazon Bedrock for the LLM and embeddings.** Same selection criteria as recipes 11.1 through 11.8. The care coordination assistant specifically benefits from a model with strong instruction-following for scope discipline across many adjacent topics, strong tool-use for orchestrating retrieval across heterogeneous coordination data, citation-grounding discipline for state assertions, and good multilingual support. Claude Sonnet-class models or comparable frontier models for the orchestration; smaller models for intent classification, seam-detection-rule pre-filtering, and routine summarization. Bedrock provides HIPAA-eligible deployment under BAA. The coordination assistant's longitudinal-relationship pattern across months and years places a premium on consistency of voice and on grounded citation behavior, both of which are attributes of the orchestration model selection.
+
+**Amazon Bedrock Knowledge Bases for the coordination-protocol corpus and the patient-education library.** The institution's curated coordination-protocol library (transition-of-care protocols by destination setting, referral-tracking protocols by specialty and urgency, post-discharge protocols by admission type, post-procedure protocols by procedure category, medication-reconciliation protocols, condition-specific coordination playbooks) and the patient-education library are the assistant's grounded retrieval sources. Knowledge Bases provides the managed RAG layer with metadata-filtered retrieval (transition type, specialty, urgency tier, audience, language, reading level, version).
+
+**Amazon Bedrock Agents for tool orchestration.** Same selection rationale as recipes 11.2 through 11.8. The assistant's tools (coordination_state_retrieve, referral_lifecycle_retrieve, encounter_retrieve, medication_list_reconcile, open_followups_retrieve, seam_flags_retrieve, protocol_retrieve, patient_education_content_retrieve, care_team_alert_propose, patient_action_propose, follow_up_schedule, escalation_propose, provenance_retrieve) are defined as Agents action groups with OpenAPI schemas. The Agent's traces preserve tool-call audit trails for the coordination-decision-record journal.
+
+**Amazon Bedrock Guardrails for scope and content filtering.** Configured with denied topics including diagnosis-attempted, prescription-attempted, dose-titration-attempted, treatment-recommendation-beyond-existing-orders, therapy-attempted (which routes to recipe 11.8 pathway), triage-attempted (which routes to recipe 11.6 pathway), benefits-quote-attempted (which routes to recipe 11.5 pathway), and similar scope violations. The coordination assistant's scope discipline is broad because the assistant interacts with adjacent topics constantly and must defer cleanly across them.
+
+**Amazon OpenSearch Serverless for the retrieval indices.** The coordination-protocol corpus, the patient-education library, and the longitudinal conversation history all benefit from vector retrieval with metadata filtering.
+
+**AWS HealthLake for FHIR-native chart-context data.** HealthLake provides a managed FHIR data store the assistant queries for Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage, and related resources. Where the institution's primary EHR exposes a FHIR API directly, the assistant can query it directly; where multiple sources contribute, HealthLake serves as a normalization layer with consistent FHIR semantics across heterogeneous source data.
+
+**AWS HealthLake Imaging and AWS HealthOmics are not in scope** for the coordination assistant; the assistant operates on encounter, medication, and observation data, not on imaging or genomics primary data, though the assistant references imaging and genomic test results at the report level when they are part of the patient's longitudinal record.
+
+**AWS HealthLake Bulk Data Export and FHIR Bulk Data Access for population workflows.** Where the institution's coordination program operates over a population (a Medicare Advantage book of business; a primary-care panel; a transitions-of-care program from a participating hospital), bulk-data flows feed the program-wide analytics and the population-level seam detection.
+
+**Amazon DynamoDB for state, longitudinal store, and provenance journal.** Multiple tables supporting the assistant's longitudinal pattern: `patient-coordination-store` (per-patient stable state including stated preferences, designated caregivers, integration coverage, consent posture), `coordination-state-store` (active conditions, medications, referrals, encounters, results, care events, seam-flags), `referral-lifecycle-store` (per-referral state machine), `transition-of-care-store` (per-transition state machine), `seam-flag-store` (detected gaps with status), `caregiver-store` (per-caregiver identity, proxy-access scope, message preferences), `conversation-state` (per-conversation transient state), `conversation-metadata` (per-conversation turn-by-turn data), `tool-call-ledger` (audited tool invocations), `coordination-decision-record-journal` (durable record of coordination events with citations), `provenance-journal` (per-data-point provenance chain), and `consent-record` (consent posture per data source and per sharing relationship).
+
+**Amazon S3 for the protocol corpus, patient-education library, conversation archive, coordination-decision-record journal, provenance journal, and outcome-correlation data.** Object Lock in compliance mode for the retention window, with retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention, and any FDA SaMD post-market obligations.
+
+**AWS Lambda for the conversation handler, ingestion adapters, seam-detection workers, protocol-trigger workers, tool implementations, care-team reporting, and outcome correlation.** Same pattern as the previous chapter 11 recipes, with additional Lambda functions for each ingestion adapter (HL7 listener, FHIR poller, claims-batch processor, pharmacy-API consumer, vendor-API consumer) and each seam-detection rule.
+
+**Amazon API Gateway and AWS WAF for the public chat endpoint.** Same as the other recipes.
+
+**AWS HealthLake plus AWS HealthLake Bulk Data, plus optional integration via AWS Lake Formation for data-sharing across organizations under TEFCA participation.** Cross-organizational data flows operate within the legal framework specified by the regulatory team.
+
+**Amazon EventBridge for the coordination-event bus.** Events including patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded.
+
+**AWS Step Functions for transition-of-care orchestration workflows.** Each transition (hospital-to-home, hospital-to-SNF, ED-to-primary-care follow-up, surgery-to-home, etc.) runs as a Step Functions workflow with states for the protocol-defined steps (medication reconciliation, follow-up-appointment scheduling, home-health or DME orders, patient education, red-flag warning instructions, completion verification). The state machines are version-controlled and audited.
+
+**Amazon MWAA (Managed Workflows for Apache Airflow) or AWS Step Functions for population-scale data ingestion and seam-detection batch jobs.** Where bulk-data ingestion and population-level seam detection run on schedules rather than per-event, MWAA or Step Functions orchestrates the batch workloads.
+
+**Amazon Pinpoint for proactive engagement messaging.** Care-event-triggered messages (post-discharge welcome-home check-in, referral-scheduling reminders, appointment-prep nudges, lab-result acknowledgement prompts, missed-appointment follow-ups) are delivered via Pinpoint with delivery-status tracking, channel-preference enforcement, and quiet-hours discipline.
+
+**Amazon Connect for warm-handoff to human care managers and clinical staff.** When the assistant escalates to a human (high-acuity gap, sensitive disclosure, conflicting-order resolution that requires clinical judgment), Connect routes to the appropriate queue with conversation context attached. Care managers are reachable via Connect's chat and voice queues.
+
+**AWS KMS, AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena.** Same operational and audit primitives as the previous recipes, with coordination-specific KMS key separation for the cross-organizational ingestion surface, the provenance journal, and the coordination-decision-record store.
+
+**Amazon QuickSight for clinical, operational, and outcome dashboards.** Per-cohort coordination dashboards (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, seam-detection rate, seam-resolution rate, escalation rate, patient-and-caregiver-reported coordination experience), engagement dashboards, and outcome-correlation dashboards.
+
+**Amazon SageMaker (optional) for custom seam-detection model hosting.** Several seam-detection rules (patterns suggestive of decompensation, complex medication-discrepancy cases that require nuanced reasoning, caregiver-burden trajectory) benefit from custom-trained classifiers; SageMaker provides the hosted-inference endpoint where deployed.
+
+**Amazon Comprehend Medical (optional) for medical-named-entity recognition over patient-and-caregiver-reported text.** When the patient or caregiver reports a medication name, a symptom, a clinician name, or a related entity in conversation, Comprehend Medical can extract structured terms for matching against the coordination state.
+
+### Architecture Diagram
+
+```mermaid
+flowchart LR
+    subgraph Channels
+      WEB[Web Chat]
+      APP[Institution App]
+      SMS[SMS via Pinpoint/Connect]
+      VOICE[Voice via Connect]
+      CGAPP[Caregiver App]
+    end
+
+    subgraph Edge
+      WAF[AWS WAF]
+      APIGW[API Gateway]
+    end
+
+    subgraph Conversation_Core
+      L_CHAT[Lambda<br/>chat handler]
+      L_INPUT[Lambda<br/>input screening<br/>+ continuous emergency screen]
+      L_OUTPUT[Lambda<br/>output safety<br/>+ provenance verify]
+      L_IDENTITY[Lambda<br/>identity + role +<br/>coordination context loading]
+    end
+
+    subgraph LLM_and_Agent
+      AGENT[Bedrock Agents]
+      BEDROCK[Bedrock<br/>LLM generation]
+      KB_PROTOCOL[Bedrock Knowledge Bases<br/>coordination protocols]
+      KB_EDU[Bedrock Knowledge Bases<br/>patient education]
+      KB_HIST[Bedrock Knowledge Bases<br/>conversation history]
+      GUARDRAILS[Bedrock Guardrails]
+      OS[OpenSearch Serverless]
+      COMP_MED[Comprehend Medical]
+    end
+
+    subgraph Coordination_Tools
+      L_STATE[Lambda<br/>coordination_state_retrieve]
+      L_REFERRAL[Lambda<br/>referral_lifecycle_retrieve]
+      L_ENCOUNTER[Lambda<br/>encounter_retrieve]
+      L_MEDREC[Lambda<br/>medication_list_reconcile]
+      L_FOLLOWUP[Lambda<br/>open_followups_retrieve]
+      L_SEAM[Lambda<br/>seam_flags_retrieve]
+      L_PROTOCOL[Lambda<br/>protocol_retrieve]
+      L_EDU[Lambda<br/>patient_education_retrieve]
+      L_ALERT[Lambda<br/>care_team_alert_propose]
+      L_ACTION[Lambda<br/>patient_action_propose]
+      L_SCHED[Lambda<br/>follow_up_schedule]
+      L_ESC[Lambda<br/>escalation_propose]
+      L_PROV[Lambda<br/>provenance_retrieve]
+    end
+
+    subgraph Cross_Org_Ingestion
+      L_HL7[Lambda<br/>HL7 v2 listener]
+      L_FHIR[Lambda<br/>FHIR poller/<br/>subscription]
+      L_CLAIMS[Lambda<br/>claims-feed processor]
+      L_PHARM[Lambda<br/>pharmacy-API consumer]
+      L_HOMEHEALTH[Lambda<br/>home-health vendor]
+      L_HIE[Lambda<br/>HIE/TEFCA adapter]
+      MWAA[MWAA<br/>batch ingestion]
+    end
+
+    subgraph Seam_Detection_and_Triggers
+      L_SEAM_ENG[Lambda<br/>seam-detection<br/>rule engine]
+      L_TRIGGER[Lambda<br/>protocol-trigger<br/>evaluator]
+      SAGEMAKER[SageMaker<br/>custom seam<br/>classifiers]
+    end
+
+    subgraph Transition_Orchestration
+      SFN[Step Functions<br/>transition-of-care<br/>workflows]
+      L_TRANS[Lambda<br/>transition state<br/>machine workers]
+    end
+
+    subgraph External_Integrations
+      EHRS[(Multiple EHRs<br/>via FHIR)]
+      HEALTHLAKE[(AWS HealthLake)]
+      HIE[(HIE / TEFCA QHIN)]
+      PAYER[(Payer claims feed)]
+      PHARM[(Pharmacies<br/>NCPDP / vendor APIs)]
+      HOMEHEALTH_EXT[(Home-health<br/>agencies)]
+      LAB[(Lab feeds)]
+      CARE_TEAM[(Patient's care team<br/>across organizations)]
+      CARE_MGMT[(Institutional<br/>care-management)]
+      TRIAGE[(Recipe 11.6 triage)]
+      MH[(Recipe 11.8 mental<br/>health pathway)]
+      EMERG[(911 / 988)]
+      NAV[(Care navigation /<br/>social services)]
+    end
+
+    subgraph State_and_Audit
+      DDB_PT[(DynamoDB<br/>patient coordination<br/>store)]
+      DDB_STATE[(DynamoDB<br/>coordination state)]
+      DDB_REFERRAL[(DynamoDB<br/>referral lifecycle)]
+      DDB_TRANS[(DynamoDB<br/>transition of care)]
+      DDB_SEAM[(DynamoDB<br/>seam flags)]
+      DDB_CG[(DynamoDB<br/>caregivers)]
+      DDB_SESS[(DynamoDB<br/>conversation state)]
+      DDB_META[(DynamoDB<br/>conversation<br/>metadata)]
+      DDB_TOOL[(DynamoDB<br/>tool-call ledger)]
+      DDB_DECISION[(DynamoDB<br/>coordination<br/>decision journal)]
+      DDB_PROV[(DynamoDB<br/>provenance journal)]
+      DDB_CONSENT[(DynamoDB<br/>consent record)]
+      S3_PROTOCOL[(S3<br/>coordination<br/>protocols)]
+      S3_EDU[(S3<br/>patient education)]
+      S3_AUDIT[(S3<br/>audit archive)]
+      S3_DECISION[(S3<br/>decision-record<br/>journal)]
+      S3_PROV[(S3<br/>provenance<br/>archive)]
+    end
+
+    subgraph Reporting_and_Analytics
+      L_REPORT[Lambda<br/>care-team reporting]
+      L_OUTCOME[Lambda<br/>outcome correlation]
+      EB[EventBridge]
+      KIN[Kinesis Firehose]
+      ATH[Athena]
+      QS[QuickSight]
+      CW[CloudWatch]
+      CT[CloudTrail]
+      PIN[Pinpoint<br/>proactive engagement]
+      CONNECT[Amazon Connect<br/>warm handoff]
+    end
+
+    subgraph Secrets_and_Keys
+      SM_SEC[(Secrets Manager)]
+      KMS[(AWS KMS)]
+      KMS_PROV[(KMS<br/>provenance key)]
+      KMS_DECISION[(KMS<br/>decision-record key)]
+    end
+
+    WEB --> WAF
+    APP --> WAF
+    CGAPP --> WAF
+    SMS --> APIGW
+    VOICE --> APIGW
+    WAF --> APIGW
+    APIGW --> L_CHAT
+
+    EHRS --> L_FHIR
+    EHRS --> L_HL7
+    HIE --> L_HIE
+    PAYER --> L_CLAIMS
+    PHARM --> L_PHARM
+    HOMEHEALTH_EXT --> L_HOMEHEALTH
+    LAB --> L_HL7
+    L_HL7 --> HEALTHLAKE
+    L_FHIR --> HEALTHLAKE
+    L_CLAIMS --> DDB_STATE
+    L_PHARM --> DDB_STATE
+    L_HOMEHEALTH --> DDB_STATE
+    L_HIE --> HEALTHLAKE
+    MWAA --> L_FHIR
+    MWAA --> L_CLAIMS
+
+    L_HL7 --> DDB_PROV
+    L_FHIR --> DDB_PROV
+    L_CLAIMS --> DDB_PROV
+    L_PHARM --> DDB_PROV
+    L_HOMEHEALTH --> DDB_PROV
+    L_HIE --> DDB_PROV
+
+    L_HL7 --> EB
+    L_FHIR --> EB
+    L_CLAIMS --> EB
+    L_PHARM --> EB
+    L_HOMEHEALTH --> EB
+    EB --> L_SEAM_ENG
+    EB --> L_TRIGGER
+    L_SEAM_ENG --> SAGEMAKER
+    L_SEAM_ENG --> DDB_SEAM
+    L_TRIGGER --> SFN
+    SFN --> L_TRANS
+    L_TRIGGER --> PIN
+    L_TRIGGER --> L_ALERT
+
+    L_CHAT --> L_INPUT
+    L_INPUT --> TRIAGE
+    L_INPUT --> MH
+    L_INPUT --> EMERG
+    L_CHAT --> L_IDENTITY
+    L_IDENTITY --> DDB_PT
+    L_IDENTITY --> DDB_CG
+    L_IDENTITY --> DDB_STATE
+    L_IDENTITY --> DDB_CONSENT
+    L_CHAT --> AGENT
+    AGENT --> BEDROCK
+    AGENT --> KB_PROTOCOL
+    AGENT --> KB_EDU
+    AGENT --> KB_HIST
+    KB_PROTOCOL --> OS
+    KB_EDU --> OS
+    KB_HIST --> OS
+    AGENT --> GUARDRAILS
+    AGENT --> COMP_MED
+    AGENT --> L_STATE
+    AGENT --> L_REFERRAL
+    AGENT --> L_ENCOUNTER
+    AGENT --> L_MEDREC
+    AGENT --> L_FOLLOWUP
+    AGENT --> L_SEAM
+    AGENT --> L_PROTOCOL
+    AGENT --> L_EDU
+    AGENT --> L_ALERT
+    AGENT --> L_ACTION
+    AGENT --> L_SCHED
+    AGENT --> L_ESC
+    AGENT --> L_PROV
+    L_STATE --> DDB_STATE
+    L_REFERRAL --> DDB_REFERRAL
+    L_ENCOUNTER --> HEALTHLAKE
+    L_MEDREC --> DDB_STATE
+    L_FOLLOWUP --> DDB_STATE
+    L_SEAM --> DDB_SEAM
+    L_PROTOCOL --> KB_PROTOCOL
+    L_EDU --> KB_EDU
+    L_ALERT --> CONNECT
+    L_ALERT --> CARE_MGMT
+    L_ESC --> CONNECT
+    L_PROV --> DDB_PROV
+    L_CHAT --> L_OUTPUT
+    L_OUTPUT --> DDB_DECISION
+    L_OUTPUT --> S3_DECISION
+    AGENT --> DDB_TOOL
+    L_CHAT --> DDB_SESS
+    L_CHAT --> DDB_META
+
+    L_REPORT --> CARE_TEAM
+    L_REPORT --> CARE_MGMT
+    L_OUTCOME --> S3_AUDIT
+    EB --> KIN
+    KIN --> S3_AUDIT
+    S3_AUDIT --> ATH
+    S3_DECISION --> ATH
+    S3_PROV --> ATH
+    ATH --> QS
+    L_CHAT --> CW
+    APIGW --> CT
+    L_FHIR --> SM_SEC
+    L_CLAIMS --> SM_SEC
+    L_PHARM --> SM_SEC
+    L_HOMEHEALTH --> SM_SEC
+    KMS --> S3_AUDIT
+    KMS --> S3_PROTOCOL
+    KMS --> S3_EDU
+    KMS_DECISION --> S3_DECISION
+    KMS_DECISION --> DDB_DECISION
+    KMS_PROV --> DDB_PROV
+    KMS_PROV --> S3_PROV
+    KMS --> DDB_PT
+    KMS --> DDB_STATE
+    KMS --> DDB_REFERRAL
+    KMS --> DDB_TRANS
+    KMS --> DDB_SEAM
+    KMS --> DDB_CG
+    KMS --> DDB_SESS
+    KMS --> DDB_META
+    KMS --> DDB_TOOL
+    KMS --> DDB_CONSENT
+    KMS --> SM_SEC
+
+    style AGENT fill:#fcf,stroke:#333
+    style BEDROCK fill:#fcf,stroke:#333
+    style KB_PROTOCOL fill:#fcf,stroke:#333
+    style KB_EDU fill:#fcf,stroke:#333
+    style GUARDRAILS fill:#fcf,stroke:#333
+    style L_INPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_OUTPUT fill:#fcc,stroke:#900,stroke-width:3px
+    style L_SEAM_ENG fill:#fcc,stroke:#900,stroke-width:3px
+    style EHRS fill:#ccf,stroke:#333
+    style HIE fill:#ccf,stroke:#333
+    style PAYER fill:#ccf,stroke:#333
+    style PHARM fill:#ccf,stroke:#333
+    style EMERG fill:#ccf,stroke:#900,stroke-width:3px
+    style TRIAGE fill:#ccf,stroke:#333
+    style MH fill:#ccf,stroke:#333
+    style HEALTHLAKE fill:#ccf,stroke:#333
+    style CARE_TEAM fill:#ccf,stroke:#333
+    style CARE_MGMT fill:#ccf,stroke:#333
+    style DDB_STATE fill:#9ff,stroke:#333,stroke-width:3px
+    style DDB_PROV fill:#9ff,stroke:#900,stroke-width:3px
+    style DDB_DECISION fill:#9ff,stroke:#333
+    style DDB_REFERRAL fill:#9ff,stroke:#333
+    style DDB_TRANS fill:#9ff,stroke:#333
+    style DDB_SEAM fill:#9ff,stroke:#333
+    style S3_DECISION fill:#cfc,stroke:#333
+    style S3_PROV fill:#cfc,stroke:#900,stroke-width:3px
+    style KMS_PROV fill:#fcc,stroke:#900,stroke-width:3px
+    style KMS_DECISION fill:#fcc,stroke:#900,stroke-width:3px
+```
+
+### Prerequisites
+
+| Requirement | Details |
+|-------------|---------|
+| **AWS Services** | Amazon Bedrock (Agents, Knowledge Bases, Guardrails, foundation model with strong tool-use, embedding model), Amazon OpenSearch Serverless, AWS HealthLake, AWS Lambda, AWS Step Functions, Amazon MWAA (or AWS Step Functions for batch ingestion), Amazon API Gateway, AWS WAF, Amazon DynamoDB, Amazon S3, AWS KMS (with separate keys for the provenance journal and the coordination-decision-record store), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, Amazon EventBridge, Amazon Kinesis Data Firehose, AWS Glue, Amazon Athena, Amazon Pinpoint, Amazon Connect (warm-handoff to human care managers and clinical staff), Amazon QuickSight (dashboards), Amazon Comprehend Medical (medical NER over patient-and-caregiver-reported text). Optionally: Amazon SageMaker (custom seam-detection classifier hosting). |
+| **External Inputs** | Multiple EHRs via FHIR APIs (USCDI v3 or later) for participating organizations (Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage). HL7 v2 ADT and ORU feeds from participating hospitals. HIE and TEFCA QHIN integration where the institution participates. Payer claims feeds where the institution has a claims-data partnership. Pharmacy data via NCPDP standards or vendor APIs (CVS, Walgreens, Walmart, regional chains, mail-order, specialty pharmacies). Home-health vendor APIs from connected agencies. Lab feeds from connected labs (LabCorp, Quest, regional reference labs, hospital labs). Coordination-protocol corpus curated and version-controlled by clinical leadership including transition-of-care protocols (hospital-to-home, hospital-to-SNF, ED-to-primary-care follow-up, surgery-to-home, oncology-treatment cycles), referral-tracking protocols by specialty and urgency, post-discharge protocols, post-procedure protocols, medication-reconciliation protocols, condition-specific coordination playbooks for high-prevalence multi-condition combinations. Patient-education library reviewed by clinical leadership and patient-experience leadership, multilingual and multi-reading-level. Care-management workforce capacity (employed or contracted) sized to expected escalation volume. Identity-and-proxy-access infrastructure with state-specific caregiver-consent compliance. Consent-management infrastructure with per-data-source and per-sharing-relationship tracking. <!-- TODO: verify; specific external inputs vary by institution; the cross-organizational coverage profile is the largest single configuration question --> |
+| **IAM Permissions** | Per-Lambda least-privilege roles. The HL7 listener and FHIR poller Lambdas have read access to the connected EHR endpoints with credentials in Secrets Manager. The claims-feed processor has read access to the payer's claims-feed endpoint. The pharmacy-API consumer has read access to connected pharmacy APIs. The home-health vendor Lambda has read access to connected agency APIs. Each ingestion Lambda has write access to the provenance journal and to the relevant coordination-state tables. The seam-detection rule engine has read access to coordination-state tables and write access to the seam-flag store. The coordination-decision-record-recording Lambda has write access to the decision-record store. The escalation Lambda has write access to the Connect queue. None of the assistant's Lambdas have write access to the clinical record except for institutionally-approved coordination-event records (e.g., FHIR Communication resources for the conversation log; FHIR ServiceRequest resources for follow-up scheduling where the institution permits assistant-originated requests; with explicit patient consent and institutional clinical-leadership signoff). Resource-based policies pin invoking principals to the production agent and API Gateway stage ARNs. |
+| **BAA and Compliance** | AWS BAA signed. Verify all services in scope are HIPAA-eligible at build time. The assistant is patient-and-caregiver-facing PHI from multiple organizations, with cross-organizational data integration and data-sharing implications. Legal counsel familiar with HIPAA, the Information Blocking and Interoperability rules, TEFCA participation requirements, state-specific medical-record statutes, state-specific caregiver-consent and proxy-access laws, 42 CFR Part 2 (substance-use treatment), state-specific mental-health-record protections, state-specific HIV-record and genetic-test-result protections, state-specific adolescent confidentiality, and (where the assistant produces clinical recommendations) the FDA SaMD framework reviews the data-handling posture. The institutional regulatory team reviews the FDA-strategy positioning before launch and on each material scope change. The institutional malpractice insurer is part of the policy review. State-specific regulations on AI-mediated patient communication, on telehealth, and on care-management may apply. <!-- TODO: verify; coordination-software regulatory landscape includes HIPAA, the ONC Information Blocking and Interoperability rules under the 21st Century Cures Act, state medical-record and caregiver-consent statutes, FDA SaMD framework, and where applicable 42 CFR Part 2 and state-specific sensitive-record protections --> |
+| **Encryption** | Coordination-protocol corpus, patient-education library, conversation archive, coordination-decision-record journal: SSE-KMS with customer-managed keys. Provenance journal: SSE-KMS with separately-managed customer key for blast-radius containment and for separate-access-control discipline. Coordination-decision-record journal: SSE-KMS with separately-managed customer key. S3 archives: Object Lock in compliance mode for the retention window. DynamoDB tables: customer-managed KMS at rest, with sensitive tables (provenance journal, coordination-decision-record journal) on separate keys. Lambda environment variables: KMS-encrypted. Secrets Manager: customer-managed KMS. TLS in transit for all AWS API calls and all integrations with external systems including HL7 and FHIR endpoints. |
+| **VPC** | Production: ingestion Lambdas (HL7 listener, FHIR poller, claims-feed processor, pharmacy-API consumer, home-health vendor, HIE adapter), tool Lambdas that call EHRs, care-management workflows, escalation pathways, and care-navigation systems run in VPC with controlled egress. PrivateLink to vendor-hosted endpoints where supported; tightly-scoped NAT path with allow-list otherwise. VPC endpoints for DynamoDB, S3, KMS, Secrets Manager, CloudWatch Logs, EventBridge, Bedrock, OpenSearch Serverless, HealthLake, Step Functions, MWAA, Pinpoint, Connect, Comprehend Medical, and SageMaker (where used). The patient-and-caregiver-facing edge is public; the back-office and cross-organizational-integration traffic is private. |
+| **CloudTrail** | Enabled with data events on all sensitive S3 buckets (audit-archive, coordination-decision-record-journal, provenance-archive, coordination-protocol corpus, patient-education library) and DynamoDB tables (coordination-state, provenance journal, coordination-decision-record journal, referral-lifecycle, transition-of-care, seam-flag, caregiver, consent record, etc.), Secrets Manager secrets, and customer-managed KMS keys. Bedrock and Bedrock Agents invocations logged. Lambda invocations logged. API Gateway access logs enabled. Step Functions execution logs enabled. MWAA execution logs enabled. Connect interactions logged with appropriate retention. Pinpoint message-status logs preserved. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode. Audit retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention rules, FDA SaMD post-market obligations where applicable, and litigation-hold obligations. |
+| **Sample Data** | Synthetic patient profiles stratified by chronic-condition mix, by post-discharge episode type, by post-procedure recovery, by oncology-treatment-cycle phase, by caregiver presence, by integration coverage profile (well-instrumented vs. partially-instrumented vs. poorly-instrumented), by language, by socioeconomic context, by social-determinant flags. Synthetic FHIR bundles, HL7 v2 messages, claims feeds, pharmacy fills, and home-health visit notes. Synthetic conversation histories covering enrollment, post-discharge windows, referral-tracking lifecycles, transition-of-care orchestration, medication-reconciliation episodes, caregiver-burden disclosures, and escalation scenarios. Coordination-protocol corpus reviewed by clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management. Patient-education library reviewed by clinical leadership and patient-experience leadership in multiple languages and reading levels. Test EHRs, HIEs, payer claims, pharmacy, home-health, and care-management systems with synthetic data. Test caregiver-proxy-access scenarios across multiple state-law jurisdictions. |
+| **Cost Estimate** | At a mid-sized payer or integrated-delivery-network scale (50,000 enrolled members across multiple acuity tiers; average 1-4 conversational engagements per week per active member; average 4-10 turns per engagement; average 2,500 tokens of prompt and 500 tokens of response per turn for the orchestration model plus tool-call overhead; plus ingestion processing across HL7, FHIR, claims, pharmacy, home-health, HIE; plus seam-detection and protocol-trigger evaluation): Bedrock LLM invocations typically $3-8 per active member per month for a Sonnet-class orchestration model, totaling approximately $1.8M-4.8M per year. Bedrock Agents and Knowledge Bases hosting plus the OpenSearch Serverless retrieval indices typically $80,000-300,000 per year. Lambda, API Gateway, WAF, DynamoDB, S3, KMS, Secrets Manager, CloudWatch, CloudTrail, EventBridge, Kinesis Firehose, Glue, Athena, Step Functions, MWAA total approximately $200,000-700,000 per year combined (the cross-organizational ingestion volume is the dominant driver among these). AWS HealthLake typically $80,000-400,000 per year (varies with FHIR-resource volume and population size). Pinpoint typically $30,000-150,000 per year. Connect typically $80,000-400,000 per year. Comprehend Medical typically $20,000-100,000 per year. SageMaker (when used) typically $20,000-80,000 per year. Total AWS infrastructure typically $2.3M-7.0M per year at this scale (approximately $4-12 per active member per month). The care-management workforce cost (employed or contracted nurse case managers, social workers, care coordinators) is typically larger than the AWS infrastructure cost and is the dominant operational expense; a deployment that under-invests in human care-management capacity is a deployment with safety gaps and missed coordination value. <!-- TODO: replace with verified pricing once the implementing team validates against the AWS Pricing Calculator; specific costs depend on Bedrock model choice, conversation volume, ingestion volume across HL7/FHIR/claims/pharmacy/HIE, FHIR-source choice, escalation rate, and channel mix --> |
+
+### Ingredients
+
+| AWS Service | Role |
+|------------|------|
+| **Amazon Bedrock** | LLM for orchestration and conversational response generation; embedding model for the coordination-protocol corpus, patient-education library, and conversation history |
+| **Amazon Bedrock Agents** | Tool orchestration: define coordination tools as action groups, manage the multi-step LLM-and-tool flow |
+| **Amazon Bedrock Knowledge Bases** | Managed RAG over (a) coordination protocols, (b) patient-education library, (c) longitudinal conversation history. Metadata-filtered retrieval (transition type, specialty, urgency tier, audience, language, reading level, version) |
+| **Amazon OpenSearch Serverless** | Vector and lexical retrieval index backing each Knowledge Base |
+| **Amazon Bedrock Guardrails** | Content filtering for diagnosis-attempted, prescription-attempted, dose-titration-attempted, treatment-recommendation-beyond-existing-orders, therapy-attempted (route to recipe 11.8), triage-attempted (route to recipe 11.6), benefits-quote-attempted (route to recipe 11.5) |
+| **AWS Lambda** | Chat handler, input/output safety, identity-role-and-coordination-context loading, ingestion adapters (HL7, FHIR, claims, pharmacy, home-health, HIE), seam-detection rule engine, protocol-trigger evaluator, transition-of-care state-machine workers, care-team reporting, outcome correlation, and tool implementations (coordination_state_retrieve, referral_lifecycle_retrieve, encounter_retrieve, medication_list_reconcile, open_followups_retrieve, seam_flags_retrieve, protocol_retrieve, patient_education_content_retrieve, care_team_alert_propose, patient_action_propose, follow_up_schedule, escalation_propose, provenance_retrieve) |
+| **AWS Step Functions** | Transition-of-care workflows with states for protocol-defined steps; transition state machines version-controlled and audited |
+| **Amazon MWAA** | Population-scale batch ingestion (FHIR Bulk Data exports, claims-feed periodic refresh, population-level seam-detection runs) |
+| **Amazon API Gateway** | Public-facing chat endpoint for web, app, SMS, voice, and caregiver-app channels |
+| **AWS WAF** | Rate limiting, bot detection, common attack patterns |
+| **Amazon DynamoDB** | patient-coordination-store, coordination-state-store, referral-lifecycle-store, transition-of-care-store, seam-flag-store, caregiver-store, conversation-state, conversation-metadata, tool-call-ledger, coordination-decision-record-journal, provenance-journal, consent-record |
+| **Amazon S3** | Coordination-protocol corpus, patient-education library, conversation archive, coordination-decision-record journal, provenance archive, outcome-correlation data |
+| **AWS HealthLake** | FHIR-native data store normalizing data from multiple EHRs and HIE feeds (Patient, Encounter, Condition, MedicationRequest, MedicationStatement, Observation, DiagnosticReport, ServiceRequest, CarePlan, AllergyIntolerance, Immunization, Coverage) |
+| **AWS KMS** | Customer-managed encryption keys per data class, with separate keys for the provenance journal and the coordination-decision-record journal |
+| **AWS Secrets Manager** | Credentials for EHRs, HIE/TEFCA endpoints, payer claims feeds, pharmacy APIs, home-health vendor APIs, care-management workflow systems, escalation pathways |
+| **Amazon CloudWatch** | Operational metrics (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, seam-detection rate, seam-resolution rate, escalation rate, citation-coverage rate, per-cohort slices); alarms |
+| **AWS CloudTrail** | API-level audit logging |
+| **Amazon EventBridge** | Coordination-event bus (patient_enrolled, caregiver_designated, integration_connected, encounter_ingested, referral_ordered, referral_scheduled, referral_completed, transition_initiated, transition_completed, medication_filled, medication_discontinued, lab_result_posted, seam_flag_raised, seam_flag_resolved, care_team_alert_generated, escalation_routed, coordination_decision_recorded) |
+| **Amazon Pinpoint** | Proactive care-event-triggered messaging (post-discharge welcome-home check-in, referral-scheduling reminders, appointment-prep nudges, lab-result acknowledgement prompts, missed-appointment follow-ups) with delivery-status tracking, channel-preference enforcement, and quiet-hours discipline |
+| **Amazon Connect** | Warm-handoff queue for human care managers and clinical staff (chat and voice), routing integration with care-management leadership |
+| **Amazon Kinesis Data Firehose** | Streaming audit and telemetry delivery |
+| **AWS Glue Data Catalog + Amazon Athena** | SQL access to audit, decision-record, provenance, and telemetry data |
+| **Amazon Comprehend Medical** | Medical NER over patient-and-caregiver-reported text for matching against the coordination state |
+| **Amazon SageMaker (where used)** | Hosted custom seam-detection classifiers (decompensation patterns, complex medication-discrepancy reasoning, caregiver-burden trajectory) |
+| **Amazon QuickSight** | Clinical, operational, and outcome dashboards with per-cohort slices |
+
+---
+
+### Code
+
+#### Walkthrough
+
+**Step 1: Enroll the patient and capture cross-organizational consent with caregiver setup.** Enrollment is more involved than for the previous chapter 11 bots because the consent posture covers multiple data sources, multiple sharing relationships, and (often) one or more caregivers with proxy-access scope. The consent flow has been reviewed by legal counsel familiar with HIPAA, the Information Blocking rule, state-specific medical-record statutes, state-specific caregiver-consent rules, and (where applicable) 42 CFR Part 2, state-specific mental-health-record protections, and other sensitive-record rules. Skip this step or treat it as boilerplate, and the deployment's regulatory posture is compromised before the first conversation.
+
+```
+ON enroll_patient(patient_id, enrollment_program_id,
+                  legal_consent_form_signed,
+                  caregiver_designations,
+                  state_of_residence):
+    // Step 1A: validate the patient is eligible for the
+    // institution's deployment scope.
+    eligibility = check_eligibility({
+        patient_id: patient_id,
+        program: enrollment_program_id,
+        excluded_populations: INSTITUTION_EXCLUDED_POPULATIONS
+            // typically: patients in active hospice (where a
+            // hospice-specific coordination tool is more
+            // appropriate); patients whose primary coordination
+            // is delivered by a contracted external care
+            // navigator (where the coordination relationship is
+            // already owned by another entity); minors in
+            // adult-only deployments; others per institutional
+            // clinical-leadership policy
+    })
+
+    IF NOT eligibility.eligible:
+        return {
+            action: "enrollment_declined",
+            reason: eligibility.reason,
+            referral: eligibility.recommended_alternative
+        }
+
+    // Step 1B: capture cross-organizational consent posture.
+    // Consent is per data source and per sharing relationship.
+    // The consent record is the operational gate the
+    // architecture enforces; it is not optional and not
+    // bypass-able from the assistant.
+    consent_record = capture_consent({
+        patient_id: patient_id,
+        data_sources: enumerate_known_sources(patient_id),
+            // primary care EHR, hospital EHR(s), specialty
+            // EHR(s), HIE participation, payer claims feed,
+            // pharmacies (each), home-health agency, lab(s)
+        sharing_relationships: [
+            "with_primary_care",
+            "with_specialists",
+            "with_care_management",
+            "with_designated_caregivers"
+        ],
+        sensitive_record_categories: [
+            // each requires explicit category-specific consent
+            // per state and federal rules
+            "mental_health_records",
+            "substance_use_records_42_cfr_part_2",
+            "hiv_records",
+            "genetic_test_results",
+            "adolescent_confidential_records"
+        ],
+        revocability: "revocable_at_any_time_per_category",
+        state_of_residence: state_of_residence
+    })
+
+    // Step 1C: capture caregiver designations.
+    // Each caregiver gets a separate identity, separate
+    // authentication, separate proxy-access scope, and
+    // separate state-law access posture.
+    caregiver_records = []
+    FOR each cg IN caregiver_designations:
+        proxy_scope = capture_proxy_access_scope({
+            patient_id: patient_id,
+            caregiver_identity: cg,
+            access_level: cg.requested_access,
+                // values: "full", "scheduling_only",
+                // "medications_only", "education_only",
+                // "emergency_contact_only"
+            sensitive_record_carve_outs: cg.sensitive_carve_outs,
+                // patient may withhold mental-health records
+                // from a caregiver while granting other access
+            state_law_check: check_state_caregiver_law(
+                state_of_residence, cg.relationship)
+                // some states require notarized HCP/POA
+                // documentation, others have specific rules for
+                // adolescents and aging adults
+        })
+        caregiver_records.append(proxy_scope)
+
+    // Step 1D: identify the patient's known clinicians,
+    // pharmacies, payers, and ancillary services.
+    known_relationships = capture_known_relationships({
+        patient_id: patient_id,
+        clinicians: enumerate_clinicians(patient_id),
+        pharmacies: enumerate_pharmacies(patient_id),
+        payers: enumerate_payers(patient_id),
+        ancillary_services: enumerate_ancillary(patient_id)
+    })
+
+    // Step 1E: capture preferences (channels, quiet hours,
+    // language, preferred name, what to discuss with whom).
+    preferences = capture_preferences({
+        patient_id: patient_id,
+        channels: ["app", "sms", "voice", "email"],
+        quiet_hours: prompt_for_quiet_hours(),
+        language: prompt_for_language(),
+        preferred_name: prompt_for_preferred_name(),
+        caregiver_routing_preferences:
+            prompt_for_caregiver_routing()
+    })
+
+    // Step 1F: persist enrollment artifacts.
+    persist_enrollment({
+        patient_id: patient_id,
+        consent_record: consent_record,
+        caregiver_records: caregiver_records,
+        known_relationships: known_relationships,
+        preferences: preferences,
+        program: enrollment_program_id,
+        state_of_residence: state_of_residence,
+        enrollment_timestamp: now(),
+        consent_versions: snapshot_consent_versions(),
+        enrolling_user: signing_user
+    })
+
+    // Step 1G: emit enrollment event for downstream systems.
+    emit_event("patient_enrolled", {patient_id, program})
+    FOR each cg IN caregiver_records:
+        emit_event("caregiver_designated",
+                   {patient_id, caregiver_id: cg.id})
+
+    return {
+        action: "enrolled",
+        patient_id: patient_id,
+        coordination_state_initialized: true
+    }
+```
+
+What can go wrong if you skip or shortcut this: the assistant operates without a defensible consent posture across organizations, the caregiver-access model is ad-hoc, the patient's preferences are not captured, the assistant cannot reason about its own integration coverage, and the regulatory and patient-trust postures are both broken. Investments here pay back across every subsequent conversation.
+
+---
+
+**Step 2: Ingest cross-organizational data with provenance discipline.** The ingestion layer is the architectural floor for the coordination assistant. Every data point ingested is recorded with its source, its timestamp, its ingestion path, and its integrity hash. The ingestion pipeline is composed of per-source adapters; each adapter handles authentication, rate limiting, format translation, sensitive-record classification, and provenance recording.
+
+```
+ON ingest_event(source_type, raw_message, ingestion_metadata):
+    // Step 2A: route to the appropriate per-source adapter.
+    adapter = select_adapter(source_type)
+        // values: "hl7_v2_adt", "hl7_v2_oru",
+        // "fhir_subscription", "fhir_polling",
+        // "claims_batch", "pharmacy_ncpdp",
+        // "pharmacy_vendor_api", "home_health_vendor_api",
+        // "hie_query", "tefca_query", "patient_reported"
+
+    // Step 2B: validate and parse.
+    parsed = adapter.parse(raw_message)
+    validation = adapter.validate(parsed)
+    IF NOT validation.valid:
+        log_failed_ingestion(parsed, validation.errors)
+        return {action: "rejected", reason: validation.errors}
+
+    // Step 2C: classify sensitive-record categories.
+    // Some categories trigger separate handling per
+    // state and federal rules; this is operational, not
+    // optional.
+    sensitivity = classify_sensitivity(parsed)
+        // categories: "general", "mental_health",
+        // "substance_use_42_cfr_part_2", "hiv",
+        // "genetic", "adolescent_confidential"
+
+    // Step 2D: enforce per-source consent posture.
+    // If the patient has not consented to ingestion from
+    // this source, or has revoked consent, the data is
+    // dropped and the revocation is honored.
+    consent_check = verify_consent({
+        patient_id: parsed.patient_id,
+        source_type: source_type,
+        sensitivity_category: sensitivity.category
+    })
+    IF NOT consent_check.allowed:
+        log_consent_denied_ingestion(parsed, consent_check)
+        return {action: "consent_denied"}
+
+    // Step 2E: write to the provenance journal.
+    // Provenance records are append-only and separately
+    // keyed for blast-radius containment.
+    provenance_id = write_provenance({
+        patient_id: parsed.patient_id,
+        source_type: source_type,
+        source_message_id: ingestion_metadata.message_id,
+        source_timestamp: parsed.source_timestamp,
+        ingestion_timestamp: now(),
+        ingestion_path: ingestion_metadata.path,
+        integrity_hash: hash_message(raw_message),
+        sensitivity_category: sensitivity.category,
+        adapter_version: adapter.version
+    })
+
+    // Step 2F: normalize to the coordination-state schema.
+    // For FHIR-native sources, the data lands in HealthLake
+    // and the assistant's coordination-state-store has
+    // pointers. For HL7 and other non-FHIR sources, the
+    // data is mapped to FHIR-aligned shapes for consistency.
+    normalized = adapter.normalize(parsed)
+
+    // Step 2G: reconcile against existing coordination state.
+    // Reconciliation may detect duplicates, conflicts, or
+    // updates to existing entries.
+    reconciliation = reconcile_with_state({
+        patient_id: parsed.patient_id,
+        normalized_event: normalized,
+        provenance_id: provenance_id
+    })
+
+    // Step 2H: update the coordination-state-store with
+    // provenance references preserved.
+    update_coordination_state({
+        patient_id: parsed.patient_id,
+        update_type: reconciliation.update_type,
+            // values: "new_entry", "update_existing",
+            // "conflict_detected", "duplicate_dropped"
+        normalized_event: normalized,
+        provenance_id: provenance_id,
+        reconciliation_details: reconciliation
+    })
+
+    // Step 2I: emit care-event triggers for downstream
+    // protocol and seam-detection processing.
+    triggers = derive_triggers(normalized, reconciliation)
+    FOR each trigger IN triggers:
+        emit_event(trigger.type, trigger.payload)
+            // common triggers: "encounter_ingested",
+            // "referral_ordered", "discharge_event",
+            // "lab_result_posted", "medication_filled",
+            // "appointment_scheduled", "appointment_missed"
+
+    return {
+        action: "ingested",
+        provenance_id: provenance_id,
+        triggers_emitted: triggers.length
+    }
+```
+
+What can go wrong if you skip or shortcut this: the assistant has no provenance for its assertions, the consent posture is unenforceable per data source, the sensitive-record categories are mishandled, the reconciliation is ad-hoc, and the seam-detection layer has no signal to operate on. The ingestion layer is multi-quarter engineering work for any institution that takes the assistant seriously.
+
+---
+
+**Step 3: Run the seam-detection rule engine and the protocol-trigger evaluator.** Seam detection is the assistant's distinctive value layer. The rules and the protocols are institutional content with named clinical-leadership ownership; the engine runs them deterministically (or with calibrated heuristic models) and routes detected gaps to the appropriate human or to the patient-and-caregiver engagement scheduler.
+
+```
+ON care_event_or_periodic_tick(patient_id, event):
+    // Step 3A: load the patient's coordination state and
+    // the relevant protocol context.
+    state = load_coordination_state(patient_id)
+    context = load_protocol_context({
+        patient_id: patient_id,
+        active_care_events: state.active_care_events
+    })
+
+    // Step 3B: run the seam-detection rule set.
+    // Each rule is owned by a named clinical leader; rules
+    // have effective dates and version histories.
+    seam_findings = []
+    FOR each rule IN ENABLED_SEAM_RULES:
+        IF rule.applies_to(state, event):
+            finding = rule.evaluate({
+                state: state,
+                event: event,
+                context: context
+            })
+            IF finding.detected:
+                seam_findings.append({
+                    rule_id: rule.id,
+                    rule_version: rule.version,
+                    rule_owner: rule.owner,
+                    finding: finding,
+                    confidence: finding.confidence,
+                    suggested_resolver:
+                        finding.suggested_resolver
+                        // values: "patient", "caregiver",
+                        // "care_team", "clinician",
+                        // "patient_and_care_team"
+                })
+
+    // Step 3C: persist seam-flags to the seam-flag-store.
+    FOR each finding IN seam_findings:
+        seam_flag_id = persist_seam_flag(patient_id, finding)
+        emit_event("seam_flag_raised", {
+            patient_id: patient_id,
+            seam_flag_id: seam_flag_id,
+            rule_id: finding.rule_id,
+            suggested_resolver: finding.suggested_resolver
+        })
+
+    // Step 3D: evaluate protocol triggers.
+    // Triggers come from the protocol library, not from LLM
+    // judgment. Examples: post-discharge welcome-home
+    // conversation within 48 hours; referral-tracking
+    // check-in 1 week after order if not scheduled; lab-
+    // result acknowledgement after clinician sign-off;
+    // medication-fill check after new prescription.
+    protocol_triggers = []
+    FOR each protocol IN ACTIVE_PROTOCOLS_FOR_PATIENT(state):
+        triggered = protocol.evaluate_triggers({
+            state: state,
+            event: event,
+            now: now()
+        })
+        protocol_triggers.extend(triggered)
+
+    // Step 3E: schedule patient-and-caregiver engagements
+    // for resolvable items.
+    FOR each trigger IN protocol_triggers:
+        IF trigger.action_type == "engage_patient_or_caregiver":
+            schedule_engagement({
+                patient_id: patient_id,
+                trigger: trigger,
+                target_role:
+                    determine_target_role(trigger, state),
+                channel:
+                    select_channel(state.preferences, trigger),
+                quiet_hours_check:
+                    state.preferences.quiet_hours,
+                window: trigger.window
+            })
+
+    // Step 3F: route care-team-resolvable items to alerts.
+    FOR each finding IN seam_findings:
+        IF finding.suggested_resolver IN [
+            "care_team", "clinician", "patient_and_care_team"]:
+            create_care_team_alert({
+                patient_id: patient_id,
+                finding: finding,
+                priority:
+                    derive_priority(finding, state),
+                routing:
+                    determine_routing(finding, state)
+            })
+
+    // Step 3G: handle high-acuity events.
+    // Some seam findings or protocol triggers are
+    // immediately escalation-worthy (e.g., post-discharge
+    // symptoms suggestive of decompensation reported by
+    // the patient or caregiver; conflicting orders for
+    // a high-risk medication class; missed critical
+    // medication for an active condition).
+    FOR each finding IN seam_findings:
+        IF finding.priority == "high_acuity":
+            escalate_immediately({
+                patient_id: patient_id,
+                finding: finding,
+                pathway: finding.escalation_pathway
+                    // values: "care_management_immediate",
+                    // "clinical_callback_within_2_hours",
+                    // "triage_pathway", "911_routed"
+            })
+
+    return {
+        seam_findings: seam_findings.length,
+        protocol_triggers: protocol_triggers.length,
+        engagements_scheduled: count_scheduled,
+        alerts_created: count_alerts,
+        escalations: count_escalations
+    }
+```
+
+What can go wrong if you skip or shortcut this: the assistant cannot detect the gaps that are its distinctive value, the protocol-driven engagement cadence is missing, the care-team feedback loop is broken, and the assistant degrades to a glorified FAQ bot over coordination data. The seam-detection-rule library and the protocol library together are the largest non-LLM engineering investment in the system.
+
