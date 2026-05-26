@@ -1442,3 +1442,1252 @@ ON care_event_or_periodic_tick(patient_id, event):
 
 What can go wrong if you skip or shortcut this: the assistant cannot detect the gaps that are its distinctive value, the protocol-driven engagement cadence is missing, the care-team feedback loop is broken, and the assistant degrades to a glorified FAQ bot over coordination data. The seam-detection-rule library and the protocol library together are the largest non-LLM engineering investment in the system.
 
+
+
+---
+
+**Step 4: Initiate the conversation surface with input safety, identity, and coordination context.** A conversation can be patient-initiated, caregiver-initiated, or assistant-initiated (from a care-event trigger or a protocol-driven engagement). Whichever the entry point, the conversation handler runs the same input-safety pipeline as the previous chapter 11 bots, plus the continuous emergency-screening pass that every patient-or-caregiver utterance receives, plus identity-verification with the speaker-role distinction (patient vs. caregiver), plus the coordination-state context loading.
+
+```
+ON conversation_turn(session_id, utterance, channel,
+                     auth_context, speaker_role):
+    // Step 4A: input safety with continuous emergency screen.
+    // Same primitives as recipes 11.1-11.8, with one
+    // coordination-specific addition: the continuous
+    // emergency screen runs on every utterance regardless
+    // of conversation context.
+    safety = run_input_safety({
+        utterance: utterance,
+        channel: channel,
+        speaker_role: speaker_role,
+        prompt_injection_check: true,
+        phi_minimization_check: true,
+        crisis_classifier: true,
+        coordination_acuity_classifier: true
+            // detects post-discharge symptoms suggestive of
+            // decompensation, missed critical medications,
+            // reported caregiver crisis, etc.
+    })
+
+    IF safety.crisis_flag:
+        return route_to_crisis_pathway({
+            session_id: session_id,
+            utterance: utterance,
+            crisis_type: safety.crisis_type
+                // values: "self_harm_or_suicide" -> 988 + recipe 11.8;
+                // "acute_medical" -> 911 + recipe 11.6;
+                // "intimate_partner_violence" -> NDV hotline +
+                //   institutional pathway;
+                // "elder_abuse" -> APS + institutional pathway;
+                // "child_abuse" -> mandatory-reporter pathway
+        })
+
+    IF safety.coordination_acuity_flag:
+        return route_to_acuity_pathway({
+            session_id: session_id,
+            utterance: utterance,
+            acuity_type: safety.acuity_type
+        })
+
+    IF NOT safety.passes:
+        return safe_template_response(safety.failure_reason)
+
+    // Step 4B: identity-and-role verification.
+    // The session conveys the verified identity (patient or
+    // caregiver). Caregiver identity carries proxy-access
+    // scope.
+    identity = verify_identity_and_role(auth_context)
+    IF NOT identity.verified:
+        return identity_required_response()
+
+    // Step 4C: coordination-context loading scoped by
+    // speaker role.
+    coordination_context = load_coordination_context({
+        patient_id: identity.patient_id,
+        speaker_role: identity.role,
+            // values: "patient", "caregiver",
+            // "caregiver_with_full_proxy",
+            // "caregiver_with_scheduling_only_proxy",
+            // etc.
+        proxy_access_scope: identity.proxy_scope,
+        sensitive_record_carve_outs:
+            identity.sensitive_carve_outs,
+        recent_window_days: 90
+            // longitudinal context window; older context is
+            // reachable on demand via tools but not pre-loaded
+    })
+
+    // Step 4D: assemble the prompt context.
+    prompt_context = {
+        system_prompt: SYSTEM_PROMPT_VERSION_X,
+            // versioned, signed-off by clinical leadership;
+            // includes the assistant's role, scope discipline,
+            // speaker-role-aware behavior, citation discipline,
+            // not-a-clinician disclosure, and protocol
+            // citation expectations
+        coordination_context: coordination_context,
+        recent_conversation_history:
+            load_recent_history(session_id, max_turns=20),
+        long_term_summary:
+            load_long_term_summary(identity.patient_id),
+        speaker_role: identity.role,
+        utterance: utterance
+    }
+
+    // Step 4E: invoke the agent with tool-use.
+    // The agent decides which tools to call, in what
+    // order, with what arguments. The agent's traces are
+    // preserved for the coordination-decision-record
+    // journal.
+    agent_response = invoke_agent({
+        prompt_context: prompt_context,
+        tools: COORDINATION_TOOL_SURFACE,
+        guardrails_config: GUARDRAILS_VERSION_X,
+        knowledge_bases: [
+            "coordination_protocols",
+            "patient_education",
+            "conversation_history"
+        ],
+        trace: true
+    })
+
+    return agent_response
+```
+
+What can go wrong if you skip or shortcut this: the assistant treats every conversation as a fresh start, the speaker role is conflated, the proxy-access scope is not enforced, the continuous emergency screen is missed, and the conversation handler degrades to a stateless FAQ bot.
+
+---
+
+**Step 5: Run the agent's tool-use loop with citation discipline.** The agent's job is to take the user's utterance, decide what coordination tools to call, retrieve the necessary state and protocols, and compose a grounded response. Each tool call is recorded in the tool-call ledger; each retrieved citation is preserved in the response trace. The LLM does not fabricate coordination-state assertions; if a tool call returns "unknown" or "not in coordination state," the assistant says so honestly.
+
+```
+ON agent_invocation(prompt_context, tools, guardrails, kbs):
+    // Step 5A: model produces an initial plan and tool-call
+    // sequence. The LLM is instructed to call tools to
+    // retrieve coordination state before making any
+    // assertion about that state, and to retrieve protocol
+    // content before delivering any coordination
+    // instruction.
+    plan = model.generate_plan({
+        system: prompt_context.system_prompt,
+        context: prompt_context,
+        tools_available: tools.schemas
+    })
+
+    tool_results = []
+    citations_collected = []
+
+    // Step 5B: execute the tool-call sequence with audit.
+    FOR each tool_call IN plan.tool_calls:
+        // Validate the tool call is permitted in scope.
+        IF NOT scope_validator.permits(tool_call,
+                                       prompt_context):
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: "out_of_scope_tool_call"}
+            })
+            continue
+
+        // Validate the tool's patient_id argument matches
+        // the verified session. Defense-in-depth against
+        // prompt-injection attempts to reach other patients'
+        // data.
+        IF tool_call.args.patient_id !=
+                prompt_context.coordination_context.patient_id:
+            log_security_event(
+                "patient_id_mismatch_tool_call",
+                tool_call)
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: "patient_id_mismatch"}
+            })
+            continue
+
+        // Validate the tool's access scope honors the
+        // speaker-role proxy posture.
+        IF NOT proxy_scope_validator.permits(
+                tool_call,
+                prompt_context.speaker_role,
+                prompt_context.coordination_context):
+            tool_results.append({
+                tool_call: tool_call,
+                result: {error: "proxy_scope_denied"}
+            })
+            continue
+
+        result = execute_tool(tool_call)
+
+        // Persist the tool call in the ledger with audit.
+        persist_tool_call_ledger({
+            session_id:
+                prompt_context.session_id,
+            tool: tool_call.name,
+            args: tool_call.args,
+            result_summary: summarize(result),
+            timestamp: now(),
+            speaker_role: prompt_context.speaker_role,
+            tool_version: tool_call.tool_version
+        })
+
+        // Collect citations for grounded assertions.
+        IF result.citations:
+            citations_collected.extend(result.citations)
+
+        tool_results.append({
+            tool_call: tool_call,
+            result: result
+        })
+
+    // Step 5C: model composes the response grounded in
+    // tool results and citations.
+    composed_response = model.compose_response({
+        prompt_context: prompt_context,
+        tool_results: tool_results,
+        citations: citations_collected,
+        instruction:
+            "Compose a response that answers the user's "
+            "question or performs the requested coordination "
+            "task. Ground every coordination-state assertion "
+            "in cited provenance. Ground every protocol "
+            "instruction in cited protocol. Where a fact is "
+            "not in the coordination state or in cited "
+            "protocol, say so honestly. Do not produce "
+            "diagnostic or prescriptive recommendations "
+            "beyond what the patient's existing clinicians "
+            "have ordered. Defer to the care team for any "
+            "clinical-judgment question."
+    })
+
+    return {
+        response: composed_response,
+        tool_calls: tool_results,
+        citations: citations_collected,
+        plan: plan
+    }
+```
+
+What can go wrong if you skip or shortcut this: the tool-call audit trail is incomplete, the patient_id-cross-check defense-in-depth is missing, the proxy-scope discipline is bypassable, and the citation discipline is unenforced. The agent's reasoning is hard to audit when something goes wrong.
+
+---
+
+**Step 6: Run output safety with protocol-faithfulness verification.** Output safety has the standard primitives from recipe 11.1 (scope filter, vendor-managed guardrail layer, persona-and-tone check). The coordination-specific addition is a faithfulness verifier that confirms the response's coordination-state assertions cite preserved provenance and the response's protocol instructions cite preserved protocol content. A response that asserts coordination facts without citation, or delivers protocol instructions without citation, is regenerated with a stricter constraint or replaced with a safe-fallback template.
+
+```
+ON output_safety(composed_response, tool_results, citations,
+                 prompt_context):
+    // Step 6A: standard output-safety primitives.
+    scope_check = scope_filter.evaluate(composed_response)
+    IF scope_check.violation:
+        return regenerate_with_stricter_scope({
+            response: composed_response,
+            violation: scope_check.violation
+        })
+
+    guardrail_check =
+        bedrock_guardrails.evaluate(composed_response)
+    IF guardrail_check.blocked:
+        return safe_fallback_template(guardrail_check.reason)
+
+    persona_check = persona_and_tone.evaluate(composed_response)
+    IF persona_check.violation:
+        return regenerate_with_persona_constraint(
+            composed_response, persona_check.violation)
+
+    // Step 6B: faithfulness verification (coordination-
+    // specific). Validates that every coordination-state
+    // assertion in the response is grounded in the
+    // tool_results, that every protocol instruction is
+    // grounded in cited protocol, and that the citation
+    // chain back to provenance is intact.
+    faithfulness = verify_faithfulness({
+        response: composed_response,
+        tool_results: tool_results,
+        citations: citations,
+        verifier_model: VERIFIER_MODEL_VERSION_X
+            // independent verifier model, distinct from the
+            // orchestration model, with structured-output
+            // schema validation
+    })
+
+    IF faithfulness.coordination_state_assertion_unverified:
+        // Response asserts something about the patient's
+        // coordination state that is not in the retrieved
+        // tool results. Regenerate with stricter
+        // grounding constraint.
+        return regenerate_with_grounding_constraint({
+            response: composed_response,
+            issue: "coordination_state_assertion_unverified",
+            unverified_claims:
+                faithfulness.unverified_claims
+        })
+
+    IF faithfulness.protocol_instruction_uncited:
+        return regenerate_with_grounding_constraint({
+            response: composed_response,
+            issue: "protocol_instruction_uncited"
+        })
+
+    IF faithfulness.provenance_chain_broken:
+        return safe_fallback_template(
+            "provenance_chain_broken")
+
+    // Step 6C: speaker-role-appropriate disclosure check.
+    // A caregiver speaking on behalf of the patient may
+    // have restricted access to certain categories per the
+    // patient's preference; the response must honor those
+    // carve-outs.
+    role_check = speaker_role_disclosure_check({
+        response: composed_response,
+        speaker_role: prompt_context.speaker_role,
+        sensitive_carve_outs:
+            prompt_context.coordination_context
+                .sensitive_record_carve_outs
+    })
+    IF role_check.violation:
+        return regenerate_with_carve_out_constraint(
+            composed_response, role_check.violation)
+
+    // Step 6D: conservative-bias check. Where the response
+    // could plausibly involve clinical judgment beyond the
+    // coordination scope, did the response defer to the
+    // care team?
+    conservative_check = conservative_bias_check({
+        response: composed_response,
+        prompt_context: prompt_context
+    })
+    IF conservative_check.violation:
+        return regenerate_with_deference_constraint(
+            composed_response,
+            conservative_check.violation)
+
+    // Step 6E: persist the coordination-decision-record.
+    persist_coordination_decision_record({
+        session_id: prompt_context.session_id,
+        patient_id:
+            prompt_context.coordination_context.patient_id,
+        speaker_role: prompt_context.speaker_role,
+        utterance: prompt_context.utterance,
+        composed_response: composed_response,
+        tool_calls: tool_results,
+        citations: citations,
+        faithfulness_score: faithfulness.score,
+        scope_check: scope_check,
+        guardrail_check: guardrail_check,
+        persona_check: persona_check,
+        role_check: role_check,
+        conservative_check: conservative_check,
+        timestamp: now(),
+        model_version: ACTIVE_MODEL_VERSION,
+        prompt_version: ACTIVE_PROMPT_VERSION,
+        protocol_corpus_version:
+            ACTIVE_PROTOCOL_CORPUS_VERSION,
+        coordination_state_version:
+            ACTIVE_COORDINATION_STATE_VERSION
+    })
+
+    return composed_response
+```
+
+What can go wrong if you skip or shortcut this: the assistant produces coordination assertions without provenance, delivers protocol instructions without citation, ignores speaker-role carve-outs, drifts out of conservative-bias scope, and the coordination-decision-record journal lacks the structured trace needed for retrospective review.
+
+---
+
+**Step 7: Orchestrate transitions of care with Step Functions.** When a discharge event arrives (the institution's hospital sends an HL7 ADT-A03 discharge message; or the receiving home-health agency confirms admission to home health; or the SNF confirms admission), the assistant initiates the appropriate transition-of-care workflow. The workflow is a Step Functions state machine, version-controlled, signed off by clinical leadership, with deterministic state transitions and explicit completion criteria. The LLM operates on top of the state machine as the conversational interface; the state machine drives the protocol.
+
+```
+ON discharge_event(patient_id, discharge_event):
+    // Step 7A: identify the appropriate transition protocol
+    // based on the discharge destination and the admission
+    // type.
+    transition_protocol =
+        select_transition_protocol({
+            patient_id: patient_id,
+            admission_type: discharge_event.admission_type,
+            discharge_destination:
+                discharge_event.destination,
+                // values: "home", "home_with_home_health",
+                // "snf", "ltac", "rehab",
+                // "hospice", "other"
+            patient_population:
+                derive_population(patient_id),
+                // affects protocol calibration; e.g.,
+                // post-CABG vs post-CAP vs post-stroke
+            insurance_population:
+                derive_insurance_population(patient_id)
+                // affects benefits-related steps
+        })
+
+    // Step 7B: instantiate the transition workflow.
+    workflow_execution = step_functions.start_execution({
+        state_machine: TRANSITION_OF_CARE_STATE_MACHINE,
+        input: {
+            patient_id: patient_id,
+            discharge_event: discharge_event,
+            transition_protocol: transition_protocol,
+            instantiated_at: now()
+        }
+    })
+
+    // The state machine encodes the protocol-defined steps:
+    //
+    // Step 7B-1: Welcome-home check-in within 48 hours
+    //   (step calls Pinpoint to send the message;
+    //    schedules a follow-up if no response within
+    //    24 hours; escalates if no response within 48
+    //    hours)
+    //
+    // Step 7B-2: Medication reconciliation between the
+    //   discharge medication list and the pre-admit list
+    //   (step calls medication_list_reconcile; if a
+    //    discrepancy is detected, surfaces to seam-flag
+    //    queue for clinical review)
+    //
+    // Step 7B-3: Follow-up appointment validation within
+    //   the protocol window (step calls referral_lifecycle
+    //   tooling; if the appointment is not scheduled within
+    //    the discharge protocol's window, surfaces to
+    //    engagement scheduler for patient outreach plus
+    //    care-team alert)
+    //
+    // Step 7B-4: Home-health or DME order validation
+    //   (step verifies that the receiving agency has
+    //    received and accepted the order)
+    //
+    // Step 7B-5: Patient and caregiver education delivery
+    //   (step calls patient_education content retrieval
+    //    grounded in the discharge-instructions and the
+    //    institution's reviewed library)
+    //
+    // Step 7B-6: Red-flag warning instructions
+    //   (step delivers the clinically-reviewed warning
+    //    instructions for the specific admission type and
+    //    discharge destination)
+    //
+    // Step 7B-7: Symptom-monitoring engagement
+    //   (step schedules check-ins per the discharge
+    //    protocol's cadence, with escalation thresholds)
+    //
+    // Step 7B-8: Closure verification
+    //   (step verifies all protocol items are satisfied;
+    //    if any are open past their windows, escalates to
+    //    care-management for resolution; closes the
+    //    transition workflow with the closure summary
+    //    delivered to the care team)
+
+    return {
+        workflow_execution_id:
+            workflow_execution.execution_id,
+        transition_protocol_version:
+            transition_protocol.version,
+        expected_completion_window:
+            transition_protocol.completion_window
+    }
+```
+
+What can go wrong if you skip or shortcut this: the discharge-to-home gap (the 48-hour-to-72-hour window where most preventable readmissions originate) is unmanaged, medication reconciliation is left to chance, follow-up appointments are not validated against the protocol window, red-flag warnings are not delivered, and the transition closure is silent. Transitions of care are the single most consequential coordination event class for this assistant, and they are best run through a deterministic state-machine orchestration rather than left to LLM judgment.
+
+---
+
+**Step 8: Track referral lifecycles to closure.** Referrals are first-class coordination objects with a structured lifecycle (ordered, communicated, scheduled, attended, consult-note-received, closed). Each transition has specified time windows. The referral-lifecycle subsystem is a state machine; the LLM operates on top of it.
+
+```
+ON referral_event(patient_id, referral_event):
+    // Step 8A: classify the event type.
+    event_type = classify_referral_event(referral_event)
+        // values: "ordered", "communicated_to_patient",
+        // "scheduled", "rescheduled", "attended",
+        // "no_showed", "cancelled",
+        // "consult_note_received", "closed"
+
+    // Step 8B: load the referral's current state.
+    referral_state =
+        load_referral_state(referral_event.referral_id)
+
+    // Step 8C: validate the state transition.
+    transition = referral_state_machine.validate({
+        current_state: referral_state.state,
+        event: event_type
+    })
+
+    IF NOT transition.valid:
+        log_invalid_referral_transition(
+            referral_event, referral_state, transition)
+        return {action: "rejected"}
+
+    // Step 8D: persist the new state with provenance.
+    new_state = referral_state_machine.transition({
+        current: referral_state,
+        event_type: event_type,
+        event_payload: referral_event
+    })
+    persist_referral_state({
+        referral_id: referral_event.referral_id,
+        new_state: new_state,
+        transition_at: now(),
+        provenance_id: referral_event.provenance_id
+    })
+
+    // Step 8E: emit downstream events.
+    emit_event("referral_state_changed", {
+        patient_id: patient_id,
+        referral_id: referral_event.referral_id,
+        previous_state: referral_state.state,
+        new_state: new_state.state
+    })
+
+    // Step 8F: schedule the next protocol-driven action.
+    next_action = referral_protocol.next_action(
+        new_state, referral_event)
+
+    IF next_action.type == "engage_patient":
+        // E.g., 1 week after order if not yet scheduled,
+        // walk the patient through the scheduling step,
+        // including known barriers (specialty wait time,
+        // insurance acceptance).
+        schedule_engagement({
+            patient_id: patient_id,
+            trigger: next_action,
+            channel:
+                load_preferences(patient_id).preferred_channel,
+            window: next_action.window
+        })
+
+    IF next_action.type == "alert_care_team":
+        // E.g., referral has aged out of its protocol
+        // window; surface for care-management resolution.
+        create_care_team_alert({
+            patient_id: patient_id,
+            alert_type:
+                "referral_aged_past_protocol_window",
+            referral_id: referral_event.referral_id,
+            priority:
+                derive_priority_from_referral_urgency(
+                    new_state)
+        })
+
+    IF next_action.type == "close_referral":
+        // Consult note received and ordering clinician has
+        // acknowledged; close the referral.
+        close_referral(referral_event.referral_id)
+        emit_event("referral_closed", {
+            patient_id: patient_id,
+            referral_id: referral_event.referral_id
+        })
+
+    return {
+        action: "transitioned",
+        new_state: new_state.state,
+        next_action: next_action
+    }
+```
+
+What can go wrong if you skip or shortcut this: referrals stay open indefinitely without resolution, the patient does not get the specialty consult that was ordered, the ordering clinician does not get the consult note feedback that was needed, the referral-closure rate (a leading indicator of coordination quality) collapses, and the most easily-measured coordination outcome is silently degrading.
+
+---
+
+**Step 9: Handle medication-reconciliation seams across pharmacies and clinicians.** Medication reconciliation is one of the most consequential and most data-quality-sensitive coordination tasks. The assistant maintains the patient's medication list as a single source of truth synthesized from all known pharmacy fills, all known clinician orders, and all patient-reported medications. The reconciliation logic is robust to the data-quality issues common in pharmacy and clinician feeds (inconsistent medication-naming, inconsistent dose representation, inconsistent dosing-instruction parsing, incomplete coverage). When a discrepancy is detected, the assistant flags it for human reconciliation rather than attempting clinical judgment.
+
+```
+ON medication_event(patient_id, medication_event):
+    // Step 9A: classify the source.
+    source_type = medication_event.source_type
+        // values: "pharmacy_fill", "clinician_order",
+        // "patient_reported", "discharge_med_list",
+        // "hl7_rde", "fhir_medicationrequest",
+        // "fhir_medicationstatement"
+
+    // Step 9B: normalize the medication entry.
+    // The normalization layer canonicalizes drug name
+    // (RxNorm), dose representation (UCUM), and dosing
+    // instructions where possible.
+    normalized = normalize_medication({
+        raw_event: medication_event,
+        rxnorm_lookup: true,
+        ucum_normalization: true,
+        sig_parser: true
+            // best-effort parser for free-text dosing
+            // instructions; falls back to preserved
+            // free-text when parsing is uncertain
+    })
+
+    // Step 9C: load the patient's current synthesized
+    // medication list.
+    current_med_list =
+        load_synthesized_medication_list(patient_id)
+
+    // Step 9D: reconcile.
+    reconciliation = reconcile_medication({
+        normalized_event: normalized,
+        current_med_list: current_med_list,
+        rules: MEDICATION_RECONCILIATION_RULES
+            // institutional rules signed off by pharmacy
+            // informatics; e.g., "if a clinician orders a
+            // medication that was previously discontinued
+            // by another clinician, surface for clinical
+            // review"; "if two clinicians order
+            // interacting medications without recorded
+            // coordination, surface for clinical review";
+            // "if a pharmacy fills a medication the patient
+            // says they were told to stop, surface for
+            // clinical review"; "if the discharge med list
+            // does not reconcile with the pre-admit list
+            // plus expected changes, surface for clinical
+            // review"
+    })
+
+    // Step 9E: update the synthesized medication list with
+    // provenance preserved.
+    update_synthesized_medication_list({
+        patient_id: patient_id,
+        update: reconciliation.update,
+        provenance_id: medication_event.provenance_id
+    })
+
+    // Step 9F: surface seams.
+    FOR each seam IN reconciliation.seams:
+        seam_flag_id = persist_seam_flag({
+            patient_id: patient_id,
+            rule_id: seam.rule_id,
+            description: seam.description,
+            suggested_resolver: seam.suggested_resolver,
+            priority: seam.priority,
+            confidence: seam.confidence
+        })
+        emit_event("seam_flag_raised", {
+            patient_id: patient_id,
+            seam_flag_id: seam_flag_id
+        })
+
+    return {
+        action: "reconciled",
+        seams_raised: reconciliation.seams.length,
+        synthesized_list_version:
+            current_med_list.version + 1
+    }
+```
+
+What can go wrong if you skip or shortcut this: the patient's medication list across systems remains contradictory, the assistant's medication assertions are not trustworthy, the seam-detection layer does not catch the discrepancies that lead to medication-related adverse events, and the assistant degrades into a tool that surfaces medication confusion rather than resolving it. The pharmacy-informatics partnership is the operational owner here; the assistant is the surfacing layer, not the reconciler.
+
+---
+
+**Step 10: Generate care-team reporting and outcome correlation.** The care team has visibility into the assistant's activity through structured summaries (real-time alerts for high-priority gaps; weekly digests; monthly summaries; transition-of-care closure reports; quarterly clinical-review packets). The reporting is designed for the care team's workflow and is reviewed by clinical leadership before launch. Outcome-correlation runs against coordination-specific outcomes (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, avoidable-readmission rate, avoidable-ED-utilization rate, patient-and-caregiver-reported coordination experience) on multi-quarter windows.
+
+```
+ON reporting_tick(reporting_window):
+    // Step 10A: real-time alerts (already streamed during
+    // operations). This step produces the periodic-summary
+    // artifacts.
+
+    // Step 10B: weekly digest per active member.
+    FOR each patient IN ACTIVE_PATIENT_COHORT:
+        digest = compose_weekly_digest({
+            patient_id: patient.id,
+            window: last_7_days,
+            sections: [
+                "open_referrals_status",
+                "transition_of_care_status",
+                "seam_flag_status",
+                "medication_reconciliation_findings",
+                "key_disclosures_caregiver_burden_etc",
+                "patient_and_caregiver_reported_experience",
+                "open_followups",
+                "recommended_care_team_actions"
+            ]
+        })
+        deliver_to_care_team({
+            patient_id: patient.id,
+            digest: digest,
+            delivery_channel:
+                care_team_workflow.delivery_channel
+        })
+
+    // Step 10C: monthly summary with longitudinal trends.
+    FOR each patient IN ACTIVE_PATIENT_COHORT:
+        summary = compose_monthly_summary({
+            patient_id: patient.id,
+            window: last_30_days,
+            sections: [
+                "longitudinal_trends",
+                "open_issues",
+                "recommendation_for_care_team_action",
+                "care_management_promotion_candidate"
+                    // patients whose coordination needs
+                    // have grown beyond what the assistant
+                    // alone can address; promote to nurse
+                    // case management or other higher-touch
+                    // service
+            ]
+        })
+        deliver_to_care_team({
+            patient_id: patient.id,
+            summary: summary,
+            delivery_channel:
+                care_team_workflow.delivery_channel
+        })
+
+    // Step 10D: transition-of-care closure reports.
+    FOR each completed_transition IN
+            transitions_completed_in_window:
+        report = compose_transition_closure_report({
+            transition_id: completed_transition.id,
+            closure_summary:
+                completed_transition.closure_summary,
+            protocol_compliance:
+                completed_transition.protocol_compliance,
+            seam_flags_raised_during:
+                completed_transition.seams,
+            patient_and_caregiver_experience:
+                completed_transition.experience_summary
+        })
+        deliver_to_care_team(report)
+
+    // Step 10E: quarterly clinical-review packets.
+    // Clinical leadership reviews assistant performance:
+    // sampled conversations, sampled seam-flag resolutions,
+    // outcome trends, per-cohort metrics, equity
+    // disparities, protocol revisions.
+    IF reporting_window.is_quarter_end:
+        clinical_review_packet =
+            compose_clinical_review_packet({
+                quarter: reporting_window.quarter,
+                sampled_conversations:
+                    sample_conversations(
+                        reporting_window, sample_size=200),
+                sampled_seam_resolutions:
+                    sample_seam_resolutions(
+                        reporting_window, sample_size=100),
+                outcome_metrics:
+                    compute_outcome_metrics(
+                        reporting_window),
+                per_cohort_metrics:
+                    compute_per_cohort_metrics(
+                        reporting_window),
+                equity_disparity_findings:
+                    compute_equity_disparities(
+                        reporting_window),
+                protocol_revision_proposals:
+                    aggregate_revision_proposals(
+                        reporting_window)
+            })
+        deliver_to_clinical_leadership(
+            clinical_review_packet)
+
+    // Step 10F: outcome-correlation pipeline.
+    // Multi-quarter and multi-year correlation against
+    // utilization and clinical outcomes. Results are
+    // observational, not causal.
+    outcome_correlation = compute_outcome_correlation({
+        window: reporting_window,
+        outcome_metrics: [
+            "referral_closure_rate",
+            "transition_of_care_completion_rate",
+            "medication_reconciliation_accuracy",
+            "avoidable_readmission_rate",
+            "avoidable_ed_utilization_rate",
+            "duplicate_service_rate",
+            "patient_and_caregiver_reported_coordination_experience",
+            "caregiver_burden_trajectory",
+            "total_cost_of_care_for_engaged_cohort"
+        ],
+        comparison_cohort:
+            propensity_matched_unenrolled_cohort()
+                // observational; not a randomized trial
+    })
+    deliver_outcome_summary(outcome_correlation)
+
+    return {
+        digests_delivered: count_digests,
+        summaries_delivered: count_summaries,
+        closure_reports_delivered: count_closure_reports,
+        review_packet_delivered:
+            reporting_window.is_quarter_end,
+        outcome_correlation_window:
+            reporting_window
+    }
+```
+
+What can go wrong if you skip or shortcut this: the care team has no visibility into the assistant's activity, the assistant operates as a parallel system rather than as an extension of the care team, the outcome-correlation evidence is missing when leadership asks for it, the equity-disparity findings are not surfaced, and the protocol-revision feedback loop does not close. Care-team reporting is not a phase-2 enhancement; it is the operating-room visibility that makes the assistant a tool the care team trusts.
+
+
+---
+
+### Expected Results
+
+**Sample conversation (illustrative, abbreviated, post-discharge welcome-home check-in):**
+
+```
+Bot:     Hi Mr. Chen, this is the coordination tool from
+         your primary care home, checking in two days
+         after your hospital discharge. I'm a chat tool,
+         not a person, and I work alongside your care
+         team. How are things at home?
+
+Patient: tired but okay. taking the new pills.
+
+Bot:     Glad you made it home. Quick check on the
+         medications: I have, from the discharge list,
+         metoprolol 50 mg twice a day, lisinopril 10 mg
+         once a day, and the new one, furosemide 40 mg
+         once a day in the morning. Does that match what
+         you have at home?
+
+Patient: yes those are the bottles i have. but my wife
+         says the cardiologist's office told her on the
+         phone yesterday to go up to 60 mg of furosemide.
+
+Bot:     Thanks for letting me know. That kind of
+         change between the discharge plan and what an
+         outside clinician told your wife is exactly the
+         kind of thing I should flag for your care team
+         to confirm. Two things I'm doing right now:
+
+         1. I'm logging this and sending an alert to
+            your primary care nurse so she can call the
+            cardiologist's office and confirm the dose
+            change. You should hear from her later
+            today.
+
+         2. Until your nurse confirms, please stay on
+            the dose your wife heard from the
+            cardiologist (60 mg) only if your wife has
+            written down what they told her, and the
+            person on the call was someone from
+            Dr. Patel's office. If there is any doubt,
+            it is safer to stay on the discharge dose
+            (40 mg) until the dose is confirmed. I am
+            not making the dose decision; the
+            clinicians are. I'm only flagging the
+            seam.
+
+         Is your wife around to tell me whether she
+         wrote down who she spoke with and what they
+         said?
+
+Patient: she's here. she says it was the nurse at
+         dr. patel's office, kim, and she wrote it on
+         the calendar.
+
+Bot:     Good. I'm noting that. Your nurse will follow
+         up. While I have you, let me make sure your
+         follow-up cardiology appointment is on the
+         calendar. The discharge plan called for a
+         follow-up within 7-10 days, which would be by
+         next Monday. Has that been scheduled?
+
+Patient: nothing on my calendar.
+
+Bot:     Okay, that one is on me to surface to the
+         scheduling team. I'll send a request now to
+         have someone call you to set it up. Their
+         number for any questions is on the after-visit
+         summary the hospital sent home with you. While
+         you're recovering, three things to watch for
+         that mean call your care team or 911 right
+         away:
+
+         - Sudden worsening shortness of breath at rest
+         - Weight gain of more than 3 pounds in 24
+           hours, or 5 pounds in a week
+         - Swelling in your legs or feet getting
+           noticeably worse
+
+         If any of those happen, call your care team's
+         line or 911. The number for the cardiology
+         after-hours line is in your discharge papers.
+
+         How are you feeling otherwise? Any of those
+         things going on now?
+
+Patient: no none of those. just tired.
+
+Bot:     Tiredness for a few days after a hospital
+         stay is normal, especially with the medication
+         changes. I'll check back tomorrow afternoon
+         once we've heard from the nurse about the
+         dose. Take care.
+
+[Behind the scenes: the assistant has raised a seam-flag
+ (medication discrepancy between discharge list and
+ reported dose change), routed the seam to the primary
+ care nurse with the patient's wife's recollection of the
+ source, scheduled a follow-up appointment scheduling
+ task for the scheduling team, and recorded the
+ conversation in the coordination-decision-record journal
+ with full citations to the discharge medication list
+ (provenance: hospital EHR), the cardiology referral
+ (provenance: primary care EHR), the institution's
+ post-discharge protocol for the patient's admission type
+ (citation: protocol library v3.2), and the heart-failure
+ red-flag warnings (citation: patient-education library
+ v8.7). The wife's call recollection is recorded as
+ patient-and-caregiver-reported and is not yet validated
+ against a source.]
+```
+
+**Sample care-team alert (illustrative, generated from the conversation above):**
+
+```
+ALERT: Medication discrepancy seam, priority MEDIUM
+       (clinical-judgment required)
+
+Patient: Chen, [redacted ID]
+Date: [timestamp]
+Source of seam: post-discharge welcome-home conversation
+Conversation ID: [conv ID]
+
+Description:
+Patient (with caregiver present) reports that
+cardiology nurse Kim at Dr. Patel's office instructed
+the patient's wife by phone yesterday to titrate
+furosemide from 40 mg to 60 mg once daily. This
+contradicts the discharge medication list (40 mg once
+daily, hospital EHR provenance, signed off by
+discharging hospitalist Dr. Garcia 2 days ago).
+
+The conversation has been documented; the patient was
+told to remain on the discharge dose until the dose is
+confirmed, with the alternative path of staying on the
+60 mg dose if the wife is confident in the source. The
+assistant did not make the dose decision.
+
+Suggested action:
+1. Call Dr. Patel's office to confirm the dose change
+2. If confirmed, update the discharge medication list
+   in the patient's chart and emit a patient-facing
+   confirmation
+3. If unconfirmed, instruct the patient on the correct
+   dose
+
+Provenance chain attached:
+- Discharge medication list (hospital EHR, message ID
+  ABC-123, ingested 2 days ago)
+- Patient and caregiver report (conversation ID
+  XYZ-789, captured today)
+
+Care-team owner: assigned to primary care nurse C.
+Lopez (queue: PCMH-coordination-medium)
+SLA: 4 business hours
+```
+
+**Performance benchmarks (illustrative, your mileage varies):**
+
+| Metric | Pre-bot baseline (existing care alone) | Post-bot (engaged members) |
+|--------|---------------------------------------|----------------------------|
+| Referral closure rate (within protocol window) | 30-55% (varies by specialty and program) | 60-85% (after multi-quarter ramp) |
+| Transition-of-care completion rate (per institutional protocol) | 40-65% | 70-90% |
+| Medication-reconciliation discrepancy detection rate | Variable, often low | Substantially higher (the assistant's distinctive value) |
+| 30-day readmission rate for engaged transitions | Baseline | 5-25% relative reduction (where outcomes mature) |
+| Avoidable ED utilization rate | Baseline | 5-20% relative reduction (where outcomes mature) |
+| Duplicate-service rate | Variable | Modest reduction in detected duplicates |
+| Caregiver-burden trajectory (Zarit Burden Interview or similar) | Variable | Modest improvement in engaged caregivers |
+| Patient-and-caregiver-reported coordination experience | Variable | Generally positive, varies by program design |
+| Engagement attrition by 6 months | N/A | 25-50% (operational risk, similar to other longitudinal bots) |
+| Citation-coverage rate | N/A | 95%+ as launch-gate target |
+| Seam-detection precision (sampled review) | N/A | 80-95% target across rules |
+| Seam-detection recall (sampled review) | N/A | 70-90% target across rules |
+| Per-active-member infrastructure cost | N/A | $4-12 per member per month |
+| Per-active-member total cost (including care-management workforce) | N/A | $30-100 per member per month |
+| Per-cohort outcome disparity | Often invisible | Monitored explicitly |
+
+<!-- TODO: replace illustrative figures with measured results from the deployment. The ranges above are typical for hybrid AI-plus-human coordination programs but vary substantially with program design, target population, integration coverage, and engagement intensity. Published evidence for hybrid coordination programs includes peer-reviewed studies of programs from major payers, integrated delivery networks, post-discharge transition programs, and care-coordination platforms, with effect sizes varying. -->
+
+**Where it struggles:**
+
+- **Integration coverage gaps.** The assistant operates only as well as its ingestion. Patients whose primary care, hospital, pharmacy, and home-health are all integrated have a different experience than patients with partial coverage. Mitigation: explicit per-source coverage tracking, per-patient confidence calibration, transparent disclosure to the patient and caregiver about what the assistant does and does not know.
+- **Provenance gaps.** When the assistant cannot trace an assertion back to a specific source, the assertion is suspect. Mitigation: provenance-as-architectural-primitive; faithfulness verification; safe-fallback templates when provenance is missing.
+- **Seam-detection-rule-engine maturity.** The first rules deployed catch the most common, well-understood seams (medication discrepancies, referral non-scheduling, transition-of-care incompleteness). The harder cases (subtle conflicting orders, complex cross-organizational coordination patterns) require multi-quarter rule-development with clinical-leadership ownership.
+- **Care-team adoption and trust.** A coordination assistant the care team does not trust or use is a coordination assistant whose value is invisible. Mitigation: clinical-leadership co-design, care-team-workflow integration, sampled-review with care-team feedback, structured failure-mode labeling.
+- **Engagement attrition over months.** Patients and caregivers who initially engage may attrit over time as the immediate post-discharge or post-procedure pressure recedes. Mitigation: relationship-quality engineering, low-pressure check-in cadence, caregiver-burden-aware engagement timing, gentle re-engagement after silence, per-cohort attrition monitoring.
+- **Cross-organizational consent friction.** Patients enrolling in coordination across organizations encounter consent friction that is genuinely confusing. Mitigation: plain-language consent UX, multilingual consent forms, cohort-specific guidance, opt-in granularity for sensitive categories.
+- **Equity gaps in integration coverage.** Patients in well-resourced practices and well-resourced markets are better instrumented than patients in under-resourced practices and markets, who often have greater coordination needs. Mitigation: per-cohort monitoring as launch-gate; targeted integration investment for under-resourced sites; alternative integration paths (patient-mediated SMART on FHIR; HIE participation; payer-provided claims feeds).
+- **Outcome attribution.** Engaged patients are not a random sample, and coordination outcomes have many confounders. Mitigation: matched-cohort or quasi-experimental analysis; recognition that observational correlation is suggestive, not causal; long-time-horizon commitment.
+- **Caregiver-burden interventions remain limited.** The assistant can take routine work off the caregiver's plate but cannot address the underlying caregiver-burden drivers (financial constraints, social isolation, the caregiver's own health needs). Mitigation: respite-and-support resource surfacing; integration with care-management for high-burden cases; explicit caregiver-burden tracking with care-management routing.
+- **Cross-organizational data quality remains uneven.** Pharmacy data feeds carry inconsistent medication-naming and dose representation. FHIR APIs from different EHRs return different shapes for the same clinical concept. Claims feeds lag clinical events by weeks to months. Mitigation: institutional-pharmacy-informatics partnership; FHIR normalization layer; per-source data-quality tracking; transparent disclosure of data-quality limitations.
+- **Sensitive-record handling complexity.** 42 CFR Part 2, state-specific mental-health record protections, state-specific HIV-record protections, genetic-test-result protections, and adolescent confidentiality each have category-specific rules. Mitigation: sensitive-record-classification at ingestion; per-category consent enforcement; legal-counsel review of state-specific rules; institutional policy with named ownership.
+- **Information Blocking rule navigation.** The Information Blocking rule requires certain data sharing; state-specific privacy regulations may limit it. Mitigation: legal-counsel-reviewed institutional posture; operational enforcement through the consent layer; documented decision rationale for any apparent tension.
+- **Adversarial inputs.** Patients (or bad actors) attempting to extract information about other patients, manipulate seam-flag routing, bypass scope discipline, or test the system. Mitigation: input-safety pipeline with prompt-injection detection; output-safety pipeline; tool-Lambda patient_id-cross-check; per-language adversarial test corpus including coordination-specific injection cases.
+- **Liability exposure for missed seams or mishandled escalations.** A coordination assistant that fails to detect a seam (e.g., a critical medication conflict; an overlooked discharge follow-up; a miscommunicated dose change) and a patient is subsequently harmed is a foreseeable liability exposure. Mitigation: rigorous seam-detection-rule sign-off; sampled review by clinical leadership; named clinical-leadership ownership per rule; FDA-strategy artifact maintained where applicable; institutional malpractice carrier involvement.
+- **Build-vs-buy positioning.** Several mature commercial coordination platforms offer adjacent capabilities. Mitigation: evaluate build-vs-buy explicitly; most major institutions run a hybrid that combines a thin orchestration layer in-house with vendor-supplied integration substrate.
+- **Long-term protocol drift.** Over years, coordination protocols evolve as clinical evidence accumulates and institutional practice changes. Mitigation: protocol-as-code with version control; annual review cycles; clinical-leadership signoff; deprecation policy.
+
+
+---
+
+## Why This Isn't Production-Ready
+
+The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.
+
+**Cross-organizational ingestion layer is multi-quarter engineering work.** The HL7 listener, FHIR poller, claims-feed processor, pharmacy-API consumer, home-health vendor adapter, and HIE/TEFCA adapter are each non-trivial integrations. Each has authentication, rate-limiting, error-handling, idempotency, format-translation, sensitive-record-classification, and provenance-recording. Most institutions discover the integration layer is the largest single engineering investment in the system and is multi-quarter work for any meaningful coverage profile.
+
+**Coordination-protocol corpus is multi-quarter clinical work.** Transition-of-care protocols by destination setting, referral-tracking protocols by specialty and urgency, post-discharge protocols by admission type, post-procedure protocols by procedure category, medication-reconciliation protocols, condition-specific coordination playbooks, each with effective dates, version histories, named clinical-leadership ownership, and annual review cycles. Most institutions discover their coordination-protocol library is implicit in their care-managers' heads and needs substantial work to be made explicit and operational.
+
+**Seam-detection rule library with named clinical-leadership ownership per rule.** The rules that catch the gaps that human coordinators catch through experience are institutional content. Each rule has named ownership (patient safety officer, pharmacy director, care-management director, post-discharge care coordinator director, etc.), an effective date, a version history, sampled review for precision and recall, and clinical-leadership signoff before deployment. Multi-quarter work to mature.
+
+**Caregiver-as-first-class-participant identity model with state-law compliance.** Caregiver designation, proxy-access scope, sensitive-record carve-outs, state-specific consent requirements, and operationally-enforced access scoping. Some states require specific caregiver-consent forms (notarized HCP/POA documentation, institution-specific proxy-access forms), others have specific rules for adolescents and aging adults. Legal counsel reviews state-specific variations.
+
+**Cross-organizational consent posture with regulatory review.** Per-data-source and per-sharing-relationship consent tracking, with state-specific variations enforced for sensitive categories. Legal counsel familiar with HIPAA, the Information Blocking and Interoperability rules, TEFCA, state-specific medical-record statutes, 42 CFR Part 2, state-specific mental-health-record protections, state-specific HIV and genetic-test-result protections, and adolescent confidentiality reviews the consent posture before launch.
+
+**Provenance journal with separate KMS keying and access controls.** Every entry in the coordination state has a recorded source, timestamp, and provenance chain. The provenance journal is separately keyed (KMS), separately retained, and separately access-controlled for blast-radius containment. Audit-friendly retrieval is part of production scope.
+
+**Coordination-decision-record journal with structured retention.** Every assistant-generated decision (response delivered, seam detected, alert created, transition initiated, escalation routed) is recorded in a durable, separately-governed journal. Retention sized to the longest of HIPAA's six-year minimum, state-specific medical-record retention, and any FDA SaMD post-market obligations. Reviewable by clinical leadership, compliance, regulatory, and legal.
+
+**Step Functions transition-of-care state machines version-controlled and audited.** Each transition workflow is a state machine with clinical-leadership signoff, version control, deterministic state transitions, and explicit completion criteria. The state machine is versioned alongside the protocol corpus; updates are reviewed before promotion.
+
+**Referral-lifecycle state machine with deterministic logic.** Referrals move through specified lifecycle states with specified time windows. The state machine is institutional content with clinical-leadership signoff; the LLM operates on top of it and does not invent transitions.
+
+**Medication-reconciliation rules with pharmacy-informatics partnership.** Medication-naming canonicalization (RxNorm), dose representation (UCUM), dosing-instruction parsing, and discrepancy-detection rules are owned by pharmacy informatics and signed off by pharmacy leadership. Multi-quarter work to mature.
+
+**Per-cohort monitoring with launch-gate discipline.** Coordination metrics, engagement metrics, outcome metrics, and patient-and-caregiver experience vary by language, channel, condition mix, age cohort, sex, social-determinant flags, caregiver presence, and integration coverage. Per-cohort dashboards reviewed by clinical leadership, operations, compliance, and patient-experience teams. Single-cohort threshold metrics including referral closure rate, transition completion rate, medication-reconciliation accuracy, seam-detection precision and recall, faithfulness rate, citation-coverage rate, equity-disparity flags. Launch-gate institution-wide-average informational only; each cohort meets threshold.
+
+**Outcome-correlation pipeline as multi-quarter to multi-year post-launch commitment.** Coordination outcomes show up over weeks to years depending on the metric. Multi-window correlation (30-day, 90-day, 6-month, 12-month, 24-month, 36-month) against utilization (readmission rate, ED-utilization rate, total cost of care, duplicate-service rate), clinical (HEDIS gap closure, condition-specific outcome trajectories), and patient-experience (PROM trajectories, coordination-experience scores) outcomes. Pipeline ownership jointly held by clinical leadership, data science, operations, compliance, and the participating payer's quality and analytics teams.
+
+**Care-team workflow integration designed jointly with care-management leadership.** The assistant is not a parallel data stream; it is an extension of the care team. The integration with care management's existing workflow tooling (case management platforms, EHR-based care plans, internal alert queues) is designed jointly with the care-management leadership and is reviewed by them before launch.
+
+**Disaster-recovery topology with per-stage failover policy.** Bedrock LLM outage, Bedrock Knowledge Bases outage, Bedrock Agents outage, Bedrock Guardrails outage with stricter scope enforcement, OpenSearch Serverless outage, DynamoDB outage, S3 outage, HealthLake outage, Step Functions outage, MWAA outage, Pinpoint outage, Connect outage, and per-source ingestion outage. Failover-detection thresholds, failover-back triggers, quarterly testing cadence. Crisis-pathway integrity preserved across all degraded states. Graceful-degradation paths exercised in tabletop drills.
+
+**Multi-language deployment with validated translations.** Per-language asset development including validated coordination-protocol translations, validated patient-education translations, validated regulatory-disclaimer translations, per-language tone and persona calibration, per-language asset versioning, per-language launch-gate. Cultural-context adaptation for major populations served.
+
+**Accessibility conformance.** WCAG 2.1 AA conformance for the chat widget; per-channel accessibility considerations for SMS-friendly rendering for low-literacy patients, voice-channel availability, cognitive-load adaptations, screen-reader compatibility. Accessibility launch-gate criteria.
+
+**Per-event idempotency keys for the EventBridge coordination-event bus.** Suggested keys: `patient_enrolled (patient_id, "enrolled")`; `caregiver_designated (patient_id, caregiver_id, "designated")`; `integration_connected (patient_id, source_id, "connected")`; `encounter_ingested (patient_id, encounter_id, "ingested")`; `referral_ordered (referral_id, "ordered")`; `referral_scheduled (referral_id, "scheduled")`; `referral_completed (referral_id, "completed")`; `transition_initiated (transition_id, "initiated")`; `transition_completed (transition_id, "completed")`; `medication_filled (fill_id, "filled")`; `medication_discontinued (med_id, "discontinued")`; `lab_result_posted (result_id, "posted")`; `seam_flag_raised (seam_id, "raised")`; `seam_flag_resolved (seam_id, "resolved")`; `care_team_alert_generated (alert_id, "generated")`; `escalation_routed (escalation_id, "routed")`; `coordination_decision_recorded (decision_id, "recorded")`. Downstream consumers maintain a deduplication store.
+
+**Tool-surface contract management as architectural primitive.** Per-tool versioned schemas, semantic versioning, deprecation policy, backward-compatibility discipline, change-management process owned jointly by engineering, clinical leadership, and compliance.
+
+**IAM resource-based policy and defense-in-depth Lambda authentication.** Each Lambda's resource-based policy pinned to the production API Gateway stage ARN, the production Bedrock Agents action-group ARN, or the production EventBridge rule ARN. Defense-in-depth event-payload validation. Tool-Lambda patient_id-cross-check audit logging.
+
+**Prompt-injection defense to architectural primitive.** Delimited-input framing, tool-Lambda enforcement that every tool validates patient_id arguments against the verified session, per-language jailbreak-test corpus including coordination-specific injection cases (manipulate seam-flag routing, manipulate referral-lifecycle transitions, manipulate scope discipline to elicit clinical recommendations, manipulate proxy-scope to reach restricted records), Bedrock Guardrails configuration with denied topics specific to coordination scope.
+
+**Cross-region failover for the production stack.** Bedrock, Bedrock Agents, Bedrock Knowledge Bases, Lambda, DynamoDB, Step Functions, MWAA, Pinpoint, Connect, and the institutional integrations (EHRs, HIE, payer claims, pharmacies, home-health, care-team-workflow). High-acuity-event integrity preserved across regions.
+
+**Per-channel authentication and encryption.** Per-channel data-in-transit posture, per-channel session-token TTL, per-channel access-control scope, per-channel BAA scope, per-channel TCPA/10DLC compliance for SMS, per-channel voice-recording retention compliance, audit-record propagation of per-channel authentication context.
+
+**Build-vs-buy rigor.** Several mature commercial vendors offer care-coordination platforms with FHIR integration, claims-feed processing, transition-of-care workflows, and (in some cases) hybrid-coordination workforces. Most major institutions run a hybrid that builds a thin orchestration layer in-house and partners with vendors for the cross-organizational integration substrate.
+
+**Operational ownership across multiple teams.** The assistant sits at the intersection of clinical leadership across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management; the care-management workforce; compliance; regulatory; IT; the call center; patient experience; the malpractice carrier; the institutional regulatory team; and the participating payer's analytics and quality teams.
+
+
+---
+
+## The Honest Take
+
+The care coordination assistant is the recipe in this chapter where the architectural complexity is highest, the cross-organizational dependencies are most numerous, and the time horizon for outcome demonstration is longest. The previous bots in this chapter operate within a single institution's data and workflow context; this one explicitly operates across organizations, across systems, and across stakeholders. The architectural decisions and the operational disciplines that distinguish a deployment that genuinely improves coordination from a deployment that merely automates the appearance of coordination are not subtle, and most of them have been visible in the published failures of digital coordination tools over the past two decades.
+
+The first trap is treating the cross-organizational integration layer as phase-2 work. The assistant cannot deliver coordination value without consuming data from systems outside the operating institution. Institutions that defer the integration work and build the assistant against a single-EHR data picture build a tool that handles a small slice of the patient's coordination state and misses the seams that are the assistant's distinctive value. The integration layer is multi-quarter engineering work; it is also the largest single engineering investment in the system. Building it concurrently with the conversational layer is the path that produces a tool the patient and care team can use.
+
+The second trap is treating the protocol corpus and seam-detection rule library as someone else's content. The institutional protocols (transition-of-care protocols by destination setting, referral-tracking protocols by specialty and urgency, condition-specific coordination playbooks) and the seam-detection rules (medication-discrepancy detection, referral non-scheduling, transition-of-care incompleteness, conflicting-order detection) are the substance of the coordination work. The LLM is the interface; the institutional content is the substance. Most institutions discover, partway through the project, that their protocols are implicit in their care-managers' heads and need substantial work to be made explicit. Formalizing this is multi-quarter clinical work that has to start before the engineering work and continue alongside it.
+
+The third trap is provenance casualness. When the assistant says "your cardiologist increased your diuretic last Tuesday," the patient or care team may need to know how the assistant knows. A coordination assistant whose assertions cannot be traced back to specific source messages is a coordination assistant the care team cannot trust and the institution cannot defend when something goes wrong. Provenance-as-architectural-primitive is not a nice-to-have; it is the foundation that lets the assistant be auditable, defensible, and trustworthy.
+
+The fourth trap is the caregiver afterthought. A coordination assistant that treats caregivers as patient-pretenders (let the caregiver log in as the patient and use the patient's surface) is a coordination assistant that fails the caregiver-burden monitoring, fails the state-law caregiver-consent requirements, and fails the patient-and-caregiver pattern that is the modal experience for the highest-need population. The caregiver-as-first-class-participant identity model is architectural, not bolt-on.
+
+The fifth trap is the consent over-simplification. Cross-organizational data integration carries cross-organizational consent implications. State-specific privacy regulations apply for sensitive categories. The Information Blocking rule requires certain data sharing; state laws may limit it. The institutional consent posture is reviewed by legal counsel familiar with this landscape before launch and on each material change. Skipping this turns a deployment into a privacy violation waiting to happen.
+
+The sixth trap is scope drift. The assistant is for coordination, not for clinical decision-making, not for triage, not for chronic-disease coaching, not for mental-health support. Adjacent recipes handle those topics. A coordination assistant that drifts into clinical territory is delivering content the institution has not validated, with all of the regulatory and clinical exposure that implies. The scope discipline is broad because the topics adjacent to coordination are numerous, and the deference to other recipes' pathways is the visible architectural manifestation of the discipline.
+
+The seventh trap is care-team-workflow neglect. A coordination assistant that operates as a parallel data stream (the assistant has its own dashboards, its own alerts, its own queues, all separate from the care team's existing tooling) is a coordination assistant the care team will not use. The integration with care-management's existing workflow tooling, the design of the alerts and digests for the care team's actual day, the structured-failure-mode-labeling feedback loop that lets the care team improve the rules, are not optional. Most coordination-tool failures in the published literature are workflow-integration failures, not technology failures.
+
+The eighth trap is outcome-attribution overconfidence. Engaged patients are not a random sample, coordination outcomes have many confounders, and the time horizon for utilization-outcome demonstration is multi-year. Institutions building this with quarterly-impact expectations will be disappointed. Institutions willing to invest at the right time horizon, with appropriate analytical rigor (matched-cohort or quasi-experimental analysis, recognition that observational correlation is suggestive rather than causal), can demonstrate genuinely meaningful outcomes.
+
+The ninth trap is equity blindness. Coordination programs reach disproportionately the patients who are already plugged in to the digital-tool ecosystem and well-instrumented across data sources. The patients with the highest coordination needs are often the patients with the most limited access to digital tools and the most limited integration coverage. A coordination assistant that reaches the patients who need it least and misses the patients who need it most is a coordination assistant that exacerbates rather than reduces healthcare disparities. Per-cohort monitoring is non-negotiable.
+
+The tenth trap is the build-vs-buy ambiguity. Several mature commercial vendors offer care-coordination platforms. The build-vs-buy decision is institution-specific and depends on the integration profile, the protocol portfolio, the care-management workforce structure, the population targeted, and the existing technology stack. Most major institutions in production run a hybrid: thin orchestration in-house, vendor-supplied integration substrate, jointly-owned protocol library, jointly-owned seam-detection rule engine. Pretending the build-vs-buy question has a generic answer is the trap; making it explicit and institution-specific is the discipline.
+
+The eleventh trap is the workforce-sizing under-investment. The economics of the assistant depend on the AI handling routine touches at scale and the human care managers handling the cases that need clinical judgment. A deployment that under-invests in the human care-management workforce is a deployment with safety gaps and missed coordination value. The licensed-and-trained care-management workforce (employed or contracted) is the dominant operational expense, and it is not optional.
+
+The twelfth trap is the regulatory-positioning casualness. Patient-facing care-coordination software with cross-organizational data integration sits at the intersection of HIPAA, the Information Blocking and Interoperability rules, state medical-record statutes, state caregiver-consent rules, 42 CFR Part 2, state mental-health-record protections, and (where the assistant produces clinical recommendations) the FDA SaMD line. The institutional regulatory team is involved from architectural design and reviews each material scope change. Deploying without this involvement is deploying with regulatory exposure that the institution has not characterized.
+
+The thing that surprises engineers coming from generic-chatbot backgrounds is how much of the engineering value is in the integration layer, the protocol corpus, the seam-detection rule library, and the provenance discipline. The conversational LLM and the tool-orchestration are largely the same as the previous chapter 11 recipes; the cross-organizational integration, the institutional content, the seam-detection rules, the caregiver identity model, the consent posture, and the provenance journal are the parts that distinguish a coordination assistant from a chat surface over a single EHR.
+
+The thing that surprises clinical leaders coming from care-management practice is how dependent the assistant's quality is on the explicitness of the protocol content. Care managers operate from clinical judgment built over years of experience; the assistant operates from explicit, version-controlled protocol content with named clinical-leadership ownership. Formalizing what care managers do informally is multi-quarter clinical work that takes more effort than the engineering work and produces an artifact (the institutional protocol corpus) that is valuable in its own right beyond the assistant.
+
+The thing that surprises business leaders is how long the time horizon is and how the human care-management workforce is the dominant cost. The infrastructure cost is meaningful; the workforce cost is typically larger. A deployment that under-invests in the workforce is a deployment with safety gaps. The economics work because the assistant handles the routine touches while the workforce focuses on the cases that need clinical judgment, but the workforce is not optional.
+
+The thing about Amazon Bedrock specifically: same as recipes 11.2 through 11.8, Bedrock Agents is the right level of abstraction. The Agent handles the multi-step LLM-and-tool orchestration; the action groups are the coordination tools; Knowledge Bases provides the multi-corpus RAG over protocols, education, and history; Guardrails provides safety filtering with coordination-specific denied topics. The institutional value lives in the integration layer, the protocol corpus, the seam-detection rules, the caregiver identity model, the consent posture, and the provenance journal, not in the Bedrock features themselves.
+
+The thing about cost: as noted, the dominant operational cost is the human care-management workforce, not the AWS infrastructure. The infrastructure cost is small relative to the cost of even a single avoidable readmission, and a single avoidable adverse event from a missed coordination seam has individual and societal consequences that no actuarial accounting can capture.
+
+The thing about cross-organizational integration: the field has moved meaningfully in the past five years, with ONC certification of FHIR APIs, the Information Blocking final rule, TEFCA implementation, and FHIR Bulk Data Access making cross-organizational data exchange more feasible than it was a decade ago. Coordination architectures that consume this infrastructure are operating in a more capable environment than equivalent architectures from the early 2010s. The integration is still uneven, the data quality is still inconsistent, and the operational realities still require substantial human attention; but the foundation is meaningfully better than it was.
+
+The thing about patient and caregiver trust: a coordination assistant that is clearly a chat tool, that delivers content grounded in cited provenance, that is explicit about what it knows and what it does not know, that defers to the human care team for clinical judgment, and that visibly works alongside the care team rather than replacing it, builds trust over time. A coordination assistant that overreaches, hides its limitations, or pretends to clinical authority destroys trust quickly and is hard to recover.
+
+The thing I would do differently the second time: start with a single transition type (typically post-discharge from an inpatient stay) and a narrow population (a specific Medicare Advantage cohort, or a specific hospital's discharge-to-home pipeline) before expanding to multi-transition, multi-population coordination. The narrow start lets the team validate the integration layer, the protocol corpus, the seam-detection rules, the caregiver identity model, the consent posture, the provenance journal, the workflow integration with care management, and the per-cohort monitoring against a manageable scope. Adding additional transitions, populations, languages, and channels later, with the validated infrastructure already in place, is safer and more likely to succeed than launching with the full scope and discovering the failure modes against a heterogeneous population.
+
+The last thing: care coordination is the use case where the cumulative effect of dozens of small touches across weeks and months is the substance of the value, and where the assistant's value is not in any individual conversation but in the seams it catches that would otherwise have been missed, the referrals it closes that would otherwise have languished, the transitions it orchestrates that would otherwise have generated readmissions, and the relief it provides to caregivers who would otherwise have been the only thread holding the coordination together. An assistant evaluated on per-conversation engagement metrics will be optimized for the wrong thing. An assistant evaluated on coordination outcomes (referral closure rate, transition completion rate, medication-reconciliation accuracy, caregiver burden, avoidable utilization, patient-and-caregiver coordination experience) is being evaluated correctly, and the architectural decisions follow from there. Build the institutional muscles for the harder parts first; the conversational layer is the easier part.
+
+
+---
+
+## Variations and Extensions
+
+**Post-discharge coordination assistant (transitional-care focus).** A focused variant for the immediate post-discharge window (typically 30-90 days), with intensive engagement around medication reconciliation, follow-up-appointment scheduling, red-flag warning instructions, and readmission prevention. Often deployed as the first variant because the time window is short, the protocol is well-established, and the readmission-prevention outcome is well-measured.
+
+**Chronic-multi-condition coordination assistant (the David case from the opening).** A variant for patients with multiple chronic conditions across multiple specialties and multiple organizations, with longer-term engagement (months to years), heavier focus on cross-clinician coordination and medication reconciliation across pharmacies, and tight integration with the patient's primary care home. The use case the recipe opens with.
+
+**Oncology coordination assistant.** A variant for oncology patients in active treatment, with treatment-cycle-aware engagement (chemotherapy infusion sequences, radiation therapy regimens, surgical recovery, immunotherapy cycles), tight integration with the oncology team's care navigators, and side-effect-management content alongside the coordination work. Often deployed in parallel with a dedicated human oncology nurse navigator who handles complex coordination; the assistant handles routine touches.
+
+**Transplant coordination assistant.** A variant for transplant recipients (kidney, liver, heart, lung, stem cell) with phase-specific protocols (waitlist, peri-transplant, immediate post-transplant, long-term post-transplant), tight integration with the transplant team, intensive medication-reconciliation focus given the immunosuppression regimen complexity, and high-acuity-event sensitivity given the catastrophic consequences of missed coordination.
+
+**Heart-failure-focused coordination assistant.** A variant for the heart-failure population with disease-specific monitoring (weight, symptoms, medication adherence), tight integration with the cardiology team, GDMT-titration support that surfaces guideline-directed-medical-therapy progress, and decompensation-risk monitoring. Frequently deployed alongside heart-failure-specific care management.
+
+**Pediatric complex-care coordination assistant.** A variant for children with medical complexity (multiple specialists, durable medical equipment, home nursing, school-based care), with caregiver-as-primary-participant identity model, school-based-care integration, and pediatric-specific protocols. Subject to additional consent considerations given the patient is a minor.
+
+**Older-adult coordination assistant with dementia-mediated communication.** A variant for older adults including patients with cognitive impairment, with caregiver-mediated communication patterns, dementia-specific protocols, fall-risk and elder-abuse screening integration, and tight integration with geriatric care management.
+
+**Maternal-and-postpartum coordination assistant.** A variant for the prenatal-through-postpartum window, with pregnancy-trimester-aware engagement, postpartum-specific protocols including postpartum-depression screening (recipe 11.8 pathway), newborn-care coordination, and lactation-support coordination.
+
+**Behavioral-health-medical integrated coordination assistant.** A variant for the population with comorbid behavioral-health and medical conditions, with tight integration to recipe 11.8 (mental health) and recipe 11.7 (chronic disease), 42 CFR Part 2 compliance for substance-use treatment data where applicable, and state-specific mental-health-record privacy compliance.
+
+**Population-management coordination overlay.** A variant deployed at the population level (a Medicare Advantage book of business; a primary-care panel; an ACO attribution list) with population-wide bulk-data ingestion, population-level seam-detection runs, risk-stratified engagement intensity, and integration with the institution's quality-measurement and value-based-contract reporting.
+
+**Specialty-referral-management variant.** A variant focused on the referral-tracking workflow, with intensive referral-lifecycle management, specialty-acceptance-and-wait-time tracking, alternative-specialist surfacing when barriers are encountered, and tight integration with the referring practice's care managers.
+
+**Care-navigation variant for under-resourced populations.** A variant adapted for patients in markets with limited integration coverage, limited specialty access, and significant social-determinant barriers, with heavier reliance on patient-mediated SMART on FHIR data flows, deeper social-services integration, and culturally-and-linguistically-adapted content.
+
+**Emergency-department-to-primary-care-follow-up variant.** A variant focused on the ED-discharge-to-primary-care transition, with intensive engagement in the 24-72 hour post-ED-discharge window, medication-reconciliation against the ED visit's new prescriptions, follow-up-appointment validation within the protocol window, and red-flag-warning delivery.
+
+**Hospital-at-home coordination assistant.** A variant for patients in hospital-at-home programs, with tight integration to the hospital-at-home care team, daily check-ins on biometric monitoring, medication-administration verification, and acute-event-escalation pathways. <!-- TODO: verify; hospital-at-home is an established care-delivery model with specific Medicare reimbursement considerations through the CMS Acute Hospital Care at Home waiver and similar payer programs -->
+
+**Voice-channel deployment for accessibility.** A voice-channel variant for patients without smartphones, patients with disabilities affecting written communication, and patients who prefer voice. Voice-specific design includes slower pacing, briefer responses, and accessibility considerations. High-acuity-event integrity is preserved across channels.
+
+**Multi-language deployment beyond English plus Spanish.** Per-language asset development reviewed by clinical leadership and language-services teams, with per-language equity monitoring and culturally-adapted protocol content where appropriate.
+
+**Hybrid AI-plus-licensed-coach deployment.** The assistant handles routine engagement; a licensed nurse coach is available for between-touch support beyond the assistant's scope. The architectural extension is the licensed-coach scheduling and case-load management, plus the differentiation between assistant-scope and coach-scope topics.
+
+**High-risk-tier deployment with intensive nurse case management.** A higher-touch variant for the highest-risk slice of the population, with daily assistant engagement, weekly nurse-case-manager touches, and aggressive escalation pathways. The assistant's scope is the same; the operational integration with case management is deeper.
+
+**Population-health overlay with quality-measure focus.** The assistant's outputs feed an institutional population-health dashboard tracking patterns of coordination quality across the population for HEDIS, Star Ratings, ACO quality-measure reporting, and value-based-contract performance.
+
+**Build-on-FHIR-only variant for institutions without HL7 v2 sources.** A variant deployed in markets where FHIR is the dominant interchange standard, with simpler integration architecture (FHIR-only ingestion), tighter coupling to FHIR-native semantic models, and reduced integration complexity at the cost of partial coverage where HL7 v2 is the modal interchange.
+
+**Continuous-improvement loop with structured failure-mode labeling.** Beyond per-conversation feedback, the institution runs a structured labeling program where reviewers (RNs, care managers, clinical leadership) tag failure modes (out-of-scope, off-protocol, seam-detection-miss, seam-detection-false-positive, provenance-gap, citation-gap, scope-violation, equity-disparity, integration-coverage-gap). The labels feed the protocol-library, seam-detection-rule, prompt-tuning, and policy-revision workflows.
+
+**Specialty-specific protocol-library variants.** Cardiology-specific, oncology-specific, transplant-specific, behavioral-health-medical-integrated, pediatric-complex-care-specific protocol libraries with named clinical-leadership ownership and annual review cycles. The variant pattern: a base coordination architecture plus specialty-specific overlays.
+
+**Provider-side coordination assistant.** A variant deployed not for the patient but for the patient's care team, providing the same coordination state and seam-detection layer with a provider-facing surface (instead of, or in addition to, the patient-facing surface). The provider variant is often easier to deploy because the consent and identity model is simpler, but the patient-facing variant is where the broader population-scale coordination value lives.
+
+---
+
+## Related Recipes
+
+- **Recipe 11.1 (FAQ Chatbot):** Same chapter, foundational. The coordination assistant inherits the input-screening pipeline, scope filtering, conversation logging, audit pattern, persona discipline, and per-cohort monitoring.
+- **Recipe 11.2 (Appointment Scheduling Bot):** Same chapter. The assistant's coordination work routinely produces scheduling needs (follow-up appointments after discharge, referral-driven specialty visits, lab-draw appointments) that hand off to the scheduling bot's booking infrastructure.
+- **Recipe 11.3 (Prescription Refill Request Bot):** Same chapter. Coordination conversations that surface refill needs hand off to the refill workflow; coordination-detected medication-reconciliation gaps may surface during refill conversations as well.
+- **Recipe 11.4 (Pre-Visit Intake Bot):** Same chapter. The coordination assistant's longitudinal context can pre-populate intake for scheduled visits with appropriate consent and provenance.
+- **Recipe 11.5 (Insurance Benefits Navigator):** Same chapter. Coordination conversations that surface benefits questions (does my insurance cover this specialist? does my insurance accept the lab the doctor wants? is the home-health agency in-network?) route to the benefits navigator.
+- **Recipe 11.6 (Symptom Checker / Triage Bot):** Same chapter. Acute symptom presentations during coordination conversations route to the triage workflow with the coordination context preserved.
+- **Recipe 11.7 (Chronic Disease Management Coach):** Same chapter. Patients with chronic conditions may have both deployments; the coach handles within-condition disease management while the coordinator handles cross-clinician coordination. Consent-gated context flows in both directions.
+- **Recipe 11.8 (Mental Health Support Bot):** Same chapter. Patients with comorbid behavioral-health needs route to recipe 11.8 for behavioral-health support while the coordination assistant continues to manage the cross-clinician coordination.
+- **Recipe 11.10 (Clinical Trial Recruitment Conversationalist):** Same chapter. Patients identified as candidates for clinical trials may be referred from the coordination assistant with appropriate consent.
+- **Recipe 1.6 (Handwritten Clinical Note Digitization):** Chapter 1. Where home-health agencies or smaller practices share notes via paper or scanned documents, the digitization pipeline feeds coordination context.
+- **Recipe 2.5 (After-Visit Summary Generation):** Chapter 2. After-visit summaries from cross-organization visits feed the coordination assistant's longitudinal context where consent permits.
+- **Recipe 2.6 (Clinical Note Summarization):** Chapter 2. Summarization of cross-organization clinical notes powers the coordination assistant's encounter-context tooling.
+- **Recipe 3.7 (Patient Deterioration Early Warning):** Chapter 3. Coordination-state-aware deterioration patterns (post-discharge decompensation, missed-medication-driven decompensation) complement the deterioration detection systems.
+- **Recipe 3.8 (Readmission Risk Anomaly Detection):** Chapter 3. Readmission-risk scores inform coordination intensity and care-team-attention prioritization.
+- **Recipe 4.5 (Medication Adherence Intervention Targeting):** Chapter 4. Coordination-detected medication-adherence issues feed adherence-intervention targeting; the coordination assistant is one delivery channel.
+- **Recipe 4.6 (Care Gap Prioritization):** Chapter 4. Coordination-state-aware care-gap prioritization feeds the assistant's protocol-driven engagement scheduling.
+- **Recipe 4.7 (Care Management Program Enrollment):** Chapter 4. The coordination assistant is one tier in a multi-tier care-management program; high-risk patients identified by the assistant may be promoted to higher-touch nurse case management.
+- **Recipe 5.5 (Cross-Facility Patient Matching):** Chapter 5. Cross-organizational data integration depends on patient-matching across organizations; the coordination assistant inherits the entity-resolution work.
+- **Recipe 5.6 (Claims-to-Clinical Data Linkage):** Chapter 5. The coordination assistant's claims-feed integration depends on claims-to-clinical linkage to make claims data clinically actionable.
+- **Recipe 7.x (Predictive Analytics, Chapter 7):** Risk scores including readmission-risk, ED-utilization-risk, and total-cost-of-care prediction inform coordination intensity.
+- **Recipe 10.5 (Patient-Facing Voice Assistant):** Chapter 10. Voice-channel coordination support builds on voice-assistant ASR/TTS patterns.
+- **Recipe 12.x (Time Series Analysis):** Chapter 12. Longitudinal symptom-tracking and biometric-trend analysis benefits from time-series patterns.
+- **Recipe 13.x (Knowledge Graphs):** Chapter 13. Patient-and-care-network knowledge graphs (clinicians, organizations, relationships, referral histories, claims patterns) underpin coordination-state synthesis.
+
+
+---
+
+## Additional Resources
+
+**AWS Documentation:**
+- [Amazon Bedrock User Guide](https://docs.aws.amazon.com/bedrock/latest/userguide/what-is-bedrock.html)
+- [Amazon Bedrock Agents](https://docs.aws.amazon.com/bedrock/latest/userguide/agents.html)
+- [Amazon Bedrock Knowledge Bases](https://docs.aws.amazon.com/bedrock/latest/userguide/knowledge-base.html)
+- [Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
+- [Amazon OpenSearch Serverless](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html)
+- [AWS HealthLake Developer Guide](https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html)
+- [AWS HealthLake Bulk Data Export](https://docs.aws.amazon.com/healthlake/latest/devguide/export-datastore.html)
+- [AWS Lambda Developer Guide](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html)
+- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
+- [Amazon MWAA User Guide](https://docs.aws.amazon.com/mwaa/latest/userguide/what-is-mwaa.html)
+- [Amazon API Gateway Developer Guide](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html)
+- [AWS WAF Developer Guide](https://docs.aws.amazon.com/waf/latest/developerguide/waf-chapter.html)
+- [Amazon DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html)
+- [Amazon S3 Object Lock](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html)
+- [Amazon EventBridge User Guide](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html)
+- [Amazon Pinpoint Developer Guide](https://docs.aws.amazon.com/pinpoint/latest/developerguide/welcome.html)
+- [Amazon Connect Administrator Guide](https://docs.aws.amazon.com/connect/latest/adminguide/what-is-amazon-connect.html)
+- [Amazon Comprehend Medical](https://docs.aws.amazon.com/comprehend-medical/latest/dev/comprehendmedical-welcome.html)
+- [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
+- [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+
+**AWS Sample Repos:**
+- [`aws-samples/amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock invocation patterns including Agents, Knowledge Bases, Guardrails
+- [`aws-samples/aws-genai-llm-chatbot`](https://github.com/aws-samples/aws-genai-llm-chatbot): reference architecture for a multi-model chatbot on AWS
+- [`aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): broader healthcare AI/ML sample notebooks
+<!-- TODO: confirm current repo names and locations at time of build; the AWS sample repo organization changes over time -->
+
+**AWS Solutions and Blogs:**
+- [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences plus AI/ML): browse for care-coordination, transitions-of-care, and patient-engagement reference architectures
+- [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "Bedrock Agents," "healthcare conversational AI," "care coordination"
+- [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "care coordination," "transitions of care," "patient engagement," "interoperability"
+<!-- TODO: replace generic search-the-blog pointers with specific verified blog post URLs once they are confirmed to exist -->
+
+**External References (Standards, Frameworks, and Clinical Guidelines):**
+- [HL7 v2 Messaging Standard](https://www.hl7.org/implement/standards/product_brief.cfm?product_id=185): legacy clinical-event messaging standard widely deployed for ADT and ORU
+- [HL7 FHIR R4 Specification](https://www.hl7.org/fhir/R4/): the modern interchange standard
+- [HL7 FHIR US Core Implementation Guide](https://hl7.org/fhir/us/core/): U.S. baseline FHIR profiles
+- [USCDI (United States Core Data for Interoperability)](https://www.healthit.gov/isa/united-states-core-data-interoperability-uscdi): minimum data set required by ONC certification
+- [FHIR Bulk Data Access Specification](https://hl7.org/fhir/uv/bulkdata/): population-level data export specification
+- [SMART on FHIR](https://docs.smarthealthit.org/): authorization and app-launch framework for FHIR-based applications
+- [21st Century Cures Act and ONC Information Blocking Final Rule](https://www.healthit.gov/topic/information-blocking): U.S. federal information-blocking regulation
+- [TEFCA (Trusted Exchange Framework and Common Agreement)](https://www.healthit.gov/topic/interoperability/policy/trusted-exchange-framework-and-common-agreement-tefca): U.S. national interoperability framework
+- [42 CFR Part 2](https://www.ecfr.gov/current/title-42/chapter-I/subchapter-A/part-2): U.S. federal confidentiality regulation for substance-use treatment records
+- [HIPAA Privacy Rule](https://www.hhs.gov/hipaa/for-professionals/privacy/index.html): governs PHI in coordination state, conversation logs, and longitudinal records
+- [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html): governs technical and administrative safeguards
+- [NCPDP SCRIPT and Telecommunication Standards](https://www.ncpdp.org/Standards): pharmacy data interchange standards
+- [Care Coordination Measures Atlas (AHRQ)](https://www.ahrq.gov/ncepcr/care/coordination/atlas.html): published catalog of care-coordination measurement frameworks
+- [Project RED (Re-Engineered Discharge)](https://www.bu.edu/fammed/projectred/): published transitions-of-care intervention with measured outcomes
+- [Care Transitions Intervention (Coleman)](https://caretransitions.health/): published transitions-of-care intervention model
+- [Transitional Care Model (Naylor)](https://www.transitionalcare.info/): published transitions-of-care nurse-led model
+- [Patient-Centered Medical Home (NCQA)](https://www.ncqa.org/programs/health-care-providers-practices/patient-centered-medical-home-pcmh/): primary-care coordination framework
+- [Centers for Medicare and Medicaid Services Chronic Care Management](https://www.cms.gov/Outreach-and-Education/Medicare-Learning-Network-MLN/MLNProducts/Downloads/ChronicCareManagement.pdf): CMS framework for billable chronic-care-management services
+- [Centers for Medicare and Medicaid Services Transitional Care Management](https://www.cms.gov/outreach-and-education/medicare-learning-network-mln/mlnproducts/downloads/transitional-care-management-services-fact-sheet-icn908628.pdf): CMS framework for billable transitional-care-management services
+- [Zarit Burden Interview](https://www.dementiapathways.ie/_filecache/04a/ddd/98-zbi.pdf): widely used and validated caregiver-burden assessment instrument
+- [American Geriatrics Society Beers Criteria](https://www.americangeriatrics.org/publications-tools/beers-criteria-american-geriatrics-society): potentially-inappropriate-medication criteria for older adults, relevant for medication-reconciliation seam detection
+- [STOPP/START Criteria](https://academic.oup.com/ageing/article/44/2/213/2812233): explicit criteria for prescribing in older adults
+- [FDA Software as a Medical Device (SaMD)](https://www.fda.gov/medical-devices/digital-health-center-excellence/software-medical-device-samd): FDA SaMD framework
+- [FDA Digital Health Center of Excellence](https://www.fda.gov/medical-devices/digital-health-center-excellence): central resource for digital-health regulatory updates
+- [FDA Clinical Decision Support Software Final Guidance (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software): FDA framework distinguishing regulated and non-regulated CDS
+- [WCAG 2.1 Accessibility Guidelines](https://www.w3.org/WAI/standards-guidelines/wcag/): accessibility standards for chat-widget surfaces
+- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/): security framework for LLM-backed applications
+- [TCPA and 10DLC for SMS](https://www.fcc.gov/general/telephone-consumer-protection-act-1991): U.S. SMS-messaging regulation, relevant for coordination-related text outreach
+
+**Industry and Research Resources:**
+- [American College of Physicians (ACP)](https://www.acponline.org/): internal-medicine specialty association including care-coordination resources
+- [American Academy of Family Physicians (AAFP)](https://www.aafp.org/): family-medicine specialty association including care-coordination resources
+- [American Hospital Association (AHA)](https://www.aha.org/): hospital industry association including transitions-of-care resources
+- [Case Management Society of America (CMSA)](https://www.cmsa.org/): case-management professional association
+- [American Case Management Association (ACMA)](https://www.acmaweb.org/): case-management professional association
+- [National Patient Safety Foundation (NPSF)](https://www.npsf.org/): patient-safety research and advocacy
+- [Institute for Healthcare Improvement (IHI)](https://www.ihi.org/): quality-improvement resources including transitions-of-care toolkits
+- [American Society of Health-System Pharmacists (ASHP)](https://www.ashp.org/): medication-reconciliation resources
+- [Sequoia Project](https://sequoiaproject.org/): TEFCA Recognized Coordinating Entity, interoperability resources
+- [HIMSS Interoperability Showcase](https://www.himss.org/): industry interoperability showcase
+- [Office of the National Coordinator for Health Information Technology (ONC)](https://www.healthit.gov/): U.S. federal interoperability and information-blocking authority
+- [American Medical Association (AMA) Augmented Intelligence Resources](https://www.ama-assn.org/practice-management/digital/augmented-intelligence-medicine): AMA position statements on AI in medical practice including coordination applications
+
+---
+
+## Estimated Implementation Time
+
+| Tier | Scope | Time |
+|------|-------|------|
+| Basic | Single transition type (typically post-discharge from inpatient stay), single language (English), single channel (in-app chat plus SMS for proactive engagement), single primary EHR integration via FHIR with one secondary HIE integration, single primary pharmacy integration, basic coordination-protocol library (post-discharge protocols only) reviewed by clinical leadership, basic seam-detection rule library (medication discrepancy plus referral non-scheduling plus transition-of-care incompleteness only) with named clinical-leadership ownership, basic caregiver identity model with one or two state-law jurisdictions covered, basic provenance journal, basic transition-of-care Step Functions workflow for the single transition type, basic care-team alert and weekly digest reporting, basic FDA-strategy artifact reviewed by regulatory counsel, basic per-cohort monitoring at the institutional-aggregate level, basic audit pipeline with coordination-specific retention, named clinical-leadership ownership across primary care and hospital medicine and care management, multi-quarter clinical-content development and integration work | 18-24 months |
+| Production-ready | Multi-transition (post-discharge from inpatient, post-procedure, ED-to-PCP follow-up, surgery-to-home, oncology-treatment cycles), multi-channel (web chat, app embed, SMS with TCPA/10DLC compliance, voice via Connect), multi-language (English plus Spanish at minimum with clinically-validated translations), multi-source integration including multiple EHRs via FHIR with USCDI v3 conformance, HL7 v2 ADT and ORU feeds, HIE/TEFCA participation, payer claims feed (where applicable), multiple pharmacies (NCPDP and major-chain APIs), home-health vendor APIs, lab feeds, full coordination-protocol library across primary care, hospital medicine, specialty practice, pharmacy, home health, and care management with annual review cycles, full seam-detection rule library with named clinical-leadership ownership per rule, full caregiver identity model with state-specific compliance, full provenance journal with separate KMS keying, full transition-of-care Step Functions workflows for the institution's full transition portfolio, full care-team workflow integration with case management's existing tooling, full FDA-strategy artifact and (where applicable) SaMD registration, full HIPAA-grade compliance review including state-specific medical-record retention compliance and 42 CFR Part 2 compliance where applicable, full per-cohort equity monitoring with launch-gate discipline, mandatory-reporting routing per state, outcome-correlation pipeline with multi-window correlation against utilization, clinical, and patient-experience outcomes, named operational owners across clinical leadership in primary care and hospital medicine and specialty practice and pharmacy and home health and care management, the care-management workforce, compliance, regulatory, IT, the call center, and patient experience | 36-60 months |
+| With variations | Post-discharge variant deep deployment, chronic-multi-condition variant, oncology coordination variant, transplant coordination variant, heart-failure-focused variant, pediatric-complex-care variant, older-adult-with-dementia variant, maternal-and-postpartum variant, behavioral-health-medical-integrated variant with 42 CFR Part 2 compliance, population-management overlay variant, specialty-referral-management variant, care-navigation variant for under-resourced populations, ED-to-PCP-follow-up variant, hospital-at-home variant, voice-channel variant with accessibility considerations, multi-language deployment beyond English plus Spanish with native-speaker review, hybrid AI-plus-licensed-coach variant, high-risk-tier variant with intensive case management, population-health overlay with quality-measure focus, build-on-FHIR-only variant, continuous-improvement loop with structured failure-mode labeling, specialty-specific protocol-library variants, provider-side coordination variant | 24-48 months beyond production-ready |
+
+---
+
+## Tags
+
+`conversational-ai` · `care-coordination` · `care-coordination-assistant` · `transitions-of-care` · `referral-tracking` · `referral-lifecycle` · `medication-reconciliation` · `seam-detection` · `cross-organizational-integration` · `longitudinal-coordination-state` · `provenance-discipline` · `caregiver-as-first-class-participant` · `proxy-access` · `cross-organizational-consent` · `tool-using-llm` · `function-calling` · `bedrock-agents` · `rag` · `citation-grounding` · `protocol-library` · `coordination-protocol-corpus` · `patient-education-library` · `hl7-v2-ingestion` · `fhir-ingestion` · `fhir-bulk-data` · `claims-feed-ingestion` · `pharmacy-data-integration` · `ncpdp` · `hie-integration` · `tefca-integration` · `home-health-integration` · `lab-feed-integration` · `intent-classification` · `scope-containment` · `prompt-injection-defense` · `prompt-versioning` · `persona-design` · `patient-facing` · `caregiver-facing` · `multilingual` · `accessibility` · `equity-monitoring` · `cohort-stratified-accuracy` · `outcome-correlation` · `referral-closure-rate` · `transition-completion-rate` · `medication-reconciliation-accuracy` · `caregiver-burden` · `avoidable-readmission` · `avoidable-ed-utilization` · `social-determinants-of-health` · `state-mental-health-privacy` · `42-cfr-part-2` · `information-blocking-rule` · `21st-century-cures-act` · `fda-samd` · `fda-cds` · `regulatory-strategy` · `clinical-leadership-signoff` · `bedrock` · `bedrock-knowledge-bases` · `bedrock-guardrails` · `opensearch-serverless` · `healthlake` · `lambda` · `step-functions` · `mwaa` · `api-gateway` · `waf` · `dynamodb` · `s3` · `kms` · `secrets-manager` · `cloudwatch` · `cloudtrail` · `eventbridge` · `kinesis-firehose` · `glue` · `athena` · `pinpoint` · `connect` · `comprehend-medical` · `sagemaker` · `quicksight` · `complex` · `regulated` · `hipaa` · `phi-handling` · `audit-trail` · `coordination-decision-record-journal` · `provenance-journal` · `seam-flag-store` · `referral-lifecycle-store` · `transition-of-care-store` · `consent-record` · `chapter11` · `recipe-11-9`
