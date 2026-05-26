@@ -75,3 +75,341 @@ Searching for: [38;5;141mTODO[0m in [38;5;141mC:\tmp\ralph-worktrees\iter-451
 [38;5;10m ✓ [0mSuccessfully found [38;5;244m6 matches[0m in [38;5;244m1 files[0m under C:\tmp\ralph-worktrees\iter-451\chapter12.02-supply-inventory-forecasting.md
 [38;5;244m - Completed in 0.5s[0m
 
+I'll create the following file: [38;5;141mC:\tmp\ralph-worktrees\iter-451\reviews\chapter12.02-expert-review.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Expert Review: Recipe 12.2 - Supply Inventory Forecasting
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Reviewed by:** Technical Expert Panel (Security, Architecture, Networking, Voice)
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m **Date:** 2026-05-25
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m **Recipe file:** `chapter12.02-supply-inventory-forecasting.md`
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m ## Verdict: PASS
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m The recipe is structurally complete, healthcare-domain accurate, and consistent with CC's voice. All required sections are present (Problem, Technology, General Architecture Pattern, AWS Implementation with Why-These-Services / Architecture Diagram / Prerequisites / Ingredients / Code with pseudocode walkthrough, Expected Results, Why-This-Isn't-Production-Ready, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation). Em-dash count is 0 (verified via grep for the `—` character against the published draft). The 70/30 vendor balance is maintained. The Tuesday-afternoon-orthopedic-staple-cartridge-and-eighteen-months-of-pandemic-masks opening earns its position as the chapter's strongest single articulation of the supply-chain-runs-on-guesses-dressed-up-as-par-levels primitive.
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m The Technology section's segmentation pedagogy (smooth / intermittent / erratic / lumpy via Average Demand Interval and Coefficient of Variation Squared, with healthcare-specific procedure-driven and pandemic-and-crisis demand classes) is correctly granular and recipe-distinct from Recipe 12.1's appointment-volume forecasting pattern. The model-family-per-segment routing (ETS/SARIMA/Prophet for smooth and seasonal, Croston/SBA/TSB for intermittent, two-stage case-times-per-case-usage for procedure-driven, hierarchical aggregation for lumpy, optional DeepAR pool for multi-SKU shared learning) is operationally accurate. The reorder-point-and-safety-stock formula (`z_score * sqrt(lead_time_days) * std_daily_demand`) is the textbook standard. The clarifying note that "the prediction interval, not the point estimate, is the operational primitive" earns the recipe's voice and is the load-bearing operational insight that downstream consumers most often miss.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m That said, three correctness-and-completeness gaps at HIGH severity should be addressed before publication, plus the chapter-pattern set of MEDIUM and LOW items.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m Priority breakdown: 0 CRITICAL, 3 HIGH, 9 MEDIUM, 5 LOW. PASS because there are no CRITICAL findings and HIGH count (3) is at, but does not exceed, the > 3 = FAIL threshold. The three HIGH findings are localized completeness gaps that the recipe's own prose correctly diagnoses; closing them brings the architecture and pseudocode up to the standard the recipe text claims.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m ## Stage 1: Independent Expert Reviews
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m ### Security Expert (OWASP, CIS, NIST SP 800-66 for HIPAA)
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m **What's done well:**
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m - BAA called out explicitly in Prerequisites with the conservative framing that consumption data linked to specific patients or procedures is treated as PHI even when aggregated to daily SKU counts. The "PHI considerations are conservative" hedge is the architecturally-correct posture.
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m - KMS encryption explicit across S3 (SSE-KMS), DynamoDB (encryption at rest), SageMaker training and inference (encrypted EBS volumes, KMS-encrypted output), and CloudWatch log groups (configure KMS encryption explicitly).
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m - CloudTrail enabled with explicit scope: SageMaker, S3, DynamoDB, and Glue API calls.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m - VPC posture for SageMaker called out with VPC endpoints for S3, CloudWatch Logs, and KMS.
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m - Idempotent DynamoDB writes with primary-key overwrite framing in Step 5 is correct.
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m - The "an immutable audit log captures which model version produced which reorder point" framing in Why-This-Isn't-Production-Ready correctly elevates audit-trail-discipline as a production gap.
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m - IAM permissions table enumerates the right action set (SageMaker, Glue, S3, Step Functions, DynamoDB, KMS).
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m **Finding S1 (HIGH): SKU-master and model-and-reorder-decision governance scaffolding underspecified despite explicit prose elevation.**
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m - **Expert:** Security (data-governance, model-lifecycle, audit-trail-as-architectural-primitive)
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready section ("SKU master data quality," "Cold-start handling for new SKUs," "Demand regime breaks," "Forecast monitoring and drift detection," "Service level differentiation by clinical importance," "Idempotency, audit trail, and rerun safety"); Honest Take ("Concept drift is silent and constant"); Cross-Cutting Design Points (absent in the architecture pattern).
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m - **Quote:** "Everything downstream depends on a clean SKU master with accurate categorization, lead times, vendor information, and successor-mapping for retired items. In most hospitals this data is held together with duct tape and tribal knowledge."
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m - **Problem:** The recipe correctly elevates SKU-master-as-load-bearing-data-asset, model-version-stamping-on-every-reorder-point, demand-regime-break flags as exogenous signals, per-SKU service-level targets, cold-start handling for new SKUs, and the audit-trail discipline for materials-management decisions that flow into purchase orders. Despite this thorough prose elevation (across six separate paragraphs in Why-This-Isn't-Production-Ready plus the Honest Take), the architecture pattern, the Mermaid diagram, the Prerequisites table, and the pseudocode walkthrough treat these primitives as institutional-policy reference rather than as architectural assets with versioned governance, named ownership, sandbox testing, and per-decision audit-stamping.
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m - **Fix:** Add a "SKU Master, Model Registry, and Reorder-Decision Audit Lifecycle" subsection to the General Architecture Pattern's Cross-Cutting Design Points specifying (1) SKU master as a versioned governance artifact owned jointly by materials management, supply-chain analytics, and the GHX/Workday item-catalog team with named ownership for successor-mapping and demand-regime-break flags; (2) per-segment model artifact stored in a versioned S3 prefix (model-id, model-version, segment, training-window, validation-error, sigma) with the version stamp persisted on every forecast record (the recipe's pseudocode already includes `model_version` on the DynamoDB record; promote to architectural primitive); (3) reorder-decision audit journal as an Object-Lock-in-compliance-mode S3 prefix recording every (facility_id, sku_id, generated_at, model_version, reorder_point, order_quantity, mean_demand_horizon, lower_bound, upper_bound) tuple alongside the input feature vector and the active-SKU-master-version, so any downstream purchase-order decision can be reconstructed at audit time; (4) demand-regime-break flag schema in the SKU master (per-SKU, per-date-range, with reason code: pandemic, recall, formulary-change, contract-switch, vendor-discontinuation) consumed by the feature-engineering step and the model-training step explicitly rather than by ad-hoc data engineering. Match the chapter-pattern from 11.6's S1 finding for the governance-scaffolding shape.
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m **Finding S2 (MEDIUM): KMS keying granularity not differentiated by data class.**
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m - **Expert:** Security
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m - **Location:** Prerequisites table ("Encryption: S3: SSE-KMS; DynamoDB: encryption at rest enabled (default); SageMaker training and inference: encrypted EBS volumes, KMS-encrypted output").
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m - **Problem:** The Prerequisites row mentions SSE-KMS but does not differentiate keys per data class. Production posture in HIPAA-eligible workloads typically uses customer-managed keys (CMKs) per data class for blast-radius containment: separate CMK for the consumption-history bucket (potential PHI when joined to procedures or patients), a separate CMK for the model-artifacts bucket, a separate CMK for the forecast-outputs bucket, a separate CMK for the SKU-master and reorder-decision-audit prefix, and a separate CMK for the DynamoDB table.
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m - **Fix:** Update the Prerequisites Encryption row to specify customer-managed KMS keys per data class with key aliases that map to the class, matching the chapter-9 / chapter-11 pattern.
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m **Finding S3 (MEDIUM): CloudTrail data-events scope not specified.**
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m - **Expert:** Security
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m - **Location:** Prerequisites table ("CloudTrail: Enabled: log all SageMaker, S3, DynamoDB, and Glue API calls for HIPAA audit trail.").
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m - **Problem:** The current line conflates management-plane and data-plane events. Materials-management reorder decisions that feed into purchase orders should have CloudTrail data events on the consumption-history bucket, the model-artifacts bucket, the forecast-outputs bucket, the reorder-decision-audit bucket (when added per S1), and the DynamoDB sku-forecasts table. Without data events, the audit trail captures only "who created the bucket" not "who read the consumption history at training time" or "who wrote the reorder point at inference time."
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m - **Fix:** Update the CloudTrail row to call out data events explicitly on the listed buckets and DynamoDB table, with the trail itself stored in a separately-keyed Object-Lock S3 bucket.
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m **Finding S4 (MEDIUM): IAM permissions table reads as wildcard-by-action without resource scoping.**
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m - **Expert:** Security
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m - **Location:** Prerequisites IAM Permissions row.
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m - **Problem:** The permissions list (`sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `dynamodb:BatchWriteItem`, `kms:Decrypt`) names actions but not resource ARNs or condition keys. Per-Lambda least-privilege posture should pin the resource ARNs (specific buckets, specific tables, specific keys) and use condition keys (`aws:SourceVpc`, `aws:SourceVpce`, `kms:ViaService`) to constrain the principals to the production VPC.
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m - **Fix:** Add a hedge sentence to the IAM Permissions row (or in the Why-This-Isn't-Production-Ready section) noting that production posture pins resource ARNs and uses condition keys to constrain principals, and that the per-Lambda role list should be: glue-job-role (read consumption-history bucket, write modeling-ready bucket), segment-skus-lambda-role (read modeling-ready bucket), training-fan-out-state-role (start sagemaker training jobs, write model-artifacts bucket), batch-inference-role (read modeling-ready and model-artifacts, write forecasts bucket), reorder-calc-lambda-role (read forecasts bucket, BatchWriteItem against the DynamoDB table only).
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m ### Architecture Expert (scalability, anti-patterns, distributed systems)
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m **What's done well:**
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m - The five-stage decomposition (Consumption History, Feature Engineering and SKU Segmentation, Per-Segment Model Training, Forecast and Reorder Point Calculation, Materials Management / ERP Integration) is the correct shape and is operationally distinct from Recipe 12.1's three-stage decomposition.
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m - The segment-routing primitive (ADI / CV² classification with procedure-driven override) is recipe-distinct and correctly elevated as the architectural fork.
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m - Step Functions Map state for per-segment training fan-out is correct.
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m - DynamoDB key design (partition_key = facility_id + "#" + sku_id, sort_key = generated_at) is reasonable for the access pattern described.
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m - Idempotent overwrite-by-key write pattern in Step 5 is correct.
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m - The note that "Operationally, three different vendors' alcohol prep pads are interchangeable. In the item master, they're three SKUs..." correctly anticipates the substitution-and-rollup architectural primitive.
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m - The "Rolling up to 'consumption groups' or 'GMDN families'" framing is the correct compromise.
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m **Finding A1 (HIGH): Per-SKU and per-segment forecast monitoring with launch-gate discipline architecturally implicit despite recipe's own elevation as central trap.**
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m - **Expert:** Architecture (drift detection, SLO-as-code, launch-gate discipline)
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("Forecast monitoring and drift detection. Track per-SKU forecast error against actuals on a rolling basis. Alert when error exceeds tolerance for two consecutive cycles for high-value SKUs."); Honest Take's third paragraph ("Concept drift is silent and constant. Surgeons change preferences. Vendors change. Contracts change..."); Architecture diagram only shows "CloudWatch Alarms / SNS Topic" wired to Step Functions errors, not to forecast-quality metrics.
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m - **Quote:** "Without this monitoring, the first sign of model degradation is a clinician complaining about stockouts."
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m - **Problem:** The recipe correctly elevates concept-drift-as-silent-and-constant, per-SKU forecast-error-vs-actuals tracking, two-consecutive-cycle alerting on high-value SKUs, and retraining cadence (monthly is reasonable for most segments) plus retraining-on-demand-when-drift-is-detected. Despite this elevation, the architecture pattern, the Mermaid diagram, and the pseudocode treat monitoring as a CloudWatch-alarm-on-pipeline-errors primitive rather than as a per-SKU, per-segment, per-cohort forecast-quality SLO with launch-gate threshold values. The Step 3 quality gate ("REJECT this model; alert the ML engineer / IF error > current_production_model[segment_label].error * 1.20") is correct at the segment level but does not cover the per-SKU forecast-vs-actual feedback loop that runs continuously after deployment.
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m - **Fix:** Add a "Per-Segment and Per-SKU Forecast Monitoring with Launch-Gate Discipline" subsection to the General Architecture Pattern. Specify (1) a rolling per-SKU forecast-error-vs-actual feedback table (DynamoDB or Timestream) populated by a daily Lambda that joins yesterday's actual consumption against the forecast issued for that day; (2) per-segment SLO thresholds (smooth: 30-day MAPE < target, intermittent: 30-day MASE < 1.0, procedure-driven: forecast-vs-actual ratio within target band, lumpy: monitored at the rolled-up category level); (3) two-axis cohort stratification (high-value SKUs measured by annual spend / clinical-criticality-tier; volume-tier; segment); (4) launch-gate threshold values for new model versions (block deployment if validation MAPE / MASE exceeds threshold or regresses materially against the production model); (5) retraining cadence per segment (monthly default; on-demand when drift detected; cold-start retraining on a separate cadence). Match the chapter-pattern from 11.6's A1 / 11.7's A1 finding.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m **Finding A2 (HIGH): Cross-recipe dependency on Recipe 12.1's case-volume forecast not architecturally explicit.**
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m - **Expert:** Architecture (distributed-systems boundary, integration contract)
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m - **Location:** Step 1 pseudocode (`row.scheduled_cases = lookup forecasted_cases(facility, date)  // for procedure-driven SKUs`); Mermaid diagram (no edge from a case-forecast service to the supply-forecast pipeline); Related Recipes (mentions 12.1 but does not specify the integration contract).
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m - **Quote:** "Procedure-driven SKUs go through a two-stage model: forecast cases, multiply by per-case usage."
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m - **Problem:** The procedure-driven branch of the segmentation depends on a case-volume forecast as input. The pseudocode references `forecasted_cases(facility, date)` without specifying where that lookup goes (the Recipe 12.1 forecast output, the OR scheduling system's confirmed-case projection, the surgical-scheduling integration layer, or some hybrid). Operationally, the answer matters: the OR schedule three weeks out is a much stronger signal than the historical-pattern forecast, and a confirmed case three days out is essentially deterministic. The architecture should specify (1) which signal sources feed the lookup; (2) how they are reconciled (precedence: confirmed-case over OR-schedule over Recipe-12.1-forecast over fallback historical mean); (3) the freshness contract (case forecasts refreshed at least daily for procedure-driven SKUs, not on the weekly cadence of the rest of the pipeline); (4) the failure mode if the lookup is unavailable (fall back to historical mean per case, alert the ML engineer, do not silently emit zeros).
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m - **Fix:** Add a "Case-Forecast Integration for Procedure-Driven SKUs" primitive to Cross-Cutting Design Points. Update the Mermaid diagram to show an explicit edge from a "Case Forecast / OR Schedule" source into the feature-engineering step. Update Step 1 pseudocode to specify the precedence rules and the failure-mode fallback. Update Related Recipes to make the integration contract with Recipe 12.1 explicit (Recipe 12.1's DynamoDB forecast table is the upstream dependency for the procedure-driven branch).
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m **Finding A3 (HIGH): Cold-start handling for new SKUs and SKU-rename-and-substitution discipline not architected despite recipe's own elevation as central trap.**
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m - **Expert:** Architecture (data-lifecycle, cold-start, master-data integration)
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("Cold-start handling for new SKUs. A new SKU enters the catalog with no history. Per-SKU models have nothing to fit. Production options include..."); Why-This-Isn't-Production-Ready ("Vendor and contract changes. ... Cold-start handling for SKU substitutions is a real production concern."); Step 1 pseudocode (`daily_consumption = apply sku_master.successor_map to daily_consumption`); Honest Take (no explicit treatment).
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m - **Quote:** "Pick one and implement it; do not let the pipeline silently emit zeros."
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m - **Problem:** The recipe correctly elevates the new-SKU-with-no-history primitive, the SKU-rename-and-substitution primitive, and the recall-and-discontinuation primitive. The Step 1 pseudocode applies a `successor_map` from the SKU master, which is correct in shape. However, the architecture does not specify (1) which of the three production options for new-SKU cold-start the pipeline implements (predecessor-borrowing, similar-SKU-borrowing via item-category clustering, configured-starting-reorder-point until N months of history accumulates); (2) the threshold at which a new SKU's own history takes over from the borrowed history; (3) the recall-and-discontinuation signal flow (the pipeline must explicitly receive the recall flag from the SKU master and emit reorder_point = 0 with a "recalled" decision-record, not silently follow the historical pattern); (4) the substitution-active flag flow (when SKU A is being phased out in favor of SKU B, the pipeline should consume both signals and report a combined reorder picture).
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m - **Fix:** Add a "Cold-Start, Successor-Mapping, and Recall-and-Discontinuation Discipline" subsection to the General Architecture Pattern. Specify the three cold-start options with the recipe's recommendation (predecessor-borrowing as the default where the SKU master has a successor link; similar-SKU clustering as the fallback; configured-starting-reorder-point as the final fallback). Specify the threshold (typically 12 weeks or 25% of the segment's typical training window). Specify the recall-and-discontinuation signal handler as a first-class component that consumes a daily SKU-master delta feed, emits explicit zero-demand records with a `regime: discontinued` flag, and stops further forecasting for the SKU. Match the chapter-pattern A3 finding shape.
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m **Finding A4 (MEDIUM): Demand-regime-break flag not present in feature schema or master data despite recipe's own elevation.**
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("Demand regime breaks. Pandemics, recalls, formulary changes, and contract switches all introduce regime breaks where past data is no longer representative. The pipeline needs explicit signals (a 'regime break' flag in the SKU master per date range)..."); Step 1 pseudocode (does not reference a regime-break flag); Step 3 pseudocode (does not exclude or downweight regime-break periods).
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m - **Fix:** Add a `regime_break_periods` field to the SKU-master schema (per-SKU, per-date-range, with reason-code enum) and update the Step 1 pseudocode to filter or downweight those periods explicitly, with a fallback to a flagged-but-included posture for low-data segments. Update Step 3 to read the flag in training.
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m **Finding A5 (MEDIUM): Step Functions Map state max concurrency not specified.**
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m - **Location:** Mermaid diagram (Step Functions ... per-segment training jobs); Step 3 pseudocode (segment-routed training).
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m - **Problem:** Default Step Functions Map state concurrency is 40. For a multi-thousand-SKU portfolio that segments into smooth, intermittent, erratic, lumpy, procedure-driven, and (optional) deepar-pool, the segment-level fan-out fits within default concurrency. However, where the architecture scales beyond a single facility to a multi-facility health system (the per-segment-per-facility training fan-out), the default may throttle. Distributed Map (released 2022) supports up to 10,000 concurrent iterations.
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m - **Fix:** Add a sentence to the Why-These-Services subsection or the Architecture Pattern noting that Distributed Map should be selected for multi-facility deployments, and that concurrency limits per SageMaker account region apply (training-jobs-per-region quotas have to be raised before high-fan-out training).
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m **Finding A6 (MEDIUM): DynamoDB schema mixes timestamp sort keys with the literal string "CURRENT".**
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m - **Location:** Step 5 pseudocode ("Optional: also write an aggregate 'CURRENT' record at sort key 'CURRENT' so consumers can do a single GetItem instead of querying by sort key and sorting client-side.").
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m - **Problem:** Mixing a literal string sort-key value with timestamp sort-key values produces a schema that's awkward to query (the descending-by-timestamp scan accidentally hits the "CURRENT" record first if the literal sorts last alphabetically; the query has to filter it out). Cleaner alternatives: (1) separate `sku-current-forecasts` table with no sort key; (2) Global Secondary Index keyed on a `current` flag; (3) sort-key prefix discipline ("v#<timestamp>" for versioned records, "c#current" for the current pointer) so the query patterns can be range-bounded.
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m - **Fix:** Replace the "CURRENT" sort-key suggestion with a separate `sku-current-forecasts` table or a GSI design. Update Step 5 to reflect the cleaner schema.
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m **Finding A7 (MEDIUM): ERP integration shown as a single edge in the diagram despite prose elevation as "rarely a one-shot DynamoDB write."**
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m - **Location:** Mermaid diagram ("J[DynamoDB / sku-forecasts] --> K[ERP / Materials Mgmt Dashboard]"); Why-This-Isn't-Production-Ready ("The integration is rarely a one-shot DynamoDB write; it's typically a flat-file extract or an API call into the ERP that runs on its own cadence and reconciles. Plan for this engineering work, which often dwarfs the modeling work in scope.").
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m - **Fix:** Update the Mermaid diagram to show the integration layer explicitly: DynamoDB → "Reconciliation Lambda / EventBridge Pipe" → "ERP Adapter (flat-file SFTP or API)" → "Oracle / SAP / Workday / Infor". Add a note in Why-These-Services or the Architecture Pattern naming the reconciliation contract (idempotent, retryable, ERP-driven cadence, not pipeline-driven cadence).
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m ### Networking Expert (RFCs, cloud provider best practices)
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m **What's done well:**
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m - VPC posture for SageMaker training and inference called out with VPC endpoints for S3, CloudWatch Logs, and KMS.
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m - HIPAA-workloads framing applied to the VPC requirement.
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m - The recipe correctly avoids egress-to-public-internet language for any PHI-bearing path; consumption data and forecasts stay within the VPC and S3.
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m **Finding N1 (MEDIUM): VPC endpoint coverage incomplete for the broader pipeline (Glue, Lambda, DynamoDB, Step Functions, EventBridge).**
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m - **Severity:** MEDIUM
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m - **Expert:** Networking
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m - **Location:** Prerequisites table VPC row ("Production: SageMaker training and inference jobs in VPC with VPC endpoints for S3, CloudWatch Logs, and KMS. Required for HIPAA workloads.").
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m - **Problem:** The current row only covers SageMaker. Glue ETL jobs, Lambda functions (segment-skus-lambda, reorder-calc-lambda, dynamo-loader-lambda), Step Functions invocations, and EventBridge schedule events all run in the same architecture and need VPC posture and endpoint coverage. Without VPC endpoints for Glue (gateway endpoint or interface endpoint depending on Glue connection type), DynamoDB (gateway endpoint), Step Functions (interface endpoint), and EventBridge (interface endpoint), traffic traverses the public internet path even when the workloads are in VPC.
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m - **Fix:** Update the VPC row to enumerate the full endpoint list: S3 (gateway), DynamoDB (gateway), KMS (interface), CloudWatch Logs (interface), Step Functions (interface), Glue (interface for development endpoints; the underlying Glue jobs are managed and use the connection's VPC endpoints), Lambda (the Lambdas themselves should run in VPC subnets with endpoints for KMS, S3, DynamoDB, Logs, Secrets Manager). Add EventBridge interface endpoint where production posture requires private-only EventBridge invocations.
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m **Finding N2 (LOW): mTLS or signed-JWT discipline for ERP / GHX integration not specified.**
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m - **Expert:** Networking
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("The integration is rarely a one-shot DynamoDB write; it's typically a flat-file extract or an API call into the ERP...").
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m - **Problem:** Cross-organizational integration (where the supply pipeline pulls SKU master from a GHX exchange or pushes reorder points to an ERP hosted off-AWS) should use the institution's existing FHIR-API integration model with mTLS or signed-JWT, not novel direct connections. The recipe does not specify this.
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m - **Fix:** Add a sentence to the Why-This-Isn't-Production-Ready ERP-integration paragraph naming mTLS or signed-JWT as the appropriate authentication discipline for cross-organizational integration.
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m ### Voice Reviewer (STYLE-GUIDE.md, RECIPE-GUIDE.md)
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m **Em-dash count: 0** (verified via grep for the `—` character against the published draft). The prose follows the no-em-dashes rule throughout.
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m **TODO markers: 6** (verified via grep). All are appropriately scoped: N1 (Amazon Forecast deprecation status), V1 (SageMaker / Glue / DynamoDB pricing), N2 (reference-implementation link liveness), N3 (Python companion file existence), A1 (accuracy benchmarks), N4 (external link audit). These are appropriate author hedges for the draft stage and should be tracked through to publication.
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m **Voice consistency:** The Tuesday-afternoon-orthopedic-staple-cartridge / eighteen-months-of-pandemic-masks opening earns its position as the chapter's clearest articulation of the same-day-stockout-and-overstock primitive. The "Healthcare supply chains run on guesses dressed up as par levels" line is the recipe's strongest single passage. The "Nobody throws a party for a 15% reduction in supply chain working capital, but the CFO notices" line is consistent with CC's self-deprecating-expertise register. The Honest Take's four paragraphs (model-selection-question-gets-way-more-attention-than-it-deserves; the-value-isn't-in-the-forecast-itself-but-in-reorder-point-updates; intermittent-demand-is-genuinely-harder; concept-drift-is-silent-and-constant) earn their positions and land well. The closing primitive "The prediction interval, not the point estimate, is the operational primitive" is the recipe's strongest single closing insight.
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m **Vendor-balance (70/30):** Maintained. AWS service names appear first in the AWS Implementation section, not in The Problem or The Technology. The General Architecture Pattern is vendor-agnostic and the conceptual prose throughout the Technology section is reusable for a reader on GCP or Azure.
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m **Finding V1 (LOW): "Simple" tag may understate production complexity.**
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m - **Expert:** Voice
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m - **Location:** Header ("Complexity: Simple") and Tags row ("simple").
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m - **Problem:** The Why-This-Isn't-Production-Ready section enumerates seven non-trivial production gaps (SKU master quality, cold-start handling, demand regime breaks, drift detection, service-level differentiation, audit trail, ERP integration). The Estimated Implementation Time section gives 8-12 weeks for production-ready and 16-20 weeks with variations. "Simple" reads accurately for the modeling primitive but understates the organizational and master-data work.
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m - **Fix:** Optional. Either keep "Simple" with a parenthetical hedge ("Simple modeling, complex master-data plumbing"), or rename to "Moderate" matching the production-ready timeline. The current label is defensible as "simple to start" but flagging as a voice-register opportunity.
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m **Finding V2 (LOW): TODO marker N3 references a Python companion that "does not yet exist."**
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m - **Expert:** Voice
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m - **Location:** Line 395.
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m - **Quote:** "The Python companion file (chapter12.02-python-example.md) is referenced here but does not yet exist."
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m - **Problem:** A linked sibling file that does not exist is a publication-blocking issue, not a verify-later TODO. The companion is referenced by `[Python Example](chapter12.02-python-example)` in the recipe text, which would render as a broken link.
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m - **Fix:** Confirm the Python companion has been drafted (ralph pipeline log suggests `chapter12.02-python-example.md` exists in the repo root; verify against the draft directory before publication). If the file exists, resolve the TODO with a "verified, file present" note.
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m **Finding V3 (LOW): "Quietly approaching its expiration date" passes the no-em-dashes rule but contains a long compound sentence that pushes the limit.**
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m - **Severity:** LOW
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m - **Expert:** Voice
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m - **Location:** First Problem paragraph.
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m - **Problem:** The opening paragraph contains a single sentence that runs for nearly 90 words ("Down the hall, a different problem is playing out in the central supply room: there are eighteen months' worth of a respiratory mask still sitting on the shelf from the pandemic-era surge buy that never got drawn down, taking up space and quietly approaching its expiration date."). This is intentional voice (the accumulating-list-as-rhetorical-device is a CC pattern) and lands well. No fix required; flagging only.
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m ## Stage 2: Expert Discussion
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m The four reviewers concur on the dominant findings. The Security and Architecture experts overlap on the SKU-master / model-registry / reorder-decision-audit governance scaffolding (Security S1 and Architecture A1, A2, A3 are different facets of the same multi-asset governance gap); both reviewers will surface this as a HIGH finding. The Architecture A2 (cross-recipe dependency) and A3 (cold-start) findings are the recipe-distinct architectural primitives that the chapter pattern from Recipes 12.1 (single-facility appointment forecasting) does not have to enforce because there is no SKU-master, no per-SKU cold-start, and no recall-and-discontinuation signal flow.
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m **Conflict resolution:** None of the four reviewers' findings conflict. Security S1 and Architecture A1 / A2 / A3 are layered: S1 is the governance frame, A1 is the monitoring frame within that governance, A2 is the cross-recipe contract, A3 is the data-lifecycle frame. All four are required for production-ready status and are correctly elevated in the recipe's prose; the architecture pattern needs to follow through.
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m **Priority ordering:** The three HIGH findings (Security S1 / Architecture A1, Architecture A2, Architecture A3) all warrant pre-publication attention. The MEDIUM findings are content-strengthening updates that can be addressed in the editor pass or accepted as out-of-scope-for-cookbook-recipe. The LOW findings are cosmetic.
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m **Anticipated rewrite scope:** Adding the three architectural-primitive subsections (SKU-master / model-registry / reorder-decision-audit lifecycle; per-segment / per-SKU forecast monitoring with launch-gate discipline; cross-recipe case-forecast integration with cold-start and recall handling) will likely add 40-60 lines to the General Architecture Pattern's Cross-Cutting Design Points and 15-25 lines to the Mermaid diagram's edge labels and node count. Estimated TechWriter rewrite effort: 4-6 hours for the three architecture-pattern subsections plus the diagram update.
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m ## Stage 3: Synthesized Feedback
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m ### CRITICAL Findings
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m (None.)
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m ### HIGH Findings
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m **H1. SKU-master, model-registry, and reorder-decision-audit governance scaffolding underspecified despite explicit prose elevation.**
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m - **Expert:** Security
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready section paragraphs 1, 5, 6; Cross-Cutting Design Points (absent in the architecture pattern); Mermaid diagram.
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m - **Quote:** "Everything downstream depends on a clean SKU master with accurate categorization, lead times, vendor information, and successor-mapping for retired items. In most hospitals this data is held together with duct tape and tribal knowledge."
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m - **Fix:** Add a "SKU Master, Model Registry, and Reorder-Decision Audit Lifecycle" subsection to the General Architecture Pattern's Cross-Cutting Design Points specifying: SKU master as a versioned governance artifact with named ownership (materials management plus supply-chain analytics plus the GHX/Workday item-catalog team) and demand-regime-break flag schema; per-segment model artifact stored in a versioned S3 prefix with model-version stamp persisted on every forecast record; reorder-decision audit journal as an Object-Lock-in-compliance-mode S3 prefix recording every (facility_id, sku_id, generated_at, model_version, reorder_point, order_quantity, mean_demand_horizon, lower_bound, upper_bound, active-SKU-master-version, input-feature-hash) tuple. Match the chapter-pattern from 11.6's S1 finding for the governance-scaffolding shape.
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m **H2. Per-segment and per-SKU forecast monitoring with launch-gate discipline architecturally implicit despite recipe's own elevation as central trap.**
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("Forecast monitoring and drift detection..."); Honest Take ("Concept drift is silent and constant..."); Mermaid diagram (CloudWatch wired to pipeline errors only).
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m - **Quote:** "Without this monitoring, the first sign of model degradation is a clinician complaining about stockouts."
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m - **Fix:** Add a "Per-Segment and Per-SKU Forecast Monitoring with Launch-Gate Discipline" subsection to the General Architecture Pattern. Specify a daily Lambda that joins yesterday's actual consumption against the forecast issued for that day; per-segment SLO thresholds (smooth: 30-day MAPE; intermittent: 30-day MASE; procedure-driven: forecast-vs-actual ratio band); two-axis cohort stratification (high-value SKUs by annual spend / clinical-criticality-tier; volume-tier; segment); launch-gate threshold values for new model versions; retraining cadence per segment. Match the chapter-pattern A1 finding shape.
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m **H3. Cold-start handling, successor-mapping, and recall-and-discontinuation discipline not architected despite recipe's own elevation as central trap.**
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m - **Severity:** HIGH
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m - **Expert:** Architecture
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m - **Location:** Why-This-Isn't-Production-Ready ("Cold-start handling for new SKUs..." and "Vendor and contract changes..."); Step 1 pseudocode (`successor_map` reference is the only hint).
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m - **Quote:** "Pick one and implement it; do not let the pipeline silently emit zeros."
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m - **Fix:** Add a "Cold-Start, Successor-Mapping, and Recall-and-Discontinuation Discipline" subsection to the General Architecture Pattern. Specify the three cold-start options with the recipe's recommended default (predecessor-borrowing where the SKU master has a successor link; similar-SKU clustering as fallback; configured-starting-reorder-point as final fallback). Specify the threshold (typically 12 weeks). Specify the recall-and-discontinuation signal handler as a first-class component consuming a daily SKU-master delta feed and emitting explicit zero-demand records with `regime: discontinued` flag. Update Step 1 pseudocode and the Mermaid diagram to show the cold-start path explicitly. Promote the Architecture A2 finding (cross-recipe case-forecast dependency for procedure-driven SKUs) into the same subsection or as a sibling subsection.
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m ### MEDIUM Findings
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m **M1. KMS keying granularity not differentiated by data class.** (Security S2.) Replace single-CMK posture with customer-managed keys per data class (consumption-history bucket, model-artifacts bucket, forecast-outputs bucket, SKU-master and reorder-decision-audit prefix, DynamoDB table). Match the chapter-9 / chapter-11 pattern.
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m **M2. CloudTrail data-events scope not specified.** (Security S3.) Update Prerequisites CloudTrail row to call out data events explicitly on the listed S3 buckets and the DynamoDB table, with the trail itself stored in a separately-keyed Object-Lock S3 bucket.
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m **M3. IAM permissions table reads as wildcard-by-action without resource scoping.** (Security S4.) Add a hedge sentence noting production posture pins resource ARNs and uses condition keys to constrain principals, and enumerate the per-Lambda role list (glue-job-role, segment-skus-lambda-role, training-fan-out-state-role, batch-inference-role, reorder-calc-lambda-role).
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m **M4. Demand-regime-break flag not present in feature schema or master data despite recipe's own elevation.** (Architecture A4.) Add a `regime_break_periods` field to the SKU-master schema and update Step 1 pseudocode to filter or downweight those periods.
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m **M5. Step Functions Map state max concurrency not specified.** (Architecture A5.) Add a sentence noting Distributed Map for multi-facility deployments and the SageMaker training-jobs-per-region quota.
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m **M6. DynamoDB schema mixes timestamp sort keys with the literal string "CURRENT".** (Architecture A6.) Replace the "CURRENT" sort-key suggestion with a separate `sku-current-forecasts` table or a GSI design.
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m **M7. ERP integration shown as a single edge in the diagram despite prose elevation as "rarely a one-shot DynamoDB write."** (Architecture A7.) Update the Mermaid diagram to show the integration layer (Reconciliation Lambda / EventBridge Pipe → ERP Adapter → Oracle / SAP / Workday / Infor).
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m **M8. VPC endpoint coverage incomplete for the broader pipeline (Glue, Lambda, DynamoDB, Step Functions, EventBridge).** (Networking N1.) Update the VPC row to enumerate the full endpoint list.
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m **M9. BAA framing potentially overstated for daily-aggregate SKU consumption.** Aggregated daily SKU counts at facility level are generally not PHI under HIPAA's safe harbor; the recipe correctly errs conservative by recommending BAA coverage but could clarify the precise threshold (BAA needed if procedure-level case counts feed in, especially for small case volumes / rare procedures that may be re-identifiable). Update the BAA Prerequisites row with the more precise threshold framing.
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m ### LOW Findings
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m **L1. mTLS or signed-JWT discipline for ERP / GHX integration not specified.** (Networking N2.) Add a sentence to the Why-This-Isn't-Production-Ready ERP-integration paragraph naming mTLS or signed-JWT.
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m **L2. "Simple" tag may understate production complexity.** (Voice V1.) Optional reformulation; current label is defensible as "simple to start."
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m **L3. TODO marker N3 references a Python companion that "does not yet exist."** (Voice V2.) Verify the companion file exists and resolve the TODO before publication.
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m **L4. Long compound sentence in opening Problem paragraph approaching 90 words.** (Voice V3.) Intentional voice; flagging only.
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m **L5. The 6 unresolved TODO-verify markers should be tracked through to publication.** Acceptable as draft hedges; flagging for traceability.
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m ## Summary Table
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m | Severity | Count | Action |
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m |----------|-------|--------|
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m | CRITICAL | 0     | None.  |
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m | HIGH     | 3     | Three architectural-primitive subsections (governance scaffolding; per-segment / per-SKU forecast monitoring; cold-start / successor-mapping / recall handling with cross-recipe case-forecast integration) need to be promoted from prose to architecture before publication. |
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m | MEDIUM   | 9     | Content-strengthening updates to the architecture pattern, Prerequisites table, Mermaid diagram, and pseudocode. |
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m | LOW      | 5     | Cosmetic; flagging only. |
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m **Verdict: PASS** (no CRITICAL findings; HIGH count = 3 ≤ 3 threshold).
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m ## Recommended Next Steps
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m 1. TechWriter promotes the three HIGH-finding subsections (SKU-master / model-registry / reorder-decision-audit lifecycle; per-segment and per-SKU forecast monitoring with launch-gate discipline; cold-start / successor-mapping / recall-and-discontinuation discipline including cross-recipe case-forecast integration) from prose into the General Architecture Pattern's Cross-Cutting Design Points and updates the Mermaid diagram accordingly.
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m 2. TechEditor reconciles the MEDIUM findings against the prose updates and consolidates the Prerequisites table updates (KMS per data class, CloudTrail data events, IAM resource scoping, VPC endpoint enumeration, BAA threshold).
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m 3. The 6 TODO-verify markers should be resolved (or accepted-as-hedge with reviewer signoff) during the TechEditor pass. The N3 marker (Python companion existence) is publication-blocking and should be resolved first.
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m 4. After the rewrite, this review can be re-run end-to-end to confirm the HIGH findings are closed.
+[0m[K
+Creating: [38;5;141mC:\tmp\ralph-worktrees\iter-451\reviews\chapter12.02-expert-review.md[0m
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mExpert review for recipe 12.2 (Supply Inventory Forecasting) written to [38;5;10mreviews/chapter12.02-expert-review.md[0m.[0m[0m
+[0m[0m
+[1mVerdict: PASS[22m (0 CRITICAL, 3 HIGH, 9 MEDIUM, 5 LOW)[0m[0m
+[0m[0m
+Key findings:[0m[0m
+[0m[0m
+[1mHIGH (3):[22m[0m[0m
+- **H1 (Security):** SKU-master, model-registry, and reorder-decision-audit governance scaffolding underspecified despite explicit prose elevation in Why-This-Isn't-Production-Ready. The recipe correctly diagnoses the gap; the architecture pattern needs to follow through with named ownership, version stamping, and Object-Lock audit journal.[0m[0m
+- **H2 (Architecture):** Per-segment and per-SKU forecast monitoring with launch-gate discipline architecturally implicit. Recipe's own Honest Take elevates "Concept drift is silent and constant" but the diagram only shows CloudWatch wired to pipeline errors, not to forecast-quality SLOs.[0m[0m
+- **H3 (Architecture):** Cold-start handling, successor-mapping, recall-and-discontinuation discipline, and cross-recipe case-forecast integration (procedure-driven SKUs depend on Recipe 12.1's output) not architected.[0m[0m
+[0m[0m
+[1mMEDIUM (9):[22m KMS keying granularity, CloudTrail data events, IAM resource scoping, demand-regime-break flag schema, Map state concurrency, DynamoDB sort-key schema, ERP integration layer, VPC endpoint coverage for Glue/Lambda/DynamoDB/Step Functions/EventBridge, and BAA threshold framing.[0m[0m
+[0m[0m
+[1mLOW (5):[22m mTLS for ERP integration, "Simple" tag understating production complexity, Python companion file existence verification, opening sentence length, TODO marker tracking.[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...[2K[1G[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 13.44 • Time: 9m 30s
+
+[0m[1G[0m[0m[?25h[1mStrengths confirmed:[22m Em-dash count = 0, voice consistent throughout, 70/30 vendor balance maintained, healthcare-domain accuracy high (Croston/SBA/TSB/Syntetos classification, GHX/GMDN references, M5 dataset, Amazon Forecast deprecation, EOQ/MinT/MASE references all operationally accurate), structurally complete with all required sections.[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141mC:\tmp\ralph-worktrees\iter-451[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141mC:\tmp\ralph-worktrees\iter-451[0m [38;5;244m(showing 1000 of 1627 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.46s[0m
+
+Reading file: [38;5;141mC:\tmp\ralph-worktrees\iter-451\reviews\chapter12.02-expert-review.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m41486 bytes[0m from C:\tmp\ralph-worktrees\iter-451\reviews\chapter12.02-expert-review.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 1.64 • Time: 19s
+
+[38;5;141m> [0m{"verdict": "pass", "rationale": "Review covers all required dimensions: clinical/healthcare-domain accuracy (SKU master semantics, BAA/PHI thresholds for aggregated consumption, procedure-driven and pandemic demand classes, GMDN families, recall/discontinuation handling, surgical case-usage patterns), architectural soundness (7 findings on forecast monitoring, cross-recipe case-forecast dependency, cold-start/successor mapping, regime-break flags, Step Functions Distributed Map, DynamoDB sort-key design, ERP integration layering), and security considerations (governance scaffolding, per-data-class CMKs, CloudTrail data-plane events, IAM resource scoping with condition keys, VPC endpoint enumeration). Findings are explicitly prioritized as 0 CRITICAL / 3 HIGH / 9 MEDIUM / 5 LOW, each with location, quote, problem statement, and concrete remediation steps (specific subsection names, schema fields, diagram edges, pseudocode changes). Includes voice/style review, multi-expert panel structure with conflict resolution, and recommended next steps."}[0m[1G[0m[0m[?25h
