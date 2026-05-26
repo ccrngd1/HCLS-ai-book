@@ -1,22 +1,20 @@
 # Recipe 12.2: Python Implementation Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.2. It shows one way you could translate the supply-inventory-forecasting pipeline into working Python using boto3 against Amazon S3, AWS Glue (here represented by an in-process pandas transform), Amazon SageMaker (here represented by an in-process Prophet/SBA training routine), AWS Step Functions (here represented by sequential function calls), Amazon DynamoDB (mocked with `MockTable`), Amazon EventBridge (mocked with `MockEventBus`), and Amazon CloudWatch (mocked with `MockCloudWatch`). The demo generates synthetic SKU consumption data with four distinct demand patterns (smooth, intermittent, erratic, procedure-driven) so you can see the segmentation logic, the per-segment model selection, and the reorder-point calculation work end-to-end without provisioning anything. It is not production-ready. There is no real SageMaker training job, no real Glue ETL, no real Step Functions state machine, no real DynamoDB table, no real EventBridge bus, no real CloudWatch alarms, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints, no item-master successor reconciliation, no ERP integration, no per-SKU forecast monitoring, and no drift detection. Think of it as the sketchpad version: useful for understanding the shape of a multi-SKU demand-forecasting pipeline that respects the segmentation discipline, the per-segment-model-selection discipline, the reorder-point-as-operational-primitive discipline, the prediction-interval-not-point-estimate discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a hospital materials management system on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 12.2. It shows one way you could translate the supply-inventory-forecasting pipeline into working Python using boto3 against Amazon S3, AWS Glue (here represented by an in-process Python aggregation), Amazon SageMaker (here represented by pure-Python `SmoothModel` and `SBAModel` classes that stand in for Prophet and Croston/SBA), AWS Step Functions (here represented by sequential function calls), Amazon DynamoDB (mocked with `MockTable`), Amazon EventBridge (mocked with `MockEventBus`), and Amazon CloudWatch (mocked with `MockCloudWatch`). The demo generates synthetic SKU consumption data with four distinct demand patterns (smooth, intermittent, erratic, procedure-driven) so you can see the segmentation logic, the per-segment model selection, and the reorder-point calculation work end-to-end without provisioning anything. It is not production-ready. There is no real SageMaker training job, no real Glue ETL, no real Step Functions state machine, no real DynamoDB table, no real EventBridge bus, no real CloudWatch alarms, no per-Lambda IAM least privilege, no KMS customer-managed keys, no VPC endpoints, no item-master successor reconciliation, no ERP integration, no per-SKU forecast monitoring, and no drift detection. Think of it as the sketchpad version: useful for understanding the shape of a multi-SKU demand-forecasting pipeline that respects the segmentation discipline, the per-segment-model-selection discipline, the reorder-point-as-operational-primitive discipline, the prediction-interval-not-point-estimate discipline, and the audit-everything discipline this recipe demands. It is not something you would point at a hospital materials management system on Monday morning. Consider it a starting point, not a destination.
 >
-> The code maps to the five pseudocode steps from the main recipe: pull and shape the daily SKU consumption history with calendar features and successor-mapping (Step 1); segment the SKU portfolio by demand pattern using ADI and CV² (Step 2); train a forecasting model per segment using Prophet for smooth and erratic SKUs, the Syntetos-Boylan Approximation for intermittent and lumpy SKUs, and a two-stage case-times-usage model for procedure-driven SKUs (Step 3); generate forecasts and translate forecast variance into reorder points and order quantities using the classical safety-stock formula (Step 4); load the forecast records to DynamoDB keyed by `facility_id#sku_id` with idempotent batched writes (Step 5). The synthetic SKUs, facilities, vendors, lead times, and consumption patterns in the demo are fictional; nothing in this file should be interpreted as real consumption data from any real institution.
+> The code maps to the five pseudocode steps from the main recipe: pull and shape the daily SKU consumption history with calendar features and successor-mapping (Step 1); segment the SKU portfolio by demand pattern using ADI and CV² (Step 2); train a forecasting model per segment with pure-Python stand-ins for Prophet (smooth SKUs), the Syntetos-Boylan Approximation (intermittent, erratic, and lumpy SKUs), and a two-stage case-times-usage model (procedure-driven SKUs) (Step 3); generate forecasts and translate forecast variance into reorder points and order quantities using the classical safety-stock formula (Step 4); load the forecast records to DynamoDB keyed by `facility_id#sku_id` with idempotent batched writes (Step 5). The synthetic SKUs, facilities, vendors, lead times, and consumption patterns in the demo are fictional; nothing in this file should be interpreted as real consumption data from any real institution.
 
 ---
 
 ## Setup
 
-You will need the AWS SDK for Python plus a few open-source forecasting libraries:
+You will need the AWS SDK for Python:
 
 ```bash
-pip install boto3 pandas numpy
-# Optional, for the smooth-segment Prophet branch:
-pip install prophet
-# Optional, for the case-volume model in the procedure-driven branch:
-pip install statsmodels
+pip install boto3
 ```
+
+The demo runs against the Python standard library plus boto3; no other packages are imported. Production deployments swap the demo's pure-Python `SmoothModel` and `SBAModel` for real forecasting libraries (Prophet for the smooth-segment branch, statsmodels or an intermittent-demand library for Croston/SBA/TSB, the SageMaker DeepAR built-in algorithm for multi-series neural forecasting); the Gap to Production section spells out the substitutions.
 
 In production you would also configure an Amazon S3 bucket for the consumption-history landing zone and the model-artifact / forecast-output zone, an AWS Glue crawler over the S3 prefix and a Glue ETL job (PySpark or Glue notebook) that does the cleaning, joining, and successor-mapping, an Amazon SageMaker training image with Prophet, statsmodels, and an intermittent-demand library installed (a custom container built on the SageMaker scikit-learn base or the SageMaker DeepAR built-in algorithm for the multi-series neural option), an AWS Step Functions state machine that orchestrates extract -> segment -> per-segment Map state -> forecast -> reorder calc -> DynamoDB load, an Amazon DynamoDB table for the served forecasts and reorder points keyed by `facility_id#sku_id` and a sort key for `generated_at` plus a `CURRENT` pointer record per SKU, an Amazon EventBridge schedule that triggers the Step Functions state machine on a weekly cadence (and a daily one for the consumption-data refresh), AWS Lambda functions for the lightweight transforms (SKU segmentation, reorder-point calculation, DynamoDB loader), Amazon CloudWatch dashboards and alarms for pipeline failures and per-segment forecast drift, and a thin integration layer (typically a flat-file extract or an API call) that pushes the new reorder points into the institutional ERP / materials management system on its own cadence. The demo replaces all of these with a single in-process Python file so the focus stays on the segmentation, the per-segment modeling, the reorder-point math, and the disposition logic rather than on the platform plumbing.
 
@@ -60,7 +58,6 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from statistics import mean, stdev
-from typing import Optional
 
 import boto3
 from botocore.config import Config
@@ -89,7 +86,12 @@ BOTO3_RETRY_CONFIG = Config(
     retries={"max_attempts": 5, "mode": "adaptive"})
 
 # Module-level clients. Reused across function calls within the
-# pipeline so each call does not pay the connection cost.
+# pipeline so each call does not pay the connection cost. The
+# demo wires up MockTable / MockEventBus / MockCloudWatch via
+# run_demo() and never touches these real handles; they are
+# staged here so production wiring is a one-line swap. boto3
+# client and resource construction is lazy (no network call
+# until first use), so the unused handles are free at import.
 REGION = "us-east-1"
 s3_client          = boto3.client("s3",
                                   region_name=REGION,
@@ -652,6 +654,10 @@ def segment_skus(prepared_rows):
     return segments, diagnostics
 ```
 
+<!-- TODO (TechWriter): Code review Issue 4 (NOTE). Replace the set/sorted/comprehension chain in the per-segment count log with a `Counter`: `from collections import Counter` (alongside the existing `defaultdict` import); `seg_counts = Counter(segments.values())`; then `", ".join(f"{seg}={n}" for seg, n in sorted(seg_counts.items()))`. The current expression rewalks segments.values() once per segment and is harder to read than the prose intent. -->
+
+<!-- TODO (TechWriter): Code review Issue 3 (NOTE). The pseudocode Step 1 in the main recipe lists row-level features `scheduled_cases` and `flu_season_index` that this Python implementation does not attach to each row; the procedure-driven model reads case volume via the side-channel `case_volume_by_date` parameter instead. Either trim those two lines from the recipe pseudocode or attach `scheduled_cases` and a respiratory-season indicator to each row in `prepare_consumption_data` so the modeling-ready table is visibly self-contained (the latter is preferable because it teaches the row-as-feature-vector pattern the pseudocode advocates). -->
+
 ---
 
 ## Step 3: Train a Model per Segment
@@ -804,11 +810,13 @@ class SBAModel:
         # SKUs systematically over-stock.
         self.daily_forecast = (size_s / interval_s) * (1 - self.alpha / 2.0)
 
-        # Residual standard deviation against the constant
-        # forecast. SBA forecasts are constant per day, which
-        # makes residual variance simple to compute. Production
-        # uses MASE (mean absolute scaled error) for intermittent
-        # demand because MAPE blows up on zero days.
+        # Residual standard deviation against the constant forecast.
+        # This is the per-day demand variability, which the
+        # safety-stock formula consumes via z * sqrt(lead_time)
+        # * sigma. For accuracy reporting, production uses MASE
+        # rather than MAPE because MAPE is undefined on zero-
+        # demand days; that is a separate metric from the std-dev
+        # used for reorder-point calculation.
         residuals = [q - self.daily_forecast for q in daily_quantities]
         if len(residuals) > 1:
             self.sigma = stdev(residuals)
@@ -1020,6 +1028,18 @@ def generate_sku_forecasts_and_reorder_points(trained, sku_master, run_id):
 
         reorder_point = int(round(float(
             Decimal(str(mean_demand_lead)) + safety_stock)))
+        # TODO (TechWriter): Code review Issue 8 (NOTE). The
+        # round-trip Decimal(str(float)) -> Decimal -> float ->
+        # round -> int discards Decimal's precision benefit
+        # because the immediate float() cast is what determines
+        # the final integer. Either compute everything in float
+        # (Decimal only at the DynamoDB boundary, matching the
+        # demo's existing pattern: int(round(mean_demand_lead +
+        # float(safety_stock)))) or stay in Decimal end-to-end
+        # (mean_demand_lead_dec = Decimal(str(mean_demand_lead));
+        # int((mean_demand_lead_dec + safety_stock).quantize(
+        # Decimal("1")))). The all-float form fits the file
+        # better.
 
         order_quantity = _suggest_order_quantity(
             mean_demand_per_day, master_entry)
@@ -1077,9 +1097,11 @@ The forecast records are written to a DynamoDB table keyed by `facility_sku` (a 
 def load_forecasts_to_dynamodb(records, table, event_bus, cloudwatch):
     """Step 5: Batched writes to the served table plus a CURRENT pointer.
 
-    DynamoDB BatchWriteItem accepts up to 25 items per call. The
-    demo loops in chunks; production also handles unprocessed
-    items returned from BatchWriteItem with exponential backoff.
+    The boto3 resource-level batch_writer() chunks into 25-item
+    batches and retries UnprocessedItems with exponential backoff
+    internally. The explicit chunking below is for clarity in a
+    pedagogical mock; production typically just hands the full
+    list of records to a single batch_writer() context.
     """
     if not records:
         return 0
