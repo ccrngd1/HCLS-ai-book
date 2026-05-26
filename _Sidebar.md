@@ -206,6 +206,7 @@
   * [Python Example](chapter12.05-python-example)
 * [12.6 — Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting)
   * [Python Example](chapter12.06-python-example)
+* [12.8 — Disease Progression Trajectory Modeling](chapter12.08-disease-progression-trajectory-modeling)
 
 ---
 
