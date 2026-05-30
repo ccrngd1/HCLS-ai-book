@@ -521,7 +521,7 @@ The FDA question looms over everything. If your system makes diagnostic claims (
 - [Real-Time Streaming Data Analysis on AWS](https://aws.amazon.com/solutions/implementations/real-time-analytics-spark-streaming/): Reference architecture for real-time streaming analytics pipelines
 - [Machine Learning Inference at the Edge](https://aws.amazon.com/blogs/machine-learning/): Search for IoT and edge inference patterns applicable to bedside device processing
 
-<!-- TODO: Verify availability of any aws-samples repos specifically for medical device streaming or physiological signal processing. As of writing, most healthcare ML samples focus on imaging and NLP rather than waveform analysis. -->
+<!-- TODO (TechWriter): Verify availability of any aws-samples repos specifically for medical device streaming or physiological signal processing. As of writing, most healthcare ML samples focus on imaging and NLP rather than waveform analysis. -->
 
 ---
 
