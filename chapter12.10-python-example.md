@@ -35,7 +35,7 @@ A few things worth knowing upfront:
 - **Waveform data linked to patient identifiers is PHI.** Even raw voltage values become PHI when associated with a patient ID. Every storage and compute service must be on the HIPAA eligible services list, encrypted with KMS, and inside your institutional VPC.
 - **The signal quality gate is your most important defense against false alarms.** In real ICU data, 20-40% of waveform segments are artifact-contaminated. Passing these to the classifier produces confident wrong answers. Reject early, reject often.
 - **Persistence thresholds are the second defense.** A single 10-second window classified as "atrial fibrillation" at 72% confidence is not actionable. Six consecutive windows at 85%+ confidence is. Tune persistence thresholds per condition based on clinical urgency and acceptable false alarm rates.
-- **DynamoDB and Timestream both reject Python `float`.** Timestream accepts `float` for measure values but requires string dimensions. The demo handles this; production code should use explicit type coercion everywhere.
+- **Timestream requires string-typed dimensions and epoch-millisecond timestamps.** The demo converts ISO timestamps to epoch milliseconds for the `Time` field and coerces all dimension values to strings. Production code should use explicit type coercion everywhere.
 - **The example collapses many ECS tasks, Lambdas, and SageMaker endpoints into a single Python file.** In production, ingestion, preprocessing, classification, alert logic, and storage are separate services with their own scaling, error handling, and IAM boundaries.
 
 ---
@@ -53,7 +53,6 @@ import statistics
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from decimal import Decimal
 
 import boto3
 from botocore.config import Config
@@ -603,19 +602,20 @@ def set_cooldown(patient_id, classification):
 
 def count_consecutive(results, classification, min_confidence):
     """
-    Count the longest run of consecutive windows matching the
-    given classification at or above the confidence threshold.
+    Count trailing consecutive windows (from most recent backward)
+    matching the given classification at or above the confidence
+    threshold. We count from the end because the trailing run
+    represents the patient's current state; a historical run that
+    has since resolved is not actionable.
     """
-    max_run = 0
-    current_run = 0
-    for r in results:
+    count = 0
+    for r in reversed(results):
         if (r["classification"] == classification
                 and r["confidence"] >= min_confidence):
-            current_run += 1
-            max_run = max(max_run, current_run)
+            count += 1
         else:
-            current_run = 0
-    return max_run
+            break
+    return count
 
 
 def apply_alert_logic(classification_results, sns=None):
@@ -763,7 +763,10 @@ def store_classifications(classification_results, alerts_generated,
                     1 if result["classification"] in alert_ids else 0),
                  "Type": "BIGINT"},
             ],
-            "Time": result["window_timestamp"],
+            "Time": str(int(
+                datetime.fromisoformat(
+                    result["window_timestamp"].replace("Z", "+00:00")
+                ).timestamp() * 1000)),
             "TimeUnit": "MILLISECONDS",
         })
 

@@ -231,7 +231,7 @@ FUNCTION preprocess_waveform(raw_record):
     IF sqi_score < QUALITY_THRESHOLD:  // typically 0.6 - 0.8 depending on application
         log_quality_rejection(raw_record, sqi_score)
         write_quality_metric to Timestream:
-            patient_id = raw_record.session_id
+            session_id = raw_record.session_id
             metric     = "sqi_rejection"
             value      = sqi_score
             timestamp  = raw_record.timestamp
