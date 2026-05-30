@@ -12,11 +12,11 @@ Now look at what happens to that data. Almost all of it is thrown away. The moni
 
 This is not a storage problem. Storage is cheap. This is an analysis problem. The volume and velocity of physiological waveform data overwhelms human attention. A nurse watching six patients cannot simultaneously track the beat-to-beat variability in each patient's QT interval, the trending of pulse pressure variation, and the spectral evolution of an EEG. But a machine can.
 
-The clinical value is enormous. Arrhythmia detection from ECG waveforms is the most mature application, but it's just the beginning. Seizure prediction from EEG, hemodynamic instability detection from arterial line waveforms, ventilator asynchrony detection from flow and pressure curves, and neonatal apnea detection from respiratory waveforms are all active areas where continuous waveform analysis can provide minutes to hours of early warning before clinical deterioration becomes obvious.
+Here's where it gets interesting from a clinical standpoint. Arrhythmia detection from ECG waveforms is the most mature application, but it's just the beginning. Seizure prediction from EEG, hemodynamic instability detection from arterial line waveforms, ventilator asynchrony detection from flow and pressure curves, and neonatal apnea detection from respiratory waveforms are all active areas where continuous waveform analysis can provide minutes to hours of early warning before clinical deterioration becomes obvious.
 
 The challenge is building a system that can ingest these high-frequency streams, process them in near-real-time, distinguish genuine physiological signals from the ocean of noise and artifact, and surface actionable alerts without drowning clinicians in false alarms. Alert fatigue is already the number one complaint in ICU nursing. Adding another alarm source that fires incorrectly is worse than having no alarm at all.
 
-Let's talk about how waveform analysis actually works, and why it's harder than it looks.
+Here's how the signal processing actually works, and why the gap between "demo" and "production" is so wide.
 
 ---
 
@@ -92,6 +92,8 @@ At a conceptual level, continuous waveform analysis follows this pipeline:
 
 **Alert / Store:** Route actionable findings to the clinical notification system. Store all classifications (including non-alerting ones) for retrospective analysis, model retraining, and clinical research. Maintain a complete audit trail of what was detected, when, and what action was taken.
 
+**Failure handling is critical.** Each stage needs a dead-letter mechanism for failed records. In a clinical safety system, silent data loss (waveform segments dropped without detection) is a patient safety concern. Failed records should be retried with backoff, then routed to a dead-letter store for manual review. Operational alerts on failure queue depth ensure the team knows when the pipeline is degrading.
+
 ---
 
 ## The AWS Implementation
@@ -100,13 +102,13 @@ At a conceptual level, continuous waveform analysis follows this pipeline:
 
 **Amazon Kinesis Data Streams for waveform ingestion.** Physiological waveforms are the definition of high-throughput streaming data. Kinesis handles the continuous ingestion of millions of data points per second with guaranteed ordering within each shard. Each patient or device maps to a partition key, ensuring all data from one source stays in order. The 7-day retention window provides a buffer for reprocessing if your downstream analysis needs to be re-run.
 
-**AWS Lambda (or Amazon ECS/Fargate for sustained workloads) for preprocessing.** The preprocessing step (filtering, artifact detection, quality scoring) is computationally moderate but must run continuously. For lower-volume deployments, Lambda with Kinesis triggers works. For sustained high-throughput (dozens of beds, multiple waveform types), ECS/Fargate containers provide consistent compute without cold-start latency.
+**AWS Lambda (or Amazon ECS/Fargate for sustained workloads) for preprocessing.** The preprocessing step (filtering, artifact detection, quality scoring) is computationally moderate but must run continuously. For lower-volume deployments, Lambda with Kinesis triggers works. For sustained high-throughput (dozens of beds, multiple waveform types), ECS/Fargate containers provide consistent compute without cold-start latency. Configure ECS Service Auto Scaling based on Kinesis iterator age (the lag between record arrival and processing). Target an iterator age under 5 seconds. Pre-provision a minimum task count that handles your typical census plus 20% headroom for burst scenarios like mass casualty events or shift-change admissions.
 
-**Amazon SageMaker for model hosting.** Waveform classification models (typically CNNs or transformers) need GPU inference for real-time performance at scale. SageMaker real-time endpoints with auto-scaling provide managed GPU inference with predictable latency. For the highest throughput requirements, SageMaker supports multi-model endpoints that can serve different waveform models (ECG classifier, EEG seizure detector) from the same infrastructure.
+**Amazon SageMaker for model hosting.** Waveform classification models (typically CNNs or transformers) need GPU inference for real-time performance at scale. SageMaker real-time endpoints with auto-scaling provide managed GPU inference with predictable latency. Deploy separate endpoints per waveform type (ecg-rhythm-classifier, eeg-seizure-detector, abp-hemodynamic-analyzer). This enables independent model updates, independent scaling (ECG inference volume is typically 5-10x higher than EEG), and fault isolation. A multi-model endpoint is acceptable for cost optimization in smaller deployments but introduces deployment coupling. Store model artifacts in a versioned S3 bucket with Object Lock (compliance mode) after validation. Use SageMaker Model Registry to track approved model versions. The endpoint deployment pipeline should verify the model artifact's SHA-256 hash against the registry before deployment, supporting FDA QMS requirements for software configuration management.
 
-**Amazon Timestream for waveform storage and analytics.** Timestream is purpose-built for time series data at scale. It handles the write throughput of continuous waveform ingestion, provides built-in time-based queries (give me the last 4 hours of this patient's ECG features), and automatically manages data lifecycle (hot storage for recent data, cold storage for historical). The magnetic store tier keeps months of historical data queryable at low cost.
+**Amazon Timestream for waveform storage and analytics.** Timestream is purpose-built for time series data at scale. It handles the write throughput of continuous waveform ingestion, provides built-in time-based queries (give me the last 4 hours of this patient's ECG features), and automatically manages data lifecycle (hot storage for recent data, cold storage for historical). The magnetic store tier keeps months of historical data queryable at low cost. Batch Timestream writes using the WriteRecords API (up to 100 records per call). Buffer classification results for 1-2 seconds before flushing to maximize batch efficiency and reduce cost by 10-50x versus individual writes.
 
-**Amazon SNS/SQS for clinical alerting.** Alerts need to reach clinicians through multiple channels (pager, mobile app, nurse station display) with guaranteed delivery and acknowledgment tracking. SNS fan-out to multiple subscribers handles the multi-channel requirement. SQS provides buffering and retry for downstream systems that might be temporarily unavailable.
+**Amazon SNS/SQS for clinical alerting.** Alerts need to reach clinicians through multiple channels (pager, mobile app, nurse station display) with guaranteed delivery and acknowledgment tracking. SNS fan-out to multiple subscribers handles the multi-channel requirement. The clinical-waveform-alerts SNS topic uses SSE-KMS encryption. Subscribers are restricted via SNS access policies to authorized clinical notification endpoints. Mobile push notifications use the opaque session ID (not the MRN), with the receiving app resolving the patient identity locally. SQS provides buffering and retry for downstream systems that might be temporarily unavailable.
 
 **Amazon S3 for raw waveform archival.** Raw waveform data (pre-processing) goes to S3 for long-term retention. This supports model retraining, clinical research, and regulatory audit requirements. Lifecycle policies move data to Glacier after the active analysis window.
 
@@ -116,14 +118,17 @@ At a conceptual level, continuous waveform analysis follows this pipeline:
 flowchart TD
     A[🏥 Bedside Monitors\nHL7/IEEE 11073] -->|Device Integration\nEngine| B[Kinesis Data Streams\nWaveform Ingestion]
     B -->|Trigger| C[ECS/Fargate\nPreprocessing]
-    C -->|Clean Segments| D[SageMaker Endpoint\nWaveform Classification]
+    C -->|Clean Segments| D[SageMaker Endpoints\nPer-Waveform-Type\nClassification]
     C -->|Signal Quality\nMetrics| E[Timestream\nQuality Metrics]
     C -->|Raw Archive| F[S3\nWaveform Archive]
-    D -->|Classifications| G[Lambda\nPost-Processing &\nAlert Logic]
+    D -->|Classifications| G[SQS → Lambda\nPost-Processing &\nAlert Logic]
     G -->|Actionable Alerts| H[SNS\nClinical Notifications]
     G -->|All Results| E
-    H -->|Pager/App| I[👩‍⚕️ Clinical Staff]
+    H -->|Pager/App| I[👩⚕️ Clinical Staff]
     H -->|Display| J[🖥️ Nurse Station]
+    C -.->|Failures| K[DLQ\nFailed Records]
+    D -.->|Failures| K
+    G -.->|Failures| K
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
@@ -134,11 +139,11 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Kinesis Data Streams, Amazon ECS/Fargate, Amazon SageMaker, Amazon Timestream, Amazon S3, Amazon SNS, AWS Lambda |
-| **IAM Permissions** | `kinesis:PutRecord`, `kinesis:GetRecords`, `sagemaker:InvokeEndpoint`, `timestream:WriteRecords`, `timestream:Select`, `s3:PutObject`, `sns:Publish` |
+| **AWS Services** | Amazon Kinesis Data Streams, Amazon ECS/Fargate, Amazon SageMaker, Amazon Timestream, Amazon S3, Amazon SNS, Amazon SQS, AWS Lambda |
+| **IAM Permissions** | Per-component least-privilege roles: (1) Device integration: `kinesis:PutRecord`, `s3:PutObject` (archive bucket); (2) Preprocessing: `kinesis:GetRecords`, `timestream:WriteRecords`, `s3:PutObject`; (3) Inference: `sagemaker:InvokeEndpoint`; (4) Post-processing: `timestream:WriteRecords`, `sns:Publish`, `sqs:ReceiveMessage`; (5) Monitoring: `timestream:Select`, `cloudwatch:GetMetricData` |
 | **BAA** | AWS BAA signed (required: waveform data is PHI linked to patient identifiers) |
-| **Encryption** | Kinesis: server-side encryption with KMS; S3: SSE-KMS; Timestream: encryption at rest (default); SageMaker endpoint: encrypted inter-container traffic; all transit over TLS |
-| **VPC** | Production: all compute in VPC with VPC endpoints for Kinesis, S3, SageMaker, Timestream, SNS, and CloudWatch Logs. Device integration engine in same VPC or connected via Direct Connect/VPN. |
+| **Encryption** | Kinesis: server-side encryption with KMS; S3: SSE-KMS; Timestream: encryption at rest (default); SageMaker endpoint: encrypted inter-container traffic; SNS: SSE-KMS; all transit over TLS |
+| **VPC** | Production: all compute in VPC with VPC endpoints for Kinesis, S3, SageMaker (API and Runtime), Timestream (Write and Query), SNS, SQS, CloudWatch Logs, ECR (api and dkr), STS, and KMS. Device integration engine in same VPC or connected via Direct Connect (preferred for <5ms latency) or site-to-site VPN. No internet path for waveform data. Deploy ECS tasks and SageMaker endpoints in the same AZ to minimize cross-component latency. |
 | **CloudTrail** | Enabled for all API calls. SageMaker endpoint invocations logged for audit trail of clinical decisions. |
 | **Sample Data** | PhysioNet MIMIC-III Waveform Database (publicly available, de-identified ICU waveforms). PhysioNet MIT-BIH Arrhythmia Database for ECG classification development. Never use identifiable patient waveforms in dev. |
 | **Cost Estimate** | Kinesis: ~$0.015/million records. SageMaker GPU endpoint (ml.g4dn.xlarge): ~$0.74/hour. Timestream writes: ~$0.50/million records. At 30 beds continuous monitoring: ~$800-1200/month compute + storage. |
@@ -150,10 +155,11 @@ flowchart TD
 |------------|------|
 | **Amazon Kinesis Data Streams** | Ingests high-frequency waveform streams with per-patient ordering |
 | **Amazon ECS/Fargate** | Runs continuous preprocessing (filtering, artifact detection, quality scoring) |
-| **Amazon SageMaker** | Hosts trained waveform classification models on GPU endpoints |
+| **Amazon SageMaker** | Hosts trained waveform classification models on GPU endpoints (one per waveform type) |
 | **Amazon Timestream** | Stores classification results, quality metrics, and derived features for time-based queries |
 | **Amazon S3** | Archives raw waveform data for retraining and research |
-| **Amazon SNS** | Delivers clinical alerts to multiple notification channels |
+| **Amazon SNS** | Delivers clinical alerts to multiple notification channels (SSE-KMS encrypted) |
+| **Amazon SQS** | Buffers classification results for post-processing with built-in retry and DLQ |
 | **AWS Lambda** | Applies post-processing logic, alert suppression, and clinical context rules |
 | **AWS KMS** | Manages encryption keys for all data stores and streams |
 | **Amazon CloudWatch** | Monitors pipeline latency, model inference time, alert rates, and system health |
@@ -162,31 +168,33 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: Waveform ingestion.** Bedside monitors produce continuous streams of physiological data. A device integration engine (running on-premises or in the VPC) translates proprietary device protocols into a standardized format and pushes individual samples or small batches into Kinesis. Each record includes the patient identifier, waveform type (ECG lead II, arterial BP, SpO2 pleth), timestamp, and the sample values. The partition key is the patient/device combination, ensuring all data from one source arrives in order. Without ordered ingestion, downstream analysis would see scrambled waveforms and produce garbage classifications.
+**Step 1: Waveform ingestion.** Bedside monitors produce continuous streams of physiological data. A device integration engine (running on-premises or in the VPC) translates proprietary device protocols into a standardized format and pushes individual samples or small batches into Kinesis. Each record includes an opaque session identifier (not the patient's MRN), waveform type, timestamp, and the sample values. The partition key is this session ID combined with the waveform type, ensuring all data from one source arrives in order. Using an opaque session ID rather than a direct patient identifier prevents PHI leakage into stream metadata, S3 key paths, and CloudWatch dimensions. A separate identity service with restricted access maps session IDs to MRNs. Without ordered ingestion, downstream analysis would see scrambled waveforms and produce garbage classifications.
 
 ```
-FUNCTION ingest_waveform_sample(patient_id, waveform_type, timestamp, samples):
+FUNCTION ingest_waveform_sample(session_id, waveform_type, timestamp, samples):
     // Package the waveform data into a structured record.
     // "samples" is an array of numerical values from the ADC (analog-to-digital converter).
     // For ECG at 500 Hz, a 1-second batch would contain 500 values.
+    // NOTE: session_id is an opaque UUID mapped to the patient MRN in a separate
+    // identity service. Never use MRN directly as a partition key or S3 path component.
     record = {
-        patient_id:    patient_id,        // unique patient identifier in this ICU stay
+        session_id:    session_id,        // opaque encounter-session UUID
         waveform_type: waveform_type,     // e.g., "ecg_lead_ii", "art_bp", "eeg_fp1"
         timestamp:     timestamp,         // precise timestamp of first sample in this batch (ISO 8601)
         sample_rate:   250,               // samples per second (varies by waveform type)
         values:        samples            // array of numerical sample values
     }
 
-    // Push to Kinesis with patient+device as partition key.
+    // Push to Kinesis with session+device as partition key.
     // This guarantees ordering: all samples from this patient's ECG arrive in sequence.
     put_record to Kinesis stream "waveform-ingestion":
         data          = serialize(record)
-        partition_key = patient_id + ":" + waveform_type
+        partition_key = session_id + ":" + waveform_type
 
     // Also archive the raw data to S3 for long-term retention.
     // Use a time-partitioned key structure for efficient retrieval.
     put_object to S3 bucket "waveform-archive":
-        key  = "{patient_id}/{waveform_type}/{date}/{hour}/{timestamp}.json"
+        key  = "{session_id}/{waveform_type}/{date}/{hour}/{timestamp}.json"
         body = serialize(record)
 ```
 
@@ -223,7 +231,7 @@ FUNCTION preprocess_waveform(raw_record):
     IF sqi_score < QUALITY_THRESHOLD:  // typically 0.6 - 0.8 depending on application
         log_quality_rejection(raw_record, sqi_score)
         write_quality_metric to Timestream:
-            patient_id = raw_record.patient_id
+            patient_id = raw_record.session_id
             metric     = "sqi_rejection"
             value      = sqi_score
             timestamp  = raw_record.timestamp
@@ -239,7 +247,7 @@ FUNCTION preprocess_waveform(raw_record):
     windows = segment_into_windows(filtered, window_size, overlap=0.5)
 
     RETURN {
-        patient_id:    raw_record.patient_id,
+        session_id:    raw_record.session_id,
         waveform_type: raw_record.waveform_type,
         timestamp:     raw_record.timestamp,
         windows:       windows,       // list of fixed-length clean signal segments
@@ -257,7 +265,8 @@ FUNCTION classify_waveform(preprocessed):
 
     FOR each window in preprocessed.windows:
         // Invoke the appropriate model endpoint based on waveform type.
-        // Different waveform types use different specialized models.
+        // Each waveform type has its own dedicated endpoint for independent
+        // scaling, updates, and fault isolation.
         endpoint_name = get_endpoint_for_waveform(preprocessed.waveform_type)
 
         response = invoke SageMaker endpoint:
@@ -280,30 +289,35 @@ FUNCTION classify_waveform(preprocessed):
             signal_quality: preprocessed.sqi_score
         }
 
+    // On inference failure (timeout, throttling), retry up to 3 times with
+    // exponential backoff. If still failing, route the preprocessed segment
+    // to a DLQ for manual review. Never silently drop waveform data.
+
     RETURN {
-        patient_id:    preprocessed.patient_id,
+        session_id:    preprocessed.session_id,
         waveform_type: preprocessed.waveform_type,
         results:       results
     }
 ```
 
-**Step 4: Post-processing and alert logic.** Raw model outputs are not clinical alerts. A single window classified as "atrial fibrillation" with 70% confidence is not actionable. This step applies clinical logic: requiring sustained detections (multiple consecutive windows agreeing), applying confidence thresholds, checking patient context (known conditions that should not re-alert), and enforcing cooldown periods. This is where you control your false alarm rate, and it's the difference between a system clinicians trust and one they disable.
+**Step 4: Post-processing and alert logic.** Raw model outputs are not clinical alerts. A single window classified as "atrial fibrillation" with 70% confidence is not actionable. This step applies clinical logic: requiring sustained detections (multiple consecutive windows agreeing), applying confidence thresholds, checking patient context (known conditions that should not re-alert), and enforcing cooldown periods. This is where you control your false alarm rate, and it's the difference between a system clinicians trust and one they disable. This Lambda function is triggered via SQS (not direct invocation), which provides built-in retry semantics and a DLQ for failed processing attempts.
 
 ```
 FUNCTION apply_alert_logic(classification_results):
-    patient_id = classification_results.patient_id
+    session_id = classification_results.session_id
     results    = classification_results.results
 
     // Load patient context: known conditions, active alerts, alert history.
     // A patient with documented chronic atrial fibrillation should not get
     // repeated AFib alerts. A patient post-cardiac surgery may have expected PVCs.
-    patient_context = load_patient_context(patient_id)
+    patient_context = load_patient_context(session_id)
 
-    // Count consecutive windows with the same high-confidence classification.
-    // A single window detection is unreliable. Sustained detection is meaningful.
+    // Count trailing consecutive windows with the same high-confidence classification.
+    // We count from the most recent window backward because that represents the
+    // current patient state. A historical run that has since resolved is not actionable.
     FOR each unique classification in results:
-        consecutive_count = count_consecutive_windows(results, classification, 
-                                                      min_confidence=ALERT_CONFIDENCE_THRESHOLD)
+        consecutive_count = count_trailing_consecutive(results, classification, 
+                                                       min_confidence=ALERT_CONFIDENCE_THRESHOLD)
 
         // Check if this classification meets the sustained detection requirement.
         // Different conditions have different persistence thresholds:
@@ -315,16 +329,16 @@ FUNCTION apply_alert_logic(classification_results):
         IF consecutive_count >= persistence_threshold:
             // Check suppression rules before alerting.
             IF classification in patient_context.known_conditions:
-                log_suppressed_alert(patient_id, classification, "known_condition")
+                log_suppressed_alert(session_id, classification, "known_condition")
                 CONTINUE  // do not alert for known, documented conditions
 
-            IF is_in_cooldown(patient_id, classification):
-                log_suppressed_alert(patient_id, classification, "cooldown_active")
+            IF is_in_cooldown(session_id, classification):
+                log_suppressed_alert(session_id, classification, "cooldown_active")
                 CONTINUE  // recently alerted for this; don't re-alert yet
 
             // This is a genuine, actionable alert. Generate it.
             alert = {
-                patient_id:     patient_id,
+                session_id:     session_id,
                 classification: classification,
                 confidence:     average_confidence(results, classification),
                 onset_time:     first_detection_timestamp(results, classification),
@@ -333,22 +347,24 @@ FUNCTION apply_alert_logic(classification_results):
             }
 
             // Publish alert to clinical notification system.
+            // SNS topic uses SSE-KMS encryption. Alert contains session_id (opaque),
+            // not MRN. The receiving clinical app resolves patient identity locally.
             publish to SNS topic "clinical-waveform-alerts":
                 message  = serialize(alert)
                 attributes = {
                     severity:  alert.severity,    // enables filtering by urgency
-                    patient:   patient_id,
+                    session:   session_id,
                     condition: classification
                 }
 
             // Set cooldown to prevent alert storms.
-            set_cooldown(patient_id, classification, duration=COOLDOWN_MINUTES)
+            set_cooldown(session_id, classification, duration=COOLDOWN_MINUTES)
 
     // Store ALL classification results (alerting and non-alerting) for audit and research.
     write_batch to Timestream:
         FOR each result in results:
             record = {
-                patient_id:     patient_id,
+                session_id:     session_id,
                 waveform_type:  classification_results.waveform_type,
                 classification: result.classification,
                 confidence:     result.confidence,
@@ -361,26 +377,32 @@ FUNCTION apply_alert_logic(classification_results):
 **Step 5: Store and expose results.** Every classification, whether it triggered an alert or not, is stored in Timestream for retrospective analysis. This enables clinicians to review a patient's waveform analysis history ("show me all rhythm classifications for this patient over the last 24 hours"), supports model performance monitoring (tracking false positive rates over time), and provides the training data for model improvement. The storage layer also feeds dashboards that show unit-level alert rates, signal quality trends, and system health metrics.
 
 ```
-FUNCTION store_and_expose(patient_id, classification_results, alerts_generated):
+FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
     // Write detailed results to Timestream for time-based queries.
     // Timestream's time-partitioned storage makes "last N hours" queries fast.
-    FOR each result in classification_results:
-        write to Timestream table "waveform-classifications":
-            dimensions = {
-                patient_id:     patient_id,
-                waveform_type:  result.waveform_type,
-                classification: result.classification
-            }
-            measures = {
-                confidence:     result.confidence,
-                signal_quality: result.signal_quality,
-                alerted:        1 if result in alerts_generated else 0
-            }
-            timestamp = result.window_start
+    // Batch writes: up to 100 records per WriteRecords call for cost efficiency.
+    FOR each batch of 100 records in classification_results:
+        write_records to Timestream table "waveform-classifications":
+            records = [
+                {
+                    dimensions = {
+                        session_id:     session_id,
+                        waveform_type:  result.waveform_type,
+                        classification: result.classification
+                    },
+                    measures = {
+                        confidence:     result.confidence,
+                        signal_quality: result.signal_quality,
+                        alerted:        1 if result in alerts_generated else 0
+                    },
+                    timestamp = result.window_start
+                }
+                FOR each result in batch
+            ]
 
     // Write summary metrics for operational dashboards.
     write to Timestream table "waveform-system-metrics":
-        dimensions = { unit: get_patient_unit(patient_id) }
+        dimensions = { unit: get_patient_unit(session_id) }
         measures = {
             classifications_per_minute: count(classification_results) / window_duration_minutes,
             alert_rate:                 count(alerts_generated) / count(classification_results),
@@ -397,7 +419,7 @@ FUNCTION store_and_expose(patient_id, classification_results, alerts_generated):
 
 ```json
 {
-  "patient_id": "ICU-BED-07-20260301",
+  "session_id": "a3f7c291-4e82-4b1a-9d03-7f8e2c1b5a94",
   "waveform_type": "ecg_lead_ii",
   "analysis_window": {
     "start": "2026-03-01T14:22:00Z",
