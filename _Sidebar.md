@@ -210,6 +210,8 @@
   * [Python Example](chapter12.08-python-example)
 * [12.9 — Epidemic Forecasting](chapter12.09-epidemic-forecasting)
   * [Python Example](chapter12.09-python-example)
+* [12.10 — Physiological Waveform Analysis](chapter12.10-physiological-waveform-analysis)
+  * [Python Example](chapter12.10-python-example)
 
 ---
 
