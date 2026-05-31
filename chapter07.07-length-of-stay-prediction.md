@@ -96,7 +96,7 @@ Several approaches work for LOS prediction, each with tradeoffs:
 
 ### The General Architecture Pattern
 
-```
+```text
 [EHR Data Extract] → [Feature Engineering] → [Model Training Pipeline]
                                                         ↓
 [Real-time Clinical Feed] → [Feature Store] → [Inference Engine] → [Prediction Store]
@@ -124,7 +124,7 @@ The feature store is the critical piece that bridges both modes. Training featur
 
 <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add brief note on model artifact security: KMS encryption for model artifacts in S3, access control on Model Registry (restrict CreateModel/CreateEndpoint to deployment pipeline role), and model approval gate (PendingManualApproval status) before serving live predictions. -->
 
-**Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. Define your feature groups (admission features, daily clinical features, social features), compute them once, and both training and inference see the same values. The offline store feeds training; the online store feeds real-time predictions.
+**Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. Define your feature groups (admission features, daily clinical features, social features), compute them once, and both training and inference see the same values. The offline store feeds training; the online store feeds real-time inference.
 
 **AWS HealthLake for FHIR-based clinical data.** HealthLake provides a FHIR-compliant data store that can ingest ADT (admit/discharge/transfer) events, lab results, medications, and other clinical data in a standardized format. This gives you a clean, queryable source for feature engineering without building custom EHR integrations from scratch.
 
@@ -197,7 +197,7 @@ flowchart TD
 
 **Step 1: Feature extraction from clinical data.** The foundation of any LOS model is the feature set. At admission time, you extract static features (demographics, diagnosis, comorbidities, admission source). As the stay progresses, you extract dynamic features (latest labs, vital sign trends, medication changes, procedures). The feature extraction logic must handle missing data gracefully because not every patient has every lab drawn on every day. The key design decision: compute features at a consistent cadence (every 24 hours at midnight, for example) so that training data and inference data are aligned temporally. Skip this step or compute features inconsistently, and your model will learn patterns that don't exist in production.
 
-```
+```text
 FUNCTION extract_admission_features(encounter):
     // Static features available at the moment of admission.
     // These form the baseline prediction before any clinical trajectory is observed.
@@ -266,7 +266,7 @@ FUNCTION extract_daily_features(encounter, as_of_date):
 
 **Step 2: Training data preparation.** For training, you need historical encounters with known outcomes (actual LOS). The trick is creating training examples at multiple time points during each stay. A patient who stayed 7 days generates training examples at day 0 (target: 7), day 1 (target: 6), day 2 (target: 5), and so on. This teaches the model to predict remaining LOS from any point during the stay, not just admission. Filter out encounters that ended in death or transfer (different outcome distributions) unless you're building separate models for those populations. Also exclude encounters shorter than 24 hours (observation stays) unless your use case specifically includes them.
 
-```
+```text
 FUNCTION prepare_training_data(historical_encounters, min_los=1, max_los=60):
     // Build training examples from completed encounters.
     // Each encounter generates multiple examples: one per day of stay.
@@ -306,7 +306,7 @@ FUNCTION prepare_training_data(historical_encounters, min_los=1, max_los=60):
 
 **Step 3: Model training with service-line stratification.** One model does not fit all. Cardiac surgery patients have fundamentally different LOS drivers than general medicine patients. Train separate models per service line (or DRG family) to capture these differences. Use gradient boosted trees as the baseline because they handle the mixed feature types, missing values, and non-linear relationships well. Evaluate using mean absolute error (MAE) and the percentage of predictions within 1 day of actual. Also evaluate calibration: does the model's predicted distribution match the actual distribution?
 
-```
+```text
 FUNCTION train_los_model(training_data, service_line):
     // Train a gradient boosted tree model for a specific service line.
     // Separate models per service line capture different LOS dynamics.
@@ -361,7 +361,7 @@ FUNCTION train_los_model(training_data, service_line):
 
 <!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify multi-model endpoint pattern: separate endpoints per service line vs. SageMaker Multi-Model Endpoints (lower cost, ~50ms model-loading overhead). Update cost estimate to reflect multiple service lines. -->
 
-```
+```text
 FUNCTION predict_remaining_los(encounter_id):
     // Generate an updated LOS prediction for a current inpatient.
     // Called on a schedule (daily) and on clinical event triggers.
@@ -427,7 +427,7 @@ FUNCTION predict_remaining_los(encounter_id):
 
 **Step 5: Daily batch refresh and monitoring.** Once a day, re-score all current inpatients and compare yesterday's predictions against today's reality. Patients who were discharged yesterday provide ground truth for model monitoring. Track prediction accuracy over time and trigger retraining when performance degrades. Also monitor for distribution drift: if the patient population is changing (new service lines, seasonal patterns, pandemic surges), the model may need updating even if recent accuracy looks acceptable. Orchestrate this batch with a workflow engine (such as Step Functions): check HealthLake data freshness before scoring, checkpoint progress so the pipeline can resume on partial failure, and alert the operations team if the batch doesn't complete within its expected window.
 
-```
+```text
 FUNCTION daily_batch_refresh():
     // Run every morning: update all predictions and monitor model performance.
     
