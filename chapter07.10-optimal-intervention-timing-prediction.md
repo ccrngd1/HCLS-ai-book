@@ -578,12 +578,12 @@ FUNCTION generate_explanation(scored_result):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Model C-index (discrimination) | 0.72–0.78 |
-| Timing accuracy (event within predicted window) | 45–60% |
+| Model C-index (discrimination) | 0.72-0.78 |
+| Timing accuracy (event within predicted window) | 45-60% |
 | End-to-end scoring latency (real-time path) | 3-8 seconds (with provisioned concurrency on scoring Lambda) |
 | Batch scoring throughput | ~5,000 patients/minute |
-| Intervention effectiveness lift vs. static risk | 15–30% improvement in event prevention |
-| False urgency rate (flagged but no event within 30 days) | 30–45% |
+| Intervention effectiveness lift vs. static risk | 15-30% improvement in event prevention |
+| False urgency rate (flagged but no event within 30 days) | 30-45% |
 | Cost per patient scored | ~$0.02 (inference + compute) |
 
 **Where it struggles:**
@@ -660,9 +660,9 @@ One more thing: deploy in shadow mode first. Generate recommendations without su
 
 | Phase | Duration |
 |-------|----------|
-| **Basic** (static risk + velocity heuristic) | 8–12 weeks |
-| **Production-ready** (dynamic survival model, real-time scoring, care team integration) | 16–24 weeks |
-| **With variations** (multi-intervention, causal correction, continuous learning) | 30–40+ weeks |
+| **Basic** (static risk + velocity heuristic) | 8-12 weeks |
+| **Production-ready** (dynamic survival model, real-time scoring, care team integration) | 16-24 weeks |
+| **With variations** (multi-intervention, causal correction, continuous learning) | 30-40+ weeks |
 
 ---
 
