@@ -9,7 +9,7 @@
 You'll need the AWS SDK for Python and a few image processing libraries:
 
 ```bash
-pip install boto3 numpy pillow
+pip install boto3 numpy pillow scipy
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
@@ -56,6 +56,9 @@ MARKER_COLOR_RANGE = {
     # HSV color range for detecting the blue marker.
     # These values work for the standard blue calibration stickers.
     # You'll need to tune these if you use a different colored marker.
+    # NOTE: This config shows what a production implementation would use.
+    # The simplified detect_reference_marker() below uses RGB thresholds
+    # for readability. Wire this config into your detection logic in production.
     "hue_min": 100,
     "hue_max": 130,
     "sat_min": 100,
@@ -529,6 +532,8 @@ def store_measurement(
         "circularity": Decimal(str(measurements["circularity"])),
         "confidence": Decimal(str(round(confidence, 3))),
         "image_s3_key": image_s3_key,
+        # In production, you'd also store the segmentation mask to S3 for audit
+        # and include mask_s3_key here. Omitted for simplicity in this example.
         "clinician_id": metadata.get("clinician_id", "unknown"),
         "wound_location": metadata.get("wound_location", "unspecified"),
         "device_info": metadata.get("device_info", "unknown"),
@@ -570,8 +575,9 @@ def store_measurement(
             # Alert if wound is growing significantly
             if area_change_pct > WOUND_GROWTH_ALERT_THRESHOLD_PCT:
                 logger.warning(
-                    f"ALERT: Wound {wound_id} for patient {patient_id} "
-                    f"increased {area_change_pct:.1f}% over {days_elapsed} days."
+                    f"ALERT: Wound {wound_id} growth detected: "
+                    f"{area_change_pct:.1f}% over {days_elapsed} days. "
+                    f"Review required."
                 )
 
             record["healing_trajectory"] = healing_trajectory
