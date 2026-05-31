@@ -184,6 +184,8 @@
   * [Python Example](chapter07.07-python-example)
 * [7.8 — Disease Progression Modeling](chapter07.08-disease-progression-modeling)
   * [Python Example](chapter07.08-python-example)
+* [7.9 — Mortality Risk Scoring (ICU)](chapter07.09-mortality-risk-scoring-icu)
+  * [Python Example](chapter07.09-python-example)
 
 ---
 
