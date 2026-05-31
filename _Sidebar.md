@@ -174,6 +174,8 @@
   * [Python Example](chapter07.02-python-example)
 * [7.3 — Patient Churn / Disenrollment Prediction](chapter07.03-patient-churn-disenrollment-prediction)
   * [Python Example](chapter07.03-python-example)
+* [7.4 — ED Visit Prediction](chapter07.04-ed-visit-prediction)
+  * [Python Example](chapter07.04-python-example)
 
 ---
 
