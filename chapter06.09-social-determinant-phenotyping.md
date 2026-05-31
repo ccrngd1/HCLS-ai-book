@@ -135,6 +135,8 @@ Unlike supervised learning, there's no ground truth for "correct" SDOH phenotype
 
 **Stage 1: NLP Extraction.** Process clinical notes through an SDOH-specific NLP pipeline. Extract mentions, classify assertions, resolve temporality. Output: per-patient, per-encounter SDOH mention records with domain, polarity, and timestamp.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add 2-3 sentences on error handling: failed extractions should go to a dead-letter queue, feature assembly should distinguish "no extractions found" from "extraction never attempted," and a monitoring alarm should fire when DLQ depth exceeds a threshold. Silent NLP failures create ambiguous gaps indistinguishable from legitimate absence of SDOH mentions. -->
+
 **Stage 2: Feature Assembly.** Combine NLP extractions, structured screening responses, and geocoded community indicators into a unified patient feature vector. Handle missingness explicitly (distinguish "screened negative" from "never screened"). Apply temporal weighting (recent signals matter more than old ones).
 
 **Stage 3: Clustering.** Apply an appropriate clustering algorithm to the assembled feature matrix. Determine optimal cluster count through a combination of statistical criteria (silhouette score, BIC for LCA) and clinical interpretability. Assign each patient a phenotype label and a membership probability.
@@ -199,13 +201,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon Location Service |
-| **IAM Permissions** | `comprehend:DetectEntities`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `glue:StartJobRun`, `geo:SearchPlaceIndexForText` |
+| **IAM Permissions** | `comprehend:DetectEntities`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `glue:StartJobRun`, `geo:SearchPlaceIndexForText`. Scope all permissions to specific resource ARNs in production (for example, `sagemaker:InvokeEndpoint` scoped to `arn:aws:sagemaker:REGION:ACCOUNT:endpoint/sdoh-ner-model`). |
 | **BAA** | Required. Clinical notes and SDOH data are PHI. All services must be covered under your AWS BAA. |
 | **Encryption** | S3: SSE-KMS for all buckets. DynamoDB: encryption at rest (default). SageMaker: KMS-encrypted training data, model artifacts, and endpoint traffic. All transit over TLS. |
-| **VPC** | Production: SageMaker endpoints and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, Comprehend Medical, and CloudWatch Logs. |
+| **VPC** | Production: SageMaker endpoints and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, Comprehend Medical, Location Service, and CloudWatch Logs. |
 | **CloudTrail** | Enabled for all API calls. SDOH data access must be auditable. |
 | **Sample Data** | Synthetic clinical notes with SDOH mentions. MIMIC-III/IV contains social history sections. CDC SVI data is publicly available. Never use real patient notes in development. |
-| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. SageMaker endpoint: ~$0.05/hour (ml.m5.large). Glue: ~$0.44/DPU-hour. Per-patient total depends on note volume; estimate $0.15-$0.40 per patient for initial phenotyping. |
+| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. SageMaker endpoint: ~$0.05/hour (ml.m5.large). Glue: ~$0.44/DPU-hour. Per-patient total depends on note volume; estimate $0.15-$0.40 per patient for initial phenotyping. Cross-AZ data transfer costs apply for batch processing and should be factored into per-patient estimates for large populations. |
 
 ### Ingredients
 
@@ -271,6 +273,8 @@ FUNCTION extract_sdoh_from_note(note_text, patient_id, encounter_date):
 ```
 
 **Step 2: Feature assembly.** This step combines three data sources into a single patient feature vector: NLP extractions from notes, structured screening responses, and community-level indicators linked via geocoding. The challenge is handling missingness honestly. A patient with no NLP mentions might have no social needs, or might simply have sparse documentation. A patient with no screening data wasn't necessarily screened negative; they may never have been asked. The feature vector must encode these distinctions because they affect clustering behavior. Treating "never screened" as "no needs" would systematically undercount SDOH burden in populations with less documentation.
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add guidance on geocoding PHI: recommend geocoding at zip+4 level (not full street address) when census-tract precision suffices for ADI/SVI lookup; call Location Service via VPC endpoint; cache geocode results in the feature store to avoid repeated address transmission; include geocoding calls in application-level audit logging. -->
 
 ```
 FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
@@ -344,7 +348,7 @@ FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
     RETURN features
 ```
 
-**Step 3: Clustering.** With the feature matrix assembled, this step applies a clustering algorithm to discover natural groupings of patients by social determinant profile. The choice of algorithm matters: we use Gower distance (which handles mixed binary, categorical, and continuous features natively) with hierarchical agglomerative clustering. This avoids the need to impute missing values or force everything into a numeric space. The optimal number of clusters is determined by a combination of silhouette score (statistical) and clinical interpretability (human judgment). In practice, SDOH phenotyping tends to produce 4-8 meaningful clusters. Fewer than 4 is too coarse to be actionable; more than 8 is too granular for care management teams to operationalize.
+**Step 3: Clustering.** With the feature matrix assembled, this step applies a clustering algorithm to discover natural groupings of patients by social determinant profile. The choice of algorithm matters: we use Gower distance (which handles mixed binary, categorical, and continuous features natively) with hierarchical agglomerative clustering using average linkage (UPGMA). Average linkage is valid for non-Euclidean distance matrices like Gower. (Ward's linkage, while popular, requires Euclidean distances and produces unreliable results with Gower.) The optimal number of clusters is determined by a combination of silhouette score (statistical) and clinical interpretability (human judgment). In practice, SDOH phenotyping tends to produce 4-8 meaningful clusters. Fewer than 4 is too coarse to be actionable; more than 8 is too granular for care management teams to operationalize.
 
 ```
 FUNCTION cluster_patients(feature_matrix, min_k = 4, max_k = 8):
@@ -362,9 +366,11 @@ FUNCTION cluster_patients(feature_matrix, min_k = 4, max_k = 8):
     results = empty map
 
     FOR k in range(min_k, max_k + 1):
-        // Hierarchical agglomerative clustering with Ward's linkage.
-        // Ward's minimizes within-cluster variance, producing compact clusters.
-        labels = hierarchical_cluster(distance_matrix, method = "ward", n_clusters = k)
+        // Hierarchical agglomerative clustering with average linkage (UPGMA).
+        // Average linkage is valid for non-Euclidean distances like Gower.
+        // Ward's linkage requires Euclidean distances and would produce
+        // unreliable results here.
+        labels = hierarchical_cluster(distance_matrix, method = "average", n_clusters = k)
 
         // Silhouette score: how well-separated are the clusters?
         // Range: -1 to 1. Higher is better. Above 0.3 is reasonable for social data.
@@ -432,6 +438,10 @@ FUNCTION characterize_phenotypes(feature_matrix, cluster_labels, patient_demogra
 ```
 
 **Step 5: Store phenotype assignments.** Write each patient's phenotype assignment to the real-time lookup store. Include the assignment date, confidence (membership probability if using soft clustering), and a staleness indicator. Phenotypes decay: a patient's social circumstances change, and an assignment from 18 months ago may no longer reflect reality. Downstream systems should check the assignment date and trigger re-evaluation if it's stale.
+
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note that feature_snapshot is derived PHI subject to the same retention and access controls as source data. Consider recommending an S3 URI reference in DynamoDB rather than the full snapshot, to reduce PHI surface in the real-time lookup store. -->
+
+<!-- TODO (TechWriter): Expert review S4 (MEDIUM). Add requirement for application-level audit logging at the care management integration point: each phenotype lookup should log requesting user/system, patient_id, timestamp, and phenotype returned (HIPAA accounting-of-disclosures control). -->
 
 ```
 STALENESS_THRESHOLD_DAYS = 180  // re-evaluate phenotype if older than 6 months
@@ -558,6 +568,8 @@ Staleness is a real operational problem. Social circumstances change. A phenotyp
 
 The intervention matching is where the value lives, and it's where most projects stall. Phenotyping without a clear "so what" is an academic exercise. Before you build the clustering, make sure you have community resources to connect patients to. A phenotype of "food insecurity" is only useful if you have a food assistance referral pathway ready.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a recommendation for re-clustering cadence. Common pattern: weekly incremental assignment (new patients to existing centroids) with monthly full re-clustering and equity audit. Note that cadence should be driven by rate of new SDOH data accumulation, not calendar alone. -->
+
 ---
 
 ## Variations and Extensions
@@ -567,6 +579,8 @@ The intervention matching is where the value lives, and it's where most projects
 **Longitudinal trajectory tracking.** Rather than a single point-in-time phenotype, track how patients move between phenotypes over time. A patient who transitions from "multi-domain complexity" to "transportation barrier only" is improving. A patient moving in the opposite direction needs escalated support. Build a state-transition model that identifies patients on worsening trajectories before they reach crisis.
 
 **Federated phenotyping across health systems.** SDOH phenotypes discovered at one health system may not generalize to another (different populations, different documentation practices, different community resources). A federated learning approach trains local models at each site and aggregates the cluster structures without sharing patient-level data. This enables regional or national SDOH phenotype taxonomies while preserving privacy.
+
+**Cluster drift detection.** Monitor silhouette scores and cluster size distributions across consecutive clustering runs. Significant drift (new social determinants emerging, community resources eliminating a previously common barrier) should trigger a full re-validation with clinical stakeholders rather than silently producing stale phenotype definitions.
 
 ---
 
