@@ -108,13 +108,15 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 ### Why These Services
 
-**Amazon SageMaker for model training and real-time inference.** Readmission scoring needs to happen within hours of discharge, which means you need a model endpoint that can score individual patients on demand. SageMaker provides managed real-time endpoints with auto-scaling, plus the training infrastructure for periodic model retraining. The built-in XGBoost container is well-suited for the gradient boosted tree approach that dominates this problem space.
+**Amazon SageMaker for model training and real-time inference.** Readmission scoring needs to happen within hours of discharge, which means you need a model endpoint that can score individual patients on demand. SageMaker gives you managed real-time endpoints that auto-scale, plus the training infrastructure for periodic retraining. The built-in XGBoost container is well-suited for the gradient boosted tree approach that dominates this problem space.
 
 **Amazon HealthLake for clinical data aggregation.** HealthLake provides a FHIR-native data store that can ingest clinical data from EHR systems and normalize it into a queryable format. For readmission prediction, you need to pull together diagnoses, procedures, medications, labs, and encounter history for each patient at discharge time. HealthLake's FHIR search capabilities make this feature assembly step cleaner than querying raw EHR databases directly.
 
 **AWS Glue for feature engineering pipelines.** The batch feature engineering (computing rolling utilization metrics, comorbidity indices, medication complexity scores) runs as scheduled ETL jobs. Glue handles the heavy transformations on historical data that feed model training, while real-time features are assembled at scoring time from HealthLake queries.
 
 **Amazon EventBridge for discharge event processing.** ADT discharge events flow into EventBridge, which triggers the scoring pipeline. EventBridge's event filtering ensures only qualifying inpatient discharges (not observation stays or planned returns) trigger the model. This event-driven architecture means scores are generated automatically without manual intervention.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add dead letter queue guidance: SQS DLQ for failed scoring events, CloudWatch alarm on DLQ depth > 0, daily retry Lambda, and manual review fallback for patients not scored within 24 hours. -->
 
 **AWS Step Functions for pipeline orchestration.** The scoring workflow (detect discharge, assemble features, invoke model, stratify risk, route intervention, store results) has multiple steps with error handling and retry logic. Step Functions coordinates this sequence and provides visibility into failures. If the feature assembly step fails (e.g., a source system is down), the workflow retries with backoff rather than silently dropping the patient.
 
@@ -168,18 +170,21 @@ flowchart TD
     style N fill:#9ff,stroke:#333
 ```
 
+**Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for 1-2 weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon EventBridge, AWS Step Functions, Amazon DynamoDB, Amazon SNS, Amazon S3, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution` |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`. All permissions should be scoped to specific resource ARNs (e.g., `sagemaker:InvokeEndpoint` targeting `arn:aws:sagemaker:{region}:{account}:endpoint/readmission-risk-*`). Use separate IAM roles for the scoring Lambda, training pipeline, and monitoring functions with distinct permission boundaries. |
 | **BAA** | Required. All services handling PHI must be covered under your AWS BAA. HealthLake, SageMaker, DynamoDB, S3, Glue, Step Functions, EventBridge, SNS, and QuickSight are all HIPAA-eligible. |
 | **Encryption** | S3: SSE-KMS for feature stores and model artifacts. DynamoDB: encryption at rest (default). HealthLake: AWS-managed or customer-managed KMS keys. SageMaker: KMS encryption for training data, model artifacts, and endpoint traffic. All inter-service communication over TLS. |
-| **VPC** | Production: SageMaker endpoints, Glue jobs, and Lambda functions in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch Logs. HealthLake accessed via VPC endpoint. |
-| **CloudTrail** | Enabled for all API calls. Critical for HIPAA audit trail: who accessed which patient's risk score, when, and from where. |
-| **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset with readmission outcomes). CMS Synthetic Public Use Files for claims-based features. Never use real PHI in development. |
-| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: <200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. |
+| **VPC** | Production: SageMaker endpoints, Glue jobs, and Lambda functions in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, CloudWatch Logs, Step Functions (states), and SNS. HealthLake accessed via interface endpoint (verify regional availability). |
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Expand VPC endpoint list with full details on gateway vs. interface types for each service. Also address N2: note HealthLake limited regional availability. -->
+| **CloudTrail** | Enabled for all API calls. Critical for HIPAA audit trail: who accessed which patient's risk score, when, and from where. Note: DynamoDB data events log table name and API action but not item keys. Implement application-level audit logging (patient_id, requesting identity, timestamp) for patient-level access auditing required by HIPAA. |
+| **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset with readmission outcomes). CMS Synthetic Public Use Files for claims-based features. Never use real PHI in development. Model validation on real patient data requires a HIPAA-compliant environment with the same security controls as production. |
+| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.115/hour (~$83/month). Scoring latency: <200ms per patient. At 100 discharges/day, the per-discharge cost is ~$0.003. HealthLake: $0.60/GB stored + $0.09 per 1000 read operations. Glue: $0.44/DPU-hour for batch feature engineering. Feature assembly involves 5-7 FHIR queries per patient; parallelize independent queries to keep assembly latency under 1 second. |
 
 ### Ingredients
 
@@ -193,6 +198,7 @@ flowchart TD
 | **Amazon DynamoDB** | Stores risk scores for real-time lookup by downstream systems |
 | **Amazon SNS** | Delivers high-risk alerts to care transition teams |
 | **Amazon S3** | Feature store (Parquet), model artifacts, training datasets, scoring audit logs |
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify feature store architecture: for >100 discharges/day, pre-compute historical utilization features nightly via Glue into DynamoDB keyed by patient_id. Scoring workflow queries HealthLake only for current-encounter features + DynamoDB for pre-computed historical features. This hybrid keeps latency under 500ms. -->
 | **Amazon QuickSight** | Readmission analytics dashboards for leadership and quality teams |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Monitoring, alerting on scoring failures, model performance metrics |
@@ -438,12 +444,22 @@ FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
         model_version: score_result.model_version,
         scored_at: score_result.scored_at,
         ttl: discharge_info.discharge_date + 45 days  // Keep 15 days past window
+        // TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance
+        // retention requirements. 45-day TTL is operationally sound but scores that
+        // influenced clinical decisions may need 6-10 year retention. Consider
+        // archiving to S3 before TTL deletion.
     }
 
     // Write to DynamoDB for downstream system access
     DYNAMODB_PUT("readmission-risk-scores", risk_assessment)
 
     // Notify care team for high-risk patients
+    // IMPORTANT: SNS messages with patient IDs + clinical indicators = PHI.
+    // Restrict topic subscriptions to HIPAA-compliant endpoints only
+    // (Lambda, SQS within VPC, or HTTPS endpoints under your BAA).
+    // Never use email/SMS subscriptions for messages containing patient data.
+    // If email alerts are needed, send minimal content ("1 new high-risk
+    // discharge requires review") with a link to the secure dashboard.
     IF risk_tier == "HIGH":
         SNS_PUBLISH(
             topic = "high-risk-discharge-alerts",
@@ -639,7 +655,7 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 
 - [CMS Hospital Readmissions Reduction Program](https://www.cms.gov/medicare/payment/prospective-payment-systems/acute-inpatient-pps/hospital-readmissions-reduction-program-hrrp) - Official program documentation, penalty methodology, and condition-specific measures
 - [MIMIC-IV Clinical Database](https://physionet.org/content/mimiciv/) - Publicly available ICU dataset commonly used for readmission prediction research and model development
-- TODO: Verify current URL for Yale/CMS readmission measure methodology documentation
+- [CMS Quality Measures - Hospital Inpatient Quality Reporting](https://qualitynet.cms.gov/) - Detailed risk-adjustment methodology for each HRRP condition, including the Yale/CORE readmission measures
 
 ---
 
