@@ -1,6 +1,6 @@
 # Recipe 6.6: Patient Similarity for Care Planning
 
-**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.15–$0.40 per similarity query (depending on cohort size and feature count)
+**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.15-$0.40 per similarity query (depending on cohort size and feature count)
 
 ---
 
@@ -159,7 +159,7 @@ flowchart TD
 | **CloudTrail** | Enabled: log all SageMaker inference calls and S3 access for HIPAA audit trail |
 | **Application Audit Log** | Lambda orchestrator logs each query: requesting user, query patient ID, timestamp, result count, and confidence level. Immutable log (CloudWatch Logs with retention policy) for HIPAA accounting of disclosures. |
 | **Sample Data** | Synthetic patient cohort with features and outcomes. CMS Synthetic Public Use Files provide realistic population distributions. Never use real PHI in development. |
-| **Cost Estimate** | SageMaker endpoint (ml.m5.large): ~$0.12/hour. Glue ETL: ~$0.44/DPU-hour. DynamoDB on-demand: ~$1.25 per million reads. S3 storage: negligible. Total per query (with caching): $0.15–$0.40 depending on cache hit rate. |
+| **Cost Estimate** | SageMaker endpoint (ml.m5.large): ~$0.12/hour. Glue ETL: ~$0.44/DPU-hour. DynamoDB on-demand: ~$1.25 per million reads. S3 storage: negligible. Total per query (with caching): $0.15-$0.40 depending on cache hit rate. |
 
 ### Ingredients
 
