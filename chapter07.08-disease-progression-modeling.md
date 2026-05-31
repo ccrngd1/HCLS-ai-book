@@ -1,107 +1,104 @@
 # Recipe 7.8: Disease Progression Modeling
 
-**Complexity:** Complex · **Phase:** Mature · **Estimated Cost:** ~$0.02 per patient trajectory scored
+**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$2,500–$8,000/month (model training + inference at scale)
 
 ---
 
 ## The Problem
 
-A 54-year-old patient with Type 2 diabetes has an A1C of 7.8%, stage 2 chronic kidney disease, and mild peripheral neuropathy. Their nephrologist wants to know: how fast is this kidney disease likely to progress? Will this patient need dialysis in three years? Five years? Ten? Should we escalate treatment now, or is the current regimen holding the line?
+A nephrologist is looking at a patient with Stage 3a chronic kidney disease. The eGFR is 52. It was 58 a year ago, 63 two years before that. The question that matters most to this patient, to their family, and to the care team is: how fast is this going to get worse? Will they need dialysis in two years? Five? Ten? Should we escalate treatment now, or is this a slow decline that can be managed conservatively for another decade?
 
-Today, the answer is mostly clinical intuition informed by population-level statistics. "Patients with your profile typically progress at about X rate." But "typically" hides enormous variance. Some patients with identical lab values and diagnoses progress rapidly to end-stage disease. Others plateau for decades. The difference often comes down to factors that are measurable but not synthesized: medication adherence patterns, subtle lab trends, comorbidity interactions, genetic predispositions, lifestyle factors that never make it into a structured field.
+Right now, the answer is mostly clinical intuition. The nephrologist has seen hundreds of CKD patients. They know the general trajectory. But "general trajectory" is not the same as "this patient's trajectory." Two patients with identical eGFR values today can have wildly different outcomes depending on their diabetes control, blood pressure management, medication adherence, genetic factors, and a dozen other variables that interact in ways no human can reliably compute across a multi-year horizon.
 
-Disease progression modeling is the attempt to move from population averages to individualized trajectories. Instead of telling a patient "people like you usually..." you tell them "based on your specific history and trends, here's what we expect for you, and here's how confident we are in that prediction."
+This isn't unique to kidney disease. Diabetes progresses from controlled to uncontrolled to complications. Heart failure moves through stages. COPD declines. Multiple sclerosis relapses and remits. Parkinson's advances. In every case, the clinical question is the same: given everything we know about this patient right now, what does their future look like?
 
-This matters operationally at every level. For the patient, it informs treatment decisions and life planning. For the care team, it determines treatment intensity and monitoring frequency. For the health system, it drives resource planning: how many dialysis chairs will we need in 2028? How many joint replacements? How many patients will transition from manageable chronic disease to high-acuity, high-cost care?
+The stakes are enormous. Intervene too early and you subject patients to aggressive treatments they didn't need yet (with side effects, costs, and quality-of-life impacts). Intervene too late and you've missed the window where treatment could have slowed progression. The sweet spot is knowing, with reasonable confidence, where a patient is headed so you can time interventions appropriately.
 
-The diseases where this is most impactful share a common pattern: they progress through defined stages, the progression rate varies dramatically between individuals, and earlier intervention at the right moment can meaningfully alter the trajectory. Chronic kidney disease (CKD stages 1-5), diabetic complications (retinopathy, nephropathy, neuropathy), heart failure (NYHA classes I-IV), COPD (GOLD stages 1-4), multiple sclerosis, Parkinson's disease, Alzheimer's disease. These are the conditions where knowing the trajectory changes what you do about it.
+Disease progression modeling is the ML approach to this problem. It takes longitudinal patient data (labs, vitals, medications, diagnoses, procedures over time) and learns the patterns that predict how a disease will evolve for a specific individual. Not population averages. Individual trajectories.
 
-The challenge is that disease progression unfolds over years, not days. You're predicting a curve, not a point. And the curve bends in response to treatment, which means your model needs to account for interventions that haven't happened yet. This is genuinely one of the harder prediction problems in healthcare ML.
+It's also one of the hardest problems in healthcare ML, and the reasons why are worth understanding before you build anything.
 
 ---
 
-## The Technology: Modeling Trajectories Over Time
+## The Technology: Modeling How Diseases Evolve
 
-### What Makes This Different From Point-in-Time Prediction
+### Why This Is Fundamentally Hard
 
-Most healthcare prediction models answer a binary question at a single moment: "Will this patient be readmitted in 30 days?" "Will this patient no-show for their appointment?" Disease progression modeling is fundamentally different. You're predicting a continuous trajectory over an extended time horizon. The output isn't a single probability; it's a curve showing expected disease state over time, ideally with uncertainty bounds.
+Disease progression modeling sits at the intersection of several difficult ML problems, and the combination is what makes it genuinely complex.
 
-Think of it this way. A readmission model takes a snapshot of the patient at discharge and makes a yes/no prediction. A progression model takes the patient's entire longitudinal history (every lab value, every medication change, every clinical event over months or years) and projects that trajectory forward. The input is a time series. The output is a time series. The prediction horizon might be 1 year, 5 years, or 10 years.
+**Long time horizons.** You're predicting months to years into the future, not hours or days. Every additional month of prediction horizon compounds uncertainty. A model that's well-calibrated at 6 months might be useless at 36 months. The further out you predict, the more external factors (new medications, lifestyle changes, comorbidities) can alter the trajectory.
 
-This changes everything about how you build, validate, and deploy the model.
+**Treatment effects confound observation.** Here's the fundamental paradox: you're trying to predict what will happen to a patient, but the treatments they receive change what happens. A patient whose CKD was progressing rapidly might have been put on an ACE inhibitor that slowed the decline. If you train naively on observational data, you'll learn that "patients who got ACE inhibitors progressed slowly," which conflates the treatment effect with the natural disease course. Separating what the disease would have done from what treatment made it do is a causal inference problem, and it's genuinely hard.
 
-### The Core Modeling Approaches
+**Irregular observation intervals.** Patients don't show up for labs on a regular schedule. A stable patient might have labs every 6 months. A deteriorating patient might have labs every 2 weeks. The observation frequency itself is informative (more frequent visits often signal clinical concern), and your model needs to handle irregular time series gracefully. Standard time series models that expect evenly-spaced observations don't work here without significant adaptation.
 
-**Joint longitudinal-survival models.** This is the classical statistical approach, and it remains the gold standard for clinical credibility. The idea: model the longitudinal biomarker trajectory (e.g., eGFR over time) and the time-to-event outcome (e.g., time to dialysis) simultaneously, allowing the biomarker trajectory to inform the event prediction. These models have strong theoretical foundations, produce interpretable parameters, and handle irregular observation times naturally. The downside: they make parametric assumptions about trajectory shapes (linear, quadratic) that may not hold for all patients, and they scale poorly to high-dimensional feature spaces.
+**Competing risks and multi-state transitions.** A CKD patient doesn't just progress linearly from Stage 3 to Stage 5. They might stabilize. They might improve temporarily. They might develop a cardiovascular event that changes everything. They might die from something unrelated. Disease progression is really a multi-state model with transitions between states, and some transitions are absorbing (you don't come back from dialysis initiation). Modeling this correctly requires thinking about competing risks, not just a single outcome.
 
-**Hidden Markov models (HMMs) and multi-state models.** These treat disease progression as transitions between discrete states (CKD stage 1 to stage 2 to stage 3, etc.). The model estimates transition probabilities between states, conditioned on patient characteristics. This is intuitive for diseases with clinically defined stages. The limitation: forcing continuous progression into discrete buckets loses information, and the Markov assumption (future state depends only on current state, not history) is often violated in practice. A patient who progressed rapidly from stage 2 to stage 3 is probably at higher risk of continued rapid progression than one who's been stable at stage 3 for five years.
+**Censoring.** Many patients in your training data haven't reached the endpoint yet. A patient with 3 years of CKD data who hasn't progressed to Stage 4 isn't a "non-progressor." They might progress next year. This is right-censoring, and it's the same problem that survival analysis was invented to handle. Ignoring it (treating censored patients as non-events) biases your model toward optimism.
 
-**Recurrent neural networks and temporal models.** LSTMs, GRUs, and transformer-based architectures can learn complex temporal patterns from sequential clinical data without making parametric assumptions about trajectory shapes. Feed them the sequence of labs, vitals, medications, and diagnoses over time, and they learn to predict future values. They handle irregular time intervals (a common challenge in clinical data, where patients aren't observed on a fixed schedule) and can capture non-linear interactions between features. The tradeoff: they require substantially more data, they're harder to interpret, and they can overfit to training data patterns that don't generalize.
+### The Modeling Approaches
 
-**Gaussian process models.** These provide a principled way to model uncertainty in trajectory predictions. A Gaussian process defines a distribution over possible trajectory curves, giving you not just a point prediction but a full uncertainty envelope that widens as you project further into the future. This is particularly valuable for disease progression because the uncertainty is clinically meaningful: "we're fairly confident about the next 6 months, but the 5-year projection has wide bounds" is honest and actionable information. The limitation: computational cost scales cubically with the number of observations, making them impractical for very large datasets without approximation methods.
+There are several families of models used for disease progression, each with different strengths:
 
-**Causal inference approaches.** Here's the fundamental challenge that separates disease progression from simpler prediction problems: treatment effects. A patient's trajectory is not just a function of their disease biology; it's a function of the treatments they receive. If you train a model on historical data where patients received treatment, the model learns the trajectory under treatment, not the natural disease course. To predict "what happens if we change the treatment plan," you need causal reasoning, not just pattern matching. Marginal structural models, g-computation, and targeted learning approaches attempt to estimate counterfactual trajectories: what would have happened under different treatment decisions. This is the frontier of the field and the hardest part to get right.
+**Joint longitudinal-survival models.** These simultaneously model the trajectory of a biomarker (like eGFR over time) and the time to an event (like dialysis initiation). The biomarker trajectory informs the event risk, and the event risk accounts for the fact that some trajectories are cut short. This is the classical statistical approach, well-understood and interpretable, but it struggles with high-dimensional feature spaces and complex nonlinear relationships.
 
-### The Feature Engineering Challenge
+**Hidden Markov models (HMMs) and multi-state models.** These represent disease as a sequence of discrete states with probabilistic transitions. A patient is "in" a state (e.g., CKD Stage 3a) and has some probability of transitioning to adjacent states (Stage 3b, or back to Stage 2, or to death) at each time step. The "hidden" part means the true disease state might not be directly observable; you infer it from noisy measurements. These are elegant for diseases with clear staging but struggle when progression is continuous rather than discrete.
 
-Disease progression models are hungry for longitudinal data. Not just the most recent lab value, but the trend. Not just the current medication list, but the history of medication changes and why they happened. The features that matter most:
+**Recurrent neural networks and temporal models.** LSTMs, GRUs, and transformer-based architectures can learn complex temporal patterns from sequential patient data. They handle irregular time intervals (with appropriate encoding), capture nonlinear relationships, and can incorporate high-dimensional feature sets. The tradeoff: they're less interpretable, require more data, and can overfit on small cohorts. They also don't naturally handle censoring without custom loss functions.
 
-**Biomarker trajectories.** The slope of eGFR over the last 12 months is more predictive than the current eGFR value alone. A patient with eGFR of 45 that's been stable for three years is in a very different situation than one with eGFR of 45 that was 60 six months ago. You need to compute trajectory features: slopes, acceleration (change in slope), variability, and time since last significant change.
+**Gaussian process models.** These provide a probabilistic framework for modeling continuous trajectories with uncertainty quantification built in. They handle irregular observations naturally and produce confidence intervals that widen as you predict further into the future (which is honest). They're computationally expensive for large datasets but excellent for individual patient trajectory modeling.
 
-**Treatment history.** Which medications has the patient been on, for how long, at what doses, and what happened to their biomarkers after each change? Treatment response patterns are highly informative. A patient who responded well to ACE inhibitors (slowed their eGFR decline) has a different prognosis than one who didn't respond.
+**Survival analysis extensions.** Cox proportional hazards models, accelerated failure time models, and their modern deep learning extensions (DeepSurv, Deep Recurrent Survival Analysis) handle censoring natively and can model time-to-event outcomes. They're the right foundation when your primary question is "when will this patient reach a specific milestone?"
 
-**Comorbidity interactions.** Diseases don't progress in isolation. Diabetes accelerates CKD progression. Hypertension accelerates both. Heart failure and CKD create a vicious cycle. Your model needs to capture these interactions, either through explicit interaction features or through model architectures that learn them implicitly.
+In practice, production systems often combine approaches: a temporal model for trajectory prediction paired with a survival model for milestone timing, with uncertainty quantification layered on top.
 
-**Event sequences.** Hospitalizations, ED visits, specialist referrals, procedure codes. The pattern of healthcare utilization over time tells a story about disease trajectory that lab values alone miss. A patient who's been hospitalized twice in the last year for heart failure exacerbations is on a different trajectory than one with the same ejection fraction who's been stable.
+### Handling Treatment Effects
 
-**Missing data patterns.** This is subtle but important. In clinical data, missingness is informative. A patient who hasn't had a lab drawn in 18 months might be doing well (no clinical concern) or might be disengaged from care (which is itself a risk factor for progression). The pattern of observation frequency carries signal.
+This deserves its own section because it's where most naive implementations fail.
 
-### Time Horizons and Uncertainty
+If you train a model on observational data without accounting for treatment, you'll learn correlations that don't reflect causal disease progression. Patients who received aggressive treatment will appear to have better outcomes, but that's the treatment working, not the disease being milder.
 
-One of the most important design decisions is the prediction horizon. Short-term predictions (6-12 months) are more accurate but less actionable for long-term planning. Long-term predictions (5-10 years) are more useful for resource planning and patient counseling but carry much wider uncertainty.
+There are several approaches to this:
 
-The honest answer is that you need both, and you need to communicate uncertainty clearly. A progression model should output:
+**Marginal structural models** use inverse probability of treatment weighting to create a pseudo-population where treatment assignment is independent of confounders. This lets you estimate what would have happened without treatment.
 
-1. **Expected trajectory:** The most likely path of the key biomarker(s) over time
-2. **Confidence intervals:** How wide is the uncertainty at each time point? (It should widen as you project further out)
-3. **Key inflection points:** When is the patient likely to cross clinically meaningful thresholds (e.g., eGFR < 30, A1C > 9)?
-4. **Scenario projections:** What does the trajectory look like under different treatment assumptions?
+**G-computation** models the outcome under different treatment scenarios explicitly, allowing you to predict progression under the patient's current treatment plan versus alternatives.
 
-Communicating this to clinicians is its own challenge. A probability distribution over future disease states is not something most clinicians are trained to interpret. You need to translate model output into clinically actionable language: "At current trajectory, 70% probability of reaching stage 4 CKD within 3 years. With intensified treatment, that drops to 35%."
+**Causal forests and heterogeneous treatment effect estimation** learn how treatment effects vary across patient subgroups, which is useful for identifying who benefits most from escalation.
 
-### Validation: The Multi-Year Problem
+**Simpler approaches** include conditioning on treatment as a feature (acknowledging that your predictions are "given current treatment continues") or building separate models for treated and untreated populations. These are less rigorous but more practical for a first implementation.
 
-Validating a disease progression model is fundamentally harder than validating a point-in-time prediction model. You can't just hold out 20% of your data and check accuracy. You need:
+The honest answer: perfectly separating disease progression from treatment effects requires randomized trial data or very careful causal inference methodology. Most production systems take the pragmatic approach of conditioning on current treatment and being transparent about that assumption.
 
-**Temporal validation.** Train on data from years 1-5, predict trajectories for year 6-8, and compare against what actually happened. This requires years of follow-up data, which means your validation is always looking backward.
+### Uncertainty Quantification
 
-**Calibration at multiple time horizons.** Is the model well-calibrated at 1 year? At 3 years? At 5 years? Calibration often degrades at longer horizons.
+This is non-negotiable for clinical use. A point prediction of "eGFR will be 38 in two years" is less useful (and potentially dangerous) than "eGFR will likely be between 32 and 44 in two years, with 80% confidence." Clinicians need to understand the range of possible futures, not just the most likely one.
 
-**Subgroup performance.** Does the model work equally well for patients at different disease stages? For different demographic groups? For patients on different treatment regimens?
+Approaches include:
+- Prediction intervals from Gaussian processes or Bayesian models
+- Monte Carlo dropout in neural networks (approximate Bayesian inference)
+- Quantile regression (predicting the 10th, 50th, and 90th percentile outcomes)
+- Ensemble disagreement (training multiple models and measuring how much they disagree)
 
-**Dynamic updating.** As new data arrives for a patient, does the model appropriately update its predictions? A model that doesn't incorporate new information is useless in practice.
+The uncertainty should grow with prediction horizon. If your model is equally confident about next month and next year, something is wrong.
 
-### The General Architecture Pattern
+---
+
+## General Architecture Pattern
 
 ```
-[Longitudinal Data Assembly] → [Feature Engineering] → [Model Training/Selection]
-         ↓
-[New Patient Data] → [Trajectory Prediction] → [Uncertainty Quantification]
-         ↓
-[Clinical Decision Support] → [Monitoring & Recalibration]
+[Longitudinal Data Assembly] → [Feature Engineering] → [Model Training] → [Individual Prediction] → [Clinical Integration]
 ```
 
-**Longitudinal data assembly.** Pull together the full clinical history for each patient: labs, vitals, medications, diagnoses, procedures, encounters. Align everything on a common timeline. Handle irregular observation intervals. This is the hardest engineering step and often takes longer than the modeling itself.
+**Longitudinal Data Assembly.** Gather the patient's full temporal record: labs over time, vitals over time, medications (start/stop dates, dosages), diagnoses (onset dates), procedures, and relevant social/demographic factors. This is not a single snapshot; it's a time-indexed sequence. The assembly step must handle data from multiple source systems (EHR, claims, labs, pharmacy) and align them on a common timeline.
 
-**Feature engineering.** Compute trajectory features (slopes, variability, acceleration), treatment response features, comorbidity interaction features, and utilization pattern features. Handle missing data explicitly (imputation or missingness indicators).
+**Feature Engineering.** Transform raw temporal data into model-ready features. This includes: rate of change (is eGFR declining, and how fast?), variability (is blood pressure stable or swinging?), treatment history encoding (what medications, for how long, at what doses?), comorbidity burden (how many other conditions are active?), and time-since-last-observation (how stale is our information?). For deep learning approaches, you might feed raw sequences directly, but even then, engineered features often improve performance.
 
-**Model training.** Train on historical cohorts with known outcomes. Use temporal cross-validation (train on earlier data, validate on later data). Compare multiple model families. Optimize for calibration, not just discrimination.
+**Model Training.** Train on a retrospective cohort with sufficient follow-up. The training data must include patients who progressed and patients who didn't (or who were censored). Handle class imbalance (most patients progress slowly), censoring (many patients haven't reached the endpoint), and treatment confounding (patients who progressed may have received different treatments). Validate on a held-out temporal cohort (train on patients from 2015-2020, validate on 2021-2023) to avoid data leakage.
 
-**Trajectory prediction.** For a new patient, assemble their longitudinal history, compute features, and generate a predicted trajectory with uncertainty bounds. Update predictions as new data arrives.
+**Individual Prediction.** Given a new patient's history up to today, generate a predicted trajectory with uncertainty bounds. This should include: predicted biomarker values at future time points, probability of reaching specific milestones (e.g., Stage 4, dialysis) within specific time windows, and confidence intervals that honestly reflect uncertainty.
 
-**Clinical decision support.** Translate model output into actionable clinical information: risk of reaching specific disease milestones, recommended monitoring frequency, treatment intensification triggers.
-
-**Monitoring and recalibration.** Track model performance over time. Recalibrate as treatment patterns change (new drugs, new guidelines). Detect concept drift (the relationship between features and outcomes shifting over time).
+**Clinical Integration.** Surface predictions where clinicians make decisions. This means integration with the EHR workflow, not a standalone dashboard that nobody checks. Include explanations of what's driving the prediction (which factors are accelerating or decelerating progression) and clear communication of uncertainty. Provide actionable thresholds: "if progression continues at this rate, the patient will reach Stage 4 within 18 months, suggesting nephrology referral now."
 
 ---
 
@@ -109,341 +106,392 @@ Validating a disease progression model is fundamentally harder than validating a
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** Disease progression models require iterative experimentation across multiple model families (survival models, gradient boosting, neural networks). SageMaker provides managed training infrastructure with built-in hyperparameter tuning, experiment tracking, and model registry. For serving, SageMaker endpoints handle the inference workload with auto-scaling. The key advantage here is SageMaker's support for custom containers, which you'll need because disease progression models often use specialized libraries (lifelines, pymc, deepsurvival) that aren't in the built-in algorithm set.
+**Amazon SageMaker for model training and hosting.** Disease progression models require iterative experimentation (trying different architectures, feature sets, time horizons) and then reliable hosting for real-time inference. SageMaker provides managed training infrastructure (so you're not babysitting GPU instances), experiment tracking, model registry for versioning, and real-time endpoints for serving predictions. The training jobs can scale to large cohorts without you managing cluster infrastructure.
 
-**Amazon HealthLake for longitudinal clinical data.** HealthLake is a FHIR-native data store designed for exactly this use case: assembling longitudinal patient records from multiple sources into a queryable, analytics-ready format. It handles the FHIR resource relationships (Patient, Observation, Condition, MedicationRequest, Encounter) that map directly to the features you need. The integrated analytics export to S3 gives you a clean path from clinical data to training datasets.
+**Amazon HealthLake for longitudinal data assembly.** HealthLake stores clinical data in FHIR format and provides query capabilities across patient timelines. For disease progression modeling, you need to efficiently retrieve a patient's full history (all labs, medications, conditions over years). HealthLake's FHIR-native storage makes this query natural rather than requiring complex joins across dozens of tables. It also handles the HIPAA compliance layer (encryption, access logging, BAA coverage).
 
-**AWS Glue for feature engineering pipelines.** The longitudinal feature engineering (computing slopes, variability, treatment response metrics) is a batch ETL workload that runs on large patient cohorts. Glue's Spark-based processing handles the joins and window functions needed to compute temporal features across millions of patient-time-point combinations.
+**AWS Glue for feature engineering pipelines.** Transforming raw longitudinal records into model-ready features requires batch processing at scale. Glue handles the ETL: computing rates of change, encoding medication histories, calculating comorbidity indices, and assembling training datasets. Spark-based processing handles the volume (millions of patient-years of data) without custom infrastructure.
 
-**Amazon S3 for data lake and model artifacts.** Training datasets, model artifacts, prediction outputs, and audit logs all live in S3. The lifecycle policies handle the retention requirements (clinical data often has 7-10 year retention mandates), and the versioning supports model reproducibility.
+**Amazon S3 for training data and model artifacts.** Training datasets (assembled feature matrices), trained model artifacts, and prediction outputs all live in S3. Versioned buckets let you trace which training data produced which model version, which is essential for model governance and reproducibility.
 
-**Amazon DynamoDB for real-time prediction cache.** When a clinician pulls up a patient's chart, you need the current progression prediction available in milliseconds, not minutes. DynamoDB stores the most recent prediction for each patient, updated on a schedule or triggered by new clinical data.
+**Amazon EventBridge and AWS Step Functions for orchestration.** The progression modeling pipeline has multiple stages (data refresh, feature computation, model retraining, validation, deployment) that need to run on schedule and handle failures gracefully. Step Functions orchestrate the workflow; EventBridge triggers it on schedule or in response to events (new lab results arriving).
 
-**Amazon EventBridge for orchestration.** New lab results, medication changes, and clinical events trigger prediction updates. EventBridge routes these events to the appropriate processing pipeline without tight coupling between the data sources and the prediction system.
+**Amazon CloudWatch for monitoring.** Model performance degrades over time as patient populations shift and treatment patterns change. CloudWatch tracks prediction accuracy metrics, data drift indicators, and inference latency. Alarms trigger when performance drops below acceptable thresholds, signaling that retraining is needed.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart TD
-    A[EHR / Clinical Systems] -->|FHIR Resources| B[Amazon HealthLake]
-    B -->|Analytics Export| C[S3 Data Lake]
-    C -->|Training Data| D[AWS Glue\nFeature Engineering]
-    D -->|Feature Store| E[S3 Feature Sets]
-    E -->|Train| F[SageMaker Training]
-    F -->|Model Registry| G[SageMaker Model Registry]
-    G -->|Deploy| H[SageMaker Endpoint]
+    subgraph Data Assembly
+        A[Amazon HealthLake\nFHIR Patient Records] -->|FHIR Query| B[AWS Glue\nFeature Engineering]
+        C[Claims Data\nin S3] -->|ETL| B
+    end
 
-    I[New Clinical Event] -->|EventBridge| J[Lambda\nTrigger Pipeline]
-    J -->|Patient Context| K[HealthLake Query]
-    K -->|Features| H
-    H -->|Prediction| L[DynamoDB\nPrediction Cache]
-    L -->|API| M[Clinical Decision Support\nDashboard]
+    subgraph Model Pipeline
+        B -->|Training Dataset| D[S3\nFeature Store]
+        D --> E[SageMaker Training\nProgression Model]
+        E -->|Model Artifact| F[SageMaker Model Registry]
+        F -->|Deploy| G[SageMaker Endpoint\nReal-time Inference]
+    end
 
-    N[SageMaker\nModel Monitor] -->|Drift Alert| O[CloudWatch Alarm]
+    subgraph Clinical Integration
+        H[EHR / Clinical App] -->|Patient History| G
+        G -->|Trajectory + Uncertainty| H
+        G -->|Predictions| I[DynamoDB\nPrediction Cache]
+    end
 
-    style B fill:#f9f,stroke:#333
-    style F fill:#ff9,stroke:#333
-    style H fill:#9ff,stroke:#333
-    style L fill:#9f9,stroke:#333
+    subgraph Orchestration
+        J[EventBridge\nSchedule] --> K[Step Functions\nPipeline Orchestrator]
+        K --> B
+        K --> E
+        K --> L[CloudWatch\nModel Monitoring]
+    end
+
+    style A fill:#f9f,stroke:#333
+    style E fill:#ff9,stroke:#333
+    style G fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon S3, Amazon DynamoDB, Amazon EventBridge, AWS Lambda |
-| **IAM Permissions** | `sagemaker:*` (scoped to project), `healthlake:*`, `glue:*`, `s3:GetObject/PutObject`, `dynamodb:PutItem/GetItem`, `events:PutEvents` |
-| **BAA** | Required. All services processing PHI must be covered under AWS BAA. |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; HealthLake: KMS encryption; SageMaker: KMS for training volumes and endpoints; all transit over TLS |
-| **VPC** | Production: SageMaker training and endpoints in VPC with VPC endpoints for S3, DynamoDB, HealthLake. No public internet access for PHI processing. |
-| **CloudTrail** | Enabled for all API calls. HealthLake access logging for HIPAA audit trail. |
-| **Data Requirements** | Minimum 3-5 years of longitudinal clinical data per patient. Cohort of 10,000+ patients with the target condition and known outcomes. |
-| **Sample Data** | Synthea synthetic patient generator for development. MIMIC-IV for validation benchmarking. Never use real PHI in dev/test. |
-| **Cost Estimate** | SageMaker training: ~$50-200 per training run (depends on instance type and duration). Endpoint: ~$0.10/hour for ml.m5.large. HealthLake: $0.60/10K FHIR operations. Glue: ~$0.44/DPU-hour. |
+| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon S3, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, Amazon CloudWatch |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `sagemaker:InvokeEndpoint`, `healthlake:SearchWithPost`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **BAA** | Required. Longitudinal patient data is PHI. All services must be covered under your AWS BAA. |
+| **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest. HealthLake: encrypted by default. SageMaker: KMS encryption for training volumes and endpoint storage. All transit over TLS. |
+| **VPC** | Production: SageMaker training and endpoints in VPC. VPC endpoints for S3, DynamoDB, SageMaker Runtime, CloudWatch Logs. HealthLake accessed via VPC endpoint. |
+| **CloudTrail** | Enabled for all service API calls. Model inference calls logged for audit trail (who requested predictions for which patients). |
+| **Sample Data** | Synthetic longitudinal patient data. MIMIC-IV provides realistic ICU temporal data. CMS Synthetic Public Use Files provide claims-based longitudinal records. Never use real patient data in development. |
+| **Cost Estimate** | SageMaker training: ~$50-200 per training run (ml.m5.xlarge, 2-8 hours). Endpoint: ~$150/month (ml.m5.large, always-on). HealthLake: ~$500/month (storage + queries). Glue: ~$50-100/month (scheduled ETL). Total: ~$2,500-8,000/month depending on scale and retraining frequency. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon HealthLake** | FHIR-native longitudinal clinical data store; source of truth for patient histories |
-| **AWS Glue** | Batch feature engineering: computes trajectory slopes, treatment response metrics, comorbidity interactions |
-| **Amazon SageMaker** | Model training, hyperparameter tuning, model registry, real-time inference endpoint, model monitoring |
-| **Amazon S3** | Data lake for training datasets, feature sets, model artifacts, prediction audit logs |
-| **Amazon DynamoDB** | Low-latency cache for current patient predictions; serves clinical decision support UI |
-| **Amazon EventBridge** | Event-driven orchestration: triggers prediction updates on new clinical data |
-| **AWS Lambda** | Lightweight orchestration: assembles patient context, invokes prediction endpoint |
-| **Amazon CloudWatch** | Metrics, alarms, dashboards for model performance and pipeline health |
-| **AWS KMS** | Encryption key management for all PHI-containing services |
+| **Amazon SageMaker** | Model training, experiment tracking, model registry, real-time inference endpoint |
+| **Amazon HealthLake** | FHIR-native longitudinal patient data store; source for temporal clinical records |
+| **AWS Glue** | Batch feature engineering: rate-of-change computation, medication encoding, comorbidity indexing |
+| **Amazon S3** | Training datasets, model artifacts, prediction logs (versioned, KMS-encrypted) |
+| **Amazon DynamoDB** | Prediction cache for low-latency clinical lookups |
+| **AWS Step Functions** | Pipeline orchestration: data refresh, training, validation, deployment workflow |
+| **Amazon EventBridge** | Schedule-based triggers for retraining and batch prediction updates |
+| **Amazon CloudWatch** | Model performance monitoring, data drift detection, operational alarms |
+| **AWS KMS** | Encryption key management for all data at rest |
 
 ### Code
 
+> **Reference implementations:** The following AWS resources demonstrate patterns used in this recipe:
+>
+> - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker training, deployment, and monitoring patterns including time series and survival analysis examples
+> - [`amazon-healthlake-toolkit`](https://github.com/aws-samples/amazon-healthlake-toolkit): HealthLake data ingestion and FHIR query patterns for clinical data
+
 #### Walkthrough
 
-**Step 1: Longitudinal data assembly.** The foundation of disease progression modeling is a complete, time-ordered clinical history for each patient. This step queries the FHIR data store to assemble every relevant observation (lab results, vitals), condition (diagnoses), medication request, and encounter into a unified patient timeline. The key challenge is aligning data from different sources onto a common time axis and handling the irregular intervals between observations (patients aren't measured on a fixed schedule). Without this step, you have scattered clinical fragments; with it, you have a coherent longitudinal record that reveals trajectory patterns. Skip this and your model has no temporal context to learn from.
+**Step 1: Assemble longitudinal patient history.** The foundation of disease progression modeling is a complete temporal record for each patient. This step queries HealthLake (or your clinical data store) to retrieve all relevant observations, medications, conditions, and procedures for a patient cohort, organized by time. The key insight: you need not just the current values but the full history of how values changed over time. A single eGFR of 52 tells you almost nothing about trajectory. A sequence of [63, 58, 55, 52] over four years tells you the rate of decline. Skip this step or use only point-in-time snapshots, and your model has no temporal signal to learn from.
 
 ```
-FUNCTION assemble_patient_timeline(patient_id, condition_code, lookback_years):
-    // Query the FHIR data store for all relevant clinical data for this patient.
-    // We need labs, vitals, medications, diagnoses, and encounters over the full history.
+FUNCTION assemble_patient_timeline(patient_id, lookback_years):
+    // Query the clinical data store for this patient's full history.
+    // We need labs, vitals, medications, and diagnoses over the lookback period.
+    // Each record includes a timestamp so we can reconstruct the timeline.
 
-    // Get all observations (labs, vitals) for this patient, ordered by date.
-    // These are the biomarkers whose trajectories we're modeling.
-    observations = query FHIR store:
-        resource_type = "Observation"
-        patient       = patient_id
-        date          >= (today - lookback_years)
-        sort          = date ascending
+    start_date = today minus lookback_years
 
-    // Get the medication history: what was prescribed, when, at what dose.
-    // Treatment changes are critical features for progression modeling.
-    medications = query FHIR store:
-        resource_type = "MedicationRequest"
-        patient       = patient_id
-        date          >= (today - lookback_years)
-        sort          = date ascending
+    // Retrieve lab results (eGFR, HbA1c, creatinine, albumin, etc.)
+    labs = query FHIR Observation resources where:
+        patient = patient_id
+        date >= start_date
+        category = "laboratory"
+    // Sort chronologically. Each lab has: code, value, unit, date.
 
-    // Get all active and historical conditions (diagnoses).
-    // Comorbidities influence progression rates.
-    conditions = query FHIR store:
-        resource_type = "Condition"
-        patient       = patient_id
+    // Retrieve medication history (what was prescribed, when, dosage)
+    medications = query FHIR MedicationRequest resources where:
+        patient = patient_id
+        authoredOn >= start_date
+    // Each medication has: drug code, dose, start date, end date (if stopped).
 
-    // Get encounter history: hospitalizations, ED visits, specialist visits.
-    // Utilization patterns carry signal about disease trajectory.
-    encounters = query FHIR store:
-        resource_type = "Encounter"
-        patient       = patient_id
-        date          >= (today - lookback_years)
-        sort          = date ascending
+    // Retrieve active conditions and their onset dates
+    conditions = query FHIR Condition resources where:
+        patient = patient_id
+        onset >= start_date OR clinicalStatus = "active"
 
-    // Assemble into a unified timeline: one record per observation date,
-    // with all concurrent data points aligned.
-    timeline = merge_on_timeline(observations, medications, conditions, encounters)
+    // Retrieve procedures (surgeries, dialysis sessions, etc.)
+    procedures = query FHIR Procedure resources where:
+        patient = patient_id
+        performedDateTime >= start_date
+
+    // Assemble into a unified timeline structure
+    timeline = {
+        patient_id:   patient_id,
+        labs:         labs sorted by date,
+        medications:  medications sorted by start date,
+        conditions:   conditions sorted by onset,
+        procedures:   procedures sorted by date,
+        demographics: get patient demographics (age, sex, race, zip code)
+    }
 
     RETURN timeline
 ```
 
-**Step 2: Trajectory feature engineering.** Raw clinical values are necessary but not sufficient. The slope of a biomarker over time is often more predictive than its current value. This step computes temporal features that capture the dynamics of disease progression: how fast is eGFR declining? Is the decline accelerating? How variable are the readings? How did the biomarker respond to the last medication change? These derived features transform a sequence of point measurements into a rich description of the patient's trajectory. Without this step, the model sees only snapshots and misses the motion between them.
+**Step 2: Engineer temporal features.** Raw timeline data isn't directly usable by most models. This step transforms the longitudinal record into features that capture the dynamics of disease progression. The most important features aren't the current values; they're the rates of change, the variability, and the treatment context. A patient with eGFR declining at 5 points per year is in a very different situation than one declining at 1 point per year, even if their current eGFR is identical. This step computes those dynamics. Skip it and your model sees only snapshots, missing the trajectory information that makes progression modeling valuable.
 
 ```
-FUNCTION compute_trajectory_features(timeline, biomarker_code):
-    // Extract the time series for the target biomarker (e.g., eGFR, A1C).
-    // Each entry is a (date, value) pair.
-    series = extract_biomarker_series(timeline, biomarker_code)
+FUNCTION engineer_progression_features(timeline):
+    features = empty map
 
-    // Compute the slope (rate of change) over different windows.
-    // Short-term slope captures recent acceleration or deceleration.
-    // Long-term slope captures the overall disease trajectory.
-    slope_6mo  = linear_regression_slope(series, window = 6 months)
-    slope_12mo = linear_regression_slope(series, window = 12 months)
-    slope_all  = linear_regression_slope(series, window = all available)
+    // --- Biomarker trajectory features ---
+    // For each key lab (eGFR, HbA1c, blood pressure, etc.),
+    // compute rate of change, variability, and trend.
 
-    // Compute acceleration: is the decline speeding up or slowing down?
-    // Positive acceleration on a declining biomarker means things are getting worse faster.
-    acceleration = slope_6mo - slope_12mo
+    FOR each biomarker in [eGFR, HbA1c, systolic_bp, creatinine, albumin]:
+        values = extract values for biomarker from timeline.labs, sorted by date
+        dates  = extract corresponding dates
 
-    // Compute variability: how much does the biomarker bounce around?
-    // High variability often indicates unstable disease or measurement noise.
-    variability = coefficient_of_variation(series, window = 12 months)
+        IF length(values) >= 2:
+            // Linear slope: average rate of change per year.
+            // Positive slope for eGFR = improving. Negative = declining.
+            features[biomarker + "_slope_per_year"] = linear_regression_slope(dates, values)
 
-    // Compute treatment response: how did the biomarker change after
-    // the most recent medication change?
-    last_med_change = find_most_recent_medication_change(timeline, relevant_drug_classes)
-    IF last_med_change exists:
-        pre_slope  = slope before last_med_change (3 months prior)
-        post_slope = slope after last_med_change (3 months after)
-        treatment_response = post_slope - pre_slope
-    ELSE:
-        treatment_response = null  // no medication change to evaluate
+            // Recent slope (last 12 months) vs. overall slope.
+            // Acceleration or deceleration of decline matters clinically.
+            recent_values = values from last 12 months
+            IF length(recent_values) >= 2:
+                features[biomarker + "_recent_slope"] = linear_regression_slope(
+                    recent_dates, recent_values
+                )
 
-    // Time since last observation: longer gaps may indicate disengagement from care.
-    days_since_last_obs = days between most recent observation and today
+            // Variability: standard deviation of values.
+            // High variability in eGFR suggests unstable kidney function.
+            features[biomarker + "_variability"] = standard_deviation(values)
 
-    RETURN {
-        current_value:      most recent value in series,
-        slope_6mo:          slope_6mo,
-        slope_12mo:         slope_12mo,
-        slope_all:          slope_all,
-        acceleration:       acceleration,
-        variability:        variability,
-        treatment_response: treatment_response,
-        days_since_last:    days_since_last_obs,
-        observation_count:  number of observations in series,
-        time_span_years:    years between first and last observation
-    }
+            // Most recent value (the current state)
+            features[biomarker + "_current"] = last element of values
+
+            // Time since last measurement (data freshness)
+            features[biomarker + "_days_since_last"] = days between last date and today
+
+    // --- Medication features ---
+    // Encode current and historical medication exposure.
+    // Which drug classes is the patient on? For how long?
+
+    features["ace_arb_duration_months"] = total months on ACE inhibitors or ARBs
+    features["diabetes_med_count"] = number of distinct diabetes medications active
+    features["medication_changes_12mo"] = count of medication starts/stops in last year
+    // Frequent medication changes often signal instability or treatment failure.
+
+    // --- Comorbidity burden ---
+    // Count and weight active conditions using a standard index.
+    features["charlson_comorbidity_index"] = compute Charlson index from timeline.conditions
+    features["diabetes_present"] = 1 if diabetes in active conditions, else 0
+    features["hypertension_present"] = 1 if hypertension in active conditions, else 0
+    features["heart_failure_present"] = 1 if heart failure in active conditions, else 0
+
+    // --- Utilization features ---
+    // Healthcare utilization patterns signal disease burden.
+    features["ed_visits_12mo"] = count ED visits in last 12 months
+    features["hospitalizations_12mo"] = count inpatient stays in last 12 months
+    features["nephrology_visits_12mo"] = count nephrology encounters in last 12 months
+
+    // --- Demographics ---
+    features["age"] = timeline.demographics.age
+    features["sex"] = timeline.demographics.sex
+
+    RETURN features
 ```
 
-**Step 3: Multi-state transition modeling.** This is the core prediction step. Given the patient's current state and trajectory features, estimate the probability of transitioning to each possible future state over multiple time horizons. For CKD, the states might be stages 1-5 plus dialysis and transplant. For heart failure, NYHA classes I-IV plus hospitalization and death. The model learns transition probabilities from historical cohorts and adjusts them based on individual patient features. The output is not a single prediction but a probability distribution over future states at each time point. Skip this step and you have features without predictions.
+**Step 3: Train the progression model.** This is where the ML happens. The model learns, from thousands of historical patient trajectories, the patterns that predict future disease states. The training data consists of patients with sufficient follow-up: you know their feature values at time T, and you know what happened to them by time T+horizon. The model learns to map features-at-time-T to outcomes-at-time-T+horizon. Critical choices here: the loss function must handle censoring (patients who haven't reached the endpoint yet), the validation must be temporal (train on earlier patients, validate on later ones to avoid leakage), and the output must include uncertainty (not just a point prediction). Skip proper censoring handling and your model will be systematically optimistic. Skip temporal validation and your reported accuracy will be inflated.
 
 ```
-FUNCTION predict_progression(patient_features, current_stage, model):
-    // Generate predictions at multiple time horizons.
-    // Each prediction is a probability distribution over possible future states.
-    horizons = [6 months, 12 months, 24 months, 36 months, 60 months]
+FUNCTION train_progression_model(training_cohort, prediction_horizons):
+    // training_cohort: list of patients with features and known outcomes
+    // prediction_horizons: [6, 12, 24, 36] months into the future
 
+    // Split temporally: patients enrolled before cutoff for training,
+    // patients enrolled after cutoff for validation.
+    // NEVER split randomly. Random splits leak future information.
+    train_set = patients with index date before temporal_cutoff
+    valid_set = patients with index date after temporal_cutoff
+
+    // For each prediction horizon, define the outcome:
+    // - Did the patient reach the milestone (e.g., Stage 4 CKD) within that horizon?
+    // - If not, were they censored (lost to follow-up) before the horizon?
+    // - What was their biomarker value at the horizon (if observed)?
+
+    FOR each horizon in prediction_horizons:
+        labels = []
+        FOR each patient in train_set:
+            IF patient reached milestone within horizon months:
+                label = { event: 1, time_to_event: actual time }
+            ELSE IF patient has follow-up >= horizon months:
+                label = { event: 0, time_to_event: horizon }  // survived the window
+            ELSE:
+                label = { event: 0, time_to_event: follow_up_time, censored: true }
+            append label to labels
+
+    // Train a survival-aware model.
+    // Options: DeepSurv, Random Survival Forest, Cox with time-varying covariates.
+    // The loss function must handle censored observations correctly.
+    // Use concordance index (C-index) as the primary evaluation metric:
+    // it measures whether patients predicted to progress faster actually do.
+
+    model = train survival model with:
+        features    = feature matrix from train_set
+        labels      = time-to-event labels with censoring indicators
+        loss        = negative partial log-likelihood (Cox) or ranking loss (DeepSurv)
+        epochs      = until validation C-index stops improving
+        calibration = isotonic regression on validation set predictions
+
+    // Evaluate on validation set
+    validation_c_index = concordance_index(model.predict(valid_set), valid_set.labels)
+    calibration_curve  = compare predicted probabilities to observed event rates
+
+    // A C-index above 0.70 is reasonable for multi-year disease progression.
+    // Above 0.75 is good. Above 0.80 is excellent (and you should double-check for leakage).
+    LOG "Validation C-index: " + validation_c_index
+
+    RETURN model, validation_metrics
+```
+
+**Step 4: Generate individual patient predictions.** Given a trained model and a specific patient's current history, generate a predicted trajectory with uncertainty bounds. This is the inference step that runs in production. The output should communicate not just the most likely future but the range of plausible futures. A clinician needs to know: "Is this patient almost certainly going to progress, or is there meaningful uncertainty?" The prediction should also identify which factors are driving the trajectory (explainability), so the clinician can assess whether the model's reasoning aligns with their clinical judgment.
+
+```
+FUNCTION predict_progression(model, patient_features, horizons):
+    // Generate predictions for each time horizon.
     predictions = empty map
 
     FOR each horizon in horizons:
-        // The model takes patient features and current stage as input,
-        // and outputs probability of being in each possible state at the given horizon.
-        state_probabilities = model.predict(
-            features      = patient_features,
-            current_state = current_stage,
-            time_horizon  = horizon
-        )
+        // Get the model's predicted risk and survival probability.
+        risk_score = model.predict_risk(patient_features, horizon)
 
-        // Also compute the probability of crossing key clinical thresholds.
-        // These are the actionable inflection points clinicians care about.
-        threshold_probs = compute_threshold_probabilities(
-            state_probabilities,
-            thresholds = disease-specific thresholds  // e.g., eGFR < 30, eGFR < 15
-        )
+        // Generate uncertainty bounds using the model's uncertainty mechanism.
+        // For ensemble models: use prediction variance across ensemble members.
+        // For Bayesian models: use posterior predictive distribution.
+        // For neural networks: use Monte Carlo dropout (run inference N times
+        // with dropout active, measure spread of predictions).
+        uncertainty = model.predict_uncertainty(patient_features, horizon, n_samples=100)
 
         predictions[horizon] = {
-            state_distribution: state_probabilities,
-            threshold_risks:    threshold_probs,
-            confidence_width:   compute_prediction_interval_width(state_probabilities)
+            probability_of_progression: risk_score,
+            confidence_interval_lower:  uncertainty.percentile_10,
+            confidence_interval_upper:  uncertainty.percentile_90,
+            median_prediction:          uncertainty.percentile_50
         }
 
-    // Compute the expected trajectory: the most likely path through states over time.
-    expected_trajectory = interpolate_most_likely_path(predictions)
+    // Compute feature importance for this specific prediction.
+    // SHAP values or similar: which features are pushing this patient
+    // toward faster or slower progression?
+    explanations = compute_shap_values(model, patient_features)
 
-    // Compute scenario projections: what happens under different treatment assumptions?
-    scenarios = {
-        "current_treatment": expected_trajectory,
-        "intensified":       model.predict_scenario(patient_features, treatment = "intensified"),
-        "no_change":         model.predict_scenario(patient_features, treatment = "maintain")
-    }
-
-    RETURN {
-        predictions:          predictions,
-        expected_trajectory:  expected_trajectory,
-        scenarios:            scenarios,
-        model_version:        model.version,
-        prediction_timestamp: current UTC timestamp
-    }
-```
-
-**Step 4: Uncertainty quantification.** A progression prediction without uncertainty bounds is dangerous. Clinicians need to know how confident the model is, and confidence should decrease as the prediction horizon extends. This step computes calibrated confidence intervals using the model's internal uncertainty estimates (for Bayesian models) or bootstrap resampling (for frequentist models). It also identifies factors that increase uncertainty for this specific patient: sparse observation history, unusual feature combinations, or being in a region of feature space with few training examples. Without this step, predictions look more certain than they are, which can lead to overconfident clinical decisions.
-
-```
-FUNCTION quantify_uncertainty(patient_features, predictions, model, training_data_stats):
-    // Compute prediction intervals at each time horizon.
-    // These should widen as the horizon extends (we're less certain about the distant future).
-    intervals = empty map
-
-    FOR each horizon, prediction in predictions:
-        // Method depends on model type:
-        // - Bayesian models: use posterior predictive distribution directly
-        // - Ensemble models: use prediction variance across ensemble members
-        // - Single models: use bootstrap or conformal prediction intervals
-        interval = model.prediction_interval(
-            features  = patient_features,
-            horizon   = horizon,
-            level     = 0.80  // 80% prediction interval (not 95%; too wide to be useful clinically)
-        )
-
-        intervals[horizon] = {
-            lower_bound: interval.lower,
-            upper_bound: interval.upper,
-            width:       interval.upper - interval.lower
-        }
-
-    // Identify sources of elevated uncertainty for this patient.
-    uncertainty_flags = []
-
-    // Sparse data: fewer observations means less reliable trajectory estimation.
-    IF patient_features.observation_count < 5:
-        append "Limited observation history (< 5 data points)" to uncertainty_flags
-
-    // Novelty detection: is this patient unlike the training population?
-    novelty_score = compute_distance_to_training_distribution(patient_features, training_data_stats)
-    IF novelty_score > threshold:
-        append "Patient profile is unusual relative to training population" to uncertainty_flags
-
-    // Recent trajectory instability: high variability means less predictable future.
-    IF patient_features.variability > high_variability_threshold:
-        append "High recent biomarker variability" to uncertainty_flags
+    // Identify top risk accelerators and decelerators.
+    top_accelerators = top 3 features with positive SHAP values
+        // e.g., "eGFR declining at 6 pts/year", "uncontrolled diabetes (HbA1c 9.2)"
+    top_decelerators = top 3 features with negative SHAP values
+        // e.g., "on ACE inhibitor for 2+ years", "blood pressure well-controlled"
 
     RETURN {
-        prediction_intervals: intervals,
-        uncertainty_flags:    uncertainty_flags,
-        overall_confidence:   "high" if no flags, "moderate" if 1 flag, "low" if 2+ flags
+        patient_id:        patient_features.patient_id,
+        prediction_date:   today,
+        horizons:          predictions,
+        risk_factors:      top_accelerators,
+        protective_factors: top_decelerators,
+        model_version:     model.version,
+        data_freshness:    most recent observation date in patient_features
     }
 ```
 
-**Step 5: Store and serve predictions.** The final step persists the prediction results for clinical consumption and audit purposes. Each prediction is stored with full provenance: which model version generated it, what data was available at prediction time, and what the uncertainty bounds were. This enables both real-time clinical decision support (a clinician viewing the patient's chart sees the current progression forecast) and retrospective analysis (did our predictions match reality? where did we miss?). The prediction cache is updated whenever significant new clinical data arrives, ensuring clinicians always see the most current forecast.
+**Step 5: Clinical integration and monitoring.** Predictions are useless if they don't reach clinicians at the right moment. This step stores predictions for low-latency retrieval, surfaces them in clinical workflows, and monitors model performance over time. The monitoring piece is critical: disease progression models degrade as treatment patterns change (new drugs become available), population demographics shift, and coding practices evolve. Without active monitoring, a model that was well-calibrated at deployment will silently become unreliable. Skip monitoring and you won't know your model is wrong until a clinician notices predictions that don't match reality.
 
 ```
-FUNCTION store_prediction(patient_id, prediction_result, uncertainty):
-    // Write the full prediction to the cache for real-time clinical access.
-    write to prediction cache:
-        patient_id          = patient_id
-        prediction_date     = current UTC timestamp
-        current_stage       = prediction_result.current_stage
-        expected_trajectory = prediction_result.expected_trajectory
-        scenarios           = prediction_result.scenarios
-        uncertainty         = uncertainty
-        model_version       = prediction_result.model_version
-        // TTL: predictions expire after 90 days if not refreshed.
-        // Stale predictions are worse than no prediction.
-        ttl                 = 90 days from now
+FUNCTION integrate_and_monitor(prediction, patient_id):
+    // Store the prediction for clinical retrieval.
+    // Clinicians need sub-second access during patient encounters.
+    write to prediction cache (DynamoDB):
+        patient_id       = patient_id
+        prediction       = prediction
+        ttl              = 30 days  // predictions expire; new data means new predictions
+        generated_at     = now
 
-    // Also write to the audit log (S3) for compliance and model evaluation.
-    write to audit log (S3):
-        patient_id          = patient_id
-        prediction_date     = current UTC timestamp
-        full_prediction     = prediction_result
-        features_used       = summary of input features (not raw PHI values)
-        model_version       = prediction_result.model_version
+    // Check if this prediction crosses an actionable threshold.
+    // Example: >60% probability of progression within 12 months triggers an alert.
+    IF prediction.horizons[12].probability_of_progression > 0.60:
+        generate clinical alert:
+            type     = "progression_risk_high"
+            patient  = patient_id
+            message  = "High probability of disease progression within 12 months"
+            action   = "Consider nephrology referral and treatment escalation review"
+            evidence = prediction.risk_factors
 
-    // If the prediction crosses a clinical alert threshold, emit an event.
-    IF any threshold_risk > alert_threshold:
-        emit event:
-            type       = "progression_alert"
-            patient_id = patient_id
-            detail     = which thresholds were crossed and at what probability
+    // --- Model monitoring (batch, runs daily) ---
+    // Compare predictions made N months ago against actual outcomes.
+    // Did patients we predicted would progress actually progress?
+
+    FUNCTION monitor_model_performance():
+        // Retrieve predictions made 12 months ago
+        old_predictions = query predictions where generated_at = 12 months ago
+
+        FOR each old_prediction in old_predictions:
+            actual_outcome = check if patient progressed in the 12 months since prediction
+            record (predicted_probability, actual_outcome) for calibration analysis
+
+        // Compute calibration: are predicted probabilities accurate?
+        // If we say "60% chance of progression," do ~60% of those patients progress?
+        calibration_error = compute expected calibration error across deciles
+
+        // Compute discrimination: can the model distinguish progressors from non-progressors?
+        current_c_index = concordance_index(predicted_risks, actual_outcomes)
+
+        IF calibration_error > 0.10 OR current_c_index < 0.65:
+            trigger alarm: "Model performance degraded. Retraining recommended."
+            LOG "Calibration error: " + calibration_error + ", C-index: " + current_c_index
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-**Sample output for a CKD progression prediction:**
+**Sample output for a CKD patient:**
 
 ```json
 {
-  "patient_id": "patient-00482",
-  "prediction_date": "2026-05-31T10:15:22Z",
-  "current_stage": "CKD Stage 3a",
-  "current_egfr": 52.3,
-  "expected_trajectory": {
-    "6_months": { "expected_egfr": 50.1, "stage": "3a", "confidence": "high" },
-    "12_months": { "expected_egfr": 47.8, "stage": "3a", "confidence": "high" },
-    "24_months": { "expected_egfr": 43.2, "stage": "3b", "confidence": "moderate" },
-    "36_months": { "expected_egfr": 38.9, "stage": "3b", "confidence": "moderate" },
-    "60_months": { "expected_egfr": 31.4, "stage": "3b", "confidence": "low" }
-  },
-  "threshold_risks": {
-    "egfr_below_30_within_3yr": 0.22,
-    "egfr_below_15_within_5yr": 0.08,
-    "dialysis_within_5yr": 0.05
-  },
-  "scenarios": {
-    "current_treatment": { "egfr_at_3yr": 38.9 },
-    "intensified_treatment": { "egfr_at_3yr": 42.1 },
-    "no_treatment_change": { "egfr_at_3yr": 36.2 }
-  },
-  "uncertainty": {
-    "prediction_intervals": {
-      "12_months": { "lower": 44.2, "upper": 51.4 },
-      "36_months": { "lower": 32.1, "upper": 45.7 },
-      "60_months": { "lower": 22.8, "upper": 40.0 }
+  "patient_id": "pat-7829-ckd",
+  "prediction_date": "2026-05-31",
+  "current_stage": "3a",
+  "current_eGFR": 52,
+  "horizons": {
+    "6_months": {
+      "probability_of_stage_progression": 0.12,
+      "predicted_eGFR_median": 50,
+      "confidence_interval": [46, 54]
     },
-    "flags": [],
-    "overall_confidence": "high"
+    "12_months": {
+      "probability_of_stage_progression": 0.28,
+      "predicted_eGFR_median": 47,
+      "confidence_interval": [41, 53]
+    },
+    "24_months": {
+      "probability_of_stage_progression": 0.54,
+      "predicted_eGFR_median": 42,
+      "confidence_interval": [34, 51]
+    },
+    "36_months": {
+      "probability_of_stage_progression": 0.71,
+      "predicted_eGFR_median": 38,
+      "confidence_interval": [28, 49]
+    }
   },
-  "model_version": "ckd-progression-v2.3.1"
+  "risk_factors": [
+    "eGFR declining at 5.2 points/year (above population average of 2.1)",
+    "HbA1c poorly controlled (8.9%, target <7.0%)",
+    "Proteinuria increasing over last 6 months"
+  ],
+  "protective_factors": [
+    "On ACE inhibitor (lisinopril) for 18 months",
+    "Blood pressure at target (128/78 average)",
+    "No cardiovascular events in history"
+  ],
+  "model_version": "ckd-progression-v2.3",
+  "data_freshness": "2026-05-15"
 }
 ```
 
@@ -451,58 +499,57 @@ FUNCTION store_prediction(patient_id, prediction_result, uncertainty):
 
 | Metric | Typical Value |
 |--------|---------------|
-| C-statistic (1-year stage transition) | 0.72-0.80 |
-| C-statistic (3-year stage transition) | 0.65-0.74 |
-| Calibration error (1-year) | < 5% absolute |
-| Calibration error (3-year) | < 10% absolute |
+| C-index (12-month horizon) | 0.72-0.78 |
+| C-index (36-month horizon) | 0.65-0.72 |
+| Calibration error (Brier score) | 0.08-0.15 |
 | Inference latency | 200-500ms per patient |
-| Feature engineering (batch) | ~2 hours for 100K patients |
-| Model training | 4-8 hours on ml.m5.4xlarge |
-| Cost per prediction | ~$0.02 (endpoint + DynamoDB + Lambda) |
+| Training time (50K patient cohort) | 2-6 hours |
+| Retraining frequency | Quarterly (or when drift detected) |
 
 **Where it struggles:**
-
-- Patients with very sparse observation histories (fewer than 5 data points over 2+ years)
-- Rapid, unexpected disease acceleration triggered by new comorbidities not in the training data
-- Patients on novel therapies not represented in historical training data (the model can't predict response to drugs it hasn't seen)
-- Very long prediction horizons (5+ years) where uncertainty dominates the signal
-- Patients at the boundaries between disease stages where small measurement variations cause stage oscillation
+- Patients with very short observation histories (less than 12 months of data). The model needs trajectory information, and a single snapshot isn't enough.
+- Patients on novel therapies not represented in training data. New drugs change progression rates in ways the model hasn't seen.
+- Rapid, unexpected changes (acute kidney injury superimposed on chronic disease). The model predicts gradual progression, not sudden events.
+- Subgroups underrepresented in training data (rare diseases, pediatric populations, specific ethnic groups with different progression patterns).
+- Very long horizons (5+ years). Uncertainty compounds and predictions become too wide to be clinically actionable.
 
 ---
 
 ## The Honest Take
 
-Disease progression modeling is one of those problems where the concept is elegant and the reality is humbling. The idea of giving every patient a personalized trajectory forecast sounds transformative. And it can be. But the gap between a research paper and a deployed clinical tool is wider here than in almost any other healthcare ML application.
+Disease progression modeling is one of those problems where the concept is intuitive, the clinical value is obvious, and the implementation is humbling. Here's what I've learned:
 
-The first thing that will surprise you: data assembly takes 60-70% of the project timeline. Not modeling. Not deployment. Just getting the longitudinal data into a usable format. Clinical data is scattered across systems, coded inconsistently, and full of gaps. A patient who transferred from another health system has a trajectory that starts mid-stream. A patient who was lost to follow-up for two years has a gap you can't fill. These aren't edge cases; they're the majority of your cohort.
+**The data problem is bigger than the model problem.** You'll spend 70% of your time assembling clean longitudinal data and 30% on the actual modeling. Patient records are fragmented across systems, labs are coded inconsistently, medication histories have gaps, and "lost to follow-up" might mean the patient moved, died, or switched providers. Getting a clean training cohort with reliable outcomes is the hard part.
 
-The second surprise: treatment effects are the elephant in the room. Your model learns trajectories from patients who were treated. If you deploy it to guide treatment decisions, you're using observational data to make causal claims. "Intensified treatment would slow progression by X" is a causal statement that requires causal methodology, not just a predictive model trained on historical data. Most deployed systems punt on this and just predict "trajectory under current treatment patterns," which is useful but less powerful than true counterfactual prediction.
+**Treatment confounding will haunt you.** Your first model will look great on validation metrics and then a nephrologist will point out that it's basically predicting "patients who got aggressive treatment did better," which is obvious and not useful. Accounting for treatment effects properly requires either causal inference expertise or very careful framing of what your model actually predicts ("progression given current treatment continues").
 
-The third surprise: clinician adoption is harder than model building. A nephrologist who has been managing CKD patients for 20 years has strong priors about disease trajectories. If your model disagrees with their clinical intuition, they'll ignore it. If it agrees, they'll say "I already knew that." The value proposition has to be in the cases where the model sees something the clinician doesn't: the patient whose trajectory is subtly accelerating in a way that's hard to spot from individual lab values, or the patient who looks high-risk on paper but whose trajectory is actually stable.
+**Clinicians will ask questions your model can't answer.** "What if we add this medication?" "What if the patient loses 20 pounds?" These are counterfactual questions, and a standard predictive model doesn't answer them. You need causal models or simulation-based approaches for "what if" scenarios, and those are a significant step up in complexity.
 
-The calibration problem is real and ongoing. Disease management changes over time. New drugs enter the market (SGLT2 inhibitors dramatically changed CKD progression rates). Guidelines change. Patient populations shift. A model trained on 2018-2022 data may not be well-calibrated for 2026 patients on newer therapies. You need continuous monitoring and periodic retraining, not a one-time model deployment.
+**Calibration matters more than discrimination.** A model with a C-index of 0.75 that's well-calibrated (when it says 60% risk, 60% of patients actually progress) is more clinically useful than a model with a C-index of 0.80 that's poorly calibrated. Clinicians make decisions based on the probability values, not the ranking.
 
-One thing I'd do differently: start with a simpler model (LACE-style point scoring or basic survival analysis) and prove the clinical workflow before investing in complex ML. The hardest part isn't the model; it's integrating predictions into clinical decision-making in a way that actually changes behavior. Get that right with a simple model first, then upgrade the model later.
+**The uncertainty bounds are the product, not the point estimate.** I cannot stress this enough. A clinician who sees "42% probability of progression" will treat it as a fact. A clinician who sees "somewhere between 25% and 60% probability" will appropriately factor in their own clinical judgment. Wide uncertainty bounds are honest, not a failure.
+
+**Model drift is real and faster than you'd expect.** Treatment guidelines change. New medications become available. Coding practices shift. A model trained on 2018-2022 data will start degrading by 2024 as the population and treatment landscape evolve. Plan for quarterly retraining from day one.
 
 ---
 
 ## Variations and Extensions
 
-**Multi-disease joint progression.** Many patients have multiple progressing conditions simultaneously (diabetes + CKD + heart failure). Model the joint progression of multiple diseases, capturing the interactions between them. A patient whose diabetes is poorly controlled will progress faster on CKD; modeling this jointly gives more accurate predictions than modeling each disease independently. This requires multi-task learning architectures or coupled differential equation models.
+**Multi-disease joint modeling.** Many patients have multiple chronic conditions that interact. CKD progression is influenced by diabetes control, which is influenced by cardiovascular health. A joint model that captures these interactions can provide more accurate predictions than disease-specific models in isolation. The architecture extends to multiple biomarker trajectories modeled simultaneously with shared latent factors.
 
-**Digital twin approach.** Create a computational "twin" of each patient that simulates their physiology and can be used to test treatment scenarios in silico. Feed the twin the patient's actual data to calibrate it, then run forward simulations under different treatment assumptions. This is the most ambitious version of progression modeling and requires deep domain expertise in disease physiology, but it produces the most interpretable and actionable predictions.
+**Counterfactual treatment simulation.** Instead of predicting "what will happen," predict "what would happen under different treatment scenarios." This requires causal modeling (G-computation, structural causal models) but provides the "what if" capability clinicians actually want. "If we add SGLT2 inhibitor now, the predicted eGFR at 24 months improves from 42 to 47." This is significantly harder to validate but enormously valuable for shared decision-making.
 
-**Population-level resource forecasting.** Aggregate individual progression predictions to forecast future demand for expensive resources: dialysis capacity, transplant waitlist growth, specialist appointment volume, medication costs. This transforms a clinical tool into a strategic planning tool. The key insight is that individual predictions have wide uncertainty, but population-level aggregates are much more stable (individual errors cancel out).
+**Patient-facing progression communication.** Translate model outputs into patient-understandable visualizations. A trajectory chart showing "where you are, where you're likely headed, and what we can do about it" supports shared decision-making and patient engagement. The challenge is communicating uncertainty without causing anxiety. This requires careful UX design and clinician involvement in how predictions are framed.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 7.5 (30-Day Readmission Risk):** Shares feature engineering patterns for longitudinal clinical data, but operates on a much shorter time horizon
-- **Recipe 7.6 (Rising Risk Identification):** Complementary approach that identifies patients whose risk trajectory is accelerating, which is one signal that feeds into progression modeling
-- **Recipe 12.8 (Disease Progression Trajectory Modeling):** Time-series focused approach to the same problem domain; this recipe emphasizes the predictive analytics and clinical decision support angle while 12.8 focuses on temporal modeling techniques
-- **Recipe 6.4 (Disease Severity Stratification):** Provides the baseline severity classification that progression models build upon
-- **Recipe 4.8 (Treatment Response Prediction):** Addresses the treatment effect estimation challenge that is central to scenario-based progression forecasting
+- **Recipe 7.5 (30-Day Readmission Risk):** Shorter-horizon prediction using similar longitudinal features but different outcome definition and clinical integration pattern
+- **Recipe 7.6 (Rising Risk Identification):** Complementary approach focused on rate-of-change detection rather than absolute trajectory prediction
+- **Recipe 12.8 (Disease Progression Trajectory Modeling):** Time series perspective on the same problem, focusing on temporal modeling techniques
+- **Recipe 6.4 (Disease Severity Stratification):** Provides the staging framework that progression models predict transitions between
+- **Recipe 4.8 (Treatment Response Prediction):** Related problem of predicting how a patient will respond to a specific intervention
 
 ---
 
@@ -510,20 +557,21 @@ One thing I'd do differently: start with a simpler model (LACE-style point scori
 
 **AWS Documentation:**
 - [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
+- [Amazon SageMaker Model Registry](https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html)
 - [Amazon HealthLake Developer Guide](https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html)
-- [Amazon HealthLake Analytics](https://docs.aws.amazon.com/healthlake/latest/devguide/analytics.html)
-- [SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
 - [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
+- [Amazon SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-healthlake-dicom-extension`](https://github.com/aws-samples/amazon-healthlake-dicom-extension): Demonstrates HealthLake integration patterns for clinical data workflows
-- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including time series and survival analysis patterns
+- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including survival analysis, time series, and healthcare ML patterns
+- [`amazon-healthlake-toolkit`](https://github.com/aws-samples/amazon-healthlake-toolkit): HealthLake data ingestion, FHIR queries, and clinical data pipeline patterns
 
-**Clinical References:**
-- TODO: Verify and add link to KDIGO CKD progression guidelines
-- TODO: Verify and add link to published CKD progression model validation studies (e.g., Tangri et al. kidney failure risk equation)
+**Clinical and Technical References:**
+- TODO: Verify link for MIMIC-IV dataset documentation (PhysioNet)
+- TODO: Verify link for CMS Synthetic Public Use Files
+- TODO: Verify link for lifelines Python survival analysis library documentation
 
 ---
 
@@ -531,14 +579,17 @@ One thing I'd do differently: start with a simpler model (LACE-style point scori
 
 | Phase | Duration |
 |-------|----------|
-| **Basic** (single disease, simple survival model, batch predictions) | 12-16 weeks |
-| **Production-ready** (multi-feature model, real-time predictions, clinical integration, monitoring) | 6-9 months |
-| **With variations** (multi-disease, scenario modeling, population forecasting) | 12-18 months |
+| **Basic** (single disease, single biomarker, point predictions) | 8-12 weeks |
+| **Production-ready** (multi-biomarker, uncertainty quantification, EHR integration, monitoring) | 16-24 weeks |
+| **With variations** (multi-disease joint modeling, counterfactual simulation, patient-facing) | 30-40 weeks |
 
 ---
 
-**Tags:** `predictive-analytics` `disease-progression` `longitudinal-modeling` `chronic-disease` `ckd` `survival-analysis` `sagemaker` `healthlake` `clinical-decision-support` `time-series`
+## Tags
+
+`predictive-analytics` `disease-progression` `survival-analysis` `longitudinal-modeling` `chronic-disease` `CKD` `time-to-event` `uncertainty-quantification` `sagemaker` `healthlake` `complex`
 
 ---
 
-*[← Previous: 7.7 Length of Stay Prediction](chapter07.07-length-of-stay-prediction) · [Chapter 7 Index](chapter07-index) · [Next: 7.9 Mortality Risk Scoring (ICU) →](chapter07.09-mortality-risk-scoring-icu)*
+| [← 7.7: Length of Stay Prediction](chapter07.07-length-of-stay-prediction) | [Chapter 7 Index](chapter07-index) | [7.9: Mortality Risk Scoring →](chapter07.09-mortality-risk-scoring) |
+|:---|:---:|---:|
