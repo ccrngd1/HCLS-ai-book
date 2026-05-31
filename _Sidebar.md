@@ -144,6 +144,8 @@
 * [Preface](chapter06-preface)
 * [6.1 — Geographic Patient Clustering](chapter06.01-geographic-patient-clustering)
   * [Python Example](chapter06.01-python-example)
+* [6.2 — Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation)
+  * [Python Example](chapter06.02-python-example)
 
 ---
 
