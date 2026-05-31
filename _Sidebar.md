@@ -152,6 +152,8 @@
   * [Python Example](chapter06.04-python-example)
 * [6.5 — Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis)
   * [Python Example](chapter06.05-python-example)
+* [6.6 — Patient Similarity for Care Planning](chapter06.06-patient-similarity-care-planning)
+  * [Python Example](chapter06.06-python-example)
 
 ---
 
