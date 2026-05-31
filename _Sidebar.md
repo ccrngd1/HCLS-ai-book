@@ -168,6 +168,8 @@
 #### Ch 7: Predictive Analytics / Risk Scoring
 
 * [Preface](chapter07-preface)
+* [7.1 — Appointment No-Show Prediction](chapter07.01-appointment-no-show-prediction)
+  * [Python Example](chapter07.01-python-example)
 
 ---
 
