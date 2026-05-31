@@ -20,7 +20,7 @@ The operational stakes are real. Hospitals run at 85-95% occupancy. Every bed-da
 
 The financial incentive is also direct: under DRG-based payment, the hospital gets paid a fixed amount regardless of how long the patient stays. Every day beyond the geometric mean LOS for that DRG is a day the hospital is losing money. Predicting which patients will exceed their expected LOS early enough to intervene is worth millions annually for a mid-size hospital.
 
-Let's dig into how to build this well.
+The trick is building a system that updates as reality unfolds, not one that guesses at admission and hopes for the best.
 
 ---
 
@@ -92,6 +92,8 @@ Several approaches work for LOS prediction, each with tradeoffs:
 
 **Accuracy expectations are unrealistic.** Clinicians expect the model to be right. But LOS has inherent irreducible uncertainty. Even a perfect model can't predict that a patient will fall on day 3 and fracture their hip. Setting expectations around confidence intervals rather than point predictions is essential for adoption.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add "Fairness and Equity Considerations" subsection here. LOS predictions drive resource allocation; must discuss disparate impact across demographic groups, insurance type as a protected-class proxy, and demographic-stratified evaluation metrics. See expert review for full suggested content. -->
+
 ### The General Architecture Pattern
 
 ```
@@ -120,15 +122,15 @@ The feature store is the critical piece that bridges both modes. Training featur
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for scale, model registry for versioning, and real-time endpoints for inference. For LOS prediction specifically, SageMaker's built-in XGBoost algorithm handles the structured tabular data well, and the batch transform feature handles the daily re-scoring of all current inpatients efficiently.
 
-**Amazon SageMaker Feature Store for feature management.** The feature store solves the training-serving skew problem directly. You define feature groups (admission features, daily clinical features, social features), compute them once, and serve them consistently to both training pipelines and real-time inference. The offline store feeds training; the online store feeds real-time predictions.
+**Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. You define feature groups (admission features, daily clinical features, social features), compute them once, and serve them consistently to both training pipelines and real-time inference. The offline store feeds training; the online store feeds real-time predictions.
 
 **AWS HealthLake for FHIR-based clinical data.** HealthLake provides a FHIR-compliant data store that can ingest ADT (admit/discharge/transfer) events, lab results, medications, and other clinical data in a standardized format. This gives you a clean, queryable source for feature engineering without building custom EHR integrations from scratch.
 
-**AWS Lambda for event-driven prediction triggers.** When a new lab result arrives or a patient's status changes, Lambda can trigger a re-prediction. This keeps predictions fresh without running a continuous polling loop.
+**AWS Lambda for event-driven prediction triggers.** When a new lab result arrives or a patient's status changes, Lambda can trigger a re-prediction. This keeps predictions fresh without running a continuous polling loop. Configure an ADT event trigger so that when a new admission event arrives from HealthLake, a Lambda function extracts admission features and writes them to the Feature Store online store immediately. This enables a real-time admission-time prediction within minutes of admission, rather than waiting for the next daily batch cycle.
 
-**Amazon DynamoDB for prediction storage.** Current predictions for all inpatients need to be queryable by bed, unit, service line, and predicted discharge date. DynamoDB's flexible key structure and single-digit-millisecond reads make it ideal for the operational dashboard queries.
+**Amazon DynamoDB for prediction storage.** Current predictions for all inpatients need to be queryable by bed, unit, service line, and predicted discharge date. DynamoDB's flexible key structure and single-digit-millisecond reads make it ideal for the operational dashboard queries. Access to the prediction store should be mediated through row-level security on the dashboard layer (restricting users to their assigned units) and an API layer for programmatic access. SNS alert messages should contain minimal PHI (encounter ID and unit, with a link to the secure dashboard for details) rather than embedding clinical trajectory information in notification bodies.
 
-**Amazon QuickSight for operational dashboards.** Bed management and discharge planning teams need visual tools, not APIs. QuickSight connects to the prediction store and renders unit-level views of predicted discharges, capacity forecasts, and patients at risk of extended stays.
+**Amazon QuickSight for operational dashboards.** Bed management and discharge planning teams need visual tools, not APIs. QuickSight connects to the prediction data (via Athena queries over DynamoDB exports to S3, or via a Lambda-backed custom connector) and renders unit-level views of predicted discharges, capacity forecasts, and patients at risk of extended stays. For real-time bed management views, Amazon Managed Grafana (which supports DynamoDB via CloudWatch) is an alternative worth evaluating.
 
 ### Architecture Diagram
 
@@ -147,7 +149,8 @@ flowchart TD
     G -->|Invoke| F
     
     F -->|Prediction| H[DynamoDB\nPrediction Store]
-    H -->|Query| I[QuickSight Dashboard\nBed Management]
+    H -->|Export/Stream| K[S3 + Athena]
+    K -->|Query| I[QuickSight Dashboard\nBed Management]
     H -->|Alert| J[SNS\nDischarge Planning Alerts]
     
     style B fill:#f9f,stroke:#333
@@ -158,13 +161,15 @@ flowchart TD
 
 ### Prerequisites
 
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace wildcard IAM permissions with role-specific, action-specific permissions per pipeline component (training role, inference role, feature engineering role, Lambda trigger role). Current sagemaker:* and healthlake:* violate least privilege. -->
+
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, SageMaker Feature Store, AWS HealthLake, AWS Lambda, Amazon DynamoDB, Amazon QuickSight, Amazon SNS, Amazon S3 |
 | **IAM Permissions** | `sagemaker:*` (scoped to project resources), `healthlake:*`, `dynamodb:PutItem/GetItem/Query`, `s3:GetObject/PutObject`, `lambda:InvokeFunction`, `sns:Publish` |
 | **BAA** | Required. All services handle PHI (patient demographics, diagnoses, clinical data). |
 | **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest (default). HealthLake: KMS encryption. SageMaker: KMS for training volumes and endpoints. All transit over TLS. |
-| **VPC** | SageMaker training and endpoints in VPC. VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch Logs. HealthLake accessed via VPC endpoint. |
+| **VPC** | SageMaker training and endpoints in VPC. Lambda event triggers in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), SageMaker API (interface), CloudWatch Logs (interface), SNS (interface), and HealthLake (interface). This eliminates NAT Gateway dependency for AWS service calls. |
 | **CloudTrail** | Enabled for all service API calls. SageMaker model lineage tracked via Model Registry. |
 | **Sample Data** | MIMIC-IV (publicly available ICU dataset) for development. Synthea for synthetic general hospital encounters. Never use real patient data in dev/test environments. |
 | **Cost Estimate** | Training: ~$5-20 per training run (ml.m5.xlarge, 1-4 hours). Inference endpoint: ~$100/month (ml.m5.large, always-on). Batch transform for daily refresh: ~$2/day. HealthLake: $0.60/10K FHIR operations. Feature Store: ~$50/month for online store. |
@@ -416,7 +421,7 @@ FUNCTION predict_remaining_los(encounter_id):
     RETURN result
 ```
 
-**Step 5: Daily batch refresh and monitoring.** Once a day, re-score all current inpatients and compare yesterday's predictions against today's reality. Patients who were discharged yesterday provide ground truth for model monitoring. Track prediction accuracy over time and trigger retraining when performance degrades. Also monitor for distribution drift: if the patient population is changing (new service lines, seasonal patterns, pandemic surges), the model may need updating even if recent accuracy looks acceptable.
+**Step 5: Daily batch refresh and monitoring.** Once a day, re-score all current inpatients and compare yesterday's predictions against today's reality. Patients who were discharged yesterday provide ground truth for model monitoring. Track prediction accuracy over time and trigger retraining when performance degrades. Also monitor for distribution drift: if the patient population is changing (new service lines, seasonal patterns, pandemic surges), the model may need updating even if recent accuracy looks acceptable. Orchestrate this batch with a workflow engine (such as Step Functions): check HealthLake data freshness before scoring, checkpoint progress so the pipeline can resume on partial failure, and alert the operations team if the batch doesn't complete within its expected window.
 
 ```
 FUNCTION daily_batch_refresh():
