@@ -9,104 +9,82 @@
 
 ## Verdict: PASS
 
-The implementation is well-structured, pedagogically sound, and faithfully implements the main recipe's pseudocode steps. The synthetic data generation is realistic, the model training is correct, the DynamoDB code uses Decimal properly, and the boto3 API calls are accurate. Two warnings and several notes below, but nothing that would mislead a reader into a broken implementation.
+The Python companion is well-structured, pedagogically sound, and faithfully implements the main recipe's pseudocode. The synthetic data generation produces realistic distributions, the model training pipeline is correct, top-level DynamoDB numerics use Decimal properly, and boto3 API calls are accurate. Two warnings and several notes below, but nothing that would cause the runnable pipeline to fail or seriously mislead a reader.
 
 ---
 
-## Step-by-Step Coverage Check
-
-| Step | Pseudocode Description | Python Function | Present | Correct |
-|------|------------------------|-----------------|---------|---------|
-| 1 | Discharge Event Detection | `generate_synthetic_discharges` (synthetic stand-in) | Yes | Yes |
-| 2 | Feature Assembly | Inline in `run_scoring_pipeline` + training imputation | Yes | Yes |
-| 3 | Model Scoring | `score_patient` | Yes | Yes |
-| 4 | Risk Stratification + Intervention Routing | `score_patient` + `route_interventions` | Yes | Yes |
-| 5 | Outcome Tracking | Not implemented (noted in Gap to Production) | Acceptable | N/A |
-
-The pseudocode's Step 2 (Feature Assembly from Clinical Data) is replaced by synthetic data generation, which is appropriate for a teaching example. The pseudocode's Step 5 (Outcome Tracking and Model Monitoring) is omitted from the Python but explicitly called out in the Gap to Production section. Both are reasonable scoping decisions for a companion code example.
-
----
-
-## Issues
+## Findings
 
 ### WARNING 1: `score_patient` uses -999 sentinel but model was trained with median imputation
 
 **Location:** `score_patient` function, missing value handling
 
-**The problem:** During training in `train_readmission_model`, missing lab values are imputed with the column median and a binary `_missing` indicator is added. But in `score_patient`, missing values are replaced with `-999` with the comment "sentinel for missing (XGBoost handles this)."
+During training (`train_readmission_model`), missing lab values are imputed with column medians and binary `_missing` indicators are added. But `score_patient` replaces missing values with `-999` and comments "sentinel for missing (XGBoost handles this)."
+
+scikit-learn's `GradientBoostingClassifier` does NOT handle missing value sentinels natively like XGBoost does. Passing -999 for `albumin_last` (training range 1.5-5.0) would produce wildly incorrect tree splits.
+
+The full pipeline in `run_scoring_pipeline` correctly imputes before calling `score_patient`, so end-to-end execution is correct. But the comment is misleading, and a reader calling `score_patient` directly (as its docstring implies is valid) would get garbage predictions.
+
+**Fix:** Add a prominent comment at the top of `score_patient` noting the caller must impute missing values first, and change the -999 comment from "XGBoost handles this" to "safety fallback for unexpected nulls; caller should impute before calling."
+
+---
+
+### WARNING 2: `store_risk_score` passes floats inside nested `risk_drivers` list to DynamoDB
+
+**Location:** `store_risk_score` function, line where `risk_drivers` is included in the item
 
 ```python
-# In score_patient:
-if val is None or (isinstance(val, float) and np.isnan(val)):
-    features.append(-999)  # sentinel for missing (XGBoost handles this)
+item = {
+    ...
+    "risk_drivers": score_result["risk_drivers"],
+    ...
+}
 ```
 
-scikit-learn's `GradientBoostingClassifier` does NOT handle missing values natively (unlike XGBoost). Passing -999 to a model trained on median-imputed data will produce incorrect predictions because -999 is far outside the training distribution for features like `albumin_last` (range 1.5-5.0) or `age` (range 25-95).
+The `risk_drivers` list contains dicts with `"value": features[i]` (numpy int/float) and `"importance": round(float(importances[i]), 4)` (Python float). DynamoDB's `TypeSerializer` rejects float types even when nested inside lists and maps. This would raise `TypeError: Float types are not supported. Use Decimal types instead` if `store_risk_score` were called with actual score results.
 
-The `run_scoring_pipeline` function correctly handles this by imputing with hardcoded medians and setting `_missing` indicators before calling `score_patient`. So the full pipeline works correctly. But `score_patient` in isolation would produce garbage for patients with missing values, and the comment misleads readers into thinking scikit-learn GBM handles sentinels like XGBoost does.
+The `__main__` pipeline never calls `store_risk_score` (it prints a note that scores "would be written to DynamoDB"), so this won't manifest during execution. But a reader copying this function into their code would hit the error immediately.
 
-**Why this is WARNING not ERROR:** The `run_scoring_pipeline` function pre-processes correctly before calling `score_patient`, so the end-to-end pipeline produces correct results. But a reader who calls `score_patient` directly (as the function's docstring implies is valid) would get wrong predictions.
-
-**Suggested fix:** Either add imputation logic inside `score_patient` (matching the training pipeline), or add a prominent comment noting that the caller must impute missing values before calling this function:
+**Fix:** Convert numeric values in `risk_drivers` to Decimal or cast to plain Python int/str before insertion:
 
 ```python
-# IMPORTANT: This model was trained with median imputation for missing values.
-# The caller must impute missing values and set _missing indicators before
-# calling this function. See run_scoring_pipeline for the correct pattern.
-# The -999 sentinel below is a safety fallback, not the intended path.
+"risk_drivers": [
+    {
+        "feature": d["feature"],
+        "value": Decimal(str(d["value"])),
+        "importance": Decimal(str(d["importance"])),
+    }
+    for d in score_result["risk_drivers"]
+],
 ```
 
 ---
 
-### WARNING 2: `fit_platt_scaling` function is defined but never called in the pipeline
+### NOTE 1: `fit_platt_scaling` is defined but never called in the pipeline
 
 **Location:** Step 3, `fit_platt_scaling` function
 
-**The problem:** The function `fit_platt_scaling` is defined and documented, but the pipeline uses hardcoded `CALIBRATION_A = -1.2` and `CALIBRATION_B = 0.3` constants instead. The `platt_scale` function defaults to these constants. A reader following the code top-to-bottom would expect `fit_platt_scaling` to be called during training and its output used during scoring, but that connection is never made.
-
-This is pedagogically confusing. The function exists to teach how calibration parameters are learned, but the pipeline never demonstrates the connection between fitting and applying.
-
-**Suggested fix:** Add a call to `fit_platt_scaling` in the `__main__` block after training, and use the returned parameters (or at minimum, print them and note they'd replace the hardcoded constants):
-
-```python
-# Step 2b: Fit calibration parameters (in production, use a held-out calibration set)
-print("\n[2b/4] Fitting Platt scaling calibration...")
-cal_params = fit_platt_scaling(model, X_test_subset, y_test_subset)
-print(f"  These would replace CALIBRATION_A and CALIBRATION_B in production")
-```
+The function teaches how calibration parameters are learned, but the pipeline uses hardcoded `CALIBRATION_A` and `CALIBRATION_B` constants. The connection between fitting and applying is never demonstrated. Adding a call in `__main__` (even just to print the fitted parameters) would complete the pedagogical arc.
 
 ---
 
-## Notes (No Fix Required)
-
-### NOTE 1: Platt scaling formula applies sigmoid to a probability, not a logit
+### NOTE 2: Platt scaling applied to probabilities rather than logits
 
 **Location:** `platt_scale` function
 
-The standard Platt scaling formulation transforms a raw model score (which may be a logit or uncalibrated probability) through `1 / (1 + exp(-(a*x + b)))`. When the input `x` is already a probability in [0, 1] (as it is here from `predict_proba`), the transform compresses the output range significantly. With `a = -1.2` and `b = 0.3`:
-- Input 0.5 maps to output 0.426
-- Input 0.8 maps to output 0.378
-
-This is mathematically valid (it's just a sigmoid applied to a linear transform of the probability), but it's unconventional. Standard Platt scaling is typically applied to the raw decision function output (logits), not to probabilities. The code works and the comments explain the intent, but a reader familiar with calibration literature might be confused.
-
-Not a bug since the hardcoded parameters are synthetic anyway, and the `fit_platt_scaling` function would learn appropriate parameters for whatever input space is used.
+Standard Platt scaling transforms raw decision function outputs (logits) through a sigmoid. Here it's applied to `predict_proba` output which is already a probability in [0, 1]. This is mathematically valid but unconventional. With `a = -1.2, b = 0.3`, the transform compresses the output range significantly (input 0.5 maps to ~0.43). Since the parameters are synthetic and `fit_platt_scaling` would learn appropriate values for whatever input space is used, this isn't wrong, but a reader familiar with calibration literature might be confused.
 
 ---
 
-### NOTE 2: `risk_drivers` in `score_patient` uses global feature importance, not per-patient explanations
+### NOTE 3: `risk_drivers` uses global feature importance, not per-patient explanations
 
 **Location:** `score_patient`, risk drivers section
 
-```python
-# Get feature contributions (approximate via feature importance * value deviation)
-# In production, you'd use SHAP values for proper per-patient explanations.
-```
-
-The comment correctly notes this is an approximation. The implementation uses global `model.feature_importances_` filtered by a threshold, which gives the same "top features" for every patient regardless of their specific values. This is a reasonable simplification for a teaching example, and the SHAP comment sets the right expectation. No change needed.
+The code uses `model.feature_importances_` (global, same for every patient) filtered by a threshold. Every patient with the same non-missing features gets the same "top drivers" regardless of their specific values. The comment correctly notes SHAP would be used in production. Acceptable simplification for teaching.
 
 ---
 
-### NOTE 3: `encounter_id` generation has potential duplicates
+### NOTE 4: Encounter ID generation allows potential duplicates
 
 **Location:** `generate_synthetic_discharges`, encounter_id column
 
@@ -114,68 +92,39 @@ The comment correctly notes this is an approximation. The implementation uses gl
 "encounter_id": [f"ENC-{rng.integers(1000000, 9999999)}" for _ in range(n_patients)],
 ```
 
-With 3000 patients drawing from a 9M range, collision probability is low (~0.05%) but nonzero. For a synthetic data generator in a teaching example, this is fine. In production you'd use UUIDs or sequential IDs.
-
----
-
-### NOTE 4: The `run_scoring_pipeline` imputation uses hardcoded medians
-
-**Location:** `run_scoring_pipeline`, imputation block
-
-```python
-feature_vector[col] = {"albumin_last": 3.5, "creatinine_last": 1.1,
-                       "hemoglobin_last": 12.0}[col]
-```
-
-The comment says "in production, store this with model" which is the right guidance. The hardcoded values are close to the synthetic data's actual medians (albumin ~3.5, creatinine ~1.2, hemoglobin ~12.0). Acceptable for teaching.
-
----
-
-### NOTE 5: `from sklearn.linear_model import LogisticRegression` is inside function body
-
-**Location:** `fit_platt_scaling` function
-
-The import is inside the function rather than at module scope. This works but is unconventional for a teaching example. Since the function is never called in the pipeline (see WARNING 2), this is a minor style point.
+Drawing 3000 IDs from a 9M range has low but nonzero collision probability. Fine for synthetic teaching data.
 
 ---
 
 ## Verification of Key Technical Claims
 
 **boto3 API calls verified:**
-- `boto3.resource("dynamodb").Table(name).put_item(Item={...})` -- correct API, correct usage
-- `boto3.client("sns").publish(TopicArn=..., Subject=..., Message=..., MessageAttributes={...})` -- correct. `MessageAttributes` structure with `DataType` and `StringValue` is correct.
-- `boto3.client("sagemaker-runtime").invoke_endpoint(EndpointName=..., ContentType="text/csv", Body=...)` -- correct service name (`sagemaker-runtime`), correct method name, correct parameters. Response parsing via `response["Body"].read().decode("utf-8")` is correct for SageMaker real-time endpoints.
+- `dynamodb.Table(name).put_item(Item={...})` - correct resource API usage
+- `sns_client.publish(TopicArn=..., Subject=..., Message=..., MessageAttributes={...})` - correct. `MessageAttributes` structure with `DataType` and `StringValue` keys is correct
+- `sagemaker_runtime.invoke_endpoint(EndpointName=..., ContentType="text/csv", Body=...)` - correct service name (`sagemaker-runtime`), correct method, correct parameters. Response parsing via `response["Body"].read().decode("utf-8")` is correct
 
-**DynamoDB Decimal handling:** Correctly uses `Decimal(str(round(value, 4)))` for `probability` and `raw_score` fields. The `risk_drivers` list contains plain Python dicts with float `importance` values -- this would actually fail DynamoDB's float rejection. However, since `risk_drivers` contains dicts with `round(float(...), 4)` values, and DynamoDB's `boto3` resource layer serializes nested structures through its `TypeSerializer`, floats nested inside lists/dicts ARE rejected. This is technically a latent bug but since `store_risk_score` is never actually called in the demo pipeline (the `__main__` block notes scores "would be written to DynamoDB"), it won't manifest during execution. The teaching intent is correct and the Decimal pattern for top-level numerics is properly demonstrated.
+**DynamoDB Decimal handling:** Top-level numerics (`probability`, `raw_score`) correctly use `Decimal(str(round(value, 4)))`. Nested floats in `risk_drivers` are not converted (see WARNING 2).
 
-**S3 paths:** No S3 operations in this example (model artifacts and feature stores are mentioned in prose but not implemented in code). No leading-slash issues to check.
+**S3 paths:** No S3 operations in this example. No leading-slash issues.
 
-**scikit-learn API usage:**
-- `GradientBoostingClassifier(**params).fit(X, y)` -- correct
-- `model.predict_proba(X)[:, 1]` -- correct for binary classification
-- `roc_auc_score(y_true, y_prob)` -- correct
-- `brier_score_loss(y_true, y_prob)` -- correct
-- `calibration_curve(y_true, y_prob, n_bins=10, strategy="quantile")` -- correct
-- `train_test_split(..., stratify=y)` -- correct for imbalanced classification
-- `LogisticRegression(solver="lbfgs").fit(X, y)` -- correct for Platt scaling
+**scikit-learn API usage:** All correct - `GradientBoostingClassifier`, `predict_proba`, `roc_auc_score`, `brier_score_loss`, `calibration_curve`, `train_test_split` with `stratify`, `LogisticRegression`.
 
-**Retry configuration:** `Config(retries={"max_attempts": 3, "mode": "adaptive"})` is correct botocore retry configuration syntax.
+**Retry configuration:** `Config(retries={"max_attempts": 3, "mode": "adaptive"})` is valid botocore config.
 
 ---
 
 ## Pseudocode-to-Python Consistency
 
-The Python companion implements the core scoring pipeline (Steps 2-4 of the pseudocode) faithfully:
-- Feature assembly maps to the synthetic data generation + imputation in `run_scoring_pipeline`
-- Model scoring maps to `score_patient` with the same threshold logic
-- Risk stratification and intervention routing maps to `route_interventions` with matching condition-specific logic (CHF remote monitoring, medication reconciliation, social work assessment)
-- DynamoDB storage maps to `store_risk_score` with correct TTL calculation
-- SNS alerting maps to `send_high_risk_alert` with matching message structure
+| Pseudocode Step | Python Implementation | Match |
+|-----------------|----------------------|-------|
+| Step 1: Discharge Event Detection | Synthetic data generation (appropriate stand-in) | Yes |
+| Step 2: Feature Assembly | Inline imputation in `run_scoring_pipeline` | Yes |
+| Step 3: Model Scoring + Calibration | `score_patient` + `platt_scale` | Yes |
+| Step 4: Risk Stratification + Routing | `score_patient` tiers + `route_interventions` | Yes |
+| Step 5: Outcome Tracking | Omitted (noted in Gap to Production) | Acceptable |
 
-The pseudocode's Step 1 (Discharge Event Detection) and Step 5 (Outcome Tracking) are appropriately omitted from the Python companion, which focuses on the ML pipeline rather than the event-driven infrastructure.
-
-The intervention routing logic in Python matches the pseudocode's routing table: HIGH tier gets nurse callback + condition-specific interventions, MEDIUM tier gets automated check-in + follow-up scheduling, LOW tier gets nothing additional. The specific conditions checked (medication drivers, prior admissions, CHF, deprivation index) match between pseudocode and Python.
+Intervention routing logic matches between pseudocode and Python: HIGH tier gets nurse callback + condition-specific interventions (medication, CHF, social), MEDIUM tier gets automated check-in + follow-up scheduling, LOW tier gets nothing additional. Threshold values (0.35, 0.20) match.
 
 ---
 
-*Review completed. Two warnings flagged, neither blocking. The code is pedagogically sound and would run correctly end-to-end via the `__main__` block.*
+*Review complete. Two warnings, neither blocking the runnable pipeline. Code is pedagogically sound and executes correctly end-to-end via `__main__`.*
