@@ -8,7 +8,7 @@
 <!-- TODO (TechWriter): Expert review SEC-4 (MEDIUM). Add a delete_patient_face function showing consent withdrawal workflow (delete from both S3 and Rekognition collection). -->
 <!-- TODO (TechWriter): Expert review ARCH-3 (MEDIUM). Define fallback workflow in main recipe architecture when biometric verification fails. -->
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning.
 
 ---
 
