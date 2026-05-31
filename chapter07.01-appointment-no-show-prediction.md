@@ -90,7 +90,7 @@ This separation of concerns is important. The model predicts. The action engine 
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** SageMaker handles the infrastructure you don't want to manage yourself: spinning up a training instance, running the XGBoost job, storing the model artifact, and tearing everything down when it's done. For tabular classification problems like no-show prediction, the built-in XGBoost algorithm is a strong default. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than standing up a persistent endpoint that sits idle 23 hours a day.
+**Amazon SageMaker for model training and hosting.** SageMaker handles the infrastructure you don't want to manage: spinning up a training instance, running the XGBoost job, storing the model artifact, and tearing everything down when it's done. For tabular classification problems like no-show prediction, the built-in XGBoost algorithm is a strong default. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than standing up a persistent endpoint that sits idle 23 hours a day.
 
 **Amazon S3 for data and model storage.** Training data (historical appointments with outcomes), feature datasets, and trained model artifacts all live in S3. It's the natural staging area between your data warehouse and SageMaker, and between SageMaker and your inference pipeline. Versioned buckets let you track which training data produced which model.
 
