@@ -354,6 +354,8 @@ FUNCTION aggregate_outcomes(similar_patients, outcome_config):
 
 **Step 5: Store and present results.** Cache the similarity results (they don't change until the feature store updates) and format them for the care planning interface. The presentation layer is critical: raw statistics are not useful to a care manager in a 15-minute appointment. The output should be a concise narrative with supporting data, not a data dump. Note that the default presentation returns only aggregated outcome statistics; individual similar patient IDs are not exposed to the UI unless the organization's data governance policy permits drill-down with appropriate authorization controls.
 
+The DynamoDB cache stores derived PHI (patient IDs and outcome summaries) and should be treated as a PHI data store subject to your organization's retention and amendment policies. DynamoDB TTL deletion is eventually consistent (items may persist up to 48 hours past expiration), so do not rely on TTL alone as a hard deletion guarantee for compliance purposes. If source patient data is corrected or a patient exercises amendment rights, implement an explicit cache invalidation mechanism rather than waiting for TTL expiry.
+
 ```
 FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
     // Cache results in DynamoDB with TTL matching feature store refresh interval.
@@ -457,7 +459,7 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
 
 ## The Honest Take
 
-Patient similarity is one of those ideas that sounds obviously useful and is genuinely hard to get right. The concept is intuitive: find patients like this one, see what worked. The execution is full of subtle traps.
+Patient similarity is one of those ideas that sounds obviously useful and is genuinely hard to get right. The first time I built one of these, I spent two weeks tuning the distance metric before realizing my feature set was the actual problem. The concept is intuitive: find patients like this one, see what worked. The execution is full of subtle traps.
 
 The biggest trap is the assumption that "similar features" implies "similar outcomes." It often does. But sometimes two patients look identical on paper and have wildly different trajectories because of factors you didn't capture: social support, health literacy, genetic variation, provider quality. Your similarity metric is only as good as your features, and your features are only as good as your data capture.
 
