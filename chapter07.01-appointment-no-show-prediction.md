@@ -90,7 +90,7 @@ This separation of concerns is important. The model predicts. The action engine 
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** SageMaker handles the infrastructure you don't want to manage: spinning up a training instance, running the XGBoost job, storing the model artifact, and tearing everything down when it's done. For tabular classification problems like no-show prediction, the built-in XGBoost algorithm is a strong default. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than standing up a persistent endpoint that sits idle 23 hours a day.
+**Amazon SageMaker for model training and hosting.** SageMaker handles the infrastructure you don't want to manage: spinning up a training instance, running the XGBoost job, storing the model artifact, and tearing everything down when it's done. For tabular classification like no-show prediction, the built-in XGBoost algorithm is a strong default that requires zero custom container work. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than standing up a persistent endpoint that sits idle 23 hours a day.
 
 **Amazon S3 for data and model storage.** Training data (historical appointments with outcomes), feature datasets, and trained model artifacts all live in S3. It's the natural staging area between your data warehouse and SageMaker, and between SageMaker and your inference pipeline. Versioned buckets let you track which training data produced which model.
 
@@ -129,10 +129,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge, Amazon SNS or SES |
-| **IAM Permissions** | Distributed across service-specific roles: Glue execution role (S3 read/write on feature buckets, data source access); SageMaker execution role (S3 read/write on model/feature buckets, KMS decrypt); Lambda action engine role (DynamoDB read, SNS publish); EventBridge scheduler role (Lambda invoke, SageMaker transform). Scope each role to specific resource ARNs. The Lambda role should NOT have SageMaker or Glue permissions. |
+| **IAM Permissions** | Distributed across service-specific roles. Glue execution role: S3 read/write on feature buckets, data source access. SageMaker execution role: S3 read/write on model/feature buckets, KMS decrypt. Lambda action engine role: DynamoDB read, SNS publish. EventBridge scheduler role: Lambda invoke, SageMaker transform. Scope each role to specific resource ARNs. The Lambda role should NOT have SageMaker or Glue permissions. |
 | **BAA** | AWS BAA signed (appointment data contains PHI: patient names, dates of birth, contact info) |
-| **Encryption** | S3: SSE-KMS for training data and model artifacts; DynamoDB: encryption at rest (default), TTL enabled to expire predictions after appointment date + 90 days (PHI retention policy); SageMaker: KMS-encrypted training volumes and endpoints; all transit over TLS |
-| **VPC** | Production: SageMaker training and inference in VPC with gateway endpoints for S3 and DynamoDB. Additional interface endpoints required: SageMaker API, SNS, CloudWatch Logs, and KMS. Glue jobs in VPC with access to data sources. |
+| **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest (default); enable TTL on the table to expire prediction items after appointment date + 90 days (PHI retention policy). SageMaker: KMS-encrypted training volumes and endpoints. All transit over TLS. |
+| **VPC** | Production: SageMaker training and inference in VPC with gateway endpoints for S3 and DynamoDB. Additional interface endpoints required: SageMaker API, SNS, CloudWatch Logs, KMS. Glue jobs in VPC with access to data sources. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for audit |
 | **Sample Data** | Synthetic appointment records. Generate from realistic distributions: 15% base no-show rate, correlated with lead time and patient history. Never use real patient data in dev. |
 | **Cost Estimate** | SageMaker training: ~$5-20 per training run (ml.m5.xlarge, 1-2 hours). Batch transform: ~$2-5 per nightly scoring run. DynamoDB: negligible at appointment volumes. Total: ~$200-500/month for a mid-size practice. |

@@ -29,6 +29,7 @@ from datetime import timezone
 from decimal import Decimal
 
 import boto3
+from boto3.dynamodb.conditions import Key
 import numpy as np
 import pandas as pd
 from botocore.config import Config
@@ -541,6 +542,10 @@ def store_predictions(
                 "risk_tier": risk_tier,
                 "model_version": model_version,
                 "scored_at": scored_at,
+                # The main recipe also stores top contributing features (features_used)
+                # for explainability. Computing per-prediction feature importance
+                # requires SHAP values, which adds complexity beyond this example.
+                # See SageMaker Clarify for production feature attribution.
             }
 
             batch.put_item(Item=item)
@@ -577,9 +582,12 @@ def query_high_risk_appointments(target_date: str) -> list[dict]:
 
     # Query using the scheduled_date GSI.
     # In production, this index must exist on the table.
+    # NOTE: For a teaching example, we read a single page of results.
+    # In production, loop while 'LastEvaluatedKey' is present in the response
+    # to handle days with more appointments than fit in one 1MB page.
     response = table.query(
         IndexName="scheduled-date-index",
-        KeyConditionExpression=boto3.dynamodb.conditions.Key("scheduled_date").eq(target_date),
+        KeyConditionExpression=Key("scheduled_date").eq(target_date),
     )
 
     items = response.get("Items", [])
