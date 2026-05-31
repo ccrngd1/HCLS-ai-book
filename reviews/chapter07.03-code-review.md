@@ -1,104 +1,200 @@
-# Code Review: Recipe 7.3
+# Code Review: Recipe 7.3 - Patient Churn / Disenrollment Prediction
+
+**Reviewer:** Tech Code Reviewer
+**Date:** 2026-05-31
+**Files reviewed:**
+- `chapter07.03-patient-churn-disenrollment-prediction.md` (pseudocode)
+- `chapter07.03-python-example.md` (Python)
+
+**Validation performed:**
+- Python syntax check via `ast.parse()` across all 8 code blocks: PASSED
+- boto3 API signatures verified (S3, DynamoDB, EventBridge)
+- SageMaker SDK usage verified (Estimator, TrainingInput, Model, Transformer)
+- DynamoDB Decimal handling verified
+- S3 key paths checked for leading slashes
+
+---
 
 ## Summary
 
-The Python companion for Patient Churn / Disenrollment Prediction is well-structured, pedagogically sound, and faithfully implements the pseudocode from the main recipe. The code builds understanding progressively from synthetic data generation through model training, batch scoring, risk stratification, DynamoDB storage, and EventBridge publishing. Comments are generous and explain "why" not just "what." DynamoDB numeric values are properly wrapped in `Decimal`. S3 keys have no leading slashes. boto3 and SageMaker API calls use correct method names and parameters. The main concern is that the `put_events` call doesn't check for `FailedEntryCount` in the response, which could silently lose events in a teaching context where a reader might not realize failures are possible.
+Solid implementation. The Python companion faithfully implements all five pseudocode steps and adds appropriate operational steps (EventBridge publishing, DynamoDB storage). DynamoDB correctly uses `Decimal` for numeric values. S3 paths have no leading slashes. Two warnings found: one regarding a pedagogically misleading pattern in the pipeline orchestration (training on the same data you score), and one regarding the EventBridge `put_events` response not being checked for `FailedEntryCount`. One note on a minor inconsistency between pseudocode calibration and the Python implementation.
+
+---
+
+## Verdict: PASS
 
 ---
 
 ## Issues
 
-### Issue 1: EventBridge `put_events` Does Not Check `FailedEntryCount`
+### Issue 1: Misleading pattern - Pipeline trains and scores on the same synthetic data
 
-- **File:** Python companion (`chapter07.03-python-example.md`)
-- **Location:** Step 7, `publish_high_risk_events` function
-- **Severity:** WARNING
-- **Description:** The `put_events` API can partially succeed: some entries in a batch may fail while others succeed. The response includes a `FailedEntryCount` field. The code increments `published += len(entries)` unconditionally without checking whether any entries actually failed. A reader might carry this pattern into production and silently lose intervention triggers for high-risk members. For a teaching example, at minimum a log warning when `FailedEntryCount > 0` would demonstrate awareness of partial failures.
-- **Suggested fix:** After each `put_events` call, add:
-  ```python
-  response = events_client.put_events(Entries=entries)
-  failed = response.get("FailedEntryCount", 0)
-  if failed:
-      logger.warning("%d events failed to publish", failed)
-  published += len(entries) - failed
-  ```
+**Severity:** WARNING
+**File:** `chapter07.03-python-example.md`, Step 4 / "Putting It All Together"
 
----
+In `run_churn_prediction_pipeline()`, the code trains a model on the synthetic data and then scores the exact same data:
 
-### Issue 2: Pseudocode Includes Calibration Step; Python Skips It Entirely
+```python
+members_df = generate_synthetic_members(n_members=5000, churn_rate=0.10)
+# ... trains on members_df ...
+# ... then scores members_df again ...
+local_model.fit(X, y)
+probabilities = local_model.predict_proba(X)[:, 1]
+```
 
-- **File:** Python companion (`chapter07.03-python-example.md`)
-- **Location:** Step 3 (training) and Step 4 (scoring)
-- **Severity:** WARNING
-- **Description:** The main recipe's pseudocode explicitly includes a calibration step in `train_churn_model`: "Calibrate probabilities using isotonic regression on the validation set" and then applies `calibrator.transform(raw_probability)` during scoring. The Python companion omits calibration entirely. The "Gap to Production" section mentions calibration as something missing, but the pseudocode presents it as part of the core pipeline, not a production enhancement. A reader comparing the two files will notice this discrepancy. The main recipe also emphasizes that "calibration is non-negotiable but often skipped" in the Honest Take section, making the omission more conspicuous.
-- **Suggested fix:** Either add a simple calibration step after the local model training in the "Putting It All Together" section (even a comment-only placeholder showing where it would go), or add an explicit inline comment in Step 3 noting: "The pseudocode includes a calibration step here. We omit it in this demo because the local GradientBoostingClassifier's predict_proba is already reasonably calibrated for synthetic data. In production with XGBoost, calibration is essential."
+This trains on the full dataset (including labels) and then predicts on the same rows. A reader might not realize this produces artificially perfect-looking results. The code does note `"(Simulating predictions locally for demonstration)"` but doesn't explicitly warn that scoring training data produces unrealistically optimistic probabilities.
 
----
+The "Gap Between This and Production" section mentions time-based splitting but doesn't call out this specific issue in the demo code.
 
-### Issue 3: `top_risk_factors` Stored as JSON String in DynamoDB but as List in EventBridge
+**Fix:** Add a comment at the local simulation point:
 
-- **File:** Python companion (`chapter07.03-python-example.md`)
-- **Location:** Step 6 (`store_results_dynamodb`) vs Step 7 (`publish_high_risk_events`)
-- **Severity:** NOTE
-- **Description:** In Step 6, `top_risk_factors` is serialized with `json.dumps(row["top_risk_factors"])` before storing in DynamoDB (stored as a string attribute). In Step 7, the same field is passed directly as `row["top_risk_factors"]` inside a `json.dumps` call for the EventBridge Detail. This works correctly in both cases (DynamoDB gets a string, EventBridge gets the list serialized as part of the Detail JSON). However, a reader might wonder why the DynamoDB version needs explicit serialization while EventBridge doesn't. A brief comment explaining that DynamoDB doesn't natively support nested lists of dicts as a single attribute (without using a Map type) would help.
-- **Suggested fix:** Add a comment above the `json.dumps` in Step 6:
-  ```python
-  # Serialize as JSON string because DynamoDB doesn't natively support
-  # lists of maps as a single attribute without complex type definitions.
-  "top_risk_factors": json.dumps(row["top_risk_factors"]),
-  ```
+```python
+# WARNING: We're scoring the same data we trained on. In production, you'd
+# never do this -- it produces unrealistically high accuracy. This is only
+# to demonstrate the pipeline flow. Real scoring uses the batch transform
+# output on unseen members.
+```
 
 ---
 
-### Issue 4: Local Model in "Putting It All Together" Uses Different Algorithm Than SageMaker Steps
+### Issue 2: EventBridge `put_events` response not checked for `FailedEntryCount`
 
-- **File:** Python companion (`chapter07.03-python-example.md`)
-- **Location:** `run_churn_prediction_pipeline`, after Step 4
-- **Severity:** NOTE
-- **Description:** The pipeline function trains an XGBoost model on SageMaker (Step 3) and runs batch transform (Step 4), but then simulates predictions locally using `sklearn.GradientBoostingClassifier` instead of XGBoost. The code includes a comment explaining this is for demonstration, which is fine. However, the local model uses `n_estimators=200, max_depth=6` while the SageMaker config uses `num_round=500, max_depth=6, eta=0.05`. The different algorithm and hyperparameters mean the local predictions won't match what SageMaker would produce. This is acknowledged but could confuse a reader who expects the downstream steps (risk tiers, DynamoDB writes) to reflect the actual trained model's behavior.
-- **Suggested fix:** No code change needed. The existing comment is adequate. Optionally, add a note: "Predictions from this local model will differ from the SageMaker XGBoost model. The downstream steps demonstrate the pipeline mechanics, not the model's actual performance."
+**Severity:** WARNING
+**File:** `chapter07.03-python-example.md`, Step 7 (`publish_high_risk_events`)
 
----
+The `put_events` API can partially succeed: some entries may fail while others succeed. The response includes a `FailedEntryCount` field and per-entry error codes. The current code ignores the response entirely:
 
-### Issue 5: `scoring_dt` Timezone Handling in TTL Calculation
+```python
+if len(entries) == 10:
+    events_client.put_events(Entries=entries)
+    published += len(entries)
+    entries = []
+```
 
-- **File:** Python companion (`chapter07.03-python-example.md`)
-- **Location:** Step 6, `store_results_dynamodb` function
-- **Severity:** NOTE
-- **Description:** The `scoring_date` parameter is a plain date string (e.g., "2026-05-31") created with `.strftime("%Y-%m-%d")`. The function parses it with `datetime.datetime.fromisoformat(scoring_date)`, which produces a naive datetime (midnight, no timezone). The `.timestamp()` call on a naive datetime uses the local system timezone, which could produce different TTL values depending on where the code runs. This is fine for a teaching example but worth noting. The `scoring_date` in the pipeline is generated from `datetime.datetime.now(timezone.utc)`, so the date itself is UTC-based, but the TTL calculation doesn't preserve that.
-- **Suggested fix:** No change required for a teaching example. If desired, make the TTL calculation timezone-explicit:
-  ```python
-  scoring_dt = datetime.datetime.fromisoformat(scoring_date).replace(tzinfo=timezone.utc)
-  ```
+A reader who copies this pattern into production will silently lose events. For a teaching example, this is a misleading pattern because it teaches "fire and forget" for EventBridge without acknowledging that partial failures are possible.
 
----
+**Fix:** Add a comment acknowledging the gap, or check the response:
 
-## Pseudocode vs. Python Consistency
-
-The Python implementation follows the pseudocode's logical flow faithfully with one notable omission:
-
-**Step 1 (Feature Assembly):** The pseudocode's `assemble_member_features` defines 21 features across engagement, satisfaction, network, financial, demographic, and digital categories. The Python's `generate_synthetic_members` produces all 21 features with the same names. The synthetic distributions are reasonable (churned members show worse values). Consistent.
-
-**Step 2 (Training Data Preparation):** The pseudocode's `create_training_dataset` describes time-based splitting. The Python uses stratified random split with an inline comment explaining why (synthetic data has no temporal dimension). The deviation is explained. Consistent.
-
-**Step 3 (Model Training):** The pseudocode's `train_churn_model` includes XGBoost configuration and a calibration step. The Python implements the XGBoost training via SageMaker with matching hyperparameters (objective, eval_metric, max_depth, learning_rate/eta, scale_pos_weight). **Calibration is omitted** (see Issue 2). Partially consistent.
-
-**Step 4 (Scoring):** The pseudocode's `score_membership` uses batch transform and applies calibration. The Python implements batch transform correctly but skips calibration. The local simulation fallback is clearly marked. Partially consistent (calibration gap).
-
-**Step 5 (Risk Stratification):** The pseudocode's `assign_tier` uses thresholds 0.60/0.35. The Python uses identical thresholds. The pseudocode uses SHAP values; the Python uses heuristic-based risk factors with a clear comment explaining the simplification. The intervention routing logic matches the pseudocode's concept. Consistent.
-
-**Step 6 (Storage):** The pseudocode's `store_and_serve` writes to DynamoDB with TTL. The Python implements this with `batch_writer`, proper `Decimal` wrapping, and TTL. The S3 Parquet write from the pseudocode is omitted (the Python only writes to DynamoDB), but this is a reasonable simplification for the demo. Consistent.
-
-**Step 7 (EventBridge):** The pseudocode publishes high-risk members to EventBridge with `detail_type = "MemberChurnRiskHigh"`. The Python implements this with correct batching (10 entries per call) and matching detail type. Consistent.
+```python
+response = events_client.put_events(Entries=entries)
+# In production, check response["FailedEntryCount"] and retry failed entries.
+# Partial failures are possible (e.g., event too large, throttling).
+published += len(entries) - response.get("FailedEntryCount", 0)
+```
 
 ---
 
-## Verdict
+### Issue 3: Pseudocode includes calibration step but Python skips it entirely
 
-**PASS**
+**Severity:** NOTE
+**File:** `chapter07.03-python-example.md`, overall pipeline
 
-- 0 ERROR findings
-- 2 WARNING findings (below the 3-WARNING threshold for FAIL)
-- 3 NOTE findings
+The pseudocode Step 3 (`train_churn_model`) explicitly includes isotonic regression calibration:
 
-The code is correct, would run without errors given AWS credentials and infrastructure, teaches the right patterns, and faithfully implements the main recipe's architecture. The two warnings are about silent event publishing failures (a misleading pattern a reader might carry forward) and the omission of the calibration step that the pseudocode explicitly includes. Neither would cause runtime failures. DynamoDB Decimal handling is correct throughout. S3 keys are clean (no leading slashes). boto3 API calls use correct method names, parameters, and response parsing. The SageMaker SDK usage (Estimator, TrainingInput, Model, Transformer) follows current patterns. The pedagogical flow builds understanding progressively and comments are genuinely helpful for learners.
+```
+calibrator = IsotonicRegression()
+calibrator.fit(model.predict_proba(val_set.features), val_set.labels)
+RETURN model, calibrator
+```
+
+And Step 4 (`score_membership`) applies it:
+
+```
+calibrated_probability = calibrator.transform(raw_probability)
+```
+
+The Python companion skips calibration entirely. The "Gap Between This and Production" section does call this out explicitly ("This example skips probability calibration entirely"), which is good. However, the local simulation in `run_churn_prediction_pipeline` uses raw `predict_proba` output directly for tier assignment without any note that these are uncalibrated.
+
+This is acknowledged in the gap section, so it's not misleading per se, but a brief inline comment at the point where probabilities are used would help readers connect the dots.
+
+**Fix:** Add a comment where probabilities are assigned to tiers:
+
+```python
+# These probabilities are uncalibrated. In production, apply isotonic
+# regression (see pseudocode Step 3) before using for tier assignment.
+probabilities = local_model.predict_proba(X)[:, 1]
+```
+
+---
+
+## Validation Details
+
+### Syntax check
+All 8 Python code blocks (Config, Steps 1-7, Putting It All Together) passed `ast.parse()` without errors.
+
+### boto3 / SageMaker SDK method names
+- `s3_client.upload_file(path, bucket, key)`: correct signature
+- `dynamodb.Table(name).batch_writer()`: correct context manager usage
+- `batch.put_item(Item=...)`: correct
+- `events_client.put_events(Entries=[...])`: correct, `Entries` is the right parameter name
+- `sagemaker.image_uris.retrieve(framework=, region=, version=)`: correct
+- `Estimator(image_uri=, role=, instance_count=, instance_type=, output_path=)`: correct
+- `estimator.set_hyperparameters(**params)`: correct
+- `estimator.fit({"train": ..., "validation": ...})`: correct channel names for XGBoost
+- `TrainingInput(s3_data=, content_type=)`: correct
+- `sagemaker.model.Model(image_uri=, model_data=, role=)`: correct
+- `model.transformer(instance_count=, instance_type=, output_path=, accept=, strategy=, max_payload=)`: correct parameters
+- `transformer.transform(data=, content_type=, split_type=)`: correct
+- `transformer.wait()`: correct
+
+### XGBoost hyperparameters
+- `objective: "binary:logistic"`: valid
+- `eval_metric: "aucpr"`: valid (area under precision-recall curve)
+- `num_round: "500"`: correct (string format required for SageMaker built-in)
+- `max_depth: "6"`: correct
+- `eta: "0.05"`: correct (learning rate alias)
+- `subsample: "0.8"`: valid
+- `colsample_bytree: "0.8"`: valid
+- `scale_pos_weight: "9.0"`: valid
+
+All hyperparameters are passed as strings, which is correct for SageMaker's built-in algorithm container.
+
+### DynamoDB Decimal handling
+Step 6 correctly wraps the float probability in `Decimal`:
+```python
+"churn_probability": Decimal(str(round(row["churn_probability"], 4))),
+```
+The `str()` wrapper prevents floating-point representation issues. The `ttl` field is an `int` (epoch seconds), which DynamoDB accepts natively. No raw floats are passed to `put_item`. Correct.
+
+### S3 path validation
+All S3 keys are constructed without leading slashes:
+- `f"{TRAINING_PREFIX}train/churn_train.csv"` -> `features/training/train/churn_train.csv`
+- `f"{TRAINING_PREFIX}validation/churn_validation.csv"` -> `features/training/validation/churn_validation.csv`
+- `f"{FEATURES_PREFIX}scoring_date={scoring_date}/members.csv"` -> `features/members/scoring_date=.../members.csv`
+- `f"{PREDICTIONS_PREFIX}scoring_date={scoring_date}/"` -> `predictions/scoring_date=.../`
+
+No leading slashes found. Correct.
+
+### Pseudocode-to-Python consistency
+| Pseudocode Step | Python Implementation | Match? |
+|---|---|---|
+| Step 1: `assemble_member_features` | `generate_synthetic_members` (synthetic equivalent) | Yes |
+| Step 2: `create_training_dataset` | `prepare_and_upload_training_data` | Yes |
+| Step 3: `train_churn_model` | `train_churn_model` | Yes (minus calibration, acknowledged) |
+| Step 4: `score_membership` | `score_membership_batch` | Yes |
+| Step 5: `store_and_serve` (DynamoDB) | `store_results_dynamodb` | Yes |
+| Step 5: `store_and_serve` (EventBridge) | `publish_high_risk_events` | Yes |
+| `assign_tier` | `assign_risk_tiers` | Yes |
+
+All pseudocode steps are represented. The Python adds `assign_risk_tiers` as a separate function (Step 5 in the Python), which is a reasonable decomposition of the pseudocode's `score_membership` + `assign_tier` combination.
+
+### Comment quality
+Comments are consistently helpful and explain the "why" throughout. Examples of good pedagogical comments:
+- Explaining `scale_pos_weight` formula and when to adjust it
+- Noting that SageMaker XGBoost expects CSV with label as first column, no header
+- Explaining TTL purpose (stale score expiration if pipeline fails)
+- Noting EventBridge 10-entry limit per `put_events` call
+
+---
+
+## What Is Clean
+
+- The code flows top-to-bottom in a logical order that builds understanding incrementally.
+- Config/constants are separated at the top with clear explanations of each value.
+- The synthetic data generation creates realistic distributions that differ meaningfully between churned and retained members, making the example pedagogically useful.
+- DynamoDB `batch_writer()` is used correctly for bulk writes (handles batching and unprocessed items internally).
+- The `Decimal(str(round(...)))` pattern is the correct way to handle DynamoDB numeric types.
+- The "Gap Between This and Production" section is thorough and honest about what's missing.
+- Feature column ordering is explicitly defined and consistent between training and scoring.
+- The plan type encoding dictionary ensures consistency between training and inference.
+- Logging is used appropriately throughout without exposing PHI values.
