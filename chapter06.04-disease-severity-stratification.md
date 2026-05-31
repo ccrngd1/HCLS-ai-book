@@ -118,7 +118,7 @@ The pipeline for disease severity stratification has five logical stages:
 
 ### Why These Services
 
-**Amazon SageMaker for clustering.** SageMaker provides managed infrastructure for running K-Means and other clustering algorithms at scale. The built-in K-Means algorithm is optimized for large datasets and handles the distributed computation transparently. For a 40,000-patient cohort with 30 features, this is overkill (you could run it on a laptop), but for health systems with 500,000+ patients across multiple disease cohorts, managed infrastructure matters. SageMaker also provides the notebook environment for the iterative exploration phase (trying different K values, visualizing clusters, validating against outcomes).
+**Amazon SageMaker for clustering.** SageMaker provides managed infrastructure for running K-Means and other clustering algorithms at scale. The built-in K-Means algorithm is optimized for large datasets and handles the distributed computation transparently. For a 40,000-patient cohort with 30 features, a SageMaker Processing Job with a scikit-learn container (ml.m5.large, ~$0.23/hour) is the simplest path: no model training infrastructure, just a Python script that reads from S3, runs sklearn.cluster.KMeans, and writes results back. For cohorts over 500K or when running multiple disease cohorts in parallel, SageMaker's built-in K-Means algorithm with distributed training provides horizontal scaling. SageMaker also provides the notebook environment for the iterative exploration phase (trying different K values, visualizing clusters, validating against outcomes).
 
 **AWS Glue for feature assembly.** The feature engineering step requires joining data from multiple sources: EHR extracts, claims feeds, lab results, pharmacy data. Glue handles the ETL: schema discovery, data cataloging, and transformation jobs that assemble the patient feature matrix from disparate sources. The Glue Data Catalog also provides a single metadata layer so downstream consumers know what features are available and how they were computed.
 
@@ -161,7 +161,7 @@ flowchart TD
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `athena:StartQueryExecution` |
 | **BAA** | AWS BAA signed (required: patient clinical data is PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes and model artifacts; all API calls over TLS |
-| **VPC** | Production: SageMaker training jobs and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for compute touching PHI. |
+| **VPC** | Production: SageMaker training jobs and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for compute touching PHI. Apply endpoint policies to restrict access to only the specific buckets and tables used by this pipeline. |
 | **CloudTrail** | Enabled: log all SageMaker, Glue, and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic patient cohort data. CMS Synthetic Public Use Files provide realistic chronic disease populations. Never use real PHI in development. |
 | **Cost Estimate** | SageMaker training: ~$2-5 per run (ml.m5.xlarge, 10-30 min). Glue ETL: ~$0.44/DPU-hour. S3 + DynamoDB: negligible at this scale. Monthly total for quarterly re-stratification: ~$20-50. |
@@ -277,7 +277,25 @@ FUNCTION assemble_feature_matrix(cohort_definition, feature_set):
     // the same as patients with a normal HbA1c. Strategy: impute with cohort
     // median for continuous features, 0 for binary features where absence of
     // diagnosis likely means absence of condition.
-    FOR each column in feature_matrix:
+    //
+    // CLINICAL SAFETY NOTE: Imputing binary complication flags with 0 assumes
+    // absence of diagnosis means absence of disease. For patients with sparse
+    // data (fewer than 3 visits in 12 months, no specialist encounters),
+    // consider flagging them as "insufficient data for stratification" rather
+    // than assigning them to a tier. A patient with no retinopathy screening
+    // who gets placed in Tier 0 may be missed for outreach.
+    // Track the percentage of patients with imputed values per feature; if
+    // more than 20% of a feature is imputed, that feature's discriminating
+    // power is degraded.
+
+    // First: flag patients with insufficient data
+    FOR each patient in feature_matrix:
+        null_count = count of NULL values across all features for this patient
+        IF null_count > (total_features * 0.5):
+            mark patient as "insufficient_data" and exclude from clustering
+            // These patients need manual review, not algorithmic assignment
+
+    FOR each column in feature_matrix (excluding insufficient_data patients):
         IF column is continuous (hba1c, phq9, etc.):
             replace NULL values with median of non-null values in that column
         IF column is binary (has_ckd, has_retinopathy, etc.):
@@ -418,6 +436,8 @@ FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
 
 **Step 6: Store and operationalize.** The final step writes tier assignments to a database where care management platforms and EHR systems can look them up in real time. Each record includes the patient ID, their assigned tier, the run date (so you can track changes over time), and the key feature values that drove the assignment (for explainability). This step also writes the full results to the data lake for dashboarding and longitudinal analysis.
 
+The severity-tiers table contains PHI (disease diagnosis, severity classification, clinical indicators). Restrict access by role: the pipeline write role gets `dynamodb:PutItem` only; the care management read role gets `dynamodb:GetItem` by patient_id only (no Scan); analytics queries run via Athena over the S3 Parquet copy, not DynamoDB directly. Use an opaque patient identifier as the partition key and maintain the MRN-to-opaque mapping in a separate identity service with tighter access controls.
+
 ```
 FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_matrix, run_date):
     // Write to operational database for real-time lookups
@@ -490,11 +510,15 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
 
 **Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline (monthly or quarterly) with monitoring for data freshness, job failures, and tier distribution drift. If your source data feed is delayed, the pipeline should wait rather than run on stale data.
 
+<!-- TODO (TechWriter): Expert review ARCH-2 (MEDIUM). Add brief orchestration sketch: EventBridge cron trigger + Step Functions workflow that verifies source data freshness, runs pipeline, compares new vs previous assignments, emits tier-change events to SNS, and updates a CloudWatch metric for stale assignments. -->
+
 **Tier migration tracking.** When a patient moves from Tier 1 to Tier 2 between runs, that's a clinical event that should trigger a care management alert. The pseudocode doesn't track changes between runs or generate notifications.
 
 **Multi-disease coordination.** A patient might be in the "severe" tier for diabetes and the "mild" tier for COPD. Care management needs a unified view across disease-specific stratifications. That coordination layer is not addressed here.
 
 **Model versioning.** When you change the feature set or weights, all tier assignments change. You need versioning so downstream systems know which model version produced which assignments, and so you can compare performance across versions.
+
+<!-- TODO (TechWriter): Expert review ARCH-4 (MEDIUM). Add note on SageMaker Feature Store for versioning and sharing the patient feature matrix across models. Each run should record the feature set version (hash of FEATURE_SET config) alongside tier assignments for reproducibility and audit. -->
 
 ---
 

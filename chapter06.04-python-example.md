@@ -11,7 +11,7 @@
 You'll need the AWS SDK for Python and scikit-learn:
 
 ```bash
-pip install boto3 pandas numpy scikit-learn
+pip install boto3 pandas numpy scikit-learn pyarrow
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
@@ -58,6 +58,12 @@ COHORT_CONFIG = {
 # patient feature matrix. These are the dimensions of "severity" for
 # this disease cohort. A different disease (heart failure, COPD) would
 # have a completely different feature set.
+#
+# Note: The main recipe's pseudocode also includes pct_time_above_target
+# (percentage of HbA1c readings above 7.0). We omit it here because it
+# requires continuous glucose monitoring data that's harder to synthesize
+# realistically. In a real implementation with CGM data available, you'd
+# add it to this list.
 FEATURE_COLUMNS = [
     "latest_hba1c",
     "hba1c_trend_12mo",
@@ -497,17 +503,19 @@ def compute_key_drivers(
     """
     For each patient, identify the top features driving their tier assignment.
 
-    We use z-scores as a proxy for "how much this feature contributed to
-    the patient being in a high-severity tier." Features with high positive
-    z-scores are the ones where this patient is far above the cohort average,
-    which is what pushes them toward a higher-severity cluster.
+    We use weighted z-scores as a proxy for "how much this feature contributed
+    to the patient being in a high-severity tier." The normalized matrix has
+    already had clinical weights applied, so these values reflect both
+    statistical deviation and clinical importance. Features with high positive
+    weighted z-scores are the ones where this patient is far above the cohort
+    average on a clinically weighted scale.
 
     This is a simplification. True feature importance for clustering would
-    require SHAP values or permutation importance. But z-scores are fast,
-    interpretable, and good enough for the explainability use case.
+    require SHAP values or permutation importance. But weighted z-scores are
+    fast, interpretable, and good enough for the explainability use case.
 
     Args:
-        normalized: Normalized feature matrix.
+        normalized: Normalized (and clinically weighted) feature matrix.
         labels: Tier assignments.
         df: Original DataFrame with raw values.
         top_n: Number of top drivers to return per patient.
@@ -518,10 +526,11 @@ def compute_key_drivers(
     all_drivers = []
 
     for i in range(len(labels)):
-        # Get this patient's z-scores (from the normalized matrix)
+        # Get this patient's weighted z-scores (from the normalized matrix).
+        # These reflect both statistical deviation and clinical weight.
         z_scores = normalized[i, :]
 
-        # Find the top_n features with highest absolute z-scores.
+        # Find the top_n features with highest absolute weighted z-scores.
         # These are the features where this patient deviates most from average.
         top_indices = np.argsort(np.abs(z_scores))[::-1][:top_n]
 
@@ -532,7 +541,7 @@ def compute_key_drivers(
             drivers.append({
                 "feature": feature_name,
                 "value": float(raw_value),
-                "z_score": round(float(z_scores[idx]), 2),
+                "weighted_z_score": round(float(z_scores[idx]), 2),
             })
 
         all_drivers.append(drivers)
@@ -597,7 +606,7 @@ def store_tier_assignments(
                 drivers_for_dynamo.append({
                     "feature": d["feature"],
                     "value": Decimal(str(round(d["value"], 2))),
-                    "z_score": Decimal(str(d["z_score"])),
+                    "weighted_z_score": Decimal(str(d["weighted_z_score"])),
                 })
 
             record = {
