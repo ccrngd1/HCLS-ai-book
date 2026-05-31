@@ -170,6 +170,8 @@
 * [Preface](chapter07-preface)
 * [7.1 — Appointment No-Show Prediction](chapter07.01-appointment-no-show-prediction)
   * [Python Example](chapter07.01-python-example)
+* [7.2 — Propensity to Pay Scoring](chapter07.02-propensity-to-pay-scoring)
+  * [Python Example](chapter07.02-python-example)
 
 ---
 
