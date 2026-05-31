@@ -186,6 +186,8 @@
   * [Python Example](chapter07.08-python-example)
 * [7.9 — Mortality Risk Scoring (ICU)](chapter07.09-mortality-risk-scoring-icu)
   * [Python Example](chapter07.09-python-example)
+* [7.10 — Optimal Intervention Timing Prediction](chapter07.10-optimal-intervention-timing-prediction)
+  * [Python Example](chapter07.10-python-example)
 
 ---
 
