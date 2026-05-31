@@ -62,17 +62,27 @@ This distinction is critical and has regulatory implications.
 
 **Triage** means prioritization. The system says "this lesion has features that warrant urgent review" or "this lesion has features consistent with benign patterns." It does not say "this is melanoma" or "this is a basal cell carcinoma." The dermatologist still makes the diagnosis.
 
-**Diagnosis** means the system is making a clinical determination. This triggers FDA regulatory requirements (specifically, the De Novo or 510(k) pathway for Software as a Medical Device, SaMD).
+**Diagnosis** means the system is making a clinical determination. This triggers FDA regulatory requirements. You'd be looking at the De Novo or 510(k) pathway, which is the world of Software as a Medical Device (SaMD).
 
 The regulatory landscape is evolving. The FDA has cleared some dermatology AI products for specific diagnostic claims. But for a triage system that explicitly defers diagnosis to a specialist, the regulatory burden is lower (though not zero; consult regulatory counsel). The key is how you frame the output and what clinical decisions are made based on it.
+
+### Model Explainability
+
+A confidence score alone ("72% suspicious") doesn't tell the reviewing dermatologist much. What features drove that assessment? Was it asymmetry? Color variation? Border irregularity? Without explainability, the dermatologist has no reason to trust the prioritization, and a tool they don't trust is a tool they ignore.
+
+Saliency maps (Grad-CAM or similar techniques) generate a heatmap showing which regions of the image most influenced the model's prediction. Overlaying this on the original lesion photograph gives the dermatologist actionable context: "The model focused on this irregular border region and this area of color variation." This is often the difference between a tool that gets adopted and one that gets bypassed.
+
+For production systems, generate and store the saliency map alongside the original image in the review queue. The computational overhead is modest (one additional backward pass through the network) and the clinical adoption benefit is substantial.
 
 ### The General Architecture Pattern
 
 ```
-[Image Capture] → [Quality Check] → [Preprocessing] → [Classification Model] → [Confidence Scoring] → [Triage Routing] → [Dermatologist Review Queue]
+[Image Capture] → [Metadata Strip] → [Quality Check] → [Preprocessing] → [Classification Model] → [Confidence Scoring] → [Triage Routing] → [Dermatologist Review Queue]
 ```
 
 **Image Capture:** A patient or clinician photographs the lesion. The capture interface should guide positioning, lighting, and distance. A reference marker (color card or ruler) is ideal but often impractical for patient-submitted photos.
+
+**Metadata Strip:** Patient-submitted smartphone photos contain EXIF metadata including GPS coordinates, device serial numbers, and potentially the photographer's name. Strip this metadata before storage. GPS coordinates from a patient's home photo directly reveal their home address. Retain only clinically relevant metadata (timestamp, image dimensions) and discard location, device identifiers, and photographer information.
 
 **Quality Check:** Before running inference, verify the image is usable. Is it in focus? Is the lesion visible and centered? Is there adequate lighting? Reject unusable images immediately with guidance on how to retake.
 
@@ -84,7 +94,7 @@ The regulatory landscape is evolving. The FDA has cleared some dermatology AI pr
 
 **Triage Routing:** Based on the calibrated scores and predefined thresholds, route the case: urgent cases go to the front of the dermatology queue, suspicious cases get expedited scheduling, benign-appearing cases get standard follow-up recommendations.
 
-**Dermatologist Review Queue:** Every case eventually reaches a dermatologist. The AI determines priority, not disposition. The queue interface should show the image, the model's assessment, confidence scores, and any relevant patient history.
+**Dermatologist Review Queue:** Every case eventually reaches a dermatologist. The AI determines priority, not disposition. The queue interface should show the image, the model's assessment, confidence scores, saliency map, and any relevant patient history.
 
 ---
 
@@ -92,17 +102,19 @@ The regulatory landscape is evolving. The FDA has cleared some dermatology AI pr
 
 ### Why These Services
 
-**Amazon SageMaker for model hosting.** SageMaker provides managed inference endpoints that can serve a trained image classification model with auto-scaling, A/B testing, and model monitoring. For a dermatology triage model, you need low-latency inference (patients and clinicians expect results in seconds, not minutes) with the ability to swap model versions without downtime. SageMaker real-time endpoints deliver this. SageMaker also handles the training pipeline if you're fine-tuning your own model, with built-in support for distributed training on GPU instances.
+**Amazon SageMaker for model hosting.** SageMaker provides managed inference endpoints that can serve a trained image classification model with auto-scaling, A/B testing, and model monitoring. For a dermatology triage model, you need low-latency inference (patients and clinicians expect results in seconds, not minutes) with the ability to swap model versions without downtime. SageMaker real-time endpoints deliver this. For production, deploy across multiple availability zones using SageMaker's multi-AZ endpoint configuration. SageMaker also handles the training pipeline if you're fine-tuning your own model, with built-in support for distributed training on GPU instances. SageMaker Clarify supports model explainability for image classification, enabling the saliency map generation discussed above.
 
 **Amazon S3 for image storage.** Lesion images are PHI (they're identifiable medical photographs). They need encrypted, durable, auditable storage. S3 with SSE-KMS encryption, versioning, and lifecycle policies is the standard choice. Object Lock can enforce retention policies for compliance.
 
-**AWS Lambda for orchestration.** The triage workflow is a sequence of lightweight steps: receive the image, run quality checks, call the SageMaker endpoint, apply business logic for routing, write results. Lambda handles this without persistent infrastructure. For the quality check step specifically, Lambda can run lightweight image analysis (blur detection, brightness check) without needing a full ML endpoint.
+**AWS Lambda for orchestration.** The triage workflow is a sequence of lightweight steps: receive the image, strip EXIF metadata, run quality checks, call the SageMaker endpoint, apply business logic for routing, write results. Lambda handles this without persistent infrastructure. For the quality check step specifically, Lambda can run lightweight image analysis (blur detection, brightness check) without needing a full ML endpoint.
 
 **Amazon DynamoDB for case tracking.** Each triage case needs a record: patient identifier, image reference, model output, triage decision, timestamp, and eventual dermatologist disposition. DynamoDB's key-value model fits this access pattern (lookup by case ID or patient ID) with encryption at rest and HIPAA eligibility.
 
-**Amazon API Gateway for the submission interface.** Clinicians and patient-facing apps need a REST endpoint to submit images and receive triage results. API Gateway provides authentication, throttling, and request validation in front of the Lambda orchestrator.
+**Amazon API Gateway for the submission interface.** Clinicians and patient-facing apps need a REST endpoint to submit images and receive triage results. API Gateway provides authentication, throttling, and request validation in front of the Lambda orchestrator. For internal clinical portals, consider a Private API Gateway endpoint accessible only from the VPC. For patient-facing apps, use a Regional endpoint with AWS WAF for rate limiting and IP-based access controls.
 
-**Amazon CloudWatch for monitoring.** Model performance monitoring is critical for medical AI. Track inference latency, confidence score distributions, triage category distributions, and alert on drift (if the model suddenly starts classifying everything as "urgent," something is wrong).
+**Amazon SQS for failure handling.** Configure a dead letter queue (DLQ) for failed Lambda invocations. If the SageMaker endpoint is unavailable or times out (GPU cold starts can take 2-5 minutes when scaling from zero), the case must not be silently lost. Write the case to DynamoDB with status `PENDING_INFERENCE` and reprocess via a scheduled retry. For a clinical triage system, no submission should be silently dropped. Alert on DLQ depth > 0.
+
+**Amazon CloudWatch for monitoring.** Model performance monitoring is critical for medical AI. Track inference latency, confidence score distributions, and triage category distributions. Monitor weekly triage category distribution and alert if the urgent rate shifts by more than 2 standard deviations from the 30-day rolling average. Track mean confidence scores per category; declining confidence suggests the model is seeing inputs unlike its training data. Compare model predictions against dermatologist dispositions (when available) to compute rolling accuracy metrics.
 
 ### Architecture Diagram
 
@@ -110,7 +122,7 @@ The regulatory landscape is evolving. The FDA has cleared some dermatology AI pr
 flowchart TD
     A[📱 Patient App / Clinician Portal] -->|Upload Image| B[API Gateway]
     B -->|POST /triage| C[Lambda: Orchestrator]
-    C -->|Store Original| D[S3: lesion-images/]
+    C -->|Strip EXIF + Store| D[S3: lesion-images/]
     C -->|Quality Check| E{Image Usable?}
     E -->|No| F[Return: Retake Guidance]
     E -->|Yes| G[Lambda: Preprocess]
@@ -120,6 +132,8 @@ flowchart TD
     I -->|Store Result| J[DynamoDB: triage-cases]
     I -->|Urgent/Suspicious| K[Notification: Priority Queue]
     I -->|Return Result| A
+    C -->|On Failure| L[SQS: DLQ]
+    L -->|Retry| C
 
     style D fill:#f9f,stroke:#333
     style H fill:#ff9,stroke:#333
@@ -130,11 +144,12 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon API Gateway, Amazon CloudWatch, Amazon SNS |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:PutObject`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish` |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon API Gateway, Amazon SQS, Amazon CloudWatch, Amazon SNS |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint` on `arn:aws:sagemaker:*:*:endpoint/lesion-classifier-*`; `s3:PutObject/GetObject` on `arn:aws:s3:::lesion-images/*`; `dynamodb:PutItem/GetItem` on the `triage-cases` table ARN; `sns:Publish` on the `urgent-derm-triage` topic ARN; `sqs:SendMessage/ReceiveMessage` on the DLQ ARN |
 | **BAA** | Required. Lesion photographs are identifiable medical images (PHI). |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoint: in-transit TLS + at-rest KMS; CloudWatch Logs: KMS encryption |
-| **VPC** | Production: Lambda and SageMaker endpoint in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch Logs |
+| **VPC** | Production: Lambda and SageMaker endpoint in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), CloudWatch Logs (interface), and KMS (interface). The KMS endpoint is required for S3 SSE-KMS operations in a VPC without NAT gateway. |
+| **Egress** | For PHI workloads, restrict VPC egress. Use VPC endpoints for all AWS service communication and avoid NAT gateways unless required for specific integrations. This prevents accidental PHI egress through misconfigured Lambda functions or compromised dependencies. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for audit trail |
 | **Model** | Pre-trained image classification model fine-tuned on dermatology dataset (e.g., ISIC archive). Validated across Fitzpatrick skin types I-VI. |
 | **Sample Data** | ISIC Archive (public dermoscopy images). HAM10000 dataset. Never use real patient photos in development. |
@@ -145,12 +160,13 @@ flowchart TD
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon SageMaker** | Hosts the trained lesion classification model; provides real-time inference endpoint |
-| **Amazon S3** | Stores original lesion images with encryption and retention policies |
-| **AWS Lambda** | Orchestrates the triage pipeline: quality check, preprocessing, inference call, routing logic |
+| **Amazon SageMaker** | Hosts the trained lesion classification model; provides real-time inference endpoint with multi-AZ deployment |
+| **Amazon S3** | Stores original lesion images (EXIF-stripped) with encryption and retention policies |
+| **AWS Lambda** | Orchestrates the triage pipeline: EXIF stripping, quality check, preprocessing, inference call, routing logic |
 | **Amazon DynamoDB** | Tracks triage cases: image reference, model output, triage decision, disposition |
 | **Amazon API Gateway** | REST endpoint for image submission; handles auth and throttling |
-| **Amazon SNS** | Sends urgent-case notifications to dermatology review queue |
+| **Amazon SQS** | Dead letter queue for failed inference attempts; enables retry without losing cases |
+| **Amazon SNS** | Sends urgent-case notifications to dermatology review queue (case_id only, no PHI in message body) |
 | **AWS KMS** | Manages encryption keys for all PHI-containing services |
 | **Amazon CloudWatch** | Monitors model latency, confidence distributions, and triage category drift |
 
@@ -163,7 +179,30 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: Image quality validation.** Before spending compute on inference, verify the submitted image is actually usable. A blurry photo, an image that's too dark, or one where no lesion is visible will produce garbage predictions. This step catches those early and returns actionable feedback to the submitter. The quality check is lightweight (basic image statistics, not a full ML model) and runs in milliseconds. Skip this step and you'll waste inference costs on unusable images while returning meaningless confidence scores that erode clinician trust.
+**Step 1: Image upload and metadata stripping.** Patient-submitted smartphone photos contain EXIF metadata including GPS coordinates that reveal home addresses, device serial numbers, and photographer names. Before storing the image or running any analysis, strip all non-essential metadata. Retain only the timestamp and image dimensions. This is a privacy requirement, not an optimization. Skip this step and you're storing patient home addresses alongside their medical photographs.
+
+```
+FUNCTION strip_and_store(image_bytes, patient_id):
+    // Validate file type by checking magic bytes, not just the extension.
+    // Enforce maximum file size at the API Gateway level (e.g., 10 MB).
+    IF NOT valid_image_magic_bytes(image_bytes):
+        RETURN { error: "Invalid file type. Please upload a JPEG or PNG image." }
+
+    // Strip EXIF metadata. Remove GPS, device IDs, photographer info.
+    // Keep only timestamp and dimensions for clinical context.
+    stripped_image = remove_exif_metadata(image_bytes, keep=["DateTime", "ImageWidth", "ImageHeight"])
+
+    // Store the stripped image in S3 with encryption.
+    image_key = "lesion-images/{date}/{patient_id}/{unique_id}.jpg"
+    upload to S3 bucket with:
+        key                = image_key
+        body               = stripped_image
+        server_side_encryption = "aws:kms"
+
+    RETURN { image_key: image_key, original_bytes: stripped_image }
+```
+
+**Step 2: Image quality validation.** Before spending compute on inference, verify the submitted image is actually usable. A blurry photo, an image that's too dark, or one where no lesion is visible will produce garbage predictions. This step catches those early and returns actionable feedback to the submitter. The quality check is lightweight (basic image statistics, not a full ML model) and runs in milliseconds. Skip this step and you'll waste inference costs on unusable images while returning meaningless confidence scores that erode clinician trust.
 
 ```
 FUNCTION validate_image_quality(image_bytes):
@@ -194,7 +233,7 @@ FUNCTION validate_image_quality(image_bytes):
     RETURN { valid: true }
 ```
 
-**Step 2: Image preprocessing.** The classification model expects a specific input format: fixed dimensions, normalized pixel values, and ideally a clean view of the lesion without excessive background. This step transforms the raw photograph into what the model needs. Different models have different input requirements, so the preprocessing must match the model's training pipeline exactly. If you resize differently than the training data was resized, or normalize to a different range, accuracy degrades silently.
+**Step 3: Image preprocessing.** The classification model expects a specific input format: fixed dimensions, normalized pixel values, and ideally a clean view of the lesion without excessive background. This step transforms the raw photograph into what the model needs. Different models have different input requirements, so the preprocessing must match the model's training pipeline exactly. If you resize differently than the training data was resized, or normalize to a different range, accuracy degrades silently.
 
 ```
 FUNCTION preprocess_image(image_bytes, target_size=224):
@@ -222,7 +261,7 @@ FUNCTION preprocess_image(image_bytes, target_size=224):
     RETURN payload
 ```
 
-**Step 3: Model inference.** Send the preprocessed image to the classification model and get back a probability distribution across triage categories. The model outputs raw logits or softmax probabilities for each class. This is the core ML step, and it's also the most expensive computationally. The endpoint should respond in under 2 seconds for a good user experience. If latency is a concern at scale, consider batching or asynchronous inference for non-urgent submissions.
+**Step 4: Model inference.** Send the preprocessed image to the classification model and get back a probability distribution across triage categories. The model outputs raw logits or softmax probabilities for each class. This is the core ML step, and it's also the most expensive computationally. The endpoint should respond in under 2 seconds for a good user experience. If latency is a concern at scale, consider batching or asynchronous inference for non-urgent submissions.
 
 ```
 FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
@@ -240,7 +279,7 @@ FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
     RETURN predictions
 ```
 
-**Step 4: Triage decision logic.** Raw model probabilities need to be translated into actionable triage decisions. This is where clinical judgment meets engineering. The thresholds determine the sensitivity/specificity tradeoff: lower the "urgent" threshold and you catch more true positives but flood the queue with false alarms. Raise it and you miss cases. These thresholds should be set in collaboration with dermatologists and validated on a held-out dataset with known outcomes. They're configuration, not code, and they will need adjustment over time as you gather real-world performance data.
+**Step 5: Triage decision logic.** Raw model probabilities need to be translated into actionable triage decisions. This is where clinical judgment meets engineering. The thresholds determine the sensitivity/specificity tradeoff: lower the "urgent" threshold and you catch more true positives but flood the queue with false alarms. Raise it and you miss cases. These thresholds should be set in collaboration with dermatologists and validated on a held-out dataset with known outcomes. They're configuration, not code, and they will need adjustment over time as you gather real-world performance data.
 
 ```
 // Triage thresholds. These are clinical decisions, not engineering decisions.
@@ -280,7 +319,7 @@ FUNCTION determine_triage(predictions):
     }
 ```
 
-**Step 5: Store results and notify.** Every triage case gets a permanent record: the image reference, model output, triage decision, and timestamps. This serves three purposes: (1) the dermatologist review queue needs to pull cases by priority, (2) the audit trail must show what the AI recommended and when, and (3) outcome tracking (what did the dermatologist actually find?) enables model performance monitoring over time. For urgent cases, an immediate notification ensures the dermatology team is alerted without waiting for someone to check the queue.
+**Step 6: Store results and notify.** Every triage case gets a permanent record: the image reference, model output, triage decision, and timestamps. This serves three purposes: (1) the dermatologist review queue needs to pull cases by priority, (2) the audit trail must show what the AI recommended and when, and (3) outcome tracking (what did the dermatologist actually find?) enables model performance monitoring over time. For urgent cases, an immediate notification ensures the dermatology team is alerted without waiting for someone to check the queue.
 
 ```
 FUNCTION store_and_notify(case_id, patient_id, image_key, triage_result):
@@ -300,12 +339,38 @@ FUNCTION store_and_notify(case_id, patient_id, image_key, triage_result):
 
     // For urgent cases, send an immediate notification.
     // Don't rely on someone polling the queue for time-sensitive findings.
+    // Note: the notification contains only the case_id, not patient identifiers.
+    // The dermatologist accesses patient details through the secure review queue.
     IF triage_result.category == "URGENT":
         publish to SNS topic "urgent-derm-triage":
-            message = "Urgent lesion triage: Case {case_id}, Patient {patient_id}. "
+            message = "Urgent lesion triage: Case {case_id}. "
                     + "Model confidence: {triage_result.confidence}. "
-                    + "Immediate dermatology review recommended."
+                    + "Immediate dermatology review recommended. "
+                    + "Access patient details in the secure review queue."
 
+    RETURN case_id
+```
+
+**Error handling: what happens when inference fails.** If the SageMaker endpoint times out or returns an error (GPU cold starts, transient failures, endpoint scaling), the case must not be lost. Write the case to DynamoDB with status `PENDING_INFERENCE` and route the message to the SQS dead letter queue for retry. A scheduled Lambda processes the DLQ and retries inference. If retries are exhausted, route the case to the dermatology queue with a `MANUAL_REVIEW` flag so a human triages it manually.
+
+```
+FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
+    // Write a record so the case is tracked even though inference failed.
+    write to DynamoDB table "triage-cases":
+        case_id         = case_id
+        patient_id      = patient_id
+        image_key       = image_key
+        status          = "PENDING_INFERENCE"
+        error_message   = error.message
+        submitted_at    = current UTC timestamp (ISO 8601)
+        retry_count     = 0
+
+    // Send to DLQ for retry processing.
+    send to SQS dead letter queue:
+        message_body = { case_id: case_id, image_key: image_key }
+
+    // Alert operations team if DLQ depth exceeds threshold.
+    // A growing DLQ means the endpoint is unhealthy.
     RETURN case_id
 ```
 
@@ -377,7 +442,7 @@ Here's what will surprise you when you actually build this:
 
 ## Variations and Extensions
 
-**Teledermatology integration.** Instead of just prioritizing a queue, embed the triage system into a store-and-forward teledermatology workflow. The patient submits photos through a portal, the AI triages, and the dermatologist reviews asynchronously with the AI's assessment as context (not as a binding recommendation). This extends access to patients in dermatology deserts without requiring synchronous video visits.
+**Teledermatology integration.** Instead of just prioritizing a queue, embed the triage system into a store-and-forward teledermatology workflow. The patient submits photos through a portal, the AI triages, and the dermatologist reviews asynchronously with the AI's assessment as context (not as a binding recommendation). This extends access to patients in dermatology deserts without requiring synchronous video visits. For store-and-forward workflows where immediate response isn't required, consider SageMaker Async Inference. It handles burst loads without maintaining always-on GPU instances and costs significantly less for intermittent workloads.
 
 **Longitudinal tracking.** For patients with many moles or known atypical nevi, track lesions over time. Photograph the same lesion at regular intervals and use change detection (not just single-image classification) to identify evolution. A lesion that was "benign" six months ago but has grown asymmetrically is more concerning than its current appearance alone would suggest. This requires patient-specific image registration and temporal modeling.
 
@@ -400,6 +465,7 @@ Here's what will surprise you when you actually build this:
 - [Amazon SageMaker Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html)
 - [Amazon SageMaker Image Classification Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html)
 - [Amazon SageMaker Model Monitor](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
+- [Amazon SageMaker Clarify](https://docs.aws.amazon.com/sagemaker/latest/dg/clarify-configure-processing-jobs.html)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
