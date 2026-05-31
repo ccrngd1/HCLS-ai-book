@@ -154,6 +154,8 @@
   * [Python Example](chapter06.05-python-example)
 * [6.6 — Patient Similarity for Care Planning](chapter06.06-patient-similarity-care-planning)
   * [Python Example](chapter06.06-python-example)
+* [6.7 — Clinical Trial Patient Matching](chapter06.07-clinical-trial-patient-matching)
+  * [Python Example](chapter06.07-python-example)
 
 ---
 
