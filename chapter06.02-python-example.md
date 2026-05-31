@@ -586,7 +586,7 @@ if __name__ == "__main__":
 
 When you run this pipeline, you'll see output like:
 
-```
+```text
 Step 1: Generating synthetic utilization data...
   5000 members with 8 features each
 Step 2: Preparing and scaling features...
