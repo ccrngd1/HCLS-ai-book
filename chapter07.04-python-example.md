@@ -631,7 +631,7 @@ if __name__ == "__main__":
 
 This example trains a model, scores patients, and produces an outreach worklist. It works. But there's a meaningful distance between "runs in a notebook" and "drives clinical interventions for 50,000 patients." Here's where that gap lives:
 
-**Feature engineering from raw data.** This example starts with pre-computed features. A real pipeline starts with raw claims (837/835 files), ADT feeds, pharmacy data, and EHR extracts. The feature engineering layer (computing "ED visits in last 12 months" from individual claim records) is often 80% of the work. You'd typically use a feature store (SageMaker Feature Store or a custom solution on Athena/Glue) to maintain point-in-time correct features.
+**Feature engineering from raw data.** This example starts with pre-computed features. A real pipeline starts with raw claims (837/835 files), ADT feeds, pharmacy data, and EHR extracts. The feature engineering layer (computing "ED visits in last 12 months" from individual claim records) is often 80% of the work. You'd typically use a feature store (SageMaker Feature Store or a custom solution on Athena/Glue) to maintain point-in-time-correct features.
 
 **Synthetic data performance is not a benchmark.** This synthetic data produces artificially high AUC because the outcome was generated from the same features the model uses. Real-world ED prediction models typically achieve AUC 0.70-0.78 due to unmeasured confounders, data quality issues, and temporal drift. Don't use synthetic-data performance as a benchmark for production readiness.
 
@@ -645,7 +645,7 @@ This example trains a model, scores patients, and produces an outreach worklist.
 
 **Model monitoring and drift detection.** Patient populations change. New chronic disease codes get introduced. Flu season shifts utilization patterns. You need automated monitoring that tracks prediction distribution, feature distributions, and actual vs. predicted rates over time. SageMaker Model Monitor handles this, but you still need to define what "drift" means for your use case and what action to take when it's detected.
 
-**Retraining cadence.** How often do you retrain? Monthly is typical for ED prediction. You need an automated pipeline (SageMaker Pipelines or Step Functions) that retrains, evaluates against the current production model, and promotes the new model only if it improves on key metrics.
+**Retraining cadence.** How often do you retrain? Monthly is typical for ED prediction. You need an automated pipeline (SageMaker Pipelines or Step Functions) that retrains, evaluates against the current production model, and promotes the new version only if it improves on key metrics.
 
 **Integration with care management workflows.** The DynamoDB table is just storage. The real integration is with whatever system your care managers use to manage their worklists. That might be an Epic BPA (Best Practice Alert), a Salesforce Health Cloud task, or a custom outreach platform. The "last mile" of getting a risk score into a clinician's workflow is often harder than building the model.
 
