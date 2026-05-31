@@ -70,7 +70,7 @@ I called this recipe "simple" in the chapter overview, and it is, relative to di
 
 ### The General Architecture Pattern
 
-```
+```text
 [Image Acquisition] → [Quality Assessment] → [Pass/Fail Decision] → [Alert or Archive]
 ```
 
@@ -110,13 +110,15 @@ Now let's build this on AWS. The architecture handles both near-real-time assess
 flowchart LR
     A[🏥 Modality\nX-ray / CT / MRI] -->|DICOM| B[DICOM Router\non-premises]
     B -->|Store| C[S3 Bucket\nimaging-inbox/]
-    C -->|S3 Event| D[Lambda\nimage-quality-orchestrator]
+    C -->|S3 Event| Q[SQS Queue]
+    Q -->|Trigger| D[Lambda\nimage-quality-orchestrator]
     D -->|Extract pixels\npreprocess| D
     D -->|Invoke endpoint| E[SageMaker Endpoint\nquality-model]
     E -->|Quality scores| D
     D -->|Store results| F[DynamoDB\nquality-assessments]
     D -->|Fail notification| G[SNS Topic\nquality-alerts]
     G -->|Alert| H[Tech Console /\nPACS Integration]
+    Q -->|Failed messages| DLQ[Dead Letter Queue]
 
     style C fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
@@ -156,7 +158,7 @@ For production, place an SQS queue between the S3 event notification and Lambda 
 
 **Step 1: Receive and parse the DICOM image.** When a DICOM file lands in the S3 bucket, the orchestrator function fires. The first job is extracting the pixel data and relevant metadata from the DICOM wrapper. DICOM is a complex format (it's both a file format and a network protocol), but for quality assessment we need three things: the pixel array, the modality type (to select the right quality criteria), and the study/series identifiers (to route results back to the right place). Skip this step and you're trying to feed a binary DICOM blob directly to a model that expects a pixel array.
 
-```
+```pseudocode
 FUNCTION receive_image(bucket, key):
     // Download the DICOM file from S3
     dicom_bytes = download from S3 at bucket/key
@@ -185,7 +187,7 @@ FUNCTION receive_image(bucket, key):
 
 **Step 2: Compute rule-based quality metrics.** Before invoking the ML model, compute the fast, deterministic metrics that catch obvious failures. These are cheap to compute (milliseconds), require no model inference, and catch the most egregious problems: completely black images (detector malfunction), completely white images (overexposure), and severe blur (patient moved significantly). Think of this as the "fast reject" gate. If an image fails here, there's no point spending compute on the ML model. These metrics also feed into the ML model as additional input features, giving it both the raw pixels and the computed statistics.
 
-```
+```pseudocode
 FUNCTION compute_basic_metrics(pixel_array):
     metrics = empty map
 
@@ -223,7 +225,7 @@ FUNCTION compute_basic_metrics(pixel_array):
 
 **Step 3: Invoke the ML quality model.** The rule-based metrics catch the obvious cases. The ML model handles the nuanced ones: subtle motion blur that the Laplacian variance doesn't flag, positioning errors that require understanding anatomy, and the complex interaction between multiple quality factors. The model takes the preprocessed pixel array (resized to a standard input dimension) and optionally the computed metrics as auxiliary features. It returns a quality score (0 to 1, where 1 is perfect quality) and optionally per-category scores (blur, exposure, positioning, artifacts). The model was trained on your institution's historical rejection data, so it learns your radiologists' quality standards.
 
-```
+```pseudocode
 FUNCTION assess_quality_ml(pixel_array, basic_metrics, modality):
     // Preprocess the image for model input.
     // Resize to the model's expected input dimensions (e.g., 512x512).
@@ -260,7 +262,7 @@ FUNCTION assess_quality_ml(pixel_array, basic_metrics, modality):
 
 **Step 4: Apply decision thresholds.** The model gives you a continuous score. The clinical workflow needs a discrete decision: accept, flag for review, or reject. This step applies configurable thresholds that translate scores into actions. The thresholds are stored externally (not baked into the model) so they can be tuned per site, per modality, and per body part without retraining. A three-tier system works well in practice: clear pass, borderline (flag for tech review), and clear fail (immediate retake alert). Skip this step and you're dumping raw probability scores on technologists who need a yes/no answer.
 
-```
+```pseudocode
 // Thresholds are configurable per modality and body part.
 // These are loaded from a configuration store, not hardcoded.
 THRESHOLDS = {
@@ -303,7 +305,7 @@ FUNCTION apply_decision(quality_result, modality, body_part):
 
 **Step 5: Store results and alert.** Write the quality assessment to the database for audit and analytics, and fire an alert if the image was rejected or flagged. The stored record links back to the original image (by study UID and source key) so you can always trace a quality decision back to its source. The alert goes through SNS to whatever channel the technologist monitors: a dashboard, a pager, or an integration with the modality console software.
 
-```
+```pseudocode
 FUNCTION store_and_alert(image_info, decision_result):
     // Write the complete assessment record to DynamoDB.
     // This is the audit trail: what was assessed, when, and what was decided.
