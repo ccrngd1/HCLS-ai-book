@@ -46,7 +46,7 @@ Here's what decades of no-show research have consistently found to be predictive
 
 **Appointment type.** Follow-up visits no-show at higher rates than new patient visits. Routine wellness checks no-show more than urgent symptom visits. The perceived urgency of the visit matters.
 
-**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, which reflects access barriers, not irresponsibility), age, and language barriers all correlate with no-show probability. These features improve accuracy but require careful handling to avoid reinforcing disparities (more on this in the Honest Take section).
+**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, reflecting access barriers, not irresponsibility), age, and language barriers all correlate with no-show probability. These features improve accuracy but require careful handling to avoid reinforcing disparities (more on this in the Honest Take section).
 
 **Weather and external events.** Rain, snow, extreme heat, and local events (school closures, major sports events) all measurably affect no-show rates. These are harder to incorporate because they require external data sources and real-time feature computation, but they can add a few percentage points of accuracy.
 
