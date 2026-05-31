@@ -1,5 +1,8 @@
 # Recipe 9.2: Python Implementation Example
 
+<!-- TODO (TechWriter): Expert review ARCH-1 (CRITICAL). Main recipe file chapter09.02-patient-photo-verification.md does not exist. Write the full recipe per RECIPE-GUIDE.md before this companion can be considered complete. -->
+<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Liveness detection must be part of the core architecture in the main recipe (Capture -> Liveness -> Quality -> Compare -> Audit). The Python companion can note it's omitted for simplicity. -->
+
 > **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning. Consider it a starting point, not a destination.
 
 ---
@@ -13,6 +16,8 @@ pip install boto3 pillow
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `rekognition:CompareFaces`, `rekognition:CreateCollection`, `rekognition:IndexFaces`, `rekognition:SearchFacesByImage`, `s3:GetObject`, `s3:PutObject`, and `dynamodb:PutItem` / `dynamodb:GetItem`.
+
+> **Before you start:** Confirm your AWS Business Associate Agreement (BAA) covers Rekognition, S3, DynamoDB, and any other services processing patient photos. Rekognition is BAA-eligible, but you must explicitly add it to your BAA before processing biometric PHI.
 
 Pillow is optional here but useful for image validation before sending to Rekognition. You don't want to burn API calls on corrupt or undersized images.
 
@@ -110,7 +115,8 @@ def validate_verification_image(bucket: str, key: str) -> dict:
     # without comparing to anything. It's our pre-flight check.
     response = rekognition_client.detect_faces(
         Image={"S3Object": {"Bucket": bucket, "Name": key}},
-        Attributes=["QUALITY", "DEFAULT"],
+        # DEFAULT includes Quality metrics (Brightness, Sharpness), BoundingBox, Confidence
+        Attributes=["DEFAULT"],
     )
 
     faces = response.get("FaceDetails", [])
@@ -195,11 +201,14 @@ def compare_faces(source_bucket: str, source_key: str,
             "face_matches_count": len(face_matches),
         }
     else:
-        # No match above threshold. The face in the source image doesn't
-        # look enough like the face in the target image.
-        # UnmatchedFaces tells us Rekognition DID find a face in the target,
-        # it just didn't match. This distinguishes "wrong person" from
-        # "couldn't find a face in the reference photo."
+        # No match above threshold. UnmatchedFaces lists faces detected in the
+        # target image that didn't match the source. Since we validated both
+        # images contain exactly one face, this means the target face exists
+        # but its similarity to the source is below our threshold.
+        #
+        # Note: Rekognition doesn't return the actual similarity score when below
+        # the threshold. We use 0.0 as a sentinel. The real score could be
+        # anywhere from 0 to just below SIMILARITY_THRESHOLD.
         return {
             "match": False,
             "similarity": 0.0,
