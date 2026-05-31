@@ -46,7 +46,6 @@ import uuid
 import datetime
 from datetime import timezone
 from decimal import Decimal
-from collections import defaultdict
 
 import boto3
 from botocore.config import Config
@@ -55,6 +54,7 @@ from botocore.config import Config
 # Logs Insights for query-friendly analysis. Never log PHI: no patient names,
 # no MRNs, no note content, no generated summary bodies. The audit trail for
 # summaries themselves lives in S3 with access-controlled retrieval.
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -463,8 +463,11 @@ def _remove_boilerplate(text: str) -> str:
     the extraction prompt.
     """
     # Trailing Epic-style disclaimer block. Very common, very noisy.
+    # Use MULTILINE so $ matches end-of-line, not end-of-string; avoids
+    # stripping content after mid-note "electronically signed by" phrases
+    # in copy-forwarded notes.
     text = re.sub(
-        r"(?is)electronically signed by.*$", "", text,
+        r"(?im)^\s*electronically signed by.*$", "", text,
     )
     # Telephone disclaimer footers.
     text = re.sub(
@@ -1245,11 +1248,12 @@ OUTPUT FORMAT: Return ONLY valid JSON:
     response = bedrock_runtime.invoke_model(**invoke_kwargs)
     response_payload = json.loads(response["body"].read())
 
-    # Detect Guardrail intervention explicitly. The exact field depends on
-    # how your Guardrail is configured; verify the shape returned by your
-    # setup and branch accordingly.
-    stop_reason = response_payload.get("stop_reason")
-    if stop_reason == "guardrail_intervened":
+    # Detect Guardrail intervention via the documented response field.
+    # Anthropic Claude's stop_reason values are "end_turn", "stop_sequence",
+    # "max_tokens", "tool_use", etc. Guardrail intervention is signaled
+    # separately via "amazon-bedrock-guardrailAction" in the response body.
+    guardrail_action = response_payload.get("amazon-bedrock-guardrailAction")
+    if guardrail_action == "INTERVENED":
         logger.warning("Guardrail intervened on generation; returning rejection")
         return {
             "status": "GROUNDING_REJECTED",
@@ -1369,7 +1373,7 @@ def validate_and_attach_provenance(
                 "source_note_id": source_note_id,
                 "verified": True,
                 "match_type": "overlap",
-                "overlap": round(overlap, 2),
+                "overlap": Decimal(str(round(overlap, 2))),
             }
             continue
 
@@ -1380,7 +1384,7 @@ def validate_and_attach_provenance(
             "source_value": str(source_value),
             "issue": "value_mismatch",
             "severity": "HIGH",
-            "overlap": round(overlap, 2),
+            "overlap": Decimal(str(round(overlap, 2))),
         })
 
     total = len(claims)
@@ -1498,13 +1502,21 @@ def render_and_deliver(
         summary_markdown:  The generated summary body.
         provenance_map:    Claim-to-source mapping from validation step.
         request_params:    Originating request, for destination and context.
-        validation_status: VALIDATED | NEEDS_CLINICIAN_REVIEW.
+        validation_status: VALIDATED | NEEDS_CLINICIAN_REVIEW | REQUIRES_REGENERATION |
+                           GROUNDING_REJECTED | NO_VALIDATION_COMPLETED.
 
     Returns:
         Dict with final status, archive keys, and the render payload shape.
     """
     destination = request_params.get("destination", "ehr_sidebar")
-    requires_review = validation_status == "NEEDS_CLINICIAN_REVIEW"
+    # Route to clinician review if validation did not fully pass.
+    # A summary never auto-ships to the EHR without passing validation.
+    requires_review = validation_status in (
+        "NEEDS_CLINICIAN_REVIEW",
+        "REQUIRES_REGENERATION",
+        "GROUNDING_REJECTED",
+        "NO_VALIDATION_COMPLETED",
+    )
 
     # Archive the raw summary and the provenance map. Both are PHI and must
     # be stored with SSE-KMS encryption (bucket defaults should enforce this)
@@ -1718,7 +1730,13 @@ def summarize_clinical_notes(
 
     # Steps 7-8: generation + validation loop
     generation_result = None
-    validation_result = None
+    # Initialize to a sentinel so exhausted-retry paths don't crash Step 9.
+    validation_result = {
+        "status": "NO_VALIDATION_COMPLETED",
+        "validation_rate": 0.0,
+        "unverified_claims": [],
+        "provenance_map": {},
+    }
     regeneration_hint = ""
 
     for attempt in range(1, MAX_GENERATION_ATTEMPTS + 1):
