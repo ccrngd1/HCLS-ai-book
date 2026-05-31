@@ -38,6 +38,8 @@ Propensity to pay in healthcare works on the same principle: use historical beha
 
 **Harder because:** Healthcare balances are heterogeneous in ways that credit card balances aren't. A $25 copay, a $500 deductible, and a $15,000 surgical balance are fundamentally different collection problems. The patient's propensity to pay a $25 copay tells you almost nothing about their propensity to pay a $15,000 balance. Your model needs to account for balance characteristics, not just patient characteristics.
 
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add a paragraph noting FCRA implications. Since the recipe draws an explicit credit scoring analogy, note that propensity scores used for adverse financial decisions (escalating to collections, denying payment plans) may trigger Fair Credit Reporting Act requirements. Recommend consulting legal counsel and using scores for prioritization rather than exclusion. -->
+
 ### Binary Classification with Calibrated Probabilities
 
 Like no-show prediction (Recipe 7.1), propensity to pay is a binary classification problem at its core. Given features about a patient and their balance, predict: will this balance be paid within N days? The output is a probability between 0 and 1.
@@ -98,7 +100,7 @@ The right choice depends on your operational question. If you're deciding who to
 
 **AWS Glue for feature engineering.** The ETL layer that pulls raw data from your billing system and patient accounting, computes derived features (rolling payment rates, days-to-pay averages, engagement scores), and writes model-ready datasets to S3. Glue handles the join logic across multiple source systems (billing, demographics, portal activity) that would be painful to maintain in custom code.
 
-**Amazon DynamoDB for prediction storage and lookup.** Scored predictions need to be queryable by the collection workflow: "give me all balances with propensity < 0.4 that are over 60 days old" or "what's the propensity score for this specific patient's balance?" DynamoDB's flexible query patterns and low-latency reads make it the right fit. A GSI on propensity score range enables the batch queries the strategy engine needs.
+**Amazon DynamoDB for prediction storage and lookup.** Scored predictions need to be queryable by the collection workflow: "give me all balances with propensity < 0.4 that are over 60 days old" or "what's the propensity score for this specific patient's balance?" DynamoDB works here because the access patterns are predictable: look up a single balance by ID, or query a range of scores for the strategy engine's batch routing. You don't need the relational flexibility of RDS, and the read latency matters when the strategy engine is processing thousands of routing decisions. A GSI with `score_date` as partition key and `propensity_score` as sort key enables the range queries the strategy engine needs.
 
 **Amazon EventBridge for orchestration.** Triggers the nightly scoring pipeline and the strategy engine. Also triggers retraining on a monthly schedule or when model monitoring detects drift.
 
@@ -129,15 +131,17 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a feedback loop to the architecture diagram showing ground truth collection, calibration monitoring (rolling AUC and ECE to CloudWatch), and a retraining trigger when ECE exceeds 0.05 or AUC drops below 0.75. The recipe identifies calibration as the critical requirement but the diagram has no monitoring infrastructure. -->
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:Query`, `lambda:InvokeFunction` |
+| **IAM Permissions** | Distributed across service-specific execution roles: (1) Glue job role: `s3:GetObject`/`s3:PutObject` on feature buckets, connectivity to billing system; (2) SageMaker execution role: `s3:GetObject`/`s3:PutObject` on model and feature buckets, `kms:Decrypt`; (3) Lambda strategy engine role: `dynamodb:Query`/`dynamodb:GetItem` on predictions table only (no SageMaker or Glue permissions); (4) EventBridge scheduler role: `lambda:InvokeFunction`, `sagemaker:CreateTransformJob`. Scope each role with resource ARNs restricted to specific buckets, tables, and jobs. |
 | **BAA** | AWS BAA signed (balance data contains PHI: patient names, account numbers, service dates) |
-| **Encryption** | S3: SSE-KMS for all data and model artifacts; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes; all transit over TLS |
-| **VPC** | Production: SageMaker training and inference in VPC with VPC endpoints for S3 and DynamoDB. Glue jobs in VPC with connectivity to source billing systems. |
+| **Encryption** | S3: SSE-KMS for all data and model artifacts (versioning enabled on models bucket); DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes; all transit over TLS |
+| **VPC** | Production: SageMaker training and inference in VPC with VPC endpoints for S3 and DynamoDB. Additional interface endpoints required: SageMaker API, CloudWatch Logs, KMS. Glue jobs in VPC with connectivity to source billing systems (typically via Direct Connect or site-to-site VPN; security groups on Glue ENIs must allow outbound traffic to the billing system's database port). |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls. Critical for audit: you need to demonstrate that scores are used for collection strategy optimization, not care access decisions. |
 | **Sample Data** | Synthetic patient balance records. Generate with realistic distributions: ~60% of balances paid within 90 days, ~20% partial payment, ~20% written off. Vary by balance amount and patient history. Never use real patient financial data in dev. |
 | **Cost Estimate** | SageMaker training: ~$5-15 per training run (ml.m5.xlarge, 1 hour). Batch transform: ~$2-5 per nightly scoring run. Glue: ~$0.44/DPU-hour. Total: ~$150-400/month for a mid-size health system. |
@@ -177,18 +181,30 @@ FUNCTION compute_payment_features(open_balances, patient_history, engagement_dat
         // The single strongest predictor: how has this patient handled
         // previous balances with us? Look at their last 20 balances.
         past_balances = history.last_n_balances(20)
-        pay_rate_full = count(past_balances where status = "PAID_IN_FULL") / count(past_balances)
-        pay_rate_any  = count(past_balances where any_payment_made = true) / count(past_balances)
 
-        // Average days to first payment across historical balances.
-        // A patient who typically pays within 15 days is very different
-        // from one who typically pays at 85 days.
-        avg_days_to_first_payment = mean(past_balances.days_to_first_payment)
+        // Guard against new patients with no history (cold start).
+        // Use population-average defaults when we have no behavioral signal.
+        IF count(past_balances) == 0:
+            pay_rate_full             = POPULATION_AVG_PAY_RATE  // e.g. 0.60
+            pay_rate_any              = POPULATION_AVG_ANY_PAY   // e.g. 0.75
+            avg_days_to_first_payment = POPULATION_AVG_DAYS      // e.g. 35
+            payment_plans_completed   = 0
+            payment_plans_defaulted   = 0
+            cold_start                = true
+        ELSE:
+            pay_rate_full = count(past_balances where status = "PAID_IN_FULL") / count(past_balances)
+            pay_rate_any  = count(past_balances where any_payment_made = true) / count(past_balances)
 
-        // Payment plan history: has this patient successfully completed
-        // payment plans before? Started and defaulted? Never used one?
-        payment_plans_completed = count(past_balances where payment_plan_completed = true)
-        payment_plans_defaulted = count(past_balances where payment_plan_defaulted = true)
+            // Average days to first payment across historical balances.
+            // A patient who typically pays within 15 days is very different
+            // from one who typically pays at 85 days.
+            avg_days_to_first_payment = mean(past_balances.days_to_first_payment)
+
+            // Payment plan history: has this patient successfully completed
+            // payment plans before? Started and defaulted? Never used one?
+            payment_plans_completed = count(past_balances where payment_plan_completed = true)
+            payment_plans_defaulted = count(past_balances where payment_plan_defaulted = true)
+            cold_start              = false
 
         // --- Balance Characteristics ---
 
@@ -251,7 +267,8 @@ FUNCTION compute_payment_features(open_balances, patient_history, engagement_dat
             days_since_portal_login:   days_since_portal_login,
             opened_last_statement:     opened_last_statement,
             called_billing_recently:   called_billing_recently,
-            partial_payment_made:      partial_payment_made
+            partial_payment_made:      partial_payment_made,
+            cold_start:                cold_start
         }
 
         append feature_row to features
@@ -295,27 +312,39 @@ FUNCTION train_propensity_model(training_data_path):
     raw_predictions = score_with_model(job.model_artifact, calibration_set)
     calibration_model = fit_platt_scaling(raw_predictions, calibration_set.labels)
 
-    // Save both the base model and the calibration model
+    // Save both the base model and the calibration model.
+    // Enable S3 versioning on the models bucket and store a checksum
+    // so the scoring pipeline can verify integrity before applying calibration.
     save_artifact(calibration_model, "s3://ml-data/models/propensity-to-pay/calibration/")
+    save_checksum(calibration_model, "s3://ml-data/models/propensity-to-pay/calibration/checksum")
 
     RETURN job.model_artifact, calibration_model
 ```
 
 **Step 3: Batch scoring.** Every night, the scoring pipeline runs all open balances through the trained model and calibration layer. Each balance gets a propensity score (0.0 to 1.0) and the top contributing features (for explainability to collection staff). The results are written to DynamoDB for fast lookup. Skip this step and your collection team is flying blind, treating every balance the same regardless of likelihood of recovery.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a note about interpreting scores relative to balance age. A 90-day model applied to a balance at day 85 has only 5 days of remaining outcome window, making the score more definitive than the same score on a day-5 balance. Consider recommending multiple time-horizon models or age-adjusted thresholds in the strategy engine. -->
+
 ```
 FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_model):
+    // Verify calibration model integrity before use.
+    // A corrupted calibration model silently miscalibrates all predictions.
+    verify_checksum(calibration_model, expected_checksum)
+
     // Run SageMaker batch transform on all open balances.
     // This scores thousands of balances in a single job rather than
     // making individual API calls (much more cost-effective).
+    // EnableNetworkIsolation prevents unintended data egress from the
+    // scoring container (defense-in-depth for PHI).
     transform_config = {
-        model:           model_artifact,
-        input_data:      feature_file_path,
-        output_path:     "s3://ml-data/predictions/propensity-to-pay/{date}/",
-        instance_type:   "ml.m5.xlarge",
-        instance_count:  1,
-        content_type:    "text/csv",
-        split_type:      "Line"
+        model:                  model_artifact,
+        input_data:             feature_file_path,
+        output_path:            "s3://ml-data/predictions/propensity-to-pay/{date}/",
+        instance_type:          "ml.m5.xlarge",
+        instance_count:         1,
+        content_type:           "text/csv",
+        split_type:             "Line",
+        enable_network_isolation: true
     }
 
     transform_job = SageMaker.create_transform_job(transform_config)
@@ -325,7 +354,9 @@ FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_mode
     raw_scores = load_predictions(transform_job.output_path)
     calibrated_scores = apply_platt_scaling(calibration_model, raw_scores)
 
-    // Write calibrated predictions to DynamoDB for downstream consumption
+    // Write calibrated predictions to DynamoDB for downstream consumption.
+    // Set TTL to expire predictions 90 days after balance resolution
+    // (keeps audit trail without accumulating stale PHI indefinitely).
     FOR each prediction in calibrated_scores:
         write to DynamoDB table "balance-predictions":
             balance_id       = prediction.balance_id
@@ -334,11 +365,16 @@ FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_mode
             score_date       = today
             top_features     = prediction.feature_contributions  // SHAP values or similar
             model_version    = model_artifact.version
+            ttl              = balance_resolution_date + 90 days
 
     RETURN calibrated_scores
 ```
 
+<!-- TODO (TechWriter): Expert review S2 (HIGH). Expand DynamoDB retention and access control guidance. The predictions table stores PHI (patient IDs linked to financial behavioral data). Add: (1) TTL policy to expire predictions after balance resolution plus audit window; (2) IAM policy separation between strategy engine (broad read) and other consumers (restricted); (3) note that the score-range GSI should be restricted to authorized revenue cycle roles, not exposed to clinical staff. -->
+
 **Step 4: Strategy engine.** The Lambda function reads predictions from DynamoDB and routes each balance to the appropriate collection strategy based on propensity score thresholds. High-propensity balances get standard treatment (they'll pay on their own). Medium-propensity balances get proactive intervention (payment plan offers, financial counselor outreach). Low-propensity balances get early financial assistance screening. The thresholds are configurable business parameters, not model parameters. Adjust them based on your staff capacity, payment plan administrative costs, and financial assistance policies.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a 5-10% randomization holdout to the strategy engine pseudocode. Reserve a fraction of balances in each score band for random assignment to alternative strategies. This creates counterfactual data to validate thresholds and prevents the self-fulfilling prophecy warned about in the Honest Take. Log the randomization flag alongside the routing decision. -->
 
 ```
 // Thresholds are business decisions, stored as configuration.
@@ -354,6 +390,13 @@ FUNCTION apply_collection_strategy(balance_predictions):
         balance_id = prediction.balance_id
         patient_id = prediction.patient_id
         amount     = prediction.balance_amount
+
+        // For cold-start patients (no payment history), route to a default
+        // strategy rather than relying on a weak prediction.
+        IF prediction.cold_start == true:
+            route_to_queue("new_patient_default", balance_id)
+            log_decision(balance_id, patient_id, score, "new_patient_default")
+            CONTINUE
 
         IF score >= HIGH_THRESHOLD:
             // High propensity: standard statement cadence.
@@ -422,7 +465,7 @@ FUNCTION apply_collection_strategy(balance_predictions):
 
 **Where it struggles:**
 
-- New patients with no payment history (cold start problem). The model falls back to balance characteristics and demographics, which are weaker predictors.
+- New patients with no payment history (cold start problem). The model falls back to balance characteristics and demographics, which are weaker predictors. Route these to a default strategy rather than trusting a low-confidence score.
 - Patients whose financial situation has recently changed (job loss, divorce, new insurance). Historical behavior stops being predictive.
 - Very small balances ($10-25) where the signal-to-noise ratio is poor and the collection cost exceeds the balance.
 - Balances in active dispute. A patient contesting a charge has different dynamics than one simply not paying.
