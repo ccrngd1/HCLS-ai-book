@@ -44,6 +44,12 @@ Converting pixels to physical units requires a known reference in the image. The
 
 For most deployments, the physical reference marker approach wins on the balance of accuracy, cost, and hardware simplicity. You're asking clinicians to stick a small adhesive ruler next to the wound. It's one extra step, but it's the difference between a measurement and a guess.
 
+### Metadata Privacy: A Hidden Risk in Smartphone Photography
+
+One thing that catches teams off guard: smartphone photographs contain EXIF metadata including GPS coordinates, device serial numbers, and sometimes the photographer's name. For home health wound photography, GPS coordinates in the image metadata directly reveal the patient's home address. This is PHI leakage beyond what's necessary for the clinical purpose.
+
+Your pipeline needs to strip EXIF metadata from wound photographs before permanent storage, or store EXIF data separately with strict access controls. Retain only clinically relevant metadata (timestamp, image dimensions) and discard location, device identifiers, and photographer information. If EXIF data is needed for audit purposes, store it in a separate, access-controlled record rather than embedded in the image file.
+
 ### Longitudinal Tracking: The Real Value
 
 A single wound measurement is useful for documentation. A series of measurements over time is where the clinical value lives.
@@ -88,10 +94,12 @@ The challenge: color perception depends heavily on lighting conditions. The same
 ## The General Architecture Pattern
 
 ```text
-[Capture with Reference] → [Detect Marker / Calibrate Scale] → [Segment Wound] → [Compute Measurements] → [Store with Metadata] → [Track Over Time]
+[Capture with Reference] → [Strip Metadata] → [Detect Marker / Calibrate Scale] → [Segment Wound] → [Compute Measurements] → [Store with Metadata] → [Track Over Time]
 ```
 
 **Capture with Reference.** A clinician photographs the wound with a calibration marker placed adjacent to it. The capture device can be a smartphone, tablet, or dedicated wound camera. The system should validate image quality before accepting it (is it in focus? is the marker visible? is the wound fully in frame?).
+
+**Strip Metadata.** Remove EXIF data (GPS coordinates, device identifiers) from the image before permanent storage. For home health visits, GPS coordinates reveal the patient's home address.
 
 **Detect Marker / Calibrate Scale.** The system locates the reference marker in the image and computes the pixels-per-centimeter ratio. If using a standardized marker (like a circular sticker of known diameter), this is a straightforward object detection task. If the marker isn't detected, the image is flagged.
 
@@ -99,7 +107,7 @@ The challenge: color perception depends heavily on lighting conditions. The same
 
 **Compute Measurements.** From the segmentation mask and the calibration ratio: area (in cm²), maximum length, maximum width perpendicular to length, perimeter. Optionally: tissue composition percentages.
 
-**Store with Metadata.** The measurement, the segmentation mask, the original image, and metadata (patient ID, wound location, date, clinician, device) are stored together. The image and mask are retained for audit and reprocessing.
+**Store with Metadata.** The measurement, the segmentation mask, the original image, and metadata (patient ID, wound location, date, clinician, device) are stored together. The image and mask are retained for audit and reprocessing. Segmentation masks are PHI-derived artifacts; apply the same encryption, access controls, and retention policies as the original wound images.
 
 **Track Over Time.** Measurements are linked to a wound timeline. Healing rate is computed. Alerts fire if healing stalls or reverses.
 
@@ -111,11 +119,11 @@ The challenge: color perception depends heavily on lighting conditions. The same
 
 **Amazon Rekognition Custom Labels for wound segmentation.** Rekognition Custom Labels lets you train a custom image classification or object detection model without managing ML infrastructure. For wound segmentation specifically, you'd train a model to detect and localize wound regions. For pixel-level segmentation (which gives you more precise area measurements), you'd use Amazon SageMaker with a U-Net architecture. The choice depends on your accuracy requirements: bounding-box detection is simpler to train but less precise; pixel segmentation is more accurate but requires more annotated training data.
 
-**Amazon SageMaker for model training and hosting.** If you need pixel-level segmentation (and for clinical wound measurement, you do), SageMaker provides the training infrastructure for U-Net or similar architectures, plus real-time inference endpoints for serving predictions. SageMaker's built-in algorithms include semantic segmentation, and you can bring your own model code for custom architectures.
+**Amazon SageMaker for model training and hosting.** If you need pixel-level segmentation (and for clinical wound measurement, you do), SageMaker provides the training infrastructure for U-Net or similar architectures, plus real-time inference endpoints for serving predictions. SageMaker's built-in algorithms include semantic segmentation, and you can bring your own model code for custom architectures. SageMaker also supports model versioning and production variants for A/B testing, which matters when you retrain on new data (see The Honest Take for why this is important).
 
 **Amazon S3 for image storage.** Wound photographs are PHI. They need encrypted, durable, auditable storage. S3 with SSE-KMS, versioning enabled, and lifecycle policies for retention compliance.
 
-**AWS Lambda for orchestration.** The measurement pipeline (receive image, detect marker, call segmentation endpoint, compute measurements, store results) is a stateless workflow that fits Lambda's execution model. For real-time use (clinician takes photo, wants measurement back in seconds), Lambda behind API Gateway provides the synchronous path.
+**AWS Lambda for orchestration.** The measurement pipeline (receive image, strip metadata, detect marker, call segmentation endpoint, compute measurements, store results) is a stateless workflow that fits Lambda's execution model. For real-time use (clinician takes photo, wants measurement back in seconds), Lambda behind API Gateway provides the synchronous path.
 
 **Amazon DynamoDB for measurement storage.** Wound measurements are time-series data keyed by patient and wound identifier. DynamoDB's partition key (patient_id + wound_id) and sort key (measurement_date) model fits naturally. Point lookups for the latest measurement and range queries for healing trajectory are both efficient.
 
@@ -127,7 +135,8 @@ The challenge: color perception depends heavily on lighting conditions. The same
 flowchart TD
     A[📱 Clinician Device] -->|Upload wound photo| B[API Gateway]
     B --> C[Lambda: Orchestrator]
-    C -->|Store original| D[S3: wound-images/]
+    C -->|Strip EXIF metadata| C2[Lambda: Metadata Stripper]
+    C2 -->|Store cleaned image| D[S3: wound-images/]
     C -->|Detect reference marker| E[Lambda: Marker Detection]
     E -->|Scale factor| C
     C -->|Segment wound| F[SageMaker Endpoint: U-Net]
@@ -149,21 +158,21 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| AWS Services | S3, Lambda, API Gateway, SageMaker, DynamoDB, CloudWatch, IAM |
-| IAM Permissions | s3:PutObject, s3:GetObject, sagemaker:InvokeEndpoint, dynamodb:PutItem, dynamodb:Query, logs:CreateLogGroup |
+| AWS Services | S3, Lambda, API Gateway, SageMaker, DynamoDB, CloudWatch, IAM, KMS |
+| IAM Permissions | `s3:PutObject/GetObject` on `arn:aws:s3:::wound-images/*` and `arn:aws:s3:::wound-masks/*`; `sagemaker:InvokeEndpoint` on `arn:aws:sagemaker:*:*:endpoint/wound-segmentation-*`; `dynamodb:PutItem/Query` on the `wound-measurements` table ARN; `logs:CreateLogGroup` on account log group ARNs |
 | BAA | Required. Wound photographs are PHI. |
 | Encryption | S3 SSE-KMS, DynamoDB encryption at rest, TLS 1.2+ in transit |
-| VPC | SageMaker endpoint in VPC with VPC endpoints for S3 and DynamoDB |
+| VPC | Lambda and SageMaker endpoint in VPC. Required VPC endpoints: `s3` (gateway), `dynamodb` (gateway), `sagemaker.runtime` (interface), `logs` (interface), `kms` (interface). Without the KMS endpoint, S3 SSE-KMS operations fail in a VPC with no NAT gateway. |
 | CloudTrail | Enabled for all API calls. Audit trail for PHI access. |
 | Sample Data | Public wound image datasets exist (Medetec, AZH Wound Database). Never use real patient images in development. |
-| Cost Estimate | ~$0.02-0.05 per image (SageMaker inference dominates). SageMaker endpoint: ~$0.05/hr for ml.m5.large. At 1000 images/day, ~$50-150/month total. |
+| Cost Estimate | ~$0.02-0.05 per image (SageMaker inference dominates). SageMaker endpoint: ~$0.05/hr for ml.m5.large. At 1000 images/day, ~$50-150/month total. Configure auto-scaling on `InvocationsPerInstance` metric for bursty clinical visit hours. |
 
 ### Ingredients
 
 | AWS Service | Role in This Recipe |
 |-------------|-------------------|
 | Amazon S3 | Encrypted storage for wound images and segmentation masks |
-| AWS Lambda | Orchestration, marker detection, measurement computation |
+| AWS Lambda | Orchestration, EXIF stripping, marker detection, measurement computation |
 | Amazon API Gateway | REST endpoint for clinician-facing applications |
 | Amazon SageMaker | Hosts trained U-Net segmentation model for inference |
 | Amazon DynamoDB | Stores structured measurements and wound timelines |
@@ -176,7 +185,7 @@ flowchart TD
 
 The clinician's app uploads a wound photograph. Before we do anything expensive (like calling a ML model), we validate that the image is usable.
 
-If you skip this step, you'll waste inference costs on blurry photos, images without reference markers, and accidental screenshots of the clinician's home screen.
+If you skip this step, you'll waste inference costs on blurry photos, images without reference markers, and accidental screenshots of the clinician's home screen. For production deployments, consider adding an image quality assessment step here (see Recipe 9.1) to reject blurry or poorly-lit images before incurring inference costs.
 
 ```
 FUNCTION validate_wound_image(image_bytes, metadata):
@@ -195,9 +204,14 @@ FUNCTION validate_wound_image(image_bytes, metadata):
     IF metadata.wound_location IS MISSING:
         RETURN error("Wound anatomical location required")
 
-    // Store the original image in S3 with metadata
+    // Strip EXIF metadata before storage
+    // Smartphone photos contain GPS (patient home address in home health),
+    // device serial numbers, and photographer info. Strip all of it.
+    stripped_image = strip_exif_metadata(image_bytes)
+
+    // Store the cleaned image in S3 with application-level metadata
     s3_key = "wound-images/{patient_id}/{wound_id}/{timestamp}.jpg"
-    upload_to_s3(bucket="wound-images", key=s3_key, body=image_bytes,
+    upload_to_s3(bucket="wound-images", key=s3_key, body=stripped_image,
                  metadata=metadata, encryption="aws:kms")
 
     RETURN success(s3_key)
@@ -317,13 +331,15 @@ Each measurement becomes a data point in the wound's healing timeline. We store 
 
 If you skip this step, you lose the longitudinal tracking that makes automated measurement valuable over manual documentation.
 
+The key design here: use `patient_id#wound_id` as the partition key and `timestamp` as the sort key. This makes per-wound timeline queries efficient (get all measurements for a specific wound, sorted by date) without needing to scan across unrelated wounds for the same patient. Application-layer authorization must verify that the requesting clinician has a care relationship with the patient before returning wound data.
+
 ```
 FUNCTION store_measurement(patient_id, wound_id, measurements, metadata, image_key, mask_key):
     record = {
-        "patient_id": patient_id,                    // Partition key
-        "wound_id#timestamp": wound_id + "#" + now(), // Sort key
+        "patient_wound_id": patient_id + "#" + wound_id,  // Partition key
+        "measurement_date": now(),                         // Sort key
+        "patient_id": patient_id,
         "wound_id": wound_id,
-        "measurement_date": now(),
         "area_cm2": measurements.area_cm2,
         "length_cm": measurements.length_cm,
         "width_cm": measurements.width_cm,
@@ -340,21 +356,22 @@ FUNCTION store_measurement(patient_id, wound_id, measurements, metadata, image_k
 
     dynamodb.put_item(table="wound-measurements", item=record)
 
-    // Compute healing rate if previous measurements exist
+    // Get previous measurement for this specific wound
     previous = dynamodb.query(
         table="wound-measurements",
-        partition_key=patient_id,
-        sort_key_begins_with=wound_id,
-        limit=1,
-        scan_index_forward=False  // Most recent first
+        partition_key=patient_id + "#" + wound_id,
+        scan_index_forward=False,  // Most recent first
+        limit=2                    // Current + previous
     )
 
-    IF previous exists:
-        days_elapsed = (now() - previous.measurement_date).days
+    // Skip the one we just inserted, take the prior measurement
+    IF previous has at least 2 records:
+        prior = previous[1]
+        days_elapsed = (now() - prior.measurement_date).days
         IF days_elapsed > 0:
-            area_change_pct = ((measurements.area_cm2 - previous.area_cm2)
-                              / previous.area_cm2) * 100
-            healing_rate_cm2_per_day = (previous.area_cm2 - measurements.area_cm2)
+            area_change_pct = ((measurements.area_cm2 - prior.area_cm2)
+                              / prior.area_cm2) * 100
+            healing_rate_cm2_per_day = (prior.area_cm2 - measurements.area_cm2)
                                       / days_elapsed
 
             // Alert if wound is growing
@@ -407,7 +424,7 @@ Sample output from a successful wound measurement:
 | Segmentation accuracy (Dice score) | > 0.85 | Against clinician-traced ground truth |
 | Area measurement error | < 10% | Compared to planimetry (gold standard) |
 | Marker detection rate | > 95% | When marker is properly placed |
-| End-to-end latency | < 5 seconds | From upload to measurement result |
+| End-to-end latency | < 5 seconds | From upload to measurement result. VPC-attached Lambdas may need provisioned concurrency during peak clinical hours to eliminate cold starts. |
 | Inference cost | ~$0.02-0.05 | Per image, SageMaker ml.m5.large |
 | Throughput | 200+ images/hour | Per SageMaker endpoint instance |
 
@@ -431,9 +448,11 @@ Here's what I've learned about wound measurement systems:
 
 **Longitudinal consistency matters more than single-measurement accuracy.** A system that's consistently 5% off but reproducible is more clinically useful than one that's sometimes perfect and sometimes 20% off. Clinicians care about trends. If your system says the wound went from 5.0 cm² to 4.5 cm² to 4.1 cm², they trust the trajectory even if the absolute numbers are slightly off. Inconsistency kills trust.
 
+**Watch for measurement drift when you retrain.** As you collect more annotated wound images and retrain your segmentation model, validate against a held-out test set AND compare measurements on a cohort of recent wounds against the previous model version. A new model that systematically measures 10% smaller would create false "healing" signals across your entire patient population. SageMaker production variants let you A/B test new models before full rollout.
+
 **Start with a single wound type.** Pressure ulcers are the best starting point: they're common, they're on relatively flat body surfaces (sacrum, heels), they have well-defined staging criteria, and there's strong clinical motivation for objective measurement (CMS quality reporting, litigation risk). Don't try to handle every wound type on day one.
 
-**The regulatory path is lighter than you'd expect.** Wound measurement tools are generally Class I or Class II medical devices (depending on claims). If you're measuring and documenting but not diagnosing or recommending treatment, the regulatory burden is manageable. The moment you add "this wound is not healing, consider X intervention," you're in a different regulatory category. TODO: Verify current FDA guidance on wound measurement software classification.
+**The regulatory path is lighter than you'd expect.** Wound measurement tools that only measure and document (without recommending treatment) are generally Class I or Class II medical devices under FDA guidance. The moment you add "this wound is not healing, consider X intervention," you're in a different regulatory category. Consult regulatory counsel for your specific claims and intended use.
 
 ---
 
@@ -471,6 +490,7 @@ Combine area measurements with tissue classification to suggest wound stage (for
 - Amazon S3 Encryption: https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingEncryption.html
 - Amazon DynamoDB Developer Guide: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/
 - AWS Lambda with API Gateway: https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway.html
+- Amazon SageMaker Model Registry: https://docs.aws.amazon.com/sagemaker/latest/dg/model-registry.html
 
 ### Compliance and Healthcare
 
@@ -482,8 +502,6 @@ Combine area measurements with tissue classification to suggest wound stage (for
 - Wound Measurement Best Practices (general clinical guidance on wound assessment methodology)
 - National Pressure Injury Advisory Panel (NPIAP) staging guidelines
 - CMS Quality Reporting requirements for pressure ulcer documentation
-
-TODO: Verify availability of specific AWS sample repos for medical image segmentation with SageMaker.
 
 ---
 
