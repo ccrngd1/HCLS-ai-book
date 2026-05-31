@@ -359,6 +359,12 @@ def interpret_segments(
         Each dict contains the label, centroid values in original units,
         member count, and percentage of population.
     """
+    # Guard: if you change N_CLUSTERS, update SEGMENT_LABELS to match.
+    assert N_CLUSTERS == len(SEGMENT_LABELS), (
+        f"N_CLUSTERS ({N_CLUSTERS}) must match SEGMENT_LABELS length "
+        f"({len(SEGMENT_LABELS)}). Update SEGMENT_LABELS if you change k."
+    )
+
     # Inverse-transform centroids back to original feature units.
     centroids_original = scaler.inverse_transform(centroids)
 
@@ -442,8 +448,9 @@ def store_results(
     # This is the "model card" for this segmentation run.
     output_key = f"{OUTPUT_PREFIX}{run_timestamp[:10]}/segment_profiles.json"
 
-    # Build a label lookup from cluster_id to segment_label.
+    # Build lookups from cluster_id to label and rank.
     cluster_to_label = {p["cluster_id"]: p["segment_label"] for p in profiles}
+    cluster_to_rank = {p["cluster_id"]: p["segment_rank"] for p in profiles}
 
     profile_document = {
         "run_timestamp": run_timestamp,
@@ -474,10 +481,7 @@ def store_results(
             batch.put_item(Item={
                 "member_id": row["member_id"],
                 "segment_label": cluster_to_label[cluster_id],
-                "segment_rank": next(
-                    p["segment_rank"] for p in profiles
-                    if p["cluster_id"] == cluster_id
-                ),
+                "segment_rank": cluster_to_rank[cluster_id],
                 "cluster_id": cluster_id,
                 "assigned_at": run_timestamp,
                 # Store key utilization metrics alongside the assignment
@@ -618,6 +622,8 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 **Error handling and retries.** Every AWS call here can fail. S3 writes can fail on network issues. DynamoDB batch writes can return unprocessed items if you hit throughput limits. A production system wraps all external calls in retry logic with exponential backoff, logs failures with enough context to debug, and has a dead-letter mechanism for members who couldn't be assigned.
 
+**DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace it with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
+
 **DynamoDB data types.** This example already wraps `total_allowed_12m` in `Decimal(str(value))` for DynamoDB. If you add any new float-valued field to the DynamoDB item, wrap it the same way. Plain Python floats will raise a `TypeError` from boto3 at write time.
 
 **Incremental updates.** This pipeline re-segments the entire population on every run. For 2 million members, that's fine (KMeans on 2M x 8 features takes seconds on a SageMaker Processing instance). But if you need real-time segment assignment for new members, you'd save the fitted KMeans model and scaler, then predict the segment for individual members as they enroll. Scikit-learn's `kmeans.predict()` does this in microseconds.
@@ -629,5 +635,7 @@ This example works: run it and you'll get interpretable utilization segments wit
 **Testing.** There are no tests here. A production pipeline has unit tests for feature engineering (does clipping work correctly at boundaries?), integration tests for the full pipeline with known synthetic data (do you get the expected number of clusters?), and regression tests that verify segment stability across code changes.
 
 ---
+
+<!-- TODO (TechWriter): Expert review ARCH-CRITICAL (CRITICAL). Main recipe file chapter06.02-utilization-pattern-segmentation.md does not exist. Write it following RECIPE-GUIDE.md structure. The Python companion is ready. Address SEC-1, SEC-2, SEC-3, ARCH-1, ARCH-2, NET-1, VOICE-1 findings in the main recipe (CMK guidance, access control, VPC callout, k-selection methodology, segment stability architecture, Gateway endpoint specification, 70/30 vendor balance). -->
 
 *Part of the Healthcare AI/ML Cookbook. See [Recipe 6.2: Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
