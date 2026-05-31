@@ -1,144 +1,143 @@
 # Chapter 8 Preface — Teaching Computers to Read Between the Lines
 
-Clinical text is a disaster. I mean that with deep affection and genuine respect for the people who write it, but let's be honest: clinical documentation was never designed to be read by machines. It was designed to be read by other clinicians who share a massive amount of implicit context. When a physician writes "pt c/o SOB x 3d, worse w/ exertion, no CP," another physician reads that and immediately understands the full clinical picture. A computer reads it and sees alphabet soup.
+Clinical text is where the real patient story lives. Not in the structured fields, not in the dropdown menus, not in the checkboxes that clinicians click through as fast as possible to get back to the patient. The real information, the nuance, the clinical reasoning, the "I'm worried about this but can't quite articulate why yet" signal, lives in free text. Progress notes. Discharge summaries. Radiology reports. Social work assessments. Nursing documentation.
 
-Here's what makes this chapter different from Chapter 2 (LLM / Generative AI): we're not throwing a giant language model at the problem and hoping it figures things out. We're building precise, targeted NLP pipelines that do specific jobs well. Classification. Extraction. Normalization. Assertion detection. Temporal reasoning. These are the workhorses of clinical NLP, and they've been quietly powering healthcare systems for years before anyone started talking about ChatGPT.
+And here's the problem: computers are terrible at reading it.
 
-That's not a knock on LLMs. They're genuinely transformative for certain problems (go read Chapter 2 if you haven't). But there's a whole class of NLP tasks where you need deterministic behavior, explainable outputs, low latency, and the ability to run on structured pipelines that you can validate component by component. When a coding system suggests an ICD-10 code, you need to know *why* it suggested that code. When an adverse event detector flags a safety signal, you need to trace exactly which text triggered it. "The model thought so" isn't an acceptable answer in clinical workflows.
+Not terrible in the "OCR can't recognize the characters" sense (we covered that in Chapter 1). Terrible in the "the words are all there but the meaning is buried under layers of clinical shorthand, implicit context, negation, hedging, and specialty-specific conventions" sense. A note that says "no evidence of malignancy" contains the word "malignancy" but means the opposite of what a naive keyword search would suggest. A note that says "patient's mother had breast cancer" mentions breast cancer but isn't about the patient. A note that says "r/o PE" is using an abbreviation that means "rule out pulmonary embolism" but could also mean "physical exam" or "pleural effusion" depending on context.
 
----
-
-## What "Non-LLM NLP" Actually Means
-
-Let me be precise about scope here, because the boundaries have gotten blurry.
-
-This chapter covers NLP techniques that are:
-
-- **Task-specific:** trained or configured for one job (classification, extraction, normalization)
-- **Architecturally transparent:** you can inspect the pipeline, understand each stage, and debug failures
-- **Deterministic or near-deterministic:** the same input produces the same output (or at least you can explain why it didn't)
-- **Deployable as components:** they slot into larger systems as discrete processing steps
-
-This includes classical approaches (rule-based systems, regex, dictionary lookup), statistical models (CRFs, SVMs, logistic regression), and smaller neural models (BiLSTM-CRF, CNN text classifiers, clinical BERT variants). What it excludes is general-purpose generative models that produce free-text output. The line isn't always clean (clinical BERT is technically a large language model), but the distinction is practical: are you generating text, or are you classifying, extracting, and structuring it?
+This is the domain of Natural Language Processing. And specifically, this chapter covers the NLP techniques that don't require large language models. The classical, well-understood, battle-tested approaches that have been processing clinical text for decades. The ones that run fast, cost little, and solve specific problems with surgical precision.
 
 ---
 
-## Why Clinical Text Is Its Own Beast
+## Why Non-LLM NLP Still Matters
 
-If you've worked with NLP in other domains (social media, customer reviews, news articles), clinical text will humble you quickly. It breaks assumptions that most NLP systems take for granted.
+You might be wondering: if we have GPT-4 and Claude and all these powerful generative models, why bother with "traditional" NLP? Fair question. Here's why this chapter exists.
 
-### Abbreviations and Shorthand
+**Speed and cost.** A regex-based negation detector processes a sentence in microseconds. A fine-tuned BERT classifier handles a clinical note in milliseconds. Running that same note through a large language model takes seconds and costs orders of magnitude more per inference. When you're processing millions of notes for a research cohort or running real-time classification on incoming triage text, that difference matters enormously.
 
-Clinical documentation is dense with abbreviations, and they're not standardized. "SOB" means shortness of breath, not what you're thinking. "CP" is chest pain. "Hx" is history. "Dx" is diagnosis. "Tx" is treatment. "Rx" is prescription. "Sx" is symptoms (or surgery, depending on context). "Pt" is patient. "Prn" is as needed. "Bid" is twice daily.
+**Determinism.** Traditional NLP pipelines produce the same output for the same input every time. No temperature settings, no stochastic variation, no "well, it usually gets this right." For clinical applications where you need reproducible, auditable results (think: quality measures, research cohorts, regulatory submissions), determinism isn't a nice-to-have. It's a requirement.
 
-And that's just the common ones. Every specialty has its own shorthand. Orthopedics uses "ORIF" (open reduction internal fixation). Cardiology uses "CABG" (coronary artery bypass graft, pronounced "cabbage" because medicine is delightful). Radiology uses "BIRADS" (breast imaging reporting and data system). A general-purpose NLP model trained on Wikipedia and news articles has never seen most of these.
+**Interpretability.** When a rule-based system flags a medication mention, you can trace exactly why. The pattern matched, the context window contained these tokens, the negation detector found no negating phrase within scope. Try explaining why a large language model extracted "metformin 500mg BID" from a note. You'll get a probability distribution and a shrug.
 
-### Negation Is Everywhere
+**Focused precision.** These techniques solve narrow, well-defined problems extremely well. You don't need a model that can write poetry and pass the bar exam to classify a chief complaint into one of 50 categories. You need a lightweight classifier trained on your historical data that runs in 2 milliseconds and gets it right 94% of the time.
 
-This is the single biggest trap in clinical NLP. Clinicians document what they *didn't* find as much as what they did. "No chest pain." "Denies shortness of breath." "No evidence of malignancy." "Patient does not have diabetes." "Ruled out PE."
+**Regulatory clarity.** The FDA has clear guidance on traditional ML/NLP systems used in clinical settings. The regulatory landscape for LLM-based clinical tools is still evolving. If you need something deployed and approved today, classical NLP has a much clearer path.
 
-If your NLP system extracts "chest pain" from "no chest pain" and marks it as present, you've just created a false positive that could trigger downstream alerts, incorrect risk scores, or wrong billing codes. Negation detection isn't optional in clinical NLP. It's table stakes.
-
-And it's harder than it sounds. "No chest pain" is easy. "The patient's chest pain has resolved" is trickier (it was present, now it's not). "Cannot rule out chest pain" is trickier still (it might be present). "Family history of chest pain" means someone else has it. Each of these requires different handling.
-
-### Context Windows Are Weird
-
-Clinical notes don't follow the paragraph structure of normal prose. They use section headers (History of Present Illness, Review of Systems, Assessment and Plan), bulleted lists, sentence fragments, and sometimes just isolated words or phrases. The "context" for understanding a mention might be a section header three lines above, not the immediately preceding sentence.
-
-A mention of "diabetes" in the "Past Medical History" section means something very different from "diabetes" in the "Family History" section or "diabetes" in the "Assessment" section. Your NLP system needs to understand document structure, not just sentence-level semantics.
-
-### Vocabulary Is Enormous and Evolving
-
-The UMLS (Unified Medical Language System) contains over 4 million concepts. SNOMED CT has over 350,000 active concepts. ICD-10-CM has roughly 70,000 codes. RxNorm has hundreds of thousands of drug entries. And new terms, drugs, and procedures appear constantly.
-
-No single model can memorize all of this. Practical clinical NLP systems combine learned representations with terminology services, dictionary lookups, and rule-based normalization. The model handles the fuzzy matching and context understanding; the terminology service handles the precise mapping to standard codes.
+None of this means LLMs aren't useful (Chapter 2 covers that extensively). It means the right tool depends on the job. And for many healthcare NLP tasks, the right tool is smaller, faster, cheaper, and more predictable than you might expect.
 
 ---
 
-## The Algorithmic Toolkit
+## The Core Techniques
 
-Clinical NLP draws from a surprisingly diverse set of techniques. Here's the landscape:
+Before we dive into recipes, let's establish the technical vocabulary. Clinical NLP draws from a toolkit that has been refined over decades.
 
-### Rule-Based and Dictionary Approaches
+### Tokenization and Sentence Splitting
 
-Don't dismiss these. For well-defined extraction tasks with constrained vocabularies, a carefully crafted set of rules and dictionaries can outperform ML models while being completely transparent and debuggable. Medication extraction, for example, often starts with a dictionary of known drug names plus pattern rules for dosage expressions. It's not glamorous, but it works, and when it breaks, you can see exactly why.
+Breaking text into meaningful units. Sounds trivial until you encounter clinical text: "pt c/o SOB x 3d, worse w/ exertion. Hx of CHF (EF 35% on last echo 2/2024)." Standard tokenizers trained on newspaper text choke on this. Clinical tokenizers need to handle abbreviations, slashes, measurements, dates in various formats, and the creative punctuation habits of physicians documenting under time pressure.
 
-### Conditional Random Fields (CRFs)
+### Named Entity Recognition (NER)
 
-The workhorse of sequence labeling in clinical NLP for over a decade. CRFs excel at tasks like named entity recognition (finding medication mentions, problem mentions, lab values in text) because they model the dependencies between adjacent labels. If the previous word was tagged as a drug name, the current word is more likely to be part of the same drug name or a dosage. CRFs are fast, well-understood, and produce interpretable feature weights.
+Identifying and classifying mentions of specific entity types in text: medications, diagnoses, procedures, anatomical locations, lab values. Clinical NER is harder than general-domain NER because the entities are dense (a single sentence might contain five medications), they overlap (is "left heart catheterization" one entity or two?), and they use domain-specific abbreviations that don't appear in general training corpora.
 
-### Clinical Word Embeddings
+### Negation Detection
 
-Word2Vec and GloVe trained on clinical corpora (MIMIC notes, PubMed abstracts) capture domain-specific semantic relationships that general-purpose embeddings miss entirely. In clinical embedding space, "metformin" is close to "diabetes" and "A1c," which is exactly what you want for downstream tasks. These embeddings serve as input features for classifiers, similarity computations, and clustering.
+Determining whether a clinical concept is affirmed or denied. "No fever" means fever is absent. "Denies chest pain" means chest pain is absent. "No history of diabetes" means diabetes is absent. This sounds simple, but negation scope is tricky: "No fever, chills, or night sweats" negates three things with one "no." And some constructions are genuinely ambiguous: "pain not well controlled" negates the control, not the pain.
 
-### Transformer-Based Clinical Models
+The classic algorithm here is NegEx (and its successor, ConText), which uses a set of trigger phrases and scope rules to determine negation status. It's been around since 2001, it's embarrassingly simple, and it works surprisingly well. Most production clinical NLP systems still use some variant of it.
 
-ClinicalBERT, BioBERT, PubMedBERT, and their descendants brought contextual embeddings to clinical NLP. Unlike static word embeddings, these models produce different representations for the same word depending on context. "Discharge" in "discharge from hospital" vs. "wound discharge" gets different vectors. These models are typically fine-tuned for specific downstream tasks (classification, NER, relation extraction) rather than used generatively.
+### Assertion Classification
 
-### Hybrid Pipelines
+A generalization of negation detection. Beyond present/absent, clinical mentions can be: possible ("concern for pneumonia"), conditional ("if symptoms worsen, consider CT"), historical ("prior MI in 2019"), hypothetical ("would recommend colonoscopy"), or attributed to someone else ("family history of colon cancer"). Getting this right is critical because the same entity mention means very different things depending on its assertion status.
 
-The most effective clinical NLP systems combine multiple approaches. A typical pipeline might use: dictionary lookup for initial entity detection, a CRF or transformer for boundary refinement, rule-based negation detection (NegEx or ConText algorithms), and a classifier for assertion status. Each component is independently testable and replaceable.
+### Relation Extraction
+
+Identifying relationships between entities. "Metformin 500mg twice daily for diabetes" contains a medication entity, a dose, a frequency, and a condition, and they're all related to each other. Relation extraction connects them. This is what turns a bag of extracted entities into structured, actionable information.
+
+### Text Classification
+
+Assigning categories to documents or text segments. Chief complaint classification, note type detection, sentiment analysis, urgency scoring. The workhorse of NLP. In healthcare, the interesting challenge is that your label taxonomy is often large (thousands of ICD-10 codes), hierarchical (codes have parent-child relationships), and the training data is noisy (historical coding decisions aren't always correct).
+
+### Normalization and Linking
+
+Mapping extracted mentions to standard terminologies. "Tylenol," "acetaminophen," "APAP," and "paracetamol" are all the same drug. Your system needs to know that. Normalization maps free-text mentions to canonical identifiers in standard vocabularies: RxNorm for medications, SNOMED CT for clinical concepts, ICD-10 for diagnoses, LOINC for lab tests.
 
 ---
 
-## The Classic Failure Modes
+## The Clinical NLP Pipeline
 
-Before we get into the recipes, here's where clinical NLP systems tend to break:
+Most clinical NLP systems follow a pipeline architecture. Text flows through a series of processing stages, each building on the output of the previous one:
 
-- **Negation misses:** The system extracts a condition but misses the negation cue. This is the most dangerous failure mode because it creates false positives in downstream systems.
-- **Boundary errors:** The system finds an entity but gets the boundaries wrong. "Metformin 500mg twice daily" might get extracted as just "Metformin" or incorrectly as "Metformin 500mg twice daily with food" (grabbing too much context).
-- **Normalization failures:** The system extracts "high blood sugar" but can't map it to the correct SNOMED or ICD-10 concept. Synonymy and paraphrasing make this a long-tail problem.
-- **Section confusion:** The system doesn't account for document structure, so a condition mentioned in "Family History" gets treated as a patient condition.
-- **Temporal confusion:** The system can't distinguish between current, historical, and hypothetical mentions. "History of MI" vs. "rule out MI" vs. "at risk for MI" all require different handling.
-- **Abbreviation ambiguity:** "MS" could be multiple sclerosis, mitral stenosis, morphine sulfate, or mental status. Context is the only disambiguator.
+1. **Pre-processing:** Section detection, sentence splitting, tokenization
+2. **Entity recognition:** Identifying mentions of clinical concepts
+3. **Attribute detection:** Negation, assertion, temporality, experiencer
+4. **Normalization:** Linking mentions to standard terminologies
+5. **Relation extraction:** Connecting entities to each other
+6. **Aggregation:** Combining document-level findings into patient-level summaries
 
-Every recipe in this chapter addresses one or more of these failure modes explicitly.
+The beauty of this pipeline approach is modularity. You can swap components independently. You can use a rule-based NER for medications and a machine-learned NER for diagnoses. You can upgrade your negation detector without touching your entity recognizer. Each component has a well-defined interface and can be evaluated independently.
+
+The downside is error propagation. If your tokenizer splits "500mg" into "500" and "mg" as separate tokens, your NER might miss the dose. If your NER misses an entity, your negation detector never gets a chance to classify it. Pipeline errors compound. This is why evaluation at each stage matters, and why end-to-end metrics (did we get the final answer right?) don't tell the whole story.
+
+---
+
+## The Healthcare-Specific Challenges
+
+Clinical NLP isn't just "regular NLP but on medical text." The domain has properties that make it genuinely different from processing news articles or social media posts.
+
+### Abbreviation Density
+
+Clinical text is approximately 30% abbreviations by token count. And unlike general English abbreviations, clinical abbreviations are wildly ambiguous. "MS" could mean multiple sclerosis, mitral stenosis, morphine sulfate, mental status, or musculoskeletal. "PT" could mean patient, physical therapy, prothrombin time, or part-time. Context is everything, and the context is often other abbreviations.
+
+### Implicit Information
+
+Clinicians write for other clinicians. They assume shared knowledge. "Unremarkable" in a physical exam means everything is normal, but the specific things that are normal depend on what section you're in. "Lungs: CTA bilaterally" means "clear to auscultation bilaterally," which means no abnormal breath sounds were heard. None of that is stated explicitly. Your NLP system needs to understand what's implied by what's not said.
+
+### Section Structure
+
+Clinical notes have sections (History of Present Illness, Past Medical History, Family History, Assessment and Plan), and the same words mean different things in different sections. "Diabetes" in the Past Medical History section means the patient has diabetes. "Diabetes" in the Family History section means a relative has it. "Diabetes" in the Assessment section might be a new diagnosis being considered. Section detection is a prerequisite for accurate extraction.
+
+### Temporal Complexity
+
+Clinical events happen in time, but clinical documentation rarely uses explicit timestamps. Instead, you get relative temporal expressions: "postoperatively," "prior to admission," "since last visit," "childhood onset." Resolving these to actual time relationships requires understanding the clinical narrative structure and the implicit timeline of a patient encounter.
+
+### Annotation Scarcity
+
+Training supervised NLP models requires annotated data: text where a human expert has marked the entities, their types, their assertion status, and their relationships. Clinical annotation is expensive (you need clinicians, not crowdworkers), slow (complex guidelines, high disagreement rates), and limited by privacy constraints (annotators need IRB approval and HIPAA training to see real notes). This scarcity of gold-standard training data is a persistent bottleneck.
 
 ---
 
 ## How the Recipes Progress
 
-The ten recipes in this chapter are ordered from simple, well-bounded problems to complex, multi-step reasoning tasks. Here's the progression:
+This chapter moves from simple, well-solved problems to genuinely hard open research questions.
 
-**Recipes 8.1-8.2 (Simple):** Single-task classification problems with short inputs and finite output spaces. Chief complaint classification takes a sentence and assigns a category. Sentiment analysis takes patient feedback and scores it. These are great starting points because the problem is well-defined, training data is relatively easy to obtain, and errors are low-risk.
+**Recipes 8.1-8.2** start with text classification tasks: short inputs, finite label sets, abundant training data. Chief complaint classification and sentiment analysis are problems where off-the-shelf approaches work well and the risk of errors is manageable. These are your quick wins.
 
-**Recipes 8.3-8.5 (Simple to Medium):** Extraction and normalization tasks. ICD-10 suggestion, medication extraction, and problem list extraction all require finding entities in text and mapping them to standard terminologies. The complexity increases with vocabulary size, the need for negation handling, and the precision requirements of downstream consumers.
+**Recipes 8.3-8.5** move into entity extraction and normalization. ICD-10 code suggestion, medication extraction, and problem list extraction require understanding clinical vocabulary, handling abbreviations, and mapping to standard terminologies. The label space gets larger, negation starts mattering, and you need domain-specific resources (drug dictionaries, code hierarchies).
 
-**Recipes 8.6-8.7 (Medium to Complex):** Domain-specific extraction with sparse signals. Social determinants of health and adverse event detection both require finding information that's mentioned inconsistently, documented implicitly, and requires contextual interpretation. These push beyond simple pattern matching into genuine language understanding.
+**Recipes 8.6-8.7** tackle extraction problems where the signal is sparse and the language is inconsistent. Social determinants of health and adverse events aren't documented in predictable patterns. They require more sophisticated context understanding and tolerance for incomplete information.
 
-**Recipes 8.8-8.10 (Complex):** Multi-step reasoning tasks. Clinical assertion classification, temporal relationship extraction, and phenotype extraction all require the system to understand not just *what* is mentioned but *how* it's mentioned: is it present or absent? When did it happen relative to other events? Does this patient meet a complex multi-criteria definition? These are the frontier of clinical NLP, where even state-of-the-art systems struggle.
+**Recipes 8.8-8.10** are the complex end of the spectrum. Assertion classification, temporal reasoning, and phenotype extraction require multi-sentence reasoning, deep domain knowledge, and careful evaluation methodology. These are problems where the state of the art is still actively improving, and where the gap between research performance and production reliability is widest.
 
----
-
-## A Note on Evaluation
-
-One thing that makes clinical NLP uniquely challenging is evaluation. You can't just throw a test set at your model and report an F1 score (well, you can, but it won't tell you what you need to know). Clinical NLP evaluation requires:
-
-- **Domain expert annotators:** Only clinicians can reliably annotate clinical text. Inter-annotator agreement is often surprisingly low, which tells you something about the inherent ambiguity of the task.
-- **Error analysis by category:** A 90% F1 score might mean you're perfect on common cases and terrible on rare-but-important ones. Break down performance by entity type, assertion status, and document section.
-- **Downstream impact assessment:** A false positive in a coding suggestion system wastes a coder's time. A false positive in a safety surveillance system triggers an unnecessary investigation. A false negative in either might miss revenue or miss a safety signal. The cost of errors is asymmetric and use-case-dependent.
-
-Several recipes include guidance on building evaluation frameworks appropriate to their specific task.
+Each recipe builds on concepts introduced in earlier ones. Negation detection (introduced conceptually in 8.3) becomes the focus of 8.8. Entity extraction (the core of 8.4 and 8.5) feeds into the relation extraction needed for 8.9. The pipeline architecture described above is the thread connecting all ten recipes.
 
 ---
 
-## The Relationship to Chapter 2
+## A Note on Tooling
 
-You might be wondering: if LLMs can do NLP tasks, why do we need this chapter at all?
+The clinical NLP ecosystem has some excellent open-source foundations. Apache cTAKES, spaCy with clinical extensions (medspaCy, scispaCy), and the NLTK remain workhorses for many production systems. On the commercial side, cloud NLP services offer pre-trained clinical models that handle the common extraction tasks without requiring you to train from scratch.
 
-Fair question. Here's the practical answer: LLMs are excellent at tasks that benefit from broad world knowledge, flexible reasoning, and natural language generation. They're less ideal when you need:
-
-- **Consistent, reproducible outputs** (the same input should always produce the same extraction)
-- **Explainable decisions** (why did you tag this as an adverse event?)
-- **Low latency at high volume** (processing millions of notes per day)
-- **Fine-grained control** (I want to adjust the sensitivity of negation detection without retraining the whole model)
-- **Regulatory defensibility** (show me exactly how this system arrived at this coding suggestion)
-
-In practice, many production clinical NLP systems use a hybrid approach: targeted models for the core extraction and classification tasks, with LLMs available for edge cases, disambiguation, or summarization of extracted information. The recipes in this chapter give you the targeted components. Chapter 2 gives you the generative layer. Together, they're more powerful than either alone.
+We'll reference these throughout the chapter, but remember: the recipes focus on architecture patterns and the "why" behind design decisions. The specific library or service you choose matters less than understanding what each pipeline stage needs to accomplish and how to evaluate whether it's working.
 
 ---
 
-Let's start extracting meaning from clinical text. Recipe 8.1 begins with the simplest possible NLP task in healthcare: taking a short free-text chief complaint and assigning it to a category.
+## The Elephant in the Room
+
+Yes, large language models can do many of these tasks. Sometimes better, sometimes not. The honest answer is that the boundary between "traditional NLP" and "LLM-based NLP" is getting blurry. Fine-tuned BERT models (which are technically language models, just smaller ones) have become the default approach for many clinical NLP tasks. The distinction this chapter draws is practical rather than theoretical: we're covering approaches that are fast, cheap, deterministic, and deployable today without requiring GPU clusters or per-token API costs at inference time.
+
+If you find yourself thinking "couldn't I just prompt GPT-4 to do this?" while reading a recipe, the answer is often "yes, but at 100x the cost, 1000x the latency, and with non-deterministic outputs that are harder to validate." For some use cases, that tradeoff is fine. For high-volume, real-time, or research-grade applications, the techniques in this chapter remain the right choice.
+
+Let's start with the simplest pattern: classifying short text into categories.
 
 ---
 
@@ -146,7 +145,7 @@ Let's start extracting meaning from clinical text. Recipe 8.1 begins with the si
 
 ## Further Reading
 
-- [Clinical Natural Language Processing for Predicting Hospital Readmission](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6857509/) — overview of clinical NLP approaches and their application to a common healthcare prediction task
-- [NegEx: A Simple Algorithm for Identifying Negated Findings](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2442012/) — the foundational negation detection algorithm referenced throughout this chapter
-- [UMLS (Unified Medical Language System)](https://www.nlm.nih.gov/research/umls/index.html) — the terminology backbone that clinical NLP systems normalize against
-- [ClinicalBERT: Modeling Clinical Notes and Predicting Hospital Readmission](https://arxiv.org/abs/1904.05342) — the clinical domain adaptation of BERT referenced in several recipes
+- [Clinical Natural Language Processing in Languages Other Than English: Opportunities and Challenges](https://doi.org/10.1016/j.jbi.2019.103132) — a good overview of the state of clinical NLP
+- [NegEx: A Simple Algorithm for Identifying Negated Findings](https://doi.org/10.1197/jamia.M1552) — the foundational negation detection algorithm referenced throughout this chapter
+- [Apache cTAKES](https://ctakes.apache.org/) — the open-source clinical NLP pipeline that pioneered many of the patterns described here
+- [spaCy](https://spacy.io/) and [medspaCy](https://github.com/medspacy/medspacy) — modern Python NLP libraries with clinical extensions
