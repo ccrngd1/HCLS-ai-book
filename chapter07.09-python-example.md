@@ -98,6 +98,10 @@ SOFA_LIVER_THRESHOLDS = [
     (1.2, 0), (2.0, 1), (6.0, 2), (12.0, 3), (float("inf"), 4)
 ]  # Bilirubin (mg/dL) -> SOFA points
 
+SOFA_RENAL_THRESHOLDS = [
+    (1.2, 0), (2.0, 1), (3.5, 2), (5.0, 3), (float("inf"), 4)
+]  # Creatinine (mg/dL) -> SOFA points
+
 # Model configuration
 MODEL_ENDPOINT_NAME = "icu-mortality-model-v2"
 DYNAMODB_TABLE_NAME = "icu-mortality-predictions"
@@ -263,6 +267,16 @@ def compute_sofa_liver(bilirubin: float) -> int:
     return 4
 
 
+def compute_sofa_renal(creatinine: float) -> int:
+    """Compute SOFA renal component from creatinine."""
+    if creatinine is None or np.isnan(creatinine):
+        return 0
+    for threshold, score in SOFA_RENAL_THRESHOLDS:
+        if creatinine < threshold:
+            return score
+    return 4
+
+
 def compute_sofa_cardiovascular(mean_map: float, norepi_dose: float) -> int:
     """
     Compute SOFA cardiovascular component.
@@ -315,6 +329,9 @@ def engineer_features(raw_data: dict) -> dict:
     # --- Vital sign summaries (last 6 hours) ---
     # In a real system, you'd filter by timestamp. Here we take the last 24 readings
     # (6 hours * 4 readings/hour) as our 6-hour window.
+    # Note: the loop below generates all summary stats for each vital, but only
+    # features listed in FEATURE_SCHEMA are used by the model. Extra features are
+    # silently ignored when building the feature vector in score_patient().
     window_6h = 24  # last 24 readings = 6 hours at 15-min intervals
 
     for vital_name in ["heart_rate", "sbp", "map", "resp_rate", "spo2", "temp"]:
@@ -325,10 +342,8 @@ def engineer_features(raw_data: dict) -> dict:
         if vital_name in ("heart_rate", "sbp"):
             features[f"{vital_name}_std_6h"] = float(np.nanstd(values))
 
-    # DBP summary (only need min/max/mean for MAP calculation verification)
+    # DBP summary (needed for derived calculations)
     dbp_6h = np.array(vitals["dbp"][-window_6h:])
-    features["map_min_6h"] = float(np.nanmin(vitals["map"][-window_6h:]))
-    features["map_max_6h"] = float(np.nanmax(vitals["map"][-window_6h:]))
 
     # --- Vital sign trends (24-hour window) ---
     window_24h = 96  # 24 hours * 4 readings/hour
@@ -386,8 +401,8 @@ def engineer_features(raw_data: dict) -> dict:
     )
     # GCS not available in synthetic data; default to 0 (normal)
     features["sofa_cns"] = 0
-    # Urine output not modeled; default to 0 (normal)
-    features["sofa_renal"] = compute_sofa_liver(features.get("creatinine_latest"))  # simplified
+    # Urine output not modeled; default renal scoring to creatinine only
+    features["sofa_renal"] = compute_sofa_renal(features.get("creatinine_latest"))
 
     features["sofa_total"] = (
         features["sofa_respiratory"] + features["sofa_coagulation"] +
@@ -494,7 +509,6 @@ def train_mortality_model(X: pd.DataFrame, y: np.ndarray) -> tuple:
         min_child_weight=10,  # conservative to avoid overfitting on small groups
         reg_alpha=0.1,
         reg_lambda=1.0,
-        use_label_encoder=False,
         eval_metric="logloss",
         random_state=42,
     )
@@ -510,7 +524,9 @@ def train_mortality_model(X: pd.DataFrame, y: np.ndarray) -> tuple:
     # Calibrate using isotonic regression on the test set.
     # This makes the predicted probabilities honest: if the model says 30%,
     # approximately 30% of those patients should actually die.
-    # In production, calibration is done on a held-out local dataset, not the test set.
+    # In production, calibration is a separate step that loads hospital-specific
+    # parameters from DynamoDB (see main recipe Step 4). Here we combine it
+    # with training for simplicity.
     calibrated_model = CalibratedClassifierCV(
         raw_model, method="isotonic", cv="prefit"
     )
@@ -558,8 +574,10 @@ def score_patient(features: dict, raw_model, calibrated_model) -> dict:
     explainer = shap.TreeExplainer(raw_model)
     shap_values = explainer.shap_values(feature_df)
 
-    # Get the top 5 contributing features by absolute SHAP value
-    shap_array = shap_values[0]  # single patient
+    # Get the top 5 contributing features by absolute SHAP value.
+    # shap_values has shape (1, n_features) for our single-row input;
+    # index [0] gets that row's SHAP values across all features.
+    shap_array = shap_values[0]
     feature_importance = list(zip(FEATURE_SCHEMA, shap_array, feature_vector[0]))
     feature_importance.sort(key=lambda x: abs(x[1]), reverse=True)
 
@@ -575,9 +593,10 @@ def score_patient(features: dict, raw_model, calibrated_model) -> dict:
             "plain_text": plain_text,
         })
 
-    # Confidence interval (Wilson score interval approximation)
-    # In production this uses the calibration sample size for tighter bounds.
-    # Here we use a rough estimate based on model uncertainty.
+    # Confidence interval (Wald interval approximation).
+    # In production, use the Wilson score interval or Bayesian calibration
+    # for better coverage at extreme probabilities (near 0 or 1).
+    # Here we use the simpler Wald interval for demonstration.
     n_cal = 500  # approximate calibration sample size
     ci_width = 1.96 * np.sqrt(calibrated_prob * (1 - calibrated_prob) / n_cal)
     ci_lower = max(0.0, calibrated_prob - ci_width)
@@ -634,6 +653,17 @@ def _explain_feature(feature_name: str, value: float, shap_val: float) -> str:
 from decimal import Decimal
 
 
+def _convert_floats_to_decimal(obj):
+    """Recursively convert float values to Decimal for DynamoDB compatibility."""
+    if isinstance(obj, float):
+        return Decimal(str(round(obj, 6)))
+    elif isinstance(obj, dict):
+        return {k: _convert_floats_to_decimal(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_floats_to_decimal(i) for i in obj]
+    return obj
+
+
 def build_prediction_record(patient_id: str, admission_id: str,
                             score_result: dict, features: dict) -> dict:
     """
@@ -659,7 +689,7 @@ def build_prediction_record(patient_id: str, admission_id: str,
         "confidence_interval_upper": Decimal(str(score_result["confidence_interval"][1])),
 
         # Explainability
-        "top_contributors": score_result["top_contributors"],
+        "top_contributors": _convert_floats_to_decimal(score_result["top_contributors"]),
 
         # Context
         "hours_since_admission": Decimal(str(features.get("hours_in_icu", 0))),
@@ -684,8 +714,8 @@ def store_prediction_dynamodb(record: dict) -> None:
     - TTL on a retention_expiry field (for data lifecycle management)
     """
     # DynamoDB requires Decimal for numeric types, not float.
-    # The build_prediction_record function already handles this for top-level fields.
-    # For nested structures (top_contributors), we'd need to recursively convert.
+    # The build_prediction_record function handles this for all fields,
+    # including nested structures (top_contributors), using _convert_floats_to_decimal.
     # Skipping the actual write here since this is a local demo.
 
     # In production:
@@ -874,7 +904,7 @@ This example demonstrates the architecture and code patterns. It trains a model,
 
 **HealthLake integration.** Step 1 here generates fake data. In production, you query Amazon HealthLake via FHIR APIs to get real-time vital signs, labs, and medications. The FHIR query patterns are well-documented, but handling the data quality issues (missing timestamps, duplicate observations, coding inconsistencies) is a project in itself.
 
-**SageMaker deployment.** The model here lives in memory. In production, it's deployed to a SageMaker real-time endpoint (ml.m5.large is sufficient for XGBoost inference). You'd use SageMaker Model Registry for versioning, SageMaker Pipelines for automated retraining, and SageMaker Model Monitor for drift detection.
+**SageMaker deployment.** The model here lives in memory. In production, it's deployed to a SageMaker real-time endpoint (ml.m5.large is sufficient for XGBoost inference). You'd use SageMaker Model Registry for versioning, SageMaker Pipelines for automated retraining, and SageMaker Model Monitor for drift detection. Configure the endpoint to return both predictions and SHAP values in a single call to reduce latency.
 
 **Local calibration.** The calibration here uses the test set (which is cheating, statistically). Production calibration uses a held-out dataset of recent local outcomes, refreshed monthly. The isotonic regression calibrator is stored in DynamoDB (or S3) and loaded at inference time. Different hospitals get different calibration functions.
 

@@ -123,13 +123,17 @@ Subgroup calibration analysis is mandatory before deployment. Not just overall A
 
 **Amazon HealthLake for FHIR-based clinical data.** HealthLake is a HIPAA-eligible, FHIR-native data store that can ingest clinical data from EHR systems. It handles the messy reality of healthcare data: different coding systems, varying data formats, and the need for a longitudinal patient view. For mortality prediction, you need a patient's full ICU trajectory in one queryable place.
 
-**AWS Lambda for feature engineering orchestration.** The feature engineering pipeline (temporal aggregations, derived features, missing value imputation) runs on each prediction request or on a schedule. Lambda handles the stateless, event-driven nature of this work: a new lab result arrives, trigger a feature refresh, score the patient.
+**AWS Lambda for feature engineering orchestration.** The feature engineering pipeline (temporal aggregations, derived features, missing value imputation) runs on each prediction request or on a schedule. Lambda handles the stateless, event-driven nature of this work: a new lab result arrives, trigger a feature refresh, score the patient. For patients with ICU stays exceeding 7-10 days, the volume of vital sign data may approach Lambda's 15-minute timeout. In those cases, pre-aggregate vital signs into hourly summaries in a separate pipeline (AWS Glue or SageMaker Processing), or allocate maximum Lambda memory (10 GB) to maximize compute throughput. Include a timeout fallback that serves the most recent successful prediction rather than failing silently.
+
+<!-- TODO (TechWriter): Expert review A-1 (HIGH). Consider adding a dedicated paragraph or callout box about the Lambda timeout edge case for long-stay patients, with concrete guidance on the pre-aggregation pipeline pattern. -->
 
 **Amazon DynamoDB for prediction storage and serving.** Predictions need to be stored durably (for audit and outcome tracking) and served with low latency to clinical displays. DynamoDB's single-digit-millisecond reads and write-once-read-many access pattern fit perfectly.
 
-**Amazon EventBridge for orchestration.** The pipeline has multiple triggers: new data arrives, scheduled rescoring, model retraining events, drift alerts. EventBridge provides the event routing without custom integration code.
+**Amazon EventBridge for orchestration.** The pipeline has multiple triggers: new data arrives, scheduled rescoring, model retraining events, drift alerts. EventBridge provides the event routing without custom integration code. In production, supplement the 4-hour schedule with event-triggered rescoring for high-acuity changes (new vasopressor started, intubation, cardiac arrest code). EventBridge rules can match specific HL7 ADT event types to trigger immediate rescoring. See Variations for implementation details.
 
 **Amazon CloudWatch for model monitoring.** Custom metrics for prediction distribution, calibration drift, and feature drift. Alarms when the model's behavior changes in ways that suggest degradation.
+
+**Note on the calibration step:** The architecture diagram shows calibration as a separate Lambda for conceptual clarity. In production, combine feature engineering, SageMaker invocation, and calibration into a single Lambda function to reduce latency and eliminate partial-failure states. The calibration parameters (loaded from DynamoDB) can be cached in Lambda memory across invocations since they change only monthly.
 
 ### Architecture Diagram
 
@@ -147,6 +151,9 @@ flowchart TD
     F -->|Outcome Data| I[SageMaker\nModel Monitor]
     I -->|Drift Alert| J[CloudWatch Alarm]
     I -->|Retrain Trigger| K[SageMaker Pipeline\nRetraining]
+    
+    C -->|On Failure| L[SQS Dead Letter Queue]
+    L -->|DLQ Depth > 0| J
 
     style B fill:#f9f,stroke:#333
     style D fill:#ff9,stroke:#333
@@ -157,12 +164,14 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon API Gateway, Amazon CloudWatch, AWS KMS |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `healthlake:SearchWithGet`, `healthlake:ReadResource`, `dynamodb:PutItem`, `dynamodb:GetItem`, `lambda:InvokeFunction`, `events:PutEvents`, `cloudwatch:PutMetricData` |
-| **BAA** | AWS BAA signed (required: ICU clinical data is PHI) |
+| **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon API Gateway, Amazon CloudWatch, AWS KMS, Amazon SQS (DLQ) |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint` (scoped to `arn:aws:sagemaker:*:*:endpoint/icu-mortality-*`), `healthlake:SearchWithGet` and `healthlake:ReadResource` (scoped to specific data store ARN), `dynamodb:PutItem` and `dynamodb:GetItem` (scoped to `arn:aws:dynamodb:*:*:table/icu-mortality-*`), `lambda:InvokeFunction`, `events:PutEvents`, `cloudwatch:PutMetricData`. Scope all permissions to specific resource ARNs in production. |
+| **BAA** | AWS BAA signed (required: ICU clinical data is PHI). Verify all services against the [AWS HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) before processing PHI. |
 | **Encryption** | HealthLake: encrypted at rest (default); DynamoDB: SSE-KMS; SageMaker: KMS for model artifacts and endpoint data; S3 training data: SSE-KMS; all API calls over TLS |
-| **VPC** | Production: SageMaker endpoint in VPC, Lambda in VPC with VPC endpoints for HealthLake, DynamoDB, SageMaker Runtime, and CloudWatch Logs. Network isolation for the inference path. |
+| **VPC** | Production: SageMaker endpoint in VPC, Lambda in VPC with VPC endpoints for: SageMaker Runtime (Interface), HealthLake (Interface), DynamoDB (Gateway), CloudWatch Logs (Interface), STS (Interface), KMS (Interface). Add S3 (Gateway) if calibration parameters are loaded from S3. STS endpoint is required for Lambda execution role assumption. Security groups: Lambda SG allows outbound 443 to SageMaker endpoint SG and VPC endpoint SGs only. SageMaker endpoint SG allows inbound 443 from Lambda SG only. No internet egress from the inference path. |
+| **API Gateway** | Configure as a Private API (accessible only within the VPC) or as a Regional API with mutual TLS and IAM authorization. The clinical dashboard connects via the hospital's VPN or AWS Direct Connect. Do not expose mortality predictions via a public API endpoint. The API layer must verify that the requesting clinician has an active care relationship with the patient before returning prediction data. |
 | **CloudTrail** | Enabled: log all SageMaker inference calls, HealthLake queries, and DynamoDB writes for HIPAA audit trail |
+| **Error Handling** | Configure an SQS dead letter queue on the Lambda function. Failed prediction attempts route to the DLQ for retry and alerting. Add a CloudWatch alarm on DLQ message count > 0. The clinical dashboard should display the prediction timestamp prominently so clinicians can identify stale predictions. Consider a "prediction freshness" indicator that turns yellow after 6 hours and red after 8 hours without a successful update. |
 | **Training Data** | Historical ICU admissions with outcomes. Minimum 5,000-10,000 admissions for reasonable model performance. MIMIC-IV (publicly available, de-identified) for development; local EHR data for production calibration. |
 | **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.134/hour (~$97/month). Per-prediction cost negligible. HealthLake: $0.60/10K FHIR reads. DynamoDB: on-demand pricing, negligible at ICU volumes. |
 
@@ -172,10 +181,11 @@ flowchart TD
 |------------|------|
 | **Amazon SageMaker** | Model training, hosting, monitoring, and retraining pipeline |
 | **Amazon HealthLake** | FHIR-native clinical data store for longitudinal patient data |
-| **AWS Lambda** | Feature engineering and calibration logic |
+| **AWS Lambda** | Feature engineering, model invocation, and calibration (combined in production) |
 | **Amazon DynamoDB** | Prediction storage, outcome tracking, audit trail |
+| **Amazon SQS** | Dead letter queue for failed prediction attempts |
 | **Amazon EventBridge** | Scheduled rescoring and event-driven orchestration |
-| **Amazon API Gateway** | REST API for clinical dashboard integration |
+| **Amazon API Gateway** | Private REST API for clinical dashboard integration |
 | **Amazon CloudWatch** | Model performance metrics, drift detection alarms |
 | **AWS KMS** | Encryption key management for all data at rest |
 
@@ -326,7 +336,7 @@ FUNCTION engineer_features(raw_data):
     RETURN features
 ```
 
-**Step 3: Score with the mortality model.** The engineered feature vector is sent to the SageMaker endpoint hosting the trained model. The model returns a raw probability score. For gradient boosted trees, this is the output of the sigmoid function applied to the sum of tree predictions. The raw score reflects the training population's mortality rate, which may not match your hospital's population. That's why we don't use this score directly. It goes through calibration in the next step. Skip this step and you have features with no prediction. Use the raw score without calibration and you have a prediction that's relatively correct (ranks patients properly) but absolutely wrong (the probabilities don't mean what they say).
+**Step 3: Score with the mortality model.** The engineered feature vector is sent to the SageMaker endpoint hosting the trained model. The model returns a raw probability score along with SHAP explanations for the prediction. For gradient boosted trees, the raw score is the output of the sigmoid function applied to the sum of tree predictions. The raw score reflects the training population's mortality rate, which may not match your hospital's population. That's why we don't use this score directly. It goes through calibration in the next step. Use the raw score without calibration and you have a prediction that's relatively correct (ranks patients properly) but absolutely wrong (the probabilities don't mean what they say).
 
 ```
 FUNCTION score_patient(features):
@@ -341,25 +351,22 @@ FUNCTION score_patient(features):
             replace with NaN  // XGBoost's native missing value handling
     
     // Call the SageMaker real-time inference endpoint.
-    // This returns a raw probability from the model's training distribution.
+    // Production: use a single endpoint call that returns score + explanations
+    // to reduce latency and attack surface. Most XGBoost serving containers
+    // support returning both predictions and SHAP values in one response.
     response = call SageMaker.InvokeEndpoint with:
-        endpoint_name = "icu-mortality-model-v2"
-        content_type = "text/csv"
-        body = feature_vector as CSV row
-    
-    raw_score = parse float from response.Body
-    
-    // Also extract feature importance for this specific prediction (SHAP values).
-    // These explain WHY this patient scored high or low.
-    // Critical for clinician trust: "the model says 65% because of rising lactate,
-    // worsening P/F ratio, and increasing vasopressor requirements."
-    shap_response = call SageMaker.InvokeEndpoint with:
         endpoint_name = "icu-mortality-model-v2"
         content_type = "text/csv"
         body = feature_vector as CSV row
         custom_attributes = "explain=true"
     
-    shap_values = parse SHAP values from shap_response
+    raw_score = parse float from response.Body
+    
+    // Extract feature importance for this specific prediction (SHAP values).
+    // These explain WHY this patient scored high or low.
+    // Critical for clinician trust: "the model says 65% because of rising lactate,
+    // worsening P/F ratio, and increasing vasopressor requirements."
+    shap_values = parse SHAP values from response
     top_contributors = select top 5 features by absolute SHAP value
     
     RETURN {
@@ -385,7 +392,10 @@ FUNCTION calibrate_score(raw_score, hospital_id):
     // Compute confidence interval using the calibration uncertainty.
     // A score based on 10,000 local outcomes has tighter bounds than one based on 500.
     n_calibration_samples = calibration_params.sample_size
-    // Wilson score interval for binomial proportion
+    // Wilson score interval for binomial proportion.
+    // This approximates calibration uncertainty. For more rigorous uncertainty
+    // quantification, consider Bayesian calibration (beta-binomial posterior)
+    // or conformal prediction intervals.
     ci_lower, ci_upper = wilson_confidence_interval(
         calibrated_score, n_calibration_samples, confidence=0.95)
     
@@ -529,7 +539,7 @@ FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_out
 - Patients transferred from other ICUs (missing early trajectory data)
 - Populations with significant demographic shift from training data
 - Cases where withdrawal of life-sustaining treatment is the proximate cause of death (self-fulfilling prophecy)
-- Rapidly changing clinical status where 4-hour rescoring misses the inflection point
+- Rapidly changing clinical status where 4-hour rescoring misses the inflection point (mitigated by event-triggered rescoring)
 
 ---
 
