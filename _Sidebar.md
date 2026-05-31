@@ -146,6 +146,8 @@
   * [Python Example](chapter06.01-python-example)
 * [6.2 — Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation)
   * [Python Example](chapter06.02-python-example)
+* [6.3 — Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering)
+  * [Python Example](chapter06.03-python-example)
 
 ---
 
