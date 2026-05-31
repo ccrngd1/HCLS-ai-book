@@ -527,7 +527,9 @@ def generate_summary(
     # languages, the safer path is to generate in English and post-process
     # through Amazon Translate. The boundary is fuzzy and should be
     # validated per language with native speakers.
-    language_instruction = {
+    # TODO (TechWriter): Code review Finding 1 (ERROR). The es/zh/vi strings below
+    # are double-encoded UTF-8 mojibake. Replace with correct UTF-8 characters.
+    # Spanish should read "español", not "espaÃ±ol". Save file as UTF-8 no BOM.    language_instruction = {
         "en": "Write the entire summary in English.",
         "es": "Escribe todo el resumen en espaÃ±ol. Usa un tono natural y respetuoso.",
         "zh": "ç”¨ä¸­æ–‡ç®€ä½“å†™æ•´ä¸ªæ‘˜è¦ã€‚è¯­æ°”è‡ªç„¶ã€å°Šé‡æ‚£è€…ã€‚",
@@ -1128,6 +1130,11 @@ def generate_after_visit_summary(
     # Step 7
     # Require clinician review for high-risk visits, validation flags,
     # or readability-loop failures.
+    # TODO (TechWriter): Code review Finding 3 (WARNING). This check does not
+    # catch REQUIRES_REGENERATION status. If all attempts fail validation, the
+    # summary is auto-delivered to non-high-risk patients. Add
+    # validation["status"] == "REQUIRES_REGENERATION" and readability is None
+    # to the requires_review condition.
     requires_review = (
         visit_type in HIGH_RISK_VISIT_TYPES
         or (validation and validation["status"] == "NEEDS_CLINICIAN_REVIEW")
@@ -1296,6 +1303,11 @@ Run this end-to-end against a synthetic encounter and you'll see the full patter
 
 **Model-ID lifecycle.** The model IDs in this example will be replaced over time as newer model versions launch. A production pipeline stores model IDs in configuration (SSM Parameter Store or AppConfig), not in code. When you update to a new model version, you rerun your regression suite before flipping the production config. Skipping this is how teams end up discovering at 2 AM that the new model version ignores a critical section of their prompt.
 
+<!-- TODO (TechWriter): Code review Finding 2 (WARNING). The paragraph below
+     claims validation_rate is stored to DynamoDB with Decimal wrapping, but the
+     example code never writes validation_rate to DynamoDB. Either update the prose
+     to say "if you extend the code to persist validation_rate, wrap it with
+     Decimal(str(round(...)))" or add the DynamoDB write to Step 7. -->
 **DynamoDB Decimal gotcha.** The validation_rate in Step 5 gets stored as a Decimal when written to DynamoDB, because DynamoDB doesn't accept Python floats. The example code handles this correctly (`Decimal(str(round(validation_rate, 4)))`), but it's a common trap on the first deployment. Always wrap floats with `Decimal(str(...))` when writing to DynamoDB; going through `str` avoids the binary-precision issues of `Decimal(float_value)`.
 
 **Observability and SLOs.** The target for AVS delivery is typically "before the patient leaves the parking lot," which means roughly 2-5 minutes from note signature to portal publication. Set CloudWatch SLOs for end-to-end latency at the 95th percentile, regeneration-rate SLO for prompt drift, validation-pass-rate SLO for generation quality, and delivery-success-rate SLO per channel. Alert when any of these drift. Without these, you'll discover problems from patient complaints instead of from dashboards.

@@ -1,4 +1,13 @@
 <!--
+TechEditor pass (v11) - 2026-05-31
+
+No file content changes. Editorial checklist confirmed passing (em dashes=0,
+header hierarchy intact, code fences labeled, voice clean, RECIPE-GUIDE
+compliant, vendor balance ~70/30). All 25 TODO markers preserved for
+TechWriter. File is editorially converged; next action is TechWriter
+resolution of flagged findings (S1, S2, S3, S4, N1, A1-A5, S5, N2, N3,
+V1-V4, S6).
+
 TechEditor pass (v10) - 2026-05-11
 
 v10 copy-editing pass (this pass):
