@@ -1,6 +1,6 @@
-<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. It must be written before this recipe pair can pass. The Python companion is ready and references it. -->
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. Write it following RECIPE-GUIDE.md structure before this recipe pair can pass. The Python companion is ready and references it. -->
 
-# Recipe 7.4: Python Implementation Example
+# Recipe 7.4: ED Visit Prediction (Python Example)
 
 > **Heads up:** This is a deliberately simplified, illustrative implementation of an ED visit prediction pipeline. It generates synthetic patient data, trains a gradient boosted tree model, and scores patients for 30-day ED visit risk. It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment (fairness audits, calibration curves, clinical validation). Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
 
@@ -299,10 +299,10 @@ def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
     # More sensitive to performance on the minority class (ED visitors).
     avg_precision = average_precision_score(y_test, y_prob)
 
-    # TODO (TechWriter): Expert review A3 (MEDIUM). Consider adding a brief
-    # calibration check here (sklearn.calibration.calibration_curve) since the
-    # risk tiers are probability-based and GBTs produce poorly calibrated
-    # probabilities out of the box.
+    # TODO (TechWriter): Expert review A3 (MEDIUM). Add a brief calibration
+    # check here (sklearn.calibration.calibration_curve) since the risk tiers
+    # are probability-based and GBTs produce poorly calibrated probabilities
+    # out of the box. Show predicted vs. actual event rates in 5 bins.
 
     # Apply our operational thresholds to see tier distribution
     high_risk_count = (y_prob >= HIGH_RISK_THRESHOLD).sum()
