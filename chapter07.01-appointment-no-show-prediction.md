@@ -38,7 +38,7 @@ Deep learning (neural networks) is overkill for this problem in most cases. The 
 
 Here's what decades of no-show research have consistently found to be predictive:
 
-**Patient history.** The single strongest predictor of a future no-show is past no-shows. A patient who has missed 4 of their last 10 appointments has a dramatically higher probability of missing the next one than a patient with a perfect attendance record. This is the "prior behavior predicts future behavior" principle, and it dominates most models.
+**Patient history.** The single strongest predictor of a future no-show is past no-shows. A patient who missed 4 of their last 10 appointments has a dramatically higher probability of missing the next one than a patient with a perfect attendance record. This is the "prior behavior predicts future behavior" principle, and it dominates most models.
 
 **Lead time.** The gap between when the appointment was scheduled and when it's supposed to happen. An appointment booked 6 weeks out has a much higher no-show rate than one booked 2 days out. This makes intuitive sense: life changes, people forget, the urgency that prompted the booking fades.
 
@@ -46,7 +46,7 @@ Here's what decades of no-show research have consistently found to be predictive
 
 **Appointment type.** Follow-up visits no-show at higher rates than new patient visits. Routine wellness checks no-show more than urgent symptom visits. The perceived urgency of the visit matters.
 
-**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, reflecting access barriers, not irresponsibility), age, and language barriers all correlate with no-show probability. These features improve accuracy but require careful handling to avoid reinforcing disparities (more on this in the Honest Take section).
+**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, reflecting access barriers rather than irresponsibility), age, and language barriers all correlate with no-show probability. These features improve accuracy but require careful handling to avoid reinforcing disparities (more on this in the Honest Take section).
 
 **Weather and external events.** Rain, snow, extreme heat, and local events (school closures, major sports events) all measurably affect no-show rates. These are harder to incorporate because they require external data sources and real-time feature computation, but they can add a few percentage points of accuracy.
 
@@ -419,9 +419,9 @@ This is genuinely one of the easiest ML problems in healthcare to get working. T
 
 That said, here's what will surprise you:
 
-The model accuracy ceiling is lower than you'd expect. An AUC of 0.80 sounds good until you realize that means you're still wrong a lot. Human behavior is inherently stochastic. A patient with a 70% predicted no-show probability will still show up 30% of the time. You're not predicting certainty; you're predicting tendencies. Set expectations accordingly with your operations team.
+The model accuracy ceiling is lower than you'd expect. An AUC of 0.80 sounds good until you realize you're still wrong a lot. Human behavior is inherently stochastic. A patient with a 70% predicted no-show probability will still show up 30% of the time. You're not predicting certainty; you're predicting tendencies. Set expectations accordingly with your operations team.
 
-The features matter more than the algorithm. I've seen teams spend weeks tuning XGBoost hyperparameters when the real gain was adding "distance to clinic" or "number of prior no-shows" to the feature set. Start with good features and a simple model. Only add complexity if the simple model plateaus.
+The features matter more than the algorithm. I've seen teams spend weeks tuning XGBoost hyperparameters when the real gain was adding "distance to clinic" or "number of prior no-shows" to the feature set. Start with good features and a simple model. Only add complexity when the simple model plateaus.
 
 The fairness question is real and uncomfortable. No-show models trained on historical data will learn that Medicaid patients, patients from certain zip codes, and patients of certain demographics no-show at higher rates. Those patterns are real, but they reflect systemic access barriers (transportation, childcare, work flexibility), not patient irresponsibility. If you use the model to deprioritize these patients (shorter reminder windows, less outreach), you're reinforcing the disparity. The ethical use is the opposite: direct more resources toward high-risk patients, not fewer. Make sure your action engine reflects this.
 
