@@ -94,7 +94,7 @@ These approaches are more powerful but require more data, more compute, and more
 
 ## General Architecture Pattern
 
-```
+```text
 [Feature Store] → [Similarity Engine] → [Outcome Aggregation] → [Care Plan Recommendations]
 ```
 
@@ -152,7 +152,7 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint` (scoped to the similarity endpoint ARN), `s3:GetObject`/`s3:PutObject` (scoped to the feature store bucket and prefix), `glue:StartJobRun`, `dynamodb:GetItem`/`dynamodb:PutItem` (scoped to the cache table ARN), `lambda:InvokeFunction`. Scope all permissions to specific resource ARNs. |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint` (scoped to the similarity endpoint ARN), `s3:GetObject`/`s3:PutObject` (scoped to the feature store bucket and prefix, e.g., `arn:aws:s3:::feature-store-bucket/patient-features/*`), `glue:StartJobRun`, `dynamodb:GetItem`/`dynamodb:PutItem` (scoped to the cache table ARN), `lambda:InvokeFunction`. Scope all permissions to specific resource ARNs. |
 | **BAA** | AWS BAA signed (patient features and outcomes are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for model artifacts and endpoint data; all API calls over TLS |
 | **VPC** | Production: Lambda and SageMaker endpoint in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, and SageMaker Runtime (`com.amazonaws.{region}.sagemaker.runtime`). Configure security groups to restrict egress to VPC endpoint ENIs only (no internet egress). |
