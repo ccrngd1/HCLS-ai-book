@@ -682,14 +682,15 @@ def publish_high_risk_events(results_df: pd.DataFrame, scoring_date: str) -> int
     entries = []
 
     for _, row in high_risk.iterrows():
+        # Only publish member_id, risk_tier, and intervention_type.
+        # Downstream systems look up full detail from DynamoDB.
+        # This minimizes PHI in the event bus.
         entry = {
             "Source": "churn-prediction-pipeline",
             "DetailType": "MemberChurnRiskHigh",
             "Detail": json.dumps({
                 "member_id": row["member_id"],
-                "churn_probability": round(row["churn_probability"], 4),
                 "risk_tier": row["risk_tier"],
-                "top_risk_factors": row["top_risk_factors"],
                 "intervention_type": row["intervention_type"],
                 "scoring_date": scoring_date,
             }),
