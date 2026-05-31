@@ -92,11 +92,11 @@ Now let's build this on AWS. The architecture handles both near-real-time assess
 
 ### Why These Services
 
-**Amazon SageMaker for model hosting.** The quality assessment model (whether a CNN classifier or a multi-metric pipeline) needs to run inference with low latency and scale with imaging volume. SageMaker real-time endpoints give you managed model hosting with auto-scaling. For the sub-second latency requirement, a SageMaker endpoint with a GPU instance (or an optimized CPU instance for simpler models) is the right choice. You train the model on SageMaker as well, using your historical PACS rejection data as labels.
+**Amazon SageMaker for model hosting.** Your quality model needs to respond fast and handle whatever imaging volume the department throws at it. SageMaker real-time endpoints give you managed model hosting with auto-scaling. For the sub-second latency requirement, a SageMaker endpoint with a GPU instance (or an optimized CPU instance for simpler models) is the right choice. You train the model on SageMaker as well, using your historical PACS rejection data as labels. For production deployments handling PHI, enable network isolation on the SageMaker endpoint (`EnableNetworkIsolation=True`) to prevent the model container from making outbound calls.
 
 **Amazon S3 for image storage.** DICOM images land in S3 as the durable store. S3 event notifications trigger the assessment pipeline. For HIPAA compliance, S3 with SSE-KMS encryption is standard. The images are typically routed here from an on-premises DICOM router via AWS HealthImaging or a custom DICOM receiver.
 
-**AWS Lambda for orchestration.** The glue between S3 (image arrives), preprocessing (DICOM parsing, pixel extraction), and SageMaker (inference). Lambda handles the event-driven triggering and result routing. For images under 6 MB (most single DICOM instances), Lambda's memory and timeout are sufficient. For larger studies (multi-slice CT), you'd use Step Functions or batch processing.
+**AWS Lambda for orchestration.** The glue between S3 (image arrives), preprocessing (DICOM parsing, pixel extraction), and SageMaker (inference). Lambda is triggered by the S3 event notification (a small JSON payload), then downloads the DICOM file from S3 into memory or `/tmp` storage. Single-frame radiographs (10-50 MB) fit comfortably within Lambda's 10 GB memory limit. Configure ephemeral storage to at least 1 GB. For multi-frame DICOM objects (ultrasound cine, digital breast tomosynthesis) or full CT studies processed as a single unit, consider ECS/Fargate tasks or SageMaker Processing jobs instead of Lambda.
 
 **Amazon DynamoDB for results.** Quality assessment results need fast writes and fast lookups by study ID or accession number. DynamoDB's key-value model fits. Each record stores the quality scores, pass/fail decision, and metadata for audit.
 
@@ -123,17 +123,19 @@ flowchart LR
     style F fill:#9ff,stroke:#333
 ```
 
+For production, place an SQS queue between the S3 event notification and Lambda (S3 -> SQS -> Lambda), with a dead letter queue on the SQS queue for messages that fail after the configured retry count. A missed quality check should trigger an operational alert, not silent data loss.
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SNS |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `sns:Publish` |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint` on `arn:aws:sagemaker:*:*:endpoint/image-quality-model`, `s3:GetObject` on `arn:aws:s3:::imaging-inbox/*`, `s3:PutObject` on `arn:aws:s3:::imaging-inbox/*`, `dynamodb:PutItem` on the specific table ARN, `sns:Publish` on the specific topic ARN |
 | **BAA** | AWS BAA signed (required: medical images are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SageMaker endpoint: KMS encryption for model artifacts and instance storage; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, SageMaker, DynamoDB, SNS, and CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints: `com.amazonaws.{region}.s3` (gateway), `com.amazonaws.{region}.sagemaker.runtime` (interface, for InvokeEndpoint), `com.amazonaws.{region}.dynamodb` (gateway), `com.amazonaws.{region}.sns` (interface), `com.amazonaws.{region}.logs` (interface). Interface endpoints require security groups allowing inbound HTTPS (port 443) from the Lambda function's security group. |
 | **CloudTrail** | Enabled: log all S3 and SageMaker API calls for HIPAA audit trail |
-| **Training Data** | Historical PACS rejection logs paired with the rejected images. Most radiology departments track rejection reasons. Minimum viable dataset: 1,000 accepted and 1,000 rejected images per modality. Never use real patient images in dev without proper IRB approval and de-identification. |
+| **Training Data** | Historical PACS rejection logs paired with the rejected images. Most radiology departments track rejection reasons. Minimum viable dataset: 1,000 accepted and 1,000 rejected images per modality. Never use real patient images in dev without proper IRB approval and de-identification. Ensure the DICOM router uses opaque identifiers (study UIDs or UUIDs) in S3 key paths rather than patient MRNs or names. Lambda CloudWatch Logs will contain these keys; if your S3 key structure includes PHI, configure the CloudWatch Logs log group with KMS encryption using a customer-managed key. |
 | **Cost Estimate** | SageMaker endpoint (ml.m5.large): ~$0.115/hour (~$83/month always-on). S3 storage: negligible for assessment pipeline. Lambda + DynamoDB: negligible at typical imaging volumes. Per-image cost: ~$0.01 including all services. |
 
 ### Ingredients
@@ -363,14 +365,17 @@ FUNCTION store_and_alert(image_info, decision_result):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (single image) | 1.5-3 seconds |
+| Lambda processing time (single image) | 1.5-3 seconds |
 | Rule-based metrics computation | 50-200 ms |
 | ML model inference | 200-500 ms |
+| End-to-end latency (acquisition to alert, steady state) | 5-15 seconds |
 | Quality classification accuracy | 88-94% agreement with radiologist judgment |
 | False positive rate (good images flagged as bad) | 3-7% |
 | False negative rate (bad images missed) | 1-3% |
 | Cost per image | ~$0.01 (SageMaker + Lambda + DynamoDB) |
 | Throughput | ~20-50 images/second (endpoint-limited) |
+
+The 1.5-3 second figure represents Lambda processing time (DICOM parse, metrics computation, inference, result storage). Total end-to-end latency from image acquisition to technologist alert depends on the DICOM transfer path, S3 event notification propagation, and Lambda cold start behavior. Expect 5-15 seconds in steady state with provisioned concurrency, longer with cold starts. For sub-second feedback at the modality console, see the Edge Deployment variation below.
 
 **Where it struggles:** Borderline cases where radiologists themselves disagree. Modalities or body parts not well-represented in training data. Images from new equipment models with different noise characteristics. Pediatric images (different anatomy, different quality standards, more motion). And the fundamental tension: the model learns your institution's historical standards, which may not be optimal.
 
