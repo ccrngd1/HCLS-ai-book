@@ -1,159 +1,148 @@
-# Chapter 9 Preface — Teaching Machines to See What Doctors See
+# Chapter 9 Preface — Teaching Computers to See Patients
 
-Radiology has a dirty secret: the bottleneck isn't the scanner. It's the human staring at the screen.
+Medical imaging is the backbone of modern diagnosis. Radiologists read X-rays. Dermatologists examine lesions. Pathologists study tissue slides. Ophthalmologists peer at retinas. Surgeons navigate anatomy in real time. Every one of these workflows involves a human expert looking at an image and making a judgment call. And every one of them is constrained by the same bottleneck: there aren't enough experts, and the images keep piling up.
 
-A modern CT scanner can produce a full chest study in under 10 seconds. A radiologist needs 10 to 20 minutes to read it properly. An MRI generates hundreds of slices per sequence, multiple sequences per exam. A pathologist examining a tissue biopsy might spend 30 minutes on a single slide, mentally cataloging cell morphology, tissue architecture, staining patterns. A dermatologist evaluating a suspicious mole integrates color, border irregularity, asymmetry, and size into a gestalt judgment refined over years of training.
+Here's what makes this problem fascinating from an engineering perspective: **we're not trying to replace the expert**. Not yet, anyway, and probably not for a long time. What we're building are systems that make the expert faster, more consistent, and better at catching the things that slip through when you're reading your 200th chest X-ray of the day. Triage systems that push the critical findings to the top of the worklist. Screening tools that catch diabetic retinopathy in a primary care clinic that doesn't have an ophthalmologist. Quality gates that reject a blurry image before it wastes everyone's time.
 
-These are all visual pattern recognition tasks. And here's what makes this chapter different from every other chapter in this book: the patterns being recognized are genuinely subtle, clinically consequential, and (until recently) required a decade of specialized training to identify reliably.
-
-Computer vision in healthcare isn't about replacing that expertise. It's about scaling it. About making sure the critical finding on image 847 of a 1,200-image study doesn't get missed because the radiologist has been reading for nine hours straight. About bringing screening capabilities to a rural clinic that doesn't have a dermatologist within 200 miles. About giving the pathologist a second pair of eyes that never gets fatigued and never forgets what a particular cell morphology looks like.
-
-Let me be honest about something up front: this is also the chapter where regulatory complexity is highest. Many of the use cases we'll cover touch FDA-regulated territory. I'll be clear about where the lines are, what requires clearance, and what you can build today without a regulatory submission.
+The gap between "computer vision can classify cats vs. dogs" and "computer vision can identify a 2mm pulmonary nodule on a CT scan" is enormous. But the gap has been closing, fast, and the architectures that got us here are worth understanding before we start building on top of them.
 
 ---
 
-## How Computer Vision Actually Works (The Short Version)
+## What Medical Image Analysis Actually Involves
 
-At its core, medical image analysis is pattern recognition on pixel grids. But the journey from "look at pixels" to "identify a 2mm pulmonary nodule on a CT slice" is a long one, and understanding the layers helps you reason about what's feasible, what's hard, and what's still research.
+Computer vision in healthcare isn't one problem. It's a family of problems that share some underlying technology but diverge wildly in their clinical context, regulatory requirements, and failure modes.
 
-### The Classical Approach (Pre-2012)
+At the most basic level, we're doing what all computer vision does: taking a grid of pixel values and extracting meaningful information from it. But "meaningful" in healthcare means something very specific. It means clinically actionable. It means reproducible. It means explainable to a physician who needs to trust the output enough to act on it.
 
-Before deep learning ate the field, computer vision in medical imaging relied on hand-crafted feature engineering. Researchers would define mathematical descriptions of what they were looking for: edge detectors for boundaries, texture descriptors for tissue patterns, shape metrics for anatomical structures. These features got fed into classical machine learning models (SVMs, random forests, logistic regression) that learned to classify based on those engineered representations.
+The core tasks break down into a few categories:
 
-This worked. Sort of. For narrow, well-defined tasks with consistent imaging conditions, you could build systems that performed respectably. But every new task required a new set of hand-crafted features. Every new imaging modality required starting over. And the features that humans could articulate mathematically often weren't the features that actually mattered for clinical discrimination.
+**Classification:** Is this image normal or abnormal? Is this lesion benign or malignant? Is this retinal scan showing signs of diabetic retinopathy? You're assigning the entire image (or a region of it) to a category. This is the simplest formulation and where most FDA-cleared AI products live today.
 
-### The Deep Learning Revolution (2012-Present)
+**Detection and localization:** Where in this image is the finding? Draw a bounding box around the pneumothorax. Highlight the region of the pathology slide that looks suspicious. This is harder than classification because you need to say both *what* and *where*.
 
-The ImageNet moment in 2012 (when a deep convolutional neural network dramatically outperformed all hand-crafted approaches on natural image classification) changed everything. The key insight: let the network learn its own features directly from the pixel data. Don't tell it what to look for. Give it enough labeled examples and let it figure out what matters.
+**Segmentation:** Outline the exact boundary of the structure. Trace the tumor margin. Delineate the wound edge. Measure the area of the lesion. Pixel-level precision. This is what you need for measurement, volumetric analysis, and surgical planning.
 
-Convolutional Neural Networks (CNNs) process images through layers of learned filters. Early layers detect simple patterns (edges, gradients, textures). Middle layers combine those into more complex structures (shapes, regions, boundaries). Deep layers assemble those into high-level concepts (anatomical structures, pathological findings). The network learns this hierarchy entirely from data, no human feature engineering required.
+**Registration:** Align two images of the same anatomy taken at different times or with different modalities. Overlay a PET scan onto a CT scan. Compare today's wound photo to last week's. This is the geometric problem of making two coordinate systems agree.
 
-For medical imaging, this was transformative. A CNN trained on thousands of chest X-rays learns to detect pneumothorax not because someone told it "look for a dark region at the lung apex with a visible pleural line," but because it discovered those visual patterns correlate with the pneumothorax label in the training data. It might even discover features that radiologists hadn't explicitly articulated.
+**Temporal analysis:** What's happening over time in a video stream? What phase of surgery are we in? Is the instrument approaching a critical structure? This adds the time dimension and brings real-time processing requirements.
 
-### Transfer Learning (Why You Don't Need Millions of Images)
-
-Here's the practical insight that makes medical imaging AI feasible: you don't need to train from scratch. Networks pre-trained on millions of natural images (ImageNet, for example) learn general visual features in their early layers (edges, textures, shapes) that transfer remarkably well to medical images. You take a pre-trained network, replace the final classification layers, and fine-tune on your medical dataset. This technique, transfer learning, means you can build a useful medical image classifier with hundreds or low thousands of labeled examples rather than millions.
-
-This is why medical imaging AI has exploded in the last decade. The barrier to entry dropped from "you need a massive proprietary dataset and a research lab" to "you need a few thousand well-labeled examples and a GPU."
-
-### Beyond Classification: Detection, Segmentation, and More
-
-Classification (is this image normal or abnormal?) is the simplest computer vision task. Real clinical workflows need more:
-
-**Object detection** finds and localizes specific findings within an image. Not just "this chest X-ray has a nodule" but "there's a 4mm nodule at coordinates (x, y) in the right upper lobe." Architectures like YOLO, Faster R-CNN, and their descendants handle this.
-
-**Semantic segmentation** labels every pixel in an image with a class. "These pixels are liver, these are tumor, these are blood vessel." This is critical for treatment planning, volumetric measurement, and surgical guidance. U-Net and its variants dominate medical image segmentation.
-
-**Instance segmentation** distinguishes between multiple objects of the same class. "There are three separate lesions, and here are the boundaries of each one." Important for counting, measuring, and tracking individual findings over time.
-
-**Registration** aligns images from different time points or modalities into the same coordinate space. Essential for tracking disease progression or fusing PET and CT data.
-
-Each of these tasks has its own architectural patterns, training requirements, and failure modes. The recipes in this chapter cover the spectrum.
+Each of these tasks has its own set of architectures, training strategies, and evaluation metrics. But they all share a common foundation in deep learning, specifically convolutional neural networks and (increasingly) vision transformers.
 
 ---
 
-## Why Medical Imaging Is Harder Than Regular Computer Vision
+## How We Got Here: A Brief History of Seeing
 
-If you've worked with computer vision on natural images (detecting cars, recognizing faces, classifying products), you might think medical imaging is just another application domain. It's not. Several factors make it genuinely harder:
+The history of computer vision in medicine follows the same arc as the rest of deep learning, but with a few healthcare-specific twists.
 
-### The Signal Is Subtle
+**Classical image processing (1970s-2000s):** Hand-crafted features. Edge detection. Texture analysis. Histogram-based methods. These worked in constrained settings (specific imaging protocols, specific anatomy, specific pathology) but were brittle. Every new imaging device, every new clinical question, required starting over with new feature engineering. Some of these approaches are still embedded in legacy PACS systems, doing basic quality checks and measurements.
 
-In natural image classification, the difference between a cat and a dog is obvious to any human. In medical imaging, the difference between a benign and malignant lesion might be a slight irregularity in border texture visible only at high magnification. The difference between a normal and abnormal chest X-ray might be a faint opacity partially obscured by a rib. These are signals that even expert humans miss some percentage of the time.
+**Machine learning on engineered features (2000s-2012):** Support vector machines, random forests, and other classical ML methods applied to hand-designed image features (SIFT, HOG, wavelet coefficients). Better generalization than pure rule-based systems, but still limited by the quality of the features humans could design. Computer-aided detection (CAD) systems from this era had notoriously high false-positive rates, to the point where many radiologists learned to ignore them.
 
-### The Images Are Enormous
+**The deep learning revolution (2012-2018):** AlexNet in 2012 showed that convolutional neural networks (CNNs) trained end-to-end on raw pixels could dramatically outperform hand-engineered features on image classification. The medical imaging community took notice. By 2016, papers were showing CNN performance matching or exceeding dermatologists on skin lesion classification, radiologists on certain chest X-ray findings, and pathologists on specific cancer detection tasks. The key architectures from this era (ResNet, DenseNet, U-Net for segmentation, YOLO and Faster R-CNN for detection) remain workhorses in production medical imaging AI.
 
-A standard photograph might be 4000x3000 pixels. A whole-slide pathology image can be 100,000x100,000 pixels. A volumetric CT scan is a 3D array of 512x512 slices, potentially hundreds of slices deep. You can't just resize these to 224x224 and feed them into a standard classifier. You need architectures that handle multi-scale analysis, patch-based processing, or 3D convolutions.
-
-### Class Imbalance Is Extreme
-
-Most medical images are normal. In a screening mammography program, fewer than 1% of images contain cancer. In a chest X-ray triage system, critical findings might appear in 2-5% of studies. Training a model on heavily imbalanced data is a well-known challenge, and the stakes of missing the rare positive case are much higher than in most computer vision applications.
-
-### Annotation Is Expensive and Expert-Dependent
-
-Labeling a photo of a cat requires no special training. Labeling a pathology slide for tumor boundaries requires a board-certified pathologist. Getting multiple expert annotations (necessary for measuring inter-observer agreement and establishing ground truth) multiplies that cost. This constrains dataset sizes and introduces label noise from disagreements between experts.
-
-### Imaging Conditions Vary Wildly
-
-Different scanner manufacturers, different imaging protocols, different patient positioning, different contrast agents. A model trained on GE CT scanners might perform differently on Siemens scanners. A model trained on images from one hospital's protocol might degrade when deployed at a hospital with different slice thickness or reconstruction kernels. This "domain shift" problem is one of the biggest practical challenges in deploying medical imaging AI.
-
-### The Consequences of Errors Are Clinical
-
-A false negative in a product recommendation system means someone doesn't see a relevant ad. A false negative in a cancer screening system means a patient's diagnosis is delayed. The error tolerance is fundamentally different, and it shapes everything about how you design, validate, and deploy these systems.
+**Foundation models and transformers (2020-present):** Vision transformers (ViT) brought the attention mechanism from NLP into image analysis. Self-supervised pre-training on large unlabeled datasets (including medical images) created foundation models that can be fine-tuned for specific clinical tasks with less labeled data. This is particularly important in healthcare, where expert-labeled training data is expensive and scarce. Models like BiomedCLIP and domain-specific foundation models are making it possible to build useful systems with hundreds of labeled examples instead of hundreds of thousands.
 
 ---
 
-## The Regulatory Landscape (The Part Nobody Wants to Talk About)
+## Why Medical Imaging Is Genuinely Hard
 
-Let's address the elephant in the room. Many computer vision applications in healthcare are regulated medical devices. The FDA has a framework for this, and it's evolved significantly in recent years, but it still adds substantial time and cost to deployment.
+If you've built computer vision systems for consumer applications (product recognition, autonomous driving, content moderation), you might think medical imaging is just another domain. It's not. The constraints are fundamentally different.
 
-The key distinction: **triage and workflow tools** (flagging studies for priority review, quality checking images) generally face a lighter regulatory path than **diagnostic tools** (telling a clinician what the finding is). The recipes in this chapter are ordered partly along this axis. The early recipes (image quality assessment, patient photo verification) don't make clinical claims and face minimal regulatory burden. The later recipes (diabetic retinopathy screening, pathology analysis) are squarely in FDA territory.
+### The Data Problem
 
-As of this writing, the FDA has cleared or authorized over 900 AI/ML-enabled medical devices, with radiology and cardiology leading the pack. The 510(k) pathway (demonstrating substantial equivalence to a predicate device) is the most common route. The De Novo pathway exists for novel devices without a predicate. And the FDA's Predetermined Change Control Plan framework is evolving to allow certain types of model updates without a new submission.
+Medical images are expensive to label. Not "hire a crowd worker for $0.10 per image" expensive. "Pay a board-certified radiologist $400/hour to annotate 50 images" expensive. And you often need multiple experts to agree (inter-reader variability is a real thing in radiology and pathology). Building a training dataset of 10,000 labeled examples might cost $200,000 and take six months. This is why transfer learning and foundation models matter so much in this domain.
 
-I won't pretend to give regulatory advice in these recipes. But I will flag where regulatory considerations apply and point you toward the relevant guidance documents. If you're building something that makes clinical claims based on image analysis, get a regulatory affairs specialist involved early. Not after you've built it. Early.
+### The Bias Problem
+
+Medical imaging AI has a well-documented problem with demographic bias. Models trained predominantly on images from one population may perform poorly on others. Skin lesion classifiers trained mostly on light skin perform worse on dark skin. Chest X-ray models trained at academic medical centers may not generalize to community hospitals with different equipment. This isn't a theoretical concern; it's been demonstrated repeatedly in the literature, and it has direct patient safety implications.
+
+### The Regulatory Problem
+
+If your model is making or influencing clinical decisions, the FDA likely considers it a medical device. That means a regulatory pathway (510(k), De Novo, or PMA depending on risk classification), clinical validation studies, and ongoing post-market surveillance. This isn't optional. It's not something you figure out after you build the model. It shapes your entire development process, from how you collect training data to how you validate performance to how you monitor the system in production.
+
+### The Integration Problem
+
+A model that achieves 99% accuracy in a research paper is useless if it can't integrate into the clinical workflow. Radiologists work in PACS (Picture Archiving and Communication Systems). They use DICOM (Digital Imaging and Communications in Medicine) format. They have worklists. They dictate reports. Your AI needs to fit into that workflow, not replace it. That means DICOM integration, HL7/FHIR messaging, worklist prioritization, and results that appear in the right place at the right time in the radiologist's existing tools.
+
+### The Gigapixel Problem
+
+Some medical images are enormous. A digitized pathology slide can be 100,000 x 100,000 pixels. You can't feed that into a standard CNN. You need specialized architectures (multiple instance learning, attention-based aggregation) that can process these images in patches and then reason about the whole slide. This is a genuinely different engineering challenge from processing a 512x512 photograph.
+
+### The Explanation Problem
+
+"The model says it's cancer" is not clinically acceptable. Physicians need to understand *why* the model flagged something. Attention maps, saliency maps, and other explainability techniques help, but they're imperfect. The field is still working on what "explainable medical AI" actually means in practice, and different clinical contexts have different requirements.
 
 ---
 
-## The Bias Problem (The Part Everyone Should Talk About More)
+## The Confidence Calibration Challenge
 
-Computer vision models learn from their training data. If that training data is predominantly from one demographic, the model will perform best on that demographic and potentially fail on others. In medical imaging, this manifests in several ways:
+One pattern you'll see repeated across every recipe in this chapter: confidence calibration matters more in medical imaging than almost anywhere else in ML.
 
-**Skin tone bias in dermatology:** Most dermatology training datasets are heavily skewed toward lighter skin tones. Models trained on these datasets perform measurably worse at detecting lesions on darker skin. This isn't a theoretical concern; it's been demonstrated in published research and has direct clinical implications for health equity.
+A model that says "95% confident this is malignant" needs that 95% to actually mean something. If you took 100 cases where the model said 95% confident, roughly 95 of them should actually be malignant. This property (called calibration) is not guaranteed by training a model to high accuracy. Many deep learning models are notoriously overconfident, reporting 99% confidence on cases they get wrong.
 
-**Scanner and protocol bias:** If your training data comes primarily from academic medical centers with high-end equipment, the model may underperform at community hospitals with older scanners or different protocols.
-
-**Population bias:** Disease prevalence and presentation vary across populations. A model trained primarily on one demographic may miss atypical presentations more common in another.
-
-Every recipe in this chapter includes a section on bias considerations specific to that use case. This isn't a checkbox exercise. It's a fundamental design consideration that affects architecture decisions, data collection strategy, validation methodology, and deployment monitoring.
+In healthcare, miscalibrated confidence is dangerous in both directions. Overconfidence on false positives leads to unnecessary biopsies, patient anxiety, and wasted specialist time. Overconfidence on false negatives means missed diagnoses. Every recipe in this chapter addresses confidence thresholding, and several discuss calibration techniques specifically.
 
 ---
 
 ## How This Chapter Progresses
 
-The ten recipes move from simple, low-risk applications to complex, high-stakes clinical tools:
+The ten recipes in this chapter move from simple, low-risk applications to complex, high-stakes systems. The progression is deliberate:
 
-**Recipes 9.1-9.2 (Simple):** Image quality assessment and patient photo verification. These don't make clinical claims, don't require FDA clearance, and use well-established computer vision techniques. They're great starting points for teams new to medical imaging AI because the stakes are low and the feedback loops are fast.
+**Recipes 9.1-9.2 (Simple):** We start with problems where the stakes are low and the technology is mature. Image quality assessment (is this X-ray good enough to read?) and patient photo verification (is this the right person?) don't make clinical decisions. They support workflow efficiency. If they're wrong, a human catches it immediately. These are great places to build organizational confidence in computer vision before tackling harder problems.
 
-**Recipes 9.3-9.5 (Simple to Medium):** Wound measurement, dermatology triage, and chest X-ray triage. These start touching clinical territory but in a triage/screening capacity rather than diagnostic. They flag things for human review rather than making final determinations. Regulatory considerations begin here.
+**Recipes 9.3-9.5 (Simple to Medium):** Wound measurement, dermatology triage, and chest X-ray triage introduce clinical relevance but stay in the "triage" lane. They're prioritizing and flagging, not diagnosing. The regulatory bar is lower (though not zero), and the failure mode is "a human reviews it anyway" rather than "a patient gets the wrong treatment."
 
-**Recipe 9.6 (Medium-Complex):** Diabetic retinopathy screening. This is the canonical example of FDA-cleared autonomous AI in medical imaging. It's a well-studied problem with established grading scales, public datasets, and commercial products. A great case study in what "production medical imaging AI" actually looks like.
+**Recipe 9.6 (Medium-Complex):** Diabetic retinopathy screening is the bridge case. It's a genuine diagnostic application with FDA-cleared products in the market. It works because the clinical question is well-defined (grade the severity on a standard scale), the imaging is standardized (fundus photography), and the screening context means you're catching disease early rather than making treatment decisions.
 
-**Recipes 9.7-9.8 (Complex):** Multi-modality radiology triage and pathology slide analysis. These involve massive images, multiple finding types, complex clinical workflows, and significant integration challenges. The technical and organizational complexity both increase substantially.
+**Recipes 9.7-9.10 (Complex):** Multi-modality radiology AI, pathology slide analysis, surgical video analysis, and multi-modal imaging fusion represent the frontier. These involve massive images, real-time requirements, multiple finding types, deep workflow integration, and significant regulatory complexity. They're where the field is heading, and understanding their architecture patterns prepares you for what's coming even if you're not building them today.
 
-**Recipes 9.9-9.10 (Complex):** Surgical video analysis and multi-modal imaging fusion. These push into real-time processing, multi-modal data integration, and applications that are still partially in the research domain. They represent where the field is heading rather than where it's fully arrived.
+---
+
+## The Recurring Architecture Pattern
+
+Despite the diversity of clinical applications, a common architecture emerges across most medical imaging AI systems:
+
+1. **Image acquisition and quality gate:** Reject or flag images that don't meet minimum quality standards before wasting compute on analysis.
+2. **Pre-processing and standardization:** Normalize for differences in imaging equipment, protocols, and patient positioning.
+3. **Model inference:** Run the trained model(s) on the standardized image.
+4. **Post-processing and calibration:** Apply confidence calibration, clinical rules, and output formatting.
+5. **Integration and routing:** Deliver results into the clinical workflow (PACS, EHR, worklist) with appropriate urgency.
+6. **Monitoring and feedback:** Track model performance in production, detect drift, and collect cases for retraining.
+
+Every recipe in this chapter implements some variation of this pattern. The specifics change (DICOM vs. JPEG, real-time vs. batch, single finding vs. multi-label), but the bones are the same.
+
+---
+
+## A Note on Regulatory Reality
+
+I want to be direct about something: several recipes in this chapter describe systems that, if deployed for clinical use, would require FDA clearance or approval. I'll note this in each recipe where it applies. The architecture patterns and technical approaches are valid regardless of regulatory status, but you cannot deploy a diagnostic AI system in the US without going through the appropriate regulatory pathway. Period.
+
+That said, many of the simpler recipes (quality assessment, workflow optimization, measurement assistance) may fall outside FDA jurisdiction depending on their intended use. And even for regulated applications, understanding the architecture is valuable whether you're building toward a submission or evaluating a vendor's product.
 
 ---
 
 ## What You'll Need
 
-A few practical notes before we dive in:
+Most recipes in this chapter assume:
 
-**Compute:** Medical imaging AI is GPU-hungry. Training requires significant compute (think multi-GPU for days to weeks). Inference is more modest but still benefits from GPU acceleration, especially for real-time applications or large images.
+- Familiarity with basic ML concepts (training, inference, overfitting, validation)
+- Access to medical imaging data (we'll discuss synthetic and public datasets where available)
+- Understanding of DICOM format (we'll explain the basics where needed)
+- AWS account with appropriate services enabled and BAA in place
 
-**Data:** Every recipe discusses data requirements. The good news: several public medical imaging datasets exist for research and development (CheXpert, MIMIC-CXR, HAM10000, Camelyon, and others). The bad news: production deployment requires data from your specific clinical context, and building that labeled dataset is often the hardest part of the project.
-
-**DICOM:** Medical images live in DICOM format (Digital Imaging and Communications in Medicine). It's a standard that dates to the 1980s and carries all the charm you'd expect from that era. Every recipe that touches radiology or pathology will deal with DICOM, and we'll cover the practical aspects of working with it.
-
-**PACS Integration:** Picture Archiving and Communication Systems are where medical images live in clinical workflows. Getting your AI system to receive images from and send results back to PACS is a non-trivial integration challenge. Several recipes address this.
-
----
-
-## A Note on Expectations
-
-I want to set realistic expectations. Computer vision in healthcare is genuinely exciting, and the progress over the last decade has been remarkable. But it's also a field where the gap between "works in a research paper" and "works in clinical practice" is wider than almost anywhere else in AI.
-
-A model that achieves 95% accuracy on a curated test set might drop to 85% when deployed on images from a different scanner. A system that works beautifully in a controlled pilot might struggle when confronted with the full diversity of real clinical images. Integration with existing clinical workflows (PACS, EHR, radiologist worklists) is often harder than building the model itself.
-
-The recipes in this chapter are honest about these challenges. They include architecture patterns for handling domain shift, monitoring for performance degradation, and maintaining human oversight. Because the goal isn't to build a demo that impresses in a conference talk. The goal is to build something that actually helps clinicians and patients in the real world.
-
-Let's start with the simplest pattern: making sure the images are good enough to analyze in the first place.
+The Python companions use standard deep learning libraries (PyTorch, TensorFlow) alongside AWS services for infrastructure, storage, and deployment. You don't need to be a deep learning researcher to follow along, but you should be comfortable with the idea that a model is a function that takes pixels in and produces predictions out.
 
 ---
 
-*→ [Recipe 9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment)*
+Let's start with the simplest possible win: making sure the images are worth analyzing in the first place.
+
+---
+
+*→ [Recipe 9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment.md)*
 
 ## Further Reading
 
-- [CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels and Expert Comparison](https://arxiv.org/abs/1901.07031) — one of the foundational public datasets for chest X-ray AI research
-- [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597) — the architecture that dominates medical image segmentation
-- [FDA Artificial Intelligence and Machine Learning (AI/ML)-Enabled Medical Devices](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-enabled-medical-devices) — the FDA's list of cleared AI/ML devices and regulatory guidance
+- [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597) — the segmentation architecture that launched a thousand medical imaging papers
+- [CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels](https://arxiv.org/abs/1901.07031) — one of the landmark public datasets for chest X-ray AI
+- [BiomedCLIP: A Multimodal Biomedical Foundation Model](https://arxiv.org/abs/2303.00915) — representative of the foundation model approach to medical imaging
+- [FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device) — the regulatory framework you need to understand
