@@ -90,7 +90,7 @@ This separation of concerns is important. The model predicts. The action engine 
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for production model builds, and real-time or batch inference endpoints for serving predictions. For tabular classification problems like no-show prediction, SageMaker's built-in XGBoost algorithm is a strong default. It handles the infrastructure (spinning up training instances, hyperparameter tuning, model versioning) so you can focus on features and evaluation. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than making thousands of individual API calls.
+**Amazon SageMaker for model training and hosting.** SageMaker handles the infrastructure you don't want to manage yourself: spinning up a training instance, running the XGBoost job, storing the model artifact, and tearing everything down when it's done. For tabular classification problems like no-show prediction, the built-in XGBoost algorithm is a strong default. The batch transform mode is particularly useful here: score tomorrow's entire schedule in one job rather than standing up a persistent endpoint that sits idle 23 hours a day.
 
 **Amazon S3 for data and model storage.** Training data (historical appointments with outcomes), feature datasets, and trained model artifacts all live in S3. It's the natural staging area between your data warehouse and SageMaker, and between SageMaker and your inference pipeline. Versioned buckets let you track which training data produced which model.
 
@@ -129,10 +129,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge, Amazon SNS or SES |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:Query`, `lambda:InvokeFunction`, `sns:Publish` |
+| **IAM Permissions** | Distributed across service-specific roles: Glue execution role (S3 read/write on feature buckets, data source access); SageMaker execution role (S3 read/write on model/feature buckets, KMS decrypt); Lambda action engine role (DynamoDB read, SNS publish); EventBridge scheduler role (Lambda invoke, SageMaker transform). Scope each role to specific resource ARNs. The Lambda role should NOT have SageMaker or Glue permissions. |
 | **BAA** | AWS BAA signed (appointment data contains PHI: patient names, dates of birth, contact info) |
-| **Encryption** | S3: SSE-KMS for training data and model artifacts; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes and endpoints; all transit over TLS |
-| **VPC** | Production: SageMaker training and inference in VPC with VPC endpoints for S3 and DynamoDB. Glue jobs in VPC with access to data sources. |
+| **Encryption** | S3: SSE-KMS for training data and model artifacts; DynamoDB: encryption at rest (default), TTL enabled to expire predictions after appointment date + 90 days (PHI retention policy); SageMaker: KMS-encrypted training volumes and endpoints; all transit over TLS |
+| **VPC** | Production: SageMaker training and inference in VPC with gateway endpoints for S3 and DynamoDB. Additional interface endpoints required: SageMaker API, SNS, CloudWatch Logs, and KMS. Glue jobs in VPC with access to data sources. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for audit |
 | **Sample Data** | Synthetic appointment records. Generate from realistic distributions: 15% base no-show rate, correlated with lead time and patient history. Never use real patient data in dev. |
 | **Cost Estimate** | SageMaker training: ~$5-20 per training run (ml.m5.xlarge, 1-2 hours). Batch transform: ~$2-5 per nightly scoring run. DynamoDB: negligible at appointment volumes. Total: ~$200-500/month for a mid-size practice. |
@@ -188,6 +188,10 @@ FUNCTION compute_features(appointments, patient_history):
 
         // Patient demographics and access factors
         distance_miles = compute_distance(patient.address, clinic.address)
+        // NOTE: If distance computation requires an external geocoding API,
+        // route through a NAT gateway with a BAA-covered provider, or
+        // pre-geocode addresses at patient registration time to avoid
+        // runtime PHI egress from this pipeline.
         insurance_type = encode_category(patient.insurance_type)   // "commercial", "medicaid", "medicare", "self_pay"
         age            = years_between(patient.date_of_birth, today)
 
@@ -236,7 +240,10 @@ FUNCTION train_model(training_data_path):
         subsample:       0.8,                  // use 80% of data per tree (reduces overfitting)
         colsample_bytree: 0.8,                // use 80% of features per tree
         scale_pos_weight: 5.5,                // adjust for class imbalance
-                                              // (if 15% no-show rate, weight = 85/15 ≈ 5.5)
+                                              // Compute from your training data:
+                                              // count(showed) / count(no-showed).
+                                              // This example assumes ~15% no-show rate (85/15 ≈ 5.5).
+                                              // Your practice may differ significantly (5-30% range).
         input_data:      training_data_path,
         output_path:     "s3://ml-data/models/no-show/",
         instance_type:   "ml.m5.xlarge",      // sufficient for datasets under 1M rows
@@ -268,18 +275,26 @@ FUNCTION score_upcoming_appointments(model_path, features_path):
         instance_type:   "ml.m5.large",                          // sufficient for scoring
         instance_count:  1,
         content_type:    "text/csv",
-        split_type:      "Line"                                  // one prediction per input row
+        split_type:      "Line",                                 // one prediction per input row
+        network_isolation: true                                   // defense-in-depth: container has no
+                                                                 // outbound network access (reads/writes
+                                                                 // via SageMaker-managed S3 channels only)
     }
 
     job = SageMaker.create_transform_job(transform_config)
     wait_for_completion(job)
 
-    // Read predictions and pair them with appointment IDs
+    // Read predictions and pair them with appointment IDs.
+    // Batch transform output is positional: line N of the output file
+    // contains the prediction for line N of the input file.
+    // Join predictions back to appointment IDs by index position.
     predictions = read_predictions(transform_config.output_path)
     RETURN predictions   // list of {appointment_id, no_show_probability}
 ```
 
 **Step 4: Store predictions.** Write each prediction to DynamoDB so downstream systems can look them up quickly. The primary key is the appointment ID; a secondary index on scheduled date enables range queries like "all high-risk appointments for tomorrow." Each record includes the probability, the model version (for auditability), and a timestamp. This step bridges the ML pipeline and the operational systems. Without it, predictions exist only as a file in S3 that nothing can easily query.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add conditional write guidance to prevent overwriting predictions already acted upon. Use condition expression `attribute_not_exists(acted_at)` or append a pipeline_run_id for audit consistency between predictions and actions. -->
 
 ```
 FUNCTION store_predictions(predictions):
@@ -320,7 +335,10 @@ FUNCTION run_action_engine(target_date):
 
     // High-risk: aggressive intervention
     FOR each appointment in high_risk:
-        // Send personalized reminder with easy reschedule option
+        // Send personalized reminder with easy reschedule option.
+        // Keep SMS content minimal: date/time and a generic prompt only.
+        // Do not include provider name, visit type, or clinical details in SMS.
+        // SMS is not encrypted end-to-end; link to a secure portal for specifics.
         send_reminder(
             patient_id:  appointment.patient_id,
             channel:     "sms",                          // SMS has highest open rates
@@ -345,6 +363,8 @@ FUNCTION run_action_engine(target_date):
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add Step 6: Ground truth collection and model monitoring. Needs a nightly Lambda that joins predictions with actual outcomes after the appointment date, computes rolling AUC, publishes to CloudWatch, and triggers retraining when AUC drops below threshold (e.g., 0.72). Add feedback loop to architecture diagram from scheduling system back to training pipeline. -->
 
 ### Expected Results
 
@@ -447,7 +467,7 @@ Retraining frequency matters more than you'd think. Patient populations shift. N
 - [Machine Learning Best Practices in Healthcare and Life Sciences (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-healthcare-life-sciences/ml-best-practices-healthcare-life-sciences.html)
 - [Predictive Analytics with Amazon SageMaker (AWS Blog)](https://aws.amazon.com/blogs/machine-learning/tag/predictive-analytics/)
 
-<!-- TODO: Verify all URLs above are current and accessible -->
+<!-- TODO (TechWriter): Verify all URLs above are current and accessible before publication -->
 
 ---
 
