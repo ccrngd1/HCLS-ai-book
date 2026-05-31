@@ -1,3 +1,5 @@
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. It must be written before this recipe pair can pass. The Python companion is ready and references it. -->
+
 # Recipe 7.4: Python Implementation Example
 
 > **Heads up:** This is a deliberately simplified, illustrative implementation of an ED visit prediction pipeline. It generates synthetic patient data, trains a gradient boosted tree model, and scores patients for 30-day ED visit risk. It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment (fairness audits, calibration curves, clinical validation). Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
@@ -28,7 +30,7 @@ These define the feature schema, risk thresholds, and model parameters. They liv
 ```python
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ─── Risk Tier Thresholds ───────────────────────────────────────────────────
 # These thresholds determine which patients get outreach. They're not magic
@@ -235,8 +237,11 @@ def train_ed_prediction_model(df: pd.DataFrame) -> tuple:
     y = df["ed_visit_next_30d"]
 
     # 80/20 train/test split. Stratify to maintain outcome ratio in both sets.
-    # In production, you'd also hold out a temporal validation set (train on
-    # months 1-9, validate on months 10-12) to catch concept drift.
+    # IMPORTANT: This random split is for demonstration only. In production,
+    # you MUST use a temporal split (e.g., train on months 1-9, test on months
+    # 10-12). Random splits leak future information and produce optimistically
+    # biased AUC estimates for time-dependent outcomes like ED visits. A model
+    # that shows AUC 0.82 on a random split may drop to 0.72 on a temporal split.
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
@@ -293,6 +298,11 @@ def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
     # Average precision: area under the precision-recall curve.
     # More sensitive to performance on the minority class (ED visitors).
     avg_precision = average_precision_score(y_test, y_prob)
+
+    # TODO (TechWriter): Expert review A3 (MEDIUM). Consider adding a brief
+    # calibration check here (sklearn.calibration.calibration_curve) since the
+    # risk tiers are probability-based and GBTs produce poorly calibrated
+    # probabilities out of the box.
 
     # Apply our operational thresholds to see tier distribution
     high_risk_count = (y_prob >= HIGH_RISK_THRESHOLD).sum()
@@ -377,16 +387,25 @@ def score_patients(model, patients_df: pd.DataFrame) -> pd.DataFrame:
     results = patients_df[["patient_id"]].copy()
     results["risk_score"] = risk_scores.round(4)
     results["risk_tier"] = [assign_tier(s) for s in risk_scores]
-    results["scored_at"] = datetime.utcnow().isoformat() + "Z"
+    results["scored_at"] = datetime.now(timezone.utc).isoformat()
     results["prediction_window_days"] = PREDICTION_WINDOW_DAYS
 
     # For each patient, identify the top 3 contributing factors.
-    # This uses a simple approach: feature value * feature importance.
-    # In production, you'd use SHAP values for proper per-patient explanations.
+    # WARNING: This approach (feature_value * global_importance) is dominated
+    # by feature scale and produces incorrect per-patient attributions. A patient
+    # with age=75 (importance 0.05) gets contribution 3.75, while
+    # ed_visits_last_12m=4 (importance 0.30) gets contribution 1.2. The code
+    # would incorrectly report "age" as the top factor. Do NOT show these
+    # explanations to clinicians. Use SHAP values for any patient-facing or
+    # clinician-facing explanations in production.
     feature_importances = model.feature_importances_
+    X_min = X.min().values
+    X_max = X.max().values
     for idx in results.index:
         patient_features = X.iloc[idx].values
-        contributions = patient_features * feature_importances
+        # Normalize to 0-1 range so feature scale doesn't dominate
+        patient_normalized = (patient_features - X_min) / (X_max - X_min + 1e-8)
+        contributions = patient_normalized * feature_importances
         top_indices = np.argsort(contributions)[-3:][::-1]
         top_factors = [FEATURE_COLUMNS[i] for i in top_indices]
         results.at[idx, "top_factors"] = ", ".join(top_factors)
@@ -406,6 +425,10 @@ from decimal import Decimal
 from botocore.config import Config
 
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
+
+# In a VPC with no internet egress (required for PHI workloads), ensure gateway
+# VPC endpoints exist for S3 and DynamoDB, and interface VPC endpoints for
+# SageMaker Runtime. Without these, boto3 calls will timeout silently.
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 # Table name. In production, this comes from environment variables or
@@ -452,7 +475,7 @@ def store_risk_scores(scored_df: pd.DataFrame) -> int:
                 # TTL: auto-expire records after the prediction window passes.
                 # No point keeping a "30-day risk" score that's 45 days old.
                 "ttl": int(
-                    (datetime.utcnow() + timedelta(days=PREDICTION_WINDOW_DAYS)).timestamp()
+                    (datetime.now(timezone.utc) + timedelta(days=PREDICTION_WINDOW_DAYS)).timestamp()
                 ),
             }
 
@@ -484,7 +507,7 @@ def upload_training_data(df: pd.DataFrame, bucket: str = DATA_BUCKET) -> str:
     Upload training data to S3 in CSV format for SageMaker consumption.
 
     SageMaker's built-in XGBoost algorithm expects CSV with the target column
-    first and no header row. We format accordingly.
+    first and no header row. So that's what we give it.
 
     Args:
         df: Training DataFrame with features and outcome.
@@ -610,6 +633,8 @@ This example trains a model, scores patients, and produces an outreach worklist.
 
 **Feature engineering from raw data.** This example starts with pre-computed features. A real pipeline starts with raw claims (837/835 files), ADT feeds, pharmacy data, and EHR extracts. The feature engineering layer (computing "ED visits in last 12 months" from individual claim records) is often 80% of the work. You'd typically use a feature store (SageMaker Feature Store or a custom solution on Athena/Glue) to maintain point-in-time correct features.
 
+**Synthetic data performance is not a benchmark.** This synthetic data produces artificially high AUC because the outcome was generated from the same features the model uses. Real-world ED prediction models typically achieve AUC 0.70-0.78 due to unmeasured confounders, data quality issues, and temporal drift. Don't use synthetic-data performance as a benchmark for production readiness.
+
 **Temporal validation.** We used a random train/test split. In production, you must validate temporally: train on data from months 1-9, test on months 10-12. Random splits leak future information and produce optimistic AUC estimates. A model that looks great on random splits can fail badly when deployed forward in time.
 
 **Calibration.** Our model outputs probabilities, but are they calibrated? If the model says "0.70 risk," do 70% of those patients actually visit the ED? Calibration matters because care managers make resource allocation decisions based on these numbers. Use Platt scaling or isotonic regression to calibrate, and plot reliability diagrams to verify.
@@ -624,11 +649,15 @@ This example trains a model, scores patients, and produces an outreach worklist.
 
 **Integration with care management workflows.** The DynamoDB table is just storage. The real integration is with whatever system your care managers use to manage their worklists. That might be an Epic BPA (Best Practice Alert), a Salesforce Health Cloud task, or a custom outreach platform. The "last mile" of getting a risk score into a clinician's workflow is often harder than building the model.
 
+**Consumer-specific field access.** The `top_factors` field exposes behavioral and social determinant data (e.g., "lives_alone"). An EHR risk badge showing this to patients in a portal may be inappropriate. Consider separating detailed explanations into a DynamoDB attribute that requires elevated IAM permissions. The EHR badge may only need `risk_tier` (HIGH/MEDIUM/LOW), while care managers need the full explanation. Use IAM conditions or application-layer filtering to restrict field access by consumer identity.
+
 **Consent and opt-out.** Some patients may opt out of predictive analytics or proactive outreach. Your scoring pipeline needs to respect those preferences, which means checking a consent registry before writing scores and before triggering outreach.
 
 **Error handling and retries.** If the feature store query fails mid-batch, do you skip those patients (dangerous: they might be high-risk) or retry (could delay the entire scoring run)? If DynamoDB throttles during the write, do stale scores remain visible to care managers? These operational edge cases matter when the system runs daily at scale.
 
-**IAM least-privilege.** The scoring Lambda needs `sagemaker:InvokeEndpoint` for the specific endpoint ARN, `dynamodb:PutItem` and `dynamodb:BatchWriteItem` for the specific table, and `s3:GetObject` for the feature data. Not `sagemaker:*`. Not `AmazonDynamoDBFullAccess`.
+**IAM least-privilege.** The scoring Lambda needs `sagemaker:InvokeEndpoint` for the specific endpoint ARN, `dynamodb:PutItem` and `dynamodb:BatchWriteItem` for the specific table, and `s3:GetObject` for the feature data. Not `sagemaker:*`. Not `AmazonDynamoDBFullAccess`. Split into separate roles: a SageMaker execution role (S3 read/write on model bucket, KMS decrypt), a scoring role (InvokeEndpoint, DynamoDB write), and a data upload role (S3 PutObject on training prefix only).
+
+**DynamoDB encryption for PHI.** DynamoDB encrypts at rest by default with an AWS-owned key. For PHI tables (like `ed-risk-scores`, which stores patient_id linked to health predictions), use a customer-managed KMS key (CMK) to maintain control over key rotation, access policies, and CloudTrail audit of key usage. Specify this when creating the table, not after.
 
 **VPC and network isolation.** Patient data (even derived risk scores) is PHI. The scoring job runs in a private subnet with VPC endpoints for SageMaker, DynamoDB, and S3. No internet egress. CloudTrail logs every API call for the audit trail.
 
