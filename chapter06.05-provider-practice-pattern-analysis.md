@@ -116,7 +116,7 @@ The technology is the easy part. The change management is where this lives or di
 
 The pipeline for provider practice pattern analysis has six logical stages:
 
-```
+```text
 [Claims/EHR Data] → [Case-Mix Adjustment] → [Feature Engineering] → [Clustering] → [Interpretation] → [Reporting/Feedback]
 ```
 
@@ -222,7 +222,7 @@ flowchart TD
 
 Before case-mix adjustment, validate input data: check record counts against expected volumes (alert if more than 20% deviation from prior quarter), verify all expected providers appear in the extract, check for temporal completeness (all 12 months of the analysis window have data), and validate HCC score distributions haven't shifted dramatically (which could indicate a coding change rather than real acuity change). Halt the pipeline and alert if any validation fails.
 
-```
+```text
 FUNCTION aggregate_provider_metrics(time_window_months, min_panel_size):
     // Pull all encounters, orders, referrals, prescriptions, and outcomes
     // for the specified time window from the claims/EHR data warehouse.
@@ -261,7 +261,7 @@ FUNCTION aggregate_provider_metrics(time_window_months, min_panel_size):
 
 **Step 2: Case-mix adjustment.** This is the critical step that separates practice style from patient complexity. For each metric, you build a model that predicts the expected value based on the provider's patient panel characteristics. The difference between observed and expected is the provider's practice style signal. Without this step, you're just measuring which providers have sicker patients, not which providers practice differently. The adjustment model uses patient-level features (age, sex, HCC risk scores, chronic condition count, prior utilization) to predict expected utilization at the provider level.
 
-```
+```text
 FUNCTION case_mix_adjust(provider_metrics, patient_data):
     // For each utilization metric, build a regression model predicting
     // expected values from patient characteristics.
@@ -296,7 +296,7 @@ FUNCTION case_mix_adjust(provider_metrics, patient_data):
 
 **Step 3: Feature engineering and normalization.** The adjusted metrics need preparation before clustering. This step normalizes features to comparable scales, handles any remaining outliers, and optionally reduces dimensionality. Providers with extreme O/E ratios (say, 5x expected on imaging) can distort cluster centroids, so winsorization (capping at the 95th percentile) is common. If you have 20+ metrics, PCA reduction to 5-8 components helps the clustering algorithm find cleaner structure without overfitting to noise in individual metrics.
 
-```
+```text
 FUNCTION prepare_features(adjusted_metrics, n_components):
     // Normalize each adjusted metric to zero mean, unit variance.
     // This prevents metrics with larger numeric ranges from
@@ -326,7 +326,7 @@ FUNCTION prepare_features(adjusted_metrics, n_components):
 
 **Step 4: Clustering.** Apply the clustering algorithm to the prepared feature matrix. This step identifies groups of providers with similar practice styles. The choice of K (number of clusters) should balance statistical separation with operational utility. Run multiple values of K and evaluate both quantitative metrics (silhouette score) and qualitative interpretability. A medical director needs to be able to explain what each cluster represents in plain clinical language.
 
-```
+```text
 FUNCTION cluster_providers(feature_matrix, k_range):
     // Try multiple values of K to find the best segmentation.
     // k_range is typically [3, 4, 5, 6] for provider profiling.
@@ -364,7 +364,7 @@ FUNCTION cluster_providers(feature_matrix, k_range):
 
 **Step 5: Cluster interpretation and labeling.** Raw cluster numbers mean nothing to clinicians. This step characterizes each cluster by examining which metrics are most distinctive (highest or lowest relative to the overall mean). The goal is a plain-language label that a medical director can use in conversation: "conservative/efficient," "thorough/resource-intensive," "procedure-oriented," etc. These labels should be developed collaboratively with clinical leadership, not assigned unilaterally by the analytics team.
 
-```
+```text
 FUNCTION interpret_clusters(assignments, original_metrics, loadings):
     // For each cluster, calculate the mean of each original (adjusted) metric.
     // Compare to the overall population mean.
@@ -399,7 +399,7 @@ FUNCTION interpret_clusters(assignments, original_metrics, loadings):
 
 **Step 6: Generate provider reports.** The final step produces individual provider reports and aggregate dashboards. Each provider sees their cluster assignment, how their metrics compare to their cluster peers and to the overall specialty, and which specific metrics are most distinctive about their practice style. Medical directors see the full landscape: cluster sizes, characteristics, outcome correlations, and individual provider positions. Row-level security ensures providers see peer comparisons in aggregate but cannot identify individual peers.
 
-```
+```text
 FUNCTION generate_reports(assignments, profiles, provider_metrics):
     // Individual provider report.
     FOR each provider:
