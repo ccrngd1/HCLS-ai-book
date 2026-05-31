@@ -93,7 +93,7 @@ Here's the fundamental challenge of unsupervised disease subtype discovery: how 
 - Calinski-Harabasz index: Ratio of between-cluster variance to within-cluster variance. Higher means more separated clusters.
 - Davies-Bouldin index: Average similarity between each cluster and its most similar cluster. Lower is better.
 
-These metrics tell you whether the clusters are well-separated in feature space. They do not tell you whether the clusters are clinically meaningful. A clustering that perfectly separates patients by age and sex will have excellent internal metrics but zero clinical novelty.
+These tell you whether the clusters are well-separated in feature space. They do not tell you whether the clusters are clinically meaningful. A clustering that perfectly separates patients by age and sex will have excellent internal metrics but zero clinical novelty.
 
 **Stability validation** tests whether the clusters are robust:
 - Bootstrap resampling: Resample patients with replacement, re-cluster, and measure how often the same patients end up together. Stable clusters survive resampling.
