@@ -68,6 +68,12 @@ Categorical features (payer type, plan design) need encoding. One-hot encoding w
 
 A caveat on ordinal payer encoding: this approach assumes a correlation between payer reimbursement level and patient financial risk. Your clustering results may reveal this assumption is incomplete. In our example results below, HDHP commercial patients show higher write-off rates than Medicaid patients. Consider one-hot encoding as an alternative if you want the algorithm to discover payer-risk relationships without this prior assumption. The ordinal approach works as a starting point, but review your cluster profiles to verify the encoding isn't forcing artificial separation.
 
+### Handling Outliers
+
+Clustering algorithms compute distances between data points, and K-Means computes centroids as means. A single patient with $2M in charges can pull a centroid far from the cluster's true center, distorting the entire segmentation. You need to handle outliers before clustering.
+
+The standard approach is winsorization: cap extreme values at the 99th percentile. A patient with $2M in charges becomes a patient at the 99th percentile (say, $180K). They're still the highest-charge patient in the dataset, but they can't single-handedly distort a centroid. Apply this to dollar-amount and count features (charges, write-offs, days to payment, collections count). Ratio features (payment_ratio, no_show_rate) are naturally bounded between 0 and 1, so they don't need capping.
+
 ### Choosing K (Number of Clusters)
 
 This is part science, part art. Technical approaches:
