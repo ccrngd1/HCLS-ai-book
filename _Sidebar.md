@@ -191,6 +191,12 @@
 
 ---
 
+#### Ch 8: NLP (Non-LLM)
+
+* [Preface](chapter08-preface)
+
+---
+
 #### Ch 10: Speech / Voice AI
 
 * [Preface](chapter10-preface)
