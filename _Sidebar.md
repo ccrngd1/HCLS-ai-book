@@ -145,6 +145,12 @@
 
 ---
 
+#### Ch 7: Predictive Analytics / Risk Scoring
+
+* [Preface](chapter07-preface)
+
+---
+
 #### Ch 10: Speech / Voice AI
 
 * [Preface](chapter10-preface)
