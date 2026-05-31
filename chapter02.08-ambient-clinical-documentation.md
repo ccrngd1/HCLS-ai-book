@@ -870,6 +870,9 @@ FUNCTION write_to_ehr(session_id, signed_note):
         }
 
         response = call HealthLake.CreateResource with:
+            // Note: HealthLake FHIR resource creation uses a SigV4-signed HTTPS
+            // POST to the datastore's FHIR endpoint, not a direct SDK method.
+            // See the Python companion for implementation details.
             DatastoreId = HEALTHLAKE_DATASTORE_ID
             ResourceType = "DocumentReference"
             ResourceContent = doc_ref
@@ -1193,7 +1196,7 @@ A final thought: this is one of the highest-value clinical AI categories, bar no
 - [`amazon-healthscribe-samples`](https://github.com/aws-samples/amazon-healthscribe-samples): Sample applications demonstrating HealthScribe end-to-end patterns
 - [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including grounded generation, Guardrails, and RAG components that apply to the template rendering step
 - [`aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML patterns, including clinical text processing
-- [`aws-health-ai-samples`](https://github.com/aws-samples/aws-health-ai-samples): Broader healthcare AI patterns on AWS <!-- TODO (TechCodeReviewer): verify this repo name and URL exist; replace with alternative if it does not. -->
+- [`aws-health-ai-samples`](https://github.com/aws-samples/aws-health-ai-samples): Broader healthcare AI patterns on AWS <!-- TODO (TechWriter): Code review Finding 1. Verify this repo name and URL exist; replace with a confirmed aws-samples repo if it does not. -->
 
 **AWS Solutions and Blogs:**
 - [AWS HealthScribe Product Page](https://aws.amazon.com/healthscribe/): Overview, use cases, and pricing for HealthScribe
