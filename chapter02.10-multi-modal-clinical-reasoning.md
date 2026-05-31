@@ -1,6 +1,6 @@
 # Recipe 2.10: Multi-Modal Clinical Reasoning
 
-**Complexity:** Complex · **Phase:** Research → Controlled Pilot · **Estimated Cost:** ~$0.40-$4.00 per reasoning run
+**Complexity:** Complex · **Phase:** Research → Controlled Pilot · **Estimated Cost:** ~$0.40-$4.00 per reasoning run (up to $5-$8 for worst-case comprehensive scenarios)
 
 ---
 
