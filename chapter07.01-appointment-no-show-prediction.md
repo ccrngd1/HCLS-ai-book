@@ -8,7 +8,7 @@
 
 Here's a number that should make any clinic operations manager wince: somewhere between 5% and 30% of scheduled outpatient appointments end up as no-shows. The patient just doesn't come. No call, no cancellation, no reschedule. The slot sits empty.
 
-That empty slot isn't free. A primary care physician's time is worth roughly $200-400 per hour depending on specialty and market. A 15-minute slot that goes unused is $50-100 of lost revenue. Multiply that across a 20-provider practice with a 15% no-show rate, and you're looking at hundreds of thousands of dollars in annual lost revenue. For a large health system with hundreds of providers, the number crosses into the millions.
+That empty slot isn't free. A primary care physician's time is worth roughly $200-400 per hour, depending on specialty and market. A 15-minute slot that goes unused is $50-100 of lost revenue. Multiply that across a 20-provider practice with a 15% no-show rate, and you're looking at hundreds of thousands of dollars in annual lost revenue. For a large health system with hundreds of providers, the number crosses into the millions.
 
 But the financial hit is only part of the story. That empty slot could have gone to another patient. Someone who needed to be seen. Someone on a waitlist. Someone whose condition is getting worse while they wait three weeks for the next available appointment. No-shows don't just cost money; they cost access.
 
@@ -240,10 +240,11 @@ FUNCTION train_model(training_data_path):
         subsample:       0.8,                  // use 80% of data per tree (reduces overfitting)
         colsample_bytree: 0.8,                // use 80% of features per tree
         scale_pos_weight: 5.5,                // adjust for class imbalance
-                                              // Compute from your training data:
+                                              // Compute from YOUR training data:
                                               // count(showed) / count(no-showed).
-                                              // This example assumes ~15% no-show rate (85/15 ≈ 5.5).
-                                              // Your practice may differ significantly (5-30% range).
+                                              // 5.5 assumes ~15% no-show rate (85/15 ≈ 5.5).
+                                              // A 25% rate needs ~3.0; a 7% rate needs ~13.
+                                              // Recompute on each retrain as distribution shifts.
         input_data:      training_data_path,
         output_path:     "s3://ml-data/models/no-show/",
         instance_type:   "ml.m5.xlarge",      // sufficient for datasets under 1M rows
