@@ -10,13 +10,15 @@ A health system has 14,000 patients with a diagnosis of heart failure. They're a
 
 The clinical intuition is obvious: "heart failure" is not one disease. It's a collection of diseases that happen to share a final common pathway (the heart can't pump effectively). Cardiologists know this. They talk about ischemic vs. non-ischemic, about infiltrative cardiomyopathies, about hypertensive heart disease. But the current taxonomy is based on mechanism of injury and ejection fraction. It doesn't capture the full heterogeneity of how these patients actually behave.
 
-This isn't unique to heart failure. Type 2 diabetes, COPD, depression, sepsis, asthma, Parkinson's disease: all of these are "umbrella diagnoses" that likely contain distinct biological subtypes with different trajectories and different optimal treatments. The Lancet published a landmark study in 2018 identifying five distinct clusters within Type 2 diabetes, each with different progression patterns and complication risks. That study used unsupervised clustering on six clinical variables across 8,980 patients. The subtypes they found predicted outcomes better than the traditional classification.
+This isn't unique to heart failure. Type 2 diabetes, COPD, depression, sepsis, asthma, Parkinson's disease: all of these are "umbrella diagnoses" that likely contain distinct biological subtypes with different trajectories and different optimal treatments. The Lancet published a landmark study in 2018 (Ahlqvist et al., The Lancet Diabetes & Endocrinology) identifying five distinct clusters within Type 2 diabetes, each with different progression patterns and complication risks. That study used unsupervised clustering on six clinical variables across 8,980 patients. The subtypes they found predicted outcomes better than the traditional classification.
 
 The promise of disease subtype discovery is precision medicine at the population level. If you can identify that your 14,000 heart failure patients actually fall into six distinct phenotypic clusters, and that Cluster 3 responds poorly to standard beta-blocker therapy but responds well to SGLT2 inhibitors, you've just generated a hypothesis that could change treatment protocols. If Cluster 5 has a 60% readmission rate while the others average 15%, you've identified a group that needs intensive care management.
 
 The challenge: there are no labels. Nobody has pre-defined what the subtypes are. That's the whole point. You're using unsupervised learning to discover structure that the existing taxonomy doesn't capture. And that means you have no ground truth to validate against, no accuracy metric to optimize, and no way to know if the clusters you found are clinically meaningful until a physician looks at them and says "yes, these are real."
 
 This is research-grade work. It requires clinical collaboration from day one, rigorous statistical validation, and the intellectual honesty to admit when your clusters are artifacts of data quality rather than biology.
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Add paragraph on IRB/ethics review requirements: research vs. QI classification, IRB timeline (4-12 weeks), and implication for the "Basic" implementation estimate. Disease subtype discovery using patient data typically requires IRB review before accessing real patient data. -->
 
 ---
 
@@ -50,7 +52,7 @@ Consider heart failure. What features might distinguish subtypes?
 
 The choices you make here determine what subtypes you can possibly find. If you only include lab values, you'll find lab-based subtypes. If you only include comorbidities, you'll find comorbidity-based subtypes. The subtypes are not "in the data" waiting to be discovered. They're a function of which data you choose to look at and how you represent it.
 
-This is why clinical collaboration is non-negotiable. A data scientist working alone will make feature choices that seem reasonable but miss clinically important distinctions. A cardiologist will tell you that the ratio of BNP to creatinine matters more than either value alone, or that the trajectory of ejection fraction over the first 90 days after diagnosis is more informative than the baseline value.
+This is why you absolutely need clinical collaboration from day one. A data scientist working alone will make feature choices that seem reasonable but miss clinically important distinctions. A cardiologist will tell you that the ratio of BNP to creatinine matters more than either value alone, or that the trajectory of ejection fraction over the first 90 days after diagnosis is more informative than the baseline value.
 
 ### Choosing a Clustering Algorithm
 
@@ -86,7 +88,7 @@ For disease subtype discovery, I'd recommend: use PCA for initial exploration an
 
 Here's the fundamental challenge of unsupervised disease subtype discovery: how do you know the clusters are real?
 
-**Internal validation metrics** measure cluster quality without external labels:
+**Internal validation metrics** tell you whether your clusters are well-formed, without needing external labels to compare against:
 - Silhouette score: How similar is each patient to their own cluster vs. the nearest other cluster? Ranges from -1 to 1; higher is better.
 - Calinski-Harabasz index: Ratio of between-cluster variance to within-cluster variance. Higher means more separated clusters.
 - Davies-Bouldin index: Average similarity between each cluster and its most similar cluster. Lower is better.
@@ -140,7 +142,11 @@ If your clusters have beautiful silhouette scores but identical outcomes across 
 
 **Amazon SageMaker for ML compute and experimentation.** Disease subtype discovery is inherently iterative. You'll run dozens of clustering experiments with different feature sets, algorithms, and parameters before finding stable, clinically meaningful subtypes. SageMaker provides managed Jupyter notebooks for exploration, built-in implementations of K-means and PCA, and the ability to bring custom algorithms (GMM, HDBSCAN, consensus clustering) in containers. The experiment tracking in SageMaker Experiments lets you compare runs systematically rather than losing track of which parameter combination produced which result.
 
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add note on SageMaker notebook hardening for research workloads: recommend SageMaker Studio with domain-level VPC config, disable root access on notebook instances, use lifecycle configurations to restrict pip/conda to approved package mirrors, and enable notebook audit logging. Research workflows with interactive PHI access have higher risk than automated pipelines. -->
+
 **Amazon S3 for data lake storage.** The feature extraction pipeline pulls from multiple source systems (labs, medications, diagnoses, notes) and materializes a patient-feature matrix that may be hundreds of megabytes to several gigabytes. S3 provides durable, encrypted storage for both the raw extracted features and the intermediate/final clustering results. Versioning lets you reproduce any analysis from any point in time.
+
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note on data retention: implement S3 lifecycle policies for experiment artifacts (transition to Glacier after retention period, delete after maximum retention). Maintain a manifest of patient IDs per experiment to support HIPAA amendment and accounting-of-disclosures requests. -->
 
 **AWS Glue for ETL and feature extraction.** Building the patient-feature matrix requires joining across multiple data domains, handling temporal logic (which lab value to use when there are multiple?), and applying business rules (how to encode medication history). Glue's Spark-based ETL handles this at scale, and the Glue Data Catalog provides schema management for the feature tables.
 
@@ -148,7 +154,7 @@ If your clusters have beautiful silhouette scores but identical outcomes across 
 
 **Amazon DynamoDB for subtype assignment storage.** Once subtypes are validated and a classifier is built, new patients need to be assigned to subtypes in real time. DynamoDB provides low-latency lookups by patient ID for downstream systems (care management platforms, clinical decision support) that need to know a patient's subtype.
 
-**AWS Step Functions for pipeline orchestration.** The full pipeline (extract features, preprocess, reduce dimensions, cluster, validate, characterize) has multiple stages with dependencies. Step Functions orchestrates this as a state machine with error handling, retries, and audit logging.
+**AWS Step Functions for pipeline orchestration.** The full pipeline (extract features, preprocess, reduce dimensions, cluster, validate, characterize) has multiple stages with dependencies. Step Functions orchestrates this as a state machine with error handling, retries, and audit logging. The clinical validation step uses Step Functions' callback pattern (`.waitForTaskToken`): the state machine pauses, sends a notification to the clinical review team with the cluster characterization report, and resumes when the clinician approves or requests re-analysis with different parameters.
 
 ### Architecture Diagram
 
@@ -181,10 +187,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Athena, Amazon DynamoDB, AWS Step Functions, AWS KMS |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `athena:StartQueryExecution`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `athena:StartQueryExecution`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution`. Scope all permissions to specific resource ARNs (e.g., `s3:GetObject` on `arn:aws:s3:::patient-features-bucket/cohort-*`). |
 | **BAA** | AWS BAA signed (patient clinical data is PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS-encrypted volumes and endpoints; Glue: KMS for job bookmarks and temp storage; all transit over TLS |
-| **VPC** | SageMaker notebooks and training jobs in VPC with VPC endpoints for S3, DynamoDB, and SageMaker API. No internet egress for PHI workloads. |
+| **VPC** | SageMaker notebooks and training jobs in VPC with VPC endpoints for S3, DynamoDB, and SageMaker API. No internet egress for PHI workloads. Configure Glue connections with VPC subnet and security group for jobs accessing VPC-resident data sources (EHR databases, data warehouses). |
 | **CloudTrail** | Enabled for all service API calls. SageMaker experiment tracking provides additional audit of model lineage. |
 | **Sample Data** | Synthetic patient cohort with clinical features. MIMIC-IV (PhysioNet) provides realistic ICU patient data for development. Never use real PHI in dev/research without IRB approval. |
 | **Cost Estimate** | Glue ETL: ~$0.44/DPU-hour. SageMaker ml.m5.xlarge notebook: ~$0.23/hr. Training jobs (ml.m5.4xlarge): ~$0.92/hr. Expect 20-50 hours of compute for a full exploration cycle. |
@@ -424,7 +430,11 @@ FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data
     RETURN characterization, report
 ```
 
-**Step 7: Build subtype classifier for new patients.** Once subtypes are validated, you need a way to assign new patients to the discovered subtypes without re-running the full clustering pipeline. Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype.
+**Step 7: Build subtype classifier for new patients.** Once subtypes are validated, you need a way to assign new patients to the discovered subtypes without re-running the full clustering pipeline.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add subsection or expanded intro before Step 7 addressing the research-to-production transition: (1) prospective validation on a temporal holdout cohort, (2) FDA CDS considerations under 21st Century Cures Act, (3) clinical governance approval workflow, (4) drift monitoring strategy for deployed subtype classifier. -->
+
+Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype.
 
 ```
 FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
@@ -529,6 +539,8 @@ FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
 | Real-time subtype assignment | < 200ms per patient via SageMaker endpoint |
 | Typical silhouette score | 0.25-0.45 (clinical data rarely produces clean separation) |
 | Classifier accuracy | 85-95% (depends on cluster separation) |
+
+**Memory note:** Consensus clustering memory scales quadratically with cohort size (the N x N consensus matrix). For the 14,000-patient example, an ml.m5.4xlarge (64 GB RAM) is sufficient. For cohorts above 20,000 patients, consider block-diagonal approximation, sparse consensus matrices (only store entries above a threshold), or mini-batch consensus approaches.
 
 **Where it struggles:** Diseases with continuous spectrums rather than discrete subtypes (the clusters are real but boundaries are fuzzy). Cohorts with high missingness (clusters reflect data availability). Small cohorts (< 1,000 patients) where statistical power is insufficient. Features that are confounded by treatment (patients on different drugs look different because of the drugs, not because of underlying biology).
 

@@ -237,7 +237,8 @@ def preprocess_and_reduce(df, variance_threshold=VARIANCE_THRESHOLD):
     X_scaled = scaler.fit_transform(X)
 
     # PCA: find how many components capture the target variance
-    pca = PCA(random_state=RANDOM_SEED)
+    # Note: PCA with the default full SVD solver is deterministic (no random_state needed).
+    pca = PCA()
     pca.fit(X_scaled)
 
     cumulative_variance = np.cumsum(pca.explained_variance_ratio_)
@@ -248,8 +249,8 @@ def preprocess_and_reduce(df, variance_threshold=VARIANCE_THRESHOLD):
         n_components, cumulative_variance[n_components - 1] * 100, X_scaled.shape[1]
     )
 
-    # Transform to reduced space
-    pca_reduced = PCA(n_components=n_components, random_state=RANDOM_SEED)
+    # Transform to reduced space (full SVD is deterministic; no random_state needed)
+    pca_reduced = PCA(n_components=n_components)
     X_reduced = pca_reduced.fit_transform(X_scaled)
 
     return X_scaled, X_reduced, scaler, pca_reduced, feature_cols
@@ -519,6 +520,7 @@ def store_subtype_assignments(patient_ids, labels, characterization, table_name=
         record = {
             "patient_id": str(patient_id),
             "subtype_id": int(label),
+            # Serialize to JSON string; DynamoDB rejects Python floats (requires Decimal)
             "subtype_characterization": json.dumps(characterization[int(label)]),
             "assignment_timestamp": timestamp,
             "model_version": "consensus-v1",
@@ -574,6 +576,9 @@ def run_subtype_discovery_pipeline():
     logger.info("Best K by average silhouette: %d", best_k)
 
     # Step 4: Consensus clustering at the best K
+    # We use the full scaled feature space (X_scaled) rather than PCA-reduced space here.
+    # Bootstrap resampling provides implicit regularization against dimensionality issues,
+    # and retaining all features ensures the consensus matrix captures full phenotypic similarity.
     logger.info("=" * 60)
     logger.info("STEP 4: Consensus clustering (K=%d, %d iterations)", best_k, CONSENSUS_ITERATIONS)
     logger.info("=" * 60)
