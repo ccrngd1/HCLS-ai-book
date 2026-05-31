@@ -468,7 +468,7 @@ Retraining frequency matters more than you'd think. Patient populations shift. N
 - [Machine Learning Best Practices in Healthcare and Life Sciences (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-healthcare-life-sciences/ml-best-practices-healthcare-life-sciences.html)
 - [Predictive Analytics with Amazon SageMaker (AWS Blog)](https://aws.amazon.com/blogs/machine-learning/tag/predictive-analytics/)
 
-<!-- TODO (TechWriter): Verify all URLs above are current and accessible before publication -->
+<!-- TODO (TechWriter): Verify all URLs above are current and accessible before publication. Check aws-healthcare-lifescience-ai-ml repo still exists on GitHub. -->
 
 ---
 
