@@ -20,7 +20,7 @@ The operational stakes are real. Hospitals run at 85-95% occupancy. Every bed-da
 
 The financial incentive is also direct: under DRG-based payment, the hospital gets paid a fixed amount regardless of how long the patient stays. Every day beyond the geometric mean LOS for that DRG is a day the hospital is losing money. Predicting which patients will exceed their expected LOS early enough to intervene is worth millions annually for a mid-size hospital.
 
-The trick is building a system that updates as reality unfolds, not one that guesses at admission and hopes for the best.
+The goal is a system that updates as reality unfolds, not one that guesses at admission and hopes for the best.
 
 ---
 
@@ -124,7 +124,7 @@ The feature store is the critical piece that bridges both modes. Training featur
 
 <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add brief note on model artifact security: KMS encryption for model artifacts in S3, access control on Model Registry (restrict CreateModel/CreateEndpoint to deployment pipeline role), and model approval gate (PendingManualApproval status) before serving live predictions. -->
 
-**Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. You define feature groups (admission features, daily clinical features, social features), compute them once, and serve them consistently to both training pipelines and real-time inference. The offline store feeds training; the online store feeds real-time predictions.
+**Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. Define your feature groups (admission features, daily clinical features, social features), compute them once, and both training and inference see the same values. The offline store feeds training; the online store feeds real-time predictions.
 
 **AWS HealthLake for FHIR-based clinical data.** HealthLake provides a FHIR-compliant data store that can ingest ADT (admit/discharge/transfer) events, lab results, medications, and other clinical data in a standardized format. This gives you a clean, queryable source for feature engineering without building custom EHR integrations from scratch.
 
@@ -172,9 +172,9 @@ flowchart TD
 | **BAA** | Required. All services handle PHI (patient demographics, diagnoses, clinical data). |
 | **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest (default). HealthLake: KMS encryption. SageMaker: KMS for training volumes and endpoints. All transit over TLS. |
 | **VPC** | SageMaker training and endpoints in VPC. Lambda event triggers in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), SageMaker API (interface), CloudWatch Logs (interface), SNS (interface), and HealthLake (interface). This eliminates NAT Gateway dependency for AWS service calls. |
-| **CloudTrail** | Enabled for all service API calls. SageMaker model lineage tracked via Model Registry. |
-| **Sample Data** | MIMIC-IV (publicly available ICU dataset) for development. Synthea for synthetic general hospital encounters. Never use real patient data in dev/test environments. |
-| **Cost Estimate** | Training: ~$5-20 per training run (ml.m5.xlarge, 1-4 hours). Inference endpoint: ~$100/month (ml.m5.large, always-on). Batch transform for daily refresh: ~$2/day. HealthLake: $0.60/10K FHIR operations. Feature Store: ~$50/month for online store. |
+| **CloudTrail** | Enabled for all service API calls. Enable data events for S3 (training data and model artifact buckets) and DynamoDB (prediction store). SageMaker model lineage tracked via Model Registry. Enable SageMaker endpoint invocation logging via CloudWatch for patient-level audit trails. |
+| **Sample Data** | MIMIC-IV (publicly available ICU dataset; requires PhysioNet credentialing and data use agreement) for development. Synthea for synthetic general hospital encounters. Never use real patient data in dev/test environments. If using institutional data for development, apply HIPAA Safe Harbor de-identification before moving data to non-production environments. |
+| **Cost Estimate** | Training: ~$5-20 per training run (ml.m5.xlarge, 1-4 hours). Inference endpoint: ~$100/month (ml.m5.large, always-on; multiply for separate per-service-line endpoints, or use Multi-Model Endpoints to reduce cost by 60-80%). Batch transform for daily refresh: ~$2/day. HealthLake: $0.60/10K FHIR operations. Feature Store: ~$50/month for online store. Real-time cost of ~$0.08/prediction assumes ~1,200 predictions/month amortized over the always-on endpoint. |
 
 ### Ingredients
 
