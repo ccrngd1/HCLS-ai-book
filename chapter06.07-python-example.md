@@ -552,7 +552,7 @@ def evaluate_nlp_criterion(criterion: dict, notes: list) -> dict:
         return {
             "status": "PASS",  # The condition IS present
             "confidence": best_match["score"],
-            "evidence": f"Found '{best_match['text']}' (confidence: {best_match['score']:.2f}, not negated)",
+            "evidence": f"Found '{best_match['text']}' (confidence: {best_match['score']:.2f}, affirmed)",
         }
 
     if negated:

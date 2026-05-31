@@ -131,7 +131,7 @@ Your matching system needs explicit temporal logic: what's the acceptable recenc
 
 **Amazon S3 for data lake storage.** Patient data extracts, clinical notes, trial criteria definitions, and matching results all live in S3. The data lake pattern allows different processing stages to read from and write to a shared storage layer without tight coupling.
 
-**AWS Step Functions for pipeline orchestration.** The multi-stage matching pipeline (pre-screen, NLP, scoring, notification) has dependencies between stages and needs error handling, retries, and monitoring. Step Functions provides visual workflow orchestration with built-in retry logic and state management.
+**AWS Step Functions for pipeline orchestration.** The multi-stage matching pipeline (pre-screen, NLP, scoring, notification) has dependencies between stages and needs error handling, retries, and monitoring. Step Functions gives you visual workflow orchestration with built-in retry logic and state management.
 
 **Amazon DynamoDB for candidate tracking.** Each candidate's matching status (which criteria passed, which failed, which are pending NLP, overall score) needs fast read/write access. DynamoDB's key-value model fits the per-patient status tracking pattern.
 
