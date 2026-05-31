@@ -98,7 +98,7 @@ The feedback loop is critical. Track which interventions were attempted, which m
 
 **Amazon S3 for the feature store and model artifacts.** S3 is the durable layer underneath everything: raw source data lands here, transformed features are stored here, trained model artifacts live here, and scoring results are written here. Parquet format for the feature tables gives you columnar efficiency for the wide, sparse feature matrices typical of churn models.
 
-**Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly batch scoring of the full membership). EventBridge triggers the pipeline, and Step Functions coordinates the steps: feature refresh, model scoring, stratification, and output delivery. This is cleaner than cron jobs and gives you built-in retry logic and failure alerting.
+**Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly batch scoring of the full membership). EventBridge triggers the pipeline, and Step Functions coordinates the steps: feature refresh, model scoring, stratification, and output delivery. You get retry logic and failure alerting without building them yourself, which matters when a missed scoring run means your retention team is working with stale risk data for a week.
 
 **Amazon DynamoDB for real-time risk lookup.** Once members are scored, downstream systems (call center applications, care management platforms, member portals) need to look up a member's churn risk in real time. DynamoDB provides single-digit-millisecond lookups by member ID. The weekly batch scoring job writes results here; operational systems read from here.
 
@@ -159,10 +159,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, AWS Glue, Amazon S3, Amazon DynamoDB, Amazon EventBridge, AWS Step Functions, Amazon QuickSight, Amazon Athena |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `events:PutRule` |
+| **IAM Permissions** | Distributed across service-specific execution roles: Glue role (S3 read/write scoped to feature buckets), SageMaker role (S3 read/write for model/feature buckets, KMS decrypt), Step Functions role (invoke Glue and SageMaker, write DynamoDB), EventBridge scheduler role (start Step Functions). Scope each role with resource ARNs. Do not combine into a single role. |
 | **BAA** | AWS BAA signed (member behavioral data, claims data, and grievance records are PHI) |
 | **Encryption** | S3: SSE-KMS for all feature and scoring data; DynamoDB: encryption at rest (default); SageMaker: KMS for training volumes and model artifacts; all transit over TLS |
-| **VPC** | Production: SageMaker training and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for PHI processing. |
+| **VPC** | Production: SageMaker training and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for PHI processing. Glue jobs require network connectivity to each source system. For on-premises sources (common for claims warehouses and legacy CRM systems), this requires Direct Connect or site-to-site VPN. For sources in separate VPCs, use VPC peering or Transit Gateway. Plan for this connectivity early; it is often the longest lead-time item. |
 | **CloudTrail** | Enabled: log all SageMaker, Glue, and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic membership data with behavioral features. CMS publishes [synthetic Medicare claims](https://data.cms.gov/collection/synthetic-medicare-enrollment-fee-for-service-claims-and-prescription-drug-event) for development. Never use real member data in dev/test. |
 | **Cost Estimate** | Glue: ~$0.44/DPU-hour for feature jobs; SageMaker training: ~$0.05/instance-hour (ml.m5.xlarge); Batch Transform: ~$0.05/instance-hour; DynamoDB: on-demand ~$1.25/million writes. Total for 100K members scored weekly: ~$50-100/month. |
@@ -351,6 +351,28 @@ FUNCTION assign_tier(probability):
     IF probability >= 0.60: RETURN "high"      // top ~10% typically
     IF probability >= 0.35: RETURN "medium"    // next ~20%
     RETURN "low"
+
+// Note: these thresholds are illustrative. In production, set them based on
+// your retention team's weekly capacity. If your team can handle 200 outreach
+// calls per week and you score monthly, your "high" tier should contain roughly
+// 800 members (200 calls/week x 4 weeks). Work backward from capacity to find
+// the probability threshold that produces the right volume.
+
+FUNCTION recommend_intervention(top_drivers):
+    // Route to the appropriate team based on the dominant risk factor.
+    // The top driver tells us WHY this member is at risk, which determines
+    // who can actually fix the problem.
+    top_feature = top_drivers[0].feature_name
+    
+    IF top_feature is "pcp_in_network" or "pcp_changed_last_6m":
+        RETURN "network_adequacy_outreach"
+    IF top_feature is "unresolved_grievances" or "grievances_last_6m":
+        RETURN "member_services_escalation"
+    IF top_feature is "denied_claims_last_6m" or "total_oop_last_6m":
+        RETURN "benefits_counseling"
+    IF top_feature is "utilization_trend_ratio" or "portal_login_trend":
+        RETURN "engagement_outreach"
+    RETURN "general_retention_call"
 ```
 
 **Step 5: Store and serve results.** Write scoring results to both the analytical store (S3/Parquet for dashboards and analysis) and the operational store (DynamoDB for real-time lookup by member ID). Downstream systems query DynamoDB when a member calls in, logs into the portal, or is being reviewed by a care manager.
@@ -364,6 +386,10 @@ FUNCTION store_and_serve(results, scoring_date):
     
     // Write current scores to DynamoDB for real-time operational lookup.
     // Overwrite previous scores (only current risk matters for intervention routing).
+    // Note: not all downstream systems should see the full risk factor detail.
+    // The call center app may need the full explanation for context. The member
+    // portal should not display churn risk factors to the member. Consider storing
+    // detailed explanations in a separate attribute requiring elevated permissions.
     FOR each result in results:
         write to DynamoDB table "member-churn-risk":
             partition_key    = result.member_id
@@ -375,8 +401,13 @@ FUNCTION store_and_serve(results, scoring_date):
             ttl              = scoring_date + 30 days  // auto-expire stale scores
     
     // Trigger intervention workflows for high-risk members.
+    // Only publish member_id and risk_tier to EventBridge, not the full
+    // risk factor detail. Downstream systems look up detail from DynamoDB.
+    // This minimizes PHI in the event bus and reduces blast radius if a
+    // rule is misconfigured to route to an unintended target.
     high_risk = filter results where risk_tier == "high"
     publish high_risk to EventBridge with detail_type = "MemberChurnRiskHigh"
+        event detail = { member_id, risk_tier, intervention_type, scored_at }
     // Downstream rules route to appropriate intervention queues.
 ```
 
@@ -433,7 +464,9 @@ The intervention matters more than the model. A perfect churn prediction with no
 
 Seasonality will fool you. Churn in healthcare is heavily seasonal (open enrollment periods, annual renewal cycles). A model trained on January-March data and deployed in October will underperform because the feature distributions shift. Train on full annual cycles and include time-of-year features.
 
-The ethical dimension is real. Churn models can inadvertently encode discrimination. If members in underserved zip codes have worse network adequacy and higher churn, your model learns "zip code predicts churn." The intervention might then focus retention efforts on members who are already well-served while ignoring the root cause (network gaps) for those who aren't. Monitor your model's predictions across demographic groups and ensure interventions address root causes, not just symptoms.
+The ethical dimension is real. Churn models can inadvertently encode discrimination. If members in underserved zip codes have worse network adequacy and higher churn, your model learns "zip code predicts churn." The intervention might then focus retention efforts on members who are already well-served while ignoring the root cause (network gaps) for those who aren't. Monitor your model's predictions across demographic groups and ensure interventions address root causes, not just symptoms. Document your model's fairness characteristics in a model card: which features are included, which were excluded and why, and how predictions distribute across demographic groups. CMS and state regulators are increasingly scrutinizing algorithmic decision-making in health plans. Having a documented fairness analysis before you're asked for one is significantly less painful than producing one under regulatory pressure.
+
+<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add a Step 6 for model monitoring: monthly ground truth join comparing predictions from 90 days ago against actual disenrollment outcomes, rolling AUC-PR and ECE computation published to CloudWatch, retraining trigger when AUC-PR drops below 0.40 or ECE exceeds 0.10. Especially important around open enrollment periods when population composition shifts. -->
 
 ---
 

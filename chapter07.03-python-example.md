@@ -25,6 +25,7 @@ Before we get to the steps, here's the configuration that drives the pipeline. T
 ```python
 import logging
 import datetime
+import json
 from datetime import timezone
 from decimal import Decimal
 
@@ -78,6 +79,7 @@ XGBOOST_PARAMS = {
     "scale_pos_weight": "9.0",    # adjust for your actual churn rate
                                    # formula: (1 - churn_rate) / churn_rate
                                    # for 10% churn: 0.90/0.10 = 9.0
+    "early_stopping_rounds": "50", # stop if validation aucpr doesn't improve for 50 rounds
 }
 
 # Feature columns the model expects, in order.
@@ -584,9 +586,6 @@ def _recommend_intervention(factors: list[dict]) -> str:
 *The pseudocode calls this `store_and_serve(results, scoring_date)`. We write each member's risk score to DynamoDB so operational systems (call center apps, care management platforms, member portals) can look up churn risk in real time. The TTL ensures stale scores auto-expire if the weekly scoring job fails.*
 
 ```python
-from decimal import Decimal
-import json
-
 # Create DynamoDB resource.
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
@@ -617,11 +616,13 @@ def store_results_dynamodb(results_df: pd.DataFrame, scoring_date: str) -> int:
     # Calculate TTL: 30 days from scoring date.
     # If the weekly scoring job fails for multiple weeks, stale scores
     # auto-expire rather than persisting indefinitely.
-    scoring_dt = datetime.datetime.fromisoformat(scoring_date)
+    scoring_dt = datetime.datetime.fromisoformat(scoring_date).replace(tzinfo=timezone.utc)
     ttl_dt = scoring_dt + datetime.timedelta(days=30)
     ttl_epoch = int(ttl_dt.timestamp())
 
-    # Write each member's score. In production, use batch_writer for efficiency.
+    # Write scores in batches. batch_writer() automatically buffers items and
+    # sends them in groups of 25 (DynamoDB's BatchWriteItem limit), handling
+    # UnprocessedItems retries internally.
     with table.batch_writer() as batch:
         for _, row in results_df.iterrows():
             item = {
