@@ -194,6 +194,26 @@
 #### Ch 8: NLP (Non-LLM)
 
 * [Preface](chapter08-preface)
+* [8.1 — Chief Complaint Classification](chapter08.01-chief-complaint-classification)
+  * [Python Example](chapter08.01-python-example)
+* [8.2 — Patient Sentiment Analysis](chapter08.02-patient-sentiment-analysis)
+  * [Python Example](chapter08.02-python-example)
+* [8.3 — ICD-10 Code Suggestion](chapter08.03-icd10-code-suggestion)
+  * [Python Example](chapter08.03-python-example)
+* [8.4 — Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization)
+  * [Python Example](chapter08.04-python-example)
+* [8.5 — Problem List Extraction](chapter08.05-problem-list-extraction)
+  * [Python Example](chapter08.05-python-example)
+* [8.6 — SDOH Extraction](chapter08.06-sdoh-extraction)
+  * [Python Example](chapter08.06-python-example)
+* [8.7 — Adverse Event Detection in Clinical Text](chapter08.07-adverse-event-detection-clinical-text)
+  * [Python Example](chapter08.07-python-example)
+* [8.8 — Clinical Assertion Classification](chapter08.08-clinical-assertion-classification)
+  * [Python Example](chapter08.08-python-example)
+* [8.9 — Temporal Relationship Extraction](chapter08.09-temporal-relationship-extraction)
+  * [Python Example](chapter08.09-python-example)
+* [8.10 — Phenotype Extraction for Research](chapter08.10-phenotype-extraction-research)
+  * [Python Example](chapter08.10-python-example)
 
 ---
 
