@@ -148,6 +148,8 @@
   * [Python Example](chapter06.02-python-example)
 * [6.3 — Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering)
   * [Python Example](chapter06.03-python-example)
+* [6.4 — Disease Severity Stratification](chapter06.04-disease-severity-stratification)
+  * [Python Example](chapter06.04-python-example)
 
 ---
 
