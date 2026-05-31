@@ -28,7 +28,7 @@ At its core, 30-day readmission prediction is binary classification with a fixed
 
 The 30-day window is not arbitrary. It's the CMS measurement window for HRRP penalties. Some organizations also track 7-day and 90-day readmissions, but 30-day is the regulatory standard and the most common prediction target.
 
-This sounds like a straightforward supervised learning problem. And conceptually, it is. But the details are where it gets interesting.
+This sounds like a straightforward supervised learning problem, and conceptually it is. But the details are where it gets interesting.
 
 ### What Makes This Harder Than It Looks
 
@@ -170,7 +170,7 @@ flowchart TD
     style N fill:#9ff,stroke:#333
 ```
 
-**Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for 1-2 weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
+**Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for one to two weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
 
 ### Prerequisites
 
