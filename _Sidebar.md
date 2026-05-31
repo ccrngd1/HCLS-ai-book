@@ -158,6 +158,8 @@
   * [Python Example](chapter06.07-python-example)
 * [6.8 — Disease Subtype Discovery](chapter06.08-disease-subtype-discovery)
   * [Python Example](chapter06.08-python-example)
+* [6.9 — Social Determinant Phenotyping](chapter06.09-social-determinant-phenotyping)
+  * [Python Example](chapter06.09-python-example)
 
 ---
 
