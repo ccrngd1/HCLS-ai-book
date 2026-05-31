@@ -142,6 +142,8 @@
 #### Ch 6: Cohort Analysis / Clustering
 
 * [Preface](chapter06-preface)
+* [6.1 — Geographic Patient Clustering](chapter06.01-geographic-patient-clustering)
+  * [Python Example](chapter06.01-python-example)
 
 ---
 
