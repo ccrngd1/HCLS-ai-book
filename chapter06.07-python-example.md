@@ -13,7 +13,7 @@ pip install boto3
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `comprehend:DetectEntitiesV2` (Comprehend Medical)
+- `comprehendmedical:DetectEntitiesV2` (Comprehend Medical)
 - `athena:StartQueryExecution`, `athena:GetQueryExecution`, `athena:GetQueryResults`
 - `s3:GetObject`, `s3:PutObject`
 - `dynamodb:PutItem`, `dynamodb:Query`
@@ -120,6 +120,9 @@ SAMPLE_TRIAL_CRITERIA = {
             "logic": {
                 "field": "active_medications",
                 "operator": "CONTAINS",
+                # Simplified: checks metformin presence + duration only.
+                # "Monotherapy" enforcement would require checking no other
+                # antidiabetics are active.
                 "value": "metformin",
                 "duration_days": 90,
             },
@@ -865,11 +868,11 @@ Patient: PAT-001
     [✓] BMI over 27
         BMI: 31.4 (required: >27)
     [✓] No history of pancreatitis
-        Found negated 'pancreatitis' (confidence: 0.92, not negated)
+        Found negated 'pancreatitis' (confidence: 0.92)
     [✓] No eGFR below 45 in the past 6 months
         lab_egfr: 72 (from 2026-03-20)
     [✓] No active cancer diagnosis in the past 5 years
-        Found negated 'cancer' (confidence: 0.88, not negated)
+        Found negated 'cancer' (confidence: 0.88)
 
 Patient: PAT-005
   Eligibility Score: 88.7%
@@ -886,7 +889,7 @@ Patient: PAT-005
     [✓] BMI over 27
         BMI: 29.8 (required: >27)
     [✓] No history of pancreatitis
-        Found negated 'pancreatitis' (confidence: 0.91, not negated)
+        Found negated 'pancreatitis' (confidence: 0.91)
     [✓] No eGFR below 45 in the past 6 months
         lab_egfr: 82 (from 2026-04-28)
     [?] No active cancer diagnosis in the past 5 years

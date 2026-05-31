@@ -123,7 +123,7 @@ Your matching system needs explicit temporal logic: what's the acceptable recenc
 
 ### Why These Services
 
-**Amazon SageMaker for NLP models.** The clinical NLP pipeline (entity extraction, negation detection, temporal reasoning) requires custom models trained on clinical text. SageMaker provides the training infrastructure and real-time inference endpoints. For organizations without custom models, Amazon Comprehend Medical provides pre-trained clinical NLP as a starting point, though it lacks the trial-specific fine-tuning that improves precision.
+**Amazon SageMaker for NLP models.** The clinical NLP pipeline (entity extraction, negation detection, temporal reasoning) requires custom models trained on clinical text. SageMaker gives you the training infrastructure and real-time inference endpoints for those custom models. For organizations without custom models, Amazon Comprehend Medical provides pre-trained clinical NLP as a starting point, though it lacks the trial-specific fine-tuning that improves precision.
 
 **Amazon Comprehend Medical for clinical entity extraction.** Comprehend Medical extracts medical entities (conditions, medications, procedures, lab values) from clinical text with negation and assertion detection built in. It handles the "no history of pancreatitis" problem natively. For many criteria, this is sufficient without custom model training.
 
@@ -135,7 +135,7 @@ Your matching system needs explicit temporal logic: what's the acceptable recenc
 
 **Amazon DynamoDB for candidate tracking.** Each candidate's matching status (which criteria passed, which failed, which are pending NLP, overall score) needs fast read/write access. DynamoDB's key-value model fits the per-patient status tracking pattern.
 
-**Amazon EventBridge for trial registry updates.** When new trials open or criteria change, EventBridge triggers re-screening of the patient population. This keeps the candidate pool current without manual intervention.
+**Amazon EventBridge for trial registry updates.** When new trials open or criteria change, EventBridge triggers re-screening of the patient population. A scheduled Lambda polls the ClinicalTrials.gov API daily for new or amended trials matching your therapeutic areas and publishes events to EventBridge when changes are detected. This keeps the candidate pool current without manual intervention.
 
 ### Architecture Diagram
 
@@ -170,13 +170,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | AWS Services | SageMaker, Comprehend Medical, Glue, Athena, S3, Step Functions, DynamoDB, EventBridge, Lambda |
-| IAM Permissions | `sagemaker:InvokeEndpoint`, `comprehend:DetectEntities`, `glue:StartJobRun`, `athena:StartQueryExecution`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| IAM Permissions | `sagemaker:InvokeEndpoint`, `comprehendmedical:DetectEntitiesV2`, `glue:StartJobRun`, `athena:StartQueryExecution`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution`. Scope each action to specific resource ARNs (e.g., `arn:aws:s3:::trial-matching-*` for S3, specific endpoint ARN for SageMaker). In research contexts, consider separate roles for the pre-screen stage (structured data access) and the NLP stage (clinical notes access) to enforce least-privilege separation. |
 | BAA | Required. All services processing PHI must be covered under your AWS BAA. |
 | Encryption | S3 SSE-KMS for all data at rest. DynamoDB encryption at rest. TLS 1.2+ in transit. SageMaker endpoint encryption. |
-| VPC | SageMaker endpoints and Glue jobs in private subnets. VPC endpoints for S3, DynamoDB, and SageMaker Runtime. |
+| VPC | SageMaker endpoints and Glue jobs in private subnets. VPC endpoints for S3, DynamoDB, SageMaker Runtime, and Comprehend Medical (`com.amazonaws.{region}.comprehendmedical`). Consider adding Step Functions and Lambda VPC endpoints if orchestration components are VPC-bound. Restrict security group egress to VPC endpoints only (no internet egress) for Lambda functions and SageMaker endpoints processing clinical notes. Enable VPC Flow Logs to monitor data movement patterns. |
 | CloudTrail | Enabled for all API calls. Log who queried which patients and when. |
 | Sample Data | Synthetic patient records (Synthea is excellent for this). ClinicalTrials.gov API for real trial criteria. Never use real PHI in development. |
-| Cost Estimate | ~$0.20–$0.75 per patient screened (Comprehend Medical: ~$0.01/100 chars; SageMaker inference: ~$0.10/patient for custom NLP; Athena: ~$5/TB scanned) |
+| Cost Estimate | ~$0.20–$0.75 per patient screened (Comprehend Medical: ~$0.01/100 chars; SageMaker inference: ~$0.10/patient for custom NLP; Athena: ~$5/TB scanned). Store structured patient data in Parquet format partitioned by relevant dimensions (e.g., patient cohort, data type) to minimize Athena scan volume. Separate clinical notes from structured data in the S3 layout so the structured pre-screen doesn't scan note text. |
 
 ### Ingredients
 
@@ -519,13 +519,17 @@ FUNCTION generate_worklist(trial_id, top_n=50):
 
 ## Why This Isn't Production-Ready
 
-**Consent and regulatory compliance.** Using patient data for trial matching has regulatory implications. Some institutions require explicit patient consent for research screening. Others operate under a waiver of consent for pre-screening activities. Your legal and IRB teams need to weigh in before you screen a single patient. The technical system is the easy part; the governance framework is harder.
+**Consent and regulatory compliance.** This system performs automated pre-screening: identifying potentially eligible patients from existing EHR data. It does not constitute screening (which requires patient contact and informed consent). This distinction matters. Most institutions can operate pre-screening under a waiver of consent per 45 CFR 46.116(f) or under HIPAA's preparatory-to-research provision (45 CFR 164.512(i)(1)(ii)), but this requires documented IRB or Privacy Board approval. Some institutions require explicit patient opt-in for any research-related data use; others allow pre-screening under existing data governance frameworks. Your legal and IRB teams need to weigh in before you screen a single patient. Document your institution's determination before deploying. The system's audit trail (CloudTrail logs of which patients were evaluated, when, and for which trial) supports the accountability requirements of both provisions. The technical system is the easy part; the governance framework is harder.
 
 **EHR integration.** This recipe assumes you have patient data in a queryable data lake. Getting it there from your EHR (Epic, Cerner, Meditech) requires an integration layer (FHIR APIs, bulk data exports, or HL7 feeds) that is a project unto itself. The matching logic is downstream of that integration.
 
 **Criteria maintenance.** Trial criteria change. Amendments modify inclusion/exclusion criteria mid-enrollment. Your criteria parser needs to handle updates and trigger re-screening of the candidate pool. A stale criteria set produces stale matches.
 
 **Coordinator workflow integration.** The worklist needs to live where coordinators already work, not in a separate application they have to remember to check. Integration with CTMS (Clinical Trial Management Systems) like OnCore, Velos, or Florence is essential for adoption.
+
+**Data retention and minimization.** Matching results in DynamoDB contain per-criterion evidence strings with derived PHI. Define a retention policy: when a trial closes enrollment, archive or delete candidate records. Consider DynamoDB TTL on the `trial-candidates` table keyed to the trial's expected enrollment close date plus a buffer for audit purposes. Evidence strings containing PHI should be treated with the same retention controls as the source clinical data.
+
+**Error handling in the NLP stage.** The NLP deep screen processes thousands of candidates over 15-30 minutes. A single patient failure (corrupt notes, encoding issues, Comprehend Medical throttling) shouldn't fail the entire pipeline. Use Step Functions Map state with `maxConcurrency` to control parallelism and `toleratedFailurePercentage` to allow completion even if some patients fail. Failed patients should be written to a dead letter queue for retry or manual review. Checkpoint progress so a pipeline restart doesn't reprocess already-screened candidates.
 
 ---
 
