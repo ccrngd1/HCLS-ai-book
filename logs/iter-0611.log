@@ -1,0 +1,257 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780196012847-000010-eee3ab497c2ab349 iteration=611 task_id=ch06-r02-edit persona=TechEditor
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-611[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-611[0m [38;5;244m(showing 1000 of 1826 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.262s[0m
+
+[38;5;141m> [0mLet me find the recipe draft, reviews, and style guides needed for this edit.[0m[0m
+[0m[0m
+Searching for files: [38;5;141m**/chapter06.02*[0m in [38;5;141m/tmp/ralph-worktrees/iter-611[0m[38;5;244m (using tool: glob)[0mBatch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/reviews/chapter06.02-expert-review.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/reviews/chapter06.02-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m3 files[0m under /tmp/ralph-worktrees/iter-611
+[38;5;244m - Completed in 0.31s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m17689 bytes[0m from /tmp/ralph-worktrees/iter-611/reviews/chapter06.02-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7783 bytes[0m from /tmp/ralph-worktrees/iter-611/reviews/chapter06.02-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to find the main recipe file. The expert review says it doesn't exist, but let me check if it was created since then, and also read the Python companion and style guide.[0m[0m
+[0m[0m
+Searching for files: [38;5;141m**/chapter06.02-utilization*[0m in [38;5;141m/tmp/ralph-worktrees/iter-611[0m[38;5;244m (using tool: glob)[0mBatch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/RECIPE-GUIDE.md[0m, all lines
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/chapter06.02-utilization*[0m under /tmp/ralph-worktrees/iter-611
+[38;5;244m - Completed in 0.27s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-611/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-611/RECIPE-GUIDE.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mThe main recipe file doesn't exist. The expert review's CRITICAL finding is that [38;5;10mchapter06.02-utilization-pattern-segmentation.md[0m is missing. Only the Python companion exists. Let me read the Python companion to understand what we're working with.[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m31858 bytes[0m from /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a complete picture. The situation is:[0m[0m
+[0m[0m
+1. [1mMain recipe file does NOT exist[22m (ARCH-CRITICAL finding)[0m[0m
+2. [1mPython companion exists[22m and is high quality[0m[0m
+3. The code review found 1 WARNING (Issue 3: missing N_CLUSTERS/SEGMENT_LABELS validation) and 2 NOTEs[0m[0m
+4. The expert review found the CRITICAL missing file plus several MEDIUM findings for the main recipe[0m[0m
+[0m[0m
+Looking at the Python companion, I can see:[0m[0m
+- Issue 3 from code review (the assertion) has already been addressed in the current file (the [38;5;10massert[0m is present in [38;5;10minterpret_segments()[0m)[0m[0m
+- Issue 1 (linear scan) has been addressed (the [38;5;10mcluster_to_rank[0m dict is already built)[0m[0m
+- The TODO marker at the bottom already captures the ARCH-CRITICAL finding[0m[0m
+[0m[0m
+The Python companion is already in good shape. My job as TechEditor is to polish what exists. Let me apply the editorial checklist:[0m[0m
+[0m[0m
+1. [1mGrammar/mechanics[22m: Check for issues[0m[0m
+2. [1mCode formatting[22m: Verify language tags on fenced blocks[0m[0m
+3. [1mLink verification[22m: Check the broken link at the bottom[0m[0m
+4. [1mHeader hierarchy[22m: Verify structure[0m[0m
+5. [1mReadability[22m: Short paragraphs, active voice[0m[0m
+6. [1mVoice drift[22m: Check for anti-patterns, em dashes[0m[0m
+7. [1mRECIPE-GUIDE compliance[22m: For a Python companion file[0m[0m
+8. [1mVendor balance[22m: N/A for Python companion (inherently AWS-specific)[0m[0m
+[0m[0m
+The file is well-written. The code review's Issue 1 and Issue 3 are already addressed in the current version. Issue 2 (iterrows at scale) is already mentioned in the Gap section. The existing TODO marker correctly captures the critical finding.[0m[0m
+[0m[0m
+Let me make the minimal editorial fixes:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+[38;5;244m - Completed in 0.5s[0m
+
+[38;5;141m> [0mGood, no em dashes. Let me check for any other style issues and apply the final edits. The file is largely clean. I'll make the minimal fixes needed:[0m[0m
+[0m[0m
+1. The closing link references a file that doesn't exist (broken link noted in expert review) - the TODO already captures this[0m[0m
+2. The opening heading should be H1 per recipe guide for Python companions[0m[0m
+3. Minor punctuation consistency[0m[0m
+I'll modify the following file: [38;5;141mchapter06.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Align title with naming convention used in chapter 1 Python companions
+
+[49m[38;5;9m- 1   [0m:[38;5;9m[49m # Recipe 6.2: Python Implementation Example
+[0m[49m[38;5;10m+    1[0m:[38;5;10m[49m # Recipe 6.2: Utilization Pattern Segmentation (Python Example)
+[0m[K
+Updating: [38;5;141mchapter06.02-python-example.md[0m
+[38;5;244m - Completed in 0.3s[0m
+
+I'll modify the following file: [38;5;141mchapter06.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Fix grammar: 'fewer' for countable months, not 'less'
+
+[49m[38;5;9m- 613     [0m:[38;5;9m[49m **Real data ingestion.** This example generates synthetic data. In production, you'd query your claims data warehouse (Redshift, Snowflake, or a data lake on S3) for trailing 12-month utilization metrics per member. That query itself is non-trivial: you need to handle members with partial enrollment (less than 12 months of data), exclude members who disenrolled, and decide how to handle members with zero utilization across all dimensions (are they healthy or just not using their benefits?).
+[0m[49m[38;5;10m+      613[0m:[38;5;10m[49m **Real data ingestion.** This example generates synthetic data. In production, you'd query your claims data warehouse (Redshift, Snowflake, or a data lake on S3) for trailing 12-month utilization metrics per member. That query itself is non-trivial: you need to handle members with partial enrollment (fewer than 12 months of data), exclude members who disenrolled, and decide how to handle members with zero utilization across all dimensions (are they healthy or just not using their benefits?).
+[0m[K
+Updating: [38;5;141mchapter06.02-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+I'll modify the following file: [38;5;141mchapter06.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Tighten phrasing: remove unnecessary 'it'
+
+[49m[38;5;9m- 625     [0m:[38;5;9m[49m **DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace it with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
+[0m[49m[38;5;10m+      625[0m:[38;5;10m[49m **DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
+[0m[K
+Updating: [38;5;141mchapter06.02-python-example.md[0m
+[38;5;244m - Completed in 0.16s[0m
+
+[38;5;141m> [0mNow let me verify the existing TODO marker is properly formatted and check if there's anything else that needs attention:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m for pattern: [38;5;141mtodo[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 1 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe TODO marker is well-formed and captures all the review findings. Let me also add a VPC callout in the Setup section as recommended by SEC-3:[0m[0m
+I'll modify the following file: [38;5;141mchapter06.02-python-example.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Add VPC callout in Setup per SEC-3 finding
+
+[49m[39m  17, 17[0m:[39m[49m Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+[0m[49m[39m  18, 18[0m:[39m[49m - `s3:GetObject` and `s3:PutObject` (reading utilization data, writing segment assignments)
+[0m[49m[39m  19, 19[0m:[39m[49m - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing segment profiles and member assignments)
+[0m[49m[38;5;9m- 20    [0m:[38;5;9m[49m - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m > **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints for S3 and DynamoDB. See the Gap to Production section at the end for the full list of production requirements.
+[0m[K
+Updating: [38;5;141mchapter06.02-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me do a final read of the top and bottom of the file to confirm everything is consistent:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m30[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m, from line [38;5;141m634[0m to end of file
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2062 bytes[0m from /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1490 bytes[0m from /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe file is clean. Let me verify the complete editorial checklist:[0m[0m
+[0m[0m
+1. [1mGrammar and mechanics[22m - Fixed "less than 12 months" to "fewer than 12 months" (countable noun). No other issues found.[0m[0m
+2. [1mCode formatting[22m - All fenced blocks have language tags ([38;5;10mpython[0m, [38;5;10mbash[0m). Inline code used correctly for service names and API calls.[0m[0m
+3. [1mLink verification[22m - The closing link to [38;5;10mchapter06.02-utilization-pattern-segmentation[0m is broken (file doesn't exist). This is captured by the existing TODO marker.[0m[0m
+4. [1mHeader hierarchy[22m - H1 for title, H2 for major sections. No skipped levels.[0m[0m
+5. [1mReadability[22m - Short paragraphs, active voice throughout. No run-on sentences.[0m[0m
+6. [1mVoice drift[22m - Zero em dashes. No documentation-voice. No feature-list formatting. No announcement statements. Engineer-explaining-cool-stuff tone throughout.[0m[0m
+7. [1mRECIPE-GUIDE compliance[22m - For a Python companion: opening callout ✓, setup ✓, config/constants ✓, one section per step ✓, full pipeline function ✓, gap to production ✓.[0m[0m
+8. [1mVendor balance[22m - N/A for Python companion (inherently 100% AWS-specific, which is correct per RECIPE-GUIDE).[0m[0m
+[0m[0m
+[1mSummary of edits applied:[22m[0m[0m
+- Renamed title from "Python Implementation Example" to "Utilization Pattern Segmentation (Python Example)" for consistency with the recipe naming convention[0m[0m
+- Fixed grammar: "less than 12 months" to "fewer than 12 months"[0m[0m
+- Tightened phrasing in Gap section (removed unnecessary "it")[0m[0m
+- Added VPC production callout in Setup section per SEC-3 finding[0m[0m
+- Preserved existing TODO marker that captures all deferred findings (ARCH-CRITICAL, SEC-1/2/3, ARCH-1/2, NET-1, VOICE-1)[0m[0m
+[0m[0m
+The code review's Issue 3 (missing assertion) was already addressed in the current file. Issue 1 (linear scan replaced with dict lookup) was also already fixed. Issue 2 (iterrows at scale) is documented in the Gap section.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 10.89 • Time: 1m 24s
+
+[0m[1G[0m[0m[?25hThe CRITICAL finding (missing main recipe file) remains correctly deferred via the TODO marker for the TechWriter to address.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: '/tmp/ralph-worktrees/iter-611/chapters/06-cohort-analysis/recipe-02-utilization-pattern-segmentation.md' does not exist
+[0m[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: Directory not found: /tmp/ralph-worktrees/iter-611/chapters/06-cohort-analysis
+[0m[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: Directory not found: /tmp/ralph-worktrees/iter-611/chapters
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-611[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-611[0m [38;5;244m(showing 1000 of 1846 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.225s[0m
+
+[38;5;141m> [0mNow I can see the file is at the root level. Let me read the relevant files:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-611/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m32184 bytes[0m from /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me read the review files for chapter 6.2:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/reviews/chapter06.02-expert-review.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-611/reviews/chapter06.02-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m17689 bytes[0m from /tmp/ralph-worktrees/iter-611/reviews/chapter06.02-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m7783 bytes[0m from /tmp/ralph-worktrees/iter-611/reviews/chapter06.02-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have all the information needed to make my assessment. Let me check for em dashes and other style issues in the Python example file:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-611/chapter06.02-python-example.md
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mGood, no em dashes. Now I have enough information to render my verdict.[0m[0m
+[0m[0m
+[1mSummary of findings:[22m[0m[0m
+[0m[0m
+1. [1mStyle guide compliance:[22m No em dashes found. Voice is consistent with STYLE-GUIDE.md (engineer explaining something cool, parenthetical asides, self-deprecating honesty). Code blocks all have language tags ([38;5;10mbash[0m, [38;5;10mpython[0m). Header hierarchy is correct (H1 > H2 > no skipped levels).[0m[0m
+[0m[0m
+2. [1mTechnical findings from reviews:[22m[0m[0m
+   - The expert review has 1 CRITICAL finding (ARCH-CRITICAL: main recipe file missing) and 7 MEDIUM findings (SEC-1, SEC-2, SEC-3, ARCH-1, ARCH-2, NET-1, VOICE-1).[0m[0m
+   - The code review has 1 WARNING (Issue 3: missing N_CLUSTERS/SEGMENT_LABELS validation) and 2 NOTEs.[0m[0m
+   - Looking at the actual Python example file, I can see that Issue 1 (linear scan) and Issue 3 (missing assertion) from the code review have been [1mincorporated[22m - the code already has [38;5;10mcluster_to_rank[0m dict and the [38;5;10massert N_CLUSTERS == len(SEGMENT_LABELS)[0m assertion. Issue 2 (iterrows at scale) is addressed in the Gap section.[0m[0m
+   - The CRITICAL and MEDIUM findings from the expert review are explicitly flagged as a TODO marker at the bottom of the file: [38;5;10m<!-- TODO (TechWriter): Expert review ARCH-CRITICAL (CRITICAL). Main recipe file chapter06.02-utilization-pattern-segmentation.md does not exist... Address SEC-1, SEC-2, SEC-3, ARCH-1, ARCH-2, NET-1, VOICE-1 findings... -->[0m[0m[0m
+   - The VPC callout (SEC-3) has been incorporated with the Production note in the Setup section.[0m[0m
+[0m[0m
+3. [1mPass condition check:[22m[0m[0m
+   - No style guide violations ✅[0m[0m
+   - No em dashes ✅[0m[0m
+   - Correct header hierarchy ✅[0m[0m
+   - All code blocks have language tags ✅[0m[0m
+   - Voice consistent with STYLE-GUIDE.md ✅[0m[0m
+   - HIGH/MEDIUM technical findings: All are explicitly flagged as TODO markers for the TechWriter ✅[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 5.92 • Time: 44s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Python companion file has no style guide violations: zero em dashes, correct header hierarchy (H1 > H2), all code blocks have language tags (bash, python), voice is consistent with STYLE-GUIDE.md (engineer-explaining-over-lunch tone, parenthetical asides, honest Gap section). Code review findings (Issue 1 cluster_to_rank dict, Issue 3 assertion) are already incorporated in the code. All CRITICAL and MEDIUM expert review findings (ARCH-CRITICAL, SEC-1 through SEC-3, ARCH-1, ARCH-2, NET-1, VOICE-1) are explicitly flagged as a TODO marker for the TechWriter at the bottom of the file, meeting the pass condition for unincorporated findings."}

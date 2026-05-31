@@ -1,4 +1,4 @@
-# Recipe 6.2: Python Implementation Example
+# Recipe 6.2: Utilization Pattern Segmentation (Python Example)
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.2. It shows one way you could translate utilization pattern segmentation concepts into working Python code. It is not production-ready. There's no error handling, no retry logic, no input validation. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy against your entire member population on Monday morning. Consider it a starting point, not a destination.
 >
@@ -18,6 +18,8 @@ Your environment needs credentials configured (via environment variables, an ins
 - `s3:GetObject` and `s3:PutObject` (reading utilization data, writing segment assignments)
 - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing segment profiles and member assignments)
 - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
+
+> **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints for S3 and DynamoDB. See the Gap to Production section at the end for the full list of production requirements.
 
 ---
 
@@ -610,7 +612,7 @@ The silhouette score of ~0.38 is typical for healthcare utilization data. It mea
 
 This example works: run it and you'll get interpretable utilization segments with member assignments. But the distance between "works as a script" and "runs monthly against 2 million members in a production population health platform" is significant. Here's where that gap lives.
 
-**Real data ingestion.** This example generates synthetic data. In production, you'd query your claims data warehouse (Redshift, Snowflake, or a data lake on S3) for trailing 12-month utilization metrics per member. That query itself is non-trivial: you need to handle members with partial enrollment (less than 12 months of data), exclude members who disenrolled, and decide how to handle members with zero utilization across all dimensions (are they healthy or just not using their benefits?).
+**Real data ingestion.** This example generates synthetic data. In production, you'd query your claims data warehouse (Redshift, Snowflake, or a data lake on S3) for trailing 12-month utilization metrics per member. That query itself is non-trivial: you need to handle members with partial enrollment (fewer than 12 months of data), exclude members who disenrolled, and decide how to handle members with zero utilization across all dimensions (are they healthy or just not using their benefits?).
 
 **Feature engineering depth.** We use 8 raw count/sum features. A production implementation would add derived features: ED-to-outpatient ratio (are they using the ED as primary care?), Rx complexity score (number of unique therapeutic classes), care fragmentation index (number of distinct providers), and trend features (is utilization increasing or decreasing quarter-over-quarter). These derived features often separate the "Rising Risk" segment more cleanly.
 
@@ -622,7 +624,7 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 **Error handling and retries.** Every AWS call here can fail. S3 writes can fail on network issues. DynamoDB batch writes can return unprocessed items if you hit throughput limits. A production system wraps all external calls in retry logic with exponential backoff, logs failures with enough context to debug, and has a dead-letter mechanism for members who couldn't be assigned.
 
-**DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace it with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
+**DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
 
 **DynamoDB data types.** This example already wraps `total_allowed_12m` in `Decimal(str(value))` for DynamoDB. If you add any new float-valued field to the DynamoDB item, wrap it the same way. Plain Python floats will raise a `TypeError` from boto3 at write time.
 
