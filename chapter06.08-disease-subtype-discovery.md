@@ -1,111 +1,136 @@
 # Recipe 6.8: Disease Subtype Discovery
 
-**Complexity:** Complex · **Phase:** Research/Clinical · **Estimated Cost:** Variable (compute-heavy)
+**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$2.00–$8.00 per patient in the analysis cohort (depending on feature dimensionality and compute requirements)
 
 ---
 
 ## The Problem
 
-Here's a dirty secret in medicine: many diseases we treat as single entities are actually collections of distinct conditions wearing the same name. "Type 2 diabetes" is not one disease. It's a label we slap on a heterogeneous group of metabolic dysfunctions that happen to share a common symptom (elevated blood glucose) but may have wildly different underlying mechanisms, progression patterns, and optimal treatments.
+A health system has 14,000 patients with a diagnosis of heart failure. They're all coded HFrEF or HFpEF. They all get guideline-directed medical therapy. And yet: some respond beautifully to beta-blockers while others don't. Some progress to transplant evaluation within two years while others remain stable for a decade. Some have readmission rates of 40% while others never come back.
 
-This isn't a theoretical concern. A patient with insulin-resistant Type 2 diabetes driven by visceral adiposity responds differently to metformin than a patient whose diabetes is primarily driven by beta-cell dysfunction. They both get the same ICD-10 code. They both get the same first-line treatment protocol. One of them responds well. The other doesn't, and we call that "treatment failure" when really it's "wrong treatment for this particular flavor of the disease."
+The clinical intuition is obvious: "heart failure" is not one disease. It's a collection of diseases that happen to share a final common pathway (the heart can't pump effectively). Cardiologists know this. They talk about ischemic vs. non-ischemic, about infiltrative cardiomyopathies, about hypertensive heart disease. But the current taxonomy is based on mechanism of injury and ejection fraction. It doesn't capture the full heterogeneity of how these patients actually behave.
 
-The same story plays out across oncology (breast cancer has at least four molecular subtypes with different prognoses), psychiatry (major depressive disorder is almost certainly multiple distinct conditions), autoimmune diseases (lupus presents so differently across patients that clinicians joke it's a dozen diseases), and cardiology (heart failure with preserved ejection fraction is a grab-bag of distinct pathophysiologies).
+This isn't unique to heart failure. Type 2 diabetes, COPD, depression, sepsis, asthma, Parkinson's disease: all of these are "umbrella diagnoses" that likely contain distinct biological subtypes with different trajectories and different optimal treatments. The Lancet published a landmark study in 2018 identifying five distinct clusters within Type 2 diabetes, each with different progression patterns and complication risks. That study used unsupervised clustering on six clinical variables across 8,980 patients. The subtypes they found predicted outcomes better than the traditional classification.
 
-The clinical impact is enormous. If you can identify meaningful subtypes within a disease population, you can:
+The promise of disease subtype discovery is precision medicine at the population level. If you can identify that your 14,000 heart failure patients actually fall into six distinct phenotypic clusters, and that Cluster 3 responds poorly to standard beta-blocker therapy but responds well to SGLT2 inhibitors, you've just generated a hypothesis that could change treatment protocols. If Cluster 5 has a 60% readmission rate while the others average 15%, you've identified a group that needs intensive care management.
 
-- Match patients to treatments that actually work for their specific subtype
-- Set realistic prognosis expectations (some subtypes progress faster)
-- Design clinical trials that aren't diluted by heterogeneity (a drug that works for subtype A but not subtype B will fail a trial that mixes them)
-- Identify biomarkers that distinguish subtypes early, before treatment failure reveals them
+The challenge: there are no labels. Nobody has pre-defined what the subtypes are. That's the whole point. You're using unsupervised learning to discover structure that the existing taxonomy doesn't capture. And that means you have no ground truth to validate against, no accuracy metric to optimize, and no way to know if the clusters you found are clinically meaningful until a physician looks at them and says "yes, these are real."
 
-The challenge: these subtypes aren't labeled in your data. Nobody tagged patients as "Type 2 diabetes subtype 3." You have to discover the structure from the data itself. That's unsupervised learning, and it's one of the hardest problems in clinical informatics because there's no answer key to check your work against.
+This is research-grade work. It requires clinical collaboration from day one, rigorous statistical validation, and the intellectual honesty to admit when your clusters are artifacts of data quality rather than biology.
 
 ---
 
-## The Technology: Unsupervised Clustering for Subtype Discovery
+## The Technology: How Unsupervised Clustering Discovers Disease Subtypes
 
-### What Is Unsupervised Clustering?
+### What Unsupervised Clustering Actually Does
 
-At its core, unsupervised clustering is the process of finding natural groupings in data without being told what the groups are. You hand the algorithm a bunch of patient records described by dozens or hundreds of features (lab values, vital signs, genetic markers, medication responses, comorbidities) and ask: "Are there distinct subgroups here that look meaningfully different from each other?"
+Let's start from first principles. Supervised learning has labels: you know the answer and you're training a model to predict it. Unsupervised clustering has no labels. You're handing the algorithm a pile of patient data and asking: "Are there natural groupings here that I haven't noticed?"
 
-The algorithm doesn't know what a "disease subtype" is. It doesn't know what diabetes is. It just finds regions of the feature space where patients cluster together, separated from other clusters by measurable gaps. Your job is to look at what the algorithm found and determine whether those clusters correspond to something clinically real.
+The algorithm looks at each patient as a point in high-dimensional space. If you have 50 clinical features per patient (labs, vitals, medications, comorbidities, demographics), each patient is a point in 50-dimensional space. Clustering algorithms find regions of that space where patients are densely packed together and separated from other dense regions by relative emptiness.
 
-This is fundamentally different from supervised learning (where you have labeled examples to learn from) and from rule-based stratification (where a clinician defines the tiers). Unsupervised discovery can find structure that humans haven't noticed yet. That's its power and its danger.
+The intuition: if patients in one region of the space share similar lab patterns, similar medication responses, and similar outcomes, they might represent a coherent biological subtype. The "might" is doing a lot of work in that sentence, and we'll come back to it.
 
-### The Clustering Algorithm Landscape
+### The Feature Engineering Problem
 
-There's no single "best" clustering algorithm for disease subtype discovery. The right choice depends on your data characteristics and assumptions about cluster shape.
+This is where disease subtype discovery diverges from standard clustering applications. In geographic clustering, your features are obvious (latitude, longitude). In disease subtype discovery, feature selection is the entire ballgame.
 
-**K-Means and variants.** The workhorse. Partitions patients into K groups by minimizing within-cluster variance. Fast, scalable, interpretable. The catch: you have to specify K in advance (how many subtypes?), and it assumes roughly spherical clusters of similar size. For high-dimensional clinical data, those assumptions often don't hold. K-Means++ improves initialization; Mini-Batch K-Means handles large datasets.
+Consider heart failure. What features might distinguish subtypes?
 
-**Gaussian Mixture Models (GMM).** A probabilistic generalization of K-Means. Instead of hard cluster assignments, each patient gets a probability of belonging to each cluster. This is valuable in medicine because patients often don't fit neatly into one subtype. A patient might be 70% subtype A and 30% subtype B. GMMs also handle elliptical (non-spherical) cluster shapes. The downside: more parameters to estimate, more sensitive to initialization, and model selection (choosing K) requires information criteria like BIC or AIC.
+**Clinical measurements:** Ejection fraction, BNP/NT-proBNP levels, troponin, creatinine, hemoglobin, sodium, potassium, liver function tests, thyroid function. Each measured at what time point? Baseline? Trajectory over time? Peak value? Rate of change?
 
-**Hierarchical clustering.** Builds a tree (dendrogram) of nested clusters, from individual patients up to the entire population. You can cut the tree at different levels to get different numbers of clusters. Useful for exploring structure at multiple granularities. Agglomerative (bottom-up) is more common than divisive (top-down). The downside: doesn't scale well beyond a few thousand patients without approximations, and the choice of linkage criterion (single, complete, Ward's) dramatically affects results.
+**Comorbidity profiles:** Diabetes, hypertension, atrial fibrillation, chronic kidney disease, COPD, obesity, sleep apnea, anemia. Binary presence/absence? Or severity-weighted?
 
-**DBSCAN and density-based methods.** Finds clusters as dense regions separated by sparse regions. Doesn't require specifying K. Can find arbitrarily shaped clusters. Handles noise (patients that don't belong to any cluster). The downside: sensitive to the density threshold parameter (epsilon), and struggles with clusters of varying density, which is common in clinical data where some subtypes are rare.
+**Medication response:** Which drugs were tried? Which were tolerated? Which produced measurable improvement? This is retrospective observational data, not randomized trial data, so confounding is everywhere.
 
-**Spectral clustering.** Constructs a similarity graph between patients and partitions it using eigenvectors of the graph Laplacian. Can find non-convex cluster shapes that K-Means misses. Useful when the "similarity" between patients is better captured by a custom kernel than by Euclidean distance. The downside: computationally expensive for large populations, and the number of clusters still needs to be specified.
+**Functional status:** NYHA class, 6-minute walk distance, quality of life scores. Often sparsely documented.
 
-**Deep clustering (autoencoders + clustering).** Uses a neural network to learn a low-dimensional representation of patients, then clusters in that learned space. Can capture complex nonlinear relationships between features. Increasingly popular in genomics and multi-omics subtyping. The downside: less interpretable (what do the learned dimensions mean?), requires more data, and adds hyperparameter complexity.
+**Imaging features:** LV dimensions, wall motion abnormalities, valve disease, RV function. Requires structured extraction from echo reports.
 
-### Why This Is Hard
+**Genomic data:** If available. Usually it's not, outside of research cohorts.
 
-Disease subtype discovery is not a standard clustering problem. Several factors make it uniquely challenging:
+The choices you make here determine what subtypes you can possibly find. If you only include lab values, you'll find lab-based subtypes. If you only include comorbidities, you'll find comorbidity-based subtypes. The subtypes are not "in the data" waiting to be discovered. They're a function of which data you choose to look at and how you represent it.
 
-**No ground truth.** In a typical ML problem, you can evaluate your model against known correct answers. Here, the whole point is that the correct answers don't exist yet. You're proposing new categories. Validation requires clinical interpretation, external cohort replication, and ideally prospective studies showing that the subtypes predict different outcomes or treatment responses.
+This is why clinical collaboration is non-negotiable. A data scientist working alone will make feature choices that seem reasonable but miss clinically important distinctions. A cardiologist will tell you that the ratio of BNP to creatinine matters more than either value alone, or that the trajectory of ejection fraction over the first 90 days after diagnosis is more informative than the baseline value.
 
-**Feature selection is everything.** Which patient attributes do you cluster on? Lab values? Genetic markers? Medication history? Comorbidities? Vital sign trajectories? The choice of features determines what kind of subtypes you'll find. Cluster on metabolic markers and you'll find metabolic subtypes. Cluster on genetic variants and you'll find genetic subtypes. These may or may not align. There's no objectively correct feature set; it depends on what clinical question you're trying to answer.
+### Choosing a Clustering Algorithm
 
-**Dimensionality.** Clinical datasets often have hundreds of features per patient. High-dimensional spaces are treacherous for clustering: distances become less meaningful (the "curse of dimensionality"), noise features dilute signal features, and visualization becomes impossible. Dimensionality reduction (PCA, UMAP, t-SNE, autoencoders) is almost always necessary, but each method makes different assumptions about what structure to preserve.
+There's no single "best" algorithm for disease subtype discovery. The choice depends on your assumptions about cluster shape, your tolerance for specifying the number of clusters in advance, and your data characteristics.
 
-**Missing data.** Clinical data is notoriously incomplete. Not every patient has every lab test. Missingness is often informative (a test wasn't ordered because the clinician didn't suspect a condition). Simple imputation can introduce bias. Multiple imputation adds complexity. Some clustering methods handle missing data natively; most don't.
+**K-means** is the simplest and most widely used. It assumes clusters are roughly spherical (equal variance in all directions) and requires you to specify K (the number of clusters) in advance. It's fast, scales well, and produces interpretable results. Its weakness: real disease subtypes are rarely spherical in feature space. If one subtype is defined by a tight range of BNP values but a wide range of ejection fractions, K-means will struggle.
 
-**Temporal complexity.** Diseases evolve over time. A patient's subtype might change as their condition progresses. Cross-sectional clustering (one snapshot per patient) misses this. Longitudinal clustering (trajectories over time) is more informative but dramatically more complex.
+**Gaussian Mixture Models (GMM)** generalize K-means by allowing elliptical clusters (different variances in different directions). They also provide soft assignments: instead of "this patient belongs to Cluster 3," you get "this patient has 72% probability of Cluster 3 and 28% probability of Cluster 1." That probabilistic assignment is clinically useful because many patients are genuinely on the boundary between subtypes.
 
-**Clinical meaningfulness.** Finding clusters is easy. Finding clusters that matter is hard. A clustering algorithm will always find groups if you ask it to. The question is whether those groups correspond to distinct biological mechanisms, different prognoses, or different treatment responses. Statistical separation is necessary but not sufficient for clinical relevance.
+**Hierarchical clustering** builds a tree (dendrogram) of nested clusters, from individual patients up to the entire population. You can cut the tree at different levels to get different numbers of clusters. The advantage: you can visualize the full hierarchy and see which subtypes are "close" to each other. The disadvantage: it doesn't scale well beyond a few thousand patients without approximation methods.
 
-### Where the Field Has Moved
+**DBSCAN and HDBSCAN** find clusters of arbitrary shape and automatically identify outliers (patients who don't fit any cluster). They don't require you to specify the number of clusters. The disadvantage: they're sensitive to their density parameters, and in high-dimensional clinical data, the concept of "density" becomes unreliable (the curse of dimensionality).
 
-The last five years have seen significant advances:
+**Spectral clustering** works by building a similarity graph between patients and finding communities in that graph. It handles non-convex cluster shapes well. It's computationally expensive for large populations but produces excellent results when the underlying structure is complex.
 
-**Multi-omics integration.** Combining genomics, transcriptomics, proteomics, and metabolomics data for subtyping. Methods like MOFA (Multi-Omics Factor Analysis) and similarity network fusion handle heterogeneous data types.
+**Consensus clustering** (also called ensemble clustering) runs multiple clustering algorithms (or the same algorithm with different parameters) and identifies groupings that are stable across runs. If patients consistently end up in the same cluster regardless of algorithm choice or random initialization, that's evidence the cluster is real rather than an artifact. This is the gold standard for disease subtype discovery in research settings.
 
-**Consensus clustering.** Running multiple clustering algorithms (or the same algorithm with different parameters) and identifying stable clusters that appear consistently. Reduces sensitivity to algorithmic choices.
+For a first pass, I'd recommend: run K-means, GMM, and hierarchical clustering across a range of K values (3 through 10). Use consensus clustering to identify which groupings are stable. Then validate the stable clusters clinically.
 
-**Deep phenotyping from EHR data.** Using the full richness of electronic health records (not just structured fields but also clinical notes via NLP) to build patient representations for clustering.
+### Dimensionality Reduction
 
-**Causal subtyping.** Moving beyond correlational clusters to identify subtypes with distinct causal mechanisms, often integrating Mendelian randomization or instrumental variable approaches.
+If you have 50 or 100 clinical features, clustering directly in that space is problematic. The curse of dimensionality means that distance metrics become less meaningful as dimensions increase. Points that are "close" in 100-dimensional space may not be meaningfully similar.
 
-**Federated subtype discovery.** Running clustering across multiple institutions without sharing patient-level data, enabling larger effective sample sizes while preserving privacy.
+**PCA (Principal Component Analysis)** projects the data onto the directions of maximum variance. If 90% of the variance in your 50 features can be captured by 8 principal components, you can cluster in 8 dimensions instead of 50. The downside: principal components are linear combinations of original features, which makes them hard to interpret clinically. "PC3 = 0.4 * BNP + 0.3 * creatinine - 0.2 * ejection fraction" is not something a cardiologist can act on.
 
----
+**UMAP (Uniform Manifold Approximation and Projection)** is a non-linear dimensionality reduction technique that preserves local structure. It's excellent for visualization (projecting patients into 2D for plotting) and can reveal cluster structure that PCA misses. But it's stochastic (different runs produce different layouts) and the distances in UMAP space are not directly interpretable.
 
-## General Architecture Pattern
+**Autoencoders** (neural network-based dimensionality reduction) learn a compressed representation of the patient data. They can capture non-linear relationships that PCA misses. The latent space of an autoencoder can be used as input to clustering. The downside: they're black boxes, and explaining why two patients ended up in the same cluster becomes harder.
 
-The pipeline for disease subtype discovery follows a research-oriented workflow that's more iterative than a typical production ML pipeline:
+For disease subtype discovery, I'd recommend: use PCA for initial exploration and to determine how many dimensions carry meaningful variance. Use UMAP for visualization. Cluster in the PCA-reduced space (or the original space if dimensionality is manageable). Use the UMAP visualization to sanity-check whether the clusters look coherent.
+
+### Validation: The Hard Part
+
+Here's the fundamental challenge of unsupervised disease subtype discovery: how do you know the clusters are real?
+
+**Internal validation metrics** measure cluster quality without external labels:
+- Silhouette score: How similar is each patient to their own cluster vs. the nearest other cluster? Ranges from -1 to 1; higher is better.
+- Calinski-Harabasz index: Ratio of between-cluster variance to within-cluster variance. Higher means more separated clusters.
+- Davies-Bouldin index: Average similarity between each cluster and its most similar cluster. Lower is better.
+
+These metrics tell you whether the clusters are well-separated in feature space. They do not tell you whether the clusters are clinically meaningful. A clustering that perfectly separates patients by age and sex will have excellent internal metrics but zero clinical novelty.
+
+**Stability validation** tests whether the clusters are robust:
+- Bootstrap resampling: Resample patients with replacement, re-cluster, and measure how often the same patients end up together. Stable clusters survive resampling.
+- Feature perturbation: Add noise to features or drop features and re-cluster. Robust clusters survive perturbation.
+- Algorithm variation: Do different algorithms find the same groupings? Consensus clustering formalizes this.
+
+**Clinical validation** is the only validation that ultimately matters:
+- Do the clusters have different outcomes (mortality, readmission, progression)?
+- Do the clusters have different treatment responses?
+- Can a clinician look at the cluster profiles and say "yes, I recognize these patients"?
+- Do the clusters suggest actionable differences in care?
+
+If your clusters have beautiful silhouette scores but identical outcomes across groups, they're not clinically useful subtypes. If they have mediocre silhouette scores but dramatically different 5-year mortality rates, they might be the most important finding in your dataset.
+
+### The General Architecture Pattern
 
 ```
-[Cohort Definition] → [Feature Engineering] → [Dimensionality Reduction] →
-[Clustering] → [Cluster Validation] → [Clinical Interpretation] →
-[External Replication] → [Subtype Characterization]
+[Cohort Definition] → [Feature Extraction] → [Preprocessing] → [Dimensionality Reduction]
+    → [Multi-Algorithm Clustering] → [Consensus/Stability Analysis]
+    → [Clinical Validation] → [Subtype Characterization] → [Deployment/Monitoring]
 ```
 
-**Cohort Definition.** Select the patient population. This sounds simple but involves critical decisions: which diagnosis codes define the disease? What's the minimum observation window? How do you handle patients with multiple qualifying conditions? Inclusion/exclusion criteria directly affect what subtypes you can discover.
+**Cohort definition:** Select the patient population. All patients with a specific diagnosis code? Only those with sufficient data completeness? Only those with a minimum follow-up period? These choices affect what subtypes you can find.
 
-**Feature Engineering.** Transform raw clinical data into a patient-feature matrix. Aggregate longitudinal data into summary statistics (mean HbA1c over 2 years, rate of eGFR decline, number of hospitalizations). Handle categorical variables (medications, comorbidities) via encoding. Normalize continuous features to prevent scale-dominant clustering.
+**Feature extraction:** Pull clinical features from EHR data. This requires joining across multiple data domains (labs, medications, diagnoses, procedures, notes). Handle missingness explicitly: impute, exclude, or use algorithms that handle missing data natively.
 
-**Dimensionality Reduction.** Reduce the feature space to a manageable number of dimensions while preserving meaningful structure. PCA for linear relationships, UMAP or t-SNE for nonlinear manifold structure, autoencoders for complex learned representations. The reduced space is where clustering happens.
+**Preprocessing:** Normalize features to comparable scales. Handle outliers. Encode categorical variables. This step has outsized impact on results because clustering algorithms are sensitive to feature scaling.
 
-**Clustering.** Apply one or more clustering algorithms to the reduced feature space. Run multiple algorithms and multiple parameter settings. Use ensemble/consensus approaches to identify robust clusters.
+**Dimensionality reduction:** Reduce feature space to a manageable number of dimensions while preserving meaningful variance.
 
-**Cluster Validation.** Assess cluster quality using internal metrics (silhouette score, Calinski-Harabasz index, Davies-Bouldin index) and stability metrics (bootstrap resampling, cross-validation). Determine the optimal number of clusters using elbow methods, gap statistics, or information criteria.
+**Multi-algorithm clustering:** Run multiple algorithms across multiple K values. Don't commit to a single algorithm or a single K.
 
-**Clinical Interpretation.** The most important step. Characterize each cluster by its distinguishing features. Are the clusters clinically coherent? Do they map to known biology? Do they predict different outcomes? This requires domain expertise and often iterative refinement.
+**Consensus/stability analysis:** Identify which groupings are robust across algorithms, initializations, and resampling.
 
-**External Replication.** Validate discovered subtypes in an independent cohort. If the same clusters appear in a different population, they're more likely to reflect real biology rather than dataset-specific artifacts.
+**Clinical validation:** Evaluate discovered clusters against outcomes, treatment responses, and clinical interpretability. This is a human-in-the-loop step that cannot be automated.
 
-**Subtype Characterization.** For validated subtypes, build a complete clinical profile: demographics, biomarkers, comorbidity patterns, treatment responses, prognosis. Develop a classifier that can assign new patients to subtypes for prospective use.
+**Subtype characterization:** For validated clusters, describe the defining features in clinically actionable terms. "Cluster 3 is characterized by preserved ejection fraction, elevated BNP, high comorbidity burden (diabetes + CKD), and poor response to beta-blockers" is actionable. "Cluster 3 has high values on PC2" is not.
+
+**Deployment/monitoring:** If subtypes are validated and actionable, build a classifier that assigns new patients to discovered subtypes. Monitor for drift as the patient population changes over time.
 
 ---
 
@@ -113,390 +138,383 @@ The pipeline for disease subtype discovery follows a research-oriented workflow 
 
 ### Why These Services
 
-**Amazon SageMaker for the ML pipeline.** Subtype discovery is an iterative, compute-intensive research workflow. SageMaker provides managed Jupyter notebooks for exploration, built-in clustering algorithms (K-Means), support for custom algorithms via containers, distributed training for large cohorts, and experiment tracking via SageMaker Experiments. The notebook environment is where researchers spend most of their time, and SageMaker handles the infrastructure so they can focus on the science.
+**Amazon SageMaker for ML compute and experimentation.** Disease subtype discovery is inherently iterative. You'll run dozens of clustering experiments with different feature sets, algorithms, and parameters before finding stable, clinically meaningful subtypes. SageMaker provides managed Jupyter notebooks for exploration, built-in implementations of K-means and PCA, and the ability to bring custom algorithms (GMM, HDBSCAN, consensus clustering) in containers. The experiment tracking in SageMaker Experiments lets you compare runs systematically rather than losing track of which parameter combination produced which result.
 
-**Amazon S3 for data lake storage.** Clinical datasets for subtyping are large (thousands of patients, hundreds of features, often with longitudinal data) and come in multiple formats (Parquet for structured data, CSV exports from EHRs, FHIR bundles). S3 provides durable, encrypted storage with lifecycle policies for managing research data retention.
+**Amazon S3 for data lake storage.** The feature extraction pipeline pulls from multiple source systems (labs, medications, diagnoses, notes) and materializes a patient-feature matrix that may be hundreds of megabytes to several gigabytes. S3 provides durable, encrypted storage for both the raw extracted features and the intermediate/final clustering results. Versioning lets you reproduce any analysis from any point in time.
 
-**AWS Glue for ETL and feature engineering.** Transforming raw EHR extracts into a clean patient-feature matrix requires significant data wrangling: joining tables, aggregating longitudinal records, encoding categoricals, handling missing values. Glue's serverless Spark environment handles this at scale without cluster management.
+**AWS Glue for ETL and feature extraction.** Building the patient-feature matrix requires joining across multiple data domains, handling temporal logic (which lab value to use when there are multiple?), and applying business rules (how to encode medication history). Glue's Spark-based ETL handles this at scale, and the Glue Data Catalog provides schema management for the feature tables.
 
-**Amazon Athena for cohort definition.** Defining the study cohort (which patients meet inclusion criteria) is a SQL problem. Athena lets researchers query the data lake directly with standard SQL, iterate on cohort definitions quickly, and export results to S3 for downstream processing.
+**Amazon Athena for ad-hoc exploration.** Before committing to a feature set, you need to explore the data: check distributions, identify missingness patterns, understand correlations. Athena lets you query the feature tables in S3 with standard SQL without provisioning any infrastructure.
 
-**Amazon SageMaker Processing for batch computation.** Dimensionality reduction and consensus clustering are compute-intensive batch jobs. SageMaker Processing provides managed compute instances that spin up, run the job, and shut down. No idle infrastructure costs between experiments.
+**Amazon DynamoDB for subtype assignment storage.** Once subtypes are validated and a classifier is built, new patients need to be assigned to subtypes in real time. DynamoDB provides low-latency lookups by patient ID for downstream systems (care management platforms, clinical decision support) that need to know a patient's subtype.
 
-**Amazon QuickSight for visualization.** Communicating subtype characteristics to clinical stakeholders requires clear visualizations: cluster plots, feature distributions by subtype, outcome curves. QuickSight connects directly to S3/Athena results for interactive dashboards.
+**AWS Step Functions for pipeline orchestration.** The full pipeline (extract features, preprocess, reduce dimensions, cluster, validate, characterize) has multiple stages with dependencies. Step Functions orchestrates this as a state machine with error handling, retries, and audit logging.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart TD
-    A[EHR Data Extract] -->|Raw clinical data| B[S3 Data Lake\nraw/]
-    B -->|ETL| C[AWS Glue\nFeature Engineering]
-    C -->|Patient-feature matrix| D[S3 Data Lake\nprocessed/]
-    
-    E[Amazon Athena] -->|Cohort SQL| D
-    
-    D -->|Training data| F[SageMaker Notebook\nExploration & Prototyping]
-    D -->|Batch input| G[SageMaker Processing\nDimensionality Reduction]
-    G -->|Reduced features| H[SageMaker Training\nClustering Algorithms]
-    H -->|Cluster assignments| I[S3 Data Lake\nresults/]
-    
-    I -->|Validation metrics| J[SageMaker Experiments\nTracking & Comparison]
-    I -->|Visualization| K[Amazon QuickSight\nSubtype Dashboards]
-    
-    F -.->|Interactive iteration| G
-    F -.->|Interactive iteration| H
+    A[EHR Data Sources\nLabs, Meds, Dx, Notes] -->|Glue ETL| B[S3 Data Lake\nPatient Feature Matrix]
+    B -->|Athena| C[Exploratory Analysis\nFeature Selection]
+    C -->|Refined Features| D[SageMaker\nPreprocessing + PCA]
+    D --> E[SageMaker\nMulti-Algorithm Clustering]
+    E --> F[SageMaker\nConsensus + Stability Analysis]
+    F --> G[Clinical Validation\nHuman-in-the-Loop]
+    G -->|Validated Subtypes| H[SageMaker\nSubtype Classifier Training]
+    H --> I[SageMaker Endpoint\nReal-Time Assignment]
+    I --> J[DynamoDB\nPatient Subtype Store]
+
+    K[Step Functions] -.->|Orchestrates| B
+    K -.-> D
+    K -.-> E
+    K -.-> F
+    K -.-> H
 
     style B fill:#f9f,stroke:#333
-    style D fill:#f9f,stroke:#333
-    style I fill:#f9f,stroke:#333
-    style H fill:#ff9,stroke:#333
-    style K fill:#9ff,stroke:#333
+    style E fill:#ff9,stroke:#333
+    style G fill:#9f9,stroke:#333
+    style J fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Athena, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:*` (scoped to project), `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `athena:StartQueryExecution` |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Athena, Amazon DynamoDB, AWS Step Functions, AWS KMS |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `athena:StartQueryExecution`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
 | **BAA** | AWS BAA signed (patient clinical data is PHI) |
-| **Encryption** | S3: SSE-KMS; SageMaker notebooks: EBS encryption; Glue: job bookmarks encrypted; all transit over TLS |
-| **VPC** | SageMaker notebooks and processing jobs in private subnets with VPC endpoints for S3, SageMaker API, and CloudWatch Logs |
-| **CloudTrail** | Enabled: log all data access for HIPAA audit trail |
-| **Sample Data** | De-identified research datasets (MIMIC-IV for ICU populations, UK Biobank for chronic disease). Never use identifiable patient data without IRB approval. |
-| **Cost Estimate** | Highly variable. Typical research project: $200-500/month (SageMaker notebooks + periodic processing jobs). Large-scale runs with GPU instances: $50-200 per experiment. |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS-encrypted volumes and endpoints; Glue: KMS for job bookmarks and temp storage; all transit over TLS |
+| **VPC** | SageMaker notebooks and training jobs in VPC with VPC endpoints for S3, DynamoDB, and SageMaker API. No internet egress for PHI workloads. |
+| **CloudTrail** | Enabled for all service API calls. SageMaker experiment tracking provides additional audit of model lineage. |
+| **Sample Data** | Synthetic patient cohort with clinical features. MIMIC-IV (PhysioNet) provides realistic ICU patient data for development. Never use real PHI in dev/research without IRB approval. |
+| **Cost Estimate** | Glue ETL: ~$0.44/DPU-hour. SageMaker ml.m5.xlarge notebook: ~$0.23/hr. Training jobs (ml.m5.4xlarge): ~$0.92/hr. Expect 20-50 hours of compute for a full exploration cycle. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon SageMaker** | ML experimentation, training, processing jobs |
-| **Amazon S3** | Data lake for raw, processed, and result datasets |
-| **AWS Glue** | ETL pipeline for feature engineering at scale |
-| **Amazon Athena** | SQL-based cohort definition and ad-hoc queries |
-| **Amazon QuickSight** | Visualization dashboards for clinical stakeholders |
+| **Amazon SageMaker** | ML experimentation, clustering algorithms, model training, real-time inference endpoint |
+| **Amazon S3** | Stores patient feature matrices, intermediate results, model artifacts, and cluster characterizations |
+| **AWS Glue** | ETL pipeline to extract and join clinical features from source systems into patient-feature matrix |
+| **Amazon Athena** | SQL-based exploration of feature distributions, missingness, and correlations |
+| **Amazon DynamoDB** | Low-latency storage of patient subtype assignments for downstream consumption |
+| **AWS Step Functions** | Orchestrates the multi-stage pipeline with error handling and audit trail |
 | **AWS KMS** | Encryption key management for all data at rest |
-| **Amazon CloudWatch** | Monitoring for long-running processing jobs |
-| **SageMaker Experiments** | Tracking clustering runs, parameters, and metrics |
+| **Amazon CloudWatch** | Monitoring, logging, and alerting for pipeline health and drift detection |
 
 ### Code
 
+> **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
+>
+> - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including built-in K-means, PCA, and custom algorithm containers
+> - [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare-specific ML examples on AWS including patient cohort analysis patterns
+
 #### Walkthrough
 
-**Step 1: Cohort definition.** Before any ML happens, you need to precisely define which patients are in your study population. This is a clinical decision with technical implementation. For diabetes subtyping, you might require: confirmed Type 2 diabetes diagnosis (ICD-10 E11.x), at least 2 years of continuous enrollment, age 30+ at diagnosis (to exclude likely Type 1 misclassifications), and no secondary diabetes causes. The cohort definition directly determines what subtypes you can discover. Too broad and you'll find subtypes that are really just different diseases mixed together. Too narrow and you'll miss rare but real subtypes. This step uses SQL against your clinical data warehouse.
+**Step 1: Define the cohort.** Before any clustering happens, you need a clean, well-defined patient population. This means selecting patients with the target diagnosis, applying minimum data completeness thresholds, and defining the observation window. A cohort with 40% missing lab values will produce clusters driven by missingness patterns rather than biology. This step also handles temporal alignment: for each patient, define a "index date" (diagnosis date, first encounter, etc.) and extract features relative to that anchor. Skip this step and your clusters will reflect data availability rather than disease biology.
 
 ```
-FUNCTION define_cohort(data_lake_path):
-    // Query the clinical data lake to identify eligible patients.
-    // Each criterion is a deliberate clinical decision, not arbitrary filtering.
-    
-    query = """
-        SELECT DISTINCT patient_id
-        FROM diagnoses
-        WHERE icd10_code LIKE 'E11%'           -- Type 2 diabetes diagnosis
-          AND diagnosis_date >= '2020-01-01'    -- Recent enough for complete data
-          AND patient_age_at_diagnosis >= 30    -- Exclude likely Type 1 misclassifications
-        
-        INTERSECT
-        
-        SELECT patient_id
-        FROM enrollment
-        WHERE continuous_months >= 24           -- Enough observation time for meaningful features
-        
-        EXCEPT
-        
-        SELECT patient_id
-        FROM diagnoses
-        WHERE icd10_code IN ('E08%', 'E09%')   -- Exclude drug-induced and post-procedural diabetes
-    """
-    
-    // Execute against the data lake and save the cohort list
-    cohort_ids = execute_query(query, output_path=data_lake_path + "/cohort/")
-    
-    RETURN cohort_ids
-    // Typical result: 15,000-50,000 patients depending on your health system size
+FUNCTION define_cohort(diagnosis_codes, min_data_completeness, observation_window):
+    // Select all patients with the target diagnosis within the study period.
+    // diagnosis_codes: list of ICD-10 codes defining the disease (e.g., I50.x for heart failure)
+    // min_data_completeness: minimum fraction of required features that must be non-null (e.g., 0.7)
+    // observation_window: how far back/forward from index date to look for features (e.g., 365 days)
+
+    candidates = query patients WHERE any diagnosis IN diagnosis_codes
+                 AND diagnosis_date BETWEEN study_start AND study_end
+
+    // For each candidate, determine their index date (first qualifying diagnosis)
+    FOR each patient in candidates:
+        patient.index_date = earliest date of qualifying diagnosis
+
+    // Apply data completeness filter
+    // Patients with too much missing data will create clusters based on missingness, not biology
+    eligible = empty list
+    FOR each patient in candidates:
+        completeness = count_non_null_features(patient, observation_window) / total_required_features
+        IF completeness >= min_data_completeness:
+            append patient to eligible
+
+    RETURN eligible  // The analysis cohort, with index dates assigned
 ```
 
-**Step 2: Feature engineering.** This is where clinical knowledge meets data engineering. You're transforming raw longitudinal records (thousands of lab results, vital signs, medication fills per patient) into a fixed-width feature vector that captures each patient's disease phenotype. The feature choices encode your hypothesis about what distinguishes subtypes. For metabolic subtyping, you might focus on: glycemic control trajectory, insulin resistance markers, beta-cell function indicators, lipid profiles, body composition, and comorbidity burden. Each feature needs careful aggregation (mean? trend? variability?) and normalization.
+**Step 2: Extract and engineer features.** This is where clinical expertise matters most. You're building a numerical representation of each patient that captures the dimensions along which subtypes might differ. For each patient, extract labs (using the value closest to index date, or the median over the observation window), medications (binary indicators or duration-weighted), comorbidities (binary or severity-scored), vitals, and any other relevant structured data. Feature engineering choices here directly determine what subtypes you can discover.
 
 ```
-FUNCTION engineer_features(cohort_ids, data_lake_path):
-    // For each patient in the cohort, compute a comprehensive feature vector.
-    // These features encode our hypothesis about what distinguishes subtypes.
-    
-    features = empty matrix (rows = patients, columns = features)
-    
-    FOR each patient_id in cohort_ids:
-        // Glycemic control features
-        hba1c_values = get_lab_results(patient_id, test="HbA1c", window="2 years")
-        features[patient_id]["hba1c_mean"]      = mean(hba1c_values)
-        features[patient_id]["hba1c_trend"]      = linear_slope(hba1c_values)  // improving or worsening?
-        features[patient_id]["hba1c_variability"] = coefficient_of_variation(hba1c_values)
-        
-        // Insulin resistance markers
-        features[patient_id]["fasting_glucose_mean"] = mean(get_labs(patient_id, "fasting_glucose"))
-        features[patient_id]["triglyceride_mean"]    = mean(get_labs(patient_id, "triglycerides"))
-        features[patient_id]["homa_ir"]              = compute_homa_ir(patient_id)  // if insulin levels available
-        
-        // Beta-cell function indicators
-        features[patient_id]["c_peptide"]         = latest(get_labs(patient_id, "c_peptide"))
-        features[patient_id]["time_to_insulin"]   = months_from_diagnosis_to_first_insulin(patient_id)
-        
-        // Body composition
-        features[patient_id]["bmi_mean"]          = mean(get_vitals(patient_id, "bmi"))
-        features[patient_id]["bmi_trend"]         = linear_slope(get_vitals(patient_id, "bmi"))
-        
-        // Comorbidity burden
-        features[patient_id]["n_comorbidities"]   = count_unique_chronic_conditions(patient_id)
-        features[patient_id]["has_cvd"]           = has_diagnosis(patient_id, cardiovascular_codes)
-        features[patient_id]["has_ckd"]           = has_diagnosis(patient_id, renal_codes)
-        features[patient_id]["has_neuropathy"]    = has_diagnosis(patient_id, neuropathy_codes)
-        
-        // Treatment response (outcome-adjacent, use carefully)
-        features[patient_id]["metformin_response"] = hba1c_change_after_medication(patient_id, "metformin")
-        features[patient_id]["n_medication_classes"] = count_diabetes_med_classes(patient_id)
-    
-    // Handle missing values: multiple imputation for features missing < 30%,
-    // drop features missing > 50% of values (too sparse to be informative)
-    features = handle_missing_data(features, strategy="multiple_imputation", threshold=0.5)
-    
-    // Normalize all continuous features to zero mean, unit variance.
-    // Without this, features on larger scales (glucose in mg/dL) dominate
-    // features on smaller scales (HbA1c in %) during distance calculations.
-    features = standardize(features, method="z_score")
-    
-    // Save the patient-feature matrix
-    save_to_parquet(features, data_lake_path + "/features/patient_feature_matrix.parquet")
-    
-    RETURN features
+FUNCTION extract_features(cohort, feature_config):
+    // feature_config defines which features to extract and how to summarize them.
+    // Example config entry: { name: "bnp_baseline", source: "labs", loinc: "42637-9",
+    //                         aggregation: "closest_to_index", window: "90_days_before" }
+
+    feature_matrix = empty matrix (rows = patients, columns = features)
+
+    FOR each patient in cohort:
+        FOR each feature_def in feature_config:
+
+            IF feature_def.source == "labs":
+                // Pull lab values within the specified window relative to index date
+                values = get_lab_values(patient, feature_def.loinc,
+                                        patient.index_date, feature_def.window)
+                // Apply aggregation: closest_to_index, median, max, slope, etc.
+                feature_matrix[patient][feature_def.name] = aggregate(values, feature_def.aggregation)
+
+            ELSE IF feature_def.source == "medications":
+                // Check if patient was on this medication class during the window
+                // Can be binary (on/off) or continuous (days on therapy)
+                feature_matrix[patient][feature_def.name] = get_medication_exposure(
+                    patient, feature_def.drug_class, patient.index_date, feature_def.window)
+
+            ELSE IF feature_def.source == "diagnoses":
+                // Check for presence of comorbidity codes
+                feature_matrix[patient][feature_def.name] = has_diagnosis(
+                    patient, feature_def.icd_codes, before_date=patient.index_date)
+
+            ELSE IF feature_def.source == "vitals":
+                values = get_vitals(patient, feature_def.vital_type,
+                                    patient.index_date, feature_def.window)
+                feature_matrix[patient][feature_def.name] = aggregate(values, feature_def.aggregation)
+
+    RETURN feature_matrix
 ```
 
-**Step 3: Dimensionality reduction.** With 20-50 features per patient, direct clustering is feasible but noisy. Dimensionality reduction serves two purposes: it removes noise and redundancy (correlated features get collapsed), and it enables visualization (you can plot 2D or 3D projections to visually inspect cluster structure). PCA is the standard first pass because it's linear, deterministic, and interpretable (each component is a weighted combination of original features). UMAP provides better nonlinear structure preservation for visualization. Use both: PCA for the actual clustering input, UMAP for the plots you show clinicians.
+**Step 3: Preprocess and reduce dimensions.** Raw clinical features have wildly different scales (BNP ranges from 0 to 35,000 pg/mL; ejection fraction ranges from 5 to 75%). Without normalization, high-magnitude features dominate the distance calculations and clustering finds "BNP subtypes" rather than meaningful phenotypes. After scaling, apply PCA to identify how many dimensions carry meaningful variance and reduce the feature space accordingly. This step also handles remaining missing values through imputation.
 
 ```
-FUNCTION reduce_dimensions(features):
-    // Step 3a: PCA for clustering input
-    // Retain enough components to explain 90% of variance.
-    // This typically reduces 30-50 features down to 8-15 components.
-    pca_model = fit_PCA(features, variance_threshold=0.90)
-    pca_features = pca_model.transform(features)
-    
-    n_components = pca_features.n_columns
-    // Log: "Retained {n_components} PCA components explaining 90% of variance"
-    
-    // Inspect component loadings to understand what each dimension captures.
-    // Component 1 might be "overall metabolic severity"
-    // Component 2 might be "insulin resistance vs. beta-cell failure axis"
-    loadings = pca_model.get_loadings()
-    save_loadings_report(loadings, "results/pca_loadings.csv")
-    
-    // Step 3b: UMAP for visualization (not for clustering input)
-    // UMAP preserves local neighborhood structure, making clusters visually apparent.
-    // n_neighbors controls local vs. global structure preservation.
-    umap_2d = fit_UMAP(features, n_components=2, n_neighbors=30, min_dist=0.1)
-    save_visualization(umap_2d, "results/umap_projection.png")
-    
-    RETURN pca_features, umap_2d
+FUNCTION preprocess_and_reduce(feature_matrix, variance_threshold=0.90):
+    // Step 3a: Handle remaining missing values
+    // Multiple imputation is preferred for research; median imputation is acceptable for exploration
+    imputed_matrix = impute_missing(feature_matrix, method="iterative")
+    // "iterative" = MICE (Multiple Imputation by Chained Equations)
+    // Each missing value is predicted from the other features, iteratively
+
+    // Step 3b: Standardize all features to zero mean, unit variance
+    // Without this, features measured in large units (BNP: 0-35000) dominate
+    // features measured in small units (creatinine: 0.5-15.0)
+    scaled_matrix = standardize(imputed_matrix)  // z-score normalization: (x - mean) / std
+
+    // Step 3c: PCA for dimensionality reduction
+    // Determine how many components capture the specified fraction of total variance
+    pca_model = fit_PCA(scaled_matrix)
+    n_components = find_n_where_cumulative_variance >= variance_threshold
+    // Typical result: 50 features reduce to 8-15 principal components capturing 90% of variance
+
+    reduced_matrix = transform(scaled_matrix, pca_model, n_components)
+
+    // Step 3d: Also generate UMAP embedding for visualization (2D)
+    umap_embedding = fit_UMAP(scaled_matrix, n_components=2)
+    // UMAP is for visualization only; clustering happens in PCA space
+
+    RETURN reduced_matrix, pca_model, umap_embedding, scaled_matrix
 ```
 
-**Step 4: Consensus clustering.** Rather than betting on a single algorithm with a single parameter setting, consensus clustering runs many configurations and identifies clusters that are stable across them. The intuition: if two patients consistently end up in the same cluster regardless of which algorithm you use or how you perturb the data, they probably genuinely belong together. This is critical for subtype discovery because you need to convince clinicians (and reviewers, and the FDA) that your subtypes are real, not artifacts of a particular algorithmic choice.
+**Step 4: Run multi-algorithm clustering.** Don't bet on a single algorithm or a single K. Run K-means, GMM, and hierarchical clustering across K=2 through K=10. For each combination, record the cluster assignments and internal validation metrics. This gives you a landscape of possible groupings rather than a single answer. The goal is to identify values of K and algorithm choices where the results converge, suggesting genuine structure rather than algorithmic artifacts.
 
 ```
-FUNCTION consensus_clustering(pca_features, k_range):
-    // Run multiple clustering approaches and find stable consensus.
-    // k_range is typically [2, 3, 4, 5, 6, 7, 8] — we don't know how many subtypes exist.
-    
-    // Co-association matrix: tracks how often each pair of patients clusters together
-    // across all runs. Size = n_patients x n_patients. Values range 0 to 1.
-    n_patients = pca_features.n_rows
-    co_association = zero_matrix(n_patients, n_patients)
-    n_runs = 0
-    
+FUNCTION run_multi_algorithm_clustering(reduced_matrix, k_range=[2,3,4,5,6,7,8,9,10]):
+    // Store all results for comparison
+    all_results = empty list
+
     FOR each k in k_range:
-        // Run K-Means with multiple random initializations
-        FOR iteration in 1 to 50:
-            // Subsample 80% of patients (bootstrap stability)
-            subsample_idx = random_sample(n_patients, fraction=0.80)
-            subsample_data = pca_features[subsample_idx]
-            
-            labels = fit_kmeans(subsample_data, k=k, random_seed=iteration)
-            
-            // Update co-association: patients in the same cluster get +1
-            FOR each pair (i, j) in subsample_idx:
-                IF labels[i] == labels[j]:
-                    co_association[i][j] += 1
-            n_runs += 1
-        
-        // Also run Gaussian Mixture Model for this k
-        FOR iteration in 1 to 20:
-            subsample_idx = random_sample(n_patients, fraction=0.80)
-            subsample_data = pca_features[subsample_idx]
-            
-            labels = fit_gmm(subsample_data, n_components=k, random_seed=iteration)
-            
-            FOR each pair (i, j) in subsample_idx:
-                IF labels[i] == labels[j]:
-                    co_association[i][j] += 1
-            n_runs += 1
-    
-    // Normalize co-association matrix to [0, 1]
-    co_association = co_association / n_runs
-    
-    // Final clustering on the co-association matrix itself.
-    // Hierarchical clustering with average linkage works well here.
-    // The co-association matrix IS the similarity measure.
-    final_labels = hierarchical_cluster(co_association, method="average")
-    
-    RETURN co_association, final_labels
+        // K-means: fast, assumes spherical clusters
+        kmeans_labels = fit_KMeans(reduced_matrix, n_clusters=k)
+        kmeans_silhouette = compute_silhouette_score(reduced_matrix, kmeans_labels)
+
+        // Gaussian Mixture Model: allows elliptical clusters, provides probabilities
+        gmm_labels = fit_GMM(reduced_matrix, n_components=k)
+        gmm_bic = compute_BIC(reduced_matrix, gmm_model)  // lower BIC = better fit/complexity tradeoff
+        gmm_silhouette = compute_silhouette_score(reduced_matrix, gmm_labels)
+
+        // Hierarchical (Ward linkage): builds dendrogram, cut at k clusters
+        hier_labels = fit_hierarchical(reduced_matrix, n_clusters=k, linkage="ward")
+        hier_silhouette = compute_silhouette_score(reduced_matrix, hier_labels)
+
+        append to all_results: {
+            k: k,
+            algorithms: {
+                "kmeans": { labels: kmeans_labels, silhouette: kmeans_silhouette },
+                "gmm":    { labels: gmm_labels, silhouette: gmm_silhouette, bic: gmm_bic },
+                "hierarchical": { labels: hier_labels, silhouette: hier_silhouette }
+            }
+        }
+
+    RETURN all_results
 ```
 
-**Step 5: Determine optimal cluster count.** How many subtypes exist? This is the million-dollar question, and there's no single correct answer. Multiple metrics provide different perspectives. The Silhouette score measures how well-separated clusters are. The Calinski-Harabasz index rewards compact, well-separated clusters. The gap statistic compares your clustering to a null (random) distribution. Consensus matrix heatmaps show whether the co-association matrix has clean block-diagonal structure. Ultimately, the "right" number of clusters is the one that's both statistically supported AND clinically interpretable.
+**Step 5: Consensus clustering and stability analysis.** This is where you separate signal from noise. Run the clustering 100+ times with bootstrap resampling (randomly sampling 80% of patients each time) and track how often each pair of patients ends up in the same cluster. Build a consensus matrix: entry (i,j) is the fraction of runs where patient i and patient j were co-clustered. Cluster the consensus matrix itself to find the final stable groupings. Patients who consistently cluster together across resamples are genuinely similar; patients who bounce between clusters are on the boundary.
 
 ```
-FUNCTION determine_optimal_k(pca_features, co_association, k_range):
-    // Compute multiple metrics for each candidate k.
-    // No single metric is definitive; look for convergence across metrics.
-    
-    metrics = empty table (columns: k, silhouette, calinski_harabasz, gap_statistic, bic)
-    
-    FOR each k in k_range:
-        labels = cut_dendrogram(co_association, k=k)
-        
-        // Silhouette: ranges -1 to 1. Higher = better separated clusters.
-        // Values > 0.5 indicate reasonable structure. > 0.7 is strong.
-        sil = silhouette_score(pca_features, labels)
-        
-        // Calinski-Harabasz: ratio of between-cluster to within-cluster variance.
-        // Higher is better. Look for a peak or elbow.
-        ch = calinski_harabasz_score(pca_features, labels)
-        
-        // Gap statistic: compares clustering quality to random expectation.
-        // Choose smallest k where gap(k) >= gap(k+1) - standard_error(k+1)
-        gap = gap_statistic(pca_features, labels, n_references=50)
-        
-        // BIC from GMM fit: penalizes model complexity.
-        // Lower is better. Balances fit quality against number of parameters.
-        gmm = fit_gmm(pca_features, n_components=k)
-        bic = gmm.bic(pca_features)
-        
-        metrics.add_row(k, sil, ch, gap, bic)
-    
-    // Present all metrics to the research team. The final decision is clinical.
-    save_metrics_report(metrics, "results/cluster_count_metrics.csv")
-    plot_metrics(metrics, "results/cluster_count_plots.png")
-    
-    // Automated suggestion (can be overridden by clinical judgment):
-    optimal_k = k with highest silhouette score among those with gap statistic support
-    
-    RETURN optimal_k, metrics
+FUNCTION consensus_clustering(scaled_matrix, k, n_iterations=100, subsample_fraction=0.8):
+    // consensus_matrix[i][j] = fraction of times patient i and j were in the same cluster
+    n_patients = number of rows in scaled_matrix
+    co_cluster_count = zero matrix (n_patients x n_patients)
+    co_occurrence_count = zero matrix (n_patients x n_patients)  // times both were sampled
+
+    FOR iteration = 1 to n_iterations:
+        // Subsample 80% of patients (bootstrap)
+        sampled_indices = random_sample(n_patients, fraction=subsample_fraction)
+
+        // Cluster the subsample
+        subsample = scaled_matrix[sampled_indices]
+        labels = fit_KMeans(subsample, n_clusters=k)  // or rotate algorithms across iterations
+
+        // Update co-clustering counts
+        FOR each pair (i, j) in sampled_indices:
+            co_occurrence_count[i][j] += 1
+            IF labels[i] == labels[j]:
+                co_cluster_count[i][j] += 1
+
+    // Compute consensus matrix (fraction of co-occurrences where pair was co-clustered)
+    consensus_matrix = co_cluster_count / co_occurrence_count
+    // Values near 1.0 = always together. Values near 0.0 = never together.
+    // Values near 0.5 = unstable assignment (boundary patients).
+
+    // Final clustering on the consensus matrix itself
+    final_labels = fit_hierarchical(1 - consensus_matrix, n_clusters=k, linkage="average")
+    // Using (1 - consensus) as a distance: patients always co-clustered have distance 0
+
+    // Compute cluster stability (proportion of ambiguous assignments)
+    stability_scores = compute_PAC(consensus_matrix)  // Proportion of Ambiguous Clustering
+    // PAC = fraction of consensus values between 0.1 and 0.9 (the "ambiguous zone")
+    // Lower PAC = more stable clustering
+
+    RETURN final_labels, consensus_matrix, stability_scores
 ```
 
-**Step 6: Cluster validation and characterization.** Once you've settled on a cluster count, you need to validate that the clusters are stable and characterize what makes each one distinct. Stability testing uses bootstrap resampling: if you perturb the data slightly, do the same clusters appear? Feature importance analysis identifies which clinical features most strongly distinguish each cluster. Outcome association tests whether clusters predict different clinical trajectories.
+**Step 6: Clinical validation and characterization.** The clusters mean nothing until validated against outcomes. For each discovered subtype, compute outcome differences (mortality, readmission, disease progression), treatment response differences, and generate interpretable profiles. Present these to clinical domain experts for review. A cluster is clinically meaningful if: (a) it has distinct outcomes, (b) a clinician can recognize the phenotype, and (c) it suggests actionable differences in care.
 
 ```
-FUNCTION validate_and_characterize(features, labels, outcomes):
-    // Stability assessment: bootstrap the cohort and re-cluster.
-    // Measure how consistently patients are assigned to the same cluster.
-    stability_scores = empty list
-    FOR iteration in 1 to 100:
-        bootstrap_idx = random_sample_with_replacement(n_patients)
-        bootstrap_labels = recluster(features[bootstrap_idx])
-        
-        // Adjusted Rand Index: 1.0 = perfect agreement, 0 = random
-        ari = adjusted_rand_index(labels[bootstrap_idx], bootstrap_labels)
-        stability_scores.append(ari)
-    
-    mean_stability = mean(stability_scores)
-    // ARI > 0.8 indicates strong stability. < 0.6 is concerning.
-    log("Cluster stability (mean ARI): {mean_stability}")
-    
-    // Feature importance: which features distinguish clusters?
-    // Use Kruskal-Wallis test (non-parametric ANOVA) for each feature across clusters.
-    feature_importance = empty table
-    FOR each feature_name in features.columns:
-        groups = [features[feature_name][labels == k] for k in unique(labels)]
-        h_stat, p_value = kruskal_wallis_test(groups)
-        effect_size = eta_squared(groups)
-        feature_importance.add_row(feature_name, h_stat, p_value, effect_size)
-    
-    // Sort by effect size to identify the most discriminating features
-    feature_importance = sort_by(feature_importance, "effect_size", descending=True)
-    
-    // Outcome association: do clusters predict different trajectories?
-    // Test against clinically meaningful outcomes.
-    outcome_tests = empty table
-    FOR each outcome in ["time_to_insulin", "hba1c_at_3_years", "cvd_event", "ckd_progression"]:
-        IF outcome is continuous:
-            stat, p = kruskal_wallis_test(outcomes[outcome] grouped by labels)
-        ELSE:  // binary outcome
-            stat, p = chi_squared_test(outcomes[outcome] vs labels)
-        outcome_tests.add_row(outcome, stat, p)
-    
-    // Generate cluster profiles: median values of top features per cluster
-    cluster_profiles = empty table
-    FOR each k in unique(labels):
-        cluster_patients = features[labels == k]
-        profile = compute_medians_and_iqr(cluster_patients, top_features)
-        cluster_profiles.add_row(k, count=len(cluster_patients), profile)
-    
-    RETURN {
-        stability: mean_stability,
-        feature_importance: feature_importance,
-        outcome_associations: outcome_tests,
-        cluster_profiles: cluster_profiles
-    }
+FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data):
+    n_clusters = number of unique values in labels
+    characterization = empty map
+
+    FOR each cluster_id in 0 to n_clusters-1:
+        cluster_patients = cohort WHERE labels == cluster_id
+
+        // Outcome analysis: do clusters have different trajectories?
+        mortality_rate = compute_mortality(cluster_patients, outcomes_data)
+        readmission_rate = compute_30day_readmission(cluster_patients, outcomes_data)
+        progression_rate = compute_disease_progression(cluster_patients, outcomes_data)
+
+        // Feature profile: what defines this cluster?
+        // For each feature, compute mean/median for this cluster vs. overall population
+        feature_profile = empty map
+        FOR each feature in feature_matrix.columns:
+            cluster_mean = mean(feature_matrix[cluster_patients][feature])
+            overall_mean = mean(feature_matrix[feature])
+            effect_size = (cluster_mean - overall_mean) / std(feature_matrix[feature])
+            feature_profile[feature] = { cluster_mean, overall_mean, effect_size }
+
+        // Identify top distinguishing features (largest absolute effect sizes)
+        top_features = sort feature_profile by absolute(effect_size), take top 10
+
+        // Statistical significance: are outcome differences real or chance?
+        // Compare this cluster's outcomes to all other clusters combined
+        outcome_p_values = compute_log_rank_test(cluster_patients, other_patients, outcomes_data)
+
+        characterization[cluster_id] = {
+            size: count(cluster_patients),
+            fraction: count(cluster_patients) / count(cohort),
+            outcomes: { mortality_rate, readmission_rate, progression_rate },
+            top_features: top_features,
+            p_values: outcome_p_values
+        }
+
+    // Generate summary report for clinical review
+    report = format_clinical_report(characterization)
+    RETURN characterization, report
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and scikit-learn, check out the [Python Example](chapter06.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+**Step 7: Build subtype classifier for new patients.** Once subtypes are validated, you need a way to assign new patients to the discovered subtypes without re-running the full clustering pipeline. Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype.
+
+```
+FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
+    // Split into train/test to estimate assignment accuracy
+    train_features, test_features, train_labels, test_labels = split(
+        feature_matrix, validated_labels, test_fraction=0.2, stratified=True)
+
+    // Train a gradient boosting classifier
+    // Why gradient boosting? It handles mixed feature types well, provides feature importance,
+    // and is robust to the moderate class imbalance typical in subtype discovery
+    classifier = fit_GradientBoosting(
+        train_features, train_labels,
+        n_estimators=200,
+        max_depth=5,
+        learning_rate=0.1
+    )
+
+    // Evaluate: how accurately can we assign patients to the discovered subtypes?
+    test_predictions = classifier.predict(test_features)
+    accuracy = compute_accuracy(test_labels, test_predictions)
+    confusion = compute_confusion_matrix(test_labels, test_predictions)
+    // Accuracy > 90% is typical for well-separated subtypes
+    // Lower accuracy suggests overlapping subtypes (which is clinically realistic)
+
+    // Feature importance: which features drive subtype assignment?
+    importance = classifier.feature_importances
+    // This tells clinicians which measurements matter most for subtyping
+
+    RETURN classifier, accuracy, confusion, importance
+```
+
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and SageMaker, check out the [Python Example](chapter06.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-**Sample output for a Type 2 diabetes subtyping study (illustrative, not from a real study):**
+**Sample output for a heart failure subtype discovery analysis (K=4):**
 
 ```json
 {
-  "study_id": "t2d-subtype-discovery-2026-03",
-  "cohort_size": 23847,
+  "analysis_id": "hf-subtype-discovery-2026-03",
+  "cohort_size": 12847,
+  "n_features": 42,
+  "n_components_pca": 11,
+  "variance_explained": 0.91,
   "optimal_k": 4,
-  "cluster_stability_ari": 0.82,
+  "consensus_stability_pac": 0.08,
   "subtypes": [
     {
-      "cluster_id": 0,
-      "n_patients": 8234,
-      "label": "Insulin-Resistant Obesity-Driven",
-      "distinguishing_features": ["high BMI", "high triglycerides", "high HOMA-IR", "preserved C-peptide"],
-      "median_hba1c": 7.8,
-      "median_bmi": 34.2,
-      "metformin_response": "good"
+      "subtype_id": 0,
+      "label": "HF-Metabolic",
+      "size": 3891,
+      "fraction": 0.303,
+      "defining_features": ["high_bmi", "diabetes", "elevated_hba1c", "preserved_ef"],
+      "30day_readmission": 0.18,
+      "1year_mortality": 0.06,
+      "notes": "Metabolic syndrome-driven HFpEF. Responds well to SGLT2 inhibitors."
     },
     {
-      "cluster_id": 1,
-      "n_patients": 6102,
-      "label": "Age-Related Beta-Cell Decline",
-      "distinguishing_features": ["older age", "low C-peptide", "rapid HbA1c rise", "normal BMI"],
-      "median_hba1c": 8.4,
-      "median_bmi": 26.1,
-      "metformin_response": "poor"
+      "subtype_id": 1,
+      "label": "HF-Ischemic-Progressive",
+      "size": 4102,
+      "fraction": 0.319,
+      "defining_features": ["low_ef", "prior_mi", "elevated_troponin", "cad_history"],
+      "30day_readmission": 0.24,
+      "1year_mortality": 0.14,
+      "notes": "Classic ischemic cardiomyopathy. Progressive LV remodeling. High device therapy rate."
     },
     {
-      "cluster_id": 2,
-      "n_patients": 5891,
-      "label": "Mild Metabolic Syndrome",
-      "distinguishing_features": ["borderline HbA1c", "high variability", "multiple comorbidities"],
-      "median_hba1c": 7.1,
-      "median_bmi": 30.5,
-      "metformin_response": "moderate"
+      "subtype_id": 2,
+      "label": "HF-Elderly-Multimorbid",
+      "size": 2568,
+      "fraction": 0.200,
+      "defining_features": ["age_over_75", "ckd_stage_3plus", "anemia", "high_comorbidity_count"],
+      "30day_readmission": 0.31,
+      "1year_mortality": 0.22,
+      "notes": "Frail, elderly, multi-organ dysfunction. Highest readmission and mortality. Palliative care discussions warranted."
     },
     {
-      "cluster_id": 3,
-      "n_patients": 3620,
-      "label": "Severe Insulin-Deficient",
-      "distinguishing_features": ["very low C-peptide", "early insulin need", "low BMI", "autoimmune markers"],
-      "median_hba1c": 9.2,
-      "median_bmi": 24.8,
-      "metformin_response": "poor"
+      "subtype_id": 3,
+      "label": "HF-Young-Idiopathic",
+      "size": 2286,
+      "fraction": 0.178,
+      "defining_features": ["age_under_55", "low_comorbidity", "low_ef", "no_cad"],
+      "30day_readmission": 0.11,
+      "1year_mortality": 0.04,
+      "notes": "Young, non-ischemic, few comorbidities. Best prognosis. May benefit from aggressive GDMT optimization."
     }
-  ]
+  ],
+  "classifier_accuracy": 0.93,
+  "top_discriminating_features": ["ejection_fraction", "age", "bmi", "creatinine", "hba1c", "prior_mi", "comorbidity_count"]
 }
 ```
 
@@ -504,75 +522,69 @@ FUNCTION validate_and_characterize(features, labels, outcomes):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Feature engineering (Glue job) | 15-45 minutes for 25K patients |
-| PCA + UMAP reduction | 2-5 minutes |
-| Consensus clustering (full run) | 1-4 hours depending on cohort size and k_range |
-| Silhouette score (good result) | 0.4-0.7 (clinical data rarely exceeds 0.7) |
-| Cluster stability (ARI) | > 0.75 for publishable results |
-| End-to-end experiment | 4-8 hours including all validation |
-| Cost per full experiment run | $50-150 (SageMaker compute) |
+| Feature extraction (Glue ETL) | 15-45 minutes for 10,000-50,000 patients |
+| Clustering exploration (full sweep) | 2-4 hours on ml.m5.4xlarge |
+| Consensus clustering (100 iterations) | 1-3 hours depending on cohort size |
+| Classifier training | 5-15 minutes |
+| Real-time subtype assignment | < 200ms per patient via SageMaker endpoint |
+| Typical silhouette score | 0.25-0.45 (clinical data rarely produces clean separation) |
+| Classifier accuracy | 85-95% (depends on cluster separation) |
 
-**Where it struggles:** Diseases with continuous spectra rather than discrete subtypes (the clusters are real but boundaries are fuzzy). Small cohorts (< 1,000 patients) where statistical power is insufficient. Populations with strong confounders (age, sex, race) that dominate the clustering unless carefully handled. And the ever-present challenge: clusters that are statistically robust but clinically uninterpretable.
+**Where it struggles:** Diseases with continuous spectrums rather than discrete subtypes (the clusters are real but boundaries are fuzzy). Cohorts with high missingness (clusters reflect data availability). Small cohorts (< 1,000 patients) where statistical power is insufficient. Features that are confounded by treatment (patients on different drugs look different because of the drugs, not because of underlying biology).
 
 ---
 
 ## The Honest Take
 
-Disease subtype discovery is one of those problems where the ML part is actually the easy part. You can get clusters out of any dataset. The hard part is everything around it.
+Disease subtype discovery is one of those problems that feels like it should be straightforward. You have patients, you have features, you run clustering, you get subtypes. In practice, it's one of the most intellectually demanding ML applications in healthcare because the hardest question isn't "how do I cluster?" but "are these clusters real?"
 
-The feature selection problem haunts you. I've seen teams spend six months building a beautiful clustering pipeline only to realize their feature set was encoding treatment patterns rather than disease biology. Patients clustered by "which medications they were prescribed" rather than "what's biologically different about their disease." Those are correlated, but they're not the same thing, and the distinction matters enormously for clinical utility.
+The thing that surprised me most: the number of clusters matters less than you'd think. Whether you find 3 subtypes or 6 subtypes, the clinical utility depends entirely on whether the subtypes have different outcomes and different optimal treatments. Four well-characterized subtypes with clear treatment implications are infinitely more valuable than eight subtypes that a clinician can't distinguish at the bedside.
 
-The validation problem is genuinely unsolved in a satisfying way. Internal metrics (silhouette, stability) tell you the clusters are statistically real. They don't tell you the clusters are clinically meaningful. The only true validation is prospective: assign new patients to subtypes and show that subtype-specific treatment works better than one-size-fits-all. That takes years and a clinical trial. Most subtyping papers stop at "we found clusters and they have different outcomes," which is suggestive but not definitive.
+Feature selection is where projects succeed or fail. I've seen teams spend months on sophisticated clustering algorithms only to realize their features were dominated by age and sex. Of course you'll find clusters if you include demographics. The question is whether you find clusters that persist after adjusting for demographics. Start by clustering without age and sex, then check whether the clusters you find correlate with demographics. That ordering matters.
 
-The reproducibility problem is real. Run the same pipeline on a different health system's data and you might find different subtypes. Is that because the populations are genuinely different, or because your method is sensitive to data collection practices, coding patterns, and population demographics? Usually it's some of both, and disentangling them is painful.
+The validation gap is real. You can have beautiful, stable, well-separated clusters with excellent internal metrics, and they can still be clinically meaningless. The only validation that matters is: does a clinician look at these clusters and say "yes, I treat these patients differently"? If the answer is no, your clusters are a statistical curiosity, not a clinical tool.
 
-The thing that surprised me most: the number of clusters matters less than you'd think. Whether diabetes has 4 subtypes or 5 or 6 is less important than whether the coarsest distinction (say, insulin-resistant vs. insulin-deficient) is actionable. Start with the biggest, most robust split and work your way to finer distinctions only if the coarse ones prove clinically useful.
-
-One more honest note: this is research-grade work. Don't promise your clinical leadership that you'll have actionable subtypes in six months. The pipeline takes weeks to build. The clinical validation takes months to years. The regulatory path to using subtypes in clinical decision-making is unclear. Set expectations accordingly.
+One more thing: publication bias in this space is severe. The papers that get published are the ones that found clean, interpretable subtypes. The teams that ran the same analysis and found mush don't publish. If your first attempt produces ambiguous results, that's normal. It doesn't mean the approach is wrong. It might mean your feature set needs refinement, your cohort needs better definition, or the disease genuinely doesn't have discrete subtypes (it's a continuum, and forcing it into clusters is the wrong framing).
 
 ---
 
 ## Variations and Extensions
 
-**Multi-omics subtyping.** Integrate genomic data (SNP arrays, whole-genome sequencing) with clinical features for biologically grounded subtypes. Use methods like similarity network fusion (SNF) or multi-omics factor analysis (MOFA) to combine heterogeneous data types. This dramatically increases the chance of finding mechanistically distinct subtypes but requires genomic data that most health systems don't routinely collect.
+**Temporal subtyping.** Instead of clustering patients by their features at a single time point, cluster by their trajectories over time. A patient whose ejection fraction is declining at 5% per year is fundamentally different from one whose EF is stable, even if their current values are identical. Time-series clustering (using dynamic time warping or trajectory shape features) captures this temporal dimension. This is harder (requires longitudinal data with consistent measurement intervals) but often more clinically meaningful.
 
-**Longitudinal trajectory clustering.** Instead of clustering patients by their average feature values, cluster by their disease trajectories over time. Use methods like group-based trajectory modeling (GBTM) or latent class growth analysis (LCGA). This captures the dynamic nature of disease: two patients might have the same HbA1c today but very different trajectories (one stable, one rapidly worsening). Requires longer observation windows and more complex modeling.
+**Multi-omics integration.** If genomic, proteomic, or metabolomic data is available for a subset of patients, integrate it with clinical features for multi-modal clustering. The subtypes discovered from clinical data alone may align with (or be refined by) molecular subtypes. This is the frontier of precision medicine research. Technically, it requires careful handling of different data modalities with different scales, missingness patterns, and noise characteristics. Methods like MOFA (Multi-Omics Factor Analysis) or similarity network fusion are designed for this.
 
-**Federated subtype discovery.** Run the clustering across multiple institutions without sharing patient-level data. Each site computes local statistics or embeddings; a central coordinator aggregates them into a global clustering. This enables larger effective sample sizes (critical for rare subtypes) while preserving privacy. Technically challenging but increasingly important as health data networks grow.
+**Subtype-specific treatment response modeling.** Once subtypes are established, build separate predictive models within each subtype. Instead of one readmission risk model for all heart failure patients, build four models (one per subtype). The subtype-specific models often outperform the population-level model because the predictive features differ across subtypes. This is where subtype discovery transitions from research insight to operational clinical tool.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 6.4 (Disease Severity Stratification):** Supervised stratification into known severity tiers; complementary to unsupervised subtype discovery
-- **Recipe 6.6 (Patient Similarity for Care Planning):** Uses similar distance metrics but for individual patient matching rather than population-level subtyping
-- **Recipe 6.10 (Multi-Morbidity Pattern Discovery):** Discovers co-occurring condition clusters; subtypes within a single disease vs. patterns across diseases
-- **Recipe 7.3 (Treatment Response Prediction):** Once subtypes are established, predicting which treatment works for which subtype
-- **Recipe 13.2 (Disease Ontology Mapping):** Knowledge graph approaches to representing discovered subtypes within existing disease taxonomies
+- **Recipe 6.4 (Disease Severity Stratification):** Stratifies within a known disease by severity; subtype discovery finds qualitatively different groups rather than a severity gradient
+- **Recipe 6.6 (Patient Similarity for Care Planning):** Uses similarity metrics that subtype discovery also relies on; subtypes provide a higher-level grouping that similarity search operates within
+- **Recipe 6.10 (Multi-Morbidity Pattern Discovery):** Discovers co-occurrence patterns across conditions; subtype discovery operates within a single condition
+- **Recipe 7.3 (Disease Progression Modeling):** Subtypes often have different progression trajectories; progression models can be built per-subtype for better accuracy
+- **Recipe 12.8 (Disease Progression Trajectory Modeling):** Temporal trajectory analysis that complements static subtype discovery
 
 ---
 
 ## Additional Resources
 
 **AWS Documentation:**
-- [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
-- [SageMaker Built-in K-Means Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/k-means.html)
-- [SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html)
-- [SageMaker Experiments](https://docs.aws.amazon.com/sagemaker/latest/dg/experiments.html)
+- [Amazon SageMaker Built-in K-Means Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/k-means.html)
+- [Amazon SageMaker Built-in PCA Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/pca.html)
+- [Amazon SageMaker Experiments](https://docs.aws.amazon.com/sagemaker/latest/dg/experiments.html)
 - [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
-- [Amazon Athena User Guide](https://docs.aws.amazon.com/athena/latest/ug/what-is.html)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including clustering and unsupervised learning notebooks
-- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare and life sciences AI/ML examples on AWS
-
-<!-- TODO: Verify these repos still exist and contain relevant clustering examples -->
+- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including K-means, PCA, and custom algorithm containers
+- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare and life science ML examples on AWS
 
 **AWS Solutions and Blogs:**
-- [AWS for Health](https://aws.amazon.com/health/): Overview of AWS healthcare solutions and compliance
-- [Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for "clustering" and "healthcare" for relevant case studies
+- [Guidance for Multi-Omics and Multi-Modal Data Integration and Analysis on AWS](https://aws.amazon.com/solutions/guidance/multi-omics-and-multi-modal-data-integration-and-analysis-on-aws/): Reference architecture for integrating multi-modal patient data for research
+- [Build a Healthcare Data Lake on AWS](https://aws.amazon.com/blogs/big-data/build-a-healthcare-data-lake-on-aws/): Patterns for building the data foundation that subtype discovery requires
 
 ---
 
@@ -580,14 +592,16 @@ One more honest note: this is research-grade work. Don't promise your clinical l
 
 | Phase | Duration |
 |-------|----------|
-| **Basic** (single algorithm, single disease, exploratory) | 3-4 weeks |
-| **Production-ready** (consensus clustering, validation suite, reproducible pipeline) | 2-3 months |
-| **With variations** (multi-omics, longitudinal, federated) | 6-12 months |
+| **Basic** (single algorithm, single disease, exploratory) | 4-6 weeks |
+| **Production-ready** (consensus clustering, clinical validation, deployed classifier) | 4-6 months |
+| **With variations** (temporal subtyping, multi-omics, per-subtype models) | 9-12 months |
 
 ---
 
-**Tags:** `unsupervised-learning` `clustering` `disease-subtyping` `precision-medicine` `phenotyping` `cohort-analysis` `research` `sagemaker` `complex`
+## Tags
+
+`cohort-analysis` · `clustering` · `unsupervised-learning` · `disease-subtype` · `precision-medicine` · `sagemaker` · `pca` · `consensus-clustering` · `clinical-validation` · `research` · `complex` · `hipaa`
 
 ---
 
-*[← Previous: 6.7 Clinical Trial Patient Matching](chapter06.07-clinical-trial-patient-matching) · [Chapter 6 Index](chapter06-index) · [Next: 6.9 Social Determinant Phenotyping →](chapter06.09-social-determinant-phenotyping)*
+*← [Recipe 6.7: Clinical Trial Patient Matching](chapter06.07-clinical-trial-patient-matching) · [Chapter 6 Index](chapter06-index) · [Next: Recipe 6.9: Social Determinant Phenotyping →](chapter06.09-social-determinant-phenotyping)*
