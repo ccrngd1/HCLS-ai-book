@@ -4,7 +4,7 @@
 **Task:** ch12-r07-edit
 **Date:** 2026-05-26
 **Status:** BLOCKED on upstream tasks
-**Iterations confirmed:** iter=488 (initial), iter=498 (re-confirm; no upstream change), iter=500 (re-confirm; no upstream change)
+**Iterations confirmed:** iter=488 (initial), iter=498 (re-confirm; no upstream change), iter=500 (re-confirm; no upstream change), iter=855 (re-confirm; no upstream change)
 
 ---
 
