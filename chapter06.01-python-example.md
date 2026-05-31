@@ -13,7 +13,7 @@ pip install boto3 numpy scikit-learn
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `geo:SearchPlaceIndexForText` and `geo:BatchSearchPlaceIndexForText` (Amazon Location Service geocoding)
+- `geo:SearchPlaceIndexForText` (Amazon Location Service geocoding)
 - `s3:GetObject` and `s3:PutObject` (reading address data, writing results)
 - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing cluster assignments and metadata)
 
@@ -250,17 +250,10 @@ def geocode_addresses(records: list[dict]) -> tuple[list[dict], list[dict]]:
             )
             search_texts.append(full_address)
 
-        # Call Amazon Location Service batch geocoding API.
-        # Each text entry gets its own result in the response.
-        response = location_client.search_place_index_for_suggestions(
-            IndexName=PLACE_INDEX_NAME,
-            Text=search_texts[0],  # Note: for true batch, use the loop below
-        )
-
-        # In practice, you'd call SearchPlaceIndexForText per address or use
-        # a batch pattern. Amazon Location Service doesn't have a native batch
-        # geocode API as of early 2026, so you loop through individually or
-        # use concurrent requests. Here's the per-address pattern:
+        # Amazon Location Service doesn't have a native batch geocode API
+        # as of early 2026, so we call SearchPlaceIndexForText per address.
+        # The batching here is client-side: we group addresses for progress
+        # tracking and rate-limit management, not because the API accepts batches.
         for record, address_text in zip(batch, search_texts):
             try:
                 geo_response = location_client.search_place_index_for_text(
@@ -586,6 +579,7 @@ def store_results(clustered_records: list[dict], cluster_metadata: dict) -> None
             batch.put_item(
                 Item={
                     "patient_id": record["patient_id"],
+                    # int is fine for DynamoDB (only float requires Decimal conversion)
                     "cluster_id": record["cluster_id"],
                     # DynamoDB requires Decimal for numbers, not float.
                     "latitude": Decimal(str(round(record["latitude"], 6))),
