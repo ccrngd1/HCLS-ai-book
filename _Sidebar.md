@@ -178,6 +178,8 @@
   * [Python Example](chapter07.04-python-example)
 * [7.5 — 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk)
   * [Python Example](chapter07.05-python-example)
+* [7.6 — Rising Risk Identification](chapter07.06-rising-risk-identification)
+  * [Python Example](chapter07.06-python-example)
 
 ---
 
