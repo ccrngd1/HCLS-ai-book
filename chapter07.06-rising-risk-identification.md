@@ -176,7 +176,7 @@ flowchart TD
 | **BAA** | AWS BAA signed (risk scores derived from PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); all API calls over TLS; Glue jobs: security configuration with S3 and CloudWatch encryption |
 | **VPC** | Production: Glue jobs and SageMaker in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, EventBridge, SNS, and SageMaker API. If Lambda detection function runs in VPC, ensure all AWS service calls have corresponding VPC endpoints to avoid NAT Gateway dependency. |
-| **CloudTrail** | Enabled: log all SageMaker, Glue, and DynamoDB API calls for HIPAA audit trail |
+| **CloudTrail** | Enabled: log all SageMaker, Glue, and DynamoDB API calls for HIPAA audit trail. Enable data events for the DynamoDB risk state table and S3 score history bucket (management events alone do not capture item-level access). |
 | **Data Sources** | EHR extract (diagnoses, labs, medications, encounters), claims feed (utilization history), ADT feed (admissions, discharges). Minimum 18-24 months of history for meaningful trajectory analysis. |
 | **Cost Estimate** | Glue: ~$0.44/DPU-hour (feature assembly + trajectory computation ~2-4 DPU-hours per run for 500K patients). SageMaker batch transform: ~$0.05/hour for ml.m5.xlarge (scoring 500K patients takes ~30 min). S3 storage: ~$0.023/GB/month. DynamoDB: on-demand pricing, ~$1.25 per million writes. Total: ~$50-150 per monthly scoring cycle for a 500K-member population. |
 
