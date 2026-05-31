@@ -2,26 +2,25 @@
 
 **Editor:** TechEditor
 **Date:** 2026-05-31
-**Status:** BLOCKED - Main recipe file missing
+**Status:** COMPLETE (Python companion) / BLOCKED (main recipe missing)
 
 ---
 
 ## Summary
 
-The final edit for Recipe 9.2 cannot be fully completed. The main recipe file (`chapter09.02-patient-photo-verification.md`) was never written. Both the code review and expert review confirm this file does not exist.
+The Python companion (`chapter09.02-python-example.md`) is editorially complete and ready for publication. The main recipe file (`chapter09.02-patient-photo-verification.md`) does not exist and must be written by the TechWriter before the full recipe can ship.
 
 ## What Was Edited
 
 **Python companion (`chapter09.02-python-example.md`):**
-- Verified all code review findings addressed (Issue 1: `UnmatchedFaces` comment corrected; Issue 2: similarity sentinel comment added; Issue 3: `Attributes` parameter fixed to `["DEFAULT"]`)
-- Verified SEC-2 (HIGH): BAA requirement note present in Setup section
-- Verified SEC-1 (MEDIUM): IAM permissions separated into verification-time vs. enrollment-time with resource-scoping guidance
-- Removed redundant sentence in opening callout ("Consider it a starting point, not a destination" duplicated the preceding sentence)
-- Confirmed: zero em dashes, no documentation-voice, no fabricated URLs, correct header hierarchy (H1 title, H2 for sections)
-- Confirmed: all code blocks have language tags (`python`, `bash`)
-- Confirmed: voice is consistent with STYLE-GUIDE.md throughout (engineer-to-engineer, conversational, honest)
-- Confirmed: all TODO markers correctly formatted with finding IDs for follow-up tracking
-- Confirmed: vendor balance is 100% AWS-specific (acceptable for Python companion; the 70/30 balance applies to the main recipe)
+
+- Code review Issue 1 (WARNING): `UnmatchedFaces` comment corrected to accurately describe API semantics
+- Code review Issue 2 (NOTE): Similarity sentinel value comment added explaining 0.0 is not the real score
+- Code review Issue 3 (NOTE): `Attributes` parameter fixed from `["QUALITY", "DEFAULT"]` to `["DEFAULT"]` with explanatory comment
+- SEC-2 (HIGH): BAA requirement note added to Setup section
+- SEC-1 (MEDIUM): IAM permissions separated into verification-time vs. enrollment-time with resource-scoping guidance
+- Removed redundant sentence in opening callout
+- All TODO markers correctly formatted with finding IDs for follow-up tracking
 
 ## Editorial Checklist Results
 
@@ -29,18 +28,18 @@ The final edit for Recipe 9.2 cannot be fully completed. The main recipe file (`
 |-------|--------|
 | Grammar and mechanics | PASS |
 | Code formatting | PASS (all fenced blocks have language tags, inline code for service names) |
-| Link verification | PASS (only internal cross-reference to main recipe, which is flagged via TODO) |
+| Link verification | PASS (one internal cross-reference to main recipe, flagged via TODO) |
 | Header hierarchy | PASS (H1 title, H2 sections, no skipped levels) |
 | Readability | PASS (short paragraphs, active voice, no run-on sentences) |
 | Voice drift | PASS (no documentation-voice, no em dashes, no LinkedIn tone) |
-| RECIPE-GUIDE compliance | N/A for Python companion (main recipe structure requirements apply to the missing file) |
+| RECIPE-GUIDE compliance | N/A for Python companion (structure requirements apply to main recipe) |
 | Vendor balance | N/A for Python companion (100% AWS is expected for the code file) |
 
 ## Blocking Issues
 
 | ID | Severity | Description |
 |----|----------|-------------|
-| ARCH-1 | CRITICAL | Main recipe file does not exist. Must be written per RECIPE-GUIDE.md before the edit pipeline can complete. |
+| ARCH-1 | CRITICAL | Main recipe file does not exist. Must be written per RECIPE-GUIDE.md before the recipe pipeline can complete. |
 
 ## Deferred to Main Recipe (via TODO markers in Python companion)
 
@@ -56,4 +55,4 @@ The final edit for Recipe 9.2 cannot be fully completed. The main recipe file (`
 
 ## Next Step
 
-The TechWriter must draft `chapter09.02-patient-photo-verification.md` before this recipe can proceed through the full edit pipeline. The Python companion is editorially complete and ready for publication once the main recipe exists.
+The TechWriter must draft `chapter09.02-patient-photo-verification.md` before this recipe can proceed through the full pipeline. The Python companion is editorially complete and ready for publication once the main recipe exists.
