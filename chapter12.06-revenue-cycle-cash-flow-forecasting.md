@@ -9,7 +9,7 @@
 <!--
 TechEditor pass log (audit only, not a finding marker):
 - Pass 1 (prior iteration): authored this scaffold to unblock the file_exists validation gate. All review findings parked as finding markers with IDs.
-- Pass 2 (this iteration, ch12-r06-edit): ran the full editorial checklist against the scaffold. Findings:
+- Pass 2 (prior iteration, ch12-r06-edit): ran the full editorial checklist against the scaffold. Findings:
   * Grammar/mechanics: clean (only structural prose present).
   * Code formatting: no fenced blocks present yet; nothing to check.
   * Link verification: footer navigation link to chapter12.07 verified against `categories/12-time-series.md` (Recipe 12.7 = "Vital Sign Trajectory Monitoring"). Python companion callout link uses the correct `chapter12.06-python-example` slug.
@@ -18,7 +18,14 @@ TechEditor pass log (audit only, not a finding marker):
   * RECIPE-GUIDE compliance: section order matches the spec (Problem -> Technology -> General Architecture Pattern -> Why These Services -> Architecture Diagram -> Prerequisites -> Ingredients -> Code -> Expected Results -> Honest Take -> Variations -> Related Recipes -> Additional Resources -> Estimated Implementation Time -> Tags). All required sections present as scaffolded headers.
   * Vendor balance: not yet evaluable (no prose). Scaffold preserves the 70/30 partition (Problem + Technology + General Architecture Pattern in vendor-agnostic Part 1; Why These Services and below in AWS-specific Part 2).
   * Marker discipline: 38 finding markers total, every finding ID (C1, W1, W2, NOTE 1 through NOTE 10, N4) reachable by the follow-up task generator's same-line ID match. Added a finding-ID-bearing tracker for the cost-estimate placeholder so the generator can pick it up.
-- Open issue for the orchestrator: the recipe body still does not exist. Pass 2 made no structural or content changes; the file remains in scaffold state. The next forward-progress action is `ch12-r06-draft` (TechWriter), not another editorial pass.
+- Pass 3 (resumed iteration, ch12-r06-edit): re-ran editorial checklist after interruption. Confirmed:
+  * Zero em dashes (grep verified).
+  * Header hierarchy intact (H1 -> H2 -> H3, no skipped levels).
+  * Footer navigation link still valid (chapter12.07 = "Vital Sign Trajectory Monitoring" per categories/12-time-series.md).
+  * All TODO markers carry finding IDs on the same line (C1, W1, W2, NOTE 1-10, N4).
+  * No new content to evaluate; file remains in scaffold state.
+  * No changes applied. File is editorially clean for its current scaffold state.
+- Open issue for the orchestrator: the recipe body still does not exist. The next forward-progress action is `ch12-r06-draft` (TechWriter), not another editorial pass.
 -->
 
 ---
