@@ -142,15 +142,19 @@ This pipeline runs periodically (quarterly is typical) rather than in real-time.
 
 **Amazon SageMaker for clustering and case-mix modeling.** SageMaker provides the ML infrastructure for both the case-mix adjustment models (regression) and the clustering algorithms. SageMaker Processing jobs handle the feature engineering and adjustment calculations at scale. The built-in K-Means algorithm works for straightforward segmentation; for GMM or hierarchical approaches, bring your own scikit-learn container. SageMaker also provides model versioning and experiment tracking, which matters when you're iterating on feature sets and adjustment methodologies.
 
-**Amazon Redshift for data aggregation.** Provider profiling requires joining claims, encounters, orders, prescriptions, and outcomes data across millions of records, then aggregating to the provider level. Redshift handles this analytical workload efficiently. The columnar storage is well-suited to the wide, aggregation-heavy queries that provider profiling demands.
+<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add note that patient-level PHI is loaded into SageMaker Processing ephemeral storage during case-mix model training. Apply minimum panel size filter (30-50 patients) before model training, not just before clustering, to prevent small-panel features from encoding individual patient characteristics. -->
+
+**Amazon Redshift for data aggregation.** Provider profiling requires joining claims, encounters, orders, prescriptions, and outcomes data across millions of records, then aggregating to the provider level. Redshift handles this analytical workload efficiently. The columnar storage is well-suited to the wide, aggregation-heavy queries that provider profiling demands. For quarterly batch workloads, consider Redshift Serverless (pay-per-query) instead of a provisioned cluster. A quarterly aggregation run processing 10M claims records might consume 30-60 RPU-hours (~$11-22 per run). If your organization already has a provisioned Redshift cluster for other analytics workloads, use it. If this pipeline is the only Redshift consumer, Serverless or even Athena over S3 Parquet files may be more cost-effective for the aggregation step.
 
 **Amazon S3 for data lake storage.** Raw data extracts, intermediate feature matrices, model artifacts, and final cluster assignments all live in S3. The data lake pattern gives you lineage (you can trace any provider's cluster assignment back through the adjusted metrics to the raw claims) and reproducibility (re-run any historical analysis with the same inputs).
 
 **AWS Glue for ETL orchestration.** The data pipeline from source systems (EHR, claims warehouse) through aggregation, adjustment, and feature engineering involves multiple transformation steps. Glue jobs handle the extract-transform-load work, with the Glue Data Catalog providing schema management across the pipeline stages.
 
-**Amazon QuickSight for provider dashboards.** The end product of this pipeline is a set of reports and dashboards that medical directors and individual providers consume. QuickSight connects to Redshift for the aggregated metrics and provides the interactive visualization layer. Row-level security ensures providers see their own data and peer comparisons but not individually identified peer data.
+**Amazon QuickSight for provider dashboards.** The end product of this pipeline is a set of reports and dashboards that medical directors and individual providers consume. QuickSight connects to Redshift for the aggregated metrics and provides the interactive visualization layer. Row-level security ensures providers see their own data and peer comparisons but not individually identified peer data. QuickSight requires a VPC connection to reach Redshift in a private subnet: configure a network interface in the same private subnet as Redshift, with the Redshift security group allowing inbound on port 5439 from the QuickSight network interface's security group. QuickSight Enterprise edition is required for VPC connectivity. Dashboards should prominently display the analysis period ("Based on data from April 2025 through March 2026, refreshed quarterly"). Include a "last updated" timestamp on every dashboard page and send email notifications to providers when new results are available.
 
-**AWS Step Functions for pipeline orchestration.** The quarterly analysis run involves multiple sequential and parallel steps: data extraction, aggregation, adjustment, clustering, validation, and report generation. Step Functions coordinates this workflow with error handling, retry logic, and audit logging.
+<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add tiered access control section: (1) Individual providers see only their own report. (2) Medical directors see specialty-level dashboards with individual provider identifiers (requires peer review privilege coverage in most states). (3) Analytics team sees de-identified data for model development. (4) For specialties with fewer than 5 providers in a cluster, suppress individual-level comparisons to prevent re-identification. Implement QuickSight row-level security with a permissions dataset mapping user identity to allowed provider_ids. Consult legal counsel on peer review privilege before exposing individually identified provider performance data. -->
+
+**AWS Step Functions for pipeline orchestration.** The quarterly analysis run involves multiple sequential and parallel steps: data extraction, aggregation, adjustment, clustering, validation, and report generation. Step Functions coordinates this workflow with error handling, retry logic, and audit logging. Include per-step failure handling: Glue ETL failure halts the pipeline (don't cluster on incomplete data); SageMaker convergence failure retries with different initialization; Redshift load failure retries with exponential backoff and falls back to S3-only output. Add a CloudWatch alarm on "days since last successful pipeline completion" to catch silent failures before the next quarterly review cycle.
 
 ### Architecture Diagram
 
@@ -180,13 +184,15 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon Redshift, Amazon S3, AWS Glue, Amazon QuickSight, AWS Step Functions, AWS KMS |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob`, `redshift:GetClusterCredentials`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `quicksight:CreateDashboard`, `states:StartExecution` |
+| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob` (with condition key restricting VPC and instance types), `redshift:GetClusterCredentials` (scoped to specific `dbuser:provider_profiling_etl`), `s3:GetObject` and `s3:PutObject` (scoped to `arn:aws:s3:::your-bucket/provider-profiling/*`), `glue:StartJobRun`, `quicksight:CreateDashboard`, `states:StartExecution`, `kms:Decrypt` and `kms:GenerateDataKey` (scoped to pipeline CMK ARN) |
 | **BAA** | Required. Provider practice data linked to patient panels contains PHI. |
-| **Encryption** | S3: SSE-KMS; Redshift: encrypted cluster with KMS CMK; SageMaker: volume encryption and inter-container encryption; QuickSight: TLS in transit |
-| **VPC** | Production: Redshift in private subnet, SageMaker jobs in VPC mode with VPC endpoints for S3 and SageMaker API, Glue connections through VPC |
+| **Encryption** | S3: SSE-KMS with customer-managed key; Redshift: encrypted cluster with KMS CMK; SageMaker: volume encryption and inter-container encryption; QuickSight: TLS in transit |
+| **VPC** | Production: Redshift in private subnet, SageMaker jobs in VPC mode with VPC endpoints for S3 and SageMaker API (endpoint policies restricting to specific buckets and APIs), Glue connections through VPC, QuickSight VPC connection for Redshift access |
 | **CloudTrail** | Enabled for all service API calls. Provider profiling data is sensitive; full audit trail required. |
 | **Data Sources** | Claims data warehouse, EHR encounter/order data, provider roster with specialty assignments, quality measure results |
-| **Cost Estimate** | Redshift: ~$0.25/hour (dc2.large reserved). SageMaker Processing: ~$0.05/hour (ml.m5.large) for quarterly runs. S3 + Glue: negligible. QuickSight: $18/user/month (Enterprise). Total for 500-provider system: ~$200-400/quarter for compute, plus QuickSight licensing. |
+| **Cost Estimate** | Redshift Serverless: ~$11-22/quarterly run (30-60 RPU-hours). SageMaker Processing: ~$0.05/hour (ml.m5.large) for quarterly runs. S3 + Glue: negligible. QuickSight: $18/user/month (Enterprise). Total for 500-provider system: ~$200-400/quarter for compute, plus QuickSight licensing. |
+
+<!-- TODO (TechWriter): Expert review SEC-2 (HIGH). Expand IAM permissions with explicit resource ARN examples showing least-privilege scoping. Show sagemaker:CreateTrainingJob with condition key sagemaker:VpcSecurityGroupIds restricting to PHI security group. Show redshift:GetClusterCredentials restricted to specific database user with schema-level grants only on provider profiling tables. -->
 
 ### Ingredients
 
@@ -205,6 +211,8 @@ flowchart TD
 #### Walkthrough
 
 **Step 1: Extract and aggregate provider metrics.** The first step pulls raw clinical data from your source systems and aggregates it to the provider level. For each provider, you calculate raw utilization metrics over your chosen time window (typically 12 months). This includes ordering rates, referral rates, prescribing patterns, cost metrics, and quality scores. The aggregation must be specialty-specific: you only compare providers within the same specialty. Skip this step and you have no data to analyze. Get the time window wrong and you either have too much noise (short window, small panels) or miss practice evolution (overly long window).
+
+Before case-mix adjustment, validate input data: check record counts against expected volumes (alert if more than 20% deviation from prior quarter), verify all expected providers appear in the extract, check for temporal completeness (all 12 months of the analysis window have data), and validate HCC score distributions haven't shifted dramatically (which could indicate a coding change rather than real acuity change). Halt the pipeline and alert if any validation fails.
 
 ```
 FUNCTION aggregate_provider_metrics(time_window_months, min_panel_size):
@@ -510,6 +518,8 @@ FUNCTION generate_reports(assignments, profiles, provider_metrics):
 **Longitudinal stability monitoring.** A production system needs to track how cluster assignments change over time and distinguish real practice evolution (a provider adopting new guidelines) from noise (random fluctuation in small-sample metrics). Alert on providers whose assignments shift dramatically between runs.
 
 **Provider feedback loop.** The reports need a mechanism for providers to contest their assignment or provide context. "My imaging rate is high because I run a concussion clinic" is legitimate context that the algorithm can't know. Build a structured feedback channel and incorporate validated exceptions into future runs.
+
+**Data retention policy.** Define how long historical provider profiles are retained after a provider leaves the system (typically 7 years for peer review records, varies by state). For patient deletion requests, re-running the aggregation pipeline without the deleted patient's data is the cleanest approach, but may be impractical for historical snapshots. Document the retention policy and deletion procedures before go-live.
 
 **Regulatory considerations.** In some states, provider profiling data has specific legal protections. Peer review privilege may apply to the analysis outputs. Consult legal counsel before sharing results broadly or tying them to compensation.
 

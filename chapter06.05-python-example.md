@@ -197,6 +197,10 @@ def case_mix_adjust(df: pd.DataFrame) -> pd.DataFrame:
     gradient boosting) and validate the adjustment with held-out data.
     The linear model here is intentionally simple for clarity.
     """
+    # Note: we train and predict on the same data here for simplicity.
+    # Production systems use cross-validation or held-out splits to avoid
+    # overfitting the adjustment model to the training providers.
+
     # Extract the case-mix features (patient panel characteristics).
     X = df[CASE_MIX_FEATURES].values
 
@@ -388,7 +392,10 @@ def interpret_clusters(
         for col in top_features.index:
             z = z_scores[col]
             metric_name = col.replace("_oe", "")
-            direction = "above" if z > 0 else "below"
+            # Use O/E ratio relative to 1.0 (expected) for both direction
+            # and magnitude. This keeps the interpretation consistent:
+            # O/E > 1.0 means "above expected," O/E < 1.0 means "below expected."
+            direction = "above" if cluster_means[col] > 1.0 else "below"
             pct_diff = abs(cluster_means[col] - 1.0) * 100
             distinctive.append({
                 "metric": col,
@@ -423,6 +430,12 @@ def _suggest_label(z_scores: pd.Series) -> str:
 
     In production, these labels should be reviewed and refined by
     clinical leadership. The algorithm suggests; humans decide.
+
+    These thresholds are calibrated for the synthetic data in this example.
+    With real provider data, the z-score distributions will differ because
+    cluster means have lower variance than individual providers. Tune these
+    empirically or replace with a rule engine that clinical leadership can
+    configure without code changes.
     """
     cost_z = z_scores.get("avg_cost_per_patient_oe", 0)
     imaging_z = z_scores.get("imaging_rate_oe", 0)
