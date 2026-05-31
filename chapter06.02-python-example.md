@@ -15,6 +15,7 @@ pip install boto3 numpy pandas scikit-learn
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+
 - `s3:GetObject` and `s3:PutObject` (reading utilization data, writing segment assignments)
 - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing segment profiles and member assignments)
 - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
