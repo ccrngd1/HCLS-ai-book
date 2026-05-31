@@ -1,60 +1,58 @@
 # Recipe 6.3: Python Implementation Example
 
-> **Heads up:** This is a deliberately simplified, illustrative implementation of the pseudocode walkthrough from Recipe 6.3. It shows one way you could translate payer mix financial risk clustering into working Python. It is not production-ready. The synthetic data here is tiny (500 patients), the feature engineering is minimal, and there's no error handling to speak of. Think of it as the napkin sketch that helps you understand the shape of the solution before you build the real thing. A starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.3. It shows one way you could translate payer mix financial risk clustering into working Python code. It is not production-ready. There's no error handling, no retry logic, no input validation. Think of it as the whiteboard sketch: useful for understanding the shape of the solution, not something you'd deploy against your actual patient population on Monday morning. Consider it a starting point, not a destination.
+>
+> This example uses SageMaker Processing Jobs with scikit-learn rather than SageMaker's built-in K-Means algorithm. For populations under 500K patients, scikit-learn is simpler and more flexible. The built-in algorithm is better when you're clustering millions of records and need distributed compute.
 
 ---
 
 ## Setup
 
-You'll need the following packages:
+You'll need the AWS SDK for Python and scikit-learn:
 
 ```bash
 pip install boto3 pandas numpy scikit-learn
 ```
 
-Your environment needs AWS credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `s3:GetObject`, `s3:PutObject`, `sagemaker:CreateProcessingJob` (if you use SageMaker for production runs), and `athena:StartQueryExecution` (for downstream profiling queries).
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+- `s3:GetObject`
+- `s3:PutObject`
+- `sagemaker:CreateProcessingJob`
+- `sagemaker:DescribeProcessingJob`
+- `athena:StartQueryExecution`
+- `athena:GetQueryResults`
+- `sns:Publish`
 
-For this example, we run clustering locally with scikit-learn. In production, you'd run this as a SageMaker Processing Job for larger populations. The algorithm is the same; the execution environment changes.
+For the SageMaker Processing Job, you'll also need a SageMaker execution role with S3 access. That's a separate IAM role from the one running this script.
 
 ---
 
-## Config and Constants
+## Configuration and Constants
 
-These go at the top of your module. They define the feature set, encoding schemes, and thresholds that drive the clustering. Treat these as configuration, not magic numbers buried in functions.
+Everything that's really configuration rather than logic lives here. The feature definitions, payer encodings, and thresholds are the pieces that change between organizations. Treat them as configuration you version-control, not magic numbers buried in functions.
 
 ```python
+import logging
+import json
+import datetime
+from datetime import timezone
+from decimal import Decimal
+
+import boto3
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
-import json
-import logging
-from datetime import datetime, timezone
 
-# Structured logging. In production, use JSON-formatted output for
-# CloudWatch Logs Insights queries. Never log patient identifiers.
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Payer type ordinal encoding. Higher number = generally higher expected
-# reimbursement. This is a simplification (plan design matters more than
-# payer category alone), but it preserves the financial ordering that
-# K-Means needs to work with categorical data.
-PAYER_ENCODING = {
-    "commercial_ppo": 5,
-    "commercial_hmo": 4,
-    "commercial_hdhp": 3,
-    "medicare": 3,
-    "medicaid": 2,
-    "self_pay": 1,
-}
+# --- Feature Configuration ---
 
-# Features used for clustering. Order matters for readability, not for
-# the algorithm. Each feature should contribute a distinct signal about
-# financial risk. Correlated features (e.g., write_off_ratio and
-# payment_ratio) are both included because they capture different
-# aspects: one is about what was lost, the other about what was collected.
+# The features we'll use for clustering. Each maps to a column in the
+# patient feature matrix. Order matters: it determines column order in
+# the numpy array passed to K-Means.
 FEATURE_COLUMNS = [
     "payer_ordinal",
     "payment_ratio",
@@ -62,317 +60,337 @@ FEATURE_COLUMNS = [
     "avg_days_to_pay",
     "utilization_intensity",
     "ed_proportion",
+    "avg_complexity",
     "no_show_rate",
     "coverage_changes_24mo",
+    "deductible_amount",
     "collections_count",
+    "charity_app_count",
 ]
 
-# Range of k values to evaluate. Healthcare financial risk clustering
-# typically lands between 4-7 clusters. Fewer than 3 is too coarse
-# (you're just rediscovering payer categories). More than 8 is too
-# granular for most finance teams to operationalize.
+# Payer type ordinal encoding. Higher = generally better reimbursement.
+# This is a simplification. In reality, a Medicaid managed care plan
+# might reimburse better than a high-deductible commercial plan for
+# certain services. But as a clustering feature, this ordinal captures
+# the broad financial ordering that matters for segmentation.
+PAYER_ENCODING = {
+    "commercial": 4,
+    "medicare": 3,
+    "medicaid": 2,
+    "self_pay": 1,
+}
+
+# Range of k values to evaluate. Start at 3 (fewer is just rediscovering
+# payer categories) and stop at 8 (more is too granular to operationalize).
 K_RANGE = range(3, 9)
 
-# Population shift alert threshold (percentage points).
-# A 5pp shift in any cluster between runs is worth investigating.
+# Population shift detection threshold (percentage points).
+# A shift of 5+ pp in any cluster between runs triggers an alert.
 SHIFT_THRESHOLD_PP = 5.0
+
+# S3 paths for the pipeline artifacts.
+S3_BUCKET = "my-health-system-analytics"
+S3_PREFIX_FEATURES = "payer-risk-clustering/features/"
+S3_PREFIX_RESULTS = "payer-risk-clustering/results/"
+S3_PREFIX_HISTORY = "payer-risk-clustering/history/"
+
+# SNS topic for shift alerts.
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:123456789012:payer-risk-alerts"
 ```
 
 ---
 
-## Step 1: Generate Synthetic Patient Financial Data
+## Step 1: Generate Synthetic Patient Data
 
-*The main recipe's Step 1 pulls from billing, EHR, and eligibility systems. Here we generate synthetic data that mimics the shape of what those joins would produce. In production, this step is a Glue ETL job that queries your actual source systems.*
+*The pseudocode calls this `extract_patient_financial_data(date_range)`. In production, this step pulls from your billing system, EHR, and eligibility feeds via Glue ETL. Here we generate synthetic data that mimics the statistical properties of a real patient population. No real PHI is used or needed for development.*
 
 ```python
-def generate_synthetic_patients(n_patients: int = 500, seed: int = 42) -> pd.DataFrame:
+def generate_synthetic_patients(n_patients: int = 5000, seed: int = 42) -> pd.DataFrame:
     """
-    Create synthetic patient financial data for demonstration.
+    Generate synthetic patient financial data for clustering development.
 
-    This simulates the output of the ETL step: one row per patient with
-    columns from billing (payment behavior), EHR (utilization), and
-    eligibility (coverage characteristics).
+    The distributions here are loosely based on published healthcare
+    utilization statistics. They're realistic enough to produce meaningful
+    clusters but are NOT derived from any actual patient data.
 
-    The synthetic data is structured to produce recognizable clusters:
-    stable commercial payers, HDHP patients with payment challenges,
-    Medicare utilizers, Medicaid high-utilization, and coverage-unstable
-    high-risk patients. Real data won't be this clean, but the patterns
-    are realistic.
+    In production, replace this entire function with your Glue ETL job
+    that joins billing, EHR, and eligibility data.
+
+    Args:
+        n_patients: Number of synthetic patients to generate.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        DataFrame with one row per patient and columns matching the
+        raw data you'd get from source system extracts.
     """
     rng = np.random.default_rng(seed)
 
-    # Define cluster archetypes. Each archetype represents a financial
-    # risk profile with characteristic feature distributions.
-    # In real data, these emerge from the algorithm. Here we plant them
-    # so the example produces interpretable results.
-    archetypes = [
-        {  # Stable commercial, low risk
-            "name": "stable_commercial",
-            "weight": 0.30,
-            "payer": "commercial_ppo",
-            "payment_ratio": (0.90, 0.05),
-            "write_off_ratio": (0.02, 0.01),
-            "avg_days_to_pay": (20, 8),
-            "utilization_intensity": (0.4, 0.2),
-            "ed_proportion": (0.05, 0.03),
-            "no_show_rate": (0.05, 0.03),
-            "coverage_changes_24mo": (0.1, 0.3),
-            "collections_count": (0.0, 0.1),
-        },
-        {  # HDHP commercial, payment challenged
-            "name": "hdhp_challenged",
-            "weight": 0.20,
-            "payer": "commercial_hdhp",
-            "payment_ratio": (0.60, 0.12),
-            "write_off_ratio": (0.18, 0.06),
-            "avg_days_to_pay": (65, 20),
-            "utilization_intensity": (0.7, 0.3),
-            "ed_proportion": (0.15, 0.08),
-            "no_show_rate": (0.12, 0.05),
-            "coverage_changes_24mo": (0.8, 0.7),
-            "collections_count": (1.2, 1.0),
-        },
-        {  # Medicare, stable utilizers
-            "name": "medicare_stable",
-            "weight": 0.22,
-            "payer": "medicare",
-            "payment_ratio": (0.87, 0.06),
-            "write_off_ratio": (0.05, 0.03),
-            "avg_days_to_pay": (32, 10),
-            "utilization_intensity": (1.0, 0.4),
-            "ed_proportion": (0.10, 0.05),
-            "no_show_rate": (0.08, 0.04),
-            "coverage_changes_24mo": (0.2, 0.4),
-            "collections_count": (0.2, 0.4),
-        },
-        {  # Medicaid, high utilization
-            "name": "medicaid_high_util",
-            "weight": 0.18,
-            "payer": "medicaid",
-            "payment_ratio": (0.72, 0.10),
-            "write_off_ratio": (0.12, 0.05),
-            "avg_days_to_pay": (45, 15),
-            "utilization_intensity": (1.5, 0.5),
-            "ed_proportion": (0.25, 0.10),
-            "no_show_rate": (0.18, 0.07),
-            "coverage_changes_24mo": (1.5, 1.0),
-            "collections_count": (0.5, 0.6),
-        },
-        {  # Coverage unstable, high risk
-            "name": "coverage_unstable",
-            "weight": 0.10,
-            "payer": "self_pay",
-            "payment_ratio": (0.35, 0.15),
-            "write_off_ratio": (0.40, 0.12),
-            "avg_days_to_pay": (110, 30),
-            "utilization_intensity": (0.8, 0.4),
-            "ed_proportion": (0.35, 0.12),
-            "no_show_rate": (0.25, 0.08),
-            "coverage_changes_24mo": (3.0, 1.2),
-            "collections_count": (2.5, 1.5),
-        },
-    ]
+    # Assign payer types with a realistic distribution.
+    # National averages: ~50% commercial, ~20% Medicare, ~20% Medicaid, ~10% self-pay.
+    # Your system's mix will differ. That's fine; the clustering adapts.
+    payer_types = rng.choice(
+        ["commercial", "medicare", "medicaid", "self_pay"],
+        size=n_patients,
+        p=[0.48, 0.22, 0.20, 0.10],
+    )
 
-    patients = []
-    patient_id = 1000
+    patients = pd.DataFrame({"patient_id": range(1, n_patients + 1), "payer_type": payer_types})
 
-    for archetype in archetypes:
-        n = int(n_patients * archetype["weight"])
-        for _ in range(n):
-            patient_id += 1
-            patient = {
-                "patient_id": f"PAT-{patient_id}",
-                "payer_type": archetype["payer"],
-                "payment_ratio": np.clip(
-                    rng.normal(*archetype["payment_ratio"]), 0, 1
-                ),
-                "write_off_ratio": np.clip(
-                    rng.normal(*archetype["write_off_ratio"]), 0, 1
-                ),
-                "avg_days_to_pay": max(
-                    0, rng.normal(*archetype["avg_days_to_pay"])
-                ),
-                "utilization_intensity": max(
-                    0, rng.normal(*archetype["utilization_intensity"])
-                ),
-                "ed_proportion": np.clip(
-                    rng.normal(*archetype["ed_proportion"]), 0, 1
-                ),
-                "no_show_rate": np.clip(
-                    rng.normal(*archetype["no_show_rate"]), 0, 1
-                ),
-                "coverage_changes_24mo": max(
-                    0, int(rng.normal(*archetype["coverage_changes_24mo"]))
-                ),
-                "collections_count": max(
-                    0, int(rng.normal(*archetype["collections_count"]))
-                ),
-            }
-            patients.append(patient)
+    # Generate financial and utilization features conditioned on payer type.
+    # Each payer segment has different statistical properties. This conditioning
+    # is what makes the synthetic data produce realistic clusters.
+    for idx, row in patients.iterrows():
+        payer = row["payer_type"]
 
-    return pd.DataFrame(patients)
+        if payer == "commercial":
+            # Commercial patients: generally good payment, moderate utilization.
+            # But with a subgroup of HDHP patients who struggle with patient responsibility.
+            is_hdhp = rng.random() < 0.35  # 35% of commercial are high-deductible
+            if is_hdhp:
+                patients.loc[idx, "payment_ratio"] = rng.beta(3, 4)  # skewed lower
+                patients.loc[idx, "avg_days_to_pay"] = rng.gamma(8, 8)  # longer
+                patients.loc[idx, "deductible_amount"] = rng.uniform(3000, 8000)
+                patients.loc[idx, "write_off_ratio"] = rng.beta(2, 8)
+            else:
+                patients.loc[idx, "payment_ratio"] = rng.beta(8, 2)  # skewed higher
+                patients.loc[idx, "avg_days_to_pay"] = rng.gamma(3, 5)
+                patients.loc[idx, "deductible_amount"] = rng.uniform(250, 2000)
+                patients.loc[idx, "write_off_ratio"] = rng.beta(1, 20)
+            patients.loc[idx, "utilization_intensity"] = rng.gamma(2, 1.5)
+            patients.loc[idx, "ed_proportion"] = rng.beta(1, 10)
+            patients.loc[idx, "coverage_changes_24mo"] = rng.poisson(0.3)
+
+        elif payer == "medicare":
+            # Medicare: reliable payer, higher utilization, older population.
+            patients.loc[idx, "payment_ratio"] = rng.beta(7, 2)
+            patients.loc[idx, "avg_days_to_pay"] = rng.gamma(4, 7)
+            patients.loc[idx, "deductible_amount"] = rng.uniform(200, 500)
+            patients.loc[idx, "write_off_ratio"] = rng.beta(1, 15)
+            patients.loc[idx, "utilization_intensity"] = rng.gamma(4, 1.5)
+            patients.loc[idx, "ed_proportion"] = rng.beta(2, 8)
+            patients.loc[idx, "coverage_changes_24mo"] = rng.poisson(0.1)
+
+        elif payer == "medicaid":
+            # Medicaid: variable payment, higher ED use, coverage instability.
+            patients.loc[idx, "payment_ratio"] = rng.beta(4, 3)
+            patients.loc[idx, "avg_days_to_pay"] = rng.gamma(5, 8)
+            patients.loc[idx, "deductible_amount"] = rng.uniform(0, 100)
+            patients.loc[idx, "write_off_ratio"] = rng.beta(2, 10)
+            patients.loc[idx, "utilization_intensity"] = rng.gamma(3, 2)
+            patients.loc[idx, "ed_proportion"] = rng.beta(3, 7)
+            patients.loc[idx, "coverage_changes_24mo"] = rng.poisson(1.2)
+
+        else:  # self_pay
+            # Self-pay: lowest payment rates, highest write-offs, coverage churn.
+            patients.loc[idx, "payment_ratio"] = rng.beta(2, 5)
+            patients.loc[idx, "avg_days_to_pay"] = rng.gamma(10, 10)
+            patients.loc[idx, "deductible_amount"] = 0.0  # no insurance, no deductible
+            patients.loc[idx, "write_off_ratio"] = rng.beta(4, 5)
+            patients.loc[idx, "utilization_intensity"] = rng.gamma(1.5, 2)
+            patients.loc[idx, "ed_proportion"] = rng.beta(4, 6)
+            patients.loc[idx, "coverage_changes_24mo"] = rng.poisson(2.0)
+
+    # Features that are less payer-dependent.
+    patients["avg_complexity"] = rng.gamma(2, 1, size=n_patients)
+    patients["no_show_rate"] = rng.beta(2, 10, size=n_patients)
+    patients["collections_count"] = rng.poisson(0.5, size=n_patients)
+    patients["charity_app_count"] = rng.poisson(0.2, size=n_patients)
+
+    # Clip unrealistic values.
+    patients["payment_ratio"] = patients["payment_ratio"].clip(0, 1)
+    patients["write_off_ratio"] = patients["write_off_ratio"].clip(0, 1)
+    patients["no_show_rate"] = patients["no_show_rate"].clip(0, 1)
+    patients["ed_proportion"] = patients["ed_proportion"].clip(0, 1)
+    patients["avg_days_to_pay"] = patients["avg_days_to_pay"].clip(0, 365)
+
+    logger.info("Generated %d synthetic patients", n_patients)
+    return patients
 ```
 
 ---
 
 ## Step 2: Engineer and Normalize Features
 
-*The main recipe's Step 2 transforms raw data into a normalized feature matrix. This is where domain expertise matters most. The choice of features, encoding scheme, and normalization method has more impact on cluster quality than the choice of algorithm.*
+*The pseudocode calls this `engineer_features(patient_features)`. This transforms raw patient data into a numeric feature matrix suitable for K-Means. The key operations: encode payer type as an ordinal, impute missing values with medians, and z-score normalize so no single feature dominates the distance calculation.*
 
 ```python
-def engineer_features(df: pd.DataFrame) -> tuple[np.ndarray, StandardScaler, pd.DataFrame]:
+def engineer_features(patients: pd.DataFrame) -> tuple[np.ndarray, StandardScaler, pd.DataFrame]:
     """
-    Transform raw patient data into a normalized feature matrix ready for clustering.
+    Transform raw patient data into a normalized feature matrix for clustering.
 
     Three things happen here:
-    1. Encode categorical payer type as an ordinal number
-    2. Select the feature columns that carry financial risk signal
-    3. Z-score normalize so no single feature dominates distance calculations
+    1. Payer type gets ordinal encoding (preserving financial ordering).
+    2. Missing values get median imputation (new patients land in the middle).
+    3. All features get z-score normalization (equal contribution to distance).
+
+    The scaler object is returned because you'll need it later to transform
+    new patients into the same feature space for cluster assignment.
+
+    Args:
+        patients: DataFrame from generate_synthetic_patients or your ETL.
 
     Returns:
-        feature_matrix: numpy array ready for K-Means (n_patients x n_features)
-        scaler: fitted StandardScaler (save this for transforming new patients)
-        df: the dataframe with payer_ordinal added (for profiling later)
+        Tuple of (feature_matrix, scaler, patients_with_features):
+        - feature_matrix: numpy array ready for K-Means (n_patients x n_features)
+        - scaler: fitted StandardScaler for transforming new data
+        - patients_with_features: original DataFrame with payer_ordinal added
     """
     # Encode payer type as ordinal. This preserves the financial ordering
-    # that matters for this use case. A fancier approach would use
-    # one-hot encoding, but ordinal works well when the categories have
-    # a natural ordering (which reimbursement rates provide).
-    df = df.copy()
-    df["payer_ordinal"] = df["payer_type"].map(PAYER_ENCODING).fillna(1)
+    # that's central to this use case. One-hot encoding would work too,
+    # but it loses the "commercial > medicare > medicaid > self_pay"
+    # reimbursement hierarchy that we want the clustering to see.
+    patients = patients.copy()
+    patients["payer_ordinal"] = patients["payer_type"].map(PAYER_ENCODING)
 
-    # Extract the feature columns into a matrix.
-    feature_df = df[FEATURE_COLUMNS].copy()
+    # Handle missing values with median imputation.
+    # In production, new patients (< 6 months of history) will have nulls
+    # in payment_ratio, avg_days_to_pay, etc. Median imputation places them
+    # in the middle of the distribution rather than at an extreme.
+    feature_df = patients[FEATURE_COLUMNS].copy()
+    for col in FEATURE_COLUMNS:
+        median_val = feature_df[col].median()
+        feature_df[col] = feature_df[col].fillna(median_val)
 
-    # Handle any remaining NaN values. In production, you'd investigate
-    # why data is missing. Here, median imputation is a safe default
-    # that places unknown patients in the middle of the distribution.
-    feature_df = feature_df.fillna(feature_df.median())
-
-    # Z-score normalization: subtract mean, divide by standard deviation.
-    # Without this, avg_days_to_pay (range 0-150) would completely dominate
-    # no_show_rate (range 0-0.3) in the distance calculation.
+    # Z-score normalization. Without this, deductible_amount (range 0-8000)
+    # would completely dominate no_show_rate (range 0-1) in the distance
+    # calculation. After normalization, both have mean=0 and std=1.
     scaler = StandardScaler()
-    feature_matrix = scaler.fit_transform(feature_df)
+    feature_matrix = scaler.fit_transform(feature_df.values)
 
     logger.info(
-        "Feature matrix: %d patients x %d features",
-        feature_matrix.shape[0],
-        feature_matrix.shape[1],
+        "Feature matrix shape: %s (patients x features)", feature_matrix.shape
     )
-
-    return feature_matrix, scaler, df
+    return feature_matrix, scaler, patients
 ```
 
 ---
 
 ## Step 3: Run Clustering and Evaluate
 
-*The main recipe's Step 3 runs K-Means for multiple k values and evaluates using silhouette score. The best k balances statistical quality with business interpretability.*
+*The pseudocode calls this `cluster_patients(feature_matrix, k_range)`. We run K-Means for each candidate k, compute silhouette scores, and select the best segmentation. The silhouette score is a starting point; final k selection requires human review of the cluster profiles.*
 
 ```python
-def find_optimal_clusters(
+def cluster_and_evaluate(
     feature_matrix: np.ndarray,
-    k_range: range = K_RANGE,
 ) -> tuple[KMeans, np.ndarray, list[dict]]:
     """
     Run K-Means for multiple k values and select the best segmentation.
 
-    We evaluate each k using silhouette score (higher = better cluster
-    separation). But the final decision should also consider whether
-    finance leadership can name and act on the resulting segments.
+    For each k in K_RANGE, we:
+    1. Fit K-Means with 10 random initializations (n_init=10 avoids local minima).
+    2. Compute the silhouette score (measures cluster separation quality).
+    3. Record inertia (within-cluster sum of squares) for the elbow plot.
+
+    The "best" k is the one with the highest silhouette score. But this is
+    a suggestion, not a final answer. If k=5 has silhouette 0.38 and k=4
+    has silhouette 0.36, but your finance team can only act on 4 strategies,
+    pick k=4. Actionability beats metrics.
+
+    Args:
+        feature_matrix: Normalized numpy array from engineer_features.
 
     Returns:
-        best_model: the fitted KMeans model for the best k
-        best_labels: cluster assignments for each patient
-        all_results: evaluation metrics for all k values (for comparison)
+        Tuple of (best_model, best_labels, all_results):
+        - best_model: fitted KMeans object for the best k
+        - best_labels: cluster assignments (array of ints, one per patient)
+        - all_results: list of dicts with k, silhouette, inertia for comparison
     """
     all_results = []
+    best_score = -1
+    best_model = None
+    best_labels = None
 
-    for k in k_range:
-        # n_init=10: run K-Means 10 times with different random seeds,
-        # keep the best result. K-Means is sensitive to initialization;
-        # multiple runs avoid getting stuck in a bad local minimum.
+    for k in K_RANGE:
+        # n_init=10: run 10 times with different random centroids, keep the best.
+        # random_state=42: reproducible results for development. Remove in production
+        # if you want to assess stability across random seeds.
         model = KMeans(n_clusters=k, n_init=10, random_state=42)
         labels = model.fit_predict(feature_matrix)
 
-        # Silhouette score: measures how similar each point is to its own
-        # cluster vs. the nearest neighboring cluster. Range -1 to 1.
-        # Above 0.25 is decent for real-world financial data.
-        sil_score = silhouette_score(feature_matrix, labels)
-
-        # Inertia: within-cluster sum of squares. Always decreases with k.
-        # Useful for the elbow method but not a standalone selection criterion.
+        score = silhouette_score(feature_matrix, labels)
         inertia = model.inertia_
 
         all_results.append({
             "k": k,
-            "silhouette_score": round(sil_score, 4),
+            "silhouette_score": round(score, 4),
             "inertia": round(inertia, 2),
-            "model": model,
-            "labels": labels,
         })
 
-        logger.info("  k=%d: silhouette=%.4f, inertia=%.1f", k, sil_score, inertia)
+        logger.info("  k=%d: silhouette=%.4f, inertia=%.2f", k, score, inertia)
 
-    # Select the k with the highest silhouette score.
-    best = max(all_results, key=lambda x: x["silhouette_score"])
+        if score > best_score:
+            best_score = score
+            best_model = model
+            best_labels = labels
+
     logger.info(
-        "Best k=%d (silhouette=%.4f)", best["k"], best["silhouette_score"]
+        "Best k=%d with silhouette=%.4f",
+        best_model.n_clusters,
+        best_score,
     )
-
-    return best["model"], best["labels"], all_results
+    return best_model, best_labels, all_results
 ```
 
 ---
 
 ## Step 4: Profile Clusters
 
-*The main recipe's Step 4 computes summary statistics for each cluster and generates human-readable profiles. A CFO doesn't care about cluster 0 vs. cluster 3. They care about "high-deductible patients who don't pay their patient responsibility."*
+*The pseudocode calls this `profile_clusters(patient_data, labels, feature_columns)`. This is where raw cluster IDs become something a CFO can understand. For each cluster, we compute summary statistics and generate a human-readable label based on the dominant characteristics.*
 
 ```python
-def profile_clusters(df: pd.DataFrame, labels: np.ndarray) -> list[dict]:
+def profile_clusters(patients: pd.DataFrame, labels: np.ndarray) -> list[dict]:
     """
-    Compute summary statistics for each cluster and generate profiles
-    that finance leadership can understand and act on.
+    Generate human-readable profiles for each cluster.
 
-    Returns a list of cluster profile dictionaries, each containing
-    size, percentage, feature means, and a suggested human-readable label.
+    For each cluster, compute:
+    - Size and percentage of total population
+    - Mean values for all financial and utilization features
+    - Dominant payer type (mode)
+    - A suggested label based on the most distinguishing characteristics
+
+    The suggested labels are heuristic. They're a starting point for the
+    conversation with your finance team, who will rename them to match
+    their mental model. "Cluster 3" means nothing. "HDHP Payment-Challenged"
+    means everything.
+
+    Args:
+        patients: DataFrame with patient data (including payer_type).
+        labels: Cluster assignment array from cluster_and_evaluate.
+
+    Returns:
+        List of profile dicts, one per cluster, sorted by cluster ID.
     """
-    df = df.copy()
-    df["cluster"] = labels
-    total_patients = len(df)
+    patients = patients.copy()
+    patients["cluster"] = labels
 
     profiles = []
 
-    for cluster_id in sorted(df["cluster"].unique()):
-        cluster_df = df[df["cluster"] == cluster_id]
-        size = len(cluster_df)
+    for cluster_id in sorted(patients["cluster"].unique()):
+        cluster_df = patients[patients["cluster"] == cluster_id]
+        n = len(cluster_df)
+        pct = round(n / len(patients) * 100, 1)
 
+        # Compute feature means for this cluster.
         profile = {
             "cluster_id": int(cluster_id),
-            "size": size,
-            "percentage": round(size / total_patients * 100, 1),
+            "size": n,
+            "percentage": pct,
             "dominant_payer": cluster_df["payer_type"].mode().iloc[0],
-            "payer_distribution": cluster_df["payer_type"]
-            .value_counts(normalize=True)
-            .round(3)
-            .to_dict(),
+            "payer_distribution": cluster_df["payer_type"].value_counts(normalize=True).round(3).to_dict(),
             "avg_payment_ratio": round(cluster_df["payment_ratio"].mean(), 3),
             "avg_write_off_ratio": round(cluster_df["write_off_ratio"].mean(), 3),
             "avg_days_to_pay": round(cluster_df["avg_days_to_pay"].mean(), 1),
-            "avg_utilization_intensity": round(
-                cluster_df["utilization_intensity"].mean(), 2
-            ),
+            "avg_utilization_intensity": round(cluster_df["utilization_intensity"].mean(), 2),
             "avg_ed_proportion": round(cluster_df["ed_proportion"].mean(), 3),
             "avg_no_show_rate": round(cluster_df["no_show_rate"].mean(), 3),
-            "avg_collections_count": round(
-                cluster_df["collections_count"].mean(), 2
-            ),
+            "avg_deductible": round(cluster_df["deductible_amount"].mean(), 0),
+            "avg_coverage_changes": round(cluster_df["coverage_changes_24mo"].mean(), 2),
+            "avg_collections_count": round(cluster_df["collections_count"].mean(), 2),
+            "avg_charity_apps": round(cluster_df["charity_app_count"].mean(), 2),
         }
 
         # Generate a suggested label based on dominant characteristics.
-        # This heuristic picks the most distinguishing features.
         profile["suggested_label"] = _generate_cluster_label(profile)
         profiles.append(profile)
 
@@ -381,277 +399,312 @@ def profile_clusters(df: pd.DataFrame, labels: np.ndarray) -> list[dict]:
 
 def _generate_cluster_label(profile: dict) -> str:
     """
-    Heuristic label generator. In production, a human reviews and
-    assigns final labels. This gives them a starting point.
+    Heuristic label generation based on cluster characteristics.
+
+    This is intentionally simple. The real labels come from your finance
+    team after they review the profiles. This just gives them a starting point.
     """
-    payer = profile["dominant_payer"].replace("_", " ").title()
-    risk_level = "High Risk"
+    payer = profile["dominant_payer"]
+    payment = profile["avg_payment_ratio"]
+    write_off = profile["avg_write_off_ratio"]
+    deductible = profile["avg_deductible"]
 
-    if profile["avg_payment_ratio"] > 0.85:
+    if payment > 0.85 and write_off < 0.05:
         risk_level = "Low Risk"
-    elif profile["avg_payment_ratio"] > 0.65:
+    elif payment > 0.6 and write_off < 0.15:
         risk_level = "Moderate Risk"
+    else:
+        risk_level = "High Risk"
 
-    utilization = "Low Util"
-    if profile["avg_utilization_intensity"] > 1.2:
-        utilization = "High Util"
-    elif profile["avg_utilization_intensity"] > 0.6:
-        utilization = "Moderate Util"
+    payer_label = payer.replace("_", " ").title()
 
-    return f"{payer} - {risk_level} - {utilization}"
+    if payer == "commercial" and deductible > 3000:
+        payer_label = "HDHP Commercial"
+
+    return f"{payer_label} - {risk_level}"
 ```
 
 ---
 
 ## Step 5: Detect Population Shifts
 
-*The main recipe's Step 5 compares cluster distributions between runs and alerts when shifts exceed a threshold. This turns a static segmentation into a monitoring system.*
+*The pseudocode calls this `detect_population_shift(current_distribution, previous_distribution, threshold)`. This compares cluster distributions between runs and fires alerts when the population is shifting in a financially meaningful direction.*
 
 ```python
 def detect_population_shift(
     current_profiles: list[dict],
     previous_profiles: list[dict],
-    threshold: float = SHIFT_THRESHOLD_PP,
 ) -> list[dict]:
     """
-    Compare cluster distributions between two time periods and flag
-    significant shifts.
+    Compare cluster distributions between the current and previous run.
 
-    A 5-percentage-point shift in any cluster is worth investigating.
-    A 10-point shift is an alarm. These thresholds are configurable
-    because what counts as "significant" depends on your organization's
-    tolerance for revenue volatility.
+    A shift of SHIFT_THRESHOLD_PP percentage points in any cluster triggers
+    an alert. In practice, a 5pp shift in a quarter is significant: it means
+    thousands of patients are moving between financial risk segments.
 
-    Returns a list of alert dictionaries for clusters that shifted
-    beyond the threshold.
+    Args:
+        current_profiles: Profiles from this run's clustering.
+        previous_profiles: Profiles from the last run (loaded from S3 history).
+
+    Returns:
+        List of alert dicts for clusters that shifted beyond threshold.
+        Empty list means the population is stable (good news).
     """
-    # Build lookup: cluster_id -> percentage for each period.
-    current_dist = {p["cluster_id"]: p["percentage"] for p in current_profiles}
-    previous_dist = {p["cluster_id"]: p["percentage"] for p in previous_profiles}
+    # Build lookup by cluster label (not ID, since IDs can shift between runs).
+    # In production, you'd use a more robust matching strategy (e.g., centroid
+    # similarity) to align clusters across runs. Labels are a simplification.
+    previous_by_label = {p["suggested_label"]: p["percentage"] for p in previous_profiles}
 
     alerts = []
 
-    for cluster_id, current_pct in current_dist.items():
-        previous_pct = previous_dist.get(cluster_id, 0.0)
+    for profile in current_profiles:
+        label = profile["suggested_label"]
+        current_pct = profile["percentage"]
+        previous_pct = previous_by_label.get(label, 0.0)
         shift = current_pct - previous_pct
 
-        if abs(shift) >= threshold:
+        if abs(shift) >= SHIFT_THRESHOLD_PP:
             direction = "growing" if shift > 0 else "shrinking"
             alerts.append({
-                "cluster_id": cluster_id,
+                "cluster_label": label,
                 "direction": direction,
                 "shift_pp": round(shift, 1),
                 "current_pct": current_pct,
                 "previous_pct": previous_pct,
                 "message": (
-                    f"Cluster {cluster_id} is {direction}: "
+                    f"Cluster '{label}' is {direction}: "
                     f"{previous_pct}% -> {current_pct}% ({shift:+.1f} pp)"
                 ),
             })
+
+    if alerts:
+        logger.info("Population shift detected: %d cluster(s) beyond threshold", len(alerts))
+    else:
+        logger.info("Population stable: no clusters shifted beyond %.1f pp", SHIFT_THRESHOLD_PP)
 
     return alerts
 ```
 
 ---
 
-## Putting It All Together
+## Step 6: Upload Results to S3
 
-Here's the full pipeline assembled into a single function. This is what you'd call from a SageMaker Processing Job or a scheduled Lambda.
-
-```python
-def run_payer_mix_clustering_pipeline(n_patients: int = 500) -> dict:
-    """
-    Run the full payer mix financial risk clustering pipeline.
-
-    In production, this would:
-    1. Pull real data from Glue catalog / Athena queries
-    2. Run on SageMaker Processing for large populations
-    3. Write results to S3 as Parquet
-    4. Trigger QuickSight dashboard refresh
-    5. Compare against previous run and alert on shifts
-
-    Here, we use synthetic data and run locally to demonstrate the flow.
-    """
-    logger.info("=" * 60)
-    logger.info("Payer Mix Financial Risk Clustering Pipeline")
-    logger.info("=" * 60)
-
-    # Step 1: Get patient data (synthetic here, ETL in production).
-    logger.info("\nStep 1: Generating synthetic patient data...")
-    df = generate_synthetic_patients(n_patients)
-    logger.info("  Generated %d patients", len(df))
-
-    # Step 2: Engineer features and normalize.
-    logger.info("\nStep 2: Engineering features...")
-    feature_matrix, scaler, df = engineer_features(df)
-
-    # Step 3: Find optimal clusters.
-    logger.info("\nStep 3: Running K-Means for k=%d to k=%d...", K_RANGE.start, K_RANGE.stop - 1)
-    best_model, labels, all_results = find_optimal_clusters(feature_matrix)
-
-    # Step 4: Profile the clusters.
-    logger.info("\nStep 4: Profiling clusters...")
-    profiles = profile_clusters(df, labels)
-
-    # Print cluster profiles for inspection.
-    logger.info("\n--- Cluster Profiles ---")
-    for p in profiles:
-        logger.info(
-            "  Cluster %d: %s (%d patients, %.1f%%)",
-            p["cluster_id"],
-            p["suggested_label"],
-            p["size"],
-            p["percentage"],
-        )
-        logger.info(
-            "    Payment ratio: %.3f | Write-off: %.3f | Days to pay: %.1f",
-            p["avg_payment_ratio"],
-            p["avg_write_off_ratio"],
-            p["avg_days_to_pay"],
-        )
-
-    # Step 5: Shift detection (simulated previous run with slight differences).
-    logger.info("\nStep 5: Checking for population shifts...")
-    # Simulate a previous period by slightly adjusting percentages.
-    simulated_previous = []
-    for p in profiles:
-        prev = p.copy()
-        prev["percentage"] = p["percentage"] + np.random.uniform(-3, 3)
-        simulated_previous.append(prev)
-
-    alerts = detect_population_shift(profiles, simulated_previous)
-    if alerts:
-        for alert in alerts:
-            logger.info("  ALERT: %s", alert["message"])
-    else:
-        logger.info("  No significant shifts detected.")
-
-    # Assemble output.
-    output = {
-        "run_timestamp": datetime.now(timezone.utc).isoformat(),
-        "total_patients": n_patients,
-        "optimal_k": best_model.n_clusters,
-        "silhouette_score": round(
-            silhouette_score(feature_matrix, labels), 4
-        ),
-        "cluster_profiles": profiles,
-        "evaluation_results": [
-            {"k": r["k"], "silhouette_score": r["silhouette_score"]}
-            for r in all_results
-        ],
-        "shift_alerts": alerts,
-    }
-
-    logger.info("\nDone. Optimal k=%d, silhouette=%.4f",
-                output["optimal_k"], output["silhouette_score"])
-
-    return output
-
-
-# Run the pipeline.
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    result = run_payer_mix_clustering_pipeline(n_patients=500)
-    print("\n" + json.dumps(
-        {k: v for k, v in result.items() if k != "cluster_profiles"},
-        indent=2, default=str,
-    ))
-    print("\nCluster Profiles:")
-    print(json.dumps(result["cluster_profiles"], indent=2, default=str))
-```
-
----
-
-## Uploading Results to S3 (AWS Integration)
-
-In production, cluster assignments go to S3 as Parquet for Athena queries and QuickSight dashboards. Here's how that integration looks:
+*In production, cluster assignments go back to S3 as Parquet for Athena queries. Profiles and evaluation metrics go as JSON for dashboards and monitoring.*
 
 ```python
-import boto3
-import io
-
 def upload_results_to_s3(
-    df: pd.DataFrame,
+    patients: pd.DataFrame,
     labels: np.ndarray,
     profiles: list[dict],
-    bucket: str,
-    prefix: str = "cluster-assignments",
+    evaluation: list[dict],
 ) -> dict:
     """
     Write cluster assignments and profiles to S3 for downstream consumption.
 
-    Two outputs:
-    1. Patient-level assignments (Parquet): one row per patient with their
-       cluster label. Athena queries this for ad-hoc analysis.
-    2. Cluster profiles (JSON): summary stats per cluster. QuickSight
-       dashboards read this for the executive view.
+    Three artifacts are written:
+    1. Cluster assignments (Parquet): patient_id + cluster_id for Athena queries.
+    2. Cluster profiles (JSON): summary stats for dashboards.
+    3. Evaluation metrics (JSON): silhouette scores for audit trail.
+
+    Args:
+        patients: DataFrame with patient data.
+        labels: Cluster assignment array.
+        profiles: List of profile dicts from profile_clusters.
+        evaluation: List of evaluation dicts from cluster_and_evaluate.
+
+    Returns:
+        Dict with S3 keys for each uploaded artifact.
     """
-    s3 = boto3.client("s3")
-    run_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    s3_client = boto3.client("s3")
+    run_date = datetime.datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # Write patient-level assignments as Parquet.
-    # Only include patient_id and cluster label. Do NOT include raw
-    # financial features in the output that goes to broad dashboards.
-    # Those features are PHI-adjacent and should stay in the restricted zone.
-    assignments_df = df[["patient_id"]].copy()
-    assignments_df["cluster_id"] = labels
-    assignments_df["run_date"] = run_date
-
-    parquet_buffer = io.BytesIO()
-    assignments_df.to_parquet(parquet_buffer, index=False)
-    parquet_buffer.seek(0)
-
-    assignments_key = f"{prefix}/{run_date}/assignments.parquet"
-    s3.put_object(
-        Bucket=bucket,
+    # 1. Cluster assignments as Parquet (for Athena).
+    assignments_df = pd.DataFrame({
+        "patient_id": patients["patient_id"],
+        "cluster_id": labels,
+        "run_date": run_date,
+    })
+    assignments_key = f"{S3_PREFIX_RESULTS}{run_date}/assignments.parquet"
+    # In production, write directly to S3 with pyarrow. Here we write locally first.
+    parquet_buffer = assignments_df.to_parquet(index=False)
+    s3_client.put_object(
+        Bucket=S3_BUCKET,
         Key=assignments_key,
-        Body=parquet_buffer.getvalue(),
+        Body=parquet_buffer,
         ServerSideEncryption="aws:kms",
     )
 
-    # Write cluster profiles as JSON.
-    profiles_key = f"{prefix}/{run_date}/profiles.json"
-    s3.put_object(
-        Bucket=bucket,
+    # 2. Cluster profiles as JSON (for dashboards and monitoring).
+    profiles_key = f"{S3_PREFIX_RESULTS}{run_date}/profiles.json"
+    s3_client.put_object(
+        Bucket=S3_BUCKET,
         Key=profiles_key,
-        Body=json.dumps(profiles, indent=2, default=str).encode("utf-8"),
-        ServerSideEncryption="aws:kms",
+        Body=json.dumps(profiles, indent=2),
         ContentType="application/json",
+        ServerSideEncryption="aws:kms",
     )
 
+    # 3. Evaluation metrics as JSON (audit trail).
+    eval_key = f"{S3_PREFIX_RESULTS}{run_date}/evaluation.json"
+    s3_client.put_object(
+        Bucket=S3_BUCKET,
+        Key=eval_key,
+        Body=json.dumps(evaluation, indent=2),
+        ContentType="application/json",
+        ServerSideEncryption="aws:kms",
+    )
+
+    # 4. Copy profiles to history for shift detection on next run.
+    history_key = f"{S3_PREFIX_HISTORY}{run_date}/profiles.json"
+    s3_client.put_object(
+        Bucket=S3_BUCKET,
+        Key=history_key,
+        Body=json.dumps(profiles, indent=2),
+        ContentType="application/json",
+        ServerSideEncryption="aws:kms",
+    )
+
+    logger.info("Uploaded results to s3://%s/%s", S3_BUCKET, S3_PREFIX_RESULTS + run_date)
     return {
         "assignments_key": assignments_key,
         "profiles_key": profiles_key,
-        "patients_written": len(assignments_df),
+        "evaluation_key": eval_key,
+        "history_key": history_key,
     }
+```
+
+---
+
+## Putting It All Together
+
+Here's the full pipeline assembled into a single function. This runs locally for development. In production, you'd run the clustering step as a SageMaker Processing Job and orchestrate with Step Functions or EventBridge.
+
+```python
+def run_payer_risk_clustering_pipeline(
+    n_patients: int = 5000,
+    previous_profiles: list[dict] | None = None,
+) -> dict:
+    """
+    Run the full payer mix financial risk clustering pipeline.
+
+    Covers all five steps from the Recipe 6.3 pseudocode:
+      1. Extract/generate patient financial data
+      2. Engineer and normalize features
+      3. Run clustering and evaluate multiple k values
+      4. Profile clusters with human-readable labels
+      5. Detect population shifts (if previous run available)
+
+    Plus uploads results to S3 for Athena and QuickSight consumption.
+
+    Args:
+        n_patients: Number of patients (synthetic data mode).
+        previous_profiles: Profiles from last run for shift detection.
+                          None on first run.
+
+    Returns:
+        Dict with profiles, evaluation metrics, alerts, and S3 keys.
+    """
+    print("=" * 60)
+    print("PAYER MIX FINANCIAL RISK CLUSTERING")
+    print("=" * 60)
+
+    # Step 1: Generate synthetic patient data.
+    # In production: replace with Glue ETL pulling from billing, EHR, eligibility.
+    print("\nStep 1: Generating patient financial data...")
+    patients = generate_synthetic_patients(n_patients=n_patients)
+    print(f"  {len(patients)} patients with {len(patients.columns)} raw features")
+
+    # Step 2: Engineer features and normalize.
+    print("\nStep 2: Engineering and normalizing features...")
+    feature_matrix, scaler, patients = engineer_features(patients)
+    print(f"  Feature matrix: {feature_matrix.shape[0]} patients x {feature_matrix.shape[1]} features")
+    print(f"  Features: {FEATURE_COLUMNS}")
+
+    # Step 3: Cluster and evaluate.
+    print("\nStep 3: Running K-Means for k={} through k={}...".format(K_RANGE.start, K_RANGE.stop - 1))
+    best_model, best_labels, evaluation = cluster_and_evaluate(feature_matrix)
+    print(f"\n  Best k={best_model.n_clusters}")
+    print("  Evaluation summary:")
+    for result in evaluation:
+        marker = " <-- best" if result["k"] == best_model.n_clusters else ""
+        print(f"    k={result['k']}: silhouette={result['silhouette_score']:.4f}{marker}")
+
+    # Step 4: Profile clusters.
+    print("\nStep 4: Profiling clusters...")
+    profiles = profile_clusters(patients, best_labels)
+    print(f"\n  Cluster Profiles:")
+    print(f"  {'Label':<35} {'Size':>6} {'%':>6} {'Pay Ratio':>10} {'Write-off':>10} {'Days AR':>8}")
+    print(f"  {'-'*35} {'-'*6} {'-'*6} {'-'*10} {'-'*10} {'-'*8}")
+    for p in profiles:
+        print(
+            f"  {p['suggested_label']:<35} {p['size']:>6} {p['percentage']:>5.1f}% "
+            f"{p['avg_payment_ratio']:>10.3f} {p['avg_write_off_ratio']:>10.3f} "
+            f"{p['avg_days_to_pay']:>7.1f}"
+        )
+
+    # Step 5: Detect population shifts.
+    alerts = []
+    if previous_profiles:
+        print("\nStep 5: Checking for population shifts...")
+        alerts = detect_population_shift(profiles, previous_profiles)
+        if alerts:
+            print("  ALERTS:")
+            for alert in alerts:
+                print(f"    {alert['message']}")
+        else:
+            print("  No significant shifts detected.")
+    else:
+        print("\nStep 5: Skipped (no previous run for comparison).")
+
+    # Upload to S3 (commented out for local development).
+    # s3_keys = upload_results_to_s3(patients, best_labels, profiles, evaluation)
+
+    print("\n" + "=" * 60)
+    print("PIPELINE COMPLETE")
+    print("=" * 60)
+
+    return {
+        "profiles": profiles,
+        "evaluation": evaluation,
+        "best_k": best_model.n_clusters,
+        "alerts": alerts,
+    }
+
+
+if __name__ == "__main__":
+    result = run_payer_risk_clustering_pipeline(n_patients=5000)
+
+    # Pretty-print the profiles as JSON.
+    print("\n\nFull profiles JSON:")
+    print(json.dumps(result["profiles"], indent=2))
 ```
 
 ---
 
 ## The Gap Between This and Production
 
-This example works. Run it and you'll get cluster assignments with interpretable profiles. But there's a meaningful distance between "works in a script with synthetic data" and "runs quarterly against your real patient population." Here's where that gap lives:
+This example works: run it and it will produce meaningful financial risk clusters from synthetic data. The distance between that and a production deployment is real. Here's where it lives.
 
-**Real data integration.** The synthetic data generator is a stand-in for a Glue ETL job that joins billing, EHR, and eligibility systems. That join logic is where 70% of your implementation time goes. Patient identity resolution across systems, handling different date formats, dealing with patients who appear in one system but not another. The clustering algorithm is the easy part.
+**Real data integration is 70% of the work.** This example generates synthetic data in one function call. In production, you're joining billing system extracts (often in HL7 835/837 formats), EHR utilization data (FHIR or proprietary APIs), and eligibility feeds (X12 270/271). Each system has its own patient identifier, its own data model, and its own update cadence. The Glue ETL job that resolves these to a single patient record is where most of the engineering effort goes. Budget 3-4 weeks for data integration alone.
 
-**Missing data handling.** This example uses median imputation, which is fine for a demo. Real patient data has structured missingness: new patients have no payment history, patients who only use the ED have no primary care utilization data, patients with coverage gaps have incomplete eligibility records. You need imputation strategies that account for why data is missing, not just that it is.
+**Patient identity resolution.** The join in Step 1 assumes a shared `patient_id`. In reality, your billing system uses account numbers, your EHR uses MRNs, and your eligibility feed uses member IDs. You need an MPI (Master Patient Index) or entity resolution layer (see Chapter 5) to link these. Without it, you'll cluster on incomplete records and produce segments that reflect data availability rather than actual financial risk.
 
-**Feature validation.** Before clustering, validate that your features actually carry signal. Check for features with near-zero variance (they contribute nothing). Check for highly correlated feature pairs (they double-count the same signal). Run feature importance analysis on a supervised proxy task (predict write-off rate) to confirm your features are relevant.
+**Feature drift and staleness.** Payment behavior changes. Payer contracts get renegotiated. New plan designs emerge. The features that separated clusters well last year might not work this year. Monitor feature distributions between runs. If a feature's variance collapses (everyone has the same value), it's no longer contributing to separation and should be replaced or re-engineered.
 
-**Cluster stability testing.** Run the algorithm 50 times with different random seeds and bootstrap samples. If a patient's cluster assignment changes in more than 15% of runs, that patient is on a boundary and their assignment isn't reliable. Report stability metrics alongside cluster assignments.
+**Cluster stability across runs.** This example runs once. In production, you re-cluster monthly or quarterly. If 30% of patients change clusters between runs, your segments aren't stable enough to act on. Common causes: too many clusters (reduce k), noisy features (smooth or remove them), or genuine population change (which is the signal you're trying to detect, not noise). Track the percentage of patients who stay in the same cluster between runs. Below 85% stability, investigate before operationalizing.
 
-**Temporal validation.** Cluster on Q1 data, then check whether the clusters predict Q2 financial outcomes. If "high risk" patients in Q1 don't actually have higher write-off rates in Q2, your clustering isn't capturing real financial risk. It might be capturing data artifacts instead.
+**SageMaker Processing Jobs for scale.** This example runs scikit-learn locally. For populations over 100K patients, run the clustering as a SageMaker Processing Job with a larger instance type (ml.m5.4xlarge or ml.m5.12xlarge). The code is identical; you just package it in a container and submit it to SageMaker. For populations over 1M, consider SageMaker's built-in K-Means algorithm, which distributes across multiple instances.
 
-**Ethical review.** Before operationalizing, check whether cluster membership correlates with race, ethnicity, or other protected characteristics. If your "high financial risk" cluster is disproportionately patients of color, you have a fairness problem that needs addressing before deployment. This isn't optional.
+**Ethical guardrails and access controls.** Cluster assignments reveal financial vulnerability. They must never be used to gate clinical access, delay care, or discriminate in scheduling. Build this into your data governance: restrict who can query cluster assignments, audit all access via CloudTrail, and document the approved use cases (financial planning, charity care budgeting, financial counseling targeting). If someone queries cluster assignments joined with scheduling data, that's an alert.
 
-**IAM least-privilege.** The S3 upload function uses whatever credentials are in the environment. Production uses a dedicated IAM role with `s3:PutObject` scoped to the specific bucket and prefix, `kms:GenerateDataKey` for the specific CMK, and nothing else.
+**Missing data handling for new patients.** Median imputation works for patients with partial history. But a brand-new patient (first visit, no payment history, no utilization data) gets median values for everything, which places them in the middle of the distribution. That's not wrong, but it's not informative either. Consider a separate "insufficient data" category for patients with less than 6 months of history, and assign them to clusters only after enough behavioral data accumulates.
 
-**VPC and encryption.** SageMaker Processing Jobs run in a VPC with no internet access. S3 access goes through a VPC endpoint. All data at rest uses KMS customer-managed keys with rotation enabled. The feature matrix contains financial data that constitutes PHI when combined with patient identifiers.
+**Outlier handling.** A single patient with $2M in charges from a transplant episode will distort the clustering if left untreated. Options: winsorize extreme values (cap at the 99th percentile), use robust scaling (median and IQR instead of mean and std), or remove extreme outliers before clustering and assign them to a separate "high-cost outlier" segment. This example does none of these. Production should.
 
-**Monitoring and alerting.** The shift detection function here prints to stdout. Production routes alerts through SNS to the revenue cycle team's Slack channel and creates a ticket in your incident management system when shifts exceed the alarm threshold.
+**VPC and encryption.** Patient financial data combined with utilization data is PHI. The SageMaker Processing Job runs in a VPC with no internet access. S3 buckets use SSE-KMS with customer-managed keys. Athena query results are encrypted. All API calls over TLS. CloudTrail logs every access to the cluster assignment data.
 
-**Scheduling.** This runs manually. Production uses EventBridge to trigger the pipeline quarterly (or monthly, depending on your population's volatility). The schedule should align with your finance team's reporting cadence so clusters are fresh when they need them.
+**Testing.** There are no tests here. A production pipeline has unit tests for feature engineering (does the scaler produce the expected output for known inputs?), integration tests for the full pipeline with synthetic data, and regression tests that verify cluster stability when re-run on the same data with the same seed. The synthetic data generator itself should be tested: verify that the statistical properties match your expectations.
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 6.3](chapter06.03-payer-mix-financial-risk-clustering) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 6.3: Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*

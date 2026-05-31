@@ -1,0 +1,705 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780197517872-000014-e5dd25fce9006389 iteration=619 task_id=ch06-r04-draft persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/RECIPE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/STYLE-GUIDE.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/categories/06-cohort-clustering.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-619/RECIPE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-619/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4472 bytes[0m from /tmp/ralph-worktrees/iter-619/categories/06-cohort-clustering.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at a completed Chapter 1 recipe for reference on style and structure:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m1[0m to [38;5;141m150[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m13791 bytes[0m from /tmp/ralph-worktrees/iter-619/chapter01.01-insurance-card-scanning.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me see more of this recipe and also check the sidebar:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m150[0m to [38;5;141m400[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/_Sidebar.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m18913 bytes[0m from /tmp/ralph-worktrees/iter-619/chapter01.01-insurance-card-scanning.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m12535 bytes[0m from /tmp/ralph-worktrees/iter-619/_Sidebar.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a thorough understanding of the style, structure, and conventions. Let me write the recipe for Chapter 6, Recipe 4: Disease Severity Stratification.[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Recipe 6.4: Disease Severity Stratification
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.02 per patient per stratification run
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ## The Problem
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m You're a care management director at a health system with 40,000 patients carrying a diabetes diagnosis. Your team has 12 care managers. Each one can actively manage maybe 80 patients at a time. That's 960 slots for 40,000 patients. You need to decide who gets those slots.
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m The naive approach is to sort by HbA1c and take the top 960. But HbA1c alone misses the patient with a 7.2 who also has stage 3 CKD, peripheral neuropathy, and three ER visits in the last quarter. That patient is far more complex than the one with a 9.0 who's otherwise healthy and just needs medication titration. Severity is not a single number. It's a constellation of clinical markers, complications, functional status, and trajectory.
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m Most health systems today use one of two approaches: a single lab value threshold (too simplistic) or a manually maintained registry where nurses review charts and assign tiers (accurate but doesn't scale). The manual approach works for 500 patients. It collapses at 40,000. And it's inconsistent: nurse A and nurse B will tier the same patient differently depending on what they noticed in the chart.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m What you actually want is a system that looks at the full clinical picture for every patient in a chronic disease cohort, identifies meaningful severity clusters, and assigns each patient to a tier that reflects their true complexity. Not a risk score (that's prediction, Chapter 7). Not a single metric. A multi-dimensional severity classification that accounts for disease burden, complications, functional decline, and healthcare utilization patterns.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m This is the kind of problem where clustering shines. You're not predicting the future. You're describing the present in a way that's actionable for resource allocation.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m ## The Technology: How Severity Stratification Works
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m ### The Core Idea
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m Disease severity stratification is a specific application of unsupervised clustering where the goal is to partition a patient population into clinically meaningful tiers based on multiple dimensions of disease burden. Unlike generic clustering (where you're exploring data for patterns), severity stratification has a clear clinical purpose: the tiers should correspond to different levels of care intensity, resource needs, and intervention strategies.
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m The fundamental insight is that severity is not a single axis. A patient with diabetes might be "severe" because of poor glycemic control, or because of accumulated complications, or because of rapid functional decline, or because of high utilization driven by social factors. These are different kinds of severity that require different interventions. A good stratification system captures this multi-dimensionality.
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m ### Feature Engineering: The Hard Part
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m Before any algorithm runs, you need to decide what "severity" means for your disease cohort. This is where clinical expertise is non-negotiable. For diabetes, you might consider:
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m **Disease control markers:** HbA1c, fasting glucose trends, time in range (for CGM patients), blood pressure, lipid panels.
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m **Complication burden:** Retinopathy stage, nephropathy (eGFR, albuminuria), neuropathy diagnosis, cardiovascular events, foot ulcer history.
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m **Functional status:** ADL limitations, mobility assessments, cognitive screening scores, depression screening (PHQ-9).
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m **Utilization signals:** ER visits, hospitalizations, specialist visits, medication changes, missed appointments.
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m **Trajectory indicators:** Rate of HbA1c change over 12 months, eGFR slope, new complications in the last year.
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m Each disease has its own feature set. Heart failure uses ejection fraction, BNP levels, NYHA class, diuretic dose, and fluid weight fluctuations. COPD uses FEV1, exacerbation frequency, oxygen requirements, and exercise tolerance. The feature engineering is disease-specific and requires clinical validation.
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m The tricky part: these features live on different scales, have different distributions, and carry different clinical weight. HbA1c ranges from 5 to 14. ER visits range from 0 to 50. You can't just throw raw values into a distance calculation and expect meaningful clusters.
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m ### Normalization and Weighting
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m Standard practice is to normalize features to a common scale (z-scores or min-max normalization) before clustering. But in clinical applications, you often want to weight certain features more heavily. A clinician might tell you that a new complication in the last 6 months is more important than a stable complication from 5 years ago. An eGFR below 30 is qualitatively different from an eGFR of 60, not just quantitatively different.
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m There are two approaches to handling this:
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m **Expert-weighted features:** Clinicians assign importance weights to each feature before clustering. This injects domain knowledge but introduces subjectivity. Different clinicians will weight differently.
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m **Data-driven weighting:** Let the algorithm discover which features best separate clinically meaningful groups. This is more objective but requires validation that the discovered structure matches clinical reality.
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m In practice, most successful implementations use a hybrid: clinicians define the feature set and provide rough importance guidance, the algorithm discovers the cluster structure, and clinicians validate that the resulting tiers make clinical sense.
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m ### Clustering Algorithms for Stratification
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m Several algorithms work for severity stratification, each with tradeoffs:
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m **K-Means:** Fast, simple, produces spherical clusters. Works well when severity tiers are roughly evenly sized and features are continuous. The main limitation is that you must specify K (the number of tiers) in advance, and it assumes clusters are roughly the same shape and size.
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m **Gaussian Mixture Models (GMM):** More flexible than K-Means because clusters can be elliptical (different variances in different dimensions). Better for clinical data where some features have wider spread in certain severity tiers. Also provides soft assignments (probability of belonging to each tier), which is useful for patients near tier boundaries.
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m **Hierarchical clustering:** Produces a dendrogram showing how patients nest into groups at different granularities. Useful for exploring whether 3, 4, or 5 tiers is the right number. Computationally expensive for large populations (O(n^2) or worse), so often applied to a sample first.
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m **DBSCAN and density-based methods:** Good at finding irregularly shaped clusters and identifying outliers. Less useful for stratification because you typically want every patient assigned to a tier, and the number of tiers should be small and interpretable.
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m For most severity stratification use cases, K-Means or GMM with K=3 to 5 is the starting point. Three tiers (mild, moderate, severe) is the minimum for actionability. Five tiers provide more granularity but require more distinct intervention strategies to justify the complexity.
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m ### Choosing K: How Many Tiers?
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m This is partly a technical question and partly an operational one.
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m **Technical approaches:** The elbow method (plot within-cluster sum of squares vs. K, look for the "elbow"), silhouette scores (measure how well-separated clusters are), and the gap statistic all provide quantitative guidance on the "natural" number of clusters in the data.
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m **Operational reality:** Your care management team can only operationalize so many tiers. If you have three intervention programs (intensive, moderate, self-management), then three tiers is the right answer regardless of what the silhouette score says. The algorithm should serve the workflow, not the other way around.
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m The best practice is to run the technical analysis to understand the data's natural structure, then map that to the operational tier count your organization can support. If the data naturally separates into 4 groups but you can only support 3 programs, merge the two most similar groups.
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m ### Validation: The Critical Step
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m Here's where severity stratification diverges from generic clustering. In generic clustering, internal metrics (silhouette score, Davies-Bouldin index) tell you whether clusters are well-separated. In clinical stratification, you need external validation: do the tiers actually correspond to different outcomes?
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m **Outcome validation:** Patients in the "severe" tier should have higher hospitalization rates, higher costs, faster disease progression, and worse quality-of-life scores than patients in the "mild" tier. If they don't, your stratification isn't capturing real severity.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m **Clinical face validity:** Show the tier assignments to clinicians who know the patients. Do they agree? A stratification that puts a well-controlled patient in the severe tier (or vice versa) has a feature engineering problem.
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m **Stability:** Run the stratification on different time windows. Do patients stay in roughly the same tier, or do assignments fluctuate wildly? Some movement is expected (patients improve or deteriorate), but wholesale reshuffling suggests the model is fitting noise.
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m **Equity audit:** Check whether tier assignments correlate with race, ethnicity, language, or insurance type after controlling for clinical factors. If Black patients are systematically assigned to lower-severity tiers despite similar clinical profiles, your features may be encoding access disparities rather than true severity.
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m ## General Architecture Pattern
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m The pipeline for disease severity stratification has five logical stages:
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m [Feature Assembly] → [Preprocessing] → [Clustering] → [Validation & Labeling] → [Operationalization]
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m **Feature Assembly:** Pull clinical data from multiple source systems (EHR, claims, labs, pharmacy) and construct the feature vector for each patient in the cohort. This is typically the most time-consuming step because healthcare data is fragmented across systems with different schemas, identifiers, and update frequencies.
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m **Preprocessing:** Normalize features to common scales. Handle missing values (a patient without a recent HbA1c is not the same as a patient with a normal HbA1c). Apply any clinical weighting. Remove patients who don't meet cohort inclusion criteria (e.g., must have at least 12 months of continuous enrollment).
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m **Clustering:** Run the selected algorithm to assign patients to severity tiers. This step is computationally straightforward once features are prepared. The algorithm itself is rarely the bottleneck.
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m **Validation and Labeling:** Validate cluster assignments against outcomes. Label clusters with clinically meaningful names (not "Cluster 0, 1, 2" but "Well-controlled with low complication burden," "Moderate complexity with active complications," "High severity with functional decline"). This step requires clinical review and iteration.
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m **Operationalization:** Push tier assignments to downstream systems (care management platforms, EHR registries, population health dashboards). Set up refresh cadence (monthly or quarterly re-stratification). Build monitoring for tier migration (patients moving between tiers over time).
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m ## The AWS Implementation
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m ### Why These Services
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m **Amazon SageMaker for clustering.** SageMaker provides managed infrastructure for running K-Means and other clustering algorithms at scale. The built-in K-Means algorithm is optimized for large datasets and handles the distributed computation transparently. For a 40,000-patient cohort with 30 features, this is overkill (you could run it on a laptop), but for health systems with 500,000+ patients across multiple disease cohorts, managed infrastructure matters. SageMaker also provides the notebook environment for the iterative exploration phase (trying different K values, visualizing clusters, validating against outcomes).
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m **AWS Glue for feature assembly.** The feature engineering step requires joining data from multiple sources: EHR extracts, claims feeds, lab results, pharmacy data. Glue handles the ETL: schema discovery, data cataloging, and transformation jobs that assemble the patient feature matrix from disparate sources. The Glue Data Catalog also provides a single metadata layer so downstream consumers know what features are available and how they were computed.
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m **Amazon S3 for data lake storage.** Raw source data, intermediate feature matrices, and final tier assignments all live in S3. Partitioned by cohort and run date, encrypted with KMS. S3 is the gravity well that everything else reads from and writes to.
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m **Amazon DynamoDB for tier assignments.** The operational output (patient X is in tier Y as of date Z) needs to be queryable in real time by care management platforms and EHR integrations. DynamoDB provides single-digit-millisecond lookups by patient ID, which is the primary access pattern.
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m **Amazon QuickSight for visualization.** Population health leaders need dashboards showing tier distributions, migration patterns, and outcome comparisons across tiers. QuickSight connects directly to S3 and Athena for this reporting layer.
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m **Amazon Athena for ad-hoc analysis.** Clinical analysts need to query the feature matrix and tier assignments without spinning up infrastructure. Athena provides serverless SQL over the S3 data lake for validation queries, equity audits, and outcome comparisons.
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m ### Architecture Diagram
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m ```mermaid
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m flowchart TD
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m     A[EHR Extract\nS3 Landing] --> D[AWS Glue\nFeature Assembly]
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m     B[Claims Feed\nS3 Landing] --> D
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m     C[Lab Results\nS3 Landing] --> D
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m     D --> E[S3 Data Lake\nFeature Matrix]
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m     E --> F[SageMaker\nClustering Job]
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m     F --> G[S3\nTier Assignments]
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m     G --> H[DynamoDB\nOperational Lookups]
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m     G --> I[QuickSight\nDashboards]
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m     G --> J[Athena\nAd-hoc Analysis]
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m     H --> K[Care Management\nPlatform]
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m     H --> L[EHR Registry\nIntegration]
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m     style E fill:#f9f,stroke:#333
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m     style F fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m     style H fill:#9ff,stroke:#333
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m ### Prerequisites
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m | Requirement | Details |
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m |-------------|---------|
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m | **AWS Services** | Amazon SageMaker, AWS Glue, Amazon S3, Amazon DynamoDB, Amazon Athena, Amazon QuickSight |
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `athena:StartQueryExecution` |
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m | **BAA** | AWS BAA signed (required: patient clinical data is PHI) |
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted training volumes and model artifacts; all API calls over TLS |
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m | **VPC** | Production: SageMaker training jobs and Glue jobs in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. No public internet access for compute touching PHI. |
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m | **CloudTrail** | Enabled: log all SageMaker, Glue, and S3 API calls for HIPAA audit trail |
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m | **Sample Data** | Synthetic patient cohort data. CMS Synthetic Public Use Files provide realistic chronic disease populations. Never use real PHI in development. |
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m | **Cost Estimate** | SageMaker training: ~$2-5 per run (ml.m5.xlarge, 10-30 min). Glue ETL: ~$0.44/DPU-hour. S3 + DynamoDB: negligible at this scale. Monthly total for quarterly re-stratification: ~$20-50. |
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m ### Ingredients
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m | AWS Service | Role |
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m |------------|------|
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m | **Amazon SageMaker** | Runs K-Means clustering on patient feature matrix; hosts notebooks for exploration |
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m | **AWS Glue** | Assembles patient feature vectors from multiple source systems |
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m | **Amazon S3** | Stores raw data, feature matrices, and tier assignment outputs |
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m | **Amazon DynamoDB** | Serves real-time tier lookups for care management integrations |
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m | **Amazon Athena** | Enables SQL-based validation queries and equity audits over S3 data |
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m | **Amazon QuickSight** | Provides population health dashboards for tier distribution and outcomes |
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m | **AWS KMS** | Manages encryption keys for all data at rest |
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m | **Amazon CloudWatch** | Monitors job execution, logs, and alerts on failures |
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m ### Code
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m >
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Includes K-Means clustering examples with built-in algorithms on SageMaker
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m > - [`aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): ETL patterns for data lake assembly including healthcare data transformations
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m #### Walkthrough
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m **Step 1: Define the cohort and feature set.** Before any computation happens, you need to define two things: which patients are in the cohort, and which features describe their severity. The cohort definition is typically a diagnosis code filter (e.g., all patients with an active Type 2 diabetes diagnosis and at least 12 months of continuous enrollment). The feature set is the clinical consensus on what dimensions matter for this disease. This step is configuration, not computation, but it drives everything downstream. Get the feature set wrong and no algorithm will save you.
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m // Configuration: defines what we're stratifying and how
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m COHORT_DEFINITION:
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m     diagnosis_codes: ["E11.*"]           // ICD-10 codes for Type 2 Diabetes
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m     min_enrollment_months: 12            // must have 12 months of data
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m     min_age: 18                          // adults only
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m     exclude_hospice: true                // exclude patients in hospice
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m FEATURE_SET:
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m     disease_control:
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m         - latest_hba1c                   // most recent HbA1c value
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m         - hba1c_trend_12mo               // slope of HbA1c over last 12 months
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m         - pct_time_above_target          // % of readings above 7.0 in last year
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m     complication_burden:
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m         - complication_count             // number of active diabetes complications
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m         - has_ckd                        // binary: CKD stage 3+ present
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m         - has_retinopathy                // binary: any retinopathy diagnosis
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m         - has_neuropathy                 // binary: peripheral neuropathy
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m         - has_cvd_event                  // binary: MI, stroke, or PVD in last 2 years
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m     functional_status:
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m         - phq9_latest                    // most recent depression screening score
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m         - adl_limitations                // count of ADL limitations documented
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m     utilization:
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m         - er_visits_12mo                 // ER visits in last 12 months
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m         - hospitalizations_12mo          // inpatient admissions in last 12 months
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m         - specialist_visits_12mo         // endocrinology/nephrology/cardiology visits
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m         - medication_changes_12mo        // number of diabetes med changes
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m CLUSTER_CONFIG:
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m     algorithm: "kmeans"
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m     k_range: [3, 4, 5]                   // try multiple values, validate each
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m     random_seed: 42                      // reproducibility
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m **Step 2: Assemble the feature matrix.** This is the ETL step where you pull data from multiple source systems and construct one row per patient with all the features defined in Step 1. In practice, this means joining EHR problem lists (for diagnoses and complications), lab results (for HbA1c and eGFR), claims data (for utilization counts), and screening tools (for PHQ-9 and ADL assessments). The output is a matrix: rows are patients, columns are features. Missing values are common and must be handled explicitly. Skip this step and you have no input for the algorithm.
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m FUNCTION assemble_feature_matrix(cohort_definition, feature_set):
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m     // Step 2a: Identify the cohort
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m     // Query the clinical data warehouse for patients matching the cohort definition.
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m     // This returns a list of patient IDs who meet all inclusion criteria.
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m     eligible_patients = query patients WHERE:
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m         has active diagnosis matching cohort_definition.diagnosis_codes
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m         AND enrollment_months >= cohort_definition.min_enrollment_months
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m         AND age >= cohort_definition.min_age
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m         AND NOT in hospice (if cohort_definition.exclude_hospice)
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m     // Step 2b: Pull features for each patient
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m     // For each patient, compute every feature in the feature set.
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m     // Each feature may come from a different source system.
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m     feature_matrix = empty table with columns = all features in feature_set
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m     FOR each patient_id in eligible_patients:
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m         row = empty map
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m         // Disease control features from lab results
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m         row["latest_hba1c"] = most recent HbA1c value for patient_id
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m         row["hba1c_trend_12mo"] = linear slope of HbA1c values over last 12 months
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m         row["pct_time_above_target"] = count(hba1c > 7.0) / count(all hba1c) in last year
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m         // Complication burden from problem list and diagnoses
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m         row["complication_count"] = count of active diabetes complication diagnoses
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m         row["has_ckd"] = 1 if eGFR < 60 or CKD diagnosis present, else 0
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m         row["has_retinopathy"] = 1 if retinopathy diagnosis present, else 0
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m         row["has_neuropathy"] = 1 if neuropathy diagnosis present, else 0
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m         row["has_cvd_event"] = 1 if MI/stroke/PVD in last 24 months, else 0
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m         // Functional status from screening tools
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m         row["phq9_latest"] = most recent PHQ-9 score (NULL if no screening)
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m         row["adl_limitations"] = count of documented ADL limitations
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m         // Utilization from claims/encounters
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m         row["er_visits_12mo"] = count of ER encounters in last 12 months
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m         row["hospitalizations_12mo"] = count of inpatient admissions in last 12 months
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m         row["specialist_visits_12mo"] = count of relevant specialist visits
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m         row["medication_changes_12mo"] = count of diabetes medication changes
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m         append row to feature_matrix
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m     // Step 2c: Handle missing values
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m     // Clinical data is never complete. Patients without a recent HbA1c are not
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m     // the same as patients with a normal HbA1c. Strategy: impute with cohort
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m     // median for continuous features, 0 for binary features where absence of
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m     // diagnosis likely means absence of condition.
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m     FOR each column in feature_matrix:
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m         IF column is continuous (hba1c, phq9, etc.):
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m             replace NULL values with median of non-null values in that column
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m         IF column is binary (has_ckd, has_retinopathy, etc.):
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m             replace NULL values with 0  // no diagnosis = assume absent
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m     RETURN feature_matrix
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m **Step 3: Preprocess and normalize.** Raw features are on wildly different scales. HbA1c ranges from 5 to 14. ER visits range from 0 to 50. Complication count ranges from 0 to 8. If you feed raw values into K-Means, the features with larger numeric ranges will dominate the distance calculation, and features with small ranges (like binary indicators) will be effectively ignored. Normalization puts all features on a common scale so each contributes proportionally to the clustering. Skip this step and your clusters will be driven entirely by whichever feature has the largest numeric range.
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m FUNCTION preprocess_features(feature_matrix, clinical_weights):
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m     // Step 3a: Z-score normalization
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m     // For each feature, subtract the mean and divide by standard deviation.
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m     // This puts every feature on a scale where 0 = average and 1 = one standard
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m     // deviation above average. Now HbA1c and ER visits are comparable.
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m     normalized_matrix = empty table same shape as feature_matrix
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m     FOR each column in feature_matrix:
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m         mean = average of all values in column
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m         std  = standard deviation of all values in column
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m         IF std == 0:
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m             // All patients have the same value for this feature.
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m             // It provides no discriminating information. Set to 0.
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m             normalized_matrix[column] = 0 for all rows
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m         ELSE:
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m             normalized_matrix[column] = (feature_matrix[column] - mean) / std
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m     // Step 3b: Apply clinical weights (optional but recommended)
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m     // If clinicians have indicated that certain features matter more for
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m     // severity determination, multiply those columns by their weight.
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m     // Example: complication_count might get weight 1.5 because clinicians
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m     // consider accumulated complications the strongest severity signal.
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m     IF clinical_weights is provided:
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m         FOR each column, weight in clinical_weights:
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m             normalized_matrix[column] = normalized_matrix[column] * weight
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m     RETURN normalized_matrix
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m **Step 4: Run clustering.** This is the core algorithm step. For each candidate value of K (number of tiers), run K-Means on the normalized feature matrix and record the results. K-Means works by placing K cluster centers in the feature space, assigning each patient to the nearest center, then iteratively adjusting the centers until assignments stabilize. The output is a tier label for each patient and the cluster centers (which describe the "average patient" in each tier). Running multiple K values lets you compare and choose the best tier count in the validation step.
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m FUNCTION run_clustering(normalized_matrix, cluster_config):
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m     results = empty map
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m     FOR each k in cluster_config.k_range:
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m         // Run K-Means with this number of clusters.
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m         // max_iterations prevents infinite loops if convergence is slow.
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m         // random_seed ensures reproducibility across runs.
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m         model = train KMeans with:
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m             data = normalized_matrix
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m             num_clusters = k
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m             max_iterations = 300
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m             random_seed = cluster_config.random_seed
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m         // Get the tier assignment for each patient
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m         assignments = model.predict(normalized_matrix)
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m         // assignments is a list: [2, 0, 1, 2, 0, ...] where each number
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m         // is the cluster (tier) that patient was assigned to
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m         // Get the cluster centers (centroids)
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m         // Each center is a vector in feature space describing the "typical"
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m         // patient in that tier. Useful for labeling and interpretation.
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m         centers = model.cluster_centers
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m         // Compute quality metrics
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m         // Inertia: sum of squared distances from each point to its cluster center.
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m         // Lower is better (tighter clusters), but always decreases with more K.
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m         inertia = model.inertia
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m         // Silhouette score: measures how similar each patient is to their own
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m         // cluster vs. the nearest other cluster. Ranges from -1 to 1.
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m         // Higher is better. Values above 0.3 suggest meaningful structure.
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m         silhouette = compute_silhouette_score(normalized_matrix, assignments)
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m         results[k] = {
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m             assignments: assignments,
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m             centers: centers,
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m             inertia: inertia,
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m             silhouette: silhouette
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m     RETURN results
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m **Step 5: Validate and label tiers.** This is where data science meets clinical judgment. For each candidate K, examine the cluster centers to understand what each tier represents, then validate against real outcomes. The best K is the one where tiers are both statistically well-separated and clinically meaningful. Once you've chosen K, assign human-readable labels to each tier based on the cluster center profiles. Skip this step and you have numbered clusters that no clinician will trust or use.
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m     // Step 5a: Compare K values using metrics
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m     FOR each k, result in clustering_results:
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m         PRINT "K={k}: silhouette={result.silhouette}, inertia={result.inertia}"
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m     // Step 5b: For the best K (highest silhouette that's operationally feasible),
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m     // examine what each cluster looks like
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m     best_k = select K with best silhouette score (subject to operational constraints)
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m     best_result = clustering_results[best_k]
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m     // Step 5c: Profile each cluster by computing feature averages
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m     // This tells you what the "typical patient" in each tier looks like.
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m     FOR each tier in 0..best_k-1:
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m         tier_patients = patients where best_result.assignments == tier
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m         tier_profile = compute mean of each feature for tier_patients
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m         PRINT "Tier {tier}: avg HbA1c={tier_profile.latest_hba1c}, "
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m               "avg complications={tier_profile.complication_count}, "
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m               "avg ER visits={tier_profile.er_visits_12mo}, "
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m               "patient count={count of tier_patients}"
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m     // Step 5d: Validate against outcomes
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m     // Tiers should correlate with real outcomes. If they don't, the
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m     // stratification isn't capturing true severity.
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m     FOR each tier in 0..best_k-1:
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m         tier_patients = patients where best_result.assignments == tier
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m         tier_outcomes = lookup outcomes for tier_patients in outcomes_data
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m         PRINT "Tier {tier} outcomes: "
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m               "hospitalization_rate={mean(tier_outcomes.hospitalized_next_12mo)}, "
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m               "cost_per_patient={mean(tier_outcomes.total_cost_12mo)}, "
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m               "mortality_rate={mean(tier_outcomes.deceased_next_12mo)}"
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m     // Step 5e: Assign clinical labels based on profiles
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m     // Sort tiers by average severity (e.g., by complication count + utilization)
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m     // and assign meaningful names.
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m     tier_labels = empty map
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m     sorted_tiers = sort tiers by ascending average severity score
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m     // Example for K=4:
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m     tier_labels[sorted_tiers[0]] = "Well-Controlled, Low Complexity"
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m     tier_labels[sorted_tiers[1]] = "Moderate, Stable Complications"
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m     tier_labels[sorted_tiers[2]] = "High Complexity, Active Complications"
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m     tier_labels[sorted_tiers[3]] = "Severe, Functional Decline"
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m     RETURN best_result.assignments, tier_labels
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m **Step 6: Store and operationalize.** The final step writes tier assignments to a database where care management platforms and EHR systems can look them up in real time. Each record includes the patient ID, their assigned tier, the run date (so you can track changes over time), and the key feature values that drove the assignment (for explainability). This step also writes the full results to the data lake for dashboarding and longitudinal analysis.
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_matrix, run_date):
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m     // Write to operational database for real-time lookups
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m     FOR each patient_id, tier_index in zip(patient_ids, assignments):
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m         write record to database table "severity-tiers":
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m             patient_id       = patient_id
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m             disease_cohort   = "type_2_diabetes"          // which disease this stratification covers
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m             tier_label       = tier_labels[tier_index]     // human-readable tier name
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m             tier_numeric     = tier_index                  // numeric tier for sorting/filtering
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m             run_date         = run_date                    // when this assignment was computed
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m             key_drivers      = top 3 features with highest // which features most influenced this
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m                                z-scores for this patient   // patient's tier (for explainability)
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m             expires_at       = run_date + 90 days          // tier assignments should be refreshed
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m                                                            // quarterly; stale assignments get flagged
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m     // Write full results to data lake for analytics
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m     write feature_matrix + assignments to S3:
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m         path = "s3://data-lake/severity-stratification/diabetes/{run_date}/results.parquet"
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m     RETURN count of patients assigned
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m ### Expected Results
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m **Sample output for a 4-tier diabetes stratification:**
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m ```json
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m {
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m   "patient_id": "PAT-00482",
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m   "disease_cohort": "type_2_diabetes",
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m   "tier_label": "High Complexity, Active Complications",
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m   "tier_numeric": 2,
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m   "run_date": "2026-03-01",
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m   "key_drivers": [
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m     {"feature": "complication_count", "value": 4, "z_score": 2.1},
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m     {"feature": "er_visits_12mo", "value": 5, "z_score": 1.8},
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m     {"feature": "has_ckd", "value": 1, "z_score": 1.5}
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m   ],
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m   "expires_at": "2026-06-01"
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m **Tier distribution for a typical 40,000-patient diabetes cohort:**
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m | Tier | Label | % of Cohort | Avg HbA1c | Avg Complications | Avg ER Visits/yr |
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m |------|-------|-------------|-----------|-------------------|-----------------|
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m | 0 | Well-Controlled, Low Complexity | 45% | 6.8 | 0.3 | 0.2 |
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m | 1 | Moderate, Stable Complications | 30% | 7.6 | 1.8 | 0.8 |
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m | 2 | High Complexity, Active Complications | 18% | 8.4 | 3.2 | 3.1 |
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m | 3 | Severe, Functional Decline | 7% | 9.1 | 4.6 | 5.8 |
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m **Performance benchmarks:**
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m | Metric | Typical Value |
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m |--------|---------------|
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m | Feature assembly (Glue ETL) | 15-45 minutes for 40K patients |
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m | Clustering (SageMaker) | 2-5 minutes for 40K patients, 30 features |
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m | End-to-end pipeline | ~1 hour including validation |
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m | Silhouette score | 0.3-0.5 (good separation for clinical data) |
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m | Outcome correlation | Tier 3 hospitalization rate 4-8x Tier 0 |
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m | Cost per run | ~$5-10 (Glue + SageMaker + storage) |
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m **Where it struggles:** Patients with multiple chronic conditions where severity signals conflict (well-controlled diabetes but severe heart failure). Patients with sparse data (new enrollees, patients who avoid care). Populations where social determinants drive utilization more than clinical severity. And any cohort where the "severe" tier is very small (less than 5% of the population), making cluster detection unstable.
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m ## Why This Isn't Production-Ready
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m **Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline (monthly or quarterly) with monitoring for data freshness, job failures, and tier distribution drift. If your source data feed is delayed, the pipeline should wait rather than run on stale data.
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m **Tier migration tracking.** When a patient moves from Tier 1 to Tier 2 between runs, that's a clinical event that should trigger a care management alert. The pseudocode doesn't track changes between runs or generate notifications.
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m **Multi-disease coordination.** A patient might be in the "severe" tier for diabetes and the "mild" tier for COPD. Care management needs a unified view across disease-specific stratifications. That coordination layer is not addressed here.
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m **Model versioning.** When you change the feature set or weights, all tier assignments change. You need versioning so downstream systems know which model version produced which assignments, and so you can compare performance across versions.
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    501[0m:[38;5;10m[49m ## The Honest Take
+[0m[49m[38;5;10m+    502[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    503[0m:[38;5;10m[49m The algorithm is the easy part. K-Means on 40,000 patients with 30 features takes seconds. The hard parts are all upstream and downstream.
+[0m[49m[38;5;10m+    504[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    505[0m:[38;5;10m[49m Upstream: getting clinicians to agree on the feature set. Every specialist thinks their favorite metric is the most important one. Endocrinologists want HbA1c weighted heavily. Nephrologists want eGFR. Cardiologists want cardiovascular event history. You'll spend more time in consensus meetings than you will writing code.
+[0m[49m[38;5;10m+    506[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    507[0m:[38;5;10m[49m Downstream: getting care managers to actually use the tiers. If the stratification doesn't match their clinical intuition for patients they know well, they'll ignore it. The first time a patient they consider "severe" shows up in Tier 1, you've lost credibility. Invest heavily in the validation step. Show them the profiles. Let them challenge the assignments. Iterate.
+[0m[49m[38;5;10m+    508[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    509[0m:[38;5;10m[49m The thing that surprised me: the biggest predictor of whether a stratification system gets adopted is not accuracy. It's explainability. Care managers need to understand why a patient is in a given tier. "The algorithm said so" is not acceptable. The key_drivers field in the output is not optional. It's the difference between a system that gets used and one that gets ignored.
+[0m[49m[38;5;10m+    510[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    511[0m:[38;5;10m[49m One more thing: tier assignments are not destiny. They're a snapshot. A patient in Tier 3 who gets intensive care management and improves should move to Tier 2 on the next run. If your tiers never change, either your interventions aren't working or your refresh cadence is too slow. Track tier migration as a program effectiveness metric.
+[0m[49m[38;5;10m+    512[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    513[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    514[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    515[0m:[38;5;10m[49m ## Variations and Extensions
+[0m[49m[38;5;10m+    516[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    517[0m:[38;5;10m[49m **Multi-disease severity composite.** Run disease-specific stratifications for each chronic condition, then create a composite severity score that accounts for multi-morbidity interactions. A patient who is Tier 2 in three diseases simultaneously is more complex than a patient who is Tier 3 in one disease. The composite requires its own weighting logic and clinical validation.
+[0m[49m[38;5;10m+    518[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    519[0m:[38;5;10m[49m **Trajectory-aware stratification.** Instead of clustering on current-state features only, include trajectory features (rate of change over 6-12 months). This separates "stable severe" patients (who may be well-managed at a high baseline) from "rapidly deteriorating" patients (who need immediate intervention regardless of current absolute values). The trajectory dimension often identifies the patients who benefit most from proactive outreach.
+[0m[49m[38;5;10m+    520[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    521[0m:[38;5;10m[49m **Explainable tier boundaries.** Replace K-Means with a decision tree trained to reproduce the cluster assignments. The tree provides explicit rules ("if complication_count >= 3 AND er_visits >= 2, then Tier 3") that clinicians can audit and understand. You lose some nuance (decision boundaries become axis-aligned) but gain transparency. Some organizations require this for clinical governance approval.
+[0m[49m[38;5;10m+    522[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    523[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    524[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    525[0m:[38;5;10m[49m ## Related Recipes
+[0m[49m[38;5;10m+    526[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    527[0m:[38;5;10m[49m - **Recipe 6.2 (Utilization Pattern Segmentation):** Segments by utilization behavior; severity stratification adds clinical dimensions on top of utilization signals
+[0m[49m[38;5;10m+    528[0m:[38;5;10m[49m - **Recipe 6.6 (Patient Similarity for Care Planning):** Uses similar feature engineering but for finding individual patient matches rather than population-level tiers
+[0m[49m[38;5;10m+    529[0m:[38;5;10m[49m - **Recipe 7.1 (Hospital Readmission Risk):** Predictive model that can use severity tier as an input feature for risk scoring
+[0m[49m[38;5;10m+    530[0m:[38;5;10m[49m - **Recipe 6.8 (Disease Subtype Discovery):** Discovers new disease subtypes through unsupervised clustering; severity stratification applies known clinical dimensions
+[0m[49m[38;5;10m+    531[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    532[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    533[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    534[0m:[38;5;10m[49m ## Additional Resources
+[0m[49m[38;5;10m+    535[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    536[0m:[38;5;10m[49m **AWS Documentation:**
+[0m[49m[38;5;10m+    537[0m:[38;5;10m[49m - [Amazon SageMaker Built-in K-Means Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/k-means.html)
+[0m[49m[38;5;10m+    538[0m:[38;5;10m[49m - [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html)
+[0m[49m[38;5;10m+    539[0m:[38;5;10m[49m - [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
+[0m[49m[38;5;10m+    540[0m:[38;5;10m[49m - [Amazon Athena User Guide](https://docs.aws.amazon.com/athena/latest/ug/what-is.html)
+[0m[49m[38;5;10m+    541[0m:[38;5;10m[49m - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+[0m[49m[38;5;10m+    542[0m:[38;5;10m[49m - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
+[0m[49m[38;5;10m+    543[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    544[0m:[38;5;10m[49m **AWS Sample Repos:**
+[0m[49m[38;5;10m+    545[0m:[38;5;10m[49m - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including K-Means clustering, data preprocessing, and model evaluation
+[0m[49m[38;5;10m+    546[0m:[38;5;10m[49m - [`aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): ETL job patterns for healthcare data lake assembly
+[0m[49m[38;5;10m+    547[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    548[0m:[38;5;10m[49m **AWS Solutions and Blogs:**
+[0m[49m[38;5;10m+    549[0m:[38;5;10m[49m - [AWS Solutions Library: Healthcare](https://aws.amazon.com/solutions/?solutions-all.sort-by=item.additionalFields.sortDate&solutions-all.sort-order=desc&awsf.content-type=*all&awsf.methodology=*all&awsf.tech-category=*all&awsf.industries=industry%23healthcare): Deployable healthcare solutions and reference architectures
+[0m[49m[38;5;10m+    550[0m:[38;5;10m[49m - [Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for "clustering" and "healthcare" for relevant case studies
+[0m[49m[38;5;10m+    551[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    552[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    553[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    554[0m:[38;5;10m[49m ## Estimated Implementation Time
+[0m[49m[38;5;10m+    555[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    556[0m:[38;5;10m[49m | Phase | Duration |
+[0m[49m[38;5;10m+    557[0m:[38;5;10m[49m |-------|----------|
+[0m[49m[38;5;10m+    558[0m:[38;5;10m[49m | Basic (single disease, 3 tiers, manual validation) | 3-4 weeks |
+[0m[49m[38;5;10m+    559[0m:[38;5;10m[49m | Production-ready (automated pipeline, monitoring, EHR integration) | 8-12 weeks |
+[0m[49m[38;5;10m+    560[0m:[38;5;10m[49m | With variations (multi-disease, trajectory, explainable boundaries) | 16-20 weeks |
+[0m[49m[38;5;10m+    561[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    562[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    563[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    564[0m:[38;5;10m[49m ## Tags
+[0m[49m[38;5;10m+    565[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    566[0m:[38;5;10m[49m `clustering` `k-means` `severity-stratification` `chronic-disease` `population-health` `care-management` `sagemaker` `glue` `cohort-analysis` `unsupervised-learning`
+[0m[49m[38;5;10m+    567[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    568[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    569[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    570[0m:[38;5;10m[49m | [← 6.3: Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering) | [Chapter 6 Index](chapter06-index) | [6.5: Provider Practice Pattern Analysis →](chapter06.05-provider-practice-pattern-analysis) |
+[0m[49m[38;5;10m+    571[0m:[38;5;10m[49m |:---|:---:|---:|
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md[0m
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mNow let me update the sidebar:[0m[0m
+I'll modify the following file: [38;5;141m_Sidebar.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  0, 0[0m:[39m[49m * [6.3 — Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering)
+[0m[49m[39m  1, 1[0m:[39m[49m   * [Python Example](chapter06.03-python-example)
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m * [6.4 — Disease Severity Stratification](chapter06.04-disease-severity-stratification)
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m   * [Python Example](chapter06.04-python-example)
+[0m[49m[39m  2, 4[0m:[39m[49m 
+[0m[49m[39m  3, 5[0m:[39m[49m ---
+[0m[K
+Updating: [38;5;141m_Sidebar.md[0m
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mThe recipe is complete. Here's what I delivered:[0m[0m
+[0m[0m
+[1mFile created:[22m [38;5;10mchapter06.04-disease-severity-stratification.md[0m[0m[0m
+[0m[0m
+[1mStructure follows RECIPE-GUIDE.md exactly:[22m[0m[0m
+- **The Problem** - Passionate framing of the care management resource allocation challenge at scale[0m[0m
+- **The Technology** - Vendor-agnostic deep dive into clustering for severity stratification, covering feature engineering, normalization/weighting, algorithm selection, choosing K, and validation[0m[0m
+- **General Architecture Pattern** - Five-stage pipeline diagram (Feature Assembly → Preprocessing → Clustering → Validation → Operationalization)[0m[0m
+- **AWS Implementation** - Why These Services, Mermaid architecture diagram, Prerequisites table, Ingredients table, 6-step pseudocode walkthrough with generous inline comments[0m[0m
+- **Expected Results** - Sample JSON output, tier distribution table, performance benchmarks, failure modes[0m[0m
+- **Why This Isn't Production-Ready** - Refresh orchestration, tier migration tracking, multi-disease coordination, model versioning[0m[0m
+- **The Honest Take** - Honest reflection on consensus challenges, adoption barriers, and explainability as the key success factor[0m[0m
+- **Variations and Extensions** - Multi-disease composite, trajectory-aware stratification, explainable tier boundaries[0m[0m
+- **Related Recipes** - Cross-references to 6.2, 6.6, 7.1, 6.8[0m[0m
+- **Additional Resources** - Verified AWS docs, sample repos, solutions links[0m[0m
+- **Estimated Implementation Time** - Three tiers[0m[0m
+- **Tags and Navigation** - Footer links to adjacent recipes[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 7.10 • Time: 3m 46s
+
+[0m[1G[0m[0m[?25h[1mSidebar updated[22m with the new recipe entry.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: '/tmp/ralph-worktrees/iter-619/chapters/06-predictive-analytics/recipe-04-disease-severity.md' does not exist
+Searching for files: [38;5;141m**/*severity*[0m in [38;5;141m/tmp/ralph-worktrees/iter-619[0m[38;5;244m (using tool: glob)[0mSearching for files: [38;5;141m**/06-*/**[0m in [38;5;141m/tmp/ralph-worktrees/iter-619[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-619
+[38;5;244m - Completed in 0.193s[0m
+
+
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/06-*/**[0m under /tmp/ralph-worktrees/iter-619
+[38;5;244m - Completed in 0.114s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m40330 bytes[0m from /tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to verify the pass conditions:[0m[0m
+[0m[0m
+1. [1mThe Problem[22m - ✅ Present (detailed section about care management resource allocation)[0m[0m
+2. [1mThe Technology[22m - ✅ Present ("The Technology: How Severity Stratification Works")[0m[0m
+3. [1mGeneral Architecture Pattern[22m - ✅ Present[0m[0m
+4. [1mAWS Implementation with pseudocode walkthrough[22m - ✅ Present (detailed walkthrough with 6 steps of pseudocode)[0m[0m
+5. [1mThe Honest Take[22m - ✅ Present[0m[0m
+6. [1mVariations[22m - ✅ Present ("Variations and Extensions")[0m[0m
+7. [1mNavigation links[22m - ✅ Present at the bottom (← 6.3 | Chapter 6 Index | 6.5 →)[0m[0m
+[0m[0m
+Now I need to check for em dashes. Let me search for them:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-619/chapter06.04-disease-severity-stratification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes found. All required sections are present and the prose uses no em dashes.[0m[0m
+[0m[0m
+[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 2.85 • Time: 27s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Recipe contains all required sections: The Problem, The Technology, General Architecture Pattern, AWS Implementation with detailed pseudocode walkthrough (6 steps), The Honest Take, Variations and Extensions, and navigation links at the bottom. No em dashes found in the prose."}
