@@ -290,6 +290,7 @@ FUNCTION compute_trajectories(current_scores, score_history):
         // (a) re-score historical periods with the current model, or
         // (b) compute slope only from scores produced by the current model version,
         //     accepting a shorter effective history window after each model update.
+        history = filter history WHERE model_version = current_model_version
 
         // Need at least 3 data points for meaningful trajectory analysis.
         // Patients with fewer points get flagged as "insufficient history."
