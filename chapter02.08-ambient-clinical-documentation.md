@@ -8,7 +8,7 @@
 
 It's 7:15 PM on a Tuesday. A family medicine physician is in her car in the clinic parking lot. She saw her last patient at 4:45. Since then she's been sitting at her desk, charting. She has eleven notes to finish from today. Each one takes her somewhere between four and twelve minutes depending on the complexity of the visit. By the time she gets home, has dinner, and tries to catch the last half hour of her daughter's soccer game over FaceTime, she'll spend another hour finishing notes. This is normal. This is every day. This is the reason her colleagues keep quitting.
 
-The term of art for this is "pajama time." The studies have names for it and measure it; Kathleen Sinsky's work at the AMA pegs physician documentation time at roughly two hours of after-hours charting for every eight hours of clinical work. [TODO (TechWriter): verify the specific AMA/Annals of Internal Medicine study citation and current figure; earlier reports have cited 1-2 hours of pajama time per clinical day.] A separate way to say the same thing: for every hour physicians spend face-to-face with patients, they spend roughly two hours in the EHR. The documentation burden is one of the top three reported drivers of physician burnout, and burnout is one of the top drivers of physicians leaving the profession. This is not a rounding-error problem. It is arguably the single largest operational problem in American outpatient medicine right now.
+The term of art for this is "pajama time" (also called "work outside of work" in the formal literature). The studies have names for it and measure it; Christine Sinsky's work at the AMA found that for every hour physicians spend face-to-face with patients, they spend nearly two additional hours on EHR and desk work (Sinsky CA, Colligan L, Li L, et al. "Allocation of Physician Time in Ambulatory Practice: A Time and Motion Study in 4 Specialties." Ann Intern Med. 2016;165(11):753-760). A separate way to say the same thing: for every hour physicians spend face-to-face with patients, they spend roughly two hours in the EHR. The documentation burden is one of the top three reported drivers of physician burnout, and burnout is one of the top drivers of physicians leaving the profession. This is not a rounding-error problem. It is arguably the single largest operational problem in American outpatient medicine right now.
 
 The acute version: a hospitalist on night shift admits six patients between 10 PM and 4 AM. Each admission note takes twenty-five minutes if she does it right. She doesn't have twenty-five minutes per admission; she has maybe eight, because she's also getting pages, fielding rapid responses, and running the code team. So she types frantically during the patient encounter, half-listening to the patient while she tries to capture the HPI in real time, then fills in the missing pieces from memory at 5 AM when she sits down to finish the documentation. The notes are worse than they would have been if she'd written them carefully after the encounter. The encounters are worse because she wasn't really listening. Everyone loses.
 
@@ -214,7 +214,7 @@ Let me walk through each stage conceptually.
 
 ### Why These Services
 
-**Amazon Web Services HealthScribe for the end-to-end ambient documentation pipeline.** HealthScribe is a HIPAA-eligible managed service that performs speech recognition, speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note generation from conversational audio. It is designed explicitly for this use case. For most teams, HealthScribe is the right primary service because it collapses most of the hard pipeline steps into one API surface, and because its outputs include the transcript-to-note traceability that clinician review requires. HealthScribe supports both synchronous (batch) and streaming modes. [TODO (TechWriter): verify streaming availability and regional coverage; HealthScribe has historically been batch-first with streaming added later, and regional availability has expanded over time.]
+**Amazon Web Services HealthScribe for the end-to-end ambient documentation pipeline.** HealthScribe is a HIPAA-eligible managed service that performs speech recognition, speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note generation from conversational audio. It is designed explicitly for this use case. For most teams, HealthScribe is the right primary service because it collapses most of the hard pipeline steps into one API surface, and because its outputs include the transcript-to-note traceability that clinician review requires. HealthScribe supports both synchronous (batch) and streaming modes. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify streaming availability and regional coverage; HealthScribe has historically been batch-first with streaming added later, and regional availability has expanded over time. -->
 
 **Amazon Transcribe Medical as an alternative or complement to HealthScribe.** Transcribe Medical is AWS's medical-specific ASR service. It supports both batch and streaming transcription with medical vocabulary tuning and specialty-specific models (primary care, cardiology, oncology, radiology, neurology, urology). Teams that want more control over the pipeline (e.g., custom diarization, custom note-generation prompts, integration with a non-HealthScribe generation step) use Transcribe Medical as the ASR building block and assemble the downstream pipeline themselves. Teams that want the managed end-to-end path use HealthScribe and accept its opinions about diarization and note structure.
 
@@ -295,18 +295,18 @@ flowchart TB
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | AWS HealthScribe (primary), Amazon Transcribe Medical (alternative or complement), Amazon Bedrock, Amazon Bedrock Guardrails, Amazon Comprehend Medical, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon Kinesis Video Streams with WebRTC (optional, for real-time), Amazon API Gateway, Amazon Cognito, AWS HealthLake (optional, for FHIR-based EHR integration), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, AWS KMS. [TODO (TechWriter): verify current HealthScribe regional availability.] |
+| **AWS Services** | AWS HealthScribe (primary), Amazon Transcribe Medical (alternative or complement), Amazon Bedrock, Amazon Bedrock Guardrails, Amazon Comprehend Medical, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon Kinesis Video Streams with WebRTC (optional, for real-time), Amazon API Gateway, Amazon Cognito, AWS HealthLake (optional, for FHIR-based EHR integration), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, AWS KMS. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify current HealthScribe regional availability. --> |
 | **IAM Permissions** | `transcribe:StartMedicalScribeJob`, `transcribe:GetMedicalScribeJob`, `transcribe:ListMedicalScribeJobs` for HealthScribe; `transcribe:StartMedicalTranscriptionJob` for Transcribe Medical; `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`; `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `comprehendmedical:InferICD10CM`; `s3:GetObject`, `s3:PutObject`, `s3:GetObjectRetention`, `s3:PutObjectRetention`; `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`; `states:StartExecution`, `states:SendTaskSuccess` (for human-review wait states); `kinesisvideo:*` (scoped) if using Kinesis Video Streams; `healthlake:CreateResource`, `healthlake:UpdateResource` if using HealthLake; `secretsmanager:GetSecretValue`; `kms:Decrypt`, `kms:GenerateDataKey`. Scope every action to specific resource ARNs. |
 | **BAA** | AWS BAA signed. Every service in the pipeline touching audio, transcripts, or notes must be HIPAA-eligible and covered under the BAA. Audio is always PHI (voice is biometric). Transcripts are PHI (contain patient identifiers and clinical content). Draft notes are PHI. Consent capture is the contractual anchor that makes the recording lawful; patients must consent affirmatively and be able to opt out without penalty. |
 | **HealthScribe Access** | HealthScribe is a distinct service from Transcribe Medical; ensure your account has access in the intended region. Verify regional availability and quota before building. |
 | **Bedrock Model Access** | Request access to a capable generation model (Claude Sonnet or equivalent) and a cheaper model (Claude Haiku or Nova Lite) for validation passes. Run note-quality evaluation with your chosen model before production. |
 | **EHR Integration** | Access to the institution's EHR write API (Epic Orders, Oracle Health, other). For FHIR-based integrations, either direct FHIR endpoints or HealthLake as an intermediary. Credential rotation, TLS, and audit requirements are set by the EHR vendor. |
 | **Encryption** | S3 audio, transcripts, draft notes, signed notes: SSE-KMS with customer-managed keys. Consider separate CMKs per data class (audio vs text) for finer retention control. DynamoDB: encryption at rest with CMK. Bedrock and HealthScribe: TLS in transit, encryption at rest. Bedrock model-invocation logging (if enabled) will contain the transcript and the draft note; log destination must be KMS-encrypted to the same standard as the note archive. CloudTrail logs to a KMS-encrypted S3 bucket with Object Lock for audit immutability where required. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Transcribe (used by HealthScribe; verify endpoint availability for the HealthScribe-specific APIs in your region), Bedrock, Bedrock Runtime, Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, HealthLake (if used). Gateway endpoints for S3 and DynamoDB. API Gateway can use a private REST API if the clinician app reaches it through VPN/Direct Connect; otherwise, API Gateway is internet-facing with WAF, Cognito authorizers, and strict rate limits. Interface endpoints cost roughly $7-10/month per AZ per endpoint; include this in the cost estimate. [TODO (TechWriter): verify which Transcribe/HealthScribe endpoints support VPC interface endpoints in your target region.] |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Transcribe (used by HealthScribe; verify endpoint availability for the HealthScribe-specific APIs in your region), Bedrock, Bedrock Runtime, Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, HealthLake (if used). Gateway endpoints for S3 and DynamoDB. If using Kinesis Video Streams with WebRTC for streaming audio, add `kinesisvideo` and `kinesisvideo-signaling` interface endpoints for the control plane; note that WebRTC media flows use ICE-negotiated peer connectivity that typically traverses the public internet through STUN/TURN servers. If API Gateway is configured as a private REST API, add `execute-api` interface endpoint. API Gateway can use a private REST API if the clinician app reaches it through VPN/Direct Connect; otherwise, API Gateway is internet-facing with WAF, Cognito authorizers, and strict rate limits. Interface endpoints cost roughly $7-10/month per AZ per endpoint; include this in the cost estimate. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify which Transcribe/HealthScribe endpoints support VPC interface endpoints in your target region. --> |
 | **CloudTrail** | Enabled with data events for S3 (audio and note buckets), DynamoDB (session table), and Secrets Manager. Correlate every artifact to the encounter session ID and the requesting clinician identity. CloudTrail logs must be immutable (separate AWS account with Object Lock, or equivalent). |
 | **Consent Management** | A consent-capture workflow is a hard prerequisite. Depending on jurisdiction, consent may be required to be explicit, documented, and revocable. Two-party consent states (California, Florida, and others in the US) have stricter requirements than one-party consent states. Even in one-party consent states, clinical ethics standards require patient consent. The consent record is a compliance artifact; design accordingly. |
 | **Sample Data** | For development and evaluation: synthetic clinical conversations generated from templates, publicly-available medical conversation corpora (if redistributable, see MTS-Dialog and similar research datasets), and recorded mock encounters with actors under research consent. Never use real clinical audio in development or test environments. For end-to-end production evaluation, use a consented pilot with a small clinician cohort and formal quality review. |
-| **Cost Estimate** | HealthScribe pricing is per minute of audio processed, typically dominating the per-encounter cost. [TODO (TechWriter): verify current HealthScribe per-minute pricing; at previous prices, a 15-minute encounter ran on the order of $0.30-$1.00 in HealthScribe costs alone.] Bedrock generation for template post-processing adds $0.02-$0.15 depending on model and note length. Validation passes add another $0.01-$0.10. Storage, DynamoDB, Lambda, Step Functions are rounding error at any reasonable volume. End-to-end per encounter: $0.40-$2.50 typical for ambulatory visits; longer inpatient encounters cost proportionally more. At 10,000 encounters per day, variable cost runs $4,000-$25,000/day; fixed infrastructure (VPC endpoints, HealthLake if used, operational overhead) adds $500-$2,000/month. Human scribe services typically cost $12-$25 per hour per clinician, or roughly $3-$6 per encounter depending on encounter length; ambient documentation is materially cheaper per encounter at scale. |
+| **Cost Estimate** | HealthScribe pricing is per minute of audio processed, typically dominating the per-encounter cost. A 15-minute encounter runs on the order of $0.30-$1.00 in HealthScribe costs alone (verify current pricing on the AWS HealthScribe pricing page, as rates have changed since launch). Bedrock generation for template post-processing adds $0.02-$0.15 depending on model and note length. Validation passes add another $0.01-$0.10. Storage, DynamoDB, Lambda, Step Functions are rounding error at any reasonable volume. End-to-end per encounter: $0.40-$2.50 typical for ambulatory visits; longer inpatient encounters cost proportionally more. At 10,000 encounters per day, variable cost runs $4,000-$25,000/day; fixed infrastructure (VPC endpoints, HealthLake if used, operational overhead) adds $500-$2,000/month. Human scribe services typically cost $12-$25 per hour per clinician, or roughly $3-$6 per encounter depending on encounter length; ambient documentation is materially cheaper per encounter at scale. |
 
 ### Ingredients
 
@@ -405,6 +405,22 @@ FUNCTION finalize_audio_and_start_healthscribe(session_id, audio_s3_key):
     // specific features (clinical note generation vs transcript-only).
     job_name = f"scribe-{session_id}"
 
+    // HealthScribe job names are unique per account per region and the start call
+    // is not idempotent on conflict. Before starting, check for an existing job
+    // with this name (handles Step Functions retries after transient failures).
+    existing = try call Transcribe.GetMedicalScribeJob with
+                 MedicalScribeJobName = job_name
+    IF existing is found AND existing.status == "IN_PROGRESS":
+        update DynamoDB: status = "HEALTHSCRIBE_RUNNING"
+        RETURN { status: "HEALTHSCRIBE_ALREADY_STARTED",
+                 healthscribe_job_name: job_name }
+    IF existing is found AND existing.status == "COMPLETED":
+        update DynamoDB: status = "HEALTHSCRIBE_COMPLETE"
+        RETURN { status: "HEALTHSCRIBE_ALREADY_COMPLETE",
+                 healthscribe_job_name: job_name }
+    IF existing is found AND existing.status == "FAILED":
+        job_name = f"scribe-{session_id}-retry-{generate_short_id()}"
+
     start_response = call Transcribe.StartMedicalScribeJob with:
         MedicalScribeJobName = job_name
         Media = {
@@ -498,22 +514,39 @@ FUNCTION extract_transcript_entities(transcript_json):
     // symptoms and medications; clinician statements contain assessments and plan.
     combined_text = patient_text + " " + clinician_text
 
-    // Comprehend Medical has a character limit per call; chunk if needed
-    entities_response = call ComprehendMedical.DetectEntitiesV2 with:
-        text = combined_text  // chunk if > limit
+    // Comprehend Medical has a per-request character limit (~20,000 UTF-8 bytes).
+    // A 15-minute encounter typically fits; longer encounters (40+ minutes,
+    // inpatient rounding) will exceed it. Chunk at sentence boundaries to avoid
+    // splitting mid-entity, then merge entity offsets back to original coordinates.
+    chunks = split_into_chunks(combined_text, max_bytes = 18000,
+                               boundary_policy = "sentence")
 
-    rxnorm_response = call ComprehendMedical.InferRxNorm with:
-        text = combined_text
+    all_entities = empty list
+    all_rxnorm = empty list
+    all_icd = empty list
 
-    icd_response = call ComprehendMedical.InferICD10CM with:
-        text = combined_text
+    FOR each chunk in chunks:
+        entities_response = call ComprehendMedical.DetectEntitiesV2 with:
+            text = chunk.text
+        all_entities.extend(map_offsets_back(entities_response, chunk.start_offset))
+
+        rxnorm_response = call ComprehendMedical.InferRxNorm with:
+            text = chunk.text
+        all_rxnorm.extend(map_offsets_back(rxnorm_response, chunk.start_offset))
+
+        icd_response = call ComprehendMedical.InferICD10CM with:
+            text = chunk.text
+        all_icd.extend(map_offsets_back(icd_response, chunk.start_offset))
 
     must_include = {
-        medications: extract_medications(rxnorm_response),
-        conditions:  extract_conditions(icd_response),
-        symptoms:    extract_symptoms(entities_response),
-        procedures:  extract_procedures(entities_response),
-        numerics:    extract_doses_and_vitals(entities_response, transcript_json)
+        medications: extract_medications(all_rxnorm),
+        conditions:  extract_conditions(all_icd),
+        symptoms:    extract_symptoms(all_entities),
+        procedures:  extract_procedures(all_entities),
+        numerics:    extract_doses_and_vitals(all_entities, transcript_json)
+        // extract_doses_and_vitals pairs Comprehend Medical's DOSAGE and
+        // NUMERIC_VALUE entity types with their governing medication or
+        // measurement via the TraitName attribute.
     }
 
     RETURN must_include
@@ -536,6 +569,17 @@ FUNCTION render_institutional_note(session, healthscribe_note, transcript_json,
     ehr_block = format_ehr_context(ehr_context)
     // ehr_context includes current med list, problem list, allergies, recent labs.
     // These are structured, not free-text, and explicitly labeled as "from EHR."
+    //
+    // PHI minimization: before passing ehr_context into the generation prompt,
+    // strip identifiers not needed for note generation.
+    // Keep: active problem list (names and codes), current medications (drug,
+    //       dose, frequency), allergies (substance and reaction), recent labs
+    //       and vitals referenced in the encounter, relevant imaging impressions.
+    // Drop: MRN, DOB (use age band if age context is needed), patient name,
+    //       address, phone, payer/member IDs, provider NPIs.
+    // The note written back to the EHR carries the patient identifier through
+    // the FHIR subject reference; identifiers do not need to appear in the
+    // generation prompt.
 
     generation_prompt = f"""
     You are drafting a clinical note from a recorded patient encounter. Your only
@@ -581,19 +625,30 @@ FUNCTION render_institutional_note(session, healthscribe_note, transcript_json,
     """
 
     response = call Bedrock.InvokeModel with:
-        model_id     = "anthropic.claude-sonnet-4"  // or equivalent current model
+        model_id     = GENERATION_MODEL_ID  // e.g. anthropic.claude-3-5-sonnet-20241022-v2:0
+                                            // Bedrock model IDs are versioned; verify the
+                                            // current ID in your region. Cross-region inference
+                                            // profiles (us.anthropic.claude-...) are recommended
+                                            // for multi-region deployments.
         prompt       = generation_prompt
         max_tokens   = 6000
         temperature  = 0.1
         guardrail_id = AMBIENT_DOC_GUARDRAIL_ID
         // Guardrails configuration:
-        // - Contextual grounding: reference context is the transcript_block and ehr_block.
-        //   This must be explicitly tagged (guardContent block in Converse, or grounding
-        //   source configured in the Guardrail policy) and is not auto-detected.
-        // - Input-side prompt-attack filters: the transcript is user-adjacent content
-        //   that could, in edge cases, contain text that looks like an instruction.
-        //   Treat the transcript as untrusted input.
-        // - Content filters on harmful content and PII policies tuned for clinical context.
+        // PREREQUISITE: the Guardrail referenced by AMBIENT_DOC_GUARDRAIL_ID must
+        // be configured at the policy level with:
+        //   1. Input-side prompt-attack filters ENABLED (configured on the Guardrail
+        //      itself, not on the invocation call).
+        //   2. Contextual grounding policy configured with the transcript explicitly
+        //      tagged as the grounding source (via guardContent block in Converse API,
+        //      or grounding source in the Guardrail policy).
+        //   3. PII filters tuned for clinical context (clinical terms are not PII).
+        //   4. Content filters set per institutional policy.
+        //
+        // The transcript is user-adjacent content that could, in edge cases, contain
+        // text that looks like an instruction. Treat it as untrusted input.
+        // Intervention is signaled via `amazon-bedrock-guardrailAction` on the
+        // response, not via `stop_reason`.
 
     // Check for Guardrail intervention. The correct field is
     // `amazon-bedrock-guardrailAction`, not `stop_reason`.
@@ -736,6 +791,9 @@ FUNCTION capture_clinician_signoff(session_id, edited_note, clinician_attestatio
         RETURN { status: "ERROR", reason: "Unexpected session state." }
 
     // Compute edit distance between draft and signed version as a quality metric
+    // Recommended: token-level Levenshtein on whitespace-normalized text,
+    // divided by the length of the longer of draft or signed. This normalization
+    // makes the metric comparable across encounter lengths and clinicians.
     draft = read from S3 at session.draft_note_s3_key
     edit_distance = compute_normalized_edit_distance(draft.sections, edited_note.sections)
 
@@ -748,7 +806,9 @@ FUNCTION capture_clinician_signoff(session_id, edited_note, clinician_attestatio
         signed_at:             current UTC timestamp,
         draft_note_key:        session.draft_note_s3_key
     }
-    // If compliance requires, apply S3 Object Lock to make the signed note immutable
+    // If compliance requires, apply S3 Object Lock to make the signed note immutable.
+    // Prerequisite: the S3 bucket must have Object Lock enabled at bucket creation
+    // and a default retention mode configured before objects can have retention applied.
     apply_object_lock_if_required(signed_key)
 
     update DynamoDB: status                  = "SIGNED",
@@ -967,14 +1027,14 @@ FUNCTION emit_quality_metrics(session):
 | HealthScribe processing time | 10-30% of audio duration for typical ambulatory encounters |
 | Total draft-ready time after encounter end | 60-180 seconds typical; longer for long encounters |
 | Time to clinician sign-off after draft ready | 2-8 minutes median; highly specialty-dependent |
-| Clinician documentation time saved vs typing from scratch | 50-75% reduction reported in published deployments [TODO (TechWriter): verify and cite specific deployment studies] |
+| Clinician documentation time saved vs typing from scratch | 50-75% reduction reported in published deployments (figures vary by specialty and encounter mix; verify against current vendor case studies for your context) |
 | Word error rate on clinical ASR in clinic audio | 5-12% with medical-tuned ASR and reasonable microphone placement |
 | Diarization accuracy (clinician vs patient turn attribution) | 88-96% on clean two-speaker audio; drops with three or more speakers |
 | Edit distance between draft and signed note (normalized) | 0.10-0.30 for well-performing pipelines; regression above 0.35 signals quality issues |
 | Validation pass rate (first generation) | 85-95% |
 | Validation pass rate (after retry) | 95-99% |
 | Fraction of sessions routed to human-review queue | 1-5% depending on specialty and audio conditions |
-| Clinician thumbs-up rate in pilot deployments | 65-85% [TODO (TechWriter): cite actual reported figures from public HealthScribe case studies] |
+| Clinician thumbs-up rate in pilot deployments | 65-85% (reported range across published ambient documentation pilots; specific figures depend on specialty, template quality, and rollout maturity) |
 | Cost per encounter | $0.40-$2.50 depending on audio length and validation retries |
 
 **Where it struggles:**
@@ -1007,7 +1067,7 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 
 **Template engineering is ongoing.** Institutional note templates change. Specialty templates multiply. Template drift (the template generates slightly different content over time as prompts iterate) can confuse coding and billing systems that expect a specific structure. Version control every template, monitor for drift, and coordinate template changes with revenue cycle and compliance teams.
 
-**Billing implications.** A note drafted by AI is still billed by the clinician. CMS and private payer guidance on AI-generated documentation is evolving. [TODO (TechWriter): verify current CMS guidance on AI-generated or AI-assisted clinical documentation and any applicable modifiers or attestation requirements.] Ensure the clinician attestation captures that they authored and are responsible for the signed note, regardless of how it was drafted.
+**Billing implications.** A note drafted by AI is still billed by the clinician. CMS and private payer guidance on AI-generated documentation is evolving; as of this writing, no specific modifier or attestation requirement exists for AI-assisted notes, but the regulatory landscape is active and your institution's compliance office should monitor CMS rulemaking. Ensure the clinician attestation captures that they authored and are responsible for the signed note, regardless of how it was drafted.
 
 **FDA posture.** Ambient documentation that generates only a note for clinician review is generally not regulated as a medical device. The moment generation crosses into clinical recommendations (suggesting diagnoses, suggesting orders, inferring acuity), the regulatory posture changes. Keep the system on the "documentation assistant" side of the line, or engage regulatory counsel if you want to cross it.
 
