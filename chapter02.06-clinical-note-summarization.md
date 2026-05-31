@@ -12,7 +12,7 @@ So she does what everyone does: she scrolls. Open the most recent progress note.
 
 This isn't a failure of clinician diligence. It's a structural mismatch between how clinical information is generated (a running log of notes, one per day per service, accumulating forever) and how it needs to be consumed (a concise picture of "where is this patient, and what matters right now"). The system produces prose. The clinician needs a briefing.
 
-The ICU handoff version of the same problem is sharper. Night shift hands off to day shift. The day attending gets a verbal sign-out in five minutes, then is on the hook for twelve hours of decisions. If the overnight resident forgets to mention that the family has been meeting with palliative care, the day team can spend an hour on aggressive workup for a patient who's already been transitioned to comfort-focused goals. If nobody mentions that the patient self-extubated once already, the day team won't be as cautious on the next extubation attempt. The consequences of a missed detail in handoff are real and documented (the I-PASS multi-center trial, Starmer et al., NEJM 2014, showed a 23% reduction in medical errors and a 30% reduction in preventable adverse events after implementing a structured handoff program).
+The ICU handoff version of the same problem is sharper. Night shift hands off to day shift. The day attending gets a verbal sign-out in five minutes, then is on the hook for twelve hours of decisions. If the overnight resident forgets to mention that the family has been meeting with palliative care, the day team can spend an hour on aggressive workup for a patient who's already been transitioned to comfort-focused goals. If nobody mentions that the patient self-extubated once already, the day team won't be as cautious on the next extubation attempt. The consequences of a missed detail in handoff are real and documented. The I-PASS multi-center trial (Starmer AJ et al., "Changes in Medical Errors After Implementation of a Handoff Program," N Engl J Med 2014;371:1803-1812) showed a 23% reduction in medical errors and a 30% reduction in preventable adverse events after implementing a structured handoff program.
 
 The readmission version is sharper still. A patient hospitalized at Hospital A in March gets readmitted at Hospital B in May. The ED physician at Hospital B is staring at eighty pages of outside records that arrived by fax. Somewhere in those eighty pages is the detail that matters (the patient was discharged on a new immunosuppressant, had a drug reaction documented on day three, and the reaction is recurring right now). That detail is buried between page forty-three and page forty-five, inside a consult note from a rheumatologist. The ED physician has seven other patients and ninety minutes to disposition this one. Statistically, they're going to miss it.
 
@@ -184,15 +184,7 @@ Let's walk through the conceptual stages.
 
 **Amazon DynamoDB for summary metadata and provenance mapping.** One item per generated summary, tracking request parameters, status, and provenance map (which source note contributed which fact). The provenance map is what powers the "where did this come from?" UI feature.
 
-**Amazon EventBridge for trigger patterns.** Summaries may be generated on demand (clinician clicks "summarize") or proactively (every admission gets an on-admission summary; every shift change triggers handoff summaries). EventBridge routes both patterns to the same pipeline.
-
-<!-- TODO (TechWriter, Expert Review A3, HIGH): EventBridge delivery is at-least-once.
-     Duplicate ADT replays and shift-change-rule DST overlaps will produce duplicate
-     summaries and duplicate LLM spend. Add an idempotency pattern here and in Step 1:
-     fingerprint = (encounter_id, admission_event_timestamp) for on-admission;
-     (service_id, shift_change_timestamp) for shift-change; conditional DynamoDB
-     PutItem with TTL before starting the Step Functions execution. Note on-demand
-     requests use a different fingerprint key to allow re-requests after edits. -->
+**Amazon EventBridge for trigger patterns.** Summaries may be generated on demand (clinician clicks "summarize") or proactively (every admission gets an on-admission summary; every shift change triggers handoff summaries). EventBridge routes both patterns to the same pipeline. Because EventBridge delivery is at-least-once, proactive triggers require an idempotency guard. Before starting a Step Functions execution, compute a fingerprint from the trigger's natural key (encounter_id plus admission_event_timestamp for on-admission; service_id plus shift_change_timestamp for shift-change) and attempt a conditional DynamoDB PutItem with a 24-hour TTL. If the write succeeds, proceed. If it fails with ConditionalCheckFailedException, return the existing summary_id without starting a duplicate execution. On-demand requests use a different fingerprint key to allow re-requests after chart edits.
 
 **Amazon API Gateway + Cognito for clinician-facing APIs.** The EHR-side integration calls into API Gateway to request summaries. Cognito (or SAML federation with the EHR's identity provider) handles clinician authentication so that access can be audited at the user level.
 
@@ -317,21 +309,10 @@ FUNCTION receive_summary_request(request):
     RETURN { summary_id: summary_id, status: "STARTED" }
 ```
 
-**Step 2: Retrieve source documents.** Pull the notes and structured data that fall inside the request's scope. Scope matters: a handoff summary should look at the current encounter; a pre-visit summary for a new specialty consult may want to look at the entire relevant history. Structured data (allergies, active problems, current medications) is pulled even when scope is narrow, because those categories belong in every summary regardless of the time window.
-
-<!-- TODO (TechWriter, Expert Review S1, HIGH): this step pulls every note in scope
-     without filtering for restricted categories. 42 CFR Part 2 substance-use-treatment
-     notes, HIV-related content, adolescent confidential notes, and genetic test
-     results all have specific disclosure rules. The prose in "Why This Isn't
-     Production-Ready" correctly says "Access control has to be enforced at the
-     retrieval layer, not bolted on downstream." Add a consent-filter step in the
-     pseudocode before returning: use FHIR DocumentReference.securityLabel when
-     available, or a local policy engine keyed on note.type + practitioner specialty.
-     Without this, the default teaches "pull everything and let downstream sort
-     it out," which is a federal-law compliance gap. -->
+**Step 2: Retrieve source documents.** Pull the notes and structured data that fall inside the request's scope. Scope matters: a handoff summary should look at the current encounter; a pre-visit summary for a new specialty consult may want to look at the entire relevant history. Structured data (allergies, active problems, current medications) is pulled even when scope is narrow, because those categories belong in every summary regardless of the time window. Critically, retrieval must filter out notes from restricted data categories (42 CFR Part 2 substance-use-treatment records, HIV-related content, adolescent confidential notes, genetic test results) unless the requesting user has a specific disclosure consent on file. Access control is enforced at the retrieval layer, not bolted on downstream.
 
 ```
-FUNCTION retrieve_source_documents(patient_id, scope, encounter_id):
+FUNCTION retrieve_source_documents(patient_id, scope, encounter_id, requesting_user):
     // Pull notes based on scope
     IF scope == "current_encounter":
         note_filter = { subject: patient_id, encounter: encounter_id }
@@ -371,6 +352,29 @@ FUNCTION retrieve_source_documents(patient_id, scope, encounter_id):
         allergies, active_problems, current_meds, code_status
     }
 
+    // Filter out notes from restricted data categories unless the requesting user
+    // has a specific disclosure consent on file. Categories to evaluate:
+    //   - 42 CFR Part 2 substance use treatment notes
+    //   - HIV/AIDS-related notes where state law adds restrictions
+    //   - Adolescent confidential notes (minor's right to confidential care varies by state)
+    //   - Genetic test results (GINA and state-specific additions)
+    //   - Behavioral health notes if organizational policy restricts them
+    //
+    // Restricted-category filtering uses either FHIR DocumentReference.securityLabel
+    // (preferred, standardized vocabulary) or a local policy engine keyed on
+    // note.type + note.practitioner.specialty.
+    patient_consents = call HealthLake.SearchResources with:
+        resource_type = "Consent"
+        filters       = { patient: patient_id, status: "active" }
+
+    notes = filter_by_disclosure_consent(
+        notes             = notes,
+        requesting_user   = requesting_user,
+        patient_consents  = patient_consents
+    )
+    // Note: the consent engine above is a placeholder for a real policy service.
+    // See "Why This Isn't Production-Ready" for the governance concerns.
+
     RETURN {
         notes:           notes,
         allergies:       allergies,
@@ -380,19 +384,7 @@ FUNCTION retrieve_source_documents(patient_id, scope, encounter_id):
     }
 ```
 
-**Step 3: Chunk and preprocess notes.** Turn the flat list of notes into processable chunks. A single note is often a reasonable chunk; very long notes (an H&P or a multi-page consult) may need sub-chunking. Preprocessing removes boilerplate (EHR-generated headers and footers, standard signatures, macro text) and normalizes dates. This step also tags notes with their service and author so the extraction can attribute content correctly.
-
-<!-- TODO (TechWriter, Expert Review A5, MEDIUM): encounter-boundary enforcement is
-     named as the mitigation for the "fact blending across patients or visits"
-     failure mode (see "The Failure Modes You Have to Design Around") but the
-     pseudocode does not carry encounter_id through chunk metadata or enforce it
-     during sub-chunking. A long H&P that references prior admissions, or a
-     consult note citing historical context, can feed the extraction with
-     mixed-encounter content. Add encounter_id to chunk_metadata, keep sub-chunks
-     from crossing encounter boundaries, and (in Step 4) add a hard rule to the
-     extraction prompt that facts not tied to this chunk's encounter go into a
-     separate `historical_context` field. Aggregation in Step 5 then indexes by
-     encounter_id so historical context is preserved but separated. -->
+**Step 3: Chunk and preprocess notes.** Turn the flat list of notes into processable chunks. A single note is often a reasonable chunk; very long notes (an H&P or a multi-page consult) may need sub-chunking. Preprocessing removes boilerplate (EHR-generated headers and footers, standard signatures, macro text) and normalizes dates. This step also tags notes with their service, author, and encounter_id so the extraction can attribute content correctly and enforce encounter boundaries (preventing the "fact blending across visits" failure mode described earlier).
 
 ```
 FUNCTION chunk_and_preprocess(notes):
@@ -404,17 +396,20 @@ FUNCTION chunk_and_preprocess(notes):
         // Strip boilerplate and macros
         text = remove_boilerplate(text)
 
-        // Tag with metadata that will travel with the chunk
+        // Tag with metadata that will travel with the chunk.
+        // encounter_id is critical: it prevents fact blending across admissions.
         chunk_metadata = {
             note_id:      note.id,
             note_date:    note.date,
             note_type:    note.type.display,         // e.g., "Progress Note", "H&P", "Discharge Summary"
             author:       note.author[0].display,
-            service:      extract_service_from_note(note)    // e.g., "Hospitalist", "Cardiology", "Nephrology"
+            service:      extract_service_from_note(note),   // e.g., "Hospitalist", "Cardiology", "Nephrology"
+            encounter_id: note.context.encounter.reference   // ties this chunk to a specific encounter
         }
 
         // If the note is very long, sub-chunk it.
         // Target around 2000-4000 tokens per chunk to stay efficient per-call.
+        // Do not merge sub-chunks across encounter boundaries.
         IF token_count(text) > 4000:
             sub_chunks = split_by_headers_then_length(text, target_tokens=3000)
             FOR each sub_chunk in sub_chunks:
@@ -437,6 +432,11 @@ FUNCTION extract_chunk_facts(chunk):
     with the fields below. Use ONLY what is explicitly documented in the note. If a field is not
     documented in THIS note, return an empty list or null. Do not infer across visits or dates.
 
+    This chunk is associated with encounter_id {chunk.metadata.encounter_id}. Extract only facts
+    documented in this chunk as pertaining to that encounter. If the chunk references prior
+    encounters (for example, "admitted 3 months ago for AKI"), include those in a dedicated
+    "historical_context" field, not mixed into the current-encounter fields.
+
     Preserve negation language exactly. "No evidence of X" must not become "X." "Rule out X" must
     not become "has X." Preserve uncertainty language ("possible," "probable," "rule out").
 
@@ -453,8 +453,10 @@ FUNCTION extract_chunk_facts(chunk):
     - code_status_mentioned:  exact text if present, or null
     - devices_or_lines:       list of active lines, tubes, drains, implants mentioned
     - critical_events:        list of any adverse events, rapid responses, code blue, etc.
+    - historical_context:     list of references to prior encounters mentioned in this note
 
     CLINICAL NOTE:
+    Encounter ID: {chunk.metadata.encounter_id}
     Note date: {chunk.metadata.note_date}
     Note type: {chunk.metadata.note_type}
     Service:   {chunk.metadata.service}
@@ -611,15 +613,8 @@ FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
 
     // Conflict detection: e.g., Cardiology recommends X on day 3, Hospitalist still has Y on day 5
     aggregated.conflicts = detect_conflicts(aggregated)
-    // TODO (TechWriter, Expert Review A1, HIGH): aggregated.conflicts is built here
-    // but never referenced by Step 7's generation prompt. The generator will
-    // default to smoothing disagreements into single recommendations, which is
-    // the specific clinical-safety failure mode this section of the recipe
-    // identifies ("Contradictions across services"). Thread conflicts into
-    // Step 7: (a) add "Active Disagreements Between Services" to the use-case
-    // section list, (b) add an explicit CONFLICT HANDLING block to the
-    // generation prompt that renders each conflict attributed by service
-    // without reconciling to a single recommendation.
+    // The conflicts list is consumed by Step 7's generation prompt, which renders
+    // each conflict attributed by service without reconciling to a single recommendation.
 
 
     write to S3: "aggregations/{summary_id}/aggregated.json" = aggregated
@@ -679,7 +674,14 @@ FUNCTION generate_summary_prose(aggregated, request_params):
     // Example for "handoff":
     // ["one_liner", "active_issues", "medications", "allergies", "code_status",
     //  "recent_significant_events", "pending_workup", "consults_and_recs",
-    //  "devices_and_lines", "disposition_plan"]
+    //  "active_disagreements_between_services", "devices_and_lines", "disposition_plan"]
+
+    // Minimum-necessary: redact non-clinical PHI from the aggregated object before
+    // the generation call. The generation step does not need MRN, DOB, phone, address,
+    // or insurance identifiers. The preferred name is an exception if the summary
+    // references the patient by name; strip everything else. This also limits PHI
+    // exposure in Bedrock model-invocation logs if logging is enabled.
+    aggregated_for_prompt = redact_non_clinical_phi(aggregated)
 
     generation_prompt = """
     You are drafting a clinician-facing summary for a {request_params.specialty} {request_params.use_case} review.
@@ -697,6 +699,14 @@ FUNCTION generate_summary_prose(aggregated, request_params):
     - Attribute consultant recommendations to the consulting service.
     - Keep to {request_params.format} format. Use the section headers listed below.
 
+    CONFLICT HANDLING:
+    If the structured summary object contains entries in the "conflicts" array, render them in a
+    dedicated section with this exact header: "Active Disagreements Between Services." For each
+    conflict, name the services involved and summarize each service's position attributed by
+    service (for example, "Cardiology recommends aggressive diuresis per note on 5/8. Nephrology
+    notes worsening creatinine and recommends cautious diuresis per note on 5/9"). Do not
+    collapse into a single recommendation. Do not pick a side.
+
     SPECIALTY EMPHASIS FOR {request_params.specialty}:
     {specialty_emphasis_instructions(request_params.specialty)}
     // For nephrology: foreground baseline and current creatinine, fluid status, nephrotoxic meds,
@@ -710,7 +720,7 @@ FUNCTION generate_summary_prose(aggregated, request_params):
     {sections as ordered list}
 
     STRUCTURED SUMMARY OBJECT (your only source of facts):
-    {aggregated as JSON}
+    {aggregated_for_prompt as JSON}
 
     OUTPUT:
     Produce the summary as plain markdown with the section headers above. After the summary,
@@ -730,52 +740,41 @@ FUNCTION generate_summary_prose(aggregated, request_params):
         // - PII detection disabled or configured to permit PHI (this is clinician-facing)
         // - Content filters on harmful content
         //
-        // TODO (TechWriter, Expert Review A4, MEDIUM): two corrections required.
-        // (1) The contextual grounding check does not compare against the whole
-        //     prompt; it compares against text explicitly tagged as grounding
-        //     source. Using the Converse API, wrap the aggregated JSON in a
-        //     `guardContent` block; using InvokeModel, supply the grounding
-        //     source via the Guardrails policy configuration. Without the
-        //     tagging, the check returns SAFE regardless of fidelity.
-        // (2) Guardrail intervention is signaled on the response body via
-        //     `amazon-bedrock-guardrailAction == "INTERVENED"`, not via
-        //     `stop_reason`. Branch on that field, not on stop_reason.
-        // The Python companion has the matching bug (Code Review Findings 2 and 4);
-        // fix them together.
+        // The contextual grounding check requires the aggregated object to be
+        // explicitly tagged as grounding source. Using the Converse API, wrap
+        // the aggregated JSON in a guardContent block. Using InvokeModel, supply
+        // the grounding source via the Guardrails policy configuration. Without
+        // this tagging, the contextual grounding check returns SAFE regardless
+        // of actual fidelity.
         //
-        // TODO (TechWriter, Expert Review S2, MEDIUM): minimum-necessary applies
-        // to prompts. The generation step does not need MRN, DOB, phone, address,
-        // or insurance identifiers. Redact non-clinical PHI from the aggregated
-        // object before the generation call. The preferred name is an exception
-        // if the summary references the patient by name; strip everything else.
-        // Call this out here and echo it in the Bedrock-logging note in the
-        // Encryption row of Prerequisites.
+        // Guardrail intervention is signaled in the response body via
+        // "amazon-bedrock-guardrailAction": "INTERVENED". Branch on that field,
+        // not on the model's stop_reason.
 
     summary_text = parse summary content from response
     provenance   = parse provenance JSON from response
 
-    // If Guardrails rejected for grounding-check failure, the pipeline loops back
-    // to regenerate with a stronger grounding instruction (capped at 2-3 attempts).
-    IF response.was_intervened_by_guardrail:
+    // Check for Guardrail intervention via the documented response field
+    IF response["amazon-bedrock-guardrailAction"] == "INTERVENED":
         RETURN { status: "GROUNDING_REJECTED", response: response }
 
     RETURN { status: "GENERATED", summary_text: summary_text, provenance: provenance }
 ```
 
-<!-- TODO (TechWriter, Expert Review A2, HIGH): define the fallback for retry
-     exhaustion. The prose says "capped at 2-3 attempts" and Step 8 mentions
-     "held for regeneration or explicit clinician review," but neither the
-     pseudocode nor the architecture diagram defines what happens after the
-     cap. Specify a three-attempt ladder (original prompt at T=0.2; stronger
-     grounding prompt that names the unverified claims; deterministic T=0.0)
-     and a terminal state that routes to a clinician_review_queue or a
-     hold-with-alert. Track the terminal state in DynamoDB as
-     status = "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW" and emit a CloudWatch
-     metric "ValidationExhausted" with specialty and use_case dimensions.
-     Mirror the exhausted-retry exit edge in the architecture diagram so it
-     terminates at a review node rather than looping back to the generator.
-     The Python companion has the matching auto-deliver bug (Code Review
-     Finding 3); fix together. -->
+**Retry strategy on validation or grounding failure:**
+
+The pipeline retries generation up to three times with escalating strategies:
+
+1. **Attempt 1:** Original prompt at temperature 0.2.
+2. **Attempt 2:** Stronger grounding instruction that names the specific unverified claims and asks the model to drop or correct them. Temperature 0.2.
+3. **Attempt 3:** Deterministic generation at temperature 0.0.
+
+After attempt 3 fails validation, the pipeline does NOT auto-deliver. It routes to one of:
+- A clinician_review_queue (preferred for clinician-facing tools), where a human reviews the summary before it reaches the EHR.
+- Partial delivery with a banner noting which sections failed validation.
+- An operations alert with summary_id, failure category, and a hold on delivery.
+
+The exhausted-retry state is tracked in DynamoDB as `status = "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW"` and emits a CloudWatch metric `ValidationExhausted` with specialty and use_case dimensions so operational dashboards catch drift. A summary never auto-ships to the EHR without passing validation.
 
 **Step 8: Validate claims and attach provenance.** Belt-and-suspenders alongside the Guardrails grounding check. Parse the generated prose, identify specific claims (dates, doses, named findings, named recommendations), and verify each one against the structured object. Attach source-note links so the clinician can click into any claim to see the note it came from. This is the feature that turns "a summary I have to trust" into "a summary I can verify."
 
