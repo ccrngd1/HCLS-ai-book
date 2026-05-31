@@ -450,6 +450,7 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
             run_date         = run_date                    // when this assignment was computed
             key_drivers      = top 3 features with highest // which features most influenced this
                                z-scores for this patient   // patient's tier (for explainability)
+            // TODO (TechWriter): Expert review SEC-3 (MEDIUM). Consider whether key_drivers should live in the operational DynamoDB table or only in the S3 analytics layer. If the tier label alone suffices for workflow routing, storing drivers only in S3 reduces the table's sensitivity. Document this as a data minimization tradeoff.
             expires_at       = run_date + 90 days          // tier assignments should be refreshed
                                                            // quarterly; stale assignments get flagged
 
@@ -507,6 +508,10 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
 ---
 
 ## Why This Isn't Production-Ready
+
+<!-- TODO (TechWriter): Expert review ARCH-1 (MEDIUM). Add brief note on failure handling: Step Functions orchestration with per-step error handling, DLQ (SQS) for patients that fail any step, and retry logic for transient failures. Silent pipeline failures mean patients miss tier assignments and potentially miss interventions. -->
+
+<!-- TODO (TechWriter): Expert review SEC-4 (MEDIUM). Add recommendation for an append-only audit log of tier assignments (patient_id, previous_tier, new_tier, run_date, model_version, pipeline_execution_id) stored in S3 (immutable, versioned bucket) for clinical governance review when tier changes trigger care plan modifications. -->
 
 **Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline (monthly or quarterly) with monitoring for data freshness, job failures, and tier distribution drift. If your source data feed is delayed, the pipeline should wait rather than run on stale data.
 
