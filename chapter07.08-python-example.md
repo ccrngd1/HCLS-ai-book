@@ -134,6 +134,10 @@ def generate_synthetic_patient_timeline(patient_id: str, progression_rate: str =
         hba1c_values = [round(np.random.normal(5.6, 0.3), 1) for _ in days_offsets]
 
     # Assemble labs into FHIR-like observation records
+    # Note: we only simulate eGFR, creatinine, and HbA1c for brevity.
+    # Albumin, hemoglobin, and potassium would come from real lab data.
+    # The feature engineering step handles missing biomarkers gracefully
+    # (fills with zero/sentinel values), so the pipeline still runs.
     labs = []
     for i, date in enumerate(observation_dates):
         labs.append({"code": "eGFR", "value": egfr_values[i], "unit": "mL/min/1.73m2", "date": date.isoformat()})
@@ -234,6 +238,10 @@ def engineer_progression_features(timeline: dict) -> dict:
     features = {}
     labs = timeline["labs"]
 
+    # Define the 12-month lookback cutoff up front. Used for recent slope
+    # calculations and medication change counts.
+    cutoff = (datetime.date.today() - datetime.timedelta(days=365)).isoformat()
+
     # --- Biomarker trajectory features ---
     for biomarker in CKD_BIOMARKERS:
         # Extract this biomarker's time series from the labs list.
@@ -256,7 +264,6 @@ def engineer_progression_features(timeline: dict) -> dict:
 
         # Recent slope: rate of change in the last 12 months only.
         # If recent slope is steeper than overall slope, the decline is accelerating.
-        cutoff = (datetime.date.today() - datetime.timedelta(days=365)).isoformat()
         recent = [(d, v) for d, v in zip(dates, values) if d >= cutoff]
         if len(recent) >= 2:
             recent_dates, recent_values = zip(*recent)
@@ -429,7 +436,10 @@ def train_progression_model(cohort_df: pd.DataFrame) -> CoxPHFitter:
     valid_predictions = cph.predict_partial_hazard(valid_df[feature_cols])
     c_index = concordance_index(
         valid_df["duration_months"],
-        -valid_predictions.values.flatten(),  # negative because higher hazard = shorter time
+        -valid_predictions.values.flatten(),
+        # Negate because concordance_index expects higher values to predict
+        # longer survival, but predict_partial_hazard returns higher values
+        # for higher risk (shorter survival). The negation aligns the scales.
         valid_df["event"],
     )
 
@@ -495,8 +505,11 @@ def predict_progression(model: CoxPHFitter, patient_features: dict, patient_id: 
         progression_prob = 1.0 - survival_prob
 
         # Confidence interval via bootstrap-like approach.
-        # In production, use the model's variance estimates or ensemble disagreement.
-        # Here we approximate with the model's standard errors.
+        # IMPORTANT: These intervals are purely illustrative placeholders.
+        # They do NOT reflect actual model uncertainty. In production, use
+        # cph.predict_survival_function with confidence intervals via the
+        # alpha parameter in lifelines, or bootstrap resampling, or ensemble
+        # disagreement across multiple trained models.
         # Wider intervals at longer horizons (uncertainty compounds over time).
         se_multiplier = 1.0 + (months / 36.0) * 0.5  # grows with horizon
         base_se = 0.08 * se_multiplier
@@ -551,7 +564,7 @@ def predict_progression(model: CoxPHFitter, patient_features: dict, patient_id: 
 
 ## Step 5: Store Predictions and Generate Alerts
 
-*The pseudocode calls this `integrate_and_monitor(prediction, patient_id)`. This stores the prediction in DynamoDB for low-latency clinical retrieval and checks whether the prediction crosses an actionable threshold.*
+*The pseudocode calls this `integrate_and_monitor(prediction, patient_id)`. This stores the prediction in DynamoDB for low-latency clinical retrieval and checks whether the prediction crosses an actionable threshold. Note: the monitoring function from the main recipe's pseudocode Step 5 is omitted here for brevity; see the main recipe for the calibration and drift detection pattern.*
 
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)

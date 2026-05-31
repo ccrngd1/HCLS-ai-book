@@ -70,6 +70,8 @@ There are several approaches to this:
 
 The honest answer: perfectly separating disease progression from treatment effects requires randomized trial data or very careful causal inference methodology. Most production systems take the pragmatic approach of conditioning on current treatment and being transparent about that assumption.
 
+<!-- TODO (TechWriter): Expert review A-5 (MEDIUM). Add a paragraph addressing the eGFR race coefficient issue (2021 CKD-EPI race-free equation) and recommend stratified model evaluation by race, sex, and age group. Reference the NKF/ASN Task Force recommendation. This is both a fairness concern and a data quality concern. -->
+
 ### Uncertainty Quantification
 
 This is non-negotiable for clinical use. A point prediction of "eGFR will be 38 in two years" is less useful (and potentially dangerous) than "eGFR will likely be between 32 and 44 in two years, with 80% confidence." Clinicians need to understand the range of possible futures, not just the most likely one.
@@ -159,9 +161,9 @@ flowchart TD
 | **AWS Services** | Amazon SageMaker, Amazon HealthLake, AWS Glue, Amazon S3, Amazon DynamoDB, AWS Step Functions, Amazon EventBridge, Amazon CloudWatch |
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `sagemaker:InvokeEndpoint`, `healthlake:SearchWithPost`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
 | **BAA** | Required. Longitudinal patient data is PHI. All services must be covered under your AWS BAA. |
-| **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest. HealthLake: encrypted by default. SageMaker: KMS encryption for training volumes and endpoint storage. All transit over TLS. |
-| **VPC** | Production: SageMaker training and endpoints in VPC. VPC endpoints for S3, DynamoDB, SageMaker Runtime, CloudWatch Logs. HealthLake accessed via VPC endpoint. |
-| **CloudTrail** | Enabled for all service API calls. Model inference calls logged for audit trail (who requested predictions for which patients). |
+| **Encryption** | S3: SSE-KMS for training data and model artifacts. DynamoDB: encryption at rest. HealthLake: encrypted by default. SageMaker: KMS encryption for training volumes and endpoint storage. All transit over TLS. Model artifacts should be treated as PHI-adjacent (they encode patterns learned from patient data) and stored in PHI-designated buckets with access logging via CloudTrail. |
+| **VPC** | Production: SageMaker training and endpoints in VPC. VPC endpoints for S3 (Gateway), DynamoDB (Gateway), HealthLake (Interface), SageMaker API (Interface), SageMaker Runtime (Interface), CloudWatch Logs (Interface), KMS (Interface), STS (Interface). Glue jobs must use VPC connections to access HealthLake via VPC endpoint rather than the public internet. All services should be deployed in the same AWS region to avoid cross-region data transfer charges on training data. |
+| **CloudTrail** | Enabled for all service API calls. Note: CloudTrail captures API call metadata (who, when, which endpoint) but not the patient identifier in inference request bodies. Implement application-level audit logging that records (patient_id, requesting_user, timestamp, prediction_version) to a separate CloudWatch Logs stream before invoking the SageMaker endpoint. |
 | **Sample Data** | Synthetic longitudinal patient data. MIMIC-IV provides realistic ICU temporal data. CMS Synthetic Public Use Files provide claims-based longitudinal records. Never use real patient data in development. |
 | **Cost Estimate** | SageMaker training: ~$50-200 per training run (ml.m5.xlarge, 2-8 hours). Endpoint: ~$150/month (ml.m5.large, always-on). HealthLake: ~$500/month (storage + queries). Glue: ~$50-100/month (scheduled ETL). Total: ~$2,500-8,000/month depending on scale and retraining frequency. |
 
@@ -190,11 +192,20 @@ flowchart TD
 
 **Step 1: Assemble longitudinal patient history.** The foundation of disease progression modeling is a complete temporal record for each patient. This step queries HealthLake (or your clinical data store) to retrieve all relevant observations, medications, conditions, and procedures for a patient cohort, organized by time. The key insight: you need not just the current values but the full history of how values changed over time. A single eGFR of 52 tells you almost nothing about trajectory. A sequence of [63, 58, 55, 52] over four years tells you the rate of decline. Skip this step or use only point-in-time snapshots, and your model has no temporal signal to learn from.
 
+<!-- TODO (TechWriter): Expert review S-1 (HIGH). FHIR queries below should be scoped to clinically relevant data categories only (specific LOINC codes for eGFR, creatinine, HbA1c, albumin, hemoglobin, potassium; relevant condition categories like renal, cardiovascular, endocrine, metabolic). Querying all patient data violates the Minimum Necessary standard (45 CFR 164.502(b)) and may violate 42 CFR Part 2 if substance abuse records are returned. Add LOINC code filters and a note about consulting your privacy officer regarding consent requirements before assembling longitudinal datasets. -->
+
 ```
 FUNCTION assemble_patient_timeline(patient_id, lookback_years):
-    // Query the clinical data store for this patient's full history.
+    // Query the clinical data store for this patient's history.
     // We need labs, vitals, medications, and diagnoses over the lookback period.
     // Each record includes a timestamp so we can reconstruct the timeline.
+    //
+    // IMPORTANT: Scope queries to clinically relevant data categories only.
+    // For CKD progression, retrieve specific LOINC codes (eGFR, creatinine,
+    // HbA1c, albumin, hemoglobin, potassium) and relevant condition categories
+    // (renal, cardiovascular, endocrine, metabolic). Do NOT query all patient
+    // data. The Minimum Necessary standard requires limiting access to what
+    // the model actually uses.
 
     start_date = today minus lookback_years
 
@@ -237,7 +248,12 @@ FUNCTION assemble_patient_timeline(patient_id, lookback_years):
 **Step 2: Engineer temporal features.** Raw timeline data isn't directly usable by most models. This step transforms the longitudinal record into features that capture the dynamics of disease progression. The most important features aren't the current values; they're the rates of change, the variability, and the treatment context. A patient with eGFR declining at 5 points per year is in a very different situation than one declining at 1 point per year, even if their current eGFR is identical. This step computes those dynamics. Skip it and your model sees only snapshots, missing the trajectory information that makes progression modeling valuable.
 
 ```
-FUNCTION engineer_progression_features(timeline):
+FUNCTION engineer_progression_features(timeline, cutoff_date):
+    // cutoff_date: the point in time from which we predict forward.
+    // CRITICAL: Only use data available at cutoff_date. Using future labs
+    // in feature computation is the #1 source of inflated metrics in
+    // progression modeling. Every value and date below must be <= cutoff_date.
+
     features = empty map
 
     // --- Biomarker trajectory features ---
@@ -245,7 +261,8 @@ FUNCTION engineer_progression_features(timeline):
     // compute rate of change, variability, and trend.
 
     FOR each biomarker in [eGFR, HbA1c, systolic_bp, creatinine, albumin]:
-        values = extract values for biomarker from timeline.labs, sorted by date
+        values = extract values for biomarker from timeline.labs
+                 where date <= cutoff_date, sorted by date
         dates  = extract corresponding dates
 
         IF length(values) >= 2:
@@ -253,9 +270,9 @@ FUNCTION engineer_progression_features(timeline):
             // Positive slope for eGFR = improving. Negative = declining.
             features[biomarker + "_slope_per_year"] = linear_regression_slope(dates, values)
 
-            // Recent slope (last 12 months) vs. overall slope.
+            // Recent slope (last 12 months before cutoff) vs. overall slope.
             // Acceleration or deceleration of decline matters clinically.
-            recent_values = values from last 12 months
+            recent_values = values from last 12 months before cutoff_date
             IF length(recent_values) >= 2:
                 features[biomarker + "_recent_slope"] = linear_regression_slope(
                     recent_dates, recent_values
@@ -269,15 +286,15 @@ FUNCTION engineer_progression_features(timeline):
             features[biomarker + "_current"] = last element of values
 
             // Time since last measurement (data freshness)
-            features[biomarker + "_days_since_last"] = days between last date and today
+            features[biomarker + "_days_since_last"] = days between last date and cutoff_date
 
     // --- Medication features ---
     // Encode current and historical medication exposure.
     // Which drug classes is the patient on? For how long?
 
-    features["ace_arb_duration_months"] = total months on ACE inhibitors or ARBs
-    features["diabetes_med_count"] = number of distinct diabetes medications active
-    features["medication_changes_12mo"] = count of medication starts/stops in last year
+    features["ace_arb_duration_months"] = total months on ACE inhibitors or ARBs as of cutoff_date
+    features["diabetes_med_count"] = number of distinct diabetes medications active at cutoff_date
+    features["medication_changes_12mo"] = count of medication starts/stops in 12 months before cutoff_date
     // Frequent medication changes often signal instability or treatment failure.
 
     // --- Comorbidity burden ---
@@ -289,9 +306,9 @@ FUNCTION engineer_progression_features(timeline):
 
     // --- Utilization features ---
     // Healthcare utilization patterns signal disease burden.
-    features["ed_visits_12mo"] = count ED visits in last 12 months
-    features["hospitalizations_12mo"] = count inpatient stays in last 12 months
-    features["nephrology_visits_12mo"] = count nephrology encounters in last 12 months
+    features["ed_visits_12mo"] = count ED visits in 12 months before cutoff_date
+    features["hospitalizations_12mo"] = count inpatient stays in 12 months before cutoff_date
+    features["nephrology_visits_12mo"] = count nephrology encounters in 12 months before cutoff_date
 
     // --- Demographics ---
     features["age"] = timeline.demographics.age
@@ -301,6 +318,8 @@ FUNCTION engineer_progression_features(timeline):
 ```
 
 **Step 3: Train the progression model.** This is where the ML happens. The model learns, from thousands of historical patient trajectories, the patterns that predict future disease states. The training data consists of patients with sufficient follow-up: you know their feature values at time T, and you know what happened to them by time T+horizon. The model learns to map features-at-time-T to outcomes-at-time-T+horizon. Critical choices here: the loss function must handle censoring (patients who haven't reached the endpoint yet), the validation must be temporal (train on earlier patients, validate on later ones to avoid leakage), and the output must include uncertainty (not just a point prediction). Skip proper censoring handling and your model will be systematically optimistic. Skip temporal validation and your reported accuracy will be inflated.
+
+**Important:** The implementation below uses the pragmatic approach: conditioning on current treatment as a feature. This means predictions are implicitly "given current treatment continues." The model does not answer counterfactual questions ("what if we stop the ACE inhibitor?"). For causal progression modeling, see the Counterfactual Treatment Simulation variation at the end of this recipe.
 
 ```
 FUNCTION train_progression_model(training_cohort, prediction_horizons):
@@ -321,6 +340,10 @@ FUNCTION train_progression_model(training_cohort, prediction_horizons):
     FOR each horizon in prediction_horizons:
         labels = []
         FOR each patient in train_set:
+            // Compute features using only data available at the patient's index date.
+            // The index date is the cutoff_date for feature engineering.
+            features = engineer_progression_features(patient.timeline, patient.index_date)
+
             IF patient reached milestone within horizon months:
                 label = { event: 1, time_to_event: actual time }
             ELSE IF patient has follow-up >= horizon months:
@@ -334,6 +357,11 @@ FUNCTION train_progression_model(training_cohort, prediction_horizons):
     // The loss function must handle censored observations correctly.
     // Use concordance index (C-index) as the primary evaluation metric:
     // it measures whether patients predicted to progress faster actually do.
+    //
+    // NOTE: This is observational prediction, not causal. Treatment features
+    // (ace_arb_duration_months, diabetes_med_count) are confounded with disease
+    // severity. The model predicts "what will happen given current treatment
+    // continues," not "what would happen if treatment changed."
 
     model = train survival model with:
         features    = feature matrix from train_set
@@ -352,6 +380,8 @@ FUNCTION train_progression_model(training_cohort, prediction_horizons):
 
     RETURN model, validation_metrics
 ```
+
+<!-- TODO (TechWriter): Expert review A-4 (MEDIUM). Add a note referencing published CKD progression models (e.g., the Kidney Failure Risk Equation by Tangri et al., which achieves C-statistics of 0.84-0.90 for 2-year and 5-year kidney failure prediction). Clarify that the recipe's benchmarks assume a general-purpose model predicting stage progression (a broader outcome than kidney failure specifically), which is inherently harder to discriminate than a binary endpoint. -->
 
 **Step 4: Generate individual patient predictions.** Given a trained model and a specific patient's current history, generate a predicted trajectory with uncertainty bounds. This is the inference step that runs in production. The output should communicate not just the most likely future but the range of plausible futures. A clinician needs to know: "Is this patient almost certainly going to progress, or is there meaningful uncertainty?" The prediction should also identify which factors are driving the trajectory (explainability), so the clinician can assess whether the model's reasoning aligns with their clinical judgment.
 
@@ -402,6 +432,8 @@ FUNCTION predict_progression(model, patient_features, horizons):
 
 **Step 5: Clinical integration and monitoring.** Predictions are useless if they don't reach clinicians at the right moment. This step stores predictions for low-latency retrieval, surfaces them in clinical workflows, and monitors model performance over time. The monitoring piece is critical: disease progression models degrade as treatment patterns change (new drugs become available), population demographics shift, and coding practices evolve. Without active monitoring, a model that was well-calibrated at deployment will silently become unreliable. Skip monitoring and you won't know your model is wrong until a clinician notices predictions that don't match reality.
 
+Note: The DynamoDB prediction cache must have access controls matching or exceeding the source clinical system, since SHAP explanations may contain specific lab values and medication names. Restrict table access to the clinical application's IAM role.
+
 ```
 FUNCTION integrate_and_monitor(prediction, patient_id):
     // Store the prediction for clinical retrieval.
@@ -409,8 +441,13 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
     write to prediction cache (DynamoDB):
         patient_id       = patient_id
         prediction       = prediction
-        ttl              = 30 days  // predictions expire; new data means new predictions
+        ttl              = 30 days  // cleanup mechanism for stale records
         generated_at     = now
+
+    // Event-driven refresh: when new lab results arrive (via EventBridge),
+    // trigger a re-prediction for this patient. The 30-day TTL is a safety
+    // net, not the primary freshness control. The clinical interface should
+    // display a warning when data_freshness is more than 14 days old.
 
     // Check if this prediction crosses an actionable threshold.
     // Example: >60% probability of progression within 12 months triggers an alert.
@@ -443,6 +480,10 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
 
         IF calibration_error > 0.10 OR current_c_index < 0.65:
             trigger alarm: "Model performance degraded. Retraining recommended."
+            // This CloudWatch alarm can trigger a Step Functions execution for
+            // automated retraining, but include a manual approval step before
+            // deploying a retrained model. Automated retraining without
+            // validation review is risky for clinical models.
             LOG "Calibration error: " + calibration_error + ", C-index: " + current_c_index
 ```
 
