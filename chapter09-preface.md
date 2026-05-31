@@ -1,4 +1,4 @@
-# Chapter 9 Preface — Teaching Machines to See What Doctors See
+# Chapter 9 Preface: Teaching Machines to See What Doctors See
 
 Radiology has a dirty secret: the bottleneck isn't the imaging equipment. MRI machines, CT scanners, digital X-ray systems. These are engineering marvels that produce exquisitely detailed images in seconds. The bottleneck is the human sitting in a dark room, scrolling through hundreds of slices, looking for the one subtle finding that changes a patient's treatment plan. And that human is exhausted, overworked, and reading more studies per day than the profession was designed for.
 
@@ -122,10 +122,10 @@ Let's start with the simplest pattern: making sure the image is good enough to u
 
 ---
 
-*→ [Recipe 9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment.md)*
+*→ [Recipe 9.1: Image Quality Assessment](chapter09.01-image-quality-assessment.md)*
 
 ## Further Reading
 
-- [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597) — the foundational architecture for medical image segmentation
-- [CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels](https://arxiv.org/abs/1901.07031) — one of the landmark public datasets for chest X-ray AI research
-- [FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device) — the regulatory framework for medical imaging AI
+- [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597). The foundational architecture for medical image segmentation.
+- [CheXpert: A Large Chest Radiograph Dataset with Uncertainty Labels](https://arxiv.org/abs/1901.07031). One of the landmark public datasets for chest X-ray AI research.
+- [FDA: Artificial Intelligence and Machine Learning in Software as a Medical Device](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device). The regulatory framework for medical imaging AI.
