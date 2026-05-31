@@ -187,7 +187,7 @@ The clinician's app uploads a wound photograph. Before we do anything expensive 
 
 If you skip this step, you'll waste inference costs on blurry photos, images without reference markers, and accidental screenshots of the clinician's home screen. For production deployments, consider adding an image quality assessment step here (see Recipe 9.1) to reject blurry or poorly-lit images before incurring inference costs.
 
-```
+```text
 FUNCTION validate_wound_image(image_bytes, metadata):
     // Check basic image properties
     image = decode_image(image_bytes)
@@ -223,7 +223,7 @@ The reference marker is how we convert pixels to centimeters. Without it, we hav
 
 If you skip this step, your "measurements" are just pixel counts with no physical meaning. They can't be compared across sessions taken at different distances.
 
-```
+```text
 FUNCTION detect_reference_marker(image):
     // Look for the calibration marker (e.g., a circular sticker of known diameter)
     // This could be a simple color/shape detection or a trained detector
@@ -255,7 +255,7 @@ This is where the ML model does its work. We send the image to our trained segme
 
 If you skip this step, you're back to manual tracing, which is what we're trying to replace.
 
-```
+```text
 FUNCTION segment_wound(image, sagemaker_endpoint):
     // Preprocess: resize to model's expected input size, normalize pixel values
     preprocessed = resize(image, target_size=(512, 512))
@@ -293,7 +293,7 @@ With the segmentation mask and the scale factor, we can compute clinically meani
 
 If you skip this step, you have a segmentation mask but no numbers for the clinical record.
 
-```
+```text
 FUNCTION compute_measurements(segmentation_mask, pixels_per_cm):
     // Count wound pixels to get area
     wound_pixel_count = count(segmentation_mask == True)
@@ -333,7 +333,7 @@ If you skip this step, you lose the longitudinal tracking that makes automated m
 
 The key design here: use `patient_id#wound_id` as the partition key and `timestamp` as the sort key. This makes per-wound timeline queries efficient (get all measurements for a specific wound, sorted by date) without needing to scan across unrelated wounds for the same patient. Application-layer authorization must verify that the requesting clinician has a care relationship with the patient before returning wound data.
 
-```
+```text
 FUNCTION store_measurement(patient_id, wound_id, measurements, metadata, image_key, mask_key):
     record = {
         "patient_wound_id": patient_id + "#" + wound_id,  // Partition key
