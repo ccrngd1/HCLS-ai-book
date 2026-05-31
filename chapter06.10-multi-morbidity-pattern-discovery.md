@@ -6,7 +6,7 @@
 
 ## The Problem
 
-A health system's population health team is staring at their top 5% utilizers. These patients have an average of 8.3 chronic conditions each. The care management team assigns them to disease-specific programs: the diabetes program, the heart failure program, the COPD program. Each program operates independently. Each generates its own care plan. The patient ends up with three care managers, conflicting medication recommendations, and a stack of appointments that would require quitting their job to attend.
+A health system's population health team is staring at their top 5% utilizers. These patients often have 6 to 8+ chronic conditions each. The care management team assigns them to disease-specific programs: the diabetes program, the heart failure program, the COPD program. Each program operates independently. Each generates its own care plan. The patient ends up with three care managers, conflicting medication recommendations, and a stack of appointments that would require quitting their job to attend.
 
 The problem isn't that these patients have multiple conditions. The problem is that we treat multi-morbidity as the sum of individual diseases rather than recognizing that certain combinations of conditions create emergent clinical patterns that behave differently from any single disease in isolation.
 
@@ -17,8 +17,6 @@ The clinical literature is full of known multi-morbidity clusters: the cardiomet
 That's multi-morbidity pattern discovery. You're mining a large patient population's diagnostic history to find clusters of conditions that travel together in clinically meaningful ways. Not just "these conditions co-occur" (that's basic association mining) but "these conditions co-occur, develop in a specific temporal sequence, share a patient phenotype, and predict a distinct clinical trajectory."
 
 The output isn't an academic paper (though it could become one). The output is actionable intelligence for care model design: which multi-morbidity patterns are prevalent enough to warrant dedicated care pathways, what the typical progression looks like, and which interventions work for the cluster rather than for any single condition within it.
-
-<!-- TODO (TechWriter): Verify statistic "8.3 chronic conditions" for top 5% utilizers. This is consistent with published literature (Barnett et al., The Lancet, 2012) but should be cited or softened to "often exceeding 6-8 chronic conditions." -->
 
 ---
 
@@ -100,7 +98,7 @@ The pipeline has five logical stages:
 [Data Extraction] → [Feature Engineering] → [Pattern Mining] → [Validation & Filtering] → [Clinical Interpretation]
 ```
 
-**Stage 1: Data Extraction.** Pull longitudinal diagnosis data for your population. You need patient ID, diagnosis code, date of first documentation, and ideally the encounter context (inpatient vs. outpatient, primary vs. secondary diagnosis). Minimum population size: 50,000 patients for pairwise analysis, 200,000+ for three-way combinations with adequate statistical power.
+**Stage 1: Data Extraction.** Pull longitudinal diagnosis data for your population. You need patient ID, diagnosis code, date of first documentation, and ideally the encounter context (inpatient vs. outpatient, primary vs. secondary diagnosis). Minimum population size: 50,000 patients for pairwise analysis, 200,000+ for three-way combinations. These minimums assume a minimum support threshold of 0.5% (250 patients at N=50,000) and a target of detecting lift >= 1.5 with 80% power after FDR correction. Smaller populations can detect high-lift patterns (lift >= 3.0) but will miss subtle associations. Larger populations (500,000+) enable four-way pattern discovery with reasonable power.
 
 **Stage 2: Feature Engineering.** Transform raw diagnosis codes into the representation your algorithms will consume. This includes: rolling up ICD-10 codes to an appropriate granularity level (CCS categories, clinical groupers, or custom hierarchies), constructing patient-condition matrices (binary or temporal), computing individual condition prevalences, and calculating expected co-occurrence rates under independence.
 
@@ -108,7 +106,7 @@ The pipeline has five logical stages:
 
 **Stage 4: Validation and Filtering.** Apply statistical filters (minimum support, minimum lift, FDR correction), adjust for confounders (age, sex, utilization), test stability (bootstrap resampling, temporal validation on held-out time periods), and rank remaining patterns by clinical relevance heuristics.
 
-**Stage 5: Clinical Interpretation.** Present filtered patterns to clinical experts for review. Clinicians assess: Is this pattern clinically coherent? Does it represent a known mechanism? Is it novel? Is it actionable? Would a dedicated care pathway for this pattern improve outcomes? This step cannot be automated. It's where the value is created.
+**Stage 5: Clinical Interpretation.** Present filtered patterns to clinical experts for review. Clinicians assess: Is this pattern clinically coherent? Does it represent a known mechanism? Is it novel? Is it actionable? Would a dedicated care pathway for this pattern improve outcomes? This step cannot be automated. It's where the value is created. Clinical review status is tracked alongside each validated pattern (in DynamoDB or as metadata in S3). Dashboards include a mechanism for clinicians to mark patterns as "confirmed," "rejected," or "needs investigation." Confirmed patterns feed into care pathway design. Rejected patterns are excluded from future reporting. Design this feedback loop with your clinical informatics team before the first pipeline run.
 
 ---
 
@@ -116,17 +114,17 @@ The pipeline has five logical stages:
 
 ### Why These Services
 
-**Amazon SageMaker** for the compute-intensive pattern mining and network analysis. Association rule mining on 200,000+ patients with 280 condition categories requires significant memory and compute. SageMaker Processing Jobs provide managed infrastructure that scales to the data size, runs the job, and shuts down. No persistent cluster to manage. For iterative exploration, SageMaker Studio notebooks let data scientists experiment with different parameters interactively.
+**Amazon SageMaker** for the compute-intensive pattern mining and network analysis. Association rule mining on 200,000+ patients with 280 condition categories requires significant memory and compute. SageMaker Processing Jobs provide managed infrastructure that scales to the data size, runs the job, and shuts down. No persistent cluster to manage. For iterative exploration, SageMaker Studio notebooks let data scientists experiment with different parameters interactively. Processing Jobs should use a custom Docker image with all dependencies pre-installed (networkx, scipy, pandas, mlxtend). Do not rely on runtime `pip install`, which requires internet access unavailable in a VPC-deployed Processing Job without NAT Gateway.
 
 **Amazon S3** as the data lake for all intermediate and final outputs. Raw diagnosis extracts, feature matrices, candidate patterns, filtered results, and clinical review outputs all live in S3. Versioning tracks how results change as parameters are tuned. Lifecycle policies manage storage costs for intermediate artifacts.
 
 **AWS Glue** for the ETL pipeline that transforms raw EHR extracts into the patient-condition matrices the algorithms consume. Glue handles the ICD-10 rollup logic, prevalence calculations, and temporal feature construction at scale. Spark-based processing handles the large joins efficiently.
 
-**Amazon Neptune** for the comorbidity network representation. Neptune is a managed graph database that stores conditions as nodes and co-occurrence relationships as edges. Graph queries (community detection, centrality, path analysis) run natively. The network can be updated incrementally as new data arrives without rebuilding from scratch.
+**Amazon Neptune** for the comorbidity network representation. Neptune Database stores conditions as nodes and co-occurrence relationships as edges. Note that community detection algorithms (Louvain, Leiden) are not native Gremlin traversal steps. Community detection runs in the SageMaker Processing Job using a graph library (networkx or igraph) after extracting the adjacency list from Neptune. Neptune stores the results (community labels as node properties) for subsequent queries and interactive exploration. The network can be updated incrementally as new data arrives without rebuilding from scratch.
 
-**Amazon Athena** for ad-hoc exploration of intermediate results. When a data scientist wants to quickly check "how many patients have this three-condition combination?" or "what's the age distribution of patients in this cluster?", Athena queries S3 directly without loading data into a separate system.
+**Amazon Athena** for ad-hoc exploration of intermediate results. When a data scientist wants to quickly check "how many patients have this three-condition combination?" or "what's the age distribution of patients in this cluster?", Athena queries S3 directly without loading data into a separate system. Configure a dedicated Athena workgroup for this pipeline with a KMS-encrypted results bucket that has the same access controls as the source data. Do not use the default Athena results bucket. Set result retention (S3 lifecycle) to 7 days to minimize PHI persistence in query results.
 
-**Amazon QuickSight** for visualization dashboards that present results to clinical stakeholders. Network visualizations, temporal progression charts, and pattern prevalence summaries need to be accessible to non-technical clinical leaders.
+**Amazon QuickSight** (Enterprise edition) for visualization dashboards that present results to clinical stakeholders. Network visualizations, temporal progression charts, and pattern prevalence summaries need to be accessible to non-technical clinical leaders. If dashboards allow drill-down to patient-level data, use row-level security to restrict access to authorized clinical users via QuickSight groups mapped to your identity provider. Enable QuickSight audit logging. If dashboards display only aggregate pattern statistics (patient counts, prevalence, lift) without patient-level drill-down, PHI exposure risk is minimal, but confirm with your privacy officer. QuickSight reads validated pattern data from S3 and does not query Neptune directly.
 
 ### Architecture Diagram
 
@@ -154,25 +152,25 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Neptune, Amazon Athena, Amazon QuickSight, AWS KMS |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `neptune-db:*` (scoped to cluster), `athena:StartQueryExecution`, `quicksight:CreateAnalysis`. Scope all permissions to specific resource ARNs. |
-| **BAA** | Required. Diagnosis histories are PHI. All services must be covered under your AWS BAA. |
-| **Encryption** | S3: SSE-KMS for all buckets. Neptune: encryption at rest enabled at cluster creation (cannot be added later). SageMaker: KMS-encrypted processing volumes. All transit over TLS. |
-| **VPC** | Production: SageMaker, Glue, and Neptune in VPC with VPC endpoints for S3, CloudWatch Logs. Neptune requires VPC deployment (no public endpoint option). |
-| **CloudTrail** | Enabled for all API calls. PHI data access must be auditable. |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Neptune, Amazon Athena, Amazon QuickSight (Enterprise), AWS KMS |
+| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN), `athena:StartQueryExecution`, `quicksight:CreateAnalysis`. Separate write roles (network construction) from read roles (dashboards, federated queries). Never grant `neptune-db:DeleteDataViaQuery` or `neptune-db:ResetDatabase` to pipeline roles. Scope all permissions to specific resource ARNs. |
+| **BAA** | Required. Diagnosis histories are PHI. All services (including QuickSight Enterprise) must be covered under your AWS BAA. |
+| **Encryption** | S3: SSE-KMS for all buckets (including Athena results bucket). Neptune: encryption at rest enabled at cluster creation (cannot be added later). SageMaker: KMS-encrypted processing volumes (`ProcessingResources.ClusterConfig.VolumeKmsKeyId`). All transit over TLS. |
+| **VPC** | Production: SageMaker, Glue, and Neptune in VPC. VPC endpoints required: S3 (Gateway), CloudWatch Logs (Interface), KMS (Interface), SageMaker API (Interface), SageMaker Runtime (Interface), Athena (Interface), Glue (Interface). Neptune is deployed within the VPC by default (no public endpoint option). Glue jobs connecting to Neptune must run in the same VPC with security group rules allowing port 8182 access to the Neptune cluster. Neptune security group: allow inbound TCP 8182 from SageMaker Processing Job security group, Glue job security group only. Deny all other inbound. |
+| **CloudTrail** | Management events enabled (default). S3 data events enabled for all PHI-containing buckets (raw-diagnoses/, feature-store/, candidate-patterns/, validated-patterns/). Data events are not enabled by default and must be configured explicitly. Cost: ~$0.10 per 100,000 events. |
 | **Sample Data** | CMS Synthetic Public Use Files (SynPUFs) provide realistic Medicare claims data with diagnosis codes. MIMIC-IV contains diagnosis histories for ICU patients. Never use real patient data in development. |
-| **Cost Estimate** | Glue ETL: ~$0.44/DPU-hour (typically 2-4 DPU for 2-3 hours). SageMaker Processing: ~$0.25/hour (ml.m5.4xlarge) for 4-8 hours per run. Neptune: ~$0.35/hour (db.r5.large) persistent. Athena: $5/TB scanned. Total per analysis run: $50-$200 depending on population size. |
+| **Cost Estimate** | Glue ETL: ~$0.44/DPU-hour (typically 2-4 DPU for 2-3 hours). SageMaker Processing: ~$0.25/hour (ml.m5.4xlarge) for 4-8 hours per run. Neptune: ~$0.70/hour (db.r5.large primary + one reader replica) for production HA, or ~$0.35/hour (single instance) for research/development. For networks under 10,000 nodes, consider a simpler alternative: store the graph as a JSON adjacency list in S3, run algorithms in SageMaker, and skip the persistent Neptune cost. Athena: $5/TB scanned. Total per analysis run: $50-$200 depending on population size (excluding persistent Neptune). |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon SageMaker** | Runs association mining, sequential pattern mining, and statistical validation as Processing Jobs |
-| **Amazon S3** | Data lake for diagnosis extracts, feature matrices, and pattern results |
+| **Amazon SageMaker** | Runs association mining, sequential pattern mining, community detection, and statistical validation as Processing Jobs (custom container with pre-installed dependencies) |
+| **Amazon S3** | Data lake for diagnosis extracts, feature matrices, pattern results, and Athena query results |
 | **AWS Glue** | ETL for ICD-10 rollup, feature engineering, and patient-condition matrix construction |
-| **Amazon Neptune** | Graph database for comorbidity network storage and community detection queries |
-| **Amazon Athena** | Ad-hoc SQL queries over intermediate results in S3 |
-| **Amazon QuickSight** | Visualization dashboards for clinical stakeholder review |
+| **Amazon Neptune** | Graph database for comorbidity network storage and interactive exploration queries |
+| **Amazon Athena** | Ad-hoc SQL queries over intermediate results in S3 (dedicated workgroup with encrypted results bucket) |
+| **Amazon QuickSight** | Enterprise edition visualization dashboards with row-level security for clinical stakeholder review |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Pipeline monitoring, job duration tracking, error alerting |
 
@@ -257,7 +255,7 @@ FUNCTION build_matrix_and_baselines(rolled_up_diagnoses, min_prevalence = 0.01):
     RETURN matrix, prevalences, expected_pairs, active_categories
 ```
 
-**Step 3: Association rule mining.** Apply the Apriori algorithm (or FP-Growth for better performance on large datasets) to find condition combinations with support above the minimum threshold. Then compute lift, confidence, and leverage for each discovered pattern. The minimum support threshold is a critical parameter: too low and you get millions of spurious patterns; too high and you miss clinically important but less common combinations. For a population of 200,000 patients, a minimum support of 0.5% (1,000 patients) is a reasonable starting point for pairwise patterns, with higher thresholds for three-way and four-way combinations.
+**Step 3: Association rule mining.** Apply FP-Growth to find condition combinations with support above the minimum threshold. Then compute lift, confidence, and leverage for each discovered pattern. FP-Growth is preferred over Apriori for this workload because it builds a compressed representation of the dataset (the FP-tree) that avoids repeated database scans. For 200,000 patients with 285 categories, the FP-tree fits comfortably in memory on an ml.m5.4xlarge instance (64 GB RAM). Apriori would also work at this scale but requires more passes over the data. The minimum support threshold is a critical parameter: too low and you get millions of spurious patterns; too high and you miss clinically important but less common combinations. For a population of 200,000 patients, a minimum support of 0.5% (1,000 patients) is a reasonable starting point for pairwise patterns, with higher thresholds for three-way and four-way combinations.
 
 ```
 FUNCTION mine_association_rules(matrix, prevalences, active_categories,
@@ -356,7 +354,7 @@ FUNCTION analyze_temporal_sequences(top_patterns, rolled_up_diagnoses, min_patie
     RETURN temporal_results
 ```
 
-**Step 5: Network construction and community detection.** Build a comorbidity network where conditions are nodes and edges represent statistically significant co-occurrence (lift > threshold, FDR-corrected p-value < 0.05). Apply community detection to identify clusters of tightly connected conditions. These communities represent multi-morbidity "neighborhoods" that may share underlying mechanisms. Store the network in a graph database for interactive exploration and incremental updates.
+**Step 5: Network construction and community detection.** Build a comorbidity network where conditions are nodes and edges represent statistically significant co-occurrence (lift > threshold, FDR-corrected p-value < 0.05). Apply community detection to identify clusters of tightly connected conditions. These communities represent multi-morbidity "neighborhoods" that may share underlying mechanisms. Community detection (Louvain algorithm) runs in the SageMaker Processing Job using networkx or igraph after extracting the adjacency list. Results (community labels) are written back to Neptune as node properties for interactive exploration.
 
 ```
 FUNCTION build_comorbidity_network(patterns, prevalences, fdr_threshold = 0.05, min_lift = 1.5):
@@ -409,7 +407,7 @@ FUNCTION build_comorbidity_network(patterns, prevalences, fdr_threshold = 0.05, 
     RETURN graph, communities
 ```
 
-**Step 6: Statistical validation and confounder adjustment.** Apply rigorous statistical filters to separate genuine multi-morbidity patterns from artifacts of age, sex, healthcare utilization, or multiple testing. This step is what separates research-grade discovery from noise. Patterns that survive validation are genuinely surprising given the population's demographics and utilization patterns. Patterns that don't survive were likely driven by confounders rather than true clinical associations.
+**Step 6: Statistical validation and confounder adjustment.** Apply rigorous statistical filters to separate genuine multi-morbidity patterns from artifacts of age, sex, healthcare utilization, or multiple testing. This step is what separates research-grade discovery from noise. Patterns that survive validation are genuinely surprising given the population's demographics and utilization patterns. Patterns that don't survive were likely driven by confounders rather than true clinical associations. Note: bootstrap resamples are computed in-memory and not persisted to disk. Ensure the SageMaker Processing Job uses an encrypted volume (configured via `ProcessingResources.ClusterConfig.VolumeKmsKeyId`) in case the algorithm spills to local storage during large-population resampling.
 
 ```
 FUNCTION validate_patterns(patterns, patient_demographics, min_lift_adjusted = 1.3):
@@ -569,8 +567,6 @@ Once patterns are discovered and validated, build a real-time scoring system tha
 - [Amazon QuickSight Visualizations](https://docs.aws.amazon.com/quicksight/latest/user/working-with-visuals.html) - Building interactive dashboards
 
 ### AWS Sample Repos
-
-<!-- TODO (TechWriter): Verify these repos exist before final publication. Search aws-samples for Neptune analytics, SageMaker processing, and healthcare-related examples. -->
 
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples) - Neptune graph database examples including graph analytics patterns
 - [`amazon-sagemaker-examples`](https://github.com/aws-samples/amazon-sagemaker-examples) - SageMaker examples including processing jobs and custom algorithms
