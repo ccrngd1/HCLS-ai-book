@@ -1,6 +1,6 @@
 # Recipe 6.2: Utilization Pattern Segmentation (Python Example)
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.2. It shows one way you could translate utilization pattern segmentation concepts into working Python code. It is not production-ready. There's no error handling, no retry logic, no input validation. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy against your entire member population on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 6.2. It shows one way you could translate utilization pattern segmentation concepts into working Python code. It is not production-ready. There is no error handling, no retry logic, no input validation. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy against your entire member population on Monday morning. Consider it a starting point, not a destination.
 >
 > One important note on the data: this example generates synthetic utilization data so you can run it without access to a real claims warehouse. The patterns are realistic (modeled after typical commercial health plan distributions), but the numbers are made up. In production, you'd pull this from your claims data lake or EDW.
 
@@ -20,7 +20,7 @@ Your environment needs credentials configured (via environment variables, an ins
 - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing segment profiles and member assignments)
 - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
 
-> **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints for S3 and DynamoDB. See the Gap to Production section at the end for the full list of production requirements.
+> **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints (free, route-table based) for S3 and DynamoDB. Use an Interface endpoint for CloudWatch Logs. See the Gap to Production section at the end for the full list of production requirements.
 
 ---
 
@@ -631,9 +631,11 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 **Incremental updates.** This pipeline re-segments the entire population on every run. For 2 million members, that's fine (KMeans on 2M x 8 features takes seconds on a SageMaker Processing instance). But if you need real-time segment assignment for new members, you'd save the fitted KMeans model and scaler, then predict the segment for individual members as they enroll. Scikit-learn's `kmeans.predict()` does this in microseconds.
 
-**VPC and encryption.** This example makes API calls without VPC configuration. A production pipeline handling member utilization data (which is PHI under HIPAA) runs inside a VPC with private subnets and Gateway endpoints for S3 and DynamoDB (free, route-table based). S3 objects are encrypted with a KMS customer-managed key (specify `SSEKMSKeyId` in the `put_object` call). DynamoDB encryption at rest is enabled by default. All API calls travel over TLS.
+**VPC and encryption.** This example makes API calls without VPC configuration. A production pipeline handling member utilization data (which is PHI under HIPAA) runs inside a VPC with private subnets and Gateway endpoints for S3 and DynamoDB (free, route-table based; no Interface endpoints needed for this batch pattern). Use an Interface endpoint for CloudWatch Logs. S3 objects are encrypted with a KMS customer-managed key (specify `SSEKMSKeyId` in the `put_object` call for key rotation control and cross-account access policies). DynamoDB encryption at rest is enabled by default. All API calls travel over TLS.
 
 **Bias and equity.** Utilization-based segmentation can encode existing access disparities. Members in underserved areas may appear "healthy" (low utilization) when they're actually unable to access care. Production systems cross-reference segments with social determinant data and flag populations where low utilization might indicate access barriers rather than good health. This is not just an ethical concern; it's a clinical accuracy concern.
+
+**Access control.** The DynamoDB table stores member IDs alongside utilization metrics, which constitutes PHI. In production, scope IAM policies to the minimum set of roles that need segment lookups. Consider using opaque surrogate keys rather than direct member identifiers if downstream consumers don't need the original ID. Classify the table as PHI-containing in your data catalog and apply appropriate retention policies.
 
 **Testing.** There are no tests here. A production pipeline has unit tests for feature engineering (does clipping work correctly at boundaries?), integration tests for the full pipeline with known synthetic data (do you get the expected number of clusters?), and regression tests that verify segment stability across code changes.
 
