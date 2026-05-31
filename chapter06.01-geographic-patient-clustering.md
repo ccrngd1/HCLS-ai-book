@@ -14,7 +14,7 @@ The same geographic clustering problem shows up in community health assessment (
 
 The data is sitting right there in the EHR: patient addresses, visit histories, diagnoses. The challenge isn't getting the data. It's turning 200,000 individual addresses into actionable geographic intelligence that a VP of Strategy can use to make a $40 million facility decision.
 
-Let's talk about how geographic clustering actually works.
+Here's how you turn 200,000 addresses into something a VP of Strategy can actually use.
 
 ---
 
@@ -96,17 +96,19 @@ Generic geographic clustering (where should we put a Starbucks?) differs from he
 
 ### Why These Services
 
-**Amazon Location Service for geocoding.** Location Service provides a managed geocoding API that converts addresses to coordinates without requiring you to run your own geocoding infrastructure. It supports batch geocoding (important when you're processing 200,000 addresses), returns confidence scores, and operates within the AWS compliance boundary. For HIPAA workloads, this matters: you're not sending patient addresses to a third-party API outside your BAA coverage.
+**Amazon Location Service for geocoding.** Location Service provides a managed geocoding API that converts addresses to coordinates without requiring you to run your own geocoding infrastructure. It supports high-throughput geocoding (important when you're processing 200,000 addresses), returns confidence scores, and operates within the AWS compliance boundary. Before sending patient addresses to Location Service, verify that it appears on the current [AWS HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). The eligible services list is updated periodically; check at implementation time. If Location Service is not listed when you implement, geocode using a self-hosted solution (e.g., Pelias or Nominatim on EC2 within your VPC) or use a geocoding provider with whom you have a BAA.
 
 **Amazon S3 for data storage.** Patient address extracts, geocoded coordinates, and cluster results all need durable, encrypted storage. S3 with SSE-KMS provides the encryption at rest, and S3's integration with every other AWS service makes it the natural data lake layer.
 
 **AWS Lambda for orchestration and clustering logic.** The geocoding and clustering steps are batch workloads that run periodically (weekly or monthly refresh). Lambda handles the orchestration: trigger the geocoding batch, run the clustering algorithm, write results. For datasets under ~500,000 points, the clustering algorithm itself runs comfortably within Lambda's memory and timeout limits.
 
-**Amazon SageMaker for large-scale clustering.** If your patient population exceeds what Lambda can handle in memory (roughly 500K+ points with enrichment data), SageMaker provides managed compute for running scikit-learn or custom clustering jobs. SageMaker Processing Jobs give you ephemeral compute that spins up, runs the algorithm, writes results to S3, and shuts down.
+<!-- TODO (TechWriter): Expert review ARCH-1 (MEDIUM). Add note recommending Step Functions Map state for orchestrating geocoding batches over 50K addresses to avoid Lambda timeout risk. -->
+
+**Amazon SageMaker for large-scale clustering.** If your patient population exceeds what Lambda can handle in memory (roughly 500K+ points with enrichment data), SageMaker provides managed compute for running scikit-learn or custom clustering jobs. SageMaker Processing Jobs give you ephemeral compute that spins up, runs the algorithm, writes results to S3, and shuts down. For datasets exceeding 500K points or requiring GPU-accelerated HDBSCAN, replace the clustering Lambda with a SageMaker Processing Job. The job reads from the same S3 geocoded/ prefix, runs the same algorithm, and writes to the same cluster-results/ prefix. The only difference is compute: SageMaker provides instances with more memory and optional GPU. Use the `sklearn` container or bring your own.
 
 **Amazon QuickSight for visualization.** QuickSight supports geospatial visualizations (point maps, filled maps, heat maps) and connects directly to S3 or Athena. For the "show me where the clusters are" question that executives ask, QuickSight delivers without requiring a custom mapping application.
 
-**Amazon DynamoDB for cluster metadata.** Once clusters are computed, downstream systems need fast lookups: "which cluster does this patient belong to?" or "what are the characteristics of cluster 7?" DynamoDB provides single-digit-millisecond reads for these access patterns.
+**Amazon DynamoDB for cluster metadata.** Once clusters are computed, downstream systems need fast lookups: "which cluster does this patient belong to?" or "what are the characteristics of cluster 7?" DynamoDB provides single-digit-millisecond reads for these access patterns. Restrict DynamoDB access to the cluster-results tables using IAM policies scoped to specific roles (the pipeline write role and the dashboard read role). Use an opaque patient identifier (not MRN) as the partition key; maintain the MRN mapping in a separate, more tightly controlled identity service. The patient-clusters table contains home location data for your entire active population; treat it as a high-sensitivity asset.
 
 ### Architecture Diagram
 
@@ -114,7 +116,7 @@ Generic geographic clustering (where should we put a Starbucks?) differs from he
 flowchart TD
     A[EHR / Enrollment System] -->|Address Extract| B[S3 Bucket\nraw-addresses/]
     B -->|Batch Trigger| C[Lambda\ngeocoder]
-    C -->|Batch Geocode| D[Amazon Location Service]
+    C -->|Per-Address Geocode| D[Amazon Location Service]
     D -->|Coordinates| C
     C -->|Write| E[S3 Bucket\ngeocoded/]
     E -->|Trigger| F[Lambda or SageMaker\nclustering-engine]
@@ -133,10 +135,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Location Service, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon QuickSight (optional), Amazon SageMaker (for large datasets) |
-| **IAM Permissions** | `geo:SearchPlaceIndexForText`, `geo:BatchSearchPlaceIndexForText` (Location Service is the newer name; the API actions use `geo:`), `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query` |
-| **BAA** | Required. Patient addresses are PHI. Geocoded coordinates derived from addresses are PHI. |
+| **IAM Permissions** | Geocoding Lambda: `geo:SearchPlaceIndexForText`, `s3:GetObject` (raw-addresses), `s3:PutObject` (geocoded), `kms:Decrypt`, `kms:GenerateDataKey`, CloudWatch Logs. Clustering Lambda/SageMaker: `s3:GetObject` (geocoded), `s3:PutObject` (cluster-results), `dynamodb:PutItem`, `kms:Decrypt`, `kms:GenerateDataKey`, CloudWatch Logs. Dashboard role: `dynamodb:Query`, `s3:GetObject` (cluster-results). |
+| **BAA** | Required. Patient addresses are PHI. Geocoded coordinates derived from addresses are PHI. Verify Amazon Location Service appears on the [HIPAA Eligible Services list](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) before sending patient addresses. |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda environment variables encrypted with KMS; all transit over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. Location Service calls go over the public endpoint (no VPC endpoint available as of early 2026; use a NAT Gateway). |
+| **VPC** | Production: Lambda in VPC with S3 and DynamoDB Gateway endpoints (free, no per-GB charge) and Interface endpoints for CloudWatch Logs. Location Service calls go over the public endpoint (no VPC endpoint available as of early 2026; use a NAT Gateway). Data is TLS-encrypted in transit. Document this data flow in your HIPAA risk assessment. If your compliance posture requires all PHI to remain within private network paths, consider self-hosted geocoding (Pelias on EC2 within your VPC). |
 | **CloudTrail** | Enabled: log all Location Service and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic patient addresses. Use Census Bureau TIGER/Line files for realistic geographic distributions. Never use real patient addresses in dev. |
 | **Cost Estimate** | Location Service geocoding: ~$0.50 per 1,000 requests. For 200,000 patients: ~$100 one-time, then incremental for new patients. Lambda and DynamoDB costs negligible at this scale. |
@@ -193,43 +195,42 @@ FUNCTION extract_patient_addresses(source_connection):
     RETURN cleaned
 ```
 
-**Step 2: Geocode addresses to coordinates.** This is where text addresses become plottable points. The geocoding service takes a street address and returns a latitude/longitude pair with a confidence score. Batch processing is critical here: geocoding 200,000 addresses one at a time would take hours and cost the same as doing it in batches of 50. The confidence score matters because a low-confidence geocode (the service guessed at the location) can place a patient miles from their actual home, distorting your clusters. We set a threshold and route low-confidence results to a "needs review" bucket rather than silently including bad coordinates.
+**Step 2: Geocode addresses to coordinates.** This is where text addresses become plottable points. The geocoding service takes a street address and returns a latitude/longitude pair with a confidence score. We process addresses in client-side batches for throughput management (controlling concurrency and rate limiting), but each address is geocoded individually. The confidence score matters because a low-confidence geocode (the service guessed at the location) can place a patient miles from their actual home, distorting your clusters. We set a threshold and route low-confidence results to a "needs review" bucket rather than silently including bad coordinates.
 
 ```
 GEOCODE_CONFIDENCE_THRESHOLD = 0.85  // below this, the coordinate is too uncertain to trust
 
 FUNCTION geocode_addresses(records, place_index_name):
-    // Process addresses in batches. Most geocoding APIs support batch calls
-    // that are both faster and cheaper than individual requests.
+    // Process addresses in client-side batches for rate limiting and progress tracking.
+    // Amazon Location Service geocodes one address per API call (SearchPlaceIndexForText).
+    // We group into batches of 50 for concurrency control, not because there's a batch API.
     geocoded = empty list
     failed = empty list
-    batch_size = 50  // Amazon Location Service batch limit
+    batch_size = 50  // process this many before logging progress
 
     FOR each batch of batch_size records:
-        // Build the batch request: one address string per record.
-        address_strings = []
         FOR each record in batch:
-            // Concatenate address components into a single search string.
+            // Build the search string from address components.
             full_address = "{record.address_line_1}, {record.city}, {record.state} {record.zip_code}"
-            append full_address to address_strings
 
-        // Call the geocoding service with the full batch.
-        results = call LocationService.BatchSearchPlaceIndex with:
-            index_name = place_index_name
-            addresses  = address_strings
+            // Call the geocoding service for this address.
+            result = call LocationService.SearchPlaceIndexForText with:
+                index_name = place_index_name
+                text       = full_address
+                max_results = 1
 
-        // Process each result: check confidence, extract coordinates.
-        FOR each result, original_record in zip(results, batch):
-            IF result.confidence >= GEOCODE_CONFIDENCE_THRESHOLD:
-                original_record.latitude  = result.latitude
-                original_record.longitude = result.longitude
-                original_record.geocode_confidence = result.confidence
-                append original_record to geocoded
+            IF result is not empty AND result.confidence >= GEOCODE_CONFIDENCE_THRESHOLD:
+                record.latitude  = result.latitude
+                record.longitude = result.longitude
+                record.geocode_confidence = result.confidence
+                append record to geocoded
             ELSE:
-                // Low confidence: maybe a partial match, ambiguous address, or rural route.
-                original_record.geocode_confidence = result.confidence
-                original_record.geocode_failure_reason = "low_confidence"
-                append original_record to failed
+                // Low confidence or no result: ambiguous address, rural route, etc.
+                record.geocode_confidence = result.confidence IF result exists ELSE 0
+                record.geocode_failure_reason = "low_confidence"
+                append record to failed
+
+        LOG "Progress: geocoded {length of geocoded} so far..."
 
     LOG "Geocoded {length of geocoded} successfully. {length of failed} below confidence threshold."
     RETURN geocoded, failed
@@ -351,10 +352,15 @@ FUNCTION enrich_clusters(clustered_records, num_clusters):
 
 **Step 6: Store results and serve downstream.** The final step persists both the per-patient cluster assignments (so any system can look up "which cluster is this patient in?") and the cluster-level metadata (so dashboards and reports can display cluster characteristics). Writing to both a fast-lookup store (DynamoDB) and a bulk-query store (S3/Athena) covers both access patterns: real-time lookups and analytical queries.
 
+Table design: the `patient-clusters` table uses `patient_id` (string, opaque identifier) as the partition key. The `cluster-metadata` table uses `cluster_id` (number) as the partition key. No sort keys needed for point lookups. If you need "list all patients in cluster X," add a GSI on `cluster_id` to the patient-clusters table, but be aware this enables bulk enumeration of patient locations by cluster.
+
+<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add S3 lifecycle policy recommendation: retain current and previous snapshot, expire older snapshots after 6-12 months. Each snapshot contains PHI; minimizing retained copies reduces exposure surface. -->
+
 ```
 FUNCTION store_results(clustered_records, cluster_metadata):
     // Write per-patient assignments to DynamoDB for fast point lookups.
     // Use case: "Which cluster does patient X belong to?"
+    // Table: patient-clusters, partition key: patient_id (opaque, not MRN)
     FOR each record in clustered_records:
         write to DynamoDB table "patient-clusters":
             patient_id   = record.patient_id
@@ -364,6 +370,7 @@ FUNCTION store_results(clustered_records, cluster_metadata):
             computed_at  = current UTC timestamp (ISO 8601)
 
     // Write cluster metadata to DynamoDB for dashboard and API access.
+    // Table: cluster-metadata, partition key: cluster_id
     FOR each cluster_id, metadata in cluster_metadata:
         write to DynamoDB table "cluster-metadata":
             cluster_id   = cluster_id
@@ -409,10 +416,10 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Geocoding throughput | ~1,000 addresses/second (batch) |
+| Geocoding throughput | ~50-100 addresses/second (per-address API calls with concurrency) |
 | Geocoding accuracy | 90-95% high-confidence matches |
 | Clustering time (200K points) | 15-45 seconds |
-| End-to-end pipeline (200K patients) | 10-20 minutes |
+| End-to-end pipeline (200K patients) | 30-60 minutes (dominated by geocoding) |
 | Cost per full run (200K patients) | ~$100-150 (dominated by geocoding) |
 | Incremental cost (new patients only) | ~$0.50 per 1,000 new addresses |
 
@@ -435,7 +442,9 @@ The parameter tuning is where I've seen teams get stuck. DBSCAN's epsilon and mi
 
 The geocoding quality issue surprised me more than I expected. In one project, 22% of addresses failed to geocode at high confidence. Most were rural routes, PO Boxes, and addresses with typos. That 22% wasn't randomly distributed. It was concentrated in exactly the underserved areas we were trying to analyze. The analysis was systematically blind to the populations that needed it most. We ended up running a separate process to estimate locations for failed geocodes using ZIP code centroids, which is imprecise but better than exclusion.
 
-One more thing: don't forget that clusters change. Run this quarterly, not once. Patient populations shift, new developments open, employers relocate. A cluster analysis from January that drives a facility decision in December is working with stale data.
+One more thing: don't forget that clusters change. Run this quarterly, not once. Patient populations shift, new developments open, employers relocate. A cluster analysis from January that drives a facility decision in December is working with stale data. For ongoing operations, maintain a change-data-capture feed from your EHR. Track address changes by comparing the current extract against the previous run's input. Only geocode new or changed addresses. This reduces geocoding costs from ~$100/run to ~$5-10/run for typical monthly patient churn (2-5% address changes).
+
+<!-- TODO (TechWriter): Expert review ARCH-2 (MEDIUM). Consider expanding the incremental processing paragraph above into a more detailed architectural pattern showing how to identify new/changed addresses and merge incremental geocoding results with existing data. -->
 
 ---
 
@@ -454,7 +463,7 @@ One more thing: don't forget that clusters change. Run this quarterly, not once.
 - **Recipe 5.3 (Address Standardization and Household Linkage):** Handles the address normalization and deduplication that feeds clean data into this recipe's geocoding step
 - **Recipe 6.2 (Utilization Pattern Segmentation):** Segments patients by behavior; combine with geographic clusters for "where do high-utilizers live?" analysis
 - **Recipe 7.1 (Readmission Risk Scoring):** Risk scores can enrich geographic clusters to identify high-risk neighborhoods
-- **Recipe 14.1 (TODO: confirm recipe number for facility location optimization):** Uses cluster output as input for mathematical optimization of facility placement
+- **Recipe 14.3 (Facility Location Optimization):** Uses cluster output as input for mathematical optimization of facility placement
 
 ---
 
