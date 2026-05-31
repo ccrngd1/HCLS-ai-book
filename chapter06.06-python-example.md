@@ -311,6 +311,10 @@ def find_similar_patients(
             continue
 
         # Stop if we've exceeded the distance threshold.
+        # kneighbors() returns results sorted by distance ascending, so once
+        # we exceed the threshold, all remaining neighbors are also too far.
+        # Note: if using approximate NN libraries (FAISS, Annoy), verify sort
+        # order before relying on this early-exit pattern.
         if dist > max_distance:
             break
 
@@ -603,7 +607,7 @@ def run_patient_similarity_pipeline(
     result = {
         "query_patient_id": query_patient_id,
         "feature_version": feature_version,
-        "similar_patients": similar[:5],  # top 5 for the response
+        "similar_patients": similar[:5],  # top 5 for display; outcome_summary uses all k neighbors
         "outcome_summary": outcome_summary,
     }
 
@@ -661,7 +665,12 @@ def explain_similarity(
         q_val = float(query_row[col])
         n_val = float(neighbor_row[col])
         weight = feature_weights[col]
-        # Raw difference, weighted.
+        # Weighted absolute difference on RAW (unscaled) values.
+        # Note: the actual similarity model uses StandardScaler-transformed
+        # values before applying weights, so this explanation is an
+        # approximation. The ranking of contributions here may differ from
+        # the true distance decomposition. For precise explanations, pass
+        # the fitted scaler and compute contributions on scaled values.
         contribution = abs(q_val - n_val) * weight
 
         explanations.append({
