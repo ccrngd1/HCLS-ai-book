@@ -217,6 +217,12 @@
 
 ---
 
+#### Ch 9: Computer Vision / Medical Imaging
+
+* [Preface](chapter09-preface)
+
+---
+
 #### Ch 10: Speech / Voice AI
 
 * [Preface](chapter10-preface)
