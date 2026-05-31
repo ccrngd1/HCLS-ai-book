@@ -1,8 +1,12 @@
-# Recipe 9.2: Python Implementation Example
+# Recipe 9.2: Patient Photo Verification - Python Example
 
 <!-- TODO (TechWriter): Expert review ARCH-1 (CRITICAL). Main recipe file chapter09.02-patient-photo-verification.md does not exist. Write the full recipe per RECIPE-GUIDE.md before this companion can be considered complete. -->
 <!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Liveness detection must be part of the core architecture in the main recipe (Capture -> Liveness -> Quality -> Compare -> Audit). The Python companion can note it's omitted for simplicity. -->
 <!-- TODO (TechWriter): Expert review SEC-2 (HIGH). Main recipe Prerequisites table must state BAA required for Rekognition, S3, DynamoDB, Lambda, CloudWatch Logs. -->
+<!-- TODO (TechWriter): Expert review SEC-1 (MEDIUM). Separate enrollment-time IAM permissions (CreateCollection, IndexFaces) from verification-time permissions (CompareFaces, SearchFacesByImage). Show resource-scoped ARN examples. -->
+<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Address biometric data requiring separate access controls from standard PHI, mandatory destruction timelines (BIPA), and dedicated S3 bucket with stricter IAM policies. -->
+<!-- TODO (TechWriter): Expert review SEC-4 (MEDIUM). Add a delete_patient_face function showing consent withdrawal workflow (delete from both S3 and Rekognition collection). -->
+<!-- TODO (TechWriter): Expert review ARCH-3 (MEDIUM). Define fallback workflow in main recipe architecture when biometric verification fails. -->
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning. Consider it a starting point, not a destination.
 
@@ -16,7 +20,12 @@ You'll need the AWS SDK for Python:
 pip install boto3 pillow
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `rekognition:CompareFaces`, `rekognition:CreateCollection`, `rekognition:IndexFaces`, `rekognition:SearchFacesByImage`, `s3:GetObject`, `s3:PutObject`, and `dynamodb:PutItem` / `dynamodb:GetItem`.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs these permissions:
+
+- **Verification (runtime):** `rekognition:CompareFaces`, `rekognition:SearchFacesByImage`, `s3:GetObject`, `dynamodb:PutItem`
+- **Enrollment (setup/admin):** `rekognition:CreateCollection`, `rekognition:IndexFaces`, `rekognition:DeleteFaces`, `s3:PutObject`, `dynamodb:GetItem`
+
+Scope these to specific resource ARNs in production (e.g., `arn:aws:s3:::patient-photos-hipaa/*` for S3, your specific table ARN for DynamoDB).
 
 > **Before you start:** Confirm your AWS Business Associate Agreement (BAA) covers Rekognition, S3, DynamoDB, and any other services processing patient photos. Rekognition is BAA-eligible, but you must explicitly add it to your BAA before processing biometric PHI.
 
