@@ -2,190 +2,82 @@
 
 ## Summary
 
-The Python companion for Propensity to Pay Scoring is well-constructed, pedagogically clear, and faithfully implements the main recipe's pseudocode pipeline. The code correctly uses `Decimal` for DynamoDB numeric values, avoids leading slashes in S3 keys, and demonstrates accurate boto3/SageMaker SDK usage throughout. The synthetic data generation is particularly strong, encoding realistic correlations between payment history features and outcomes that teach readers what the model should learn. The calibration step (isotonic regression) is a valuable addition that goes beyond many teaching examples. One warning-level issue around the `run_propensity_pipeline` function using simulated predictions instead of actual batch transform output, which could confuse readers about how the pieces connect in practice.
+The Python companion for Propensity to Pay Scoring is well-structured, pedagogically sound, and faithfully implements the pseudocode from the main recipe. The code builds understanding progressively, comments explain "why" not just "what," and boto3/SageMaker API calls are correct. DynamoDB numeric values are properly wrapped in `Decimal`. S3 keys have no leading slashes. The calibration step correctly uses isotonic regression (a reasonable alternative to the Platt scaling mentioned in the pseudocode, and the code explains why). One minor inconsistency exists between the pseudocode's batch transform instance type and the Python's, and a few notes for improvement, but nothing that would prevent the code from running or mislead a reader.
 
 ---
 
 ## Issues
 
-### Issue 1: Step 5 Uses Simulated Scores Instead of Actual Batch Transform Output
+### Issue 1: Batch Transform Instance Type Mismatch with Pseudocode
 
 - **File:** Python companion (`chapter07.02-python-example.md`)
-- **Location:** `run_propensity_pipeline`, Step 5 block
-- **Severity:** WARNING (misleading)
-- **Description:** After running batch transform in Step 4 (which writes real predictions to S3), Step 5 ignores those predictions entirely and generates random scores with `np.random.beta(2, 2, size=len(df))`. The comment says "Simulate raw predictions (in production, load from batch transform output)" but a reader following along would expect the pipeline to actually use the output from the previous step. This breaks the pedagogical flow: the reader just learned how batch transform works, then the pipeline throws away its output. It makes the calibration step appear disconnected from the scoring step.
-- **Suggested fix:** Add a helper function that loads the batch transform output from S3 (even if it's just reading the CSV back), or add a more prominent comment explaining why the demo shortcuts this:
-  ```python
-  # In a real pipeline, you'd load predictions from the batch transform output:
-  #   raw_scores = load_predictions_from_s3(predictions_uri)
-  # Here we simulate because parsing batch transform output requires knowing
-  # the exact output format, which depends on your SageMaker container version.
-  raw_scores = np.random.beta(2, 2, size=len(df))
-  ```
+- **Location:** Config section (`TRANSFORM_INSTANCE_TYPE`) and `run_batch_scoring` function
+- **Severity:** NOTE
+- **Description:** The pseudocode in the main recipe specifies `instance_type: "ml.m5.xlarge"` for the batch transform job. The Python companion uses `TRANSFORM_INSTANCE_TYPE = "ml.m5.large"` (one size smaller). This is a trivial difference that doesn't affect correctness, but a reader cross-referencing the two files might wonder which is correct. Both work fine for the stated workload.
+- **Suggested fix:** Either align the Python to `ml.m5.xlarge` to match the pseudocode, or add a brief comment noting the smaller instance is sufficient for the demo dataset.
 
 ---
 
-### Issue 2: `prepare_scoring_input` Returns a File URI, Not a Directory URI
+### Issue 2: Calibration Uses Simulated Random Scores Instead of Actual Model Output
 
 - **File:** Python companion (`chapter07.02-python-example.md`)
-- **Location:** `prepare_scoring_input` and `run_batch_scoring`
-- **Severity:** WARNING (code may not work as expected)
-- **Description:** `prepare_scoring_input` returns `f"s3://{ML_BUCKET}/{scoring_key}"` which points to a specific file (e.g., `s3://bucket/features/open-balances/scoring-input.csv`). This is then passed to `transformer.transform(data=scoring_input_uri, ...)`. SageMaker Batch Transform's `data` parameter accepts either a file URI or a directory URI (prefix). While a single-file URI does work, the SageMaker documentation and most examples use a directory prefix. More importantly, if a reader later adds multiple scoring files to the prefix, the single-file URI pattern won't pick them up. This is a minor point but could confuse readers who compare against AWS documentation examples.
-- **Suggested fix:** Either change to use the directory prefix pattern (upload to a specific subdirectory and pass the prefix), or add a comment noting that a single-file URI is valid:
+- **Location:** `run_propensity_pipeline`, Step 5 section
+- **Severity:** WARNING
+- **Description:** In the "Putting It All Together" function, Step 5 generates calibration inputs with `raw_scores = np.random.beta(2, 2, size=len(df))` and a comment saying "placeholder." The calibration model is then fitted on these random scores against the true labels, and the calibrated output is used for DynamoDB storage and strategy routing. While the code acknowledges this is a placeholder, a reader running the full pipeline end-to-end will get meaningless propensity scores that have no relationship to the actual model's predictions. The strategy routing summary will appear to work but the numbers will be nonsensical. A more pedagogically honest approach would be to either (a) load the actual batch transform output from S3, or (b) use the synthetic data's `pay_probability` array (which was used to generate labels) as a stand-in for raw model output, which would produce meaningful calibration behavior.
+- **Suggested fix:** Replace `raw_scores = np.random.beta(2, 2, size=len(df))` with something derived from the synthetic data generation, e.g.:
   ```python
-  # Batch Transform accepts either a single file URI or a directory prefix.
-  # For simplicity, we point directly to the file. In production with
-  # multiple input files, use the directory prefix instead.
+  # Simulate raw model predictions using the underlying pay probability
+  # (in production, these come from the batch transform output in S3).
+  raw_scores = pay_probability + np.random.normal(0, 0.05, size=len(df))
+  raw_scores = np.clip(raw_scores, 0.01, 0.99)
   ```
+  This would require returning `pay_probability` from `generate_synthetic_balance_data` or recomputing it. Alternatively, add a more prominent warning that the scores in Steps 5-6 are not meaningful when run end-to-end.
 
 ---
 
-### Issue 3: Calibration Model Fitted on Random Data, Not Actual Model Output
+### Issue 3: `pay_probability` Not Accessible in Pipeline Function
 
 - **File:** Python companion (`chapter07.02-python-example.md`)
 - **Location:** `run_propensity_pipeline`, Step 5
-- **Severity:** WARNING (misleading pattern)
-- **Description:** The calibration model is fitted using `raw_scores = np.random.beta(2, 2, ...)` against `val_labels = df["paid_within_90_days"].values`. This means the calibrator is learning a mapping from random numbers to actual labels, which produces a calibration function that has no relationship to the actual model's output distribution. A reader who understands calibration will find this confusing: the calibrator should be fitted on the actual model's predictions on a held-out set, not on random noise. The teaching value of the calibration step is undermined because the calibrator isn't doing what calibration actually does.
-- **Suggested fix:** This is related to Issue 1. If you can't load actual batch transform output, at least generate synthetic scores that correlate with the labels (simulating what a trained model would produce):
-  ```python
-  # Simulate model outputs that correlate with true labels (as a trained
-  # model would). Random scores would make calibration meaningless.
-  noise = rng.normal(0, 0.15, size=len(df))
-  raw_scores = np.clip(df["paid_within_90_days"].values * 0.6 + 0.2 + noise, 0.01, 0.99)
-  ```
+- **Severity:** NOTE
+- **Description:** Related to Issue 2. The `generate_synthetic_balance_data` function computes `pay_probability` internally but only returns the DataFrame (which contains the binary outcome, not the underlying probability). If a reader wanted to use the true probability as a stand-in for model output (the natural pedagogical choice), they'd need to modify the function signature. This is a minor structural issue that slightly reduces the "run it and learn" value of the example.
+- **Suggested fix:** No change required for correctness. If Issue 2 is addressed, consider returning `pay_probability` as a second return value from `generate_synthetic_balance_data`.
 
 ---
 
-### Issue 4: Missing `import datetime` Usage Inconsistency
+### Issue 4: Isotonic Regression vs. Platt Scaling Terminology
 
 - **File:** Python companion (`chapter07.02-python-example.md`)
-- **Location:** Config section and `run_batch_scoring`
-- **Severity:** NOTE (minor clarity issue)
-- **Description:** The imports include `import datetime` and `from datetime import timezone`, but `timezone` is never used anywhere in the code. Meanwhile, `run_batch_scoring` uses `datetime.date.today().isoformat()` which works correctly with the `import datetime` statement. The unused `timezone` import is harmless but may confuse a reader who wonders where it's supposed to be used (perhaps for timezone-aware score timestamps in DynamoDB).
-- **Suggested fix:** Either remove `from datetime import timezone` or add a comment noting it would be used in production for timezone-aware timestamps:
-  ```python
-  from datetime import timezone  # used in production for UTC-aware score_date
-  ```
+- **Location:** Step 5, `fit_calibration_model` function
+- **Severity:** NOTE
+- **Description:** The main recipe's pseudocode explicitly calls for "Platt scaling" (`fit_platt_scaling`). The Python companion uses isotonic regression instead and includes a good explanation of why ("tends to work better than Platt scaling when the calibration curve is non-monotonic"). This is a defensible pedagogical choice and the explanation is clear, but a reader following the pseudocode step-by-step might be confused by the switch. The comment adequately addresses this, so no fix is needed, but noting it for completeness.
+- **Suggested fix:** None required. The inline comment explaining the choice is sufficient.
 
 ---
 
-### Issue 5: Pseudocode Includes `top_features` (SHAP Values) Not in Python
+### Issue 5: `scoring_input_uri` Points to Object, Not Prefix
 
 - **File:** Python companion (`chapter07.02-python-example.md`)
-- **Location:** `store_predictions_in_dynamodb`, Step 5
-- **Severity:** NOTE (minor inconsistency with pseudocode)
-- **Description:** The main recipe's pseudocode Step 3 (`score_open_balances`) writes `top_features = prediction.feature_contributions` to DynamoDB, and the Expected Results section shows a `top_features` array with SHAP-like values. The Python companion omits this field entirely from the DynamoDB item. The "Gap to Production" section doesn't specifically mention this omission either.
-- **Suggested fix:** Add a comment in `store_predictions_in_dynamodb`:
-  ```python
-  # The main recipe also stores top contributing features (SHAP values)
-  # for explainability in the collection staff UI. Computing per-prediction
-  # SHAP values requires the shap library and adds significant complexity.
-  # See SageMaker Clarify for production feature attribution.
-  ```
-
----
-
-### Issue 6: `sklearn` Dependency Not Listed in Setup
-
-- **File:** Python companion (`chapter07.02-python-example.md`)
-- **Location:** Setup section (pip install line)
-- **Severity:** NOTE (would fail on import)
-- **Description:** The Setup section lists `pip install boto3 pandas numpy sagemaker` but Step 5 imports `from sklearn.isotonic import IsotonicRegression`. A reader following the setup instructions exactly would get an `ImportError` when reaching the calibration step. While `scikit-learn` is commonly installed in data science environments, the explicit setup section should be complete.
-- **Suggested fix:** Update the pip install line:
-  ```bash
-  pip install boto3 pandas numpy sagemaker scikit-learn
-  ```
+- **Location:** `prepare_scoring_input` function return value and `run_batch_scoring` `data` parameter
+- **Severity:** WARNING
+- **Description:** `prepare_scoring_input` returns `f"s3://{ML_BUCKET}/{scoring_key}"` which is a full object URI (e.g., `s3://bucket/features/open-balances/scoring-input.csv`). This is passed to `transformer.transform(data=scoring_input_uri, ...)`. SageMaker Batch Transform's `data` parameter accepts either an S3 object URI or an S3 prefix. Passing a single object URI works correctly, so this is not a bug. However, the main recipe's pseudocode passes `feature_file_path` which is described as a path to the feature file, so this is consistent. No actual error, but worth noting that in production with multiple input files, you'd pass the prefix instead.
+- **Suggested fix:** None required for correctness. Optionally add a comment noting that for multiple input files, pass the S3 prefix instead of a single object URI.
 
 ---
 
 ## Pseudocode vs. Python Consistency
 
-The Python implementation follows the main recipe's pipeline structure:
+The Python implementation follows the pseudocode's logical flow faithfully:
 
-| Pseudocode Step | Python Function(s) | Match? |
-|---|---|---|
-| `compute_payment_features` | `generate_synthetic_balance_data` | ✓ (synthetic replacement, clearly explained) |
-| `train_propensity_model` | `upload_training_data` + `train_propensity_model` | ✓ (split into data prep and training, logical) |
-| `score_open_balances` | `prepare_scoring_input` + `run_batch_scoring` | ✓ (split into prep and execution) |
-| Calibration (in pseudocode Step 2-3) | `fit_calibration_model` + `store_predictions_in_dynamodb` | Partial (calibration fitted on simulated data, see Issue 1/3) |
-| `apply_collection_strategy` | `apply_collection_strategy` | ✓ (same thresholds, same routing logic) |
+**Step 1 (Feature Engineering):** The pseudocode defines `compute_payment_features` pulling from billing/history/engagement systems. The Python generates synthetic data with the same feature schema. All 18 features from the pseudocode are present in the synthetic data. Consistent.
 
-**Feature schema match:** The synthetic data generator produces exactly the same feature columns described in the pseudocode's `compute_payment_features`: `pay_rate_full`, `pay_rate_any`, `avg_days_to_first_payment`, `payment_plans_completed/defaulted`, `balance_amount`, `balance_amount_log`, `balance_age_days`, `service_type`, `insurance_adjudicated`, `statements_sent`, `insurance_type`, `has_other_open_balances`, `total_open_balance`, `days_since_portal_login`, `opened_last_statement`, `called_billing_recently`, `partial_payment_made`. All present and correctly typed.
+**Step 2 (Model Training):** The pseudocode's `train_propensity_model` maps to the Python's `train_propensity_model`. Hyperparameters match exactly (objective, eval_metric, num_round, max_depth, eta, subsample, colsample_bytree, scale_pos_weight). The Python adds the upload step (Step 2 in Python) which is implicit in the pseudocode. Consistent.
 
-**Strategy engine match:** The Python `apply_collection_strategy` uses the same thresholds (0.75, 0.40) and the same routing logic (including the $500 amount split for medium-propensity balances) as the pseudocode. Exact match.
+**Step 3 (Batch Scoring):** The pseudocode's `score_open_balances` maps to the Python's `run_batch_scoring`. Both use batch transform with CSV content type and Line split. The Python separates input preparation into its own function, which is a reasonable structural choice. Consistent.
 
----
+**Step 4 (Strategy Engine):** The pseudocode's `apply_collection_strategy` maps directly to the Python's `apply_collection_strategy`. Thresholds match (0.75 high, 0.40 medium). Routing logic matches (high -> standard_statements, medium+high_amount -> financial_counselor_outreach, medium+low_amount -> payment_plan_offer, low -> financial_assistance_screening). The $500 amount threshold for counselor vs. payment plan is consistent. Consistent.
 
-## AWS SDK Accuracy
-
-| API Call | Correct? | Notes |
-|----------|----------|-------|
-| `s3_client.put_object(Bucket, Key, Body)` | ✓ | Parameters correct, Body accepts encoded string |
-| `sagemaker.image_uris.retrieve(framework, region, version)` | ✓ | Current SDK pattern |
-| `Estimator(image_uri, role, instance_count, instance_type, output_path, ...)` | ✓ | All params valid |
-| `estimator.set_hyperparameters(**dict)` | ✓ | Correct method, string values for built-in algo |
-| `TrainingInput(s3_data, content_type)` | ✓ | Correct class and params |
-| `estimator.fit(inputs={"train": ..., "validation": ...}, wait=True)` | ✓ | Both channels correct for XGBoost early stopping |
-| `estimator.model_data` | ✓ | Returns S3 URI of model artifact |
-| `sagemaker.model.Model(image_uri, model_data, role, sagemaker_session)` | ✓ | Correct constructor |
-| `model.transformer(instance_count, instance_type, output_path, accept, strategy, max_payload)` | ✓ | All params valid |
-| `transformer.transform(data, content_type, split_type, wait, logs)` | ✓ | Correct method and params |
-| `dynamodb.Table(name).batch_writer()` | ✓ | Correct context manager, handles 25-item chunking |
-| `batch.put_item(Item=dict)` | ✓ | Correct method within batch_writer context |
-
-**XGBoost hyperparameters:** All hyperparameter names (`objective`, `eval_metric`, `num_round`, `max_depth`, `eta`, `subsample`, `colsample_bytree`, `scale_pos_weight`) are valid XGBoost parameters. Values passed as strings, which is correct for SageMaker's built-in algorithm.
-
----
-
-## DynamoDB Data Types
-
-The code correctly uses `Decimal` for all numeric values in DynamoDB:
-- `Decimal(str(round(score, 4)))` for propensity_score
-- `Decimal(str(round(float(balance_amounts[i]), 2)))` for balance_amount
-
-The `str()` wrapping before `Decimal()` is correct practice to avoid floating-point representation artifacts. The code also includes an explicit comment explaining why: "DynamoDB does not accept Python floats. You must wrap numeric values in Decimal()..." This is excellent for a teaching example.
-
----
-
-## S3 Paths
-
-All S3 keys use relative paths without leading slashes:
-- `features/open-balances/scoring-input.csv` ✓
-- `features/training/train/train.csv` ✓
-- `features/training/validation/validation.csv` ✓
-- `models/propensity-to-pay/` ✓
-- `predictions/propensity-to-pay/{date}/` ✓
-
-No issues.
-
----
-
-## Comment Quality
-
-Comments are strong throughout, consistently explaining "why" rather than "what":
-- The `scale_pos_weight` comment explains the formula with a concrete example
-- The synthetic data generator comments explain which real-world correlations each feature encodes
-- The DynamoDB `Decimal` comment explains the failure mode readers would hit
-- The strategy engine comments explain the operational rationale for each tier
-- The calibration section explains why calibration matters for threshold-based decisions
-
-The "Gap to Production" section is comprehensive, covering error handling, calibration monitoring, fairness, feedback loops, VPC, encryption, and testing.
-
----
-
-## Logical Flow
-
-The code reads top-to-bottom in a pedagogically sound order:
-1. Config and constants (establishes vocabulary and tunable parameters)
-2. Synthetic data generation (gives the reader something to work with)
-3. S3 upload (shows the data format SageMaker expects)
-4. Model training (the core ML step)
-5. Batch scoring (applying the model at scale)
-6. Calibration and DynamoDB storage (bridging ML to operations)
-7. Strategy engine (turning predictions into collection decisions)
-8. Full pipeline (ties it all together)
-
-Each function builds on the previous one, and the `run_propensity_pipeline` function provides an end-to-end demonstration.
+**Calibration:** The pseudocode uses Platt scaling; the Python uses isotonic regression with an explanation. Acceptable pedagogical deviation (see Issue 4).
 
 ---
 
@@ -193,11 +85,8 @@ Each function builds on the previous one, and the `run_propensity_pipeline` func
 
 **PASS**
 
-No ERROR-level findings. Three WARNINGs (simulated scores in pipeline, file vs. directory URI, calibration on random data) and three NOTEs. The three WARNINGs are all related to the same underlying issue: the demo pipeline shortcuts the connection between batch transform output and calibration. While this is clearly labeled as a teaching example and the "Gap to Production" section is thorough, the disconnect between Steps 4 and 5 weakens the pedagogical flow. However, the individual functions are all correct and well-documented, and a reader who understands the stated limitation can still learn the full pattern.
+- 0 ERROR findings
+- 2 WARNING findings (below the 3-WARNING threshold for FAIL)
+- 3 NOTE findings
 
-**Recommended improvements (not blocking):**
-1. Replace `np.random.beta(2, 2, ...)` with synthetic scores that correlate with labels, making the calibration step meaningful
-2. Add a comment in `prepare_scoring_input` noting that single-file URIs are valid for Batch Transform
-3. Add `scikit-learn` to the pip install line in Setup
-4. Add a comment acknowledging the omitted `top_features` field
-5. Remove unused `from datetime import timezone` import
+The code is correct, would run without errors given AWS credentials, teaches the right patterns, and faithfully implements the main recipe's architecture. The two warnings are about pedagogical clarity in the end-to-end demo (random placeholder scores making the full pipeline output meaningless) and a minor terminology note. Neither would cause runtime failures or teach bad habits. The DynamoDB Decimal handling is correct throughout. S3 keys are clean. boto3 API calls use correct method names and parameters.
