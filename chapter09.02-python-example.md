@@ -2,6 +2,7 @@
 
 <!-- TODO (TechWriter): Expert review ARCH-1 (CRITICAL). Main recipe file chapter09.02-patient-photo-verification.md does not exist. Write the full recipe per RECIPE-GUIDE.md before this companion can be considered complete. -->
 <!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Liveness detection must be part of the core architecture in the main recipe (Capture -> Liveness -> Quality -> Compare -> Audit). The Python companion can note it's omitted for simplicity. -->
+<!-- TODO (TechWriter): Expert review SEC-2 (HIGH). Main recipe Prerequisites table must state BAA required for Rekognition, S3, DynamoDB, Lambda, CloudWatch Logs. -->
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning. Consider it a starting point, not a destination.
 
@@ -115,7 +116,8 @@ def validate_verification_image(bucket: str, key: str) -> dict:
     # without comparing to anything. It's our pre-flight check.
     response = rekognition_client.detect_faces(
         Image={"S3Object": {"Bucket": bucket, "Name": key}},
-        # DEFAULT includes Quality metrics (Brightness, Sharpness), BoundingBox, Confidence
+        # DEFAULT returns Quality metrics (Brightness, Sharpness), BoundingBox, and Confidence.
+        # Use "ALL" if you also need age range, gender, emotions, etc.
         Attributes=["DEFAULT"],
     )
 
@@ -202,9 +204,10 @@ def compare_faces(source_bucket: str, source_key: str,
         }
     else:
         # No match above threshold. UnmatchedFaces lists faces detected in the
-        # target image that didn't match the source. Since we validated both
-        # images contain exactly one face, this means the target face exists
-        # but its similarity to the source is below our threshold.
+        # target image that didn't match the source above our SimilarityThreshold.
+        # Since we validated both images contain exactly one face, this means
+        # the target face exists but its similarity to the source is below our
+        # threshold.
         #
         # Note: Rekognition doesn't return the actual similarity score when below
         # the threshold. We use 0.0 as a sentinel. The real score could be
