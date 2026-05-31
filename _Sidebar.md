@@ -226,6 +226,8 @@
   * [Python Example](chapter09.02-python-example)
 * [9.3 — Wound Photography Measurement](chapter09.03-wound-photography-measurement)
   * [Python Example](chapter09.03-python-example)
+* [9.4 — Dermatology Lesion Triage](chapter09.04-dermatology-lesion-triage)
+  * [Python Example](chapter09.04-python-example)
 
 ---
 
