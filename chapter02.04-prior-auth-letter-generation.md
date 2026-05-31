@@ -1,4 +1,10 @@
 <!--
+Editorial pass 3 (TechEditor, 2026-05-31):
+- Softened "embarrassingly good" to "unusually strong" in The Honest Take opening per voice review finding V3. The original was borderline hyperbole for a technical cookbook; the replacement keeps the same point in a register consistent with the measured tone of the surrounding paragraphs.
+- Final verification: zero em dashes (U+2014, U+2013), header hierarchy intact (H1 title only, H2 major sections, H3 subsections), RECIPE-GUIDE section order preserved, all TODO markers from prior passes intact and properly formatted with finding IDs on the same line, vendor balance holds (~70/30), no documentation-voice or announcement-voice patterns, no fabricated URLs, Python companion callout present, navigation footer intact.
+- All HIGH/MEDIUM review findings remain as TODO markers for TechWriter follow-up (A1, N1, S1, S2, S3, S4, A2, A3, A4, N2). LOW findings V1a/V1b/V1c also remain as TODOs. V2 (model ID) was addressed in pass 1 with an inline comment. V4 (afterthought metaphor) was addressed in pass 1. S5 (synthetic label) was addressed in pass 1.
+- Recipe is editorially complete pending TechWriter resolution of deferred findings.
+
 Editorial pass (TechEditor, 2026-05-11):
 - Removed a documentation-voice opening sentence at the end of The Problem ("This recipe is about the generation side of prior auth.") that duplicated the next sentence's framing ("This one is about being the provider..."). The second sentence already carries the contrast with Recipe 1.4 in CC voice; the first was redundant and leaned into the anti-pattern flagged in STYLE-GUIDE.md.
 - Preserved all TODO markers inserted by TechWriter, TechCodeReviewer, and TechExpertReviewer, including the three HIGH findings from expert review (cost estimate A1, VPC endpoint list N1, IAM ARN scoping S1), the six MEDIUM findings (S2 minimum-necessary, S3 model-invocation-logging PHI, S4 input-side prompt injection, A2 Step Functions task-token pattern, A3 regeneration retry cap, A4 idempotency fingerprint, N2 EHR connectivity), and the LOW findings (V1 three unverified items, the "PAO" acronym correction, the Recipe 5.x cross-reference). Per persona rules, structural additions that introduce new architectural or clinical content are left for the TechWriter rather than rewritten here.
@@ -736,7 +742,7 @@ The architecture above demonstrates the pattern. Deploying it at a practice or h
 
 ## The Honest Take
 
-Prior auth letter generation is one of those use cases where the ROI math is almost embarrassingly good. Practices spend millions of dollars per year on staff time composing these letters. A system that reduces composition time by 80% pays for itself almost immediately. The payback period can be measured in weeks, not years. This is rare in healthcare AI.
+Prior auth letter generation is one of those use cases where the ROI math is unusually strong. Practices spend millions of dollars per year on staff time composing these letters. A system that reduces composition time by 80% pays for itself almost immediately. The payback period can be measured in weeks, not years. This is rare in healthcare AI.
 
 That said, I've watched this use case fail more than once, and the failure modes are consistent. The AI part works. The integration part is where things break.
 
