@@ -224,6 +224,8 @@
   * [Python Example](chapter09.01-python-example)
 * [9.2 — Patient Photo Verification](chapter09.02-patient-photo-verification)
   * [Python Example](chapter09.02-python-example)
+* [9.3 — Wound Photography Measurement](chapter09.03-wound-photography-measurement)
+  * [Python Example](chapter09.03-python-example)
 
 ---
 
