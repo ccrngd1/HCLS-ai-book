@@ -145,7 +145,7 @@ Let's start with the simplest pattern: classifying short text into categories.
 
 ## Further Reading
 
-- [Clinical Natural Language Processing in Languages Other Than English: Opportunities and Challenges](https://doi.org/10.1016/j.jbi.2019.103132) — a good overview of the state of clinical NLP
+- [Clinical Natural Language Processing in Languages Other Than English: Opportunities and Challenges](https://doi.org/10.1016/j.jbi.2019.103132) — overview of the state of clinical NLP beyond English
 - [NegEx: A Simple Algorithm for Identifying Negated Findings](https://doi.org/10.1197/jamia.M1552) — the foundational negation detection algorithm referenced throughout this chapter
 - [Apache cTAKES](https://ctakes.apache.org/) — the open-source clinical NLP pipeline that pioneered many of the patterns described here
 - [spaCy](https://spacy.io/) and [medspaCy](https://github.com/medspacy/medspacy) — modern Python NLP libraries with clinical extensions
