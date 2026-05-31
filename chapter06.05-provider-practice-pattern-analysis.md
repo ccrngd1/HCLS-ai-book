@@ -586,7 +586,7 @@ One more thing: the clusters will reveal uncomfortable truths. You'll find that 
 - [AWS Solutions Library: Healthcare](https://aws.amazon.com/solutions/?solutions-all.sort-by=item.additionalFields.sortDate&solutions-all.sort-order=desc&awsf.content-type=*all&awsf.methodology=*all&awsf.tech-category=*all&awsf.industries=industry%23healthcare): Deployable healthcare solutions including analytics architectures
 - [AWS for Health: Analytics](https://aws.amazon.com/health/solutions/analytics/): Healthcare analytics reference architectures and customer stories
 
-<!-- TODO: Verify all URLs above are current and accessible -->
+<!-- TODO (TechWriter): Verify all URLs above are current and accessible -->
 
 ---
 
