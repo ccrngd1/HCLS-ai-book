@@ -182,6 +182,8 @@
   * [Python Example](chapter07.06-python-example)
 * [7.7 — Length of Stay Prediction](chapter07.07-length-of-stay-prediction)
   * [Python Example](chapter07.07-python-example)
+* [7.8 — Disease Progression Modeling](chapter07.08-disease-progression-modeling)
+  * [Python Example](chapter07.08-python-example)
 
 ---
 
