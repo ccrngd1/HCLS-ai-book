@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r02-edit
 title: "Final Edit: Propensity to Pay Scoring"
 target_persona: TechEditor

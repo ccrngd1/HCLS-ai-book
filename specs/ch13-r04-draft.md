@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r04-draft
 title: "Draft: Drug-Drug Interaction Knowledge Base"
 target_persona: TechWriter

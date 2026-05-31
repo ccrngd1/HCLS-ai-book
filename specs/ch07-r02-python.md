@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r02-python
 title: "Python Companion: Propensity to Pay Scoring"
 target_persona: TechWriter

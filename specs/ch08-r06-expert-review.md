@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r06-expert-review
 title: "Expert Review: Social Determinants of Health Extraction"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r06-edit
 title: "Final Edit: Rising Risk Identification"
 target_persona: TechEditor

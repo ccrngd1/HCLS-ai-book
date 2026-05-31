@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r03-python
 title: "Python Companion: Payer Mix Financial Risk Clustering"
 target_persona: TechWriter

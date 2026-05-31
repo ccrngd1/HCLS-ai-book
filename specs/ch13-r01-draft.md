@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r01-draft
 title: "Draft: Drug Formulary Navigation"
 target_persona: TechWriter

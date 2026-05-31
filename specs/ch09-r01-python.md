@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r01-python
 title: "Python Companion: Image Quality Assessment"
 target_persona: TechWriter

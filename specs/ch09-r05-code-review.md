@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r05-code-review
 title: "Code Review: Chest X-Ray Triage"
 target_persona: TechCodeReviewer

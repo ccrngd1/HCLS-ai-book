@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r09-python
 title: "Python Companion: Mortality Risk Scoring ICU"
 target_persona: TechWriter

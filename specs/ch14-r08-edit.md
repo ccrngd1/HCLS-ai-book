@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r08-edit
 title: "Final Edit: Ambulance Routing and Dispatch"
 target_persona: TechEditor

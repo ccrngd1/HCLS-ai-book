@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r08-expert-review
 title: "Expert Review: Ambulance Routing and Dispatch"
 target_persona: TechExpertReviewer

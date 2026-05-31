@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r05-draft
 title: "Draft: Ventilator Weaning Protocols"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r02-expert-review
 title: "Expert Review: Notification Timing Optimization"
 target_persona: TechExpertReviewer

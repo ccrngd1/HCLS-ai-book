@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r09-draft
 title: "Draft: Surgical Video Analysis"
 target_persona: TechWriter

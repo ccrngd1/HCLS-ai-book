@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r08-python
 title: "Python Companion: Chemotherapy Dose Optimization"
 target_persona: TechWriter

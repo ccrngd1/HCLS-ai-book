@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r09-code-review
 title: "Code Review: Literature-Derived Knowledge Graph"
 target_persona: TechCodeReviewer

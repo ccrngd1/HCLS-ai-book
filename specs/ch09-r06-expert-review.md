@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r06-expert-review
 title: "Expert Review: Diabetic Retinopathy Screening"
 target_persona: TechExpertReviewer

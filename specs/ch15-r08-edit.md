@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r08-edit
 title: "Final Edit: Chemotherapy Dose Optimization"
 target_persona: TechEditor

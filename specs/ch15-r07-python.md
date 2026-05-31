@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r07-python
 title: "Python Companion: Chronic Disease Treatment Personalization"
 target_persona: TechWriter

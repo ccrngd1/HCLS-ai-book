@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r03-edit
 title: "Final Edit: ICD CPT Hierarchy Navigation"
 target_persona: TechEditor

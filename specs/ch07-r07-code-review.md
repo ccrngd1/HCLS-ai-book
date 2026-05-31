@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r07-code-review
 title: "Code Review: Length of Stay Prediction"
 target_persona: TechCodeReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r04-draft
 title: "Draft: Medication Extraction and Normalization"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r02-python
 title: "Python Companion: Provider Directory as Knowledge Graph"
 target_persona: TechWriter

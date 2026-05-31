@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r05-python
 title: "Python Companion: Ventilator Weaning Protocols"
 target_persona: TechWriter

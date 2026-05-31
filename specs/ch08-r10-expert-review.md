@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r10-expert-review
 title: "Expert Review: Phenotype Extraction for Research"
 target_persona: TechExpertReviewer

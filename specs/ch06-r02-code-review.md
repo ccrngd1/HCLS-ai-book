@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r02-code-review
 title: "Code Review: Utilization Pattern Segmentation"
 target_persona: TechCodeReviewer

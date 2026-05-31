@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r03-draft
 title: "Draft: Inventory Reorder Optimization"
 target_persona: TechWriter

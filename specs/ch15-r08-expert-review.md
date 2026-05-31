@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r08-expert-review
 title: "Expert Review: Chemotherapy Dose Optimization"
 target_persona: TechExpertReviewer

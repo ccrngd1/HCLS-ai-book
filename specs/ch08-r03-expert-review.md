@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r03-expert-review
 title: "Expert Review: ICD-10 Code Suggestion"
 target_persona: TechExpertReviewer

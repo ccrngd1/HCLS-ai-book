@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r06-code-review
 title: "Code Review: Patient Similarity for Care Planning"
 target_persona: TechCodeReviewer

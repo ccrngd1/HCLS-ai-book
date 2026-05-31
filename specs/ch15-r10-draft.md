@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r10-draft
 title: "Draft: Hospital Resource Allocation Under Uncertainty"
 target_persona: TechWriter

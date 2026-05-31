@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r10-expert-review
 title: "Expert Review: Multi-Modal Imaging Fusion and Analysis"
 target_persona: TechExpertReviewer

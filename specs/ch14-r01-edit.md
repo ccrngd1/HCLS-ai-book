@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r01-edit
 title: "Final Edit: Appointment Slot Optimization"
 target_persona: TechEditor

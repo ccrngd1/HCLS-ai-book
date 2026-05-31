@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r08-python
 title: "Python Companion: Medical Concept Normalization and Mapping"
 target_persona: TechWriter

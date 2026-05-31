@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r06-code-review
 title: "Code Review: Patient Flow Bed Assignment"
 target_persona: TechCodeReviewer

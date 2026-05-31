@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r04-python
 title: "Python Companion: Medication Extraction and Normalization"
 target_persona: TechWriter

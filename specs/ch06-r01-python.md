@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r01-python
 title: "Python Companion: Geographic Patient Clustering"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r08-draft
 title: "Draft: Disease Progression Modeling"
 target_persona: TechWriter

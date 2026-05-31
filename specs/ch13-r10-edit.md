@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r10-edit
 title: "Final Edit: Federated Clinical Knowledge Network"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r06-code-review
 title: "Code Review: Glucose Control in ICU"
 target_persona: TechCodeReviewer

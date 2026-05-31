@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r02-python
 title: "Python Companion: Notification Timing Optimization"
 target_persona: TechWriter

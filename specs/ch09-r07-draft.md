@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r07-draft
 title: "Draft: Radiology AI Triage Multi-Modality"
 target_persona: TechWriter

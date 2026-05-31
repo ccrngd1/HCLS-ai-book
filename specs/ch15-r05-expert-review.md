@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r05-expert-review
 title: "Expert Review: Ventilator Weaning Protocols"
 target_persona: TechExpertReviewer

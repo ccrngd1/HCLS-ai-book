@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r02-code-review
 title: "Code Review: Patient Photo Verification"
 target_persona: TechCodeReviewer

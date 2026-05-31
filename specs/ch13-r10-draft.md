@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r10-draft
 title: "Draft: Federated Clinical Knowledge Network"
 target_persona: TechWriter

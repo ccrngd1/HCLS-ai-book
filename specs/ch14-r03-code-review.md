@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r03-code-review
 title: "Code Review: Inventory Reorder Optimization"
 target_persona: TechCodeReviewer

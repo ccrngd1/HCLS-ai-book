@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r01-expert-review
 title: "Expert Review: Alert Threshold Optimization"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r10-edit
 title: "Final Edit: Phenotype Extraction for Research"
 target_persona: TechEditor

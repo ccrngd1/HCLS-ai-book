@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r09-python
 title: "Python Companion: Social Determinant Phenotyping"
 target_persona: TechWriter

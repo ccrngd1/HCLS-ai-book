@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r05-expert-review
 title: "Expert Review: Operating Room Block Scheduling"
 target_persona: TechExpertReviewer

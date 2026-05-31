@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r03-draft
 title: "Draft: Wound Photography Measurement"
 target_persona: TechWriter

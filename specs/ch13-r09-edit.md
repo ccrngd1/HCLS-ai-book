@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r09-edit
 title: "Final Edit: Literature-Derived Knowledge Graph"
 target_persona: TechEditor

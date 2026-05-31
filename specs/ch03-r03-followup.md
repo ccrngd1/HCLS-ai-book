@@ -11,7 +11,8 @@ validation:
   - type: shell
     name: no-todo-markers-for-tracked-findings
     commands:
-      - python -c "import re,sys,pathlib; t=pathlib.Path('chapter03.03-billing-code-anomalies.md').read_text(encoding='utf-8'); ids=['A1', 'A2', 'A3', 'A4', 'A5', 'S1', 'S2']; missing=[i for i in ids if re.search(r'TODO[^\\n]*'+re.escape(i)+r'\\b', t)]; sys.exit(0 if not missing else (sys.stderr.write('unresolved findings still TODO: '+', '.join(missing)+chr(10)) or 1))"
+      - |
+        python -c "import re,sys,pathlib; t=pathlib.Path('chapter03.03-billing-code-anomalies.md').read_text(encoding='utf-8'); ids=['A1', 'A2', 'A3', 'A4', 'A5', 'S1', 'S2']; missing=[i for i in ids if re.search(r'TODO[^\\n]*'+re.escape(i)+r'\\b', t)]; sys.exit(0 if not missing else (sys.stderr.write('unresolved findings still TODO: '+', '.join(missing)+chr(10)) or 1))"
   - type: persona_review
     name: findings-resolved
     persona: TechExpertReviewer

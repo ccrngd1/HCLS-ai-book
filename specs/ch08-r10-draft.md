@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r10-draft
 title: "Draft: Phenotype Extraction for Research"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r09-draft
 title: "Draft: Literature-Derived Knowledge Graph"
 target_persona: TechWriter

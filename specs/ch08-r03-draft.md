@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r03-draft
 title: "Draft: ICD-10 Code Suggestion"
 target_persona: TechWriter

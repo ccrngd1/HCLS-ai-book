@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r10-draft
 title: "Draft: Optimal Intervention Timing Prediction"
 target_persona: TechWriter

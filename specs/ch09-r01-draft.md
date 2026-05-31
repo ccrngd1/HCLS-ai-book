@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r01-draft
 title: "Draft: Image Quality Assessment"
 target_persona: TechWriter

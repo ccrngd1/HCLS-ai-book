@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r08-python
 title: "Python Companion: Disease Progression Modeling"
 target_persona: TechWriter

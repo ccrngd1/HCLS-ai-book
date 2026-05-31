@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r01-draft
 title: "Draft: Alert Threshold Optimization"
 target_persona: TechWriter

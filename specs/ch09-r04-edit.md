@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r04-edit
 title: "Final Edit: Dermatology Lesion Triage"
 target_persona: TechEditor

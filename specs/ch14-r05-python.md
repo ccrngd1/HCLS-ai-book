@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r05-python
 title: "Python Companion: Operating Room Block Scheduling"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-preface
 title: "Chapter 14 Preface: Optimization / Operations Research"
 target_persona: TechWriter

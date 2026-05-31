@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-preface
 title: "Chapter 13 Preface: Knowledge Graphs / Ontology"
 target_persona: TechWriter

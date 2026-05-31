@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r03-draft
 title: "Draft: Payer Mix Financial Risk Clustering"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r01-expert-review
 title: "Expert Review: Drug Formulary Navigation"
 target_persona: TechExpertReviewer

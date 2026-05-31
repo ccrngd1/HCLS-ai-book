@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r07-expert-review
 title: "Expert Review: OR Case Sequencing"
 target_persona: TechExpertReviewer

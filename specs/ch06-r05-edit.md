@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r05-edit
 title: "Final Edit: Provider Practice Pattern Analysis"
 target_persona: TechEditor

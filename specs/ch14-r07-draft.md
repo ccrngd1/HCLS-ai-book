@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r07-draft
 title: "Draft: OR Case Sequencing"
 target_persona: TechWriter

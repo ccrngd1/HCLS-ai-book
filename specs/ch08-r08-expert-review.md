@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r08-expert-review
 title: "Expert Review: Clinical Assertion Classification"
 target_persona: TechExpertReviewer

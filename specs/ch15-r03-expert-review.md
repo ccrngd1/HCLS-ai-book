@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r03-expert-review
 title: "Expert Review: Clinical Trial Adaptive Randomization"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r09-code-review
 title: "Code Review: Social Determinant Phenotyping"
 target_persona: TechCodeReviewer

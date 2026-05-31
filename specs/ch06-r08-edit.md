@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r08-edit
 title: "Final Edit: Disease Subtype Discovery"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r02-edit
 title: "Final Edit: Patient Sentiment Analysis"
 target_persona: TechEditor

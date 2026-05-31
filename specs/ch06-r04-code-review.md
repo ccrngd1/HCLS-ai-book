@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r04-code-review
 title: "Code Review: Disease Severity Stratification"
 target_persona: TechCodeReviewer

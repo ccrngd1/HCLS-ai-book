@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r01-python
 title: "Python Companion: Appointment Slot Optimization"
 target_persona: TechWriter

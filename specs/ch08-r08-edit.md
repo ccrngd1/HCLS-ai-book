@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r08-edit
 title: "Final Edit: Clinical Assertion Classification"
 target_persona: TechEditor

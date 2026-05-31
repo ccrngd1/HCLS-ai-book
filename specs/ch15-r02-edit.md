@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r02-edit
 title: "Final Edit: Notification Timing Optimization"
 target_persona: TechEditor

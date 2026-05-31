@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r06-code-review
 title: "Code Review: Diabetic Retinopathy Screening"
 target_persona: TechCodeReviewer

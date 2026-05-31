@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r02-expert-review
 title: "Expert Review: Patient Photo Verification"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r07-draft
 title: "Draft: Clinical Trial Patient Matching"
 target_persona: TechWriter

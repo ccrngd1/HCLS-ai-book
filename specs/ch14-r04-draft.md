@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r04-draft
 title: "Draft: Nurse Staffing Optimization"
 target_persona: TechWriter

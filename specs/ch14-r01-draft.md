@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r01-draft
 title: "Draft: Appointment Slot Optimization"
 target_persona: TechWriter

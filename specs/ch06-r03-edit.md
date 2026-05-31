@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r03-edit
 title: "Final Edit: Payer Mix Financial Risk Clustering"
 target_persona: TechEditor

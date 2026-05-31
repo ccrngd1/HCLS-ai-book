@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r07-edit
 title: "Final Edit: Clinical Trial Patient Matching"
 target_persona: TechEditor

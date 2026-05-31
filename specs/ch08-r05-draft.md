@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r05-draft
 title: "Draft: Problem List Extraction"
 target_persona: TechWriter

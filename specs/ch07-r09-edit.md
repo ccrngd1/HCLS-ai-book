@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r09-edit
 title: "Final Edit: Mortality Risk Scoring ICU"
 target_persona: TechEditor

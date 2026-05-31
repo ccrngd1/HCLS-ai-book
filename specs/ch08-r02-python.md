@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r02-python
 title: "Python Companion: Patient Sentiment Analysis"
 target_persona: TechWriter

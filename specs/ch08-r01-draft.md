@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r01-draft
 title: "Draft: Chief Complaint Classification"
 target_persona: TechWriter

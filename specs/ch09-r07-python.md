@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r07-python
 title: "Python Companion: Radiology AI Triage Multi-Modality"
 target_persona: TechWriter

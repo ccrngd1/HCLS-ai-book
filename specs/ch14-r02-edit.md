@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r02-edit
 title: "Final Edit: Patient-Provider Assignment"
 target_persona: TechEditor

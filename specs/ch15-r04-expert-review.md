@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r04-expert-review
 title: "Expert Review: Sepsis Treatment Optimization"
 target_persona: TechExpertReviewer

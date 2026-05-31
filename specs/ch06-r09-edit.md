@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r09-edit
 title: "Final Edit: Social Determinant Phenotyping"
 target_persona: TechEditor

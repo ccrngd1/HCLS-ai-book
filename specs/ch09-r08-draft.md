@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r08-draft
 title: "Draft: Pathology Slide Analysis"
 target_persona: TechWriter

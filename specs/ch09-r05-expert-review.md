@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r05-expert-review
 title: "Expert Review: Chest X-Ray Triage"
 target_persona: TechExpertReviewer

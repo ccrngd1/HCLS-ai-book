@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r09-draft
 title: "Draft: Temporal Relationship Extraction"
 target_persona: TechWriter

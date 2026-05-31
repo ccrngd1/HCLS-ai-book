@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r02-python
 title: "Python Companion: Patient Photo Verification"
 target_persona: TechWriter

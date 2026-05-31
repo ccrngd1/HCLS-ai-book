@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r01-draft
 title: "Draft: Geographic Patient Clustering"
 target_persona: TechWriter

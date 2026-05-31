@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r08-draft
 title: "Draft: Medical Concept Normalization and Mapping"
 target_persona: TechWriter

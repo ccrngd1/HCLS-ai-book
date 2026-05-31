@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r01-edit
 title: "Final Edit: Geographic Patient Clustering"
 target_persona: TechEditor

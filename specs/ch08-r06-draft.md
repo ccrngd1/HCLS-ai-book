@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r06-draft
 title: "Draft: Social Determinants of Health Extraction"
 target_persona: TechWriter

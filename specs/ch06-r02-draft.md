@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r02-draft
 title: "Draft: Utilization Pattern Segmentation"
 target_persona: TechWriter

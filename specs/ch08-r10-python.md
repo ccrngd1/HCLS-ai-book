@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r10-python
 title: "Python Companion: Phenotype Extraction for Research"
 target_persona: TechWriter

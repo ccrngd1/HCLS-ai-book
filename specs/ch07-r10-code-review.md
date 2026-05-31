@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r10-code-review
 title: "Code Review: Optimal Intervention Timing Prediction"
 target_persona: TechCodeReviewer

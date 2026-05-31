@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r05-edit
 title: "Final Edit: Problem List Extraction"
 target_persona: TechEditor

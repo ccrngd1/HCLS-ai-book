@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r07-draft
 title: "Draft: Adverse Event Detection in Clinical Text"
 target_persona: TechWriter

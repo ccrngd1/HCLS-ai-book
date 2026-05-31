@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r08-code-review
 title: "Code Review: Disease Progression Modeling"
 target_persona: TechCodeReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r05-code-review
 title: "Code Review: Provider Practice Pattern Analysis"
 target_persona: TechCodeReviewer

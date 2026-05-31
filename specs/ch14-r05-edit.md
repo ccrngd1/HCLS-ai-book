@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r05-edit
 title: "Final Edit: Operating Room Block Scheduling"
 target_persona: TechEditor

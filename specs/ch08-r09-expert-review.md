@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r09-expert-review
 title: "Expert Review: Temporal Relationship Extraction"
 target_persona: TechExpertReviewer

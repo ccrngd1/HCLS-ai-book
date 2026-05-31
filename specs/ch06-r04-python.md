@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r04-python
 title: "Python Companion: Disease Severity Stratification"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r07-edit
 title: "Final Edit: Length of Stay Prediction"
 target_persona: TechEditor

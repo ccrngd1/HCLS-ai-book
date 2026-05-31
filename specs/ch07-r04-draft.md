@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r04-draft
 title: "Draft: ED Visit Prediction"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r02-edit
 title: "Final Edit: Provider Directory as Knowledge Graph"
 target_persona: TechEditor

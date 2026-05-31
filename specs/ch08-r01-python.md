@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r01-python
 title: "Python Companion: Chief Complaint Classification"
 target_persona: TechWriter

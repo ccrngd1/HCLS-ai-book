@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r03-draft
 title: "Draft: Patient Churn Disenrollment Prediction"
 target_persona: TechWriter

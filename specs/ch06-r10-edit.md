@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r10-edit
 title: "Final Edit: Multi-Morbidity Pattern Discovery"
 target_persona: TechEditor

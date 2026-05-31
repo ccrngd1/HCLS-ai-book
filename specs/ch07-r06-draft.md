@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r06-draft
 title: "Draft: Rising Risk Identification"
 target_persona: TechWriter

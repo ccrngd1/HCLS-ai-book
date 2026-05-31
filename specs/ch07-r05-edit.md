@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r05-edit
 title: "Final Edit: 30-Day Readmission Risk"
 target_persona: TechEditor

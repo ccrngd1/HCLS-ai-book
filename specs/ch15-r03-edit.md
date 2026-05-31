@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r03-edit
 title: "Final Edit: Clinical Trial Adaptive Randomization"
 target_persona: TechEditor

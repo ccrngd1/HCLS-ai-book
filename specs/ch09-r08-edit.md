@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r08-edit
 title: "Final Edit: Pathology Slide Analysis"
 target_persona: TechEditor

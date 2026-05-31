@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r06-draft
 title: "Draft: Patient Flow Bed Assignment"
 target_persona: TechWriter

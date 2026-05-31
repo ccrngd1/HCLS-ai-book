@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r06-edit
 title: "Final Edit: Diabetic Retinopathy Screening"
 target_persona: TechEditor

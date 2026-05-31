@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r06-expert-review
 title: "Expert Review: Glucose Control in ICU"
 target_persona: TechExpertReviewer

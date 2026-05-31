@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r06-edit
 title: "Final Edit: Social Determinants of Health Extraction"
 target_persona: TechEditor

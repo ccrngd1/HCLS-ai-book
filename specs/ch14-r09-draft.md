@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r09-draft
 title: "Draft: Chemotherapy Scheduling"
 target_persona: TechWriter

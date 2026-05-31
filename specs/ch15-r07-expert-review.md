@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r07-expert-review
 title: "Expert Review: Chronic Disease Treatment Personalization"
 target_persona: TechExpertReviewer

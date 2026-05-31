@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r09-expert-review
 title: "Expert Review: Chemotherapy Scheduling"
 target_persona: TechExpertReviewer

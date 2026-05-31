@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r03-draft
 title: "Draft: ICD CPT Hierarchy Navigation"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r07-draft
 title: "Draft: Length of Stay Prediction"
 target_persona: TechWriter

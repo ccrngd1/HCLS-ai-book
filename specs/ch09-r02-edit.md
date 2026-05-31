@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r02-edit
 title: "Final Edit: Patient Photo Verification"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r05-draft
 title: "Draft: Chest X-Ray Triage"
 target_persona: TechWriter

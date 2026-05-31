@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r02-python
 title: "Python Companion: Patient-Provider Assignment"
 target_persona: TechWriter

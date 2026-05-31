@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r02-draft
 title: "Draft: Notification Timing Optimization"
 target_persona: TechWriter

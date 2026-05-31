@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r07-edit
 title: "Final Edit: Adverse Event Detection in Clinical Text"
 target_persona: TechEditor

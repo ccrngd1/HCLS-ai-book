@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r03-expert-review
 title: "Expert Review: Wound Photography Measurement"
 target_persona: TechExpertReviewer

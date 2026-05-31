@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r10-python
 title: "Python Companion: Multi-Modal Imaging Fusion and Analysis"
 target_persona: TechWriter

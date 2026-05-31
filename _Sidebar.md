@@ -139,6 +139,12 @@
 
 ---
 
+#### Ch 6: Cohort Analysis / Clustering
+
+* [Preface](chapter06-preface)
+
+---
+
 #### Ch 10: Speech / Voice AI
 
 * [Preface](chapter10-preface)

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r09-python
 title: "Python Companion: Chemotherapy Scheduling"
 target_persona: TechWriter

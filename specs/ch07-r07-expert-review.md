@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r07-expert-review
 title: "Expert Review: Length of Stay Prediction"
 target_persona: TechExpertReviewer

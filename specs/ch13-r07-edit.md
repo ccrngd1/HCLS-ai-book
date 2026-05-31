@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r07-edit
 title: "Final Edit: Disease-Gene-Drug Relationship Graph"
 target_persona: TechEditor

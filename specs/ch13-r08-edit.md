@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r08-edit
 title: "Final Edit: Medical Concept Normalization and Mapping"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r08-expert-review
 title: "Expert Review: Disease Progression Modeling"
 target_persona: TechExpertReviewer

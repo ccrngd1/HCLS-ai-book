@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r06-code-review
 title: "Code Review: Rising Risk Identification"
 target_persona: TechCodeReviewer

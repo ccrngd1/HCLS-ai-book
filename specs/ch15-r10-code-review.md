@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r10-code-review
 title: "Code Review: Hospital Resource Allocation Under Uncertainty"
 target_persona: TechCodeReviewer

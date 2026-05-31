@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r06-python
 title: "Python Companion: Glucose Control in ICU"
 target_persona: TechWriter

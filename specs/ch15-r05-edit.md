@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r05-edit
 title: "Final Edit: Ventilator Weaning Protocols"
 target_persona: TechEditor

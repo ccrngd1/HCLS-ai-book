@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r01-expert-review
 title: "Expert Review: Chief Complaint Classification"
 target_persona: TechExpertReviewer

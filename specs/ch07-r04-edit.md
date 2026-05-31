@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r04-edit
 title: "Final Edit: ED Visit Prediction"
 target_persona: TechEditor

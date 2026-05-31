@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r09-code-review
 title: "Code Review: Temporal Relationship Extraction"
 target_persona: TechCodeReviewer

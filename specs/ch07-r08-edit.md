@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r08-edit
 title: "Final Edit: Disease Progression Modeling"
 target_persona: TechEditor

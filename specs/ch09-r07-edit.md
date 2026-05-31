@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r07-edit
 title: "Final Edit: Radiology AI Triage Multi-Modality"
 target_persona: TechEditor

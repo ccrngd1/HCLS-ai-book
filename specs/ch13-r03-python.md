@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r03-python
 title: "Python Companion: ICD CPT Hierarchy Navigation"
 target_persona: TechWriter

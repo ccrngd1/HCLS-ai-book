@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r09-expert-review
 title: "Expert Review: Social Determinant Phenotyping"
 target_persona: TechExpertReviewer

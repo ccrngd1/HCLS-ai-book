@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r06-edit
 title: "Final Edit: Care Gap Reasoning Engine"
 target_persona: TechEditor

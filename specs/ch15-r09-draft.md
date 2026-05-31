@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r09-draft
 title: "Draft: Radiation Therapy Adaptive Planning"
 target_persona: TechWriter

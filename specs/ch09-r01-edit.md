@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r01-edit
 title: "Final Edit: Image Quality Assessment"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r01-code-review
 title: "Code Review: Appointment Slot Optimization"
 target_persona: TechCodeReviewer

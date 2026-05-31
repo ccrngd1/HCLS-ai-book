@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r02-draft
 title: "Draft: Patient Photo Verification"
 target_persona: TechWriter

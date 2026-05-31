@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r06-expert-review
 title: "Expert Review: Patient Flow Bed Assignment"
 target_persona: TechExpertReviewer

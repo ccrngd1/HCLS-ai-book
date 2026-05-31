@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r04-edit
 title: "Final Edit: Drug-Drug Interaction Knowledge Base"
 target_persona: TechEditor

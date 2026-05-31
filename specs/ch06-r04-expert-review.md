@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r04-expert-review
 title: "Expert Review: Disease Severity Stratification"
 target_persona: TechExpertReviewer

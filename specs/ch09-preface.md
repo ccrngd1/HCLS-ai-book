@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-preface
 title: "Chapter 09 Preface: Computer Vision / Medical Imaging"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r03-python
 title: "Python Companion: Patient Churn Disenrollment Prediction"
 target_persona: TechWriter

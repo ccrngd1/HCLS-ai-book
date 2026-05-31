@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r07-edit
 title: "Final Edit: Chronic Disease Treatment Personalization"
 target_persona: TechEditor

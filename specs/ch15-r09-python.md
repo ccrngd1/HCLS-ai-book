@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r09-python
 title: "Python Companion: Radiation Therapy Adaptive Planning"
 target_persona: TechWriter

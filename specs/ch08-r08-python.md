@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r08-python
 title: "Python Companion: Clinical Assertion Classification"
 target_persona: TechWriter

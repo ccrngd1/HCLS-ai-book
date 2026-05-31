@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r03-expert-review
 title: "Expert Review: Inventory Reorder Optimization"
 target_persona: TechExpertReviewer

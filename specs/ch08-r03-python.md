@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r03-python
 title: "Python Companion: ICD-10 Code Suggestion"
 target_persona: TechWriter

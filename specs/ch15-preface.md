@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-preface
 title: "Chapter 15 Preface: Reinforcement Learning"
 target_persona: TechWriter

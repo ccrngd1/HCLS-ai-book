@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r08-draft
 title: "Draft: Clinical Assertion Classification"
 target_persona: TechWriter

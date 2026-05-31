@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r02-draft
 title: "Draft: Patient Sentiment Analysis"
 target_persona: TechWriter

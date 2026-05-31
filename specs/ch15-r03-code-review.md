@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r03-code-review
 title: "Code Review: Clinical Trial Adaptive Randomization"
 target_persona: TechCodeReviewer

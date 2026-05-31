@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-preface
 title: "Chapter 06 Preface: Cohort Analysis / Clustering"
 target_persona: TechWriter

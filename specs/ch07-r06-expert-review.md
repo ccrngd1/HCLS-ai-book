@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r06-expert-review
 title: "Expert Review: Rising Risk Identification"
 target_persona: TechExpertReviewer

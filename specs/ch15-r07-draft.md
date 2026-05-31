@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r07-draft
 title: "Draft: Chronic Disease Treatment Personalization"
 target_persona: TechWriter

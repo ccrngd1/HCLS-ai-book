@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r06-expert-review
 title: "Expert Review: Care Gap Reasoning Engine"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r06-code-review
 title: "Code Review: Care Gap Reasoning Engine"
 target_persona: TechCodeReviewer

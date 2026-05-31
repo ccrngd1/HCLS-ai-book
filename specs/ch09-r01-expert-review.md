@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r01-expert-review
 title: "Expert Review: Image Quality Assessment"
 target_persona: TechExpertReviewer

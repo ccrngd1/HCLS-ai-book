@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r10-draft
 title: "Draft: Health System Network Design"
 target_persona: TechWriter

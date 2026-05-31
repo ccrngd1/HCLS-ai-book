@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r01-expert-review
 title: "Expert Review: Appointment Slot Optimization"
 target_persona: TechExpertReviewer

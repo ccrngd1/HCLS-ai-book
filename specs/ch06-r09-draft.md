@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r09-draft
 title: "Draft: Social Determinant Phenotyping"
 target_persona: TechWriter

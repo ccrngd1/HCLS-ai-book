@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r03-edit
 title: "Final Edit: Wound Photography Measurement"
 target_persona: TechEditor

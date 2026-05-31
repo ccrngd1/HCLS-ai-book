@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r08-draft
 title: "Draft: Ambulance Routing and Dispatch"
 target_persona: TechWriter

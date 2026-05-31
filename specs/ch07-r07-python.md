@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r07-python
 title: "Python Companion: Length of Stay Prediction"
 target_persona: TechWriter

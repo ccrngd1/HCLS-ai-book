@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r07-code-review
 title: "Code Review: Adverse Event Detection in Clinical Text"
 target_persona: TechCodeReviewer

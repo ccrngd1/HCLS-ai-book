@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r06-expert-review
 title: "Expert Review: Patient Similarity for Care Planning"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r09-edit
 title: "Final Edit: Temporal Relationship Extraction"
 target_persona: TechEditor

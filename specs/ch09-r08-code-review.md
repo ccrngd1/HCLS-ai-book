@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r08-code-review
 title: "Code Review: Pathology Slide Analysis"
 target_persona: TechCodeReviewer

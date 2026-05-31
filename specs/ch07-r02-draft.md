@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r02-draft
 title: "Draft: Propensity to Pay Scoring"
 target_persona: TechWriter

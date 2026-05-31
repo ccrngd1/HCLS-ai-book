@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r10-python
 title: "Python Companion: Hospital Resource Allocation Under Uncertainty"
 target_persona: TechWriter

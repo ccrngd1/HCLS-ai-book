@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r05-draft
 title: "Draft: Operating Room Block Scheduling"
 target_persona: TechWriter

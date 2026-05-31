@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r09-python
 title: "Python Companion: Temporal Relationship Extraction"
 target_persona: TechWriter

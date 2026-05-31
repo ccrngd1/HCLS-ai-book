@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r10-python
 title: "Python Companion: Federated Clinical Knowledge Network"
 target_persona: TechWriter

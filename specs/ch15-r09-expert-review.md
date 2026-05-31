@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r09-expert-review
 title: "Expert Review: Radiation Therapy Adaptive Planning"
 target_persona: TechExpertReviewer

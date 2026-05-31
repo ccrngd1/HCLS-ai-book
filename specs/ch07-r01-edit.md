@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r01-edit
 title: "Final Edit: Appointment No-Show Prediction"
 target_persona: TechEditor

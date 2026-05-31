@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r05-python
 title: "Python Companion: Chest X-Ray Triage"
 target_persona: TechWriter

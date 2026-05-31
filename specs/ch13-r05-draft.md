@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r05-draft
 title: "Draft: Clinical Pathway Protocol Modeling"
 target_persona: TechWriter

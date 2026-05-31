@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r07-edit
 title: "Final Edit: OR Case Sequencing"
 target_persona: TechEditor

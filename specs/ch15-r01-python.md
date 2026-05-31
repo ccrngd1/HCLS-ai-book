@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r01-python
 title: "Python Companion: Alert Threshold Optimization"
 target_persona: TechWriter

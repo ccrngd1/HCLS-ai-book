@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r04-edit
 title: "Final Edit: Medication Extraction and Normalization"
 target_persona: TechEditor

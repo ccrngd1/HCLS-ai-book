@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r04-edit
 title: "Final Edit: Nurse Staffing Optimization"
 target_persona: TechEditor

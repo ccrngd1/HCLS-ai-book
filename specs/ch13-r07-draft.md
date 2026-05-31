@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r07-draft
 title: "Draft: Disease-Gene-Drug Relationship Graph"
 target_persona: TechWriter

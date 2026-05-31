@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r01-python
 title: "Python Companion: Appointment No-Show Prediction"
 target_persona: TechWriter

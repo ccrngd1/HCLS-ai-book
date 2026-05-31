@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r04-draft
 title: "Draft: Disease Severity Stratification"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r04-expert-review
 title: "Expert Review: Medication Extraction and Normalization"
 target_persona: TechExpertReviewer

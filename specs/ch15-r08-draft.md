@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r08-draft
 title: "Draft: Chemotherapy Dose Optimization"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r10-python
 title: "Python Companion: Optimal Intervention Timing Prediction"
 target_persona: TechWriter

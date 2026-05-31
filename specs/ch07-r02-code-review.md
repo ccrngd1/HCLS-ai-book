@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r02-code-review
 title: "Code Review: Propensity to Pay Scoring"
 target_persona: TechCodeReviewer

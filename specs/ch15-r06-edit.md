@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r06-edit
 title: "Final Edit: Glucose Control in ICU"
 target_persona: TechEditor

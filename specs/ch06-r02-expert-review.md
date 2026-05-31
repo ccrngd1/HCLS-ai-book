@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r02-expert-review
 title: "Expert Review: Utilization Pattern Segmentation"
 target_persona: TechExpertReviewer

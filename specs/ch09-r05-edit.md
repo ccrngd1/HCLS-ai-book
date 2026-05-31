@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r05-edit
 title: "Final Edit: Chest X-Ray Triage"
 target_persona: TechEditor

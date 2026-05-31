@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r01-code-review
 title: "Code Review: Image Quality Assessment"
 target_persona: TechCodeReviewer

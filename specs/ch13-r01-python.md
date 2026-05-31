@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r01-python
 title: "Python Companion: Drug Formulary Navigation"
 target_persona: TechWriter

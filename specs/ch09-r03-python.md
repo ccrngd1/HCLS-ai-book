@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r03-python
 title: "Python Companion: Wound Photography Measurement"
 target_persona: TechWriter

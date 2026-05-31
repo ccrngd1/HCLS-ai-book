@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r05-draft
 title: "Draft: Provider Practice Pattern Analysis"
 target_persona: TechWriter

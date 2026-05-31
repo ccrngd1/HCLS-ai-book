@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r04-edit
 title: "Final Edit: Sepsis Treatment Optimization"
 target_persona: TechEditor

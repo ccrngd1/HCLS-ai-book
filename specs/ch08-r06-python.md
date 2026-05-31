@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r06-python
 title: "Python Companion: Social Determinants of Health Extraction"
 target_persona: TechWriter

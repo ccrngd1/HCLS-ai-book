@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r02-expert-review
 title: "Expert Review: Provider Directory as Knowledge Graph"
 target_persona: TechExpertReviewer

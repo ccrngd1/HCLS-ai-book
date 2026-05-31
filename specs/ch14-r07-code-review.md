@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r07-code-review
 title: "Code Review: OR Case Sequencing"
 target_persona: TechCodeReviewer

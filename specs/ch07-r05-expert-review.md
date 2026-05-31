@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r05-expert-review
 title: "Expert Review: 30-Day Readmission Risk"
 target_persona: TechExpertReviewer

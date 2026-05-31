@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r07-expert-review
 title: "Expert Review: Radiology AI Triage Multi-Modality"
 target_persona: TechExpertReviewer

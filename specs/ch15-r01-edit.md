@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r01-edit
 title: "Final Edit: Alert Threshold Optimization"
 target_persona: TechEditor

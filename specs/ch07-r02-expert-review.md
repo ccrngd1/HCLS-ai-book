@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r02-expert-review
 title: "Expert Review: Propensity to Pay Scoring"
 target_persona: TechExpertReviewer

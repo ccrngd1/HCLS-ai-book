@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r06-code-review
 title: "Code Review: Social Determinants of Health Extraction"
 target_persona: TechCodeReviewer

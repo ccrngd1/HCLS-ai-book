@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r06-python
 title: "Python Companion: Care Gap Reasoning Engine"
 target_persona: TechWriter

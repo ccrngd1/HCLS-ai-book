@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r07-expert-review
 title: "Expert Review: Adverse Event Detection in Clinical Text"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r07-python
 title: "Python Companion: Adverse Event Detection in Clinical Text"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r05-python
 title: "Python Companion: Provider Practice Pattern Analysis"
 target_persona: TechWriter

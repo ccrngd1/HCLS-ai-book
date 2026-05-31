@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r08-python
 title: "Python Companion: Ambulance Routing and Dispatch"
 target_persona: TechWriter

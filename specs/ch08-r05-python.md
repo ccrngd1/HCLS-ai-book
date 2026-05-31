@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r05-python
 title: "Python Companion: Problem List Extraction"
 target_persona: TechWriter

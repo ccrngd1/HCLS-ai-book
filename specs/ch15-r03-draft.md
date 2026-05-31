@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r03-draft
 title: "Draft: Clinical Trial Adaptive Randomization"
 target_persona: TechWriter

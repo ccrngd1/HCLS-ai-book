@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r05-edit
 title: "Final Edit: Clinical Pathway Protocol Modeling"
 target_persona: TechEditor

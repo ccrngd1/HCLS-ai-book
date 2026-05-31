@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r03-code-review
 title: "Code Review: Patient Churn Disenrollment Prediction"
 target_persona: TechCodeReviewer

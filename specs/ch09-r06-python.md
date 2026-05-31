@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r06-python
 title: "Python Companion: Diabetic Retinopathy Screening"
 target_persona: TechWriter

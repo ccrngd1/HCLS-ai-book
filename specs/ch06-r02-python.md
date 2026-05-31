@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r02-python
 title: "Python Companion: Utilization Pattern Segmentation"
 target_persona: TechWriter

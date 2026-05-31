@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r04-expert-review
 title: "Expert Review: Nurse Staffing Optimization"
 target_persona: TechExpertReviewer

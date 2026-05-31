@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r06-edit
 title: "Final Edit: Patient Similarity for Care Planning"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r06-python
 title: "Python Companion: Patient Similarity for Care Planning"
 target_persona: TechWriter

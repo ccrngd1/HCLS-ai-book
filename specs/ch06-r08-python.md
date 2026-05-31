@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r08-python
 title: "Python Companion: Disease Subtype Discovery"
 target_persona: TechWriter

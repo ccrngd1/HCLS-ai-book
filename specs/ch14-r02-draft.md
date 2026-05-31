@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r02-draft
 title: "Draft: Patient-Provider Assignment"
 target_persona: TechWriter

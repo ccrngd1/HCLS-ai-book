@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r10-code-review
 title: "Code Review: Multi-Modal Imaging Fusion and Analysis"
 target_persona: TechCodeReviewer

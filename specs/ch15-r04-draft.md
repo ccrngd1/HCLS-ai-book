@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r04-draft
 title: "Draft: Sepsis Treatment Optimization"
 target_persona: TechWriter

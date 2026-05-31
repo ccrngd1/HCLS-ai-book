@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r05-python
 title: "Python Companion: Clinical Pathway Protocol Modeling"
 target_persona: TechWriter

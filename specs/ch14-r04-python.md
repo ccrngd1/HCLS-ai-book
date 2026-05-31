@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r04-python
 title: "Python Companion: Nurse Staffing Optimization"
 target_persona: TechWriter

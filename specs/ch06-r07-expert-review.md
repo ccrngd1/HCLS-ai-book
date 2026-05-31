@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r07-expert-review
 title: "Expert Review: Clinical Trial Patient Matching"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r06-draft
 title: "Draft: Care Gap Reasoning Engine"
 target_persona: TechWriter

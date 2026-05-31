@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r04-python
 title: "Python Companion: ED Visit Prediction"
 target_persona: TechWriter

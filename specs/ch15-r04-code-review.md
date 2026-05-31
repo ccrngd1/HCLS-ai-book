@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r04-code-review
 title: "Code Review: Sepsis Treatment Optimization"
 target_persona: TechCodeReviewer

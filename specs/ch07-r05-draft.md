@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r05-draft
 title: "Draft: 30-Day Readmission Risk"
 target_persona: TechWriter

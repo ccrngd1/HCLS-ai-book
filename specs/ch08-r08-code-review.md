@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r08-code-review
 title: "Code Review: Clinical Assertion Classification"
 target_persona: TechCodeReviewer

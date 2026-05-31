@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r09-edit
 title: "Final Edit: Radiation Therapy Adaptive Planning"
 target_persona: TechEditor

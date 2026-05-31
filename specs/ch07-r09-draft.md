@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r09-draft
 title: "Draft: Mortality Risk Scoring ICU"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r06-draft
 title: "Draft: Glucose Control in ICU"
 target_persona: TechWriter

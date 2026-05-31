@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r08-python
 title: "Python Companion: Pathology Slide Analysis"
 target_persona: TechWriter

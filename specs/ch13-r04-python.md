@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r04-python
 title: "Python Companion: Drug-Drug Interaction Knowledge Base"
 target_persona: TechWriter

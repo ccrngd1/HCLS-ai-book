@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r03-python
 title: "Python Companion: Clinical Trial Adaptive Randomization"
 target_persona: TechWriter

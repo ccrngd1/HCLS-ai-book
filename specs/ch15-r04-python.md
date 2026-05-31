@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r04-python
 title: "Python Companion: Sepsis Treatment Optimization"
 target_persona: TechWriter

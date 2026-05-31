@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r06-python
 title: "Python Companion: Patient Flow Bed Assignment"
 target_persona: TechWriter

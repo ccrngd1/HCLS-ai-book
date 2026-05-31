@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r02-edit
 title: "Final Edit: Utilization Pattern Segmentation"
 target_persona: TechEditor

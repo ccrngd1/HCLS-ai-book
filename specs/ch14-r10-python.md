@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r10-python
 title: "Python Companion: Health System Network Design"
 target_persona: TechWriter

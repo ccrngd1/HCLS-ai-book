@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r03-code-review
 title: "Code Review: Payer Mix Financial Risk Clustering"
 target_persona: TechCodeReviewer

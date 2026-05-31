@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r10-python
 title: "Python Companion: Multi-Morbidity Pattern Discovery"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r10-edit
 title: "Final Edit: Optimal Intervention Timing Prediction"
 target_persona: TechEditor

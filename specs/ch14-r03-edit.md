@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r03-edit
 title: "Final Edit: Inventory Reorder Optimization"
 target_persona: TechEditor

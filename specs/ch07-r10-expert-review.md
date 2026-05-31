@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r10-expert-review
 title: "Expert Review: Optimal Intervention Timing Prediction"
 target_persona: TechExpertReviewer

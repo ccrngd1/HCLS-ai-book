@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r03-expert-review
 title: "Expert Review: Payer Mix Financial Risk Clustering"
 target_persona: TechExpertReviewer

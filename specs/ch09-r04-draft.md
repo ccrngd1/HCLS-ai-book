@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r04-draft
 title: "Draft: Dermatology Lesion Triage"
 target_persona: TechWriter

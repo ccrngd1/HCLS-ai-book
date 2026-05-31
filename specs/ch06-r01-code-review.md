@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r01-code-review
 title: "Code Review: Geographic Patient Clustering"
 target_persona: TechCodeReviewer

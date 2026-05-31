@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r09-expert-review
 title: "Expert Review: Surgical Video Analysis"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r01-expert-review
 title: "Expert Review: Geographic Patient Clustering"
 target_persona: TechExpertReviewer

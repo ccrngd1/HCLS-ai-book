@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r05-expert-review
 title: "Expert Review: Provider Practice Pattern Analysis"
 target_persona: TechExpertReviewer

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r09-edit
 title: "Final Edit: Surgical Video Analysis"
 target_persona: TechEditor

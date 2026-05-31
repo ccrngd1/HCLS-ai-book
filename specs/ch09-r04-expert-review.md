@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r04-expert-review
 title: "Expert Review: Dermatology Lesion Triage"
 target_persona: TechExpertReviewer

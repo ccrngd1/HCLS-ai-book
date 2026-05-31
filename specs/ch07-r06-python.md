@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r06-python
 title: "Python Companion: Rising Risk Identification"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r01-draft
 title: "Draft: Appointment No-Show Prediction"
 target_persona: TechWriter

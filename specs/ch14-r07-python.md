@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r07-python
 title: "Python Companion: OR Case Sequencing"
 target_persona: TechWriter

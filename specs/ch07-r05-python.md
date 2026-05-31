@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r05-python
 title: "Python Companion: 30-Day Readmission Risk"
 target_persona: TechWriter

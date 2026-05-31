@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r07-code-review
 title: "Code Review: Radiology AI Triage Multi-Modality"
 target_persona: TechCodeReviewer

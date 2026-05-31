@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r06-draft
 title: "Draft: Patient Similarity for Care Planning"
 target_persona: TechWriter

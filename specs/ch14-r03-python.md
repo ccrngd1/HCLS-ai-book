@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r03-python
 title: "Python Companion: Inventory Reorder Optimization"
 target_persona: TechWriter

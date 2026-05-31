@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r10-edit
 title: "Final Edit: Multi-Modal Imaging Fusion and Analysis"
 target_persona: TechEditor

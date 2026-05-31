@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r01-code-review
 title: "Code Review: Appointment No-Show Prediction"
 target_persona: TechCodeReviewer

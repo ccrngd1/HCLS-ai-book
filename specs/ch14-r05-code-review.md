@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r05-code-review
 title: "Code Review: Operating Room Block Scheduling"
 target_persona: TechCodeReviewer

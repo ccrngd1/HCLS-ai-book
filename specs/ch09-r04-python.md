@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r04-python
 title: "Python Companion: Dermatology Lesion Triage"
 target_persona: TechWriter

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r01-edit
 title: "Final Edit: Drug Formulary Navigation"
 target_persona: TechEditor

@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r09-expert-review
 title: "Expert Review: Literature-Derived Knowledge Graph"
 target_persona: TechExpertReviewer

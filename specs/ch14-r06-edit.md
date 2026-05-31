@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch14-r06-edit
 title: "Final Edit: Patient Flow Bed Assignment"
 target_persona: TechEditor

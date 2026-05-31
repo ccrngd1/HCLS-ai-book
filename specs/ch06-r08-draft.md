@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r08-draft
 title: "Draft: Disease Subtype Discovery"
 target_persona: TechWriter

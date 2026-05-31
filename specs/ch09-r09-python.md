@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r09-python
 title: "Python Companion: Surgical Video Analysis"
 target_persona: TechWriter

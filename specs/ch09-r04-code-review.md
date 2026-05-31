@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r04-code-review
 title: "Code Review: Dermatology Lesion Triage"
 target_persona: TechCodeReviewer

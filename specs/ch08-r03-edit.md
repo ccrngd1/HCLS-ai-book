@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch08-r03-edit
 title: "Final Edit: ICD-10 Code Suggestion"
 target_persona: TechEditor

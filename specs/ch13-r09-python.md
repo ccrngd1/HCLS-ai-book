@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r09-python
 title: "Python Companion: Literature-Derived Knowledge Graph"
 target_persona: TechWriter

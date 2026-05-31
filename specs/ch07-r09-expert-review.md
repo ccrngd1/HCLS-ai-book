@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch07-r09-expert-review
 title: "Expert Review: Mortality Risk Scoring ICU"
 target_persona: TechExpertReviewer

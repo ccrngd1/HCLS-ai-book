@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r04-edit
 title: "Final Edit: Disease Severity Stratification"
 target_persona: TechEditor

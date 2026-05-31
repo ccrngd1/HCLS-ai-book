@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r02-code-review
 title: "Code Review: Notification Timing Optimization"
 target_persona: TechCodeReviewer

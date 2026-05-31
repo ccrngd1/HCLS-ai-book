@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch13-r04-code-review
 title: "Code Review: Drug-Drug Interaction Knowledge Base"
 target_persona: TechCodeReviewer

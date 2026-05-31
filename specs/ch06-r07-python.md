@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch06-r07-python
 title: "Python Companion: Clinical Trial Patient Matching"
 target_persona: TechWriter

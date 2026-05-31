@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch15-r09-code-review
 title: "Code Review: Radiation Therapy Adaptive Planning"
 target_persona: TechCodeReviewer

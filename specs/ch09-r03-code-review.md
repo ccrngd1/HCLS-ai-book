@@ -1,4 +1,4 @@
-﻿---
+---
 id: ch09-r03-code-review
 title: "Code Review: Wound Photography Measurement"
 target_persona: TechCodeReviewer
