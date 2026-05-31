@@ -222,6 +222,8 @@
 * [Preface](chapter09-preface)
 * [9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment)
   * [Python Example](chapter09.01-python-example)
+* [9.2 — Patient Photo Verification](chapter09.02-patient-photo-verification)
+  * [Python Example](chapter09.02-python-example)
 
 ---
 
