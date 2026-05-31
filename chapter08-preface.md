@@ -141,7 +141,7 @@ Let's start with the simplest pattern: classifying short text into categories.
 
 ---
 
-*→ [Recipe 8.1 — Chief Complaint Classification](chapter08.01-chief-complaint-classification)*
+*→ [Recipe 8.1: Chief Complaint Classification](chapter08.01-chief-complaint-classification)*
 
 ## Further Reading
 
