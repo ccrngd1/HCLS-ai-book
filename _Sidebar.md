@@ -172,6 +172,8 @@
   * [Python Example](chapter07.01-python-example)
 * [7.2 — Propensity to Pay Scoring](chapter07.02-propensity-to-pay-scoring)
   * [Python Example](chapter07.02-python-example)
+* [7.3 — Patient Churn / Disenrollment Prediction](chapter07.03-patient-churn-disenrollment-prediction)
+  * [Python Example](chapter07.03-python-example)
 
 ---
 
