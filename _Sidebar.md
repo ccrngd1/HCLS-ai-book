@@ -150,6 +150,8 @@
   * [Python Example](chapter06.03-python-example)
 * [6.4 — Disease Severity Stratification](chapter06.04-disease-severity-stratification)
   * [Python Example](chapter06.04-python-example)
+* [6.5 — Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis)
+  * [Python Example](chapter06.05-python-example)
 
 ---
 
