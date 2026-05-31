@@ -180,6 +180,8 @@
   * [Python Example](chapter07.05-python-example)
 * [7.6 — Rising Risk Identification](chapter07.06-rising-risk-identification)
   * [Python Example](chapter07.06-python-example)
+* [7.7 — Length of Stay Prediction](chapter07.07-length-of-stay-prediction)
+  * [Python Example](chapter07.07-python-example)
 
 ---
 
