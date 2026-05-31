@@ -450,13 +450,17 @@ def score_patient(model, feature_vector: dict, feature_columns: list) -> dict:
     Returns:
         Dict with probability, risk tier, and contributing factors.
     """
+    # IMPORTANT: Callers should impute missing values before calling this function.
+    # The pipeline's run_scoring_pipeline() handles imputation. If you call
+    # score_patient() directly, impute first or you'll get unreliable predictions.
+    #
     # Assemble features in the order the model expects
     features = []
     missing_count = 0
     for col in feature_columns:
         val = feature_vector.get(col)
         if val is None or (isinstance(val, float) and np.isnan(val)):
-            features.append(-999)  # sentinel for missing (XGBoost handles this)
+            features.append(-999)  # safety fallback for unexpected nulls after imputation
             missing_count += 1
         else:
             features.append(val)
@@ -625,6 +629,8 @@ def store_risk_score(
     ttl_timestamp = int((discharge_dt + timedelta(days=45)).timestamp())
 
     # Convert floats to Decimal (DynamoDB requirement)
+    # This includes nested numerics in risk_drivers (DynamoDB rejects floats
+    # even inside lists and maps).
     item = {
         "patient_id": patient_id,
         "encounter_id": encounter_id,
@@ -632,7 +638,14 @@ def store_risk_score(
         "probability": Decimal(str(round(score_result["probability"], 4))),
         "raw_score": Decimal(str(round(score_result["raw_score"], 4))),
         "risk_tier": score_result["risk_tier"],
-        "risk_drivers": score_result["risk_drivers"],
+        "risk_drivers": [
+            {
+                "feature": d["feature"],
+                "value": Decimal(str(d["value"])),
+                "importance": Decimal(str(d["importance"])),
+            }
+            for d in score_result["risk_drivers"]
+        ],
         "interventions": interventions,
         "model_version": "readmission-xgb-v2.3",
         "scored_at": score_result["scored_at"],
