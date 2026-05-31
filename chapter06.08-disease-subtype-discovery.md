@@ -1,6 +1,6 @@
 # Recipe 6.8: Disease Subtype Discovery
 
-**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$2.00–$8.00 per patient in the analysis cohort (depending on feature dimensionality and compute requirements)
+**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$2.00-$8.00 per patient in the analysis cohort (depending on feature dimensionality and compute requirements)
 
 ---
 
@@ -217,7 +217,7 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: Define the cohort.** Before any clustering happens, you need a clean, well-defined patient population. This means selecting patients with the target diagnosis, applying minimum data completeness thresholds, and defining the observation window. A cohort with 40% missing lab values will produce clusters driven by missingness patterns rather than biology. This step also handles temporal alignment: for each patient, define a "index date" (diagnosis date, first encounter, etc.) and extract features relative to that anchor. Skip this step and your clusters will reflect data availability rather than disease biology.
+**Step 1: Define the cohort.** Before any clustering happens, you need a clean, well-defined patient population. This means selecting patients with the target diagnosis, applying minimum data completeness thresholds, and defining the observation window. A cohort with 40% missing lab values will produce clusters driven by missingness patterns rather than biology. This step also handles temporal alignment: for each patient, define an "index date" (diagnosis date, first encounter, etc.) and extract features relative to that anchor. Skip this step and your clusters will reflect data availability rather than disease biology.
 
 ```
 FUNCTION define_cohort(diagnosis_codes, min_data_completeness, observation_window):
@@ -350,6 +350,10 @@ FUNCTION run_multi_algorithm_clustering(reduced_matrix, k_range=[2,3,4,5,6,7,8,9
 
 ```
 FUNCTION consensus_clustering(scaled_matrix, k, n_iterations=100, subsample_fraction=0.8):
+    // We use the full scaled feature space here rather than PCA-reduced space.
+    // Bootstrap resampling provides implicit regularization, and retaining all features
+    // ensures the consensus matrix captures the full phenotypic similarity structure.
+
     // consensus_matrix[i][j] = fraction of times patient i and j were in the same cluster
     n_patients = number of rows in scaled_matrix
     co_cluster_count = zero matrix (n_patients x n_patients)
@@ -434,7 +438,7 @@ FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data
 
 <!-- TODO (TechWriter): Expert review A1 (HIGH). Add subsection or expanded intro before Step 7 addressing the research-to-production transition: (1) prospective validation on a temporal holdout cohort, (2) FDA CDS considerations under 21st Century Cures Act, (3) clinical governance approval workflow, (4) drift monitoring strategy for deployed subtype classifier. -->
 
-Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype.
+Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype. Consider adding a confidence threshold: if the maximum predicted probability is below 0.6, flag the patient as "unclassifiable" rather than forcing assignment to a subtype. These boundary patients may represent emerging subtypes not captured in the original discovery cohort.
 
 ```
 FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
