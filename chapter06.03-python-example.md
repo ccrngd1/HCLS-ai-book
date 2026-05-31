@@ -11,7 +11,7 @@
 You'll need the AWS SDK for Python and scikit-learn:
 
 ```bash
-pip install boto3 pandas numpy scikit-learn
+pip install boto3 pandas numpy scikit-learn pyarrow
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
@@ -36,7 +36,6 @@ import logging
 import json
 import datetime
 from datetime import timezone
-from decimal import Decimal
 
 import boto3
 import numpy as np
@@ -124,6 +123,10 @@ def generate_synthetic_patients(n_patients: int = 5000, seed: int = 42) -> pd.Da
         DataFrame with one row per patient and columns matching the
         raw data you'd get from source system extracts.
     """
+    # TODO (TechWriter): Code review Issue 1 (WARNING). The iterrows/loc pattern below
+    # is correct but extremely slow (~35K individual cell assignments for 5K patients).
+    # Consider vectorizing with boolean masks per payer type, or at minimum add a
+    # prominent comment warning readers not to copy this pattern for large populations.
     rng = np.random.default_rng(seed)
 
     # Assign payer types with a realistic distribution.
@@ -442,6 +445,14 @@ def detect_population_shift(
     an alert. In practice, a 5pp shift in a quarter is significant: it means
     thousands of patients are moving between financial risk segments.
 
+    WARNING: This implementation matches clusters by suggested_label, which
+    is non-deterministic across runs. In production, match clusters by
+    centroid similarity (Hungarian method on centroid distances) or use the
+    previous run's centroids as initialization. Label-based matching will
+    produce false positives when a cluster hovers near a threshold boundary
+    (e.g., payment_ratio near 0.85 flipping between "Low Risk" and
+    "Moderate Risk" labels).
+
     Args:
         current_profiles: Profiles from this run's clustering.
         previous_profiles: Profiles from the last run (loaded from S3 history).
@@ -450,9 +461,10 @@ def detect_population_shift(
         List of alert dicts for clusters that shifted beyond threshold.
         Empty list means the population is stable (good news).
     """
+    # TODO (TechWriter): Code review Issue 3 (WARNING). Replace label-based matching
+    # with centroid-distance matching for production reliability. The current approach
+    # will produce false shift alerts when labels flip due to threshold boundary effects.
     # Build lookup by cluster label (not ID, since IDs can shift between runs).
-    # In production, you'd use a more robust matching strategy (e.g., centroid
-    # similarity) to align clusters across runs. Labels are a simplification.
     previous_by_label = {p["suggested_label"]: p["percentage"] for p in previous_profiles}
 
     alerts = []
@@ -525,7 +537,8 @@ def upload_results_to_s3(
         "run_date": run_date,
     })
     assignments_key = f"{S3_PREFIX_RESULTS}{run_date}/assignments.parquet"
-    # In production, write directly to S3 with pyarrow. Here we write locally first.
+    # to_parquet() with no path argument returns bytes in memory,
+    # which we pass directly to S3.
     parquet_buffer = assignments_df.to_parquet(index=False)
     s3_client.put_object(
         Bucket=S3_BUCKET,

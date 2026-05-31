@@ -1,6 +1,6 @@
 # Recipe 6.3: Payer Mix Financial Risk Clustering
 
-**Complexity:** Simple-Medium · **Phase:** Production · **Estimated Cost:** ~$50–200/month depending on population size
+**Complexity:** Simple-Medium · **Phase:** Production · **Estimated Cost:** ~$50-200/month depending on population size
 
 ---
 
@@ -66,6 +66,8 @@ Clustering algorithms are distance-based. If one feature ranges from 0 to 1,000,
 
 Categorical features (payer type, plan design) need encoding. One-hot encoding works but creates high-dimensional sparse vectors. For payer mix clustering specifically, ordinal encoding based on expected reimbursement rate often works better: it preserves the financial ordering that's central to the use case.
 
+A caveat on ordinal payer encoding: this approach assumes a correlation between payer reimbursement level and patient financial risk. Your clustering results may reveal this assumption is incomplete. In our example results below, HDHP commercial patients show higher write-off rates than Medicaid patients. Consider one-hot encoding as an alternative if you want the algorithm to discover payer-risk relationships without this prior assumption. The ordinal approach works as a starting point, but review your cluster profiles to verify the encoding isn't forcing artificial separation.
+
 ### Choosing K (Number of Clusters)
 
 This is part science, part art. Technical approaches:
@@ -103,7 +105,7 @@ Since clustering is unsupervised, you can't measure accuracy in the traditional 
 
 **Profiling:** For each cluster, compute summary statistics and create a human-readable profile. "Cluster 3: High-deductible commercial, moderate utilization, poor payment history, average age 38, concentrated in suburban zip codes." These profiles are what finance teams actually use.
 
-**Monitoring:** Track cluster membership over time. Alert when the population distribution shifts (e.g., Cluster 1 growing from 15% to 22% of the population over 6 months). Re-run clustering periodically (monthly or quarterly) to capture population changes.
+**Monitoring:** Track cluster membership over time. Alert when the population distribution shifts (e.g., Cluster 1 growing from 15% to 22% of the population over 6 months). Re-run clustering periodically (monthly or quarterly) to capture population changes. Define a retention policy for historical cluster assignments: retain patient-level assignments for 24-36 months for trend analysis, then aggregate to cluster-level statistics only. Ensure your retention policy aligns with your organization's HIPAA data retention schedule and any applicable state privacy laws.
 
 ---
 
@@ -111,7 +113,7 @@ Since clustering is unsupervised, you can't measure accuracy in the traditional 
 
 ### Why These Services
 
-**Amazon SageMaker for clustering.** SageMaker provides a managed K-Means algorithm (and access to scikit-learn for GMM or DBSCAN via processing jobs) that scales to millions of patients without managing infrastructure. The built-in K-Means implementation is optimized for large datasets and runs on distributed compute. For smaller populations (under 500K patients), a SageMaker Processing Job with scikit-learn is simpler and more flexible.
+**Amazon SageMaker for clustering.** SageMaker provides a managed K-Means algorithm (and access to scikit-learn for GMM or DBSCAN via processing jobs) that scales to millions of patients without managing infrastructure. The built-in K-Means implementation is optimized for large datasets and runs on distributed compute. For smaller populations (under 500K patients), a SageMaker Processing Job with scikit-learn is simpler and more flexible. The pseudocode below follows the scikit-learn API pattern. If using SageMaker's built-in K-Means algorithm, the training job requires RecordIO-protobuf or CSV input format and uses the SageMaker Estimator API rather than direct `fit_predict` calls. For populations under 500K patients, a Processing Job running scikit-learn (as shown in the pseudocode and Python companion) is simpler. For larger populations, the built-in algorithm's distributed training is worth the format conversion overhead.
 
 **Amazon S3 for data lake storage.** Feature matrices, raw source extracts, cluster assignments, and historical snapshots all live in S3. Parquet format for the feature matrices gives you columnar compression and fast reads. S3 versioning preserves historical cluster assignments for trend analysis.
 
@@ -121,7 +123,7 @@ Since clustering is unsupervised, you can't measure accuracy in the traditional 
 
 **Amazon QuickSight for visualization.** Cluster profiles, population distribution trends, and shift alerts presented in dashboards that finance leadership actually looks at. Connects directly to Athena.
 
-**Amazon EventBridge + Lambda for monitoring and alerts.** Scheduled re-clustering runs and population shift detection. When the distribution changes beyond a threshold, fire an alert to the revenue cycle team.
+**Amazon EventBridge + Lambda for monitoring and alerts.** Scheduled re-clustering runs and population shift detection. When the distribution changes beyond a threshold, fire an alert to the revenue cycle team. Configure a dead-letter queue on the shift detection Lambda for failed invocations. For quarterly runs, a failed detection is low-urgency but should generate an ops alert so the team knows to investigate.
 
 ### Architecture Diagram
 
@@ -152,7 +154,8 @@ flowchart TD
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `athena:StartQueryExecution`, `sns:Publish` |
 | **BAA** | Required. Patient financial data combined with utilization data constitutes PHI. |
 | **Encryption** | S3: SSE-KMS for all buckets. SageMaker: KMS-encrypted training volumes and model artifacts. Athena: encrypted query results. All transit over TLS. |
-| **VPC** | SageMaker training jobs and Glue jobs in VPC with VPC endpoints for S3 and KMS. No public internet access for compute touching PHI. |
+| **VPC** | SageMaker training jobs and Glue jobs in VPC with no public internet access. VPC endpoints required: S3 (gateway), KMS (interface), CloudWatch Logs (interface), SageMaker API (interface), Glue (interface). For Athena queries from within VPC: Athena (interface). Interface endpoints incur hourly per-AZ charges (~$0.01/AZ/hour each). Consider enabling `EnableNetworkIsolation` on SageMaker training jobs to prevent outbound network calls from the training container, providing defense-in-depth against data exfiltration. The built-in K-Means algorithm works with network isolation enabled. |
+| **Access Control** | Restrict read access to the `assignments/` prefix to authorized revenue cycle and finance roles. Use S3 bucket policies or AWS Lake Formation to enforce column-level and row-level access controls. Cluster labels are sensitive metadata (they reveal financial vulnerability) and must not be exposed to clinical or scheduling systems. |
 | **CloudTrail** | Enabled for all services. Audit who accessed cluster assignments (they reveal financial status). |
 | **Data Sources** | Billing/AR system extract, EHR utilization data, eligibility/enrollment feed, census-level demographic data (public). |
 | **Cost Estimate** | Glue ETL: ~$5-20/run. SageMaker training: ~$2-10/run (ml.m5.xlarge, minutes). S3 + Athena: ~$10-50/month. QuickSight: $18/user/month. Total: $50-200/month for quarterly re-clustering. |
@@ -266,6 +269,17 @@ FUNCTION engineer_features(patient_features):
         median_value = median of non-null values in column
         replace nulls in column with median_value
 
+    // Handle outliers: cap extreme values at the 99th percentile
+    // (winsorization) for dollar-amount and count features. K-Means
+    // computes centroids as means, so a single $2M charge patient can
+    // pull a centroid far from the cluster's true center. Winsorization
+    // preserves relative ordering while preventing extreme values from
+    // dominating distance calculations.
+    FOR each column in ["avg_days_to_pay", "deductible_amount", "collections_count",
+                        "charity_app_count"]:
+        p99 = 99th percentile of column
+        cap values above p99 at p99
+
     // Z-score normalize: subtract mean, divide by standard deviation.
     // This ensures no single feature dominates the distance calculation.
     // A $500K charge difference and a 0.1 no-show-rate difference
@@ -348,11 +362,17 @@ FUNCTION profile_clusters(patient_data, labels, feature_columns):
 
 **Step 5: Monitor population shifts.** Clustering isn't a one-time analysis. The value comes from tracking how your population's financial risk distribution changes over time. This step compares the current cluster distribution to the previous period and alerts when shifts exceed a threshold. A 5-percentage-point shift in any cluster over a quarter is worth investigating. A 10-point shift is an alarm.
 
+Important: K-Means cluster labels are arbitrary across runs. Cluster 0 this month might be Cluster 3 next month even if the underlying population segment is identical. To compare distributions between periods, align clusters by matching centroids (assign each new cluster to the previous-period cluster whose centroid is nearest) or use the previous period's centroids as initialization for the new run. Without label alignment, the shift detection below will produce false alerts when clusters simply swap labels.
+
 ```
 FUNCTION detect_population_shift(current_distribution, previous_distribution, threshold=5.0):
     // current_distribution: {cluster_id: percentage} from this period's clustering
     // previous_distribution: same structure from last period
     // threshold: percentage-point change that triggers an alert
+    //
+    // IMPORTANT: This assumes cluster labels have been aligned between runs
+    // (e.g., via centroid matching). Without alignment, label swaps will
+    // trigger false shift alerts.
 
     alerts = empty list
 
@@ -470,9 +490,9 @@ The clustering itself is the easy part. Getting the data together is where you'l
 
 The thing that surprised me most: the clusters you discover often don't align with the segments your finance team already uses. They think in terms of "commercial vs. government vs. self-pay." The algorithm might discover that the real risk boundary is between "patients who pay their patient responsibility portion" and "patients who don't," cutting across payer types. That HDHP commercial cluster with 18% write-off rates? That's a harder conversation than "Medicaid patients don't pay" (which isn't even true in most cases).
 
-The ethical dimension is real and you can't hand-wave it. The moment you cluster patients by financial risk, someone will ask "can we use this to prioritize scheduling?" The answer must be no. These clusters inform financial planning, charity care budgets, and financial counseling resource allocation. They never determine who gets seen, when, or by whom. Build that guardrail into your governance from day one, not after someone misuses the data.
+The ethical dimension is real and you can't hand-wave it. The moment you cluster patients by financial risk, someone will ask "can we use this to prioritize scheduling?" The answer must be no. These clusters inform financial planning, charity care budgets, and financial counseling resource allocation. They never determine who gets seen, when, or by whom. Build that guardrail into your governance from day one, not after someone misuses the data. Architecturally, this means restricting who can query cluster assignments, auditing all access via CloudTrail, and never joining cluster data with scheduling or clinical access systems.
 
-Cluster stability is another thing that catches teams off guard. If you re-run monthly and 30% of patients change clusters each time, your segments aren't stable enough to act on. This usually means your features are too noisy or your k is too high. Aim for 85%+ stability between runs before you operationalize.
+Cluster stability is another thing that catches teams off guard. If you re-run monthly and 30% of patients change clusters each time, your segments aren't stable enough to act on. This usually means your features are too noisy or your k is too high. Aim for 85%+ stability between runs before you operationalize. Measure stability using the Adjusted Rand Index between consecutive runs, or track the percentage of patients whose nearest centroid doesn't change. Remember that K-Means labels are arbitrary across runs, so you need centroid matching or label alignment before you can compare.
 
 One more thing: don't over-index on the algorithm. K-Means with well-engineered features will outperform a fancy algorithm with poorly chosen features every single time. Spend your energy on feature engineering and business validation, not on trying every clustering algorithm in scikit-learn.
 
