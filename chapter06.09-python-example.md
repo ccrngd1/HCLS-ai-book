@@ -13,7 +13,7 @@ pip install boto3 numpy pandas scipy scikit-learn gower
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
-- `comprehend-medical:DetectEntitiesV2` (for NLP extraction)
+- `comprehend:DetectEntitiesV2` (for NLP extraction via Comprehend Medical)
 - `sagemaker-runtime:InvokeEndpoint` (for SDOH NER model)
 - `s3:GetObject`, `s3:PutObject` (for data lake access)
 - `dynamodb:PutItem`, `dynamodb:GetItem` (for phenotype store)
@@ -311,7 +311,7 @@ def assemble_patient_features(
 import gower
 
 
-def prepare_feature_matrix(patient_features_list: list[dict]) -> pd.DataFrame:
+def prepare_feature_matrix(patient_features_list: list[dict]) -> tuple[pd.DataFrame, list[str]]:
     """
     Convert a list of patient feature dicts into a DataFrame suitable
     for Gower distance computation.
@@ -324,8 +324,10 @@ def prepare_feature_matrix(patient_features_list: list[dict]) -> pd.DataFrame:
       the feature from that pair's distance calculation)
 
     Returns:
-        DataFrame with one row per patient, columns are features.
-        The patient_id column is dropped (not a clustering feature).
+        Tuple of (DataFrame with one row per patient where columns are
+        features, list of patient_id strings in matching row order).
+        The patient_id column is dropped from the DataFrame (not a
+        clustering feature).
     """
     df = pd.DataFrame(patient_features_list)
 
@@ -380,10 +382,12 @@ def cluster_patients(
     # scipy expects the upper triangle as a flat array.
     condensed_dist = squareform(distance_matrix, checks=False)
 
-    # Hierarchical agglomerative clustering with Ward's linkage.
-    # Ward's minimizes within-cluster variance, producing compact clusters.
-    logger.info("Running hierarchical clustering (Ward's linkage)")
-    Z = linkage(condensed_dist, method="ward")
+    # Hierarchical agglomerative clustering with average linkage (UPGMA).
+    # Average linkage is valid for non-Euclidean distances like Gower.
+    # Ward's linkage requires Euclidean distances and would produce
+    # unreliable results here.
+    logger.info("Running hierarchical clustering (average linkage)")
+    Z = linkage(condensed_dist, method="average")
 
     # Try each candidate k and evaluate with silhouette score.
     best_k = min_k
