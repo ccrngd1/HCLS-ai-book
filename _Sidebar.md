@@ -176,6 +176,8 @@
   * [Python Example](chapter07.03-python-example)
 * [7.4 — ED Visit Prediction](chapter07.04-ed-visit-prediction)
   * [Python Example](chapter07.04-python-example)
+* [7.5 — 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk)
+  * [Python Example](chapter07.05-python-example)
 
 ---
 
