@@ -459,7 +459,7 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
 
 ## The Honest Take
 
-Patient similarity is one of those ideas that sounds obviously useful and is genuinely hard to get right. The first time I built one of these, I spent two weeks tuning the distance metric before realizing my feature set was the actual problem. The concept is intuitive: find patients like this one, see what worked. The execution is full of subtle traps.
+Patient similarity is one of those ideas that sounds obviously useful and is genuinely hard to get right. The first time I built one of these, I spent two weeks tuning the distance metric before realizing my feature set was the actual problem. I was optimizing the wrong thing entirely. The concept is intuitive: find patients like this one, see what worked. The execution is full of subtle traps.
 
 The biggest trap is the assumption that "similar features" implies "similar outcomes." It often does. But sometimes two patients look identical on paper and have wildly different trajectories because of factors you didn't capture: social support, health literacy, genetic variation, provider quality. Your similarity metric is only as good as your features, and your features are only as good as your data capture.
 
