@@ -160,6 +160,8 @@
   * [Python Example](chapter06.08-python-example)
 * [6.9 — Social Determinant Phenotyping](chapter06.09-social-determinant-phenotyping)
   * [Python Example](chapter06.09-python-example)
+* [6.10 — Multi-Morbidity Pattern Discovery](chapter06.10-multi-morbidity-pattern-discovery)
+  * [Python Example](chapter06.10-python-example)
 
 ---
 
