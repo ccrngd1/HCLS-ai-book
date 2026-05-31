@@ -71,7 +71,7 @@ PATIENT_STATE_TABLE = "intervention-timing-patient-state"
 ```python
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 def generate_synthetic_timeline(patient_id: str, risk_profile: str = "rising") -> dict:
     """
@@ -491,6 +491,8 @@ def score_intervention_window(
 
     # Case 1: Rising risk with peak ahead. This is the prime intervention window.
     # The patient is deteriorating, but we still have time to change the trajectory.
+    # Threshold is lower than the pseudocode's 0.01 because our simplified
+    # hazard model produces smaller absolute slope values than a trained LSTM would.
     if hazard_slope > 0.001 and 2 < peak_day < 14:
         # Score scales with how fast risk is rising and how much worse it will get
         intervention_score = hazard_slope * 100 * (peak_hazard / max(current_hazard, 0.001))
@@ -534,7 +536,7 @@ def score_intervention_window(
         "predicted_peak_day": peak_day,
         "peak_hazard": round(peak_hazard, 4),
         "trajectory_slope": round(hazard_slope, 6),
-        "scored_at": datetime.utcnow().isoformat() + "Z",
+        "scored_at": datetime.now(timezone.utc).isoformat(),
     }
 ```
 
@@ -629,8 +631,8 @@ def generate_worklist(scored_patients: list, features_by_patient: dict,
         patient_features = features_by_patient.get(rec["patient_id"], {})
         rec["explanation"] = generate_explanation(rec, patient_features)
         rec["expires_at"] = (
-            datetime.utcnow() + timedelta(days=rec["action_window_days"] or 7)
-        ).isoformat() + "Z"
+            datetime.now(timezone.utc) + timedelta(days=rec["action_window_days"] or 7)
+        ).isoformat()
         rec["status"] = "pending"
 
     return recommendations
@@ -686,7 +688,6 @@ def store_recommendation(recommendation: dict) -> dict:
 
     # TTL: DynamoDB will automatically delete expired recommendations.
     # This prevents stale items from cluttering the worklist.
-    from datetime import timezone
     expiry_dt = datetime.fromisoformat(recommendation["expires_at"].replace("Z", "+00:00"))
     record["ttl"] = int(expiry_dt.timestamp())
 

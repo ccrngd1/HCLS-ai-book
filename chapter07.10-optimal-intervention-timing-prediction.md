@@ -94,6 +94,8 @@ For most healthcare organizations starting this work, the practical approach is 
 
 **Decision Engine.** Combine the intervention window score with operational constraints: care manager capacity, patient preferences, channel availability (phone, text, in-person), time of day. The output is a prioritized, actionable worklist with recommended timing.
 
+<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add data minimization guidance for the delivery layer: (1) row-level access control so care managers see only their assigned patients; (2) consider coded explanations with deep links to the patient chart rather than embedding full clinical detail in the worklist; (3) if full clinical detail is included, the care management platform must meet the same encryption and access logging requirements as the EHR. -->
+
 **Care Team Delivery.** Surface the recommendation to the care team through their existing workflow tools (EHR task lists, care management platforms, mobile apps). Include the "why now" explanation: what changed in this patient's trajectory that makes today the right day to act.
 
 ---
@@ -102,13 +104,17 @@ For most healthcare organizations starting this work, the practical approach is 
 
 ### Why These Services
 
-**Amazon SageMaker for model training and hosting.** Dynamic survival models require custom architectures (RNNs, transformers) trained on longitudinal patient data. SageMaker provides the managed training infrastructure (GPU instances for sequence models), experiment tracking, and real-time inference endpoints. The model registry handles versioning as you retrain on new outcome data.
+<!-- TODO (TechWriter): Expert review ARC-1 (HIGH). Add model monitoring/drift detection to the architecture: SageMaker Model Monitor for feature distribution tracking, periodic recalibration job comparing predicted vs. observed event rates, CloudWatch alarm when C-index drops below 0.65, and a model health dashboard showing calibration curves over time. -->
+
+**Amazon SageMaker for model training and hosting.** Dynamic survival models require custom architectures (RNNs, transformers) trained on longitudinal patient data. SageMaker handles the GPU training infrastructure you need for sequence models, plus experiment tracking and real-time inference endpoints. The model registry handles versioning as you retrain on new outcome data.
 
 **AWS Glue and Amazon S3 for longitudinal data assembly.** Building patient timelines from disparate source systems (EHR extracts, claims feeds, pharmacy data, ADT feeds) is an ETL-heavy workload. Glue handles the transformation logic; S3 provides the durable data lake layer. Glue's support for incremental processing matters here because patient timelines need daily updates, not full rebuilds.
 
-**Amazon Kinesis Data Streams for real-time event ingestion.** Intervention timing is time-sensitive. If a patient's lab result comes back critically abnormal at 2 PM, you don't want to wait for tomorrow's batch run to flag them. Kinesis ingests real-time clinical events (ADT messages, lab results, medication fills) and feeds them to the scoring pipeline with sub-minute latency.
+**Amazon Kinesis Data Streams for real-time event ingestion.** Intervention timing is time-sensitive. If a patient's lab result comes back critically abnormal at 2 PM, you don't want to wait for tomorrow's batch run to flag them. Kinesis ingests real-time clinical events (ADT messages, lab results, medication fills) and feeds them to the scoring pipeline with sub-minute latency. Configure a dead letter queue (SQS) on the Lambda event source mapping so failed records aren't silently dropped; for a clinical system, a missed scoring event means a patient who should have been flagged is invisible.
 
 **AWS Lambda for intervention window scoring.** The scoring logic (apply decision rules to model output, check operational constraints, generate recommendations) is stateless and event-driven. Lambda processes each patient's updated trajectory and determines whether to surface an intervention recommendation.
+
+<!-- TODO (TechWriter): Expert review ARC-2 (HIGH). Explicitly describe DynamoDB TTL on the expires_at field to auto-delete stale recommendations, a DynamoDB Streams trigger on TTL deletions to log "expired without action" events for model feedback, and re-scoring logic that runs when a recommendation expires to determine if a new window has opened or the risk has resolved. -->
 
 **Amazon DynamoDB for patient state and recommendation storage.** Each patient has a current state (latest risk trajectory, last intervention date, engagement history) that needs fast point lookups and frequent updates. DynamoDB's key-value model with TTL support handles this cleanly. Recommendations are written here for the care team interface to consume.
 
@@ -173,13 +179,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `events:PutRule`, `events:PutTargets` |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `events:PutRule`, `events:PutTargets`. Note: these represent the aggregate across all components. Each Lambda function should have a dedicated execution role scoped to only the permissions it needs (e.g., the scoring Lambda needs `sagemaker:InvokeEndpoint` and `dynamodb:GetItem/PutItem` but not `sagemaker:CreateTrainingJob` or `glue:StartJobRun`). |
 | **BAA** | AWS BAA signed (required: all patient clinical data is PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Kinesis: server-side encryption with KMS; SageMaker: KMS for training volumes and model artifacts; all API calls over TLS |
-| **VPC** | Production: SageMaker training and endpoints in VPC; Lambda in VPC with endpoints for S3, DynamoDB, SageMaker Runtime, Kinesis, and CloudWatch Logs; VPC Flow Logs enabled |
-| **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Kinesis: server-side encryption with KMS (24-hour retention, minimum sufficient for this use case); SageMaker: KMS for training volumes and model artifacts; all API calls over TLS |
+| **VPC** | Production: SageMaker training and endpoints in VPC (enable `EnableNetworkIsolation=True` on inference endpoints to prevent outbound calls from model containers); Lambda in VPC with endpoints for S3, DynamoDB, SageMaker Runtime, Kinesis, CloudWatch Logs, KMS, STS, and EventBridge; VPC Flow Logs enabled |
+| **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, Kinesis, and Lambda API calls for HIPAA audit trail. Set CloudWatch Logs retention policy (e.g., 90 days) rather than indefinite retention. |
 | **Sample Data** | Synthetic longitudinal patient data with timestamped events. MIMIC-IV provides realistic ICU timelines. CMS Synthetic Public Use Files provide claims-level longitudinal data. Never use real PHI in development. |
-| **Cost Estimate** | SageMaker training: ~$500–2,000/run (GPU instances, depends on data volume). SageMaker endpoint: ~$800–3,000/month (ml.m5.xlarge or larger). Kinesis: ~$50–200/month. Glue: ~$100–500/month. DynamoDB: ~$50–200/month. Lambda: negligible. |
+| **Cost Estimate** | SageMaker training: ~$500-2,000/run (GPU instances, depends on data volume). SageMaker endpoint: ~$800-3,000/month (ml.m5.xlarge or larger). Kinesis: ~$50-200/month. Glue: ~$100-500/month. DynamoDB: ~$50-200/month. VPC endpoints and data transfer: ~$50-150/month. Lambda: negligible. |
 
 ### Ingredients
 
@@ -574,7 +580,7 @@ FUNCTION generate_explanation(scored_result):
 |--------|---------------|
 | Model C-index (discrimination) | 0.72–0.78 |
 | Timing accuracy (event within predicted window) | 45–60% |
-| End-to-end scoring latency (real-time path) | 2–5 seconds |
+| End-to-end scoring latency (real-time path) | 3-8 seconds (with provisioned concurrency on scoring Lambda) |
 | Batch scoring throughput | ~5,000 patients/minute |
 | Intervention effectiveness lift vs. static risk | 15–30% improvement in event prevention |
 | False urgency rate (flagged but no event within 30 days) | 30–45% |
@@ -600,7 +606,11 @@ The part that surprised me most: intervention fatigue is a bigger deal than most
 
 The self-fulfilling prophecy problem is real and insidious. Your model gets better at identifying the right patients at the right time. You intervene. They don't have events. Your next training cycle sees "model flagged, no event" and learns to flag less aggressively. Over 2-3 retraining cycles, the model can degrade significantly. You need a holdout strategy (randomly withhold intervention for a small percentage of flagged patients) to maintain the training signal, and that raises ethical questions about withholding care from patients you believe are at risk.
 
+A few guardrails on holdout designs: they're only appropriate for low-intensity interventions (outreach calls, reminders) where standard of care is already met without the model. IRB review is required for any prospective holdout. Natural variation in care manager capacity creates quasi-experimental conditions without deliberate withholding, and that's often sufficient. Never withhold clinical interventions (medication changes, referrals) for model training purposes.
+
 Start with the hybrid approach: dynamic survival model for trajectory prediction, simple decision rules for timing. Get that working, measure whether it improves outcomes compared to static risk scoring, and only then invest in the full causal/RL approach. The infrastructure you build for the simple version is the same infrastructure the complex version needs.
+
+One more thing: deploy in shadow mode first. Generate recommendations without surfacing them to the care team, and compare against actual care team decisions. Have a clinical advisory board review the threshold settings and decision logic. Run a prospective pilot with defined success metrics (intervention acceptance rate, event prevention rate) before full rollout. The model needs to earn trust before it gets to influence care delivery.
 
 ---
 
