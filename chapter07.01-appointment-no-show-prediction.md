@@ -46,7 +46,7 @@ Here's what decades of no-show research have consistently found to be predictive
 
 **Appointment type.** Follow-up visits no-show at higher rates than new patient visits. Routine wellness checks no-show more than urgent symptom visits. The perceived urgency of the visit matters.
 
-**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, which reflects access barriers, not irresponsibility), age, and language barriers all correlate with no-show probability. These features are important for accuracy but require careful handling to avoid reinforcing disparities (more on this in the challenges section).
+**Demographics and access factors.** Distance from the clinic, transportation access, insurance type (Medicaid populations historically show higher no-show rates, which reflects access barriers, not irresponsibility), age, and language barriers all correlate with no-show probability. These features improve accuracy but require careful handling to avoid reinforcing disparities (more on this in the Honest Take section).
 
 **Weather and external events.** Rain, snow, extreme heat, and local events (school closures, major sports events) all measurably affect no-show rates. These are harder to incorporate because they require external data sources and real-time feature computation, but they can add a few percentage points of accuracy.
 
@@ -64,7 +64,7 @@ No-show prediction has several properties that make it unusually tractable:
 
 **Low-stakes intervention.** If your model says "high risk of no-show" and you send an extra reminder, the worst case is a mildly annoyed patient who was going to show up anyway. Compare that to a model that recommends a medication or a surgical intervention. The cost of a false positive here is a text message.
 
-**No regulatory burden.** This isn't a clinical decision support tool. It's an operational optimization. You don't need FDA clearance, you don't need to worry about clinical validation studies, and you don't need physician sign-off on the model's recommendations. (You do still need to handle PHI appropriately, but that's table stakes in healthcare.)
+**No regulatory burden.** This isn't a clinical decision support tool. It's an operational optimization. You don't need FDA clearance, you don't need clinical validation studies, and you don't need physician sign-off on the model's recommendations. (You do still need to handle PHI appropriately, but that's table stakes in healthcare.)
 
 ### The General Architecture Pattern
 
@@ -74,7 +74,7 @@ The pipeline has four logical stages:
 [Feature Store] → [Model Training] → [Scoring Service] → [Action Engine]
 ```
 
-**Feature Store.** A pre-computed repository of patient and appointment features, updated on a schedule. Raw data from your scheduling system, EHR, and demographics tables gets transformed into model-ready features: no-show rate over last N appointments, days since last visit, distance to clinic, appointment lead time, etc. Computing these on the fly at prediction time is possible but slow and fragile. A feature store decouples feature engineering from model serving.
+**Feature Store.** A pre-computed repository of patient and appointment features, updated on a schedule. Raw data from your scheduling system, EHR, and demographics tables gets transformed into model-ready features: no-show rate over the last N appointments, days since last visit, distance to clinic, appointment lead time, and so on. Computing these on the fly at prediction time is possible but slow and fragile. A feature store decouples feature engineering from model serving.
 
 **Model Training.** A batch process that trains (or retrains) the classification model on historical appointment data. Runs on a schedule (weekly or monthly) or when triggered by performance degradation. Outputs a serialized model artifact and a performance report (AUC, calibration curve, feature importance).
 
@@ -418,7 +418,7 @@ This is genuinely one of the easiest ML problems in healthcare to get working. T
 
 That said, here's what will surprise you:
 
-The model accuracy ceiling is lower than you'd expect. AUC of 0.80 sounds good until you realize that means you're still wrong a lot. Human behavior is inherently stochastic. A patient with a 70% predicted no-show probability will still show up 30% of the time. You're not predicting certainty; you're predicting tendencies. Set expectations accordingly with your operations team.
+The model accuracy ceiling is lower than you'd expect. An AUC of 0.80 sounds good until you realize that means you're still wrong a lot. Human behavior is inherently stochastic. A patient with a 70% predicted no-show probability will still show up 30% of the time. You're not predicting certainty; you're predicting tendencies. Set expectations accordingly with your operations team.
 
 The features matter more than the algorithm. I've seen teams spend weeks tuning XGBoost hyperparameters when the real gain was adding "distance to clinic" or "number of prior no-shows" to the feature set. Start with good features and a simple model. Only add complexity if the simple model plateaus.
 
