@@ -60,6 +60,8 @@ Rising risk detection requires multiple observations per patient over time. This
 
 **Regression to the mean.** Patients identified as "rising risk" based on recent score increases will, on average, partially revert even without intervention. This is a statistical phenomenon, not a clinical one. It makes it genuinely hard to measure whether your interventions are working, because some of the "improvement" you observe would have happened anyway. Proper evaluation requires a control group or at minimum a regression-adjusted comparison.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add subsection "Equity and Bias Considerations" after this paragraph. Cover: differential data density (sparse-visit patients fall into INSUFFICIENT_HISTORY), inherited model bias (Obermeyer et al. 2019), threshold equity across demographic groups, and intervention allocation fairness. Include mitigation strategies: audit flag rates by demographic group, group-specific threshold calibration, proactive outreach for sparse-data patients, equity reporting for the insufficient-history population. -->
+
 ### Feature Engineering for Trajectory Detection
 
 The features that predict rising risk are different from those that predict current risk. You need both levels and changes:
@@ -108,6 +110,8 @@ The rising risk pipeline operates on a different cadence than real-time scoring.
 
 **Periodic Risk Scoring.** On a regular schedule, compute risk scores for the entire managed population. This might use an existing risk model (HCC, proprietary, or custom ML) or a purpose-built trajectory model. The key requirement is consistency: the same model version must be used across scoring cycles, or score comparisons become meaningless.
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about pipeline failure monitoring: recommend Step Functions or equivalent orchestrator with error handling. Each step should emit success/failure metrics to CloudWatch. Configure alarms for: pipeline not completing within expected window, any step failure, anomalous output (flagged count deviating >50% from prior cycle). Alert ops team if pipeline fails, since a missed cycle means rising-risk patients go unidentified for an additional month. -->
+
 **Score History Storage.** Every scoring cycle's results are stored with timestamps, creating a longitudinal record of each patient's risk trajectory. This is a time-series storage problem: millions of patients, each with a score at each cycle, potentially going back years. The storage must support efficient queries like "give me all scores for patient X over the last 24 months" and "give me all patients whose most recent score exceeds their score from 6 months ago by more than 0.5."
 
 **Trajectory Computation.** For each patient, compute trajectory metrics: slope over multiple windows, acceleration (change in slope), percentile migration, and time since last significant change. This is computationally intensive at population scale but embarrassingly parallel (each patient's trajectory is independent).
@@ -130,9 +134,13 @@ The rising risk pipeline operates on a different cadence than real-time scoring.
 
 **Amazon DynamoDB for operational risk state.** The current risk tier, trajectory status, and intervention routing for each patient needs to be available in real-time for care management workflows. DynamoDB provides single-digit-millisecond lookups by patient ID, which is what the care management platform needs when a nurse opens a patient's record.
 
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add paragraph on access control: API layer with panel-level authorization mediating DynamoDB access, Lambda authorizer validating panel assignment, restricting direct DynamoDB access to pipeline IAM roles only. HIPAA minimum-necessary standard requires care managers access only attributed patients. -->
+
 **Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly or monthly). EventBridge Scheduler triggers the pipeline, and EventBridge rules route completion events to downstream consumers (notifications to care managers, updates to the care management platform, alerts for rapid deterioration).
 
-**Amazon QuickSight for population-level dashboards.** Leadership needs to see the rising risk population in aggregate: how many patients are flagged, what's the distribution of trajectory severity, which programs are at capacity. QuickSight connects directly to the S3-based score history for population analytics without requiring a separate data warehouse.
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add note: SNS notifications with patient IDs and trajectory data are PHI. Restrict subscriptions to HIPAA-compliant endpoints (SQS, Lambda, HTTPS). Avoid email/SMS with clinical details. Send minimal alerts with dashboard links instead of embedding trajectory data in notification body. -->
+
+**Amazon QuickSight for population-level dashboards.** Leadership needs to see the rising risk population in aggregate: how many patients are flagged, what's the distribution of trajectory severity, which programs are at capacity. QuickSight can query the S3 score history directly, so you don't need to stand up a separate data warehouse just for leadership dashboards.
 
 ### Architecture Diagram
 
@@ -163,9 +171,11 @@ flowchart TD
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge, Amazon SNS, Amazon QuickSight |
 | **IAM Permissions** | `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `events:PutEvents`, `sns:Publish` |
+
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note: each pipeline phase should use a dedicated IAM role scoped to specific resource ARNs. Glue feature assembly role gets S3 read on source + write on feature store only. SageMaker role gets S3 read on features + write on score history only. Lambda detection role gets DynamoDB write on risk state table + events:PutEvents on specific event bus. Never use a single role with all permissions. -->
 | **BAA** | AWS BAA signed (risk scores derived from PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); all API calls over TLS; Glue jobs: security configuration with S3 and CloudWatch encryption |
-| **VPC** | Production: Glue jobs and SageMaker in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs |
+| **VPC** | Production: Glue jobs and SageMaker in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, EventBridge, SNS, and SageMaker API. If Lambda detection function runs in VPC, ensure all AWS service calls have corresponding VPC endpoints to avoid NAT Gateway dependency. |
 | **CloudTrail** | Enabled: log all SageMaker, Glue, and DynamoDB API calls for HIPAA audit trail |
 | **Data Sources** | EHR extract (diagnoses, labs, medications, encounters), claims feed (utilization history), ADT feed (admissions, discharges). Minimum 18-24 months of history for meaningful trajectory analysis. |
 | **Cost Estimate** | Glue: ~$0.44/DPU-hour (feature assembly + trajectory computation ~2-4 DPU-hours per run for 500K patients). SageMaker batch transform: ~$0.05/hour for ml.m5.xlarge (scoring 500K patients takes ~30 min). S3 storage: ~$0.023/GB/month. DynamoDB: on-demand pricing, ~$1.25 per million writes. Total: ~$50-150 per monthly scoring cycle for a 500K-member population. |
@@ -274,6 +284,12 @@ FUNCTION compute_trajectories(current_scores, score_history):
         // Retrieve this patient's historical scores, ordered by date
         history = query score_history WHERE patient_id = patient.patient_id
                   ORDER BY scoring_date ASC
+
+        // IMPORTANT: Only compute slopes using scores from the same model version.
+        // If model_version changed during the history window, either:
+        // (a) re-score historical periods with the current model, or
+        // (b) compute slope only from scores produced by the current model version,
+        //     accepting a shorter effective history window after each model update.
 
         // Need at least 3 data points for meaningful trajectory analysis.
         // Patients with fewer points get flagged as "insufficient history."
@@ -491,6 +507,8 @@ FUNCTION store_and_route(flagged_patients, previous_flags):
 | Trajectory computation (Glue) | 10-20 minutes |
 | Detection + routing (Lambda) | 2-5 minutes |
 | Rising risk flag rate | 0.5-1.5% of population per cycle |
+
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add note: for populations exceeding 500K, consider splitting the detection step. Use a Glue job for threshold application and signal collection (bulk data transformation), and Lambda only for routing and notification (handles only the flagged subset, typically <1% of population). This avoids Lambda memory and timeout constraints for the bulk filtering operation. -->
 | False positive rate (estimated) | 30-50% (patients flagged who would have stabilized without intervention) |
 | Cost per scoring cycle | $50-150 for 500K patients |
 
@@ -506,7 +524,7 @@ FUNCTION store_and_route(flagged_patients, previous_flags):
 
 ## Why This Isn't Production-Ready
 
-**Score versioning and comparability.** If you retrain your risk model (which you should, periodically), the new model's scores are not directly comparable to the old model's scores. A patient whose score went from 0.3 to 0.5 might have genuinely deteriorated, or the new model might just score everyone higher. Production systems need either: (a) re-score the full history with the new model whenever you retrain, or (b) maintain version-specific percentile baselines and compare within-version only. Both approaches have tradeoffs.
+**Score versioning and comparability.** If you retrain your risk model (which you should, periodically), the new model's scores are not directly comparable to the old model's scores. A patient whose score went from 0.3 to 0.5 might have genuinely deteriorated, or the new model might just score everyone higher. Production systems need either: (a) re-score the full history with the new model whenever you retrain, or (b) maintain version-specific percentile baselines and compare within-version only. Both approaches have tradeoffs. For most organizations, option (b) is more practical: after a model retrain, accept a reduced trajectory window until enough new-version scores accumulate. Design your minimum data point threshold (currently 3) to account for this reset.
 
 **Intervention attribution.** Once you start intervening on rising-risk patients, you can no longer cleanly measure whether the model is working. Did the patient stabilize because of your intervention, or because of regression to the mean, or because they would have stabilized anyway? Proper causal inference requires either a randomized holdout (ethically complex) or sophisticated observational methods (propensity score matching, difference-in-differences). Without this, you're flying blind on ROI.
 
