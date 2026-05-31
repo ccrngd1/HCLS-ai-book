@@ -1241,6 +1241,17 @@ OUTPUT FORMAT: Return ONLY valid JSON:
     # reference context (here, the aggregated object serialized) and
     # rejects responses that score below your configured threshold. Don't
     # ship to production without this.
+    #
+    # IMPORTANT: The contextual grounding check requires the aggregated object
+    # to be explicitly tagged as grounding source in the model invocation.
+    # Using the Converse API, wrap the aggregated JSON in a guardContent block
+    # so Guardrails knows what to compare the output against. Using InvokeModel,
+    # supply the grounding source via the Guardrails policy configuration.
+    # Without this tagging, the contextual grounding check returns SAFE
+    # regardless of actual fidelity. This example sets the IDs but does NOT
+    # tag the grounding source; the Step 8 validator is the active faithfulness
+    # guard. Production deployments should add guardContent tags around the
+    # aggregated object.
     if GUARDRAIL_ID and GUARDRAIL_VERSION:
         invoke_kwargs["guardrailIdentifier"] = GUARDRAIL_ID
         invoke_kwargs["guardrailVersion"] = GUARDRAIL_VERSION
