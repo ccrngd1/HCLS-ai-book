@@ -220,6 +220,8 @@
 #### Ch 9: Computer Vision / Medical Imaging
 
 * [Preface](chapter09-preface)
+* [9.1 — Image Quality Assessment](chapter09.01-image-quality-assessment)
+  * [Python Example](chapter09.01-python-example)
 
 ---
 
