@@ -1,4 +1,4 @@
-# Chapter 6 Preface — Finding the Patients Who Look Like Each Other
+# Chapter 6 Preface: Finding the Patients Who Look Like Each Other
 
 Every healthcare organization has the same dirty secret: they treat their patient population as if it were one homogeneous group. Same outreach letters. Same care management protocols. Same risk thresholds. Same intervention timing. And then they wonder why their diabetes management program works brilliantly for some patients and completely fails for others.
 
@@ -124,4 +124,4 @@ Let's start with the simplest version of the problem and build from there.
 
 ---
 
-*→ [Recipe 6.1 — Geographic Patient Clustering](chapter06.01-geographic-patient-clustering)*
+*→ [Recipe 6.1: Geographic Patient Clustering](chapter06.01-geographic-patient-clustering)*
