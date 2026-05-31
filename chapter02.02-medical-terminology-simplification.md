@@ -31,6 +31,10 @@ Editorial pass 3 (TechEditor, 2026-05-11):
 Editorial pass 4 (TechEditor, 2026-05-11):
 - Renamed Prerequisites row "Lambda config" to "Lambda Runtime" for title-case consistency with the rest of the table and with chapter02.01's equivalent row. Content of the row unchanged.
 - Re-scanned against both reviews: zero em dashes (U+2014), header hierarchy stable, 12 external URLs all well-formed, 3 preserved TODOs still intact (Step 0 cache lookup, retry-loop cost adjustment, Recipe 8.1 reference number). Persona constraints observed: no structural rewrites, no new technical claims, no TODO removals.
+
+Editorial pass 5 (TechEditor, 2026-05-31):
+- Added finding IDs to all three preserved TODO markers (A5, A4, V3) so the follow-up task generator can track them. No content changes to the markers themselves.
+- Final checklist: zero em dashes, zero trailing whitespace, no consecutive blank lines, header hierarchy (H1/H2/H3/H4) stable, all 12 URLs well-formed, no documentation-voice or hype markers, RECIPE-GUIDE section order compliant, vendor balance holds at ~70/30. Recipe is publication-ready pending the three deferred TechWriter items.
 -->
 
 # Recipe 2.2: Medical Terminology Simplification
@@ -195,7 +199,7 @@ flowchart LR
 
 **Step 1: Extract medical entities from source text.** Before simplifying anything, identify the critical clinical content that must survive the transformation. Medication names, dosages, conditions, procedures, dates, and provider names are non-negotiable. If any of these get lost or altered during simplification, the output is unsafe. Amazon Comprehend Medical parses clinical text and returns structured entities with their categories and positions. We use this as our "preservation checklist" that gets verified after simplification. Skip this step and you have no way to automatically detect when simplification accidentally drops a medication or changes a dosage.
 
-<!-- TODO (TechWriter): Add an explicit cache-lookup step (Step 0) before Step 1 that computes `cache_key = hash(original_text + "|" + target_grade)` and short-circuits to a cached result if present. The cost discussion, Expected Results cache-hit-rate benchmark, and "Why These Services" narrative all assume this step exists, but the pseudocode currently starts at Step 1 and never consults the cache. A reader implementing the walkthrough as written will get zero cache hits. -->
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add an explicit cache-lookup step (Step 0) before Step 1 that computes `cache_key = hash(original_text + "|" + target_grade)` and short-circuits to a cached result if present. The cost discussion, Expected Results cache-hit-rate benchmark, and "Why These Services" narrative all assume this step exists, but the pseudocode currently starts at Step 1 and never consults the cache. A reader implementing the walkthrough as written will get zero cache hits. -->
 
 ```
 FUNCTION extract_critical_entities(clinical_text):
@@ -536,7 +540,7 @@ This is one of the most satisfying LLM applications to build because the results
 
 The part that surprised me: the segmentation step matters more than the model choice. A single prompt that says "simplify this entire discharge summary" produces mediocre results because the model tries to apply one strategy uniformly. Medication sections get over-explained. Instruction sections get under-simplified. Segmenting first and applying type-specific prompts produces dramatically better output.
 
-The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The pseudocode here flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
+The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The pseudocode here flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): Expert review A4 (MEDIUM). If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
 
 The entity preservation check is where you'll find your scariest bugs. Early in development, I watched the model simplify "ticagrelor 90mg BID" into "your blood thinner twice a day." Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy. The preservation checklist catches this, but you need to be thoughtful about what goes on the list.
 
@@ -560,7 +564,7 @@ The caching layer pays for itself quickly. Standard procedure discharge instruct
 
 - **Recipe 2.1 (Patient Message Response Drafting):** Uses similar LLM patterns with Bedrock and Guardrails for patient-facing text generation
 - **Recipe 2.5 (After-Visit Summary Generation):** Generates patient-facing summaries from clinical encounters; could use this recipe's simplification as a post-processing step
-- **Recipe 8.1 (Medical Entity Extraction):** Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification <!-- TODO: Verify recipe number against final chapter 8 index -->
+- **Recipe 8.1 (Medical Entity Extraction):** Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification <!-- TODO (TechWriter): Expert review V3 (LOW). Verify recipe number against final chapter 8 index in book-wide cross-reference sweep. -->
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Upstream OCR that might produce the clinical text this recipe simplifies
 
 ---
