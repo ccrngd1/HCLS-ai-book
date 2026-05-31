@@ -641,6 +641,6 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 ---
 
-<!-- TODO (TechWriter): Expert review ARCH-CRITICAL (CRITICAL). Main recipe file chapter06.02-utilization-pattern-segmentation.md does not exist. Write it following RECIPE-GUIDE.md structure. The Python companion is ready. Address SEC-1, SEC-2, SEC-3, ARCH-1, ARCH-2, NET-1, VOICE-1 findings in the main recipe (CMK guidance, access control, VPC callout, k-selection methodology, segment stability architecture, Gateway endpoint specification, 70/30 vendor balance). -->
+<!-- TODO (TechWriter): Expert review ARCH-CRITICAL (CRITICAL). Main recipe file chapter06.02-utilization-pattern-segmentation.md does not exist. Write it following RECIPE-GUIDE.md structure. The Python companion is ready. Address these findings in the main recipe: SEC-1 (CMK guidance in Prerequisites), SEC-2 (opaque identifiers and IAM scoping), SEC-3 (full VPC architecture), ARCH-1 (k-selection methodology in Technology section), ARCH-2 (segment stability as first-class design concern), NET-1 (Gateway endpoint specification in Prerequisites), VOICE-1 (ensure 70/30 vendor balance). Also address equity/bias in Technology section and The Honest Take per expert panel guidance. -->
 
 *Part of the Healthcare AI/ML Cookbook. See [Recipe 6.2: Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
