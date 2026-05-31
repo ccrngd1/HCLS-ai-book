@@ -359,6 +359,7 @@ def train_los_model(training_df: pd.DataFrame) -> tuple:
         objective=MODEL_PARAMS["objective"],
         random_state=MODEL_PARAMS["random_state"],
         eval_metric="mae",
+        early_stopping_rounds=MODEL_PARAMS["early_stopping_rounds"],
     )
 
     # Fit with early stopping on a validation subset

@@ -122,6 +122,8 @@ The feature store is the critical piece that bridges both modes. Training featur
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for scale, model registry for versioning, and real-time endpoints for inference. For LOS prediction specifically, SageMaker's built-in XGBoost algorithm handles the structured tabular data well, and the batch transform feature handles the daily re-scoring of all current inpatients efficiently.
 
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add brief note on model artifact security: KMS encryption for model artifacts in S3, access control on Model Registry (restrict CreateModel/CreateEndpoint to deployment pipeline role), and model approval gate (PendingManualApproval status) before serving live predictions. -->
+
 **Amazon SageMaker Feature Store for feature management.** The feature store is how you avoid training-serving skew. You define feature groups (admission features, daily clinical features, social features), compute them once, and serve them consistently to both training pipelines and real-time inference. The offline store feeds training; the online store feeds real-time predictions.
 
 **AWS HealthLake for FHIR-based clinical data.** HealthLake provides a FHIR-compliant data store that can ingest ADT (admit/discharge/transfer) events, lab results, medications, and other clinical data in a standardized format. This gives you a clean, queryable source for feature engineering without building custom EHR integrations from scratch.
@@ -356,6 +358,8 @@ FUNCTION train_los_model(training_data, service_line):
 ```
 
 **Step 4: Real-time inference for current inpatients.** For operational use, the system needs to produce updated predictions for all current inpatients at least daily, and ideally whenever significant clinical events occur (new lab results, procedure completion, status change). The inference pipeline pulls the latest features from the feature store, selects the appropriate service-line model, runs prediction, and writes the result to the prediction store. Include a confidence interval (not just a point estimate) so that operations teams can distinguish between "we're fairly sure this patient leaves tomorrow" and "this could be anywhere from 2 to 10 more days."
+
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify multi-model endpoint pattern: separate endpoints per service line vs. SageMaker Multi-Model Endpoints (lower cost, ~50ms model-loading overhead). Update cost estimate to reflect multiple service lines. -->
 
 ```
 FUNCTION predict_remaining_los(encounter_id):
