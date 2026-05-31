@@ -1,4 +1,4 @@
-# Recipe 9.1: Image Quality Assessment
+# Recipe 9.1: Image Quality Assessment ⭐
 
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01 per image
 
@@ -6,15 +6,13 @@
 
 ## The Problem
 
-A radiologist opens their worklist at 7 AM. Forty-three studies waiting. They pull up the first chest X-ray and immediately see it: the image is rotated 15 degrees, the patient wasn't positioned correctly, and there's motion blur across the left lung field. Unreadable. They reject it, dictate a note requesting a retake, and move on. The patient has already left the facility. Now someone has to call them back, schedule another appointment, expose them to additional radiation, and delay the clinical decision that was waiting on that image.
+A radiologist opens their worklist at 7 AM. Forty-three studies queued overnight. They pull up the first chest X-ray and immediately see it: the patient moved during acquisition. The image is blurred, the mediastinal borders are indistinct, and there's no way to confidently rule out a small pneumothorax. They reject it. Retake ordered. The patient has already gone home.
 
-This happens constantly. Studies suggest that 5-15% of medical images acquired in routine clinical practice have quality issues significant enough to affect interpretation. In high-volume radiology departments processing hundreds of studies per day, that's dozens of wasted reads, dozens of callbacks, and dozens of delayed diagnoses. Every single day.
+Now multiply that across a health system. Radiology departments reject somewhere between 3% and 10% of imaging studies for quality reasons, depending on the modality and patient population. Pediatric studies are worse (kids move). Emergency department studies are worse (patients are in pain, positioning is rushed). Each rejected image means a repeat exposure (more radiation dose to the patient), a scheduling disruption, a delayed diagnosis, and wasted technologist time.
 
-The frustrating part? Most of these quality problems are detectable at the moment of acquisition. A blurry image is blurry immediately. A poorly positioned patient is poorly positioned immediately. An underexposed X-ray is underexposed immediately. The technologist at the machine could catch it and retake it right then, while the patient is still on the table. But they're busy, they're processing patients quickly, and subtle quality issues aren't always obvious on the small acquisition console screen.
+The frustrating part: most quality problems are detectable the instant the image is acquired. A blurred image is blurred immediately. An underexposed X-ray is underexposed immediately. A CT slice with motion artifact has motion artifact immediately. But the technologist is already positioning the next patient, and the radiologist won't see the study for hours. By the time anyone notices the quality problem, the opportunity for an immediate retake is gone.
 
-What if the machine itself could flag the problem in real time? "Hey, this image has motion artifact in the lower left quadrant. Confidence: high. Recommend retake." The tech glances at it, agrees, and retakes it before the patient leaves. Problem solved at the source, not downstream.
-
-That's what automated image quality assessment does. It's a gatekeeper that sits between acquisition and the archive, catching problems early when they're cheap to fix.
+This is a problem that computers can solve faster than humans, with less fatigue, and at the point of acquisition where it actually matters. Automated image quality assessment catches bad images before they leave the modality, while the patient is still on the table and a retake costs thirty seconds instead of a return visit.
 
 ---
 
@@ -22,332 +20,342 @@ That's what automated image quality assessment does. It's a gatekeeper that sits
 
 ### What "Quality" Means in Medical Imaging
 
-Image quality in medical imaging is not the same as image quality in photography. A beautiful, well-composed photograph can be a terrible medical image if the anatomy of interest isn't properly visualized. Quality here means: can a clinician reliably interpret this image for its intended diagnostic purpose?
+Image quality in medical imaging is not the same as image quality in photography. A technically beautiful photograph can be a clinically useless medical image, and vice versa. Medical image quality is defined by diagnostic adequacy: can a clinician extract the information they need to make a decision?
 
-The quality dimensions vary by modality, but the common ones are:
+The quality criteria are modality-specific:
 
-**Exposure/brightness.** Is the image too dark (underexposed) or too bright (overexposed)? In X-ray, this maps to whether the radiation dose produced adequate contrast between tissue types. An underexposed chest X-ray makes it impossible to distinguish subtle lung nodules from background noise.
+For **chest X-rays**, quality means: adequate inspiration (you can count at least 9 posterior ribs above the diaphragm), proper exposure (you can see the thoracic spine through the cardiac silhouette but the lung fields aren't washed out), correct positioning (the spinous processes are midline between the clavicular heads), and no motion blur.
 
-**Contrast.** Can you differentiate the structures that matter? A CT scan with poor contrast between soft tissue types is clinically useless even if it's technically sharp.
+For **CT scans**, quality means: no motion artifact (sharp organ boundaries), appropriate window/level settings, complete anatomical coverage, and consistent slice thickness.
 
-**Sharpness/motion artifact.** Did the patient move during acquisition? Motion blur in an MRI can turn a crisp brain scan into an unreadable smear. Even small movements during a long acquisition sequence create ghosting artifacts.
+For **clinical photographs** (wound photos, dermatology images), quality means: adequate lighting, proper focus, appropriate framing, and a reference marker for scale when measurement is needed.
 
-**Positioning.** Is the anatomy of interest actually in the field of view? Is the patient rotated when they should be straight? Is the collimation appropriate? A chest X-ray where the costophrenic angles are cut off is incomplete regardless of how sharp it is.
+The common thread: each modality has a set of measurable properties that correlate with diagnostic utility. And most of those properties can be computed from the pixel data alone.
 
-**Artifacts.** Metal implants causing streak artifacts in CT. Zipper artifacts in MRI from RF interference. Grid lines visible in a portable X-ray. Foreign objects in the field of view (jewelry, clothing snaps, hair clips).
+### The Two Approaches: Rules vs. Learning
 
-**Noise.** Random variation in pixel values that obscures fine detail. More common in low-dose protocols and in larger patients where the signal-to-noise ratio drops.
+There are fundamentally two ways to assess image quality automatically.
 
-### The Computer Vision Approach
+**Rule-based (traditional image processing).** You define explicit metrics and thresholds. Blur is measured by the variance of the Laplacian operator (a mathematical filter that responds to edges; blurry images have low edge response). Exposure is measured by histogram analysis (the distribution of pixel intensities should fall within expected ranges). Positioning is measured by detecting anatomical landmarks and checking their spatial relationships. This approach is interpretable, predictable, and requires no training data. It works well for simple, well-defined quality criteria. It struggles with subtle or context-dependent quality issues.
 
-Automated image quality assessment is fundamentally a classification problem. Given an image, assign it to one of several quality categories: acceptable, borderline, or reject. Some systems go further and identify the specific quality defect (motion, positioning, exposure, artifact).
+**Learned (deep learning).** You train a convolutional neural network on thousands of images labeled as "acceptable" or "reject" by radiologists. The model learns whatever features distinguish good images from bad ones, including subtle patterns that are hard to express as explicit rules. This approach handles complex, multi-factor quality assessment better than rules. It requires labeled training data (which you probably already have in your PACS rejection logs). It's less interpretable: the model might reject an image without a clear explanation of why.
 
-There are two broad approaches:
+In practice, the best systems combine both. Rule-based checks catch the obvious failures fast (completely black image, completely white image, wrong body part). A learned model handles the nuanced cases (subtle motion blur, borderline exposure, positioning that's technically acceptable but suboptimal).
 
-**Reference-based metrics.** Compare the image against a known "perfect" reference. Metrics like SSIM (Structural Similarity Index), PSNR (Peak Signal-to-Noise Ratio), and MSE (Mean Squared Error) quantify how much an image deviates from a reference. The problem: in clinical practice, you rarely have a reference image. Each patient is unique. These metrics work well for quality control in phantom testing (where you image a known object repeatedly), but poorly for real patient images.
+### The Metrics That Matter
 
-**No-reference (blind) quality assessment.** Judge the image quality without any reference. This is what you actually need in clinical practice. The model learns what "good" looks like from a training set of images labeled by radiologists or technologists as acceptable or unacceptable. Modern approaches use convolutional neural networks (CNNs) trained on thousands of labeled examples. The network learns to detect blur patterns, noise characteristics, positioning errors, and artifact signatures directly from pixel data.
+Regardless of approach, you're computing some combination of these:
 
-The no-reference approach is where the field has moved, and it's what we'll build.
+**Sharpness / blur detection.** The Laplacian variance is the classic metric. Compute the second derivative of the image (which highlights edges), then measure the variance of the result. High variance means lots of sharp edges (good). Low variance means everything is smooth (blurry). The threshold depends on the modality and resolution. You'll need to calibrate per imaging device.
 
-### Training Data: The Hard Part Nobody Talks About
+**Exposure / brightness.** Histogram analysis tells you whether the image uses the full dynamic range appropriately. An underexposed image clusters pixel values at the low end. An overexposed image clusters at the high end. For X-rays specifically, you want to see the characteristic bimodal distribution: one peak for soft tissue, one for bone/air.
 
-Here's the thing that makes this problem deceptively simple-sounding but operationally tricky: you need labeled training data, and labeling image quality is surprisingly subjective.
+**Noise estimation.** Medical images always have some noise (it's inherent to the physics of image acquisition). The question is whether noise exceeds acceptable levels. Noise estimation typically involves analyzing homogeneous regions of the image where you expect uniform intensity. The standard deviation in those regions approximates the noise floor.
 
-Ask three radiologists whether a slightly rotated chest X-ray is "acceptable" or "reject," and you'll get three different answers depending on the clinical question, their personal tolerance, and what they had for breakfast. Quality thresholds vary by institution, by modality, by body part, and by clinical indication. A chest X-ray that's adequate for confirming line placement might be inadequate for evaluating a subtle pneumothorax.
+**Anatomical completeness.** Is the entire region of interest captured? For a chest X-ray, are both costophrenic angles visible? For a knee MRI, is the entire joint included? This requires either landmark detection (find specific anatomical points and verify they're all present) or a learned model trained on properly framed vs. improperly framed images.
 
-The practical approach: use your institution's existing reject/repeat data. Most radiology departments track which images were rejected and why. That's your training set. Images that made it to the archive and were successfully interpreted are your "acceptable" class. Images that were rejected with documented reasons are your "reject" class, with the reason serving as the defect label.
+**Artifact detection.** Metal artifacts in CT, zipper artifacts in MRI, grid lines in X-rays, patient jewelry or clothing in the field of view. Each artifact type has characteristic patterns that can be detected either by rules (periodic patterns for grid lines) or by learned models (metal streak patterns).
 
-The catch: reject rates vary enormously across institutions (2-20%), so your "reject" class will be much smaller than your "acceptable" class. Class imbalance is a real problem here and needs to be addressed in training (oversampling, class weights, or synthetic augmentation of the minority class).
+### Why This Is Actually Hard (Despite Being "Simple")
 
-### Where the Field Is Now
+I called this recipe "simple" in the chapter overview, and it is, relative to diagnostic AI. But there are real challenges:
 
-Image quality assessment for medical imaging has matured significantly in the last five years. Several things have converged:
+**Threshold calibration is site-specific.** A blur threshold that works for a brand-new digital radiography system will reject everything from an older computed radiography unit. Exposure norms differ between manufacturers. You cannot ship a universal threshold configuration and expect it to work everywhere. Plan for per-device or per-modality calibration.
 
-1. **Pre-trained models.** Transfer learning from ImageNet or medical imaging foundation models means you don't need millions of labeled examples. Fine-tuning a pre-trained CNN on a few thousand quality-labeled images gets you surprisingly far.
+**"Acceptable" is subjective.** Two radiologists will disagree on whether a borderline image is adequate. Your training data (if using a learned model) inherits this subjectivity. The same image might be acceptable for ruling out a fracture but inadequate for evaluating subtle interstitial lung disease. Quality is context-dependent.
 
-2. **Multi-task learning.** Models that simultaneously predict overall quality AND identify specific defects (motion, positioning, exposure) outperform single-task binary classifiers. The defect identification task provides a richer learning signal.
+**Speed matters more than accuracy.** The whole point is catching bad images while the patient is still on the table. If your assessment takes 30 seconds, the technologist has already moved on. You need sub-second inference. This constrains model complexity.
 
-3. **Real-time inference.** Modern GPU inference can process a single image in under 100 milliseconds. That's fast enough to provide feedback at the acquisition console before the patient leaves the table.
+**False positives are expensive.** If your system flags too many images as "poor quality," technologists will start ignoring it. The boy-who-cried-wolf problem is real in clinical workflows. A 5% false positive rate on a system processing 500 images per day means 25 unnecessary alerts daily. That's enough to kill adoption.
 
-4. **DICOM metadata integration.** Combining pixel-level analysis with acquisition metadata (kVp, mAs, slice thickness, patient size) improves accuracy. A "dark" image might be appropriately exposed for a large patient but underexposed for a small one. Metadata provides context.
-
-The accuracy numbers are encouraging. Published studies report 85-95% agreement with expert radiologist quality assessments for binary accept/reject classification. That's not perfect, but it's good enough for a screening tool that flags potential issues for technologist review rather than making autonomous reject decisions.
-
----
-
-## General Architecture Pattern
-
-The pipeline has four logical stages:
+### The General Architecture Pattern
 
 ```
-[Acquire Image] → [Assess Quality] → [Route Decision] → [Act on Result]
+[Image Acquisition] → [Quality Assessment] → [Pass/Fail Decision] → [Alert or Archive]
 ```
 
-**Acquire Image.** A medical image is produced by the modality (X-ray machine, CT scanner, MRI, ultrasound). The image exists as a DICOM file containing both pixel data and metadata (patient info, acquisition parameters, study context).
+**Image Acquisition.** A DICOM image arrives from the modality (X-ray machine, CT scanner, MRI, ultrasound, or a camera for clinical photography). In most hospital environments, images flow through a DICOM router or a vendor-neutral archive (VNA) before reaching the PACS. Your quality assessment system taps into this flow.
 
-**Assess Quality.** The image is passed to a quality assessment model. The model produces: (1) an overall quality score (0-100 or categorical), (2) specific defect flags if quality is below threshold, and (3) confidence in its assessment. The model may use pixel data alone or combine it with DICOM metadata for context-aware assessment.
+**Quality Assessment.** The image is analyzed against quality criteria. This might be a single model that outputs a quality score, a pipeline of individual metric computations (blur, exposure, noise, completeness), or a combination. The output is a structured quality report: overall pass/fail, individual metric scores, and confidence levels.
 
-**Route Decision.** Based on the quality score and institutional thresholds, the image is routed to one of three paths:
-- **Accept:** Quality meets threshold. Image proceeds to PACS archive and radiologist worklist.
-- **Review:** Quality is borderline. Image is flagged for technologist review before archiving.
-- **Reject:** Quality is clearly inadequate. Technologist is alerted immediately for potential retake while patient is still present.
+**Pass/Fail Decision.** A decision engine applies thresholds to the quality scores. This is where the business logic lives: what constitutes "acceptable" for this modality, this body part, this clinical context? The thresholds should be configurable without redeploying the model.
 
-**Act on Result.** For accepted images, no action needed. For review/reject, the system generates an alert with the specific quality defect identified, enabling the technologist to make an informed decision about retake. Results are logged for quality improvement analytics.
+**Alert or Archive.** If the image passes, it flows to the PACS normally. If it fails, an alert goes to the technologist (ideally at the modality console) with specific feedback: "Image rejected: motion blur detected. Recommend retake." The failed image is still archived (you never discard medical images), but it's flagged so the radiologist knows a retake was requested.
 
-The key architectural decision is where this assessment runs. Two options:
-
-**Edge (at the modality).** The model runs on hardware at or near the acquisition device. Lowest latency, enables real-time feedback before the patient leaves. Requires edge compute infrastructure and model deployment to potentially hundreds of devices.
-
-**Cloud (centralized).** Images are sent to a central service for assessment after acquisition. Simpler deployment and model management, but higher latency. The patient may have left by the time the assessment completes. Better suited for batch quality monitoring and analytics than real-time intervention.
-
-Most production deployments use a hybrid: lightweight checks at the edge (basic exposure, obvious motion) with comprehensive assessment in the cloud (subtle artifacts, positioning analysis, multi-image consistency).
+The key architectural decision: where in the imaging chain do you insert the assessment? Closer to the modality means faster feedback but requires edge compute. At the PACS/VNA level means simpler deployment but the patient may have left. The ideal is at the modality or the DICOM router, with sub-second latency.
 
 ---
 
 ## The AWS Implementation
 
+Now let's build this on AWS. The architecture handles both near-real-time assessment (images flowing from modalities) and batch assessment (retrospective quality audits on historical studies).
+
 ### Why These Services
 
-**Amazon SageMaker for model hosting.** SageMaker provides managed inference endpoints that can serve a trained image quality model with auto-scaling, A/B testing, and model versioning. For a CNN-based quality classifier, a SageMaker real-time endpoint on a GPU instance delivers sub-second inference. SageMaker also handles the training pipeline: bring your labeled DICOM dataset, fine-tune a pre-trained model, and deploy it without managing infrastructure.
+**Amazon SageMaker for model hosting.** The quality assessment model (whether a CNN classifier or a multi-metric pipeline) needs to run inference with low latency and scale with imaging volume. SageMaker real-time endpoints give you managed model hosting with auto-scaling. For the sub-second latency requirement, a SageMaker endpoint with a GPU instance (or an optimized CPU instance for simpler models) is the right choice. You train the model on SageMaker as well, using your historical PACS rejection data as labels.
 
-**Amazon S3 for image storage.** DICOM files land in S3 as the durable storage layer. S3 event notifications trigger the quality assessment pipeline automatically when new images arrive. Server-side encryption with KMS protects PHI at rest.
+**Amazon S3 for image storage.** DICOM images land in S3 as the durable store. S3 event notifications trigger the assessment pipeline. For HIPAA compliance, S3 with SSE-KMS encryption is standard. The images are typically routed here from an on-premises DICOM router via AWS HealthImaging or a custom DICOM receiver.
 
-**AWS Lambda for orchestration.** Lambda coordinates the workflow: receives the S3 event, extracts relevant DICOM metadata, invokes the SageMaker endpoint, interprets the result, and routes the image accordingly. For the lightweight preprocessing (DICOM header parsing, image resizing for model input), Lambda's compute is sufficient.
+**AWS Lambda for orchestration.** The glue between S3 (image arrives), preprocessing (DICOM parsing, pixel extraction), and SageMaker (inference). Lambda handles the event-driven triggering and result routing. For images under 6 MB (most single DICOM instances), Lambda's memory and timeout are sufficient. For larger studies (multi-slice CT), you'd use Step Functions or batch processing.
 
-**Amazon DynamoDB for results and routing.** Quality assessment results (scores, defect flags, routing decisions) are stored in DynamoDB for fast lookup by study ID. Downstream systems (PACS integration, technologist dashboards, quality analytics) query this table to determine image status.
+**Amazon DynamoDB for results.** Quality assessment results need fast writes and fast lookups by study ID or accession number. DynamoDB's key-value model fits. Each record stores the quality scores, pass/fail decision, and metadata for audit.
 
-**Amazon SNS for alerts.** When an image is flagged for review or reject, SNS delivers real-time notifications to the technologist console, quality management dashboard, or integration engine. Low latency alerting is critical for the "retake while patient is present" use case.
+**Amazon SNS for alerting.** When an image fails quality assessment, an SNS notification routes to the appropriate channel: a message to the technologist's console application, an email to the lead tech, or an integration with the department's communication system.
 
-**Amazon CloudWatch for monitoring.** Track model inference latency, quality score distributions, reject rates by modality and shift, and alert on anomalies (sudden spike in reject rate might indicate equipment malfunction rather than technologist error).
+**AWS HealthImaging (optional).** If you're building a cloud-native imaging pipeline, AWS HealthImaging provides DICOM-native storage with sub-second retrieval of pixel data. It eliminates the need to parse DICOM files yourself and provides direct access to pixel arrays for inference.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart LR
-    A[🏥 Modality\nX-ray / CT / MRI] -->|DICOM Send| B[S3 Bucket\nimages-inbox/]
-    B -->|S3 Event| C[Lambda\nquality-assessor]
-    C -->|Extract pixels\n+ metadata| D[SageMaker Endpoint\nquality-model]
-    D -->|Score + Defects| C
-    C -->|Store result| E[DynamoDB\nquality-results]
-    C -->|Below threshold| F[SNS Topic\nquality-alerts]
-    F -->|Notify| G[Tech Console\n/ PACS Flag]
-    E -->|Query| H[Quality Dashboard\n/ Analytics]
+    A[🏥 Modality\nX-ray / CT / MRI] -->|DICOM| B[DICOM Router\non-premises]
+    B -->|Store| C[S3 Bucket\nimaging-inbox/]
+    C -->|S3 Event| D[Lambda\nimage-quality-orchestrator]
+    D -->|Extract pixels\npreprocess| D
+    D -->|Invoke endpoint| E[SageMaker Endpoint\nquality-model]
+    E -->|Quality scores| D
+    D -->|Store results| F[DynamoDB\nquality-assessments]
+    D -->|Fail notification| G[SNS Topic\nquality-alerts]
+    G -->|Alert| H[Tech Console /\nPACS Integration]
 
-    style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style E fill:#9ff,stroke:#333
+    style C fill:#f9f,stroke:#333
+    style E fill:#ff9,stroke:#333
+    style F fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish` |
-| **BAA** | AWS BAA signed (required: DICOM images contain PHI in headers and pixel data) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SageMaker endpoint: in-transit TLS + at-rest KMS; SNS: encrypted topic |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon SNS |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `sns:Publish` |
+| **BAA** | AWS BAA signed (required: medical images are PHI) |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SageMaker endpoint: KMS encryption for model artifacts and instance storage; all API calls over TLS |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, SageMaker, DynamoDB, SNS, and CloudWatch Logs |
-| **CloudTrail** | Enabled: log all SageMaker invocations and S3 access for HIPAA audit trail |
-| **Sample Data** | Synthetic or de-identified DICOM images with quality labels. Public datasets: MURA (musculoskeletal radiographs), CheXpert (chest X-rays with quality annotations). Never use real patient images in dev without proper de-identification. |
-| **Cost Estimate** | SageMaker real-time endpoint (ml.g4dn.xlarge): ~$0.736/hour. At 1000 images/day with sub-second inference, the per-image cost is ~$0.001. S3 + Lambda + DynamoDB negligible at this scale. |
+| **CloudTrail** | Enabled: log all S3 and SageMaker API calls for HIPAA audit trail |
+| **Training Data** | Historical PACS rejection logs paired with the rejected images. Most radiology departments track rejection reasons. Minimum viable dataset: 1,000 accepted and 1,000 rejected images per modality. Never use real patient images in dev without proper IRB approval and de-identification. |
+| **Cost Estimate** | SageMaker endpoint (ml.m5.large): ~$0.115/hour (~$83/month always-on). S3 storage: negligible for assessment pipeline. Lambda + DynamoDB: negligible at typical imaging volumes. Per-image cost: ~$0.01 including all services. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon SageMaker** | Hosts trained quality assessment CNN model; provides real-time inference endpoint |
-| **Amazon S3** | Stores incoming DICOM images; triggers processing pipeline |
-| **AWS Lambda** | Orchestrates workflow: DICOM parsing, model invocation, result routing |
-| **Amazon DynamoDB** | Stores quality scores, defect flags, and routing decisions per image |
-| **Amazon SNS** | Delivers real-time alerts for below-threshold images |
-| **AWS KMS** | Manages encryption keys for all data stores |
-| **Amazon CloudWatch** | Metrics, logs, and alarms for pipeline health and quality trends |
+| **Amazon SageMaker** | Hosts the quality assessment model; provides training infrastructure |
+| **Amazon S3** | Stores incoming DICOM images; encrypted at rest with KMS |
+| **AWS Lambda** | Orchestrates the pipeline: triggers on S3 event, preprocesses image, invokes model, routes results |
+| **Amazon DynamoDB** | Stores structured quality assessment results for lookup and audit |
+| **Amazon SNS** | Delivers quality failure alerts to technologists and supervisors |
+| **AWS KMS** | Manages encryption keys for S3, DynamoDB, and SageMaker |
+| **Amazon CloudWatch** | Logs, metrics, alarms for assessment latency and failure rates |
 
 ### Code
 
 #### Walkthrough
 
-**Step 1: Receive and parse DICOM image.** When a new DICOM file lands in the S3 bucket (sent from the modality via a DICOM router or gateway), the pipeline triggers automatically. The first step extracts two things from the DICOM file: the pixel data (the actual image) and the acquisition metadata (modality type, body part, acquisition parameters). The metadata provides context that improves quality assessment accuracy. A "dark" chest X-ray might be perfectly exposed for a large patient. Without the metadata context, the model might incorrectly flag it. Skip this step and you're flying blind on context.
+**Step 1: Receive and parse the DICOM image.** When a DICOM file lands in the S3 bucket, the orchestrator function fires. The first job is extracting the pixel data and relevant metadata from the DICOM wrapper. DICOM is a complex format (it's both a file format and a network protocol), but for quality assessment we need three things: the pixel array, the modality type (to select the right quality criteria), and the study/series identifiers (to route results back to the right place). Skip this step and you're trying to feed a binary DICOM blob directly to a model that expects a pixel array.
 
 ```
 FUNCTION receive_image(bucket, key):
-    // Download the DICOM file from storage
-    dicom_bytes = download file from bucket/key
+    // Download the DICOM file from S3
+    dicom_bytes = download from S3 at bucket/key
 
-    // Parse the DICOM format to extract pixel data and metadata separately.
-    // DICOM is a container format: it wraps the image pixels inside a structured
-    // header containing patient info, study info, and acquisition parameters.
+    // Parse the DICOM structure to extract pixel data and metadata.
+    // DICOM files contain both image pixels and extensive metadata
+    // (patient info, acquisition parameters, modality type, etc.)
     dicom_object = parse DICOM from dicom_bytes
 
-    // Extract the pixel array (the actual image data the model will analyze)
-    pixel_array = dicom_object.pixel_array
+    // Extract what we need for quality assessment
+    pixel_array = dicom_object.pixel_array          // the actual image data as a 2D numeric array
+    modality    = dicom_object.Modality             // "CR", "CT", "MR", "DX", etc.
+    study_uid   = dicom_object.StudyInstanceUID     // unique identifier for this imaging study
+    series_uid  = dicom_object.SeriesInstanceUID    // unique identifier for this series within the study
+    body_part   = dicom_object.BodyPartExamined     // "CHEST", "KNEE", "HEAD", etc.
 
-    // Extract acquisition metadata that provides context for quality assessment
-    metadata = {
-        modality:       dicom_object.Modality,          // "CR", "CT", "MR", etc.
-        body_part:      dicom_object.BodyPartExamined,  // "CHEST", "HEAD", "KNEE", etc.
-        kvp:            dicom_object.KVP,               // X-ray tube voltage (exposure indicator)
-        exposure:       dicom_object.Exposure,          // radiation exposure in mAs
-        patient_size:   dicom_object.PatientSize,       // helps contextualize exposure adequacy
-        study_uid:      dicom_object.StudyInstanceUID,  // unique study identifier
-        series_uid:     dicom_object.SeriesInstanceUID, // unique series identifier
-        instance_uid:   dicom_object.SOPInstanceUID     // unique image identifier
+    RETURN {
+        pixels:     pixel_array,
+        modality:   modality,
+        study_uid:  study_uid,
+        series_uid: series_uid,
+        body_part:  body_part,
+        source_key: key
     }
-
-    RETURN pixel_array, metadata
 ```
 
-**Step 2: Preprocess for model input.** The raw DICOM pixel array isn't ready for the model as-is. Medical images come in wildly different sizes (a chest X-ray might be 3000x3000 pixels, a CT slice 512x512), different bit depths (12-bit or 16-bit, not the 8-bit that most models expect), and different value ranges. This step normalizes everything into a consistent format the model expects. The preprocessing must match exactly what was used during training. If you trained on 224x224 images normalized to 0-1 range, you must resize and normalize identically at inference time. A mismatch here silently destroys accuracy with no error message.
+**Step 2: Compute rule-based quality metrics.** Before invoking the ML model, compute the fast, deterministic metrics that catch obvious failures. These are cheap to compute (milliseconds), require no model inference, and catch the most egregious problems: completely black images (detector malfunction), completely white images (overexposure), and severe blur (patient moved significantly). Think of this as the "fast reject" gate. If an image fails here, there's no point spending compute on the ML model. These metrics also feed into the ML model as additional input features, giving it both the raw pixels and the computed statistics.
 
 ```
-FUNCTION preprocess_image(pixel_array, metadata):
-    // Resize to the model's expected input dimensions.
-    // Most CNN architectures expect square inputs (224x224, 299x299, etc.)
-    // Bilinear interpolation preserves image features better than nearest-neighbor.
-    resized = resize pixel_array to (224, 224) using bilinear interpolation
+FUNCTION compute_basic_metrics(pixel_array):
+    metrics = empty map
 
+    // --- Blur Detection ---
+    // The Laplacian operator computes the second derivative of the image.
+    // Sharp images have high-frequency content (edges), which produces high variance
+    // in the Laplacian output. Blurry images are smooth, producing low variance.
+    laplacian        = apply Laplacian filter to pixel_array
+    metrics["blur_score"] = variance(laplacian)
+    // Higher score = sharper image. Typical threshold: 100-500 depending on modality.
+
+    // --- Exposure Analysis ---
+    // Compute the histogram of pixel intensities (how many pixels at each brightness level).
+    // A well-exposed image uses a broad range of the available dynamic range.
+    histogram        = compute intensity histogram of pixel_array
+    metrics["mean_intensity"]   = mean(pixel_array)
+    metrics["std_intensity"]    = standard_deviation(pixel_array)
+    metrics["percentile_5"]     = 5th percentile of pixel_array    // darkest region
+    metrics["percentile_95"]    = 95th percentile of pixel_array   // brightest region
+    metrics["dynamic_range"]    = metrics["percentile_95"] - metrics["percentile_5"]
+
+    // --- Noise Estimation ---
+    // Estimate noise by looking at the standard deviation in a smooth region.
+    // We use the median absolute deviation of the wavelet coefficients (robust estimator).
+    noise_estimate   = estimate_noise(pixel_array)  // e.g., using wavelet-based method
+    metrics["noise_level"] = noise_estimate
+
+    // --- Basic Sanity Checks ---
+    // These catch hardware failures and gross acquisition errors.
+    metrics["is_blank"]    = (metrics["dynamic_range"] < 10)       // nearly uniform image
+    metrics["is_saturated"] = (metrics["percentile_95"] >= 0.99 * max_possible_value)
+
+    RETURN metrics
+```
+
+**Step 3: Invoke the ML quality model.** The rule-based metrics catch the obvious cases. The ML model handles the nuanced ones: subtle motion blur that the Laplacian variance doesn't flag, positioning errors that require understanding anatomy, and the complex interaction between multiple quality factors. The model takes the preprocessed pixel array (resized to a standard input dimension) and optionally the computed metrics as auxiliary features. It returns a quality score (0 to 1, where 1 is perfect quality) and optionally per-category scores (blur, exposure, positioning, artifacts). The model was trained on your institution's historical rejection data, so it learns your radiologists' quality standards.
+
+```
+FUNCTION assess_quality_ml(pixel_array, basic_metrics, modality):
+    // Preprocess the image for model input.
+    // Resize to the model's expected input dimensions (e.g., 512x512).
     // Normalize pixel values to 0-1 range.
-    // DICOM images can be 12-bit (0-4095) or 16-bit (0-65535).
-    // The model was trained on normalized values, so we must match that.
-    normalized = resized / maximum_pixel_value(resized)
+    preprocessed = resize(pixel_array, target_size=(512, 512))
+    preprocessed = normalize(preprocessed, min=0, max=1)
 
-    // Convert to 3-channel if model expects RGB input.
-    // Medical images are typically grayscale (single channel).
-    // Pre-trained models from ImageNet expect 3 channels.
-    IF normalized is single-channel:
-        normalized = stack [normalized, normalized, normalized] along channel axis
-
-    // Package metadata as a separate feature vector for the model.
-    // This allows the model to contextualize pixel-level quality with acquisition info.
-    metadata_features = encode_metadata(metadata)
-    // encode_metadata converts categorical fields (modality, body_part) to numeric
-    // and normalizes continuous fields (kvp, exposure) to standard ranges
-
-    RETURN normalized, metadata_features
-```
-
-**Step 3: Invoke quality assessment model.** The preprocessed image and metadata features are sent to the trained model for inference. The model returns a quality score (0-100), a categorical verdict (accept/review/reject), and specific defect flags if quality is below threshold. The model architecture is typically a CNN (ResNet, EfficientNet, or similar) with a multi-head output: one head for overall quality score, one for defect classification. Inference takes 50-200 milliseconds on a GPU endpoint. If this step fails (endpoint unavailable, timeout), the image should proceed to the archive without a quality flag rather than blocking the clinical workflow. Quality assessment is an enhancement, not a gate.
-
-```
-FUNCTION assess_quality(image_tensor, metadata_features):
-    // Package the input for the model endpoint.
-    // The model expects both the image tensor and the metadata features.
-    payload = {
-        image:    image_tensor,        // preprocessed 224x224x3 normalized image
-        metadata: metadata_features    // encoded acquisition parameters
+    // Combine pixel data with computed metrics as model input.
+    // The model architecture accepts both the image and tabular features.
+    model_input = {
+        "image":    preprocessed,
+        "metrics":  basic_metrics,
+        "modality": modality          // modality as a categorical feature
     }
 
-    // Call the model inference endpoint.
-    // This is a synchronous call; the endpoint returns results in <200ms.
-    response = invoke model endpoint with payload
+    // Call the SageMaker endpoint for inference.
+    // The endpoint hosts the trained quality assessment model.
+    response = invoke SageMaker endpoint "image-quality-model" with model_input
 
-    // Parse the model's output into structured quality assessment.
-    result = {
-        quality_score:   response.score,          // 0-100 continuous score
-        verdict:         response.verdict,        // "accept", "review", or "reject"
-        defects:         response.defects,        // list of detected defects, e.g.,
-                                                  // ["motion_artifact", "rotation"]
-        confidence:      response.confidence,     // model's confidence in its assessment
-        defect_regions:  response.regions         // bounding boxes of problem areas (optional)
+    // Parse the model's output: overall score plus per-category breakdown.
+    quality_score = response["overall_quality"]    // 0.0 to 1.0
+    category_scores = {
+        "sharpness":    response["sharpness_score"],
+        "exposure":     response["exposure_score"],
+        "positioning":  response["positioning_score"],
+        "artifacts":    response["artifact_score"]
     }
 
-    RETURN result
+    RETURN {
+        overall_score:    quality_score,
+        category_scores:  category_scores
+    }
 ```
 
-**Step 4: Apply institutional thresholds and route.** The model's raw output needs to be interpreted through institutional policy. Different departments may have different quality thresholds. A trauma X-ray taken in the ED might have a lower quality bar than an elective screening mammogram. This step applies configurable thresholds and determines the routing action. The thresholds should be tunable without redeploying the model. Store them in configuration, not code. Skip this step and you're stuck with a one-size-fits-all threshold that will either over-reject (annoying techs) or under-reject (missing real problems).
+**Step 4: Apply decision thresholds.** The model gives you a continuous score. The clinical workflow needs a discrete decision: accept, flag for review, or reject. This step applies configurable thresholds that translate scores into actions. The thresholds are stored externally (not baked into the model) so they can be tuned per site, per modality, and per body part without retraining. A three-tier system works well in practice: clear pass, borderline (flag for tech review), and clear fail (immediate retake alert). Skip this step and you're dumping raw probability scores on technologists who need a yes/no answer.
 
 ```
 // Thresholds are configurable per modality and body part.
-// These are starting points; calibrate based on your institution's reject/repeat data.
+// These are loaded from a configuration store, not hardcoded.
 THRESHOLDS = {
-    "CR_CHEST":  { accept: 75, review: 50 },   // chest X-ray
-    "CR_KNEE":   { accept: 70, review: 45 },   // knee X-ray
-    "CT_HEAD":   { accept: 80, review: 60 },   // head CT (higher bar)
-    "MR_BRAIN":  { accept: 80, review: 60 },   // brain MRI (higher bar)
-    "DEFAULT":   { accept: 70, review: 50 }    // fallback for unlisted combinations
+    "CR_CHEST": { "accept": 0.85, "review": 0.65 },
+    "CT_HEAD":  { "accept": 0.90, "review": 0.70 },
+    "MR_KNEE":  { "accept": 0.80, "review": 0.60 },
+    "DEFAULT":  { "accept": 0.85, "review": 0.65 }
 }
 
-FUNCTION route_image(quality_result, metadata):
-    // Look up the threshold for this modality + body part combination.
-    threshold_key = metadata.modality + "_" + metadata.body_part
+FUNCTION apply_decision(quality_result, modality, body_part):
+    // Look up the appropriate thresholds for this modality/body part combination.
+    threshold_key = modality + "_" + body_part
     thresholds = THRESHOLDS[threshold_key] OR THRESHOLDS["DEFAULT"]
 
-    // Determine routing based on score vs. thresholds.
-    IF quality_result.quality_score >= thresholds.accept:
-        routing = "accept"
-        action  = "proceed to archive"
+    overall = quality_result.overall_score
 
-    ELSE IF quality_result.quality_score >= thresholds.review:
-        routing = "review"
-        action  = "flag for technologist review"
+    IF overall >= thresholds["accept"]:
+        decision = "ACCEPT"
+        action   = "Route to PACS normally"
+
+    ELSE IF overall >= thresholds["review"]:
+        decision = "REVIEW"
+        action   = "Flag for technologist review before patient leaves"
 
     ELSE:
-        routing = "reject"
-        action  = "alert technologist for immediate retake consideration"
+        decision = "REJECT"
+        action   = "Alert technologist: retake recommended"
+        // Include the worst-scoring category to give actionable feedback.
+        worst_category = find category with lowest score in quality_result.category_scores
+        action = action + " (primary issue: " + worst_category + ")"
 
     RETURN {
-        routing:    routing,
-        action:     action,
-        score:      quality_result.quality_score,
-        defects:    quality_result.defects,
-        confidence: quality_result.confidence,
-        threshold_used: thresholds
+        decision:        decision,
+        action:          action,
+        overall_score:   overall,
+        category_scores: quality_result.category_scores,
+        thresholds_used: thresholds
     }
 ```
 
-**Step 5: Store result and notify.** The quality assessment result is persisted for audit, analytics, and downstream system consumption. If the image was flagged for review or reject, a real-time notification is sent to the technologist. The stored record enables quality improvement programs: track reject rates by technologist, by modality, by time of day. Identify equipment that's producing more artifacts than expected. Measure whether the quality program is actually reducing repeat rates over time.
+**Step 5: Store results and alert.** Write the quality assessment to the database for audit and analytics, and fire an alert if the image was rejected or flagged. The stored record links back to the original image (by study UID and source key) so you can always trace a quality decision back to its source. The alert goes through SNS to whatever channel the technologist monitors: a dashboard, a pager, or an integration with the modality console software.
 
 ```
-FUNCTION store_and_notify(metadata, routing_result):
-    // Write the quality assessment record to the database.
-    // This is the permanent audit trail of every quality decision.
-    write to database table "quality-results":
-        image_id         = metadata.instance_uid
-        study_id         = metadata.study_uid
-        modality         = metadata.modality
-        body_part        = metadata.body_part
-        quality_score    = routing_result.score
-        routing          = routing_result.routing
-        defects          = routing_result.defects
-        confidence       = routing_result.confidence
-        assessed_at      = current UTC timestamp (ISO 8601)
-        threshold_used   = routing_result.threshold_used
+FUNCTION store_and_alert(image_info, decision_result):
+    // Write the complete assessment record to DynamoDB.
+    // This is the audit trail: what was assessed, when, and what was decided.
+    write record to database table "quality-assessments":
+        study_uid        = image_info.study_uid
+        series_uid       = image_info.series_uid
+        source_key       = image_info.source_key
+        modality         = image_info.modality
+        body_part        = image_info.body_part
+        assessment_time  = current UTC timestamp (ISO 8601)
+        decision         = decision_result.decision          // "ACCEPT", "REVIEW", or "REJECT"
+        overall_score    = decision_result.overall_score
+        category_scores  = decision_result.category_scores
+        thresholds_used  = decision_result.thresholds_used
+        action           = decision_result.action
 
-    // If the image needs attention, alert the technologist immediately.
-    IF routing_result.routing IN ["review", "reject"]:
-        publish notification:
-            topic   = "quality-alerts"
+    // If the image was rejected or flagged, alert the technologist.
+    IF decision_result.decision IN ["REJECT", "REVIEW"]:
+        publish to SNS topic "quality-alerts":
             message = {
-                image_id:  metadata.instance_uid,
-                study_id:  metadata.study_uid,
-                routing:   routing_result.routing,
-                score:     routing_result.score,
-                defects:   routing_result.defects,
-                action:    routing_result.action
+                study_uid:  image_info.study_uid,
+                modality:   image_info.modality,
+                body_part:  image_info.body_part,
+                decision:   decision_result.decision,
+                action:     decision_result.action,
+                score:      decision_result.overall_score
             }
 
-    RETURN routing_result.routing
+    RETURN decision_result.decision
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-**Sample output for a chest X-ray with motion artifact:**
+**Sample output for a chest X-ray with motion blur:**
 
 ```json
 {
-  "image_id": "1.2.840.113619.2.55.3.604688.2026.05.15.10.42.33.001",
-  "study_id": "1.2.840.113619.2.55.3.604688.2026.05.15.10.42.33",
+  "study_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31",
+  "series_uid": "1.2.840.113619.2.55.3.604688.2026.03.15.09.42.31.1",
+  "source_key": "imaging-inbox/2026/03/15/study-00891.dcm",
   "modality": "CR",
   "body_part": "CHEST",
-  "quality_score": 42.7,
-  "routing": "reject",
-  "defects": ["motion_artifact", "rotation"],
-  "confidence": 0.91,
-  "assessed_at": "2026-05-15T10:42:38Z",
-  "threshold_used": { "accept": 75, "review": 50 }
+  "assessment_time": "2026-03-15T09:42:35Z",
+  "decision": "REJECT",
+  "overall_score": 0.42,
+  "category_scores": {
+    "sharpness": 0.31,
+    "exposure": 0.88,
+    "positioning": 0.76,
+    "artifacts": 0.92
+  },
+  "action": "Alert technologist: retake recommended (primary issue: sharpness)"
 }
 ```
 
@@ -355,55 +363,53 @@ FUNCTION store_and_notify(metadata, routing_result):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 0.5-2 seconds (S3 event to notification) |
-| Model inference time | 50-200 ms on ml.g4dn.xlarge |
-| Binary accuracy (accept/reject) | 85-93% agreement with radiologist |
-| Defect classification accuracy | 78-88% per defect type |
-| Cost per image | ~$0.001 (inference) + negligible storage/compute |
-| Throughput | ~100 images/second per endpoint instance |
+| End-to-end latency (single image) | 1.5-3 seconds |
+| Rule-based metrics computation | 50-200 ms |
+| ML model inference | 200-500 ms |
+| Quality classification accuracy | 88-94% agreement with radiologist judgment |
+| False positive rate (good images flagged as bad) | 3-7% |
+| False negative rate (bad images missed) | 1-3% |
+| Cost per image | ~$0.01 (SageMaker + Lambda + DynamoDB) |
+| Throughput | ~20-50 images/second (endpoint-limited) |
 
-**Where it struggles:**
-
-- Subtle positioning errors that require anatomical knowledge (e.g., slight rotation that clips a costophrenic angle)
-- Quality judgments that depend on clinical indication (adequate for line check, inadequate for nodule evaluation)
-- Novel artifact types not seen in training data
-- Images from new equipment models with different noise characteristics than training data
-- Borderline cases where even radiologists disagree
+**Where it struggles:** Borderline cases where radiologists themselves disagree. Modalities or body parts not well-represented in training data. Images from new equipment models with different noise characteristics. Pediatric images (different anatomy, different quality standards, more motion). And the fundamental tension: the model learns your institution's historical standards, which may not be optimal.
 
 ---
 
 ## The Honest Take
 
-This is one of those problems that sounds like it should be solved already. And in some ways it is: every modern modality has basic exposure indicators built in. But the gap between "exposure is technically adequate" and "this image is diagnostically useful for the specific clinical question" is where all the interesting (and hard) work lives.
+This is one of those problems where the technology is genuinely ready but the deployment is harder than the ML. The model itself is straightforward: binary classification on images with clear labels (your PACS already tracks rejections). Training takes a few days. Inference is fast. The accuracy is good enough.
 
-The biggest surprise when building this: the model accuracy isn't the hard part. Getting 85-90% agreement with radiologists on binary accept/reject is achievable with a few thousand labeled examples and a fine-tuned ResNet. The hard part is everything around the model.
+The hard parts are all operational:
 
-First, threshold calibration. Set the reject threshold too aggressively and technologists start ignoring the alerts (alert fatigue is real and deadly in healthcare). Set it too conservatively and you're not catching the images that actually need retakes. You need to calibrate per institution, per modality, and then recalibrate quarterly as equipment ages and staff turns over.
+**Getting the training data out of your PACS.** Radiology departments track rejections, but the data is often in a proprietary system with no clean export path. You'll spend more time on data extraction than on model training. Budget for it.
 
-Second, workflow integration. The quality assessment is useless if the alert doesn't reach the technologist while the patient is still on the table. That means sub-5-second end-to-end latency from acquisition to alert. It means integration with the modality console or a nearby display. It means not interrupting the technologist's workflow for every borderline case. The UX matters more than the model accuracy.
+**Calibrating thresholds per site.** What I said earlier about site-specific calibration is not optional. I've seen systems that worked beautifully at one hospital and rejected 40% of images at another because the equipment was older and the baseline noise floor was higher. Plan for a calibration phase at every deployment site.
 
-Third, the training data problem. Your "reject" class is small (2-10% of images), subjective (radiologists disagree), and institution-specific (what's acceptable at a trauma center might not be at a screening facility). You'll spend more time curating training data than training models.
+**Technologist trust.** If the system rejects images that the technologist thinks are fine, they'll stop trusting it within a week. Start with a "shadow mode" where the system assesses images but doesn't alert anyone. Compare its decisions against actual radiologist rejections for a month. Only go live when the agreement rate is high enough that technologists see it as helpful, not annoying.
 
-The part I'd do differently: start with a single modality and body part (chest X-ray is the obvious choice: high volume, well-studied, public datasets available). Get that working end-to-end including the workflow integration. Then expand to other modalities. Trying to build a universal quality model across all modalities from day one is a recipe for a model that's mediocre at everything and excellent at nothing.
+**The feedback loop problem.** Once you deploy the system and technologists start retaking flagged images, your rejection rate drops. Great. But now your model's training data (historical rejections) no longer represents the current distribution of quality problems. The model needs periodic retraining on the new failure modes that slip through.
+
+The part that surprised me: the biggest ROI is not in radiology. It's in clinical photography. Wound care photos, dermatology images, dental radiographs. These are taken by non-imaging-specialists (nurses, medical assistants) with consumer-grade cameras, and the quality variance is enormous. A simple blur-and-exposure check on clinical photos catches more actionable problems than a sophisticated model on radiologist-acquired X-rays.
 
 ---
 
 ## Variations and Extensions
 
-**Real-time edge deployment.** Instead of cloud-based assessment after the image reaches S3, deploy a lightweight model (MobileNet or EfficientNet-Lite) directly on edge hardware at the modality. This enables sub-second feedback on the acquisition console itself. The tradeoff: you're managing model deployments across potentially hundreds of devices, and the edge model may be less accurate than a larger cloud model. Consider a two-tier approach: fast edge model for obvious defects, cloud model for comprehensive assessment.
+**Edge deployment for real-time feedback.** Instead of routing images to the cloud for assessment, deploy a lightweight model (quantized, optimized for inference) directly on hardware at the modality or DICOM router. This gets latency under 500ms and enables immediate feedback on the modality console. AWS IoT Greengrass or a SageMaker Edge deployment can manage model updates to edge devices. The tradeoff: you lose the scalability of cloud inference and need to manage edge hardware.
 
-**Quality trend analytics.** Aggregate quality scores over time to build operational dashboards. Track reject rates by technologist (identify training needs), by equipment (identify maintenance needs), by time of day (identify fatigue patterns), and by patient population (identify systematic challenges). This transforms a per-image tool into a quality improvement program.
+**Multi-image study-level assessment.** Instead of assessing each image independently, evaluate the entire study as a unit. A CT scan might have 200 slices; a few with motion artifact might be acceptable if the key anatomy is well-visualized on adjacent slices. This requires a study-level aggregation model that understands which slices are diagnostically critical for the ordered indication.
 
-**Feedback loop for model improvement.** When a technologist overrides the model's recommendation (accepts an image the model flagged, or rejects one the model accepted), capture that disagreement as a training signal. Periodically retrain the model on these corrections. Over time, the model adapts to your institution's specific quality standards. This requires careful tracking of overrides and a retraining pipeline, but it's how you get from 85% to 93% accuracy.
+**Feedback-driven model improvement.** When a technologist overrides the system's decision (accepts an image the system flagged, or rejects one the system passed), capture that as a training signal. Build a continuous learning pipeline where override events are reviewed, validated, and incorporated into the next model version. This closes the loop between deployment and improvement.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 9.4 (Dermatology Lesion Triage):** Uses similar CNN classification architecture but for clinical content rather than technical quality
-- **Recipe 9.5 (Chest X-Ray Triage):** Downstream consumer of quality-assessed images; quality gating ensures the triage model receives interpretable inputs
-- **Recipe 9.7 (Radiology AI Triage, Multi-Modality):** Multi-modality quality assessment is a prerequisite for reliable multi-modality triage
-- **Recipe 3.5 (Lab Result Outlier Detection):** Analogous pattern of automated quality gating before downstream consumption
+- **Recipe 9.2 (Patient Photo Verification):** Uses similar image preprocessing but for identity matching rather than quality scoring
+- **Recipe 9.4 (Dermatology Lesion Triage):** Depends on image quality assessment as a prerequisite; poor-quality photos should be caught before triage
+- **Recipe 9.5 (Chest X-Ray Triage):** Quality assessment is a natural upstream step; only route quality-adequate images to the diagnostic AI
+- **Recipe 3.7 (Patient Deterioration Early Warning):** Demonstrates a similar pattern of real-time scoring with configurable alert thresholds
 
 ---
 
@@ -411,34 +417,36 @@ The part I'd do differently: start with a single modality and body part (chest X
 
 **AWS Documentation:**
 - [Amazon SageMaker Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html)
-- [Amazon SageMaker Built-in Image Classification Algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/image-classification.html)
-- [Amazon S3 Event Notifications](https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventNotifications.html)
+- [Amazon SageMaker Training](https://docs.aws.amazon.com/sagemaker/latest/dg/train-model.html)
+- [AWS HealthImaging Developer Guide](https://docs.aws.amazon.com/healthimaging/latest/devguide/what-is.html)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
-- [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
+- [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **AWS Sample Repos:**
-- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including image classification, model deployment, and inference pipelines
-- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare and life science AI/ML examples on AWS including medical imaging workflows
+- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including image classification, model deployment, and endpoint management
+- [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare and life science AI/ML examples on AWS including medical imaging patterns
 
 **AWS Solutions and Blogs:**
-- [AWS Solutions Library: AI/ML](https://aws.amazon.com/solutions/ai-ml/): Deployable reference architectures for ML inference pipelines
-- [Medical Imaging on AWS](https://aws.amazon.com/health/solutions/medical-imaging/): AWS healthcare imaging solutions overview including DICOM handling and AI integration patterns
+- [Scalable Medical Computer Vision Model Training](https://aws.amazon.com/blogs/machine-learning/scalable-medical-computer-vision-model-training-with-amazon-sagemaker/): Patterns for training medical imaging models at scale on SageMaker
+- [AWS for Health: Medical Imaging](https://aws.amazon.com/health/solutions/medical-imaging/): Overview of AWS services for medical imaging workflows
 
 ---
 
 ## Estimated Implementation Time
 
-| Tier | Timeline | What You Get |
-|------|----------|--------------|
-| **Basic** | 3-4 weeks | Single-modality quality classifier (chest X-ray), cloud-based assessment, DynamoDB results, basic alerting |
-| **Production-ready** | 8-12 weeks | Multi-modality support, calibrated thresholds, PACS integration, technologist dashboard, monitoring and alerting |
-| **With variations** | 16-20 weeks | Edge deployment, quality trend analytics, feedback loop retraining, multi-site deployment |
+| Phase | Duration |
+|-------|----------|
+| **Basic** (rule-based metrics only, single modality) | 2-3 weeks |
+| **Production-ready** (ML model, multi-modality, alerting, monitoring) | 8-12 weeks |
+| **With variations** (edge deployment, study-level, continuous learning) | 16-20 weeks |
 
 ---
 
-**Tags:** `computer-vision` · `medical-imaging` · `quality-assessment` · `image-classification` · `cnn` · `sagemaker` · `dicom` · `radiology` · `patient-safety`
+## Tags
+
+`computer-vision` · `medical-imaging` · `quality-assessment` · `image-processing` · `sagemaker` · `dicom` · `radiology` · `simple` · `mvp` · `lambda` · `s3` · `dynamodb` · `hipaa`
 
 ---
 
-*[← Chapter 9 Index](chapter09-index) | [Next: Recipe 9.2 — Patient Photo Verification →](chapter09.02-patient-photo-verification)*
+*← [Chapter 9 Index](chapter09-index) · [Next: Recipe 9.2 - Patient Photo Verification →](chapter09.02-patient-photo-verification)*
