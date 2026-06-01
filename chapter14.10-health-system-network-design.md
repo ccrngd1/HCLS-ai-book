@@ -12,7 +12,7 @@ These are not questions you can answer with a spreadsheet and good intentions. T
 
 Health system network design is the problem of deciding what services to offer, where to offer them, and how much capacity to allocate at each location. It's a facility location problem, a capacity allocation problem, and a demand assignment problem all rolled into one. And it operates on a time horizon of 5 to 20 years, which means every input is uncertain.
 
-Most health systems today make these decisions through a combination of market analysis reports, consultant recommendations, physician lobbying, and executive intuition. The results are predictably inconsistent. Some systems over-invest in competitive markets and under-invest in growth corridors. Others chase service lines with high reimbursement without considering whether they have the referral network to sustain volume. The optimization approach doesn't replace human judgment on these decisions. It structures the analysis so that judgment is applied to the right tradeoffs rather than lost in a fog of competing anecdotes.
+Most health systems today make these decisions through a combination of market analysis reports, consultant recommendations, physician lobbying, and executive intuition. The results are predictably inconsistent. Some systems over-invest in competitive markets and under-invest in growth corridors. Others chase service lines with high reimbursement without considering whether they have the referral network to sustain volume. None of this replaces the judgment calls. It just makes sure those judgment calls happen on the actual tradeoffs instead of getting lost in a fog of competing anecdotes.
 
 This is one of the hardest problems in this entire book. The solution space is enormous, the constraints are politically charged, and the objective function is genuinely multi-dimensional. Let's dig in.
 
@@ -121,17 +121,19 @@ For a typical health system network design problem (50-200 potential facility-se
 
 ### Why These Services
 
-**Amazon SageMaker for model development and solver execution.** Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development, training jobs for compute-intensive solver runs, and processing jobs for data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.
+**Amazon SageMaker for model development and solver execution.** Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and processing jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.
+
+<!-- TODO (TechWriter): Expert review ARC-2 (MEDIUM). Clarify why Processing Jobs (not Training Jobs) are the right abstraction for solver execution. Training Jobs carry ML-specific semantics (model artifacts, hyperparameter tuning) that don't apply here. If Spot instance checkpointing is the reason for Training Jobs, state that explicitly. -->
 
 **Amazon S3 for data lake and model artifacts.** The input data (patient origin files, demographic projections, financial data, competitor intelligence) and output artifacts (solution files, scenario comparisons, sensitivity analyses) all live in S3. This provides durable, versioned storage with fine-grained access control.
 
 **AWS Glue for data integration and preparation.** Network design requires pulling data from multiple source systems (EHR, financial systems, census data, competitor databases). Glue ETL jobs handle the extraction, transformation, and loading into the analytics-ready format the optimizer needs.
 
-**Amazon Redshift for analytical queries.** Historical utilization data, patient origin analysis, and financial performance metrics live in Redshift. The demand forecasting models and gravity model parameter estimation query against this warehouse.
+**Amazon Redshift for analytical queries.** Historical utilization data, patient origin analysis, and financial performance metrics live in Redshift. The demand forecasting models and gravity model parameter estimation query against this warehouse. For quarterly optimization runs, Redshift Serverless (pay-per-query) is more cost-effective than a provisioned cluster. Use provisioned only if the analytics warehouse serves other continuous workloads.
 
-**Amazon QuickSight for decision support visualization.** The output of the optimization needs to be presented to executives as interactive maps, scenario comparisons, and sensitivity charts. QuickSight connects to the optimization results in S3/Redshift and provides the dashboard layer.
+**Amazon QuickSight for decision support visualization.** The output of the optimization needs to be presented to executives as interactive maps, scenario comparisons, and sensitivity charts. QuickSight connects to the optimization results in S3/Redshift and provides the dashboard layer. Configure a QuickSight VPC Connection to access Redshift in the private subnet. For S3 access, QuickSight uses its service role (no VPC connectivity required).
 
-**AWS Step Functions for pipeline orchestration.** The end-to-end workflow (data prep, demand forecast, model formulation, multi-scenario optimization, result aggregation, dashboard refresh) is a multi-step pipeline with dependencies. Step Functions orchestrates the sequence, handles retries, and provides visibility into pipeline status.
+**AWS Step Functions for pipeline orchestration.** The end-to-end workflow (data prep, demand forecast, model formulation, multi-scenario optimization, result aggregation, dashboard refresh) is a multi-step pipeline with dependencies. Step Functions Standard Workflows (not Express, which has a 5-minute limit) orchestrates the sequence, handles retries, and provides visibility into pipeline status. The full pipeline runs 12-24 hours, well beyond Express Workflows' maximum duration.
 
 **AWS Lambda for lightweight processing.** Scenario configuration, result post-processing, notification triggers, and API endpoints for the dashboard use Lambda for stateless compute.
 
@@ -155,7 +157,7 @@ flowchart TD
     subgraph Optimization Pipeline
         E[Step Functions\nOrchestrator]
         F[SageMaker Processing\nDemand Forecasting]
-        G[SageMaker Training Job\nMIP Solver Execution]
+        G[SageMaker Processing\nMIP Solver Execution]
         H[Lambda\nScenario Configuration]
     end
 
@@ -189,20 +191,20 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Redshift, Amazon QuickSight, AWS Step Functions, AWS Lambda |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `redshift:GetClusterCredentials`, `states:StartExecution`, `quicksight:*` |
-| **BAA** | Required if patient-level utilization data is used (it usually is for gravity model estimation). Aggregate/de-identified data for the optimizer itself may not require BAA, but the upstream data pipeline does. |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Redshift (Serverless recommended), Amazon QuickSight, AWS Step Functions, AWS Lambda |
+| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `redshift:GetClusterCredentials`, `states:StartExecution`, `quicksight:CreateIngestion`, `quicksight:DescribeIngestion`, `quicksight:UpdateDataSet`, `quicksight:DescribeDashboard` (scoped to specific resource ARNs) |
+| **BAA** | Required. The gravity model estimation step uses patient-level data with geographic identifiers (ZIP code of residence + facility visited), which constitutes PHI. All services in the upstream pipeline (Redshift, SageMaker, S3 buckets holding patient origin data) must be covered. Once gravity model parameters are estimated, the optimizer itself operates on zone-level demand aggregates (not patient-level records). Ensure the SageMaker processing job output contains no patient-level records. |
 | **Encryption** | S3: SSE-KMS for all buckets; Redshift: encrypted cluster; SageMaker: KMS-encrypted volumes and network isolation; all transit over TLS |
-| **VPC** | SageMaker jobs in private subnets with VPC endpoints for S3 and CloudWatch. Redshift in private subnet. No public internet access for compute resources touching patient data. |
-| **CloudTrail** | Enabled for all API calls. Optimization runs are auditable (who ran what scenario with what assumptions). |
-| **Solver Licensing** | If using Gurobi or CPLEX: license server or token-based licensing configured for SageMaker instances. Gurobi offers cloud licensing; CPLEX supports token servers. Budget $10K-$50K/year for enterprise solver licenses. |
-| **Cost Estimate** | SageMaker ml.m5.4xlarge for solver execution: ~$0.92/hour. Typical multi-scenario run: 4-8 hours. Monthly cost (weekly runs): ~$200-$600 compute. Redshift ra3.xlplus (2 nodes): ~$1,500/month. Total infrastructure: ~$2,000-$3,000/month. |
+| **VPC** | SageMaker jobs in private subnets. VPC endpoints required: S3 (Gateway), CloudWatch Logs (Interface), SageMaker API (Interface), SageMaker Runtime (Interface), Step Functions (Interface), Glue (Interface), KMS (Interface). Lambda functions calling AWS services from within the VPC require these endpoints or a NAT Gateway. |
+| **CloudTrail** | Enabled for all API calls. CloudTrail captures infrastructure-level audit (who started which SageMaker job). For decision-level audit (what scenarios were run, what parameters were used, what the optimizer recommended), log scenario configurations and solution summaries to a dedicated S3 audit bucket with object lock (WORM) enabled. |
+| **Solver Licensing** | If using Gurobi or CPLEX: for no-internet VPC configurations, use a self-hosted license server (Gurobi token server or CPLEX ILM server) deployed in the same VPC. Gurobi's Web License Service (WLS) requires outbound HTTPS to license.gurobi.com; if your VPC prohibits this, use a local license file or token server. Verify that solver telemetry/usage reporting is disabled or does not transmit model content. For open-source solvers (HiGHS, CBC), no licensing infrastructure is needed. Budget $10K-$50K/year for enterprise commercial solver licenses. |
+| **Cost Estimate** | SageMaker ml.m5.4xlarge for solver execution: ~$0.92/hour. Typical multi-scenario run: 4-8 hours. Monthly cost (weekly runs): ~$200-$600 compute. Redshift Serverless: ~$50-$200 per optimization cycle. Total infrastructure: ~$500-$1,500/month for quarterly runs. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon SageMaker** | Model development (notebooks), solver execution (training jobs), demand forecasting (processing jobs) |
+| **Amazon SageMaker** | Model development (notebooks), solver execution (processing jobs), demand forecasting (processing jobs) |
 | **Amazon S3** | Data lake for inputs, model artifacts, optimization results |
 | **AWS Glue** | ETL from source systems; data quality checks; schema normalization |
 | **Amazon Redshift** | Analytical warehouse for historical utilization, patient origin, financial data |
@@ -350,8 +352,13 @@ FUNCTION formulate_network_model(zones, facilities, service_lines, parameters, c
         )
     
     // Flow consistency with gravity model:
-    // Patient flows must be consistent with choice probabilities
-    // (This links the optimization to realistic patient behavior)
+    // Patient flows must be consistent with choice probabilities.
+    // NOTE: These probabilities are pre-computed based on the current network.
+    // When the optimizer opens or closes facilities, the true probabilities change.
+    // The standard fix is iterative balancing: solve, recompute probabilities for
+    // the recommended network, re-solve, repeat until convergence (typically 3-5
+    // iterations). This is omitted here for clarity but is essential for solution
+    // quality in production.
     FOR each zone z, facility f, service_line s:
         model.add_constraint(
             flow[z][f][s] <= demand[z][s] * choice_probability(z, f, s, parameters)
@@ -407,6 +414,20 @@ FUNCTION run_scenario_analysis(base_model, scenarios):
                         solver = "gurobi",  // or "highs" for open-source
                         time_limit = 3600,  // 1 hour max per scenario
                         mip_gap = 0.02)     // accept solutions within 2% of optimal
+        
+        // Handle infeasibility: if no feasible solution exists, compute the
+        // Irreducible Infeasible Subsystem (IIS) to identify conflicting constraints.
+        // Most commercial solvers provide this (Gurobi: model.computeIIS(),
+        // CPLEX: conflict refiner). Present conflicting constraints to decision-makers:
+        // "The budget and minimum volume constraints cannot both be satisfied."
+        IF solution.status == INFEASIBLE:
+            iis = compute_irreducible_infeasible_subsystem(scenario_model)
+            results[scenario.name] = {
+                status: "infeasible",
+                conflicting_constraints: iis,
+                recommendation: "Relax budget or minimum volume thresholds"
+            }
+            CONTINUE
         
         results[scenario.name] = {
             objective_value: solution.objective,
@@ -525,15 +546,15 @@ FUNCTION compute_sensitivity_and_present(results, key_parameters):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Model size (variables) | 50,000–500,000 |
-| Model size (constraints) | 100,000–1,000,000 |
-| Solve time (commercial solver) | 15–90 minutes per scenario |
-| Solve time (open-source solver) | 2–8 hours per scenario |
-| Optimality gap achieved | 1–3% (acceptable for strategic decisions) |
-| Scenario analysis (5 scenarios) | 2–8 hours total |
-| Full pipeline (data prep through dashboard) | 12–24 hours |
+| Model size (variables) | 50,000-500,000 |
+| Model size (constraints) | 100,000-1,000,000 |
+| Solve time (commercial solver) | 15-90 minutes per scenario |
+| Solve time (open-source solver) | 2-8 hours per scenario |
+| Optimality gap achieved | 1-3% (acceptable for strategic decisions) |
+| Scenario analysis (5 scenarios) | 2-8 hours total |
+| Full pipeline (data prep through dashboard) | 12-24 hours |
 
-**Where it struggles:** Highly non-linear patient choice models (the gravity model linearization introduces approximation error). Markets with rapid competitive dynamics (a competitor's decision to build changes your optimal solution, creating a game-theoretic situation the MIP doesn't capture). Very long planning horizons (20+ years) where demand uncertainty dominates the signal. And politically charged decisions where the "optimal" answer is organizationally unacceptable.
+**Where it struggles:** Highly non-linear patient choice models (the gravity model linearization introduces approximation error; see the iterative balancing note in Step 3). Markets with rapid competitive dynamics (a competitor's decision to build changes your optimal solution, creating a game-theoretic situation the MIP doesn't capture). Very long planning horizons (20+ years) where demand uncertainty dominates the signal. And politically charged decisions where the "optimal" answer is organizationally unacceptable.
 
 ---
 
@@ -593,7 +614,7 @@ One more thing: don't try to solve the whole problem at once on your first itera
 
 **AWS Documentation:**
 - [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
-- [Amazon SageMaker Training Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works-training.html)
+- [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html)
 - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
 - [Amazon QuickSight User Guide](https://docs.aws.amazon.com/quicksight/latest/user/welcome.html)
 - [AWS Glue Developer Guide](https://docs.aws.amazon.com/glue/latest/dg/what-is-glue.html)
@@ -616,9 +637,9 @@ One more thing: don't try to solve the whole problem at once on your first itera
 
 | Phase | Duration |
 |-------|----------|
-| **Basic** (single service line, single scenario, open-source solver) | 8–12 weeks |
-| **Production-ready** (multi-service, multi-scenario, validated gravity model, executive dashboard) | 6–9 months |
-| **With variations** (multi-period staging, competitive response, equity constraints) | 12–18 months |
+| **Basic** (single service line, single scenario, open-source solver) | 8-12 weeks |
+| **Production-ready** (multi-service, multi-scenario, validated gravity model, executive dashboard) | 6-9 months |
+| **With variations** (multi-period staging, competitive response, equity constraints) | 12-18 months |
 
 ---
 
