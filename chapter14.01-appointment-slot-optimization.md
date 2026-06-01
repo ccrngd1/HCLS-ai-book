@@ -517,7 +517,7 @@ Start with one willing provider. Show results. Let word spread. Mandating optimi
 - [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library, useful for multi-server validation scenarios beyond the single-provider case
 
 **AWS Solutions and Blogs:**
-- [Optimization with Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/): Search for scheduling and optimization use cases
+- [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): Search for scheduling and optimization use cases
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 ---
