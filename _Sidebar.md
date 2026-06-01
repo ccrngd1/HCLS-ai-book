@@ -364,6 +364,8 @@
   * [Python Example](chapter14.07-python-example)
 * [14.8 — Ambulance Routing and Dispatch](chapter14.08-ambulance-routing-dispatch)
   * [Python Example](chapter14.08-python-example)
+* [14.9 — Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling)
+  * [Python Example](chapter14.09-python-example)
 
 ---
 
