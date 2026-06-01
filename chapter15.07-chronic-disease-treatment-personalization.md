@@ -196,7 +196,7 @@ FUNCTION compute_quarterly_reward(
     reward += BURDEN_SCALE * treatment_level  // e.g., -0.5 per level
 
     // Appropriateness: penalize escalation when already at target
-    IF treatment_level > previous_treatment_level AND hba1c <= target + 0.3:
+    IF treatment_level > previous_treatment_level AND hba1c <= target_hba1c + 0.3:
         reward += UNNECESSARY_ESCALATION_PENALTY  // e.g., -3
 
     // Appropriateness: penalize escalation when adherence is the problem
