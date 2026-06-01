@@ -1,6 +1,6 @@
 # Recipe 15.2: Notification Timing Optimization
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$100–300/month (training + inference infrastructure)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$100-300/month (training + inference infrastructure)
 
 ---
 
