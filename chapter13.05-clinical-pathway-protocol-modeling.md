@@ -102,13 +102,13 @@ This is where knowledge graphs shine over simpler representations. The pathway g
 
 ### Why These Services
 
-**Amazon Neptune for the pathway graph store.** Neptune is AWS's managed graph database, supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For clinical pathways, the property graph model is the better fit: nodes have typed properties (step name, responsible role, expected duration), edges have typed conditions, and traversal queries map naturally to Gremlin or openCypher. Neptune handles the graph storage, indexing, and query execution. It's HIPAA eligible, supports encryption at rest and in transit, and scales read replicas for query-heavy workloads.
+**Amazon Neptune for the pathway graph store.** Neptune is AWS's graph database. It speaks two query languages: property graph (Gremlin or openCypher) and RDF (SPARQL). For clinical pathways, property graph wins easily: nodes have typed properties, edges have conditions, and traversal queries read like you'd describe the pathway out loud. Neptune handles graph storage, indexing, and query execution. It's HIPAA eligible, supports encryption at rest and in transit, and scales read replicas for query-heavy workloads. One thing to know: Neptune connections from Lambda add 200-500ms on cold start (WebSocket setup for Gremlin, or HTTP connection for openCypher). For the Traversal Engine Lambda that powers real-time CDS, configure Provisioned Concurrency of at least 2-5 instances to keep connections warm. Alternatively, use Neptune's openCypher HTTP endpoint for simpler traversal queries to avoid WebSocket overhead entirely.
 
-**AWS Lambda for the traversal and reasoning engine.** Pathway traversal queries are short-lived, stateless computations: receive a patient context, query Neptune for the patient's current pathway position, evaluate transition conditions against current clinical data, return recommendations. Lambda's execution model fits perfectly. For real-time CDS integration, you need sub-second response times; Neptune queries on well-indexed pathway graphs typically return in 50-200ms, leaving plenty of Lambda execution budget.
+**AWS Lambda for the traversal and reasoning engine.** Pathway traversal queries are short-lived, stateless computations: receive a patient context, query Neptune for the patient's current pathway position, evaluate transition conditions against current clinical data, return recommendations. Lambda's execution model fits perfectly. For real-time CDS integration, you need sub-second response times; Neptune queries on well-indexed pathway graphs typically return in 50-200ms (warm connections), leaving plenty of Lambda execution budget.
 
-**Amazon DynamoDB for patient pathway state.** Each patient's current position on each applicable pathway needs fast read/write access. DynamoDB's key-value model works well here: partition key is patient ID, sort key is pathway ID, and the item contains current node(s), entry timestamps, and completed steps. This state changes with every clinical event, so write performance matters.
+**Amazon DynamoDB for patient pathway state.** Each patient's current position on each applicable pathway needs fast read/write access. DynamoDB's key-value model works well here: partition key is patient ID, sort key is pathway ID, and the item contains current node(s), entry timestamps, and completed steps. This state changes with every clinical event, so write performance matters. A Global Secondary Index on `status` enables efficient queries for overdue checking at scale (avoiding full table scans).
 
-**Amazon EventBridge for clinical event routing.** When a lab result posts, an order is placed, or an assessment is documented, those events need to trigger pathway state evaluation. EventBridge provides the event bus that routes EHR integration events to the appropriate Lambda functions for state updates.
+**Amazon EventBridge for clinical event routing.** When a lab result posts, an order is placed, or an assessment is documented, those events need to trigger pathway state evaluation. EventBridge provides the event bus that routes EHR integration events to the appropriate Lambda functions for state updates. Pair this with an SQS Dead Letter Queue on the Lambda async invocation: if the State Updater Lambda fails after retries, the clinical event lands in the DLQ rather than disappearing silently. A CloudWatch alarm on DLQ depth tells you immediately when events are being dropped.
 
 **Amazon S3 for pathway version storage.** Pathway definitions evolve. When a clinical committee updates the pneumonia pathway, the old version doesn't disappear; patients currently on it need to complete under their enrolled version. S3 stores versioned pathway definitions (as serialized graph structures) with lifecycle policies for retention.
 
@@ -125,6 +125,8 @@ flowchart TD
     E -->|Order/Result/Assessment| F[Lambda\nState Updater]
     F -->|Read Pathway| C
     F -->|Update Position| G[DynamoDB\nPatient Pathway State]
+    F -->|On Failure| DLQ[SQS\nDead Letter Queue]
+    DLQ -->|Alarm| CW[CloudWatch\nAlarm]
     
     H[CDS Request\nPoint of Care] -->|Query| I[Lambda\nTraversal Engine]
     I -->|Traverse Graph| C
@@ -137,20 +139,24 @@ flowchart TD
     style C fill:#9cf,stroke:#333
     style G fill:#9ff,stroke:#333
     style E fill:#ff9,stroke:#333
+    style DLQ fill:#f99,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Neptune, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon S3, Amazon QuickSight |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `s3:GetObject`, `s3:PutObject`, `events:PutEvents` |
-| **BAA** | AWS BAA signed (pathway state references patient identifiers and clinical data) |
-| **Encryption** | Neptune: encryption at rest (enabled at cluster creation, cannot be added later); DynamoDB: encryption at rest (default); S3: SSE-KMS; all connections over TLS |
-| **VPC** | Neptune requires VPC deployment. Lambda functions must be in the same VPC with appropriate security groups. VPC endpoints for DynamoDB, S3, and CloudWatch Logs. |
-| **CloudTrail** | Enabled for all Neptune, DynamoDB, and Lambda API calls |
+| **AWS Services** | Amazon Neptune, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon S3, Amazon SQS, Amazon QuickSight |
+| **IAM Permissions** | Traversal Engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN). State Updater Lambda: `neptune-db:ReadDataViaQuery` (read pathway structure only). Pathway Loader (admin): `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:DeleteDataViaQuery`. All Lambdas: `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query` (scoped to table ARN). `s3:GetObject`, `s3:PutObject` (scoped to pathway bucket). `events:PutEvents`. `sqs:SendMessage` (DLQ). Never grant `neptune-db:*` in production; separate read and write roles per function. |
+| **BAA** | AWS BAA signed covering all services in this recipe. Verify Neptune, DynamoDB, Lambda, EventBridge, S3, SQS, CloudWatch Logs, and KMS are on the current [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/) list before deployment. |
+| **Encryption** | KMS: Customer-managed key (CMK) with automatic annual rotation enabled. Use the same CMK for Neptune, DynamoDB, and S3 encryption to simplify key management. Neptune requires the CMK at cluster creation (cannot be changed later). DynamoDB: encryption at rest (CMK). S3: SSE-KMS. All connections over TLS. |
+| **VPC** | Neptune requires VPC deployment. VPC must have DNS resolution and DNS hostnames enabled (required for Neptune cluster endpoint resolution). Lambda functions must be in the same VPC. Neptune security group: allow inbound TCP 8182 only from the Lambda security group. Lambda security group: allow outbound TCP 8182 to Neptune SG, outbound TCP 443 to VPC endpoint SGs. No NAT gateway needed for Neptune connectivity (VPC-native). VPC endpoints required: `com.amazonaws.{region}.s3` (Gateway), `com.amazonaws.{region}.dynamodb` (Gateway), `com.amazonaws.{region}.logs` (Interface), `com.amazonaws.{region}.kms` (Interface), `com.amazonaws.{region}.events` (Interface), `com.amazonaws.{region}.monitoring` (Interface). |
+| **Audit Logging** | CloudTrail enabled for all Neptune, DynamoDB, and Lambda API calls. Neptune Audit Logs: enable and publish to CloudWatch Logs (set `neptune_enable_audit_log=1` in the cluster parameter group). This logs all Gremlin/openCypher queries for compliance audit. Note: audit logs may contain patient IDs embedded in queries; apply CloudWatch Logs encryption with the same CMK. |
+| **Backups** | Neptune automated snapshots (increase to 7-35 days retention for production). DynamoDB Point-in-Time Recovery (PITR) enabled on the patient-pathway-state table. S3 versioning on the pathway definitions bucket. |
 | **Sample Data** | Model 2-3 clinical pathways from published guidelines (e.g., IDSA pneumonia guidelines, AHA heart failure pathway). Use synthetic patient data for testing. |
-| **Cost Estimate** | Neptune: ~$0.35/hr for db.r5.large (smallest production instance); DynamoDB: on-demand pricing ~$1.25 per million writes; Lambda: negligible at typical query volumes. Monthly estimate for 500-bed hospital: $300-600/month. |
+| **Cost Estimate** | Neptune: ~$0.35/hr for db.r5.large (smallest production instance); add a read replica for CDS query isolation (~$504/month total for primary + replica). DynamoDB: on-demand pricing ~$1.25 per million writes. Lambda: negligible at typical query volumes. Monthly estimate for 500-bed hospital: $400-800/month (Neptune primary + read replica accounts for ~70% of cost). Scale linearly with pathway query volume. Add ~$200/month per additional read replica for high-query-volume deployments. |
+
+<!-- TODO (TechWriter): Expert review S2 (HIGH). DynamoDB patient-pathway-state table has no item-level access control. For HIPAA Minimum Necessary, consider IAM leading-key conditions (dynamodb:LeadingKeys with department tags) or application-layer enforcement so that Lambdas processing one department cannot access another department's patient records. Document the chosen approach in the Prerequisites or a security callout. -->
 
 ### Ingredients
 
@@ -158,12 +164,13 @@ flowchart TD
 |------------|------|
 | **Amazon Neptune** | Stores and queries clinical pathway graph structures |
 | **AWS Lambda** | Executes traversal logic, state updates, and compliance aggregation |
-| **Amazon DynamoDB** | Maintains per-patient pathway state (current position, timestamps, completed steps) |
+| **Amazon DynamoDB** | Maintains per-patient pathway state (current position, timestamps, completed steps). GSI on `status` for efficient overdue checking. |
 | **Amazon EventBridge** | Routes clinical events (lab results, orders, assessments) to state update functions |
+| **Amazon SQS** | Dead letter queue for failed clinical event processing |
 | **Amazon S3** | Stores versioned pathway definitions and audit snapshots |
 | **Amazon QuickSight** | Visualizes pathway compliance metrics and variance patterns |
-| **AWS KMS** | Manages encryption keys for Neptune, DynamoDB, and S3 |
-| **Amazon CloudWatch** | Monitors traversal latency, state update throughput, and error rates |
+| **AWS KMS** | Manages encryption keys (CMK with annual rotation) for Neptune, DynamoDB, and S3 |
+| **Amazon CloudWatch** | Monitors traversal latency, state update throughput, error rates, and DLQ depth alarms |
 
 ### Code
 
@@ -285,7 +292,7 @@ FUNCTION advance_patient_state(patient_id, pathway_id, completed_node_id, next_n
         ADD {from: completed_node_id, to: next_node_id, at: timestamp} to completed_edges
 ```
 
-**Step 4: Evaluate transitions on clinical events.** This is the core reasoning step. When a clinical event occurs (lab result posted, order completed, assessment documented), the system checks whether any transitions from the patient's current active nodes are now satisfiable. This requires pulling the patient's current clinical data and evaluating each outgoing edge's conditions. If conditions are met, the transition fires and the patient advances.
+**Step 4: Evaluate transitions on clinical events.** This is the core reasoning step. When a clinical event occurs (lab result posted, order completed, assessment documented), the system checks whether any transitions from the patient's current active nodes are now satisfiable. This requires pulling the patient's current clinical data and evaluating each outgoing edge's conditions. If conditions are met, the transition fires and the patient advances. Note: multiple pathway versions coexist in Neptune simultaneously. Every traversal query must include the patient's enrolled version as a filter to avoid returning nodes from the wrong version.
 
 ```
 FUNCTION on_clinical_event(event):
@@ -300,9 +307,11 @@ FUNCTION on_clinical_event(event):
         FOR each active_node_id in state.active_nodes:
 
             // Get outgoing edges from this node, ordered by priority.
+            // MUST filter by enrolled pathway version to avoid cross-version traversal.
             outgoing_edges = QUERY Neptune:
                 "Find all edges FROM {active_node_id}
                  WHERE pathway_id = {state.pathway_id}
+                 AND pathway_version = {state.pathway_version}
                  ORDER BY priority ASC"
 
             FOR each edge in outgoing_edges:
@@ -359,23 +368,29 @@ FUNCTION evaluate_conditions(conditions, patient_id, node_entry_time):
     RETURN true  // all conditions satisfied
 ```
 
-**Step 5: Detect overdue transitions and variances.** Not all pathway deviations are triggered by events. Some are the absence of events: a step that should have happened by now but hasn't. A scheduled Lambda runs periodically (every 15-30 minutes) to check for overdue transitions and off-pathway actions. This is where compliance monitoring lives.
+**Step 5: Detect overdue transitions and variances.** Not all pathway deviations are triggered by events. Some are the absence of events: a step that should have happened by now but hasn't. A scheduled Lambda runs periodically (every 15-30 minutes) to check for overdue transitions and off-pathway actions. This is where compliance monitoring lives. Use a DynamoDB GSI on `status` (with `oldest_node_entry_time` as sort key) to query only active states efficiently, rather than scanning the entire table.
 
 ```
 FUNCTION check_overdue_transitions():
-    // Scan all active patient pathway states for overdue steps.
-    // This runs on a schedule, not on events.
+    // Query all active patient pathway states using the status GSI.
+    // This avoids a full table scan, which won't scale beyond ~500 patients.
+    // Paginate through all results (DynamoDB returns max 1MB per call).
 
-    active_states = SCAN DynamoDB table "patient-pathway-state"
+    active_states = QUERY DynamoDB GSI "status-index"
         WHERE status = "active"
+        ORDER BY oldest_node_entry_time ASC
+        // Paginate: loop on LastEvaluatedKey until all pages processed.
 
     FOR each state in active_states:
         FOR each active_node_id in state.active_nodes:
             node_entry_time = state.node_entry_times[active_node_id]
 
             // Check outgoing edges for time-gated transitions that are overdue.
+            // Filter by enrolled pathway version.
             outgoing_edges = QUERY Neptune:
-                "Find edges FROM {active_node_id} WHERE max_time_hours IS NOT NULL"
+                "Find edges FROM {active_node_id}
+                 WHERE pathway_version = {state.pathway_version}
+                 AND max_time_hours IS NOT NULL"
 
             FOR each edge in outgoing_edges:
                 elapsed = hours_since(node_entry_time)
@@ -399,7 +414,8 @@ FUNCTION detect_off_pathway_action(patient_id, action_taken):
         // Get all nodes in this pathway that represent the action taken.
         matching_nodes = QUERY Neptune:
             "Find vertices in pathway {state.pathway_id}
-             WHERE action_code = {action_taken.code}"
+             WHERE pathway_version = {state.pathway_version}
+             AND action_code = {action_taken.code}"
 
         IF matching_nodes is empty:
             // Action is not part of this pathway at all. Log as variance.
@@ -428,8 +444,11 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
         node = GET vertex from Neptune by id = active_node_id
 
         // Get all outgoing edges and evaluate which transitions are available.
+        // Filter by enrolled pathway version.
         outgoing_edges = QUERY Neptune:
-            "Find edges FROM {active_node_id} ORDER BY priority"
+            "Find edges FROM {active_node_id}
+             WHERE pathway_version = {state.pathway_version}
+             ORDER BY priority"
 
         available_transitions = []
         FOR each edge in outgoing_edges:
@@ -470,7 +489,7 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
     }
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune Gremlin client, check out the [Python Example](chapter13.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune openCypher client, check out the [Python Example](chapter13.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
@@ -516,9 +535,9 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Traversal query latency | 80-200ms (Neptune + condition evaluation) |
+| Traversal query latency | 80-200ms (Neptune warm connection + condition evaluation) |
 | State update latency | 15-40ms (DynamoDB write) |
-| Overdue check (full scan) | 2-5 seconds for 500 active patients |
+| Overdue check (GSI query) | 1-3 seconds for 500 active patients (paginated) |
 | Pathway loading time | 1-3 seconds for a 50-node pathway |
 | Concurrent CDS queries | 100+ per second (Neptune read replicas) |
 | Condition evaluation | 5-20ms per edge (depends on data source latency) |
@@ -533,7 +552,7 @@ Here's what will surprise you about this project: the technology is the easy par
 
 Most clinical pathways exist as Word documents or PDFs written by committee. They contain ambiguous language ("consider escalation if not improving"), implicit knowledge ("experienced clinicians know to check lactate here even though it's not written down"), and institutional variation ("we do it this way because Dr. Martinez prefers it"). Converting that into a formal graph with explicit conditions requires clinical informaticists who understand both the medicine and the data model. Budget more time for pathway modeling than for engineering.
 
-The versioning problem is real. When the pneumonia pathway gets updated (new antibiotic recommendations from IDSA), patients currently on version 2 need to complete under version 2. New admissions get version 3. Your system needs to handle multiple active versions simultaneously. This isn't hard technically (version is a property on every node and edge), but it's operationally complex: who decides when to sunset old versions? What if a patient is on a pathway for 30 days and it gets updated twice?
+The versioning problem is real. When the pneumonia pathway gets updated (new antibiotic recommendations from IDSA), patients currently on version 2 need to complete under version 2. New admissions get version 3. Your system needs to handle multiple active versions simultaneously. This isn't hard technically (version is a property on every node and edge, and every traversal query filters by the patient's enrolled version), but it's operationally complex: who decides when to sunset old versions? What if a patient is on a pathway for 30 days and it gets updated twice? A migration function can optionally re-enroll patients on the new version if the clinical committee approves mid-pathway transitions, but that's a policy decision, not a technical one.
 
 Variance detection sounds great in theory. In practice, you'll discover that 40-60% of patients deviate from pathways for clinically appropriate reasons. The pathway says "start antibiotics within 4 hours" but the patient refused, or had an anaphylaxis history that required allergy testing first, or was in radiology for an urgent CT. Your variance reports will be noisy until you build a "justified variance" mechanism where clinicians can document why they deviated. Without it, the compliance dashboard becomes meaningless noise that everyone ignores.
 
@@ -587,7 +606,7 @@ The condition evaluation layer is where performance problems hide. If evaluating
 | Tier | Timeline | What You Get |
 |------|----------|--------------|
 | **Basic** | 4-6 weeks | Single pathway modeled, basic traversal, manual state updates |
-| **Production-ready** | 12-16 weeks | Multiple pathways, EHR event integration, real-time CDS, compliance dashboard |
+| **Production-ready** | 12-16 weeks | Multiple pathways, EHR event integration, real-time CDS, compliance dashboard, DLQ and monitoring |
 | **With variations** | 20-28 weeks | Multi-pathway coordination, outcome linkage, pathway-aware order entry |
 
 ---
