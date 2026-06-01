@@ -382,6 +382,8 @@
   * [Python Example](chapter15.03-python-example)
 * [15.4 — Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization)
   * [Python Example](chapter15.04-python-example)
+* [15.5 — Ventilator Weaning Protocols](chapter15.05-ventilator-weaning-protocols)
+  * [Python Example](chapter15.05-python-example)
 
 ---
 
