@@ -107,7 +107,7 @@ Graph databases have matured significantly in the last five years. Managed servi
 
 In healthcare specifically, knowledge graphs are seeing adoption for drug interaction checking (Recipe 13.4), clinical pathway modeling (Recipe 13.5), and terminology mapping (Recipe 13.8). Formulary navigation is one of the simpler applications because the source data is already well-structured (formulary files follow CMS-mandated formats) and the query patterns are predictable.
 
-The main challenge isn't the technology. It's keeping the graph honest. The formulary file says one thing; the PBM's adjudication system sometimes does another. More on that gap in the honest take.
+The main challenge isn't the technology. It's keeping the graph honest. The formulary file says one thing, but the PBM's adjudication system sometimes does another. You'll build a beautiful graph and then discover that half your tier assignments don't match what actually happens at the pharmacy counter. More on that gap in the honest take.
 
 ---
 
