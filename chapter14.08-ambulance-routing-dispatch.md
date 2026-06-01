@@ -1,6 +1,6 @@
 # Recipe 14.8: Ambulance Routing and Dispatch
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$2,000–8,000/month depending on fleet size and call volume
+**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$2,000-8,000/month depending on fleet size and call volume
 
 ---
 
