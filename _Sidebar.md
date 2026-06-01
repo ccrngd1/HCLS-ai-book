@@ -345,4 +345,10 @@
 
 ---
 
+#### Ch 14: Optimization / Operations Research
+
+* [Preface](chapter14-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
