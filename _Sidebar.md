@@ -380,6 +380,8 @@
   * [Python Example](chapter15.02-python-example)
 * [15.3 — Clinical Trial Adaptive Randomization](chapter15.03-clinical-trial-adaptive-randomization)
   * [Python Example](chapter15.03-python-example)
+* [15.4 — Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization)
+  * [Python Example](chapter15.04-python-example)
 
 ---
 
