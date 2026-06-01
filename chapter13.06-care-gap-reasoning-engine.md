@@ -352,6 +352,11 @@ FUNCTION identify_gaps(applicable_recommendations, patient_facts, evaluation_dat
                 priority:           rec.priority,
                 frequency:          rec.frequency,
                 last_completed:     last_completed.service_date IF exists ELSE "never",
+                // TODO (TechWriter): Code review Finding 1 (WARNING). This formula is wrong.
+                // days_between(cutoff_date, evaluation_date) always equals the frequency
+                // window size, not the actual overdue amount. Correct formula:
+                // days_between(last_completed.service_date, evaluation_date) - frequency_in_days
+                // Also update the expected output JSON to match corrected math.
                 days_overdue:       days_between(cutoff_date, evaluation_date),
                 justification:      item.justification,
                 exclusions_checked: rec.excluded_by  // document what was ruled out
@@ -546,6 +551,7 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 
 **AWS Sample Repos:**
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune code samples including RDF loading, SPARQL queries, and graph analytics patterns
+<!-- TODO (TechWriter): Verify this GitHub URL exists before publication. -->
 - [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Demonstrates building and querying ontologies in Neptune with OWL reasoning
 
 **AWS Solutions and Blogs:**
