@@ -374,6 +374,8 @@
 #### Ch 15: Reinforcement Learning
 
 * [Preface](chapter15-preface)
+* [15.1 — Alert Threshold Optimization](chapter15.01-alert-threshold-optimization)
+  * [Python Example](chapter15.01-python-example)
 
 ---
 
