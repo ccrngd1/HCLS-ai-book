@@ -1,6 +1,6 @@
 # Recipe 14.5: Operating Room Block Scheduling
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$200-800/month (solver compute + data infrastructure)
+**Complexity:** Medium-High · **Phase:** Production · **Estimated Cost:** ~$200-800/month (solver compute + data infrastructure)
 
 ---
 
@@ -22,7 +22,7 @@ This is fundamentally an optimization problem. You have a scarce resource (OR ti
 
 ### What Is Mathematical Optimization?
 
-Mathematical optimization (sometimes called mathematical programming, which is confusing because it has nothing to do with writing code) is the discipline of finding the best solution from a set of feasible solutions. You define:
+Mathematical optimization (sometimes called "mathematical programming," which is confusing because it has nothing to do with writing code) is the discipline of finding the best solution from a set of feasible solutions. You define:
 
 1. **Decision variables:** The things you're choosing. In our case: which service gets which block in which room on which day.
 2. **An objective function:** What you're trying to maximize or minimize. Utilization, fairness, surgeon satisfaction, revenue, or some weighted combination.
@@ -94,7 +94,7 @@ The two-tier approach works well:
 
 The end-to-end system has four major components:
 
-```
+```text
 [Data Collection] → [Model Building] → [Optimization Engine] → [Decision Support UI]
 ```
 
@@ -204,7 +204,7 @@ We need case-level data to understand demand patterns. Each historical case tell
 
 If you skip this step, your optimization model has no grounding in reality. It would allocate blocks based on guesses rather than actual demand patterns.
 
-```
+```pseudocode
 FUNCTION extract_case_history(start_date, end_date):
     // Pull completed surgical cases from the perioperative system
     raw_cases = query_perioperative_system(
@@ -234,7 +234,7 @@ This is where we translate the scheduling problem into mathematics. Decision var
 
 If you skip this step (or get it wrong), the solver either produces infeasible solutions or optimizes for the wrong thing. Getting the model right is 80% of the work.
 
-```
+```pseudocode
 FUNCTION build_block_model(service_demand, rooms, time_slots, constraints):
     // Decision variables: binary assignment of service to room-slot
     // x[s][r][t] = 1 if service s is assigned room r in time slot t
@@ -287,7 +287,7 @@ Hand the mathematical model to a solver and let it find the best allocation. Thi
 
 If you skip this step, well, you don't have a solution. But more subtly: if you don't set appropriate time limits and optimality gaps, the solver might run for hours chasing a marginal improvement.
 
-```
+```pseudocode
 FUNCTION solve_block_allocation(model, config):
     // Configure solver parameters
     solver = INITIALIZE_SOLVER(
@@ -324,7 +324,7 @@ Between quarterly re-optimizations, you need a lighter-weight process that manag
 
 If you skip this step, allocated-but-unused blocks sit empty while other surgeons can't find time. This is the single biggest driver of the utilization gap.
 
-```
+```pseudocode
 FUNCTION daily_release_check(lookahead_days = 14):
     // Get all blocks in the lookahead window
     upcoming_blocks = QUERY blocks WHERE date BETWEEN today AND today + lookahead_days
@@ -366,7 +366,7 @@ FUNCTION daily_release_check(lookahead_days = 14):
 
 The optimization output needs to be persisted, versioned, and made available to the decision support UI. Each run produces a proposed allocation that stakeholders review before it takes effect.
 
-```
+```pseudocode
 FUNCTION store_optimization_results(allocation, metrics, run_id):
     // Store the full allocation as a versioned artifact
     WRITE_TO_S3(
@@ -475,7 +475,7 @@ Sample output from a quarterly optimization run:
 
 Here's what I've learned about OR block scheduling optimization that the textbooks don't tell you:
 
-**The politics are harder than the math.** Seriously. Building the optimization model is a well-understood engineering problem. Getting a department chair to accept that their utilization data justifies losing a block is a human problem that no solver can fix. The best implementations frame the optimizer as a "fairness engine" that removes bias from the allocation process. When the data says general surgery is using 45% of their blocks, it's harder to argue for keeping them than when it's just the perioperative director's opinion.
+**The politics are harder than the math.** Seriously. Building the optimization model is a well-understood engineering problem. Getting a department chair to accept that their utilization data justifies losing a block? That's a human problem no solver can fix. The best implementations frame the optimizer as a "fairness engine" that removes bias from the allocation process. When the data says general surgery is using 45% of their blocks, it's harder to argue for keeping them than when it's just the perioperative director's opinion.
 
 **Utilization is a terrible sole objective.** If you optimize purely for utilization, you'll pack the schedule so tight that any case running long creates a cascade of delays. You need slack in the system. A target of 75-80% utilization is more realistic and more humane than chasing 95%.
 
@@ -505,10 +505,10 @@ Instead of allocating blocks to services, allocate to individual surgeons. This 
 
 ## Related Recipes
 
-- **Recipe 14.4: Nurse Staffing Optimization** — Staffing constraints feed directly into OR block feasibility. The two models can be linked.
-- **Recipe 14.7: OR Case Sequencing** — Once blocks are allocated, the next problem is sequencing individual cases within a block for maximum efficiency.
-- **Recipe 12.3: Surgical Duration Forecasting** — Better duration predictions improve the utilization estimates that drive block allocation.
-- **Recipe 14.1: Appointment Slot Optimization** — Similar optimization structure applied to outpatient scheduling.
+- **Recipe 14.4: Nurse Staffing Optimization** - Staffing constraints feed directly into OR block feasibility. The two models can be linked.
+- **Recipe 14.7: OR Case Sequencing** - Once blocks are allocated, the next problem is sequencing individual cases within a block for maximum efficiency.
+- **Recipe 12.3: Surgical Duration Forecasting** - Better duration predictions improve the utilization estimates that drive block allocation.
+- **Recipe 14.1: Appointment Slot Optimization** - Similar optimization structure applied to outpatient scheduling.
 
 ---
 
@@ -516,19 +516,19 @@ Instead of allocating blocks to services, allocate to individual surgeons. This 
 
 ### AWS Documentation
 
-- [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html) — Running custom containers for optimization workloads
-- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html) — Orchestrating multi-step optimization pipelines
-- [Amazon DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/) — Data modeling for operational scheduling data
-- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html) — Cron-based triggering for daily optimization runs
-- [Amazon QuickSight](https://docs.aws.amazon.com/quicksight/latest/user/welcome.html) — Building utilization dashboards
+- [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html) - Running custom containers for optimization workloads
+- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html) - Orchestrating multi-step optimization pipelines
+- [Amazon DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/) - Data modeling for operational scheduling data
+- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html) - Cron-based triggering for daily optimization runs
+- [Amazon QuickSight](https://docs.aws.amazon.com/quicksight/latest/user/welcome.html) - Building utilization dashboards
 
 ### Optimization Libraries and Solvers
 
-- [Google OR-Tools](https://developers.google.com/optimization) — Open-source optimization suite with MIP and CP solvers
-- [PuLP Documentation](https://coin-or.github.io/pulp/) — Python library for formulating linear and integer programs
-- [HiGHS Solver](https://highs.dev/) — High-performance open-source linear and mixed-integer solver
+- [Google OR-Tools](https://developers.google.com/optimization) - Open-source optimization suite with MIP and CP solvers
+- [PuLP Documentation](https://coin-or.github.io/pulp/) - Python library for formulating linear and integer programs
+- [HiGHS Solver](https://highs.dev/) - High-performance open-source linear and mixed-integer solver
 
-<!-- TODO: Verify if there are specific aws-samples repos for optimization/scheduling workloads on SageMaker -->
+<!-- TODO (TechWriter): Verify if there are specific aws-samples repos for optimization/scheduling workloads on SageMaker -->
 
 ### Industry References
 
