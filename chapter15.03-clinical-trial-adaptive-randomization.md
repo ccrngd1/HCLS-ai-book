@@ -133,17 +133,17 @@ The key architectural principle: the randomization service must be stateless and
 
 ### Why These Services
 
-**Amazon SageMaker for the posterior update engine.** The Bayesian inference component needs to run on a schedule (after each batch of outcomes is confirmed) or on-demand (when triggered by new data). SageMaker Processing Jobs provide a managed compute environment for running the posterior update calculations. For simple conjugate models, this is lightweight. For complex models requiring MCMC, you can scale to larger instances. SageMaker also provides experiment tracking for the simulation studies during the design phase.
+**Amazon SageMaker for the posterior update engine.** The Bayesian inference component needs to run on a schedule (after each batch of outcomes is confirmed) or on-demand (when triggered by new data). SageMaker Processing Jobs provide a managed compute environment for running the posterior update calculations. For simple conjugate models, this is lightweight. For complex models requiring MCMC, you can scale to larger instances. SageMaker also provides experiment tracking for the simulation studies during the design phase. Note that Processing Jobs have a 3-5 minute startup overhead (instance provisioning + container pull), so total time from trigger to updated allocation probabilities is 5-7 minutes for simple models. For trials needing faster updates, consider a persistent SageMaker endpoint or a Lambda function (feasible for conjugate Beta-Binomial models where the computation is trivial).
 
 **AWS Lambda for the randomization service.** When a site enrolls a patient, the system needs to return an arm assignment in under a second. Lambda provides a stateless, highly available compute layer that reads the current allocation probabilities (pre-computed by the posterior engine) and performs the randomized assignment. The function is simple: read probabilities, generate random number, assign arm, log the assignment.
 
-**Amazon DynamoDB for state storage.** Two tables: one for the current posterior parameters (updated by the SageMaker job), one for the assignment audit log (every randomization decision with its inputs and outputs). DynamoDB's single-digit millisecond reads make it ideal for the Lambda function's hot path. The audit log table provides the complete reproducibility trail that regulators require.
+**Amazon DynamoDB for state storage.** Two tables: one for the current posterior parameters (updated by the SageMaker job), one for the assignment audit log (every randomization decision with its inputs and outputs). DynamoDB's single-digit millisecond reads make it ideal for the Lambda function's hot path. The audit log table provides the complete reproducibility trail that regulators require. Enable Point-in-Time Recovery (PITR) on both tables; the S3 posterior history provides a secondary recovery path if the allocation-state table must be rebuilt.
 
-**Amazon S3 for outcome data and simulation results.** Raw outcome data from the EDC (Electronic Data Capture) system lands in S3. Simulation results from the design phase live here too. S3 also stores the posterior update history for retrospective analysis.
+**Amazon S3 for outcome data and simulation results.** Raw outcome data from the EDC (Electronic Data Capture) system lands in S3. Simulation results from the design phase live here too. S3 also stores the posterior update history for retrospective analysis. Configure S3 Object Lock (compliance mode) for trial records that must be retained per 21 CFR 11.10(c).
 
 **AWS Step Functions for orchestration.** The posterior update pipeline (ingest new outcomes, validate, run Bayesian update, publish new allocation probabilities) is a multi-step workflow that needs error handling, retry logic, and audit logging. Step Functions provides this orchestration with built-in state tracking.
 
-**Amazon API Gateway for the randomization endpoint.** Sites call a REST API to get arm assignments. API Gateway provides authentication, throttling, and request logging in front of the Lambda function.
+**Amazon API Gateway for the randomization endpoint.** Sites call a REST API to get arm assignments. API Gateway provides authentication, throttling, and request logging in front of the Lambda function. Use a Regional endpoint for multi-site access over the internet, or a Private endpoint if sites connect via VPN/Direct Connect to the VPC. Consider AWS WAF on API Gateway for rate limiting and IP allowlisting to restrict access to known site IP ranges.
 
 ### Architecture Diagram
 
@@ -171,13 +171,14 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, AWS Lambda, Amazon DynamoDB, Amazon S3, AWS Step Functions, Amazon API Gateway, Amazon CloudWatch |
+| **AWS Services** | Amazon SageMaker, AWS Lambda, Amazon DynamoDB, Amazon S3, AWS Step Functions, Amazon API Gateway, Amazon CloudWatch, AWS WAF |
 | **IAM Permissions** | `sagemaker:CreateProcessingJob`, `lambda:InvokeFunction`, `dynamodb:GetItem`, `dynamodb:PutItem`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution` |
 | **BAA** | AWS BAA signed (trial data includes patient identifiers and outcomes) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS; Lambda environment variables encrypted with KMS |
-| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for DynamoDB, S3, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS with customer-managed key (CMK); DynamoDB: encryption at rest; all API calls over TLS; Lambda environment variables encrypted with customer-managed KMS key (enables CloudTrail visibility into key usage for Part 11 audit requirements) |
+| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for DynamoDB, S3, CloudWatch Logs, and KMS. Note: KMS uses an interface endpoint (billed per AZ-hour) unlike S3 and DynamoDB gateway endpoints (free). |
 | **CloudTrail** | Enabled: log all API calls for regulatory audit trail |
 | **21 CFR Part 11** | If FDA-regulated: electronic records must meet Part 11 requirements (audit trails, access controls, electronic signatures). CloudTrail + DynamoDB audit log + IAM provides the foundation. |
+| **Data Retention** | Clinical trial records must be retained per 21 CFR 11.10(c) (minimum 2 years post-approval or investigation termination). Use S3 Object Lock (compliance mode) and disable DynamoDB table deletion for the audit log table. |
 | **Sample Data** | Simulated trial data. Generate synthetic patient outcomes using known response rates. Never use real trial data in development. |
 | **Cost Estimate** | SageMaker Processing: ~$0.10-0.50 per posterior update (runs minutes, not hours). Lambda: negligible (millisecond executions). DynamoDB: ~$5-20/month for typical trial volumes. Total: $200-800/month depending on trial size and update frequency. |
 
@@ -192,7 +193,8 @@ flowchart TD
 | **AWS Step Functions** | Orchestrates the posterior update pipeline with error handling |
 | **Amazon API Gateway** | REST endpoint for site enrollment requests; authentication and throttling |
 | **Amazon CloudWatch** | Monitoring, alerting on randomization failures or unusual patterns |
-| **AWS KMS** | Encryption key management for all data at rest |
+| **AWS KMS** | Encryption key management for all data at rest (customer-managed keys for Part 11 auditability) |
+| **AWS WAF** | Rate limiting and IP allowlisting for the randomization API |
 
 ### Code
 
@@ -313,6 +315,8 @@ FUNCTION apply_allocation_constraints(raw_probs, min_alloc, max_alloc):
 
 **Step 4: Randomize a patient.** When a site enrolls a new patient, the randomization service reads the current allocation probabilities and performs a weighted random draw. The assignment, along with all inputs (allocation probabilities, random seed, timestamp, stratification factors), is logged to the audit table. This function must be fast (sub-second), highly available (sites can't wait), and perfectly auditable (every assignment must be reproducible given its inputs).
 
+In production, the assignment write and enrollment counter increment must be atomic (use a DynamoDB transaction). A patient assignment without a corresponding counter increment creates an audit discrepancy that regulators will flag. The pseudocode below shows the logical steps; see the Python companion for the transactional implementation pattern.
+
 ```
 FUNCTION randomize_patient(trial_id, patient_id, stratification_factors):
     // Read current allocation state
@@ -342,15 +346,18 @@ FUNCTION randomize_patient(trial_id, patient_id, stratification_factors):
         total_enrolled_at_time: state.total_enrolled
     }
     
+    // IMPORTANT: These two writes must be atomic in production.
+    // Use DynamoDB TransactWriteItems to write the assignment record
+    // AND increment the enrollment counter in a single transaction.
     write to DynamoDB "assignment-audit": assignment_record
-    
-    // Increment enrollment counter
     atomic increment state.total_enrolled in DynamoDB "allocation-state"
     
     RETURN assigned_arm
 ```
 
 **Step 5: Safety monitoring integration.** The DSMB (Data Safety Monitoring Board) operates independently of the adaptive algorithm. At pre-specified intervals, they review unblinded data and can override the system: pause enrollment, drop an arm for futility or safety, or stop the trial entirely. The system must support these overrides cleanly, without corrupting the allocation state.
+
+DSMB override actions require a separate IAM role with explicit `dynamodb:PutItem` permission scoped to the allocation-state table, restricted to authorized DSMB statisticians. Consider requiring MFA or a step-up authentication mechanism for arm-dropping actions, as these are irreversible and affect patient safety.
 
 ```
 FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
@@ -381,12 +388,16 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
         state.trial_stopped = true
         // No further randomizations possible
     
+    // Write with optimistic locking (same pattern as posterior updates)
+    // to prevent concurrent override and posterior update from conflicting
+    write updated state to DynamoDB "allocation-state"
+        with ConditionExpression: version == state.version
+        set version = state.version + 1
+    
     // Log the override with full context
     write override record to DynamoDB "assignment-audit" with:
         type = "DSMB_OVERRIDE"
         details = override_type, parameters, timestamp, authorized_by
-    
-    write updated state to DynamoDB "allocation-state"
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -419,7 +430,7 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 | Metric | Typical Value |
 |--------|---------------|
 | Randomization latency | 50-200ms (API Gateway + Lambda + DynamoDB read) |
-| Posterior update time | 10-60 seconds (SageMaker Processing for simple models) |
+| Posterior update time | 10-60 seconds compute + 3-5 minutes startup (SageMaker Processing cold start) |
 | Allocation stability | Probabilities shift gradually; no sudden jumps after burn-in |
 | Sample size savings | 10-30% fewer patients needed vs. fixed randomization (scenario-dependent) |
 | Type I error | Controlled at 0.05 (verified through simulation during design phase) |
@@ -430,7 +441,7 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 - Trials with very delayed outcomes (6+ months to evaluate). The algorithm adapts slowly because it has few confirmed outcomes to learn from.
 - Trials with many arms (5+). Thompson Sampling spreads allocation thinly and takes longer to identify winners.
 - Non-binary endpoints (time-to-event, continuous). The Bayesian machinery gets more complex and computationally expensive.
-- Multi-site trials with enrollment bursts. Many patients might be randomized between posterior updates, all using slightly stale probabilities.
+- Multi-site trials with high concurrent enrollment. Multiple patients randomized between posterior updates all use the same allocation probabilities. Over many patients, the law of large numbers ensures correct aggregate allocation, but short-term deviations from target probabilities are possible. For trials requiring strict sequential randomization, add a DynamoDB conditional write with a sequence number to serialize assignments.
 
 ---
 
@@ -456,7 +467,7 @@ Start with a trial where the ethical case is strong (rare disease, high unmet ne
 
 ## Variations and Extensions
 
-**Platform trials with multiple experimental arms.** Instead of a fixed set of arms, new experimental treatments can enter the trial while others graduate (to Phase III) or are dropped (for futility). The I-SPY 2 model. This requires a more sophisticated allocation engine that handles arm entry/exit and maintains valid inference across the changing arm set. The architecture extends naturally: add arm management endpoints and modify the posterior engine to handle variable-length arm vectors.
+**Platform trials with multiple experimental arms.** Instead of a fixed set of arms, new experimental treatments can enter the trial while others graduate (to Phase III) or are dropped (for futility). The I-SPY 2 model. This requires a smarter allocation engine that handles arms coming and going while keeping the statistics valid. The architecture extends naturally: add arm management endpoints and modify the posterior engine to handle variable-length arm vectors.
 
 **Bayesian predictive probability for early stopping.** Beyond allocation adaptation, compute the predictive probability that each arm will demonstrate superiority at the planned final analysis. If an arm's predictive probability drops below a futility threshold (e.g., <5% chance of winning at final analysis), recommend dropping it to the DSMB. This accelerates the trial by removing clearly inferior arms early.
 
@@ -488,8 +499,8 @@ Start with a trial where the ethical case is strong (rare disease, high unmet ne
 - [FDA Guidance: Master Protocols for Drug and Biological Products (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/master-protocols-efficient-clinical-trial-design-strategies-expedite-development-oncology-drugs-and)
 
 **Key References:**
-- TODO: Verify URL for Berry et al. "Bayesian Adaptive Methods for Clinical Trials" (CRC Press)
-- TODO: Verify URL for Thall & Wathen (2007) "Practical Bayesian adaptive randomisation in clinical trials" (European Journal of Cancer)
+<!-- TODO (TechWriter): Verify URL for Berry et al. "Bayesian Adaptive Methods for Clinical Trials" (CRC Press) -->
+<!-- TODO (TechWriter): Verify URL for Thall & Wathen (2007) "Practical Bayesian adaptive randomisation in clinical trials" (European Journal of Cancer) -->
 
 ---
 
