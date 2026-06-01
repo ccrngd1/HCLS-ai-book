@@ -814,6 +814,9 @@ def dispatch_ambulance(call):
                 RESPONSE_TIME_TARGETS[call["priority"]])
     logger.info("=" * 60)
 
+    # In production, persist the decision for the audit trail:
+    # store_dispatch_decision(decision)
+
     return decision
 
 
