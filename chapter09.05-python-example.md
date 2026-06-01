@@ -179,7 +179,7 @@ def route_study(bucket: str, key: str) -> dict | None:
 
 ## Step 2: Preprocess the DICOM Image for Model Input
 
-*The pseudocode calls this `preprocess_for_inference(bucket, key)`. Raw DICOM pixel data needs normalization, resizing, and photometric correction before a neural network can process it. This step must exactly replicate the preprocessing used during model training.*
+*The pseudocode calls this `preprocess_for_inference(bucket, key)` and loads from S3 internally. Here we accept a pre-loaded `pydicom.Dataset` to avoid a redundant S3 read, since the full pipeline function already has the dataset in memory from Step 1. The preprocessing logic is identical.*
 
 ```python
 from PIL import Image
@@ -287,6 +287,9 @@ def run_inference(preprocessed_image: np.ndarray, study_id: str) -> dict:
     # The SageMaker endpoint expects the raw bytes of a float32 array.
     # We add a batch dimension (1, H, W) because the model expects batched input
     # even for a single image.
+    # Note: We use raw bytes with application/x-npy content type. If your endpoint's
+    # inference container expects proper .npy format (with shape/dtype header),
+    # serialize with np.save() to a BytesIO buffer instead.
     image_batch = preprocessed_image.reshape(1, *MODEL_INPUT_SIZE).astype(np.float32)
     payload = image_batch.tobytes()
 

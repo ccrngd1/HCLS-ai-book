@@ -78,7 +78,11 @@ At a conceptual level, the pipeline looks like this:
 
 ### Why These Services
 
-**Amazon SageMaker for model hosting and inference.** SageMaker provides managed endpoints for real-time inference with auto-scaling. For a chest X-ray triage model, you need GPU-backed inference (CNNs are computationally intensive on CPU alone), consistent sub-5-second latency, and the ability to scale with imaging volume. SageMaker real-time endpoints with GPU instances (ml.g4dn or ml.g5 family) deliver this. SageMaker also handles model versioning, A/B testing for model updates, and monitoring for data drift, all of which matter for a regulated medical device.
+**Amazon SageMaker for model hosting and inference.** SageMaker provides managed endpoints for real-time inference with auto-scaling. For a chest X-ray triage model, you need GPU-backed inference (CNNs are computationally intensive on CPU alone), consistent sub-5-second latency, and the ability to scale with imaging volume. SageMaker real-time endpoints with GPU instances (ml.g4dn or ml.g5 family) deliver this. SageMaker also handles model versioning, A/B testing for model updates, and monitoring for data drift. For a regulated medical device, you need all three.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add note that for FDA-regulated devices, model updates (retraining, architecture change, threshold adjustment) must go through a predetermined change control plan or require a new regulatory submission. SageMaker Model Registry supports the approval chain but does not replace the regulatory process. -->
+
+<!-- TODO (TechWriter): Expert review S4 (LOW). Add brief note on model artifact integrity verification (SHA-256 checksums, SageMaker Model Packages approval workflows) as part of QMS requirements for FDA-regulated deployments. -->
 
 **Amazon S3 for DICOM storage and model artifacts.** Incoming DICOM files need a durable, encrypted landing zone before and after processing. S3 with SSE-KMS encryption provides this. Model artifacts (the trained weights) also live in S3 and are loaded by SageMaker at endpoint startup.
 
@@ -89,6 +93,10 @@ At a conceptual level, the pipeline looks like this:
 **Amazon CloudWatch for monitoring and alerting.** Model performance monitoring (inference latency, error rates, confidence score distributions) feeds into CloudWatch metrics and alarms. A sudden shift in the distribution of confidence scores can indicate data drift (new equipment, changed protocols) that degrades model accuracy. You want to catch this before clinicians notice.
 
 **AWS HealthImaging (optional) for DICOM management.** AWS HealthImaging is a purpose-built service for storing, accessing, and analyzing medical images at scale. If you're building the full imaging pipeline on AWS (not just the AI triage layer), HealthImaging provides DICOM-native storage with sub-second image retrieval, which simplifies the DICOM handling that would otherwise require custom code.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a subsection or paragraph on fallback behavior when the SageMaker endpoint is unavailable (deployment in progress, scaling event, transient failure). Recommended approach: if inference fails after retries, mark the study as "triage-unavailable" in DynamoDB and allow it to proceed through the worklist at normal priority. Alert the operations team. The system should degrade gracefully to pre-AI FIFO ordering, never block reads. Consider mentioning SQS buffer between preprocessor and inference for retry with backoff, and blue/green deployment for zero-downtime model updates. -->
+
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add note on configuring a Dead Letter Queue (SQS) on the study-router Lambda. Failed events should be captured for investigation and reprocessing. Set a CloudWatch alarm on DLQ message count > 0. Any study that fails triage processing should be flagged in the worklist as "AI triage unavailable" rather than silently proceeding at normal priority. -->
 
 ### Architecture Diagram
 
@@ -113,15 +121,19 @@ flowchart TD
     style J fill:#9f9,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review N2 (MEDIUM). Add a brief note after the architecture diagram addressing how DICOM data traverses from on-premises imaging equipment to the cloud S3 bucket. Options: (1) AWS Direct Connect with MACsec encryption for dedicated, low-latency connectivity; (2) Site-to-Site VPN for encrypted tunnel over public internet; (3) A DICOM gateway appliance (on-prem) that TLS-encrypts and forwards to an S3 Transfer Acceleration endpoint. Direct Connect is preferred for production radiology AI workloads due to consistent latency requirements. -->
+
 ### Prerequisites
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permissions list with a per-function breakdown (study-router needs s3:GetObject/HeadObject; preprocessor needs s3:GetObject + s3:PutObject on preprocessed prefix; inference-caller needs sagemaker:InvokeEndpoint; priority-scorer needs dynamodb:PutItem + sns:Publish). At minimum, add a note that production deployments must use per-function IAM roles with least-privilege scoping. Also add cloudwatch:PutMetricData for confidence drift monitoring. -->
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon CloudWatch, (optional) AWS HealthImaging |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `logs:CreateLogGroup`, `logs:PutLogEvents` |
+| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon CloudWatch, Amazon SNS, (optional) AWS HealthImaging |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `s3:HeadObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `cloudwatch:PutMetricData`, `logs:CreateLogGroup`, `logs:PutLogEvents`. Production deployments should use per-function IAM roles with least-privilege scoping; the permissions listed here are the union across all Lambda functions. |
 | **BAA** | AWS BAA signed (required: DICOM images are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoint: KMS-encrypted storage volumes; all API calls over TLS |
-| **VPC** | Production: Lambda and SageMaker endpoint in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch Logs. SageMaker endpoints should not have public internet access. |
+| **VPC** | Production: Lambda and SageMaker endpoint in VPC with no internet access. Required VPC endpoints: `com.amazonaws.{region}.s3` (Gateway), `com.amazonaws.{region}.dynamodb` (Gateway), `com.amazonaws.{region}.sagemaker.runtime` (Interface), `com.amazonaws.{region}.sns` (Interface), `com.amazonaws.{region}.logs` (Interface), `com.amazonaws.{region}.monitoring` (Interface, for PutMetricData). SageMaker endpoints must be deployed with VPC-only access (no public endpoint). Validate by confirming the endpoint's `VpcConfig` is populated and that no route to an internet gateway exists from the endpoint's subnet. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for HIPAA audit trail |
 | **FDA Considerations** | If deploying as a medical device: 510(k) clearance required for triage/prioritization claims. Predicate devices exist. Quality Management System (QMS) required. Post-market surveillance plan required. |
 | **Model** | Pre-trained chest X-ray classification model (e.g., DenseNet-121, EfficientNet, or custom architecture trained on CheXpert/MIMIC-CXR). Model must be validated on your institution's patient population before deployment. |
@@ -278,6 +290,10 @@ FUNCTION calculate_priority(predictions):
                 composite_score += probability * SEVERITY_WEIGHTS[finding]
 
     // Determine priority level based on composite score and finding types.
+    // Note: the severity-based rule takes precedence over composite score.
+    // A CRITICAL study may have a lower composite_score than an URGENT study
+    // because the severity >= 8 rule fires first. For dashboard sorting,
+    // use priority level as primary sort and composite_score as secondary.
     IF any triggered finding has severity >= 8:
         priority = "CRITICAL"       // pneumothorax or tension: interrupt radiologist
     ELSE IF composite_score >= 5:
@@ -295,6 +311,8 @@ FUNCTION calculate_priority(predictions):
 ```
 
 **Step 5: Store results and update the worklist.** The final step persists the triage result for audit purposes and communicates the priority back to the PACS/RIS system to reorder the radiologist's worklist. The worklist update is the integration challenge. Every PACS vendor handles this differently. Common approaches include: sending an HL7 ORM message with updated priority, modifying the DICOM Modality Worklist entry, or using the PACS vendor's proprietary API. The audit record must capture everything: what was analyzed, what the model predicted, what priority was assigned, and when. This supports both HIPAA compliance and FDA post-market surveillance.
+
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). The patient_id field is stored in the audit record. Add a justification comment explaining why (e.g., required for FDA post-market surveillance: must correlate AI findings with patient outcomes). If not needed for triage function itself, note that the DynamoDB table containing patient_id requires the same access controls as any PHI-containing data store. Alternatively, remove patient_id and note that patient linkage should be performed via PACS lookup using accession_number when needed. -->
 
 ```
 FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_result):
@@ -322,11 +340,16 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
         )
 
         // For CRITICAL findings, also send an immediate notification.
+        // The alert channel must be a HIPAA-compliant notification pathway.
+        // If using SNS, ensure all subscribers are covered under your BAA.
+        // Send only accession number and priority level in the alert;
+        // finding details should be accessible only through the authenticated
+        // PACS/RIS interface to minimize PHI exposure.
         IF priority_result.priority == "CRITICAL":
             send_alert(
                 channel  = "radiology-urgent",
-                message  = "CRITICAL finding detected on study " + accession_number
-                         + ": " + format_finding_summary(priority_result.triggered_findings)
+                message  = "CRITICAL: Study " + accession_number
+                         + " requires immediate read"
             )
 ```
 
@@ -374,7 +397,7 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 | Sensitivity (large effusion) | 88–95% |
 | False positive rate (all findings) | 5–15% per study |
 | Cost per study | ~$0.10–$0.15 (inference + storage) |
-| Throughput | ~200 studies/hour per endpoint |
+| Throughput | ~200 studies/hour per endpoint (full pipeline; limited by slowest stage, not inference alone. Scale horizontally with additional Lambda concurrency and SageMaker endpoint instances for higher volume.) |
 
 **Where it struggles:** Small apical pneumothoraces on supine patients (the hardest finding for both AI and humans). Subcutaneous emphysema mimicking pneumothorax. Skin folds creating false pleural lines. Portable AP studies with suboptimal positioning. Post-surgical patients with expected findings that shouldn't trigger alerts. Pediatric chest X-rays (most models are trained on adults).
 
