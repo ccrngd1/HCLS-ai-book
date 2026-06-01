@@ -354,6 +354,8 @@
   * [Python Example](chapter14.02-python-example)
 * [14.3 — Inventory Reorder Optimization](chapter14.03-inventory-reorder-optimization)
   * [Python Example](chapter14.03-python-example)
+* [14.4 — Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization)
+  * [Python Example](chapter14.04-python-example)
 
 ---
 
