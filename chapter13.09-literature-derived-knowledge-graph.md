@@ -94,6 +94,8 @@ Let me be direct about the failure modes:
 
 **AWS Lambda and Step Functions for pipeline orchestration.** The extraction pipeline is a multi-step workflow: fetch article, parse, run NER, run RE, normalize, grade, store. Step Functions coordinates these steps with error handling, retries, and parallel processing. Lambda handles the stateless compute for each step.
 
+<!-- TODO (TechWriter): Expert review A-1 (HIGH). Add dead-letter queue (DLQ) for failed Step Functions executions. When any step fails after retries, send article ID and failure metadata to an SQS DLQ. Add CloudWatch alarm on DLQ depth and a reprocessing Lambda for replay. Add failure path to the Mermaid diagram. Without this, failed articles silently disappear from the pipeline. -->
+
 **Amazon OpenSearch for full-text search.** While Neptune handles graph traversal queries, you also need full-text search across node properties, edge metadata, and source sentences. OpenSearch provides this complementary access pattern, letting users search for "what does the literature say about metformin and PCOS" without knowing the exact graph structure.
 
 ### Architecture Diagram
@@ -128,13 +130,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon SageMaker, Amazon Neptune, Amazon S3, AWS Lambda, AWS Step Functions, Amazon OpenSearch Service, Amazon SQS, API Gateway |
-| **IAM Permissions** | `comprehend:DetectEntitiesV2`, `sagemaker:InvokeEndpoint`, `neptune-db:*`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `opensearch:ESHttp*`, `sqs:SendMessage` |
-| **BAA** | Required if processing literature that references identifiable patient data (rare in published literature, but clinical trial results may contain cohort-level PHI) |
-| **Encryption** | S3: SSE-KMS; Neptune: encryption at rest (must be enabled at cluster creation); OpenSearch: encryption at rest and node-to-node encryption; all transit over TLS |
-| **VPC** | Neptune requires VPC deployment. Place all Lambda functions, SageMaker endpoints, and OpenSearch in the same VPC with appropriate security groups. VPC endpoints for S3 and Comprehend Medical. |
+| **IAM Permissions** | Ingestion Lambdas: `comprehend:DetectEntitiesV2`, `sagemaker:InvokeEndpoint`, `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `s3:GetObject`, `s3:PutObject`, `states:StartExecution`, `sqs:SendMessage`. Query API Lambda: `neptune-db:ReadDataViaQuery`, `opensearch:ESHttpGet`, `opensearch:ESHttpPost`. Separate admin role for Neptune backup/restore. |
+| **BAA** | Required. Published literature, particularly case reports and clinical trial results, may contain individually identifiable health information in source sentences stored as provenance. Ensure BAA coverage for Neptune, OpenSearch, and S3. |
+| **Encryption** | S3: SSE-KMS; Neptune: encryption at rest (must be enabled at cluster creation); OpenSearch: encryption at rest and node-to-node encryption; SQS: SSE-KMS; all transit over TLS |
+| **VPC** | Neptune requires VPC deployment. Place all Lambda functions, SageMaker endpoints, and OpenSearch in the same VPC with appropriate security groups. VPC endpoints for S3 and CloudWatch Logs. NAT Gateway required for Lambda to reach Comprehend Medical (no VPC interface endpoint available). SageMaker endpoints can be deployed within the VPC via PrivateLink. |
 | **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled for query-level auditing. |
 | **Sample Data** | PubMed Open Access subset (free, bulk download available). BioRED annotated corpus for relation extraction training. UMLS Metathesaurus for entity normalization (requires free license). |
-| **Cost Estimate** | Neptune: ~$700/month (db.r5.large). SageMaker endpoint: ~$200-800/month depending on instance. Comprehend Medical: $0.01/100 characters. S3 + Lambda + Step Functions: ~$100-300/month at moderate volume. OpenSearch: ~$300-500/month. |
+| **Cost Estimate** | Neptune: ~$700/month (db.r5.large). SageMaker endpoint: ~$800-2,400/month (ml.m5.xlarge or multiple ml.m5.large with auto-scaling; batch transform is more cost-effective if near-real-time freshness is not required). Comprehend Medical: $0.01/100 characters. S3 + Lambda + Step Functions: ~$100-300/month at moderate volume. OpenSearch: ~$300-500/month. Data transfer: negligible (<$50/month). |
 
 ### Ingredients
 
@@ -155,7 +157,9 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: Literature ingestion.** The pipeline starts by fetching new articles from PubMed and PubMed Central on a schedule. PubMed's E-utilities API provides programmatic access to article metadata and abstracts. PMC's Open Access subset provides full-text XML for articles with permissive licenses. The fetcher tracks what's already been ingested (using a simple watermark: the last fetch timestamp or the highest PMID processed) and only retrieves new content. Each article is stored as raw XML in the document lake, along with parsed metadata. Full-text articles yield dramatically more relationships than abstracts alone (a typical abstract might contain 2-5 extractable relationships; a full paper might contain 20-50), so prioritize full-text sources where available. Skip this step and your graph goes stale immediately.
+**Step 1: Literature ingestion.** The pipeline starts by fetching new articles from PubMed and PubMed Central on a schedule. PubMed's E-utilities API provides programmatic access to article metadata and abstracts. PMC's Open Access subset provides full-text XML for articles with permissive licenses. The fetcher tracks what's already been ingested (using a simple watermark: the last fetch timestamp or the highest PMID processed) and only retrieves new content. Each article is stored as raw XML in the document lake, along with parsed metadata. Full-text articles yield dramatically more relationships than abstracts alone (a typical abstract might contain 2-5 extractable relationships; a full paper might contain 20-50), so prioritize full-text sources where available. When both a PubMed abstract and a PMC full-text version exist for the same article, process only the full-text version to avoid inflating support counts with duplicate extractions. Skip this step and your graph goes stale immediately.
+
+<!-- TODO (TechWriter): Expert review S-1 (HIGH). Add a PHI screening step between document parsing and NER. Case reports and clinical trial results may contain individually identifiable health information in source sentences. Flag case reports using MeSH publication type metadata. For flagged documents, either skip provenance sentence storage or redact potential identifiers from stored sentences before they enter Neptune/OpenSearch. -->
 
 ```
 FUNCTION fetch_new_articles(last_watermark):
@@ -168,6 +172,8 @@ FUNCTION fetch_new_articles(last_watermark):
         query    = "(pharmacogenomics OR drug-disease OR gene-phenotype) 
                     AND {last_watermark}[PDAT] : 3000[PDAT]"
         retmax   = 1000  // batch size per fetch cycle
+        api_key  = NCBI_API_KEY  // register free at ncbi.nlm.nih.gov/account/
+                                 // without key: 3 req/sec; with key: 10 req/sec
 
     FOR each batch of article_ids:
         // Fetch full metadata and abstract for each article
@@ -279,6 +285,8 @@ FUNCTION extract_entities(sentences):
 ```
 
 **Step 4: Relation extraction.** This is the core intellectual step. Given a sentence with identified entities, determine what relationships exist between them. A custom transformer model (fine-tuned on biomedical relation extraction datasets like BioRED or ChemProt) classifies entity pairs into relationship types: treats, causes, associated_with, inhibits, metabolized_by, variant_of, and so on. Critically, the model must also detect negated and speculative relationships. "Drug X does not treat disease Y" is a relationship, but it's a negative one. "Drug X may treat disease Y" is speculative. Both need to be captured with appropriate modifiers. Skip negation detection and your graph will contain confident assertions that the literature actually refutes.
+
+<!-- TODO (TechWriter): Expert review A-2 (HIGH). Add a validation_status field to edges with values: "machine_extracted" (default), "human_validated", "human_rejected". Add query-time guidance: clinical applications should filter on validation_status = "human_validated" OR evidence_score >= 0.85 AND support_count >= 3. The 0.70 confidence threshold yields 18-30% false positives per the benchmarks, which is dangerous for downstream clinical use without this guardrail. -->
 
 ```
 FUNCTION extract_relations(sentences, entity_mentions):
@@ -598,6 +606,8 @@ FUNCTION insert_into_graph(scored_triples):
 | Graph query latency (multi-hop path) | 50-200ms |
 
 **Where it struggles:** Implicit relationships that require world knowledge to infer. Relationships spanning multiple sentences or paragraphs. Highly hedged language where the assertion strength is ambiguous. Novel entity types not in existing ontologies (newly discovered genes, experimental compounds). Languages other than English (most biomedical NER models are English-only). Retracted papers that remain in the corpus.
+
+<!-- TODO (TechWriter): Expert review A-3 (HIGH). Add retraction monitoring component to the architecture. A scheduled Lambda should check PubMed for newly retracted articles (using "Retracted Publication" publication type filter). When detected: flag affected edges with status "RETRACTED_SOURCE"; if the retracted paper was the sole source (support_count = 1), change edge status to "RETRACTED"; if other papers also support the edge, recalculate evidence_score excluding the retracted source. This is a patient safety concern: retracted findings (e.g., Wakefield MMR-autism) can persist and influence clinical queries. Add as a pipeline step or parallel monitoring process with pseudocode. -->
 
 ---
 
