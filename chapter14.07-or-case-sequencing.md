@@ -110,6 +110,10 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 **Replan trigger.** Monitors real-time events (case completions, cancellations, add-ons, duration overruns) and decides when to trigger re-optimization. Not every event needs a full replan. A case finishing 5 minutes early doesn't warrant disruption. A case finishing 45 minutes late, or a cancellation that frees a room, does.
 
+**Human override layer.** Any production scheduling system must support manual overrides. Charge nurses and surgeons need the ability to lock a case to a specific room or time slot, swap two cases within a room, or exclude a room from re-optimization entirely. Overrides are stored as hard constraints that the solver respects on subsequent runs. The dashboard should visually distinguish optimizer-assigned slots from manually-locked slots, and an audit trail records who overrode what and when.
+
+<!-- TODO (TechWriter): Expert review A3 (HIGH). Expand human override into a full subsection in the Code walkthrough showing how overrides are stored as fixed constraints in DynamoDB and read by the solver. Include role-based permissions (charge nurse can override, random staff cannot). -->
+
 ---
 
 ## The AWS Implementation
@@ -126,7 +130,7 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 **Amazon S3 for historical data and model artifacts.** Duration prediction models, historical case logs, and optimization run artifacts (for audit and analysis) live in S3.
 
-**Amazon SQS for the replan queue.** When multiple events arrive in quick succession (common during the morning rush), SQS buffers replan requests and ensures they're processed sequentially. You don't want three concurrent replans fighting over the same schedule state.
+**Amazon SQS (FIFO) for the replan queue.** When multiple events arrive in quick succession (common during the morning rush), an SQS FIFO queue buffers replan requests with content-based deduplication, ensuring they're processed sequentially. You don't want three concurrent replans fighting over the same schedule state. The FIFO ordering guarantees that replans execute in the order they were triggered, and the 5-minute deduplication window prevents replan storms from rapid-fire events.
 
 ### Architecture Diagram
 
@@ -140,8 +144,9 @@ flowchart TD
     E --> F[ECS Fargate\nSolver Engine]
     F --> G[DynamoDB\nOptimized Schedule]
     
-    D -->|Replan Needed?| H[SQS\nReplan Queue]
+    D -->|Replan Needed?| H[SQS FIFO\nReplan Queue]
     H --> F
+    H -->|3 failures| DLQ[SQS DLQ\n+ CloudWatch Alarm]
     
     I[S3\nHistorical Data] --> J[Lambda\nDuration Predictor]
     J --> E
@@ -158,14 +163,15 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Lambda, ECS (Fargate), DynamoDB, EventBridge, SQS, S3, API Gateway |
-| **IAM Permissions** | `ecs:RunTask`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sqs:SendMessage/ReceiveMessage`, `events:PutEvents` |
+| **AWS Services** | Lambda, ECS (Fargate), DynamoDB, EventBridge, SQS (FIFO), S3, API Gateway |
+| **IAM Permissions** | `ecs:RunTask`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sqs:SendMessage/ReceiveMessage`, `events:PutEvents`. All permissions scoped to specific resource ARNs (e.g., solver ECS task role accesses only the case and schedule DynamoDB tables, the historical data S3 bucket, and the replan SQS queue). |
 | **BAA** | Required: case data includes patient identifiers and procedure details (PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all transit over TLS; ECS task roles with least-privilege |
-| **VPC** | Production: Fargate tasks in private subnets with VPC endpoints for DynamoDB, S3, SQS, CloudWatch Logs |
+| **VPC** | Production: Fargate tasks in private subnets with VPC endpoints for DynamoDB, S3, SQS, EventBridge, and CloudWatch Logs. Lambda functions that handle PHI payloads should also be VPC-attached; lightweight orchestration Lambdas can run outside the VPC with appropriate IAM controls. |
+| **EHR Integration** | Secured network path required for PHI-bearing inbound connection: AWS Direct Connect, site-to-site VPN, or API Gateway with mutual TLS. HL7v2 via MLLP-to-HTTPS adapter in a private subnet. FHIR APIs via OAuth 2.0 with SMART on FHIR scopes. |
 | **CloudTrail** | Enabled for all API calls; schedule changes auditable |
 | **Sample Data** | Synthetic surgical case lists. Use realistic procedure mixes and durations from published OR benchmarking data. Never use real patient data in dev. |
-| **Cost Estimate** | Fargate solver: ~$0.05-0.20 per optimization run (2-4 vCPU, 8 GB, 1-10 min). Lambda + DynamoDB: negligible. Monthly: $200-800 depending on replan frequency. |
+| **Cost Estimate** | Fargate solver: ~$0.05-0.20 per optimization run (2-4 vCPU, 8 GB, 1-10 min). Lambda + DynamoDB: negligible. Monthly with open-source solvers (OR-Tools CP-SAT, HiGHS): $200-800 depending on replan frequency. With commercial solvers (Gurobi, CPLEX): add $1,500-5,000/month for cloud licensing depending on usage volume and contract terms. Commercial solvers are not required for most hospital-scale problems (under 100 cases/day). |
 
 ### Ingredients
 
@@ -173,11 +179,12 @@ flowchart TD
 |------------|------|
 | **AWS Lambda** | Constraint building, duration prediction, replan trigger logic |
 | **Amazon ECS (Fargate)** | Runs the optimization solver (CP-SAT, HiGHS, or commercial) |
-| **Amazon DynamoDB** | Stores case data, constraints, and current optimized schedule |
+| **Amazon DynamoDB** | Stores case data, constraints, current optimized schedule, and manual overrides |
 | **Amazon EventBridge** | Routes real-time surgical events (completions, cancellations, add-ons) |
-| **Amazon SQS** | Buffers replan requests to prevent concurrent optimization conflicts |
+| **Amazon SQS (FIFO)** | Buffers replan requests with deduplication to prevent concurrent optimization conflicts |
+| **Amazon SQS (DLQ)** | Captures failed replan attempts after 3 retries; triggers CloudWatch alarm for manual intervention |
 | **Amazon S3** | Historical case data, duration models, optimization audit logs |
-| **Amazon API Gateway** | Exposes schedule API for dashboard and EHR integration |
+| **Amazon API Gateway** | Exposes schedule API for dashboard and EHR integration (with authorizer for role-based access) |
 | **AWS KMS** | Encryption key management for PHI at rest |
 
 ### Code
@@ -223,6 +230,8 @@ FUNCTION enrich_case_list(raw_cases):
     RETURN enriched
 ```
 
+**A note on PHI in the enriched case table.** The "or-cases-today" DynamoDB table contains PHI: patient identifiers linked to procedure codes and clinical flags (ASA class, immunocompromised status). IAM policies on this table should restrict read access to the solver engine's ECS task role and the constraint builder Lambda. The published schedule API (Step 5) should expose only the minimum necessary: procedure type, surgeon, and timing. Patient identifiers should not flow to the dashboard unless the viewer has a clinical need-to-know. Implement an API Gateway authorizer with role-based access: charge nurses see patient names, the public OR board shows only room/time/procedure.
+
 **Step 2: Build the constraint model.** This step translates business rules into mathematical constraints the solver can process. The separation between business rules (which change frequently) and solver logic (which is stable) is intentional. When a new surgeon joins or a room gets renovated, you update the constraint configuration, not the solver code.
 
 ```
@@ -260,6 +269,11 @@ FUNCTION build_constraint_model(cases, rooms, staff_schedules):
     // Hard constraint: room capability.
     FOR each case in cases:
         model.add_constraint(case.room_var in case.room_constraints)
+
+    // Hard constraint: manual overrides (locked assignments from charge nurse).
+    FOR each override in read_overrides_from_database():
+        model.fix_variable(override.case_id.room_var, override.locked_room)
+        model.fix_variable(override.case_id.start_var, override.locked_start_time)
 
     // Soft constraint: minimize total overtime (penalized in objective).
     FOR each room in rooms:
@@ -306,6 +320,8 @@ FUNCTION solve_schedule(model, mode):
     ELSE:
         // No feasible solution found. Constraints are too tight.
         // Return the infeasibility report so humans can decide what to relax.
+        log_error("Solver returned INFEASIBLE. Alerting perioperative coordinator.")
+        trigger_cloudwatch_alarm("or-solver-infeasible")
         RETURN { status: "INFEASIBLE", conflicts: result.conflict_analysis() }
 ```
 
@@ -334,9 +350,14 @@ FUNCTION handle_or_event(event):
         enqueue_replan(reason = "add_on", urgency = event.case_data.priority)
 
 FUNCTION enqueue_replan(reason, **kwargs):
-    // Send to SQS with deduplication to prevent replan storms.
-    // If multiple events arrive within 60 seconds, batch them into one replan.
-    send to replan queue with deduplication_id = "replan-" + current_minute()
+    // Send to SQS FIFO queue with deduplication.
+    // The 5-minute deduplication window means rapid-fire events within 5 minutes
+    // of the first replan request are automatically deduplicated by SQS.
+    // Use a time-window-based deduplication ID to batch nearby events.
+    dedup_window = floor(current_timestamp / 300)  // 5-minute windows
+    send to replan FIFO queue with:
+        message_group_id = "or-replan"
+        deduplication_id = "replan-" + string(dedup_window)
 ```
 
 **Step 5: Publish and visualize.** The optimized schedule is exposed via API for the OR dashboard, EHR integration, and mobile notifications to surgical teams.
@@ -356,7 +377,8 @@ FUNCTION publish_schedule(schedule):
                     start_time:  case.optimized_start,
                     end_time:    case.optimized_end,
                     status:      case.current_status,
-                    confidence:  case.schedule_confidence  // how likely this time holds
+                    confidence:  case.schedule_confidence,  // how likely this time holds
+                    is_locked:   case.has_manual_override   // visually distinguish overrides
                 }
                 FOR each case in room.sequence
             ]
@@ -364,10 +386,18 @@ FUNCTION publish_schedule(schedule):
         write room_timeline to API cache
 
     // Notify affected staff of schedule changes (if this was a replan).
+    // Use a HIPAA-compliant channel: push notification to a secured mobile app
+    // (preferred), pager with case ID only (no patient name), or encrypted email.
+    // Avoid SMS with patient-identifiable content. Notifications contain the
+    // minimum necessary: case ID, new time, new room. Staff look up patient
+    // details in the secured dashboard.
     IF schedule.is_replan:
         changed_cases = find cases where start_time or room changed
         FOR each case in changed_cases:
-            notify surgical team (surgeon, anesthesia, nursing) of new time/room
+            send_secure_notification(
+                recipients = case.surgical_team,
+                content = { case_id: case.id, new_room: case.room, new_time: case.start }
+            )
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Google OR-Tools, check out the [Python Example](chapter14.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -443,6 +473,8 @@ The optimization itself is the easy part. Getting a solver to produce a good sch
 
 **Turnover time is where the real gains hide.** Most people focus on case duration optimization, but the 25-45 minutes between cases is where utilization is actually lost. Sequencing similar cases back-to-back (same equipment, same setup) can shave 5-10 minutes per turnover. Over a 6-case room day, that's 30-60 minutes of recovered time.
 
+**Failure handling matters more than optimality.** When the solver fails (and it will: infeasible constraints, OOM on large instances, network timeouts), the system must fall back gracefully to the previous valid schedule and alert the perioperative coordinator. A DLQ on the replan queue with a CloudWatch alarm ensures that silent failures don't leave the OR running on a stale schedule all day.
+
 The thing that surprised me most: the constraint that causes the most infeasibility isn't equipment or rooms. It's anesthesia coverage. When one anesthesiologist covers multiple rooms, their availability window becomes the binding constraint on the entire schedule. Model this carefully.
 
 ---
@@ -482,10 +514,8 @@ The thing that surprised me most: the constraint that causes the most infeasibil
 - [COIN-OR CBC](https://github.com/coin-or/Cbc) - Open-source MIP solver
 
 **AWS Solutions and Blogs:**
-- [Optimization on AWS](https://aws.amazon.com/optimization/) - Overview of optimization workloads on AWS
-- [Running optimization workloads on Amazon ECS](https://aws.amazon.com/blogs/containers/) - Patterns for containerized solver workloads
-
-<!-- TODO: Verify specific blog post URLs for optimization on ECS/Fargate -->
+- [AWS HPC and Batch Computing](https://aws.amazon.com/hpc/) - Patterns for compute-intensive workloads including optimization
+- [Amazon ECS Best Practices Guide](https://docs.aws.amazon.com/AmazonECS/latest/bestpracticesguide/intro.html) - Guidance for running containerized workloads on Fargate
 
 ---
 
