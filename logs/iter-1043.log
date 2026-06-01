@@ -1,0 +1,673 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780294433965-000130-6442681741e4359f iteration=1043 task_id=ch14-r05-draft persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;141m> [0mI'll start by reading the STYLE-GUIDE.md, RECIPE-GUIDE.md, and a Chapter 1 recipe for reference, plus the chapter 14 planning doc.[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/RECIPE-GUIDE.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/categories/14-optimization.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1043/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-1043/RECIPE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4249 bytes[0m from /tmp/ralph-worktrees/iter-1043/categories/14-optimization.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at a completed Chapter 1 recipe for style reference:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m1[0m to [38;5;141m150[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m13791 bytes[0m from /tmp/ralph-worktrees/iter-1043/chapter01.01-insurance-card-scanning.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me see more of this recipe and also check the [3mSidebar.md:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m150[0m to [38;5;141m400[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/_Sidebar.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m18913 bytes[0m from /tmp/ralph-worktrees/iter-1043/chapter01.01-insurance-card-scanning.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m19886 bytes[0m from /tmp/ralph-worktrees/iter-1043/_Sidebar.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a thorough understanding of the style, structure, and format. Let me write the recipe for Chapter 14, Recipe 5: Operating Room Block Scheduling.[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Recipe 14.5: Operating Room Block Scheduling
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Complexity:** Medium · **Phase:** Optimization · **Estimated Cost:** ~$50–200/month (solver compute)
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ## The Problem
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m Operating rooms are the most expensive real estate in a hospital. A single OR costs somewhere between $30 and $100 per minute to operate when you factor in staffing, equipment, overhead, and opportunity cost. Most hospitals have between 8 and 40 ORs. And the way they allocate time in those rooms? A spreadsheet that hasn't been fundamentally rethought since the 1990s.
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m Here's how it typically works. Surgical services (orthopedics, cardiac, general surgery, neurosurgery, etc.) are allocated "blocks" of OR time. Orthopedics might own Monday and Wednesday mornings in OR 3. Cardiac gets all day Tuesday in ORs 7 and 8. These allocations were negotiated years ago based on historical volume, political clout, and whoever yelled loudest at the last medical executive committee meeting.
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m The problem is that demand shifts. Orthopedics hired two new surgeons and can't fit their cases. Cardiac's volume dropped 15% after a key surgeon retired. General surgery has a 3-week backlog but only 60% of their allocated time is actually being used (because one of their surgeons retired and the block wasn't reallocated). Meanwhile, the hospital is turning away profitable cases because "there's no OR time available," even though 20% of allocated blocks go unused on any given week.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m This is not a small inefficiency. Studies consistently show that OR utilization at most hospitals hovers between 60% and 75%. The gap between actual utilization and optimal utilization represents millions of dollars in lost revenue annually for a mid-size hospital. For a large academic medical center, it can be tens of millions.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m The human cost is real too. Patients wait weeks for elective procedures because the schedule says there's no room, even when rooms sit empty. Surgeons get frustrated because they can't access time. OR directors spend their lives mediating political disputes about who "deserves" more blocks.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m This is a resource allocation problem. And resource allocation problems are exactly what mathematical optimization was invented to solve.
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m ## The Technology: Mathematical Optimization for Scheduling
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m ### What Is Block Scheduling?
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m Let's be precise about what we're optimizing. OR block scheduling operates at the "strategic" level of surgical scheduling. There are three levels:
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m 1. **Strategic (block scheduling):** Allocate blocks of OR time to surgical services or individual surgeons over a planning horizon (typically quarterly or annually). This is what we're solving here.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m 2. **Tactical (case scheduling):** Assign specific surgical cases to specific blocks on specific days. This happens within the constraints set by the strategic schedule.
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m 3. **Operational (day-of sequencing):** Order the cases within a given day's block to minimize turnover time and maximize throughput. Recipe 14.7 covers this.
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m Block scheduling is a combinatorial optimization problem. You have a finite set of OR-day-time slots, a set of surgical services with demand forecasts, and a pile of constraints (surgeon availability, equipment requirements, staffing patterns, historical agreements). You want to find the allocation that maximizes some objective (utilization, revenue, access equity, surgeon satisfaction) while respecting all the constraints.
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m ### The Optimization Formulation
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m At its core, this is a Mixed-Integer Programming (MIP) problem. Here's why:
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m **Decision variables** are binary: does service S get block B? Yes or no. You can't give half a block to orthopedics and half to cardiac (well, you can, but that's a different formulation called "open time" that we'll discuss in variations). Binary decisions mean integer programming.
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m **The objective function** is what you're trying to maximize or minimize. Common choices:
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m - Maximize weighted utilization (predicted cases filled / available time)
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m - Minimize total unused block time
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m - Maximize revenue (weight blocks by expected case mix revenue)
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m - Minimize patient access delay (weighted by urgency)
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m - Some combination of the above (multi-objective)
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m **Constraints** are the rules the solution must obey:
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m - Each block is assigned to exactly one service (or left as open/unblocked time)
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m - Each service gets at least some minimum allocation (contractual or political)
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m - Each service gets no more than some maximum (capacity limits, staffing)
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m - Certain services require specific ORs (cardiac needs the hybrid OR, neuro needs the one with the intraoperative MRI)
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m - Surgeon availability patterns (Dr. Smith only operates Mon/Wed/Fri)
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m - Equipment conflicts (only two arthroscopy towers, so max two ortho rooms simultaneously)
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m - Staffing constraints (only N specialized nurses available per day for cardiac cases)
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m - Fairness constraints (no service loses more than X% of their current allocation in one cycle)
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m ### Solver Selection
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m The solver is the engine that finds the optimal (or near-optimal) solution. Your choices:
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m **Commercial solvers (Gurobi, CPLEX, Xpress):** These are the gold standard for MIP problems. They use branch-and-bound algorithms with sophisticated cutting planes, presolve techniques, and heuristics. For a typical hospital's block scheduling problem (maybe 500-2000 binary variables, a few hundred constraints), a commercial solver will find the optimal solution in seconds to minutes. The downside: licensing costs ($10K-$50K/year for on-premises, or pay-per-use in cloud).
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m **Open-source solvers (CBC, SCIP, HiGHS, OR-Tools):** Free, capable, and improving rapidly. HiGHS in particular has become competitive with commercial solvers for many MIP problems. For block scheduling at a single hospital, these are often sufficient. They might take 10x longer than Gurobi on hard instances, but "10x longer than 30 seconds" is still 5 minutes, which is fine for a quarterly planning problem.
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m **Metaheuristics (genetic algorithms, simulated annealing, tabu search):** These don't guarantee optimality but can handle messier objective functions and constraints that are hard to express as linear inequalities. Useful when your problem has nonlinear elements (like "surgeon satisfaction" that's hard to quantify linearly) or when the MIP formulation gets too large to solve in reasonable time.
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m For most hospital block scheduling problems, a MIP formulation with an open-source solver is the right starting point. You can always upgrade to a commercial solver later if solve times become a bottleneck.
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m ### Batch vs. Real-Time
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m Block scheduling is fundamentally a batch optimization problem. You run it quarterly (or monthly, or annually) to produce the master schedule. The solve itself might take minutes to hours depending on problem size and solver choice. That's fine. Nobody needs a block schedule in 200 milliseconds.
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m However, there's a real-time component that matters: **block release and reallocation.** When a service knows they won't use an upcoming block (surgeon on vacation, cases cancelled), that time should be released back to a pool where other services can claim it. This "day-of" or "week-of" reallocation is a simpler optimization (fewer variables, shorter horizon) but needs to run quickly and frequently.
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m The architecture should support both: a heavyweight batch solver for the master schedule, and a lightweight reallocation engine for released blocks.
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m ### Why This Is Harder Than It Sounds
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m **Political constraints aren't linear.** "The chief of cardiac surgery will resign if he loses his Tuesday block" is a real constraint that doesn't fit neatly into a mathematical formulation. You end up encoding political realities as hard constraints (minimum allocations) or soft constraints (penalties in the objective function), and getting those weights right requires iteration with stakeholders.
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m **Demand forecasting is uncertain.** Your optimization is only as good as your demand predictions. If you forecast that orthopedics will need 40 hours/week and they actually need 55, your "optimal" schedule is wrong. Robust optimization or stochastic programming can help, but they add complexity.
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m **Utilization is a lagging indicator.** A service might show low utilization because they don't have enough block time (so they're sending cases elsewhere or patients are waiting), not because they don't need the time. Using raw historical utilization as the demand signal can create a death spiral: low utilization leads to reduced allocation, which leads to even lower utilization as surgeons give up trying to schedule in limited windows.
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m **The status quo has inertia.** Even if the optimizer produces a mathematically superior schedule, implementing it means telling some surgeons they're losing time. Change management is as important as the algorithm.
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m ### General Architecture Pattern
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m [Historical Data] → [Demand Forecasting] → [Constraint Assembly] → [Optimization Solver] → [Proposed Schedule] → [Stakeholder Review] → [Approved Schedule] → [Release/Reallocation Engine]
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m **Historical Data:** Case volumes by service, actual utilization by block, case durations, cancellation rates, add-on case patterns. Typically pulled from the surgical scheduling system (EHR or standalone).
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m **Demand Forecasting:** Predict future case volume by service. This can be as simple as trailing 12-month average with seasonal adjustment, or as complex as a time-series model incorporating surgeon recruitment, population trends, and referral patterns.
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m **Constraint Assembly:** Gather all hard and soft constraints from stakeholders, contracts, equipment inventories, and staffing models. This is the most labor-intensive step and requires clinical operations input.
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m **Optimization Solver:** Formulate the MIP, feed it to the solver, get back the optimal allocation.
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m **Proposed Schedule:** Present the solution to stakeholders with clear metrics: what changed, why, and what the expected impact is (utilization improvement, revenue gain, access improvement).
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m **Stakeholder Review:** Humans review, negotiate, and approve. The optimizer proposes; humans dispose. This is not optional. Any system that tries to bypass surgical leadership review will fail politically.
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m **Release/Reallocation Engine:** Once the master schedule is live, handle the ongoing process of releasing unused blocks and reallocating them to services with demand.
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m ## The AWS Implementation
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m ### Why These Services
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m **Amazon SageMaker for demand forecasting.** Before you can optimize block allocation, you need to predict how much time each service will actually need. SageMaker provides managed training and inference for time-series forecasting models. You can use built-in algorithms (DeepAR for probabilistic forecasts) or bring your own model. The key value: managed infrastructure for training on historical surgical volume data without provisioning GPU instances yourself.
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m **AWS Lambda for constraint assembly and orchestration.** The optimization pipeline is event-driven: new data arrives, constraints are assembled from multiple sources, the solver is invoked, results are stored. Lambda handles the glue logic. For the lightweight block release/reallocation engine, Lambda's sub-second cold start is fast enough (these decisions happen on a minutes-to-hours timescale, not milliseconds).
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m **Amazon ECS (Fargate) for solver execution.** MIP solvers are CPU-intensive and can run for minutes to hours on large instances. Lambda's 15-minute timeout and memory limits make it unsuitable for the actual solve. A Fargate task with 4-16 vCPUs and sufficient memory gives the solver room to work without managing EC2 instances. Spin up for the solve, shut down when done. Pay only for compute time.
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m **Amazon DynamoDB for schedule storage and constraint configuration.** The master block schedule, constraint definitions, and allocation history all need durable, low-latency storage. DynamoDB's key-value model works well for lookups like "what's the schedule for OR 5 next week?" and "what are the constraints for cardiac surgery?"
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m **Amazon S3 for historical data and model artifacts.** Surgical case history (potentially millions of records over years), trained forecasting models, and solver input/output files all live in S3. It's the data lake for the optimization pipeline.
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m **Amazon EventBridge for scheduling pipeline triggers.** The quarterly optimization run, daily release checks, and real-time reallocation events all need reliable scheduling and event routing. EventBridge handles cron-style triggers (run optimization every quarter) and event-driven triggers (block released, find a taker).
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m ### Architecture Diagram
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m ```mermaid
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m flowchart TD
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m     A[EHR / Surgical Scheduling System] -->|Case history, block usage| B[S3 Data Lake]
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m     B --> C[SageMaker\nDemand Forecasting]
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m     C -->|Volume predictions by service| D[Lambda\nConstraint Assembly]
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m     E[DynamoDB\nConstraint Config] --> D
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m     D -->|MIP formulation file| F[ECS Fargate\nOptimization Solver]
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m     F -->|Optimal allocation| G[DynamoDB\nMaster Schedule]
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m     G --> H[Dashboard / Review UI]
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m     H -->|Approved schedule| G
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m     I[EventBridge\nDaily Release Check] --> J[Lambda\nReallocation Engine]
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m     G --> J
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m     J -->|Updated allocations| G
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m     style F fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m     style C fill:#9ff,stroke:#333
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m     style G fill:#f9f,stroke:#333
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m ### Prerequisites
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m | Requirement | Details |
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m |-------------|---------|
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m | **AWS Services** | Amazon SageMaker, AWS Lambda, Amazon ECS (Fargate), Amazon DynamoDB, Amazon S3, Amazon EventBridge, Amazon CloudWatch |
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `ecs:RunTask`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `events:PutRule` |
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m | **BAA** | Required if case-level data includes PHI (surgeon names linked to patient volumes may qualify) |
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; ECS: encrypted task storage; all transit over TLS |
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m | **VPC** | Production: Fargate tasks in private subnet with VPC endpoints for S3, DynamoDB, CloudWatch Logs |
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m | **CloudTrail** | Enabled for audit trail of schedule changes and optimization runs |
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m | **Sample Data** | Synthetic surgical case data. Generate from published OR utilization benchmarks. Never use real patient-linked surgical records in dev. |
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m | **Cost Estimate** | SageMaker training: ~$5-20/run (quarterly). Fargate solver: ~$1-10/run (depends on solve time). DynamoDB + Lambda: negligible. Total: $50-200/month including daily reallocation runs. |
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m ### Ingredients
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m | AWS Service | Role |
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m |------------|------|
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m | **Amazon SageMaker** | Trains and hosts demand forecasting models for surgical volume prediction |
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m | **AWS Lambda** | Orchestrates pipeline: assembles constraints, triggers solver, handles reallocation logic |
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m | **Amazon ECS (Fargate)** | Runs CPU-intensive MIP solver (HiGHS, CBC, or commercial solver in container) |
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m | **Amazon DynamoDB** | Stores master schedule, constraints, allocation history, and release pool |
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m | **Amazon S3** | Stores historical case data, model artifacts, solver input/output files |
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m | **Amazon EventBridge** | Triggers quarterly optimization runs and daily release checks |
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m | **Amazon CloudWatch** | Monitors solver performance, utilization metrics, and pipeline health |
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m | **AWS KMS** | Manages encryption keys for data at rest |
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m ### Code
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m #### Walkthrough
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m **Step 1: Extract historical utilization data.** The optimization needs to know how each service has actually used their allocated time. Pull case-level data from the surgical scheduling system: which service, which OR, start time, end time, scheduled vs. actual duration, cancellations. Aggregate into utilization metrics per block per service. This historical view is the foundation for demand forecasting and for identifying the gap between allocation and actual use. Without this data, you're optimizing blind.
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m FUNCTION extract_utilization_data(start_date, end_date):
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m     // Pull raw surgical case records from the data lake.
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m     // Each record represents one completed (or cancelled) surgical case.
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m     cases = query S3 data lake for surgical cases between start_date and end_date
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m     // Aggregate into per-service, per-block utilization metrics.
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m     // "Utilization" = actual minutes used / allocated minutes available.
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m     utilization = empty map
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m     FOR each service in distinct services from cases:
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m         service_cases = filter cases where service matches
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m         // Calculate key metrics for this service:
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m         // - Total allocated minutes (from current block schedule)
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m         // - Total used minutes (sum of actual case durations + turnover)
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m         // - Cancellation rate (cancelled cases / scheduled cases)
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m         // - Average case duration by procedure type
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m         // - Peak demand days (days where cases exceeded block capacity)
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m         utilization[service] = {
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m             allocated_minutes_per_week:  sum of block durations assigned to service,
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m             used_minutes_per_week:       average actual minutes used per week,
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m             utilization_rate:            used / allocated,
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m             cancellation_rate:           cancelled / scheduled,
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m             overflow_cases_per_week:     cases that couldn't fit in allocated blocks,
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m             avg_case_duration:           mean duration across all case types,
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m             case_volume_trend:           month-over-month volume change
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m     RETURN utilization
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m **Step 2: Forecast demand by service.** Historical utilization tells you what happened. Forecasting tells you what's coming. A service that hired two new surgeons last month will have higher demand next quarter than their trailing average suggests. A service losing a surgeon to retirement will have lower demand. The forecasting model should incorporate both historical trends and known future events (new hires, retirements, program expansions, seasonal patterns). The output is a predicted weekly case-hour demand per service for the planning horizon.
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m FUNCTION forecast_demand(utilization_history, planning_horizon_weeks):
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m     // For each surgical service, predict future weekly demand in OR-hours.
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m     // Uses a time-series model trained on historical volume data.
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m     forecasts = empty map
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m     FOR each service in utilization_history:
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m         // Prepare feature vector:
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m         // - Historical weekly case hours (trailing 2 years)
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m         // - Seasonal indicators (month, day-of-week patterns)
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m         // - Known future events (surgeon additions/departures, program changes)
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m         // - Trend component (is volume growing or shrinking?)
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m         features = assemble_features(service, utilization_history)
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m         // Call the trained forecasting model.
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m         // Returns point estimate + confidence interval for each future week.
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m         prediction = invoke SageMaker endpoint with features
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m         forecasts[service] = {
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m             predicted_hours_per_week:  prediction.point_estimate,
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m             confidence_interval_low:   prediction.p10,    // 10th percentile
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m             confidence_interval_high:  prediction.p90,    // 90th percentile
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m             trend_direction:           prediction.trend   // growing, stable, declining
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m     RETURN forecasts
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m **Step 3: Assemble constraints.** This is where the problem gets real. Constraints come from multiple sources: equipment inventories, staffing models, surgeon preferences, contractual agreements, and political realities. Each constraint type maps to a mathematical inequality or equality in the MIP formulation. Getting constraints wrong (too tight and the problem is infeasible; too loose and the solution is impractical) is the most common failure mode. Build the constraint set iteratively with clinical operations leadership.
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m FUNCTION assemble_constraints(or_inventory, staffing, service_requirements):
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m     constraints = empty list
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m     // Hard constraint: each block assigned to exactly one service (or unblocked).
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m     // This is the fundamental structure of the problem.
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m     FOR each block in all_available_blocks:
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m         add constraint: sum of assignment variables for this block == 1
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m     // Hard constraint: OR-specific requirements.
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m     // Some services can only use certain ORs (equipment, size, location).
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m     FOR each service in services:
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m         IF service has required_or_types:
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m             add constraint: service can only be assigned to blocks in qualifying ORs
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m     // Hard constraint: staffing limits.
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m     // Only N specialized staff available per day for certain service types.
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m     FOR each day in planning_horizon:
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m         FOR each staff_type in specialized_staff:
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m             add constraint: total blocks requiring staff_type on this day <= available_count
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m     // Soft constraint (penalty in objective): minimum allocation guarantees.
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m     // Services have contractual or political minimums. Violating them is possible
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m     // but incurs a heavy penalty in the objective function.
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m     FOR each service in services:
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m         IF service has minimum_blocks_per_week:
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m             add soft constraint with penalty: allocation >= minimum
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m     // Soft constraint: change limits from current schedule.
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m     // No service should lose more than 20% of current allocation in one cycle.
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m     // This prevents politically explosive reallocations.
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m     FOR each service in services:
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m         current_allocation = lookup current block count for service
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m         add constraint: new_allocation >= 0.8 * current_allocation
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m     // Hard constraint: equipment conflicts.
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m     // Limited equipment means limited simultaneous use.
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m     FOR each equipment_type in shared_equipment:
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m         FOR each time_slot in schedule:
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m             add constraint: services needing this equipment in this slot <= equipment_count
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m     RETURN constraints
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m **Step 4: Formulate and solve the MIP.** With demand forecasts and constraints assembled, build the mathematical program and hand it to the solver. The objective function balances utilization (fill the blocks) with equity (don't starve any service) and revenue (weight high-revenue services appropriately). The solver explores the solution space and returns the optimal allocation, or the best feasible solution found within the time limit.
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m FUNCTION solve_block_schedule(forecasts, constraints, current_schedule):
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m     // Define decision variables: binary x[service][block] = 1 if service gets block.
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m     variables = create binary variable for each (service, block) pair
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m     // Define objective function: maximize weighted utilization.
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m     // Weight each assignment by: predicted demand fit * revenue weight * equity factor.
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m     objective = MAXIMIZE sum over all (service, block) pairs of:
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m         x[service][block] * (
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m             demand_fit_score(forecasts[service], block_capacity)  // how well does demand match capacity?
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m             * revenue_weight[service]                              // higher-revenue services get slight preference
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m             * equity_factor[service]                               // services below fair share get a boost
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m     // Add all constraints from Step 3.
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m     FOR each constraint in constraints:
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m         add constraint to model
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m     // Solve with time limit.
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m     // For quarterly planning, we can afford to wait minutes.
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m     // Set a time limit to prevent runaway solves on pathological instances.
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m     solution = invoke solver with:
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m         model      = (variables, objective, constraints),
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m         time_limit = 600 seconds,    // 10 minutes max
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m         gap_limit  = 0.01            // stop if within 1% of proven optimal
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m     // Extract the solution: which service gets which block.
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m     IF solution.status == OPTIMAL or FEASIBLE:
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m         schedule = empty map
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m         FOR each (service, block) pair where x[service][block] == 1:
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m             schedule[block] = service
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m         RETURN schedule, solution.objective_value, solution.gap
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m     ELSE:
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m         // Infeasible: constraints are too tight. Log which constraints conflict.
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m         RETURN null, identify_conflicting_constraints(model)
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m **Step 5: Evaluate and present results.** The solver output is a raw allocation. Before presenting it to stakeholders, compute the impact metrics: how does this compare to the current schedule? Which services gain time, which lose time? What's the projected utilization improvement? What's the revenue impact? Present this as a clear before/after comparison that decision-makers can evaluate without understanding the math.
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m FUNCTION evaluate_schedule(proposed_schedule, current_schedule, forecasts):
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m     // Compare proposed vs. current allocation for each service.
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m     comparison = empty list
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m     FOR each service in all_services:
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m         current_blocks = count blocks assigned to service in current_schedule
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m         proposed_blocks = count blocks assigned to service in proposed_schedule
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m         // Calculate projected utilization under new schedule.
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m         projected_utilization = forecasts[service].predicted_hours / (proposed_blocks * block_duration)
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m         current_utilization = historical_utilization[service]
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m         comparison.append({
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m             service:                 service,
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m             current_blocks:          current_blocks,
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m             proposed_blocks:         proposed_blocks,
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m             change:                  proposed_blocks - current_blocks,
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m             change_percent:          (proposed - current) / current * 100,
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m             projected_utilization:   projected_utilization,
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m             current_utilization:     current_utilization,
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m             utilization_improvement: projected_utilization - current_utilization,
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m             estimated_revenue_impact: calculate_revenue_delta(service, change)
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m         })
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m     // Aggregate metrics for the executive summary.
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m     summary = {
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m         total_utilization_current:   weighted average of current utilizations,
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m         total_utilization_proposed:  weighted average of projected utilizations,
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m         total_revenue_impact:        sum of revenue deltas,
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m         services_gaining_time:       count where change > 0,
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m         services_losing_time:        count where change < 0,
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m         services_unchanged:          count where change == 0
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m     // Store results for dashboard presentation.
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m     write comparison and summary to DynamoDB "schedule-proposals" table
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m     RETURN comparison, summary
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m **Step 6: Block release and reallocation (ongoing).** Once the master schedule is live, blocks will go unused. A surgeon is on vacation. Cases got cancelled. A service knows they won't fill next Tuesday's block. The release engine runs daily (or on-demand when a service releases a block) and offers released time to services with overflow demand. This is a much simpler optimization: given a single released block, which service benefits most from having it?
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m FUNCTION reallocate_released_block(released_block, waitlist):
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m     // A block has been released back to the pool.
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m     // Find the best service to give it to based on current demand overflow.
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m     // Score each service on the waitlist.
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m     scores = empty list
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m     FOR each service in waitlist:
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m         IF service can use this OR (equipment, staffing checks pass):
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m             score = (
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m                 service.overflow_cases_waiting * urgency_weight
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m                 + service.revenue_per_case * revenue_weight
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m                 + service.days_since_last_allocation * fairness_weight
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m             )
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m             scores.append({ service: service, score: score })
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m     // Assign to highest-scoring eligible service.
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m     IF scores is not empty:
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m         winner = service with highest score in scores
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m         update DynamoDB: assign released_block to winner
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m         notify winner's scheduling coordinator
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m         log reallocation event for audit
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m         RETURN winner
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m     ELSE:
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m         // No eligible takers. Mark as open time for add-on cases.
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m         update DynamoDB: mark released_block as "open"
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m         RETURN null
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m ### Expected Results
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m **Sample output for a 20-OR hospital, quarterly optimization:**
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m ```json
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m {
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m   "optimization_run_id": "opt-2026-Q3-001",
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m   "solve_time_seconds": 47.3,
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m   "optimality_gap": "0.3%",
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m   "planning_horizon": "2026-Q3 (13 weeks)",
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m   "summary": {
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m     "total_blocks_per_week": 160,
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m     "allocated_blocks": 148,
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m     "open_time_blocks": 12,
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m     "projected_utilization": 0.82,
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m     "current_utilization": 0.68,
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m     "utilization_improvement": "+14 percentage points",
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m     "estimated_annual_revenue_impact": "$4.2M"
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m   },
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m   "service_changes": [
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m     {"service": "Orthopedics", "current": 28, "proposed": 34, "change": "+6", "reason": "Two new surgeons, 3-week backlog"},
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m     {"service": "Cardiac Surgery", "current": 24, "proposed": 20, "change": "-4", "reason": "Volume decline post-retirement"},
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m     {"service": "General Surgery", "current": 20, "proposed": 22, "change": "+2", "reason": "Consistent overflow"},
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m     {"service": "Neurosurgery", "current": 16, "proposed": 16, "change": "0", "reason": "Demand matches allocation"},
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m     {"service": "Urology", "current": 12, "proposed": 14, "change": "+2", "reason": "Growing robotic program"}
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m   ]
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m **Performance benchmarks:**
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m | Metric | Typical Value |
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m |--------|---------------|
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m | Solve time (20 ORs, quarterly) | 30–120 seconds |
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m | Solve time (40 ORs, quarterly) | 2–15 minutes |
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m | Optimality gap achieved | < 1% |
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m | Utilization improvement | 8–15 percentage points |
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m | Revenue impact (mid-size hospital) | $2–8M annually |
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m | Block release reallocation time | < 5 seconds |
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m | Demand forecast accuracy (MAPE) | 10–20% |
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m **Where it struggles:** Hospitals with highly political allocation processes where mathematical optimality is overridden by relationship dynamics. Situations where demand forecasting is unreliable (new programs with no history, post-pandemic volume uncertainty). Very large academic medical centers with 50+ ORs and complex subspecialty requirements that push solve times into hours.
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m ## The Honest Take
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m Here's what nobody tells you about OR block scheduling optimization: the math is the easy part. Getting a solver to produce an optimal schedule takes a few weeks of engineering. Getting a hospital to actually implement that schedule takes 6-12 months of political negotiation.
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m The first time you run the optimizer and it says "cardiac surgery should lose 4 blocks," you'll learn very quickly that the chief of cardiac surgery sits on the hospital board. Your mathematically optimal solution needs to survive a committee meeting. Build in change limits (no service loses more than X% per cycle) and present results as recommendations, not mandates.
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m The demand forecasting piece is where most implementations underperform. Trailing averages miss structural changes (new surgeon hires, program launches). But sophisticated forecasting models need data that hospitals often don't have in clean, accessible form. Start simple (12-month trailing average with manual adjustments for known changes) and add complexity only when the simple model demonstrably fails.
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m The block release mechanism is actually where you get the fastest ROI. Most hospitals have 15-25% of blocks going unused in any given week. Just getting those released and reallocated (even with simple rules, no optimization required) can improve utilization by 5-8 percentage points. Build that first, prove value, then tackle the harder quarterly reallocation problem.
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m One thing that surprised me: the constraint that matters most isn't equipment or staffing. It's surgeon preference patterns. Surgeons are creatures of habit. They want their same day, same OR, same start time. Disrupting that pattern (even for a mathematically better schedule) creates friction that can tank adoption. Weight "schedule stability" heavily in your objective function, at least for the first few optimization cycles.
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m ## Variations and Extensions
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m **Stochastic optimization for demand uncertainty.** Instead of optimizing against point forecasts, formulate a stochastic program that considers multiple demand scenarios. The solution is robust across scenarios rather than optimal for one. This matters when demand is volatile (post-pandemic recovery, new market entrants). The tradeoff: stochastic formulations are harder to solve and harder to explain to stakeholders.
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m **Multi-objective optimization with Pareto frontiers.** Rather than collapsing utilization, revenue, equity, and surgeon satisfaction into a single weighted objective, solve the multi-objective problem and present the Pareto frontier to decision-makers. "Here are the tradeoffs: you can have 85% utilization with moderate equity, or 78% utilization with perfect equity. Which do you prefer?" This makes the tradeoffs explicit rather than hiding them in weight choices.
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m **Rolling horizon with learning.** Instead of a fixed quarterly cycle, implement a rolling optimization that adjusts allocations monthly based on actual utilization vs. forecast. Services that consistently underutilize their blocks gradually lose time; services with overflow gradually gain it. This reduces the political shock of large quarterly changes and creates a continuous improvement dynamic.
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m ## Related Recipes
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m - **Recipe 14.1 (Appointment Slot Optimization):** Optimizes at the clinic scheduling level; complementary to OR block scheduling for outpatient surgical procedures
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m - **Recipe 14.4 (Nurse Staffing Optimization):** Staffing constraints feed directly into OR block scheduling; the two should be co-optimized or at least coordinated
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m - **Recipe 14.7 (OR Case Sequencing):** Operates within the blocks allocated by this recipe; optimizes the day-of case order within a given block
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m - **Recipe 12.5 (Hospital Census Forecasting):** Downstream surgical volume affects inpatient census; block schedule changes should inform census forecasts
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m - **Recipe 7.7 (Length of Stay Prediction):** Post-surgical LOS predictions help forecast downstream bed demand from OR schedule changes
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m ## Additional Resources
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m **AWS Documentation:**
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m - [Amazon SageMaker Developer Guide](https://docs.aws.amazon.com/sagemaker/latest/dg/whatis.html)
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m - [Amazon SageMaker Built-in Algorithms: DeepAR Forecasting](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html)
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m - [Amazon ECS on Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m - [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html)
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m **Optimization Solver Resources:**
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m - [HiGHS Optimization Solver](https://highs.dev/) (open-source, high-performance LP/MIP solver)
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m - [Google OR-Tools](https://developers.google.com/optimization) (open-source optimization suite with Python bindings)
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m - [PuLP: Linear Programming in Python](https://coin-or.github.io/pulp/) (Python modeling library compatible with multiple solvers)
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    501[0m:[38;5;10m[49m **Healthcare OR Scheduling Literature:**
+[0m[49m[38;5;10m+    502[0m:[38;5;10m[49m - TODO: Verify and add specific published references on OR block scheduling optimization approaches
+[0m[49m[38;5;10m+    503[0m:[38;5;10m[49m - TODO: Verify link to AORN (Association of periOperative Registered Nurses) scheduling guidelines
+[0m[49m[38;5;10m+    504[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    505[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    506[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    507[0m:[38;5;10m[49m ## Estimated Implementation Time
+[0m[49m[38;5;10m+    508[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    509[0m:[38;5;10m[49m | Phase | Duration |
+[0m[49m[38;5;10m+    510[0m:[38;5;10m[49m |-------|----------|
+[0m[49m[38;5;10m+    511[0m:[38;5;10m[49m | **Basic** (single-hospital, batch optimization with open-source solver, manual constraint entry) | 6–8 weeks |
+[0m[49m[38;5;10m+    512[0m:[38;5;10m[49m | **Production-ready** (demand forecasting, automated constraint assembly, stakeholder dashboard, release engine) | 4–6 months |
+[0m[49m[38;5;10m+    513[0m:[38;5;10m[49m | **With variations** (stochastic optimization, multi-objective, rolling horizon, multi-site) | 8–12 months |
+[0m[49m[38;5;10m+    514[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    515[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    516[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    517[0m:[38;5;10m[49m **Tags:** `optimization` `operations-research` `scheduling` `mixed-integer-programming` `OR-utilization` `surgical-services` `resource-allocation` `healthcare-operations`
+[0m[49m[38;5;10m+    518[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    519[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    520[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    521[0m:[38;5;10m[49m | [← 14.4: Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization) | [Chapter 14 Index](chapter14-index) | [14.6: Patient Flow / Bed Assignment →](chapter14.06-patient-flow-bed-assignment) |
+[0m[49m[38;5;10m+    522[0m:[38;5;10m[49m |:---|:---:|---:|
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me update the [3mSidebar.md to include the new recipe:[0m[0m
+I'll modify the following file: [38;5;141m_Sidebar.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  0, 0[0m:[39m[49m * [14.4 — Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization)
+[0m[49m[39m  1, 1[0m:[39m[49m   * [Python Example](chapter14.04-python-example)
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m * [14.5 — Operating Room Block Scheduling](chapter14.05-or-block-scheduling)
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m   * [Python Example](chapter14.05-python-example)
+[0m[49m[39m  2, 4[0m:[39m[49m 
+[0m[49m[39m  3, 5[0m:[39m[49m ---
+[0m[K
+Updating: [38;5;141m_Sidebar.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me verify the file was created correctly by checking the beginning and end:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m, from line [38;5;141m1[0m to [38;5;141m10[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m, from line [38;5;141m513[0m to end of file
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m547 bytes[0m from /tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m522 bytes[0m from /tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe recipe is complete. Let me do a quick check for any em dashes that might have slipped in:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes. The recipe is complete and follows all style guidelines.[0m[0m
+[0m[0m
+[1mSummary of what was created:[22m[0m[0m
+[0m[0m
+- **[38;5;10mchapter14.05-or-block-scheduling.md[0m** - Full recipe covering OR block scheduling optimization with:[0m[0m
+  - Passionate problem statement about OR underutilization and the political dynamics of block allocation[0m[0m
+  - Deep technology section covering MIP formulation, solver selection (commercial vs. open-source), batch vs. real-time tradeoffs, and why the problem is harder than it sounds[0m[0m
+  - General architecture pattern (vendor-agnostic)[0m[0m
+  - AWS implementation using SageMaker (demand forecasting), ECS Fargate (solver execution), Lambda (orchestration), DynamoDB (schedule storage), S3 (data lake), and EventBridge (scheduling)[0m[0m
+  - 6-step pseudocode walkthrough with generous inline comments[0m[0m
+  - Expected results with sample JSON output and performance benchmarks[0m[0m
+  - Honest take section covering political realities, demand forecasting challenges, and the "build release engine first" advice[0m[0m
+  - Three variations (stochastic, multi-objective Pareto, rolling horizon)[0m[0m
+  - Related recipes, resources, implementation timeline, and tags[0m[0m
+[0m[0m
+- **[38;5;10m_Sidebar.md[0m** updated with the new recipe entry[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 7.60 • Time: 3m 53s
+
+[0m[1G[0m[0m[?25hTwo TODOs were inserted for claims needing verification (healthcare OR scheduling literature references).[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: '/tmp/ralph-worktrees/iter-1043/chapters/14-optimization/recipe-05-or-block-scheduling.md' does not exist
+Searching for files: [38;5;141m**/14-optimization/**[0m in [38;5;141m/tmp/ralph-worktrees/iter-1043[0m[38;5;244m (using tool: glob)[0m
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244m**/14-optimization/**[0m under /tmp/ralph-worktrees/iter-1043
+[38;5;244m - Completed in 0.12s[0m
+
+Searching for files: [38;5;141m**/*or-block*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1043[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1043
+[38;5;244m - Completed in 0.15s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m36382 bytes[0m from /tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to check for em dashes in the content and verify all required sections are present.[0m[0m
+[0m[0m
+Let me check for em dashes (the character [38;5;10m—[0m):[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1043/chapter14.05-or-block-scheduling.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes found. Now let me verify the required sections are present by checking the structure:[0m[0m
+[0m[0m
+[1mChecklist:[22m[0m[0m
+1. ✅ [1mThe Problem[22m - Present (detailed section on OR scheduling inefficiency)[0m[0m
+2. ✅ [1mThe Technology[22m - Present ("The Technology: Mathematical Optimization for Scheduling")[0m[0m
+3. ✅ [1mGeneral Architecture Pattern[22m - Present (subsection within The Technology with diagram)[0m[0m
+4. ✅ [1mAWS Implementation with pseudocode walkthrough[22m - Present ("The AWS Implementation" with 6-step walkthrough including pseudocode blocks)[0m[0m
+5. ✅ [1mThe Honest Take[22m - Present (candid section on political realities and practical advice)[0m[0m
+6. ✅ [1mVariations[22m - Present ("Variations and Extensions" with stochastic, multi-objective, rolling horizon)[0m[0m
+7. ✅ [1mNavigation links[22m - Present (bottom of file with prev/index/next links)[0m[0m
+8. ✅ [1mNo em dashes[22m - Confirmed (search returned empty)[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.20 • Time: 26s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Recipe contains all required sections: The Problem, The Technology (with General Architecture Pattern subsection), AWS Implementation with 6-step pseudocode walkthrough, The Honest Take, Variations and Extensions, and navigation links. No em dashes found in the text. Prose matches the project's direct, practitioner-focused voice with conversational tone and concrete examples."}
