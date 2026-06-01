@@ -51,7 +51,7 @@ For binary outcomes (response/no response), the posterior is typically a Beta di
 
 **Multiple endpoints.** Real trials rarely have a single binary outcome. You might care about tumor response AND progression-free survival AND quality of life AND toxicity. Combining these into a single "reward" signal requires careful clinical judgment and pre-specification in the protocol.
 
-**Type I error control.** Here's the statistical landmine: adaptive randomization can inflate the Type I error rate (false positive rate) if you're not careful. When allocation probabilities depend on observed outcomes, the usual test statistics don't follow their assumed distributions. You need either simulation-based calibration of your test statistic or specialized methods (like the stratified exact test) that account for the adaptive design.
+**Type I error control.** Here's the statistical landmine: adaptive randomization can inflate the Type I error rate (false positive rate) if you're not careful. Once allocation probabilities depend on observed outcomes, the usual test statistics stop following their assumed distributions. You need either simulation-based calibration of your test statistic or specialized methods (like the stratified exact test) that account for the adaptive design.
 
 **Regulatory acceptance.** The FDA has issued guidance on adaptive designs (2019), and they're generally supportive of response-adaptive randomization. But "supportive" doesn't mean "rubber stamp." You need to pre-specify the adaptation rules, demonstrate through simulation that Type I error is controlled, and show that the design doesn't introduce operational bias. The EMA has similar expectations. This is not a "move fast and break things" domain.
 

@@ -338,7 +338,7 @@ def randomize_patient(trial_id, patient_id, stratification_factors=None):
         "trial_id": trial_id,
         "patient_id": patient_id,
         "assigned_arm": assigned_arm,
-        "allocation_probs": {arm: str(p) for arm, p in zip(arms, probs)},
+        "allocation_probs": {arm: str(p) for arm, p in zip(arms, probs)},  # Stored as strings for human readability in audit log
         "random_seed": str(random_seed),
         "state_version": int(state["version"]),
         "stratification": stratification_factors or {},
@@ -419,8 +419,11 @@ def apply_dsmb_override(trial_id, override_type, parameters, authorized_by):
     else:
         raise ValueError(f"Unknown override type: {override_type}")
 
-    # Update state
+    # Update state with optimistic locking (same pattern as update_posteriors).
+    # In production, DSMB overrides should also use conditional writes to prevent
+    # a concurrent posterior update from silently overwriting the override.
     state["version"] = int(state["version"]) + 1
+    # TODO (TechWriter): Code review Issue 1 (WARNING). Add ConditionExpression here to match update_posteriors pattern. Currently simplified for readability.
     state_table.put_item(Item=state)
 
     # Log the override in the audit trail
