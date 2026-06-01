@@ -129,11 +129,11 @@ The key architectural decision is whether to use the graph as the primary store 
 
 **Amazon S3 for staging and bulk load.** Neptune's bulk loader reads from S3. The ETL pipeline writes reconciled node and edge files to S3 in CSV format, then triggers Neptune's bulk load API. S3 also serves as the archive for historical snapshots of the directory (useful for auditing network adequacy over time).
 
-**AWS Lambda for the query API.** A lightweight service layer that receives search requests, constructs Gremlin or openCypher queries, executes them against Neptune, and returns formatted results. Lambda's concurrency model handles bursty search traffic (Monday mornings when patients are looking for new providers) without provisioning for peak.
+**AWS Lambda for the query API.** A lightweight service layer that receives search requests, constructs Gremlin or openCypher queries, executes them against Neptune, and returns formatted results. Lambda's concurrency model handles bursty search traffic (Monday mornings when patients are looking for new providers) without provisioning for peak. Point the query Lambda at Neptune's reader endpoint for read-replica scaling; point the update Lambda at the writer endpoint.
 
 **Amazon API Gateway for the REST interface.** Exposes the query API to consuming applications with authentication, rate limiting, and request validation. Supports both synchronous queries (patient portal search) and asynchronous patterns (batch referral matching).
 
-**Amazon OpenSearch Service for full-text and geospatial search.** Neptune excels at graph traversal but isn't optimized for full-text search ("find providers whose name contains 'Patel'") or complex geospatial queries. OpenSearch complements Neptune by handling the text and geo filtering, with results fed back into graph traversals for relationship-based refinement.
+**Amazon OpenSearch Service for full-text and geospatial search.** Neptune excels at graph traversal but isn't optimized for full-text search ("find providers whose name contains 'Patel'") or complex geospatial queries. OpenSearch complements Neptune by handling the text and geo filtering, with results fed back into graph traversals for relationship-based refinement. Deploy OpenSearch in VPC mode with fine-grained access control (FGAC) enabled, since the index contains provider PII (names, addresses, phone numbers). Scope the resource-based access policy to authorized Lambda roles only, and enable audit logging for compliance.
 
 ### Architecture Diagram
 
@@ -168,13 +168,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, AWS Glue, Amazon S3, AWS Lambda, Amazon API Gateway, Amazon OpenSearch Service |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `es:ESHttp*` (scoped to domain) |
+| **IAM Permissions** | Query Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:connect` (scoped to cluster). Ingest/Update Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:connect`. Bulk Loader role: `neptune-db:StartLoaderJob`, `neptune-db:GetLoaderJobStatus`, plus `s3:GetObject` on the load bucket. All Lambdas: `s3:GetObject`, `s3:PutObject` (scoped to relevant buckets). Glue: `glue:StartJobRun`. OpenSearch: `es:ESHttp*` (scoped to domain). Enable Neptune IAM database authentication. |
 | **BAA** | AWS BAA signed (provider directories contain provider PII; when linked to member data, PHI applies) |
 | **Encryption** | Neptune: encryption at rest enabled (must be set at cluster creation, cannot be changed later); S3: SSE-KMS; OpenSearch: encryption at rest and node-to-node encryption; all API calls over TLS |
-| **VPC** | Neptune requires VPC deployment. Lambda must be in the same VPC with appropriate security groups. VPC endpoints for S3 and CloudWatch Logs. |
-| **CloudTrail** | Enabled: log all Neptune, S3, and Glue API calls |
-| **Sample Data** | NPPES NPI public data file (freely available from CMS). Synthetic network and location data for testing. Never use real member-provider assignment data in dev. |
-| **Cost Estimate** | Neptune db.r5.large: ~$0.58/hr (~$420/mo). Glue: ~$0.44/DPU-hour for ETL jobs. OpenSearch: ~$0.24/hr for a small domain. Lambda and API Gateway negligible at moderate query volumes. |
+| **VPC** | Neptune requires VPC deployment. Lambda must be in the same VPC with security groups allowing outbound to Neptune (port 8182) and OpenSearch (port 443). VPC endpoints for S3 (gateway type) and CloudWatch Logs (interface type). If Neptune IAM auth is enabled, add an STS interface endpoint. OpenSearch should be deployed in VPC mode with a resource-based access policy scoped to the query Lambda's IAM role. |
+| **CloudTrail** | Enabled: log all Neptune, S3, and Glue API calls. Additionally, the query Lambda should log each search request (timestamp, requesting application, query parameters) to CloudWatch Logs for compliance auditing and scraping detection. |
+| **Sample Data** | NPPES NPI public data file (CMS publishes this as a free download). Synthetic network and location data for testing. Never use real member-provider assignment data in dev. |
+| **Cost Estimate** | Neptune db.r5.large: ~$0.58/hr (~$420/mo). Glue: ~$0.44/DPU-hour for ETL jobs. OpenSearch: ~$0.24/hr for a small domain. Lambda and API Gateway negligible at moderate query volumes. For variable workloads, Neptune Serverless can reduce costs by scaling capacity based on demand during off-hours. |
 
 ### Ingredients
 
@@ -188,6 +188,8 @@ flowchart TD
 | **Amazon OpenSearch Service** | Full-text search and geospatial filtering to complement graph traversal |
 | **AWS KMS** | Encryption key management for Neptune, S3, and OpenSearch |
 | **Amazon CloudWatch** | Monitoring, query latency metrics, and alerting on stale data |
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add specific CloudWatch custom metrics to the architecture: last successful bulk load timestamp (alert if >48h), percentage of provider records updated in last 30 days, and count of edges with term_date in the past. Consider adding a health endpoint on the query API that returns graph freshness metadata. -->
 
 ### Code
 
@@ -305,7 +307,7 @@ FUNCTION ingest_provider_data(sources):
     RETURN file_paths  // ready for Neptune bulk load
 ```
 
-**Step 3: Load the graph.** Neptune's bulk loader is the efficient path for initial loads and large batch updates. It reads CSV files from S3 in a specific format (node files with ~id, ~label, and property columns; edge files with ~id, ~from, ~to, ~label, and property columns). For incremental updates (a provider changes their accepting-new-patients status), use direct Gremlin or openCypher mutations rather than re-loading the entire graph. The bulk loader is idempotent for nodes (same ID overwrites), but edges need careful handling to avoid duplicates.
+**Step 3: Load the graph.** Neptune's bulk loader is the efficient path for initial loads and large batch updates. It reads CSV files from S3 in a specific format (node files with ~id, ~label, and property columns; edge files with ~id, ~from, ~to, ~label, and property columns). For incremental updates (a provider changes their accepting-new-patients status), use direct Gremlin or openCypher mutations rather than re-loading the entire graph. The bulk loader is idempotent for nodes (same ID overwrites), but edges need careful handling to avoid duplicates: generate deterministic edge IDs (for example, a hash of from_id + to_id + edge_label + effective_date) so that re-loading the same file doesn't create duplicate edges.
 
 ```
 FUNCTION load_graph(node_files, edge_files, neptune_endpoint):
@@ -349,6 +351,9 @@ FUNCTION search_providers(params):
     // For most queries, geography + specialty is the narrowest entry point.
 
     // Step 4a: Geographic filtering (via OpenSearch or pre-computed geo edges)
+    // If OpenSearch is unavailable, fall back to pre-computed ZIP-to-service-area
+    // edges in Neptune. Implement a circuit breaker with a 2-second timeout so
+    // an OpenSearch outage doesn't take down the entire search path.
     nearby_locations = query OpenSearch:
         filter by geo_distance(params.zip_code, params.max_distance_miles)
     location_ids = extract IDs from nearby_locations
@@ -410,6 +415,10 @@ FUNCTION get_specialty_and_subspecialties(specialty_code):
 ```
 FUNCTION apply_incremental_update(change_event):
     // change_event contains: entity_type, entity_id, change_type, new_values
+
+    // Validate: confirm the event source is authorized and the change magnitude
+    // is within expected bounds. A single event terminating 1,000 providers
+    // should trigger an alert, not execute silently.
 
     IF change_event.entity_type == "provider":
         IF change_event.change_type == "property_update":
