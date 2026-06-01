@@ -388,6 +388,8 @@
   * [Python Example](chapter15.06-python-example)
 * [15.7 — Chronic Disease Treatment Personalization](chapter15.07-chronic-disease-treatment-personalization)
   * [Python Example](chapter15.07-python-example)
+* [15.8 — Chemotherapy Dose Optimization](chapter15.08-chemotherapy-dose-optimization)
+  * [Python Example](chapter15.08-python-example)
 
 ---
 
