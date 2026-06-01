@@ -1,6 +1,6 @@
 # Recipe 14.4: Nurse Staffing Optimization
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$50–200/month (solver compute)
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$100–200/month (solver compute)
 
 ---
 
