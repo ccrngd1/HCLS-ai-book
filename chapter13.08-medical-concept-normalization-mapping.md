@@ -116,15 +116,17 @@ At a conceptual level, a concept normalization system has these components:
 
 **Amazon Neptune for the knowledge graph store.** Neptune is AWS's managed graph database service, supporting both the property graph model (via openCypher/Gremlin) and RDF (via SPARQL). For terminology mapping, the property graph model is the better fit: concepts are nodes with properties (code, display name, terminology, version, status), and relationships are edges with properties (mapping type, confidence, provenance, effective date). Neptune handles the traversal-heavy query patterns that terminology navigation demands. It's also on the HIPAA eligible services list, which matters because concept mappings themselves aren't PHI, but the queries against them (which patient has which condition) can be.
 
-**AWS Glue for terminology ingestion.** Terminology files come in various formats (RRF for UMLS/RxNorm, RF2 for SNOMED, CSV for ICD-10, custom formats for LOINC). Glue ETL jobs handle the parsing, transformation, and bulk loading into Neptune. The jobs run on each terminology release, which means monthly at most. Glue's serverless Spark environment handles the large file sizes (UMLS is multiple gigabytes) without requiring persistent infrastructure.
+**AWS Glue for terminology ingestion.** Terminology files come in various formats (RRF for UMLS/RxNorm, RF2 for SNOMED, CSV for ICD-10, custom formats for LOINC). Glue ETL jobs handle the parsing and transformation, writing Neptune bulk loader CSV files to S3. The Neptune bulk loader then reads directly from S3 using its own IAM role (Neptune fetches the files, not Glue). This means Neptune's VPC needs an S3 Gateway endpoint, and Neptune's IAM role needs `s3:GetObject` on the processed files bucket. The jobs run on each terminology release, which means monthly at most. Glue's serverless Spark environment handles the large file sizes (UMLS is multiple gigabytes) without requiring persistent infrastructure.
 
 **Amazon ElastiCache (Redis) for normalization caching.** Point lookups against Neptune are fast (single-digit milliseconds for direct node lookups), but multi-hop traversals can take longer. For the most common normalization queries (single concept to canonical form), a Redis cache in front of Neptune reduces latency to sub-millisecond and protects Neptune from query storms during batch processing runs.
 
-**AWS Lambda + API Gateway for the normalization API.** The normalization service is a stateless lookup: receive a concept, query the graph (or cache), return the mappings. Lambda handles this cleanly with automatic scaling. API Gateway provides the REST interface, request validation, and throttling.
+**AWS Lambda + API Gateway for the normalization API.** The normalization service is a stateless lookup: receive a concept, query the graph (or cache), return the mappings. Lambda handles this cleanly with automatic scaling. API Gateway provides the REST interface, request validation, and throttling. Deploy as a private API (VPC endpoint access only) with IAM authorization (SigV4) for service-to-service calls. API keys alone are insufficient for authorization; they're for throttling, not security.
 
 **Amazon S3 for terminology file staging.** Raw terminology downloads land in S3 before Glue processes them. S3 also stores the processed graph load files (Neptune bulk loader format) and serves as the audit trail for which terminology versions have been ingested.
 
 **AWS Step Functions for ingestion orchestration.** A terminology update involves multiple steps: download the new release, validate file integrity, run the Glue ETL, bulk-load into Neptune, validate the load, warm the cache, and notify consumers. Step Functions orchestrates this sequence with error handling and retry logic.
+
+**Design principle: PHI boundary.** The normalization service is a reference data service, not a clinical data service. It accepts only terminology codes and returns mappings. It never accepts patient identifiers. Correlation with patient records happens in the calling system, not here. API Gateway request validation should reject requests containing fields outside the defined schema. Lambda logging should use structured logging with an explicit allowlist of loggable fields (code, terminology, timestamp) and never log caller-supplied context. Neptune parameterized queries (shown in the pseudocode below) prevent query-string injection of arbitrary data.
 
 ### Architecture Diagram
 
@@ -150,14 +152,18 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, AWS Glue, Amazon ElastiCache (Redis), AWS Lambda, API Gateway, Amazon S3, AWS Step Functions |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `elasticache:*` (scoped to cluster), `lambda:InvokeFunction`, `states:StartExecution` |
+| **IAM Permissions** | `neptune-db:*` (scoped to cluster ARN), `glue:StartJobRun` (scoped to job names), `s3:GetObject` on `arn:aws:s3:::terminology-raw/*`, `s3:PutObject` on `arn:aws:s3:::terminology-processed/*`, `elasticache:*` (scoped to cluster ARN), `lambda:InvokeFunction` (scoped to function ARN), `states:StartExecution` (scoped to state machine ARN) |
 | **BAA** | AWS BAA signed. Concept mappings themselves aren't PHI, but normalization queries in context (which patient maps to which concept) can constitute PHI. |
 | **Encryption** | Neptune: encryption at rest (enabled at cluster creation, cannot be added later). S3: SSE-KMS. ElastiCache: encryption at rest and in-transit. All API calls over TLS. |
-| **VPC** | Neptune requires VPC deployment. Lambda in same VPC with VPC endpoints for S3 and CloudWatch Logs. ElastiCache in same VPC. No public internet access to Neptune. |
+| **VPC** | Neptune requires VPC deployment. Lambda in same VPC with VPC endpoints for S3 and CloudWatch Logs. ElastiCache in same VPC. No public internet access to Neptune. Security groups: Lambda SG allows outbound 8182 to Neptune SG and outbound 6379 to ElastiCache SG; Neptune SG allows inbound 8182 from Lambda SG and Glue SG; ElastiCache SG allows inbound 6379 from Lambda SG. Neptune requires an S3 Gateway endpoint for bulk loader access. |
 | **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled for query-level audit trail. |
 | **Terminology Licenses** | UMLS license (free, requires registration with NLM). SNOMED CT (free in US via NLM). CPT (paid AMA license). ICD-10 (free from CMS). LOINC (free, requires registration). RxNorm (free via NLM). |
 | **Sample Data** | UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB). |
 | **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200–2,000/month for a basic deployment. |
+
+<!-- TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica. -->
+
+<!-- TODO (TechWriter): Expert review A-5 (MEDIUM). Add a fallback strategy for Neptune unavailability: if Neptune is unreachable, return cached results with a "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ deployment as the primary availability mechanism. -->
 
 ### Ingredients
 
@@ -296,11 +302,21 @@ FUNCTION create_cross_terminology_links(umls_concepts):
             // whether the mapping is exact, broader, narrower, or related.
             rel_type = determine_relationship_type(concept_a, concept_b, cui)
             
+            // Assign confidence based on relationship type.
+            // UMLS synonymy judgments have a known error rate of ~2-3%, so even
+            // exact matches don't get 1.0. Reserve 1.0 for manually curated mappings.
+            confidence = CASE rel_type:
+                "exact_match":   0.95
+                "broader_than":  0.80
+                "narrower_than": 0.80
+                "related_to":    0.60
+                DEFAULT:         0.50
+            
             append to cross_links: {
                 source:     concept_a,
                 target:     concept_b,
                 type:       rel_type,        // "exact_match", "broader_than", "narrower_than"
-                confidence: 1.0,             // UMLS CUI-based links are high confidence
+                confidence: confidence,      // Varies by relationship type; 1.0 reserved for curated mappings
                 provenance: "UMLS_CUI_" + cui
             }
     
@@ -373,7 +389,7 @@ FUNCTION normalize_concept(code, terminology, target_terminologies, version=null
 **Step 5: Hierarchy traversal for value set expansion.** Quality measures and clinical rules often reference value sets: "all codes that represent diabetes." This requires traversing the terminology hierarchy. In SNOMED CT, "Type 2 diabetes mellitus" (44054006) is-a "Diabetes mellitus" (73211009), which is-a "Disorder of glucose metabolism" (126877002). A value set defined at "Diabetes mellitus" needs to include all descendants. This step provides that expansion, which is computationally expensive for broad concepts but essential for correct quality measurement.
 
 ```
-FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_depth=5):
+FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_depth=5, max_results=10000):
     // Start with the root concept.
     // "Value set expansion" means: give me this concept and everything below it
     // in the hierarchy.
@@ -396,6 +412,13 @@ FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_
         ORDER BY depth ASC
     """, params={root_code, terminology, max_depth})
     
+    // Guard against runaway expansions. Broad concepts like "Clinical finding"
+    // (SNOMED 404684003) have hundreds of thousands of descendants.
+    truncated = false
+    IF length(descendants) > max_results:
+        descendants = descendants[0..max_results]
+        truncated = true
+    
     // For each descendant, also find cross-terminology mappings.
     // This gives you the full value set in all terminologies.
     expanded_set = [{code: root_code, terminology: terminology}]
@@ -414,9 +437,10 @@ FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_
         append cross_maps.mappings to expanded_set
     
     RETURN {
-        root:       {code: root_code, terminology: terminology},
-        total_concepts: length(expanded_set),
-        concepts:   expanded_set
+        root:            {code: root_code, terminology: terminology},
+        total_concepts:  length(expanded_set),
+        truncated:       truncated,
+        concepts:        expanded_set
     }
 ```
 
@@ -459,6 +483,8 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
     }
 ```
 
+<!-- TODO (TechWriter): Expert review A-1 (HIGH). Add a Step 7 pseudocode block for cache invalidation during terminology updates. After Neptune bulk load completes, compute the set of changed concept codes from the terminology delta and selectively delete corresponding Redis cache keys. For large deltas (annual ICD-10 update), flush the entire cache or implement a cache warming step for top-N queried concepts. -->
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune graph client, check out the [Python Example](chapter13.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -487,7 +513,7 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
       "terminology": "SNOMEDCT",
       "display": "Diabetes mellitus",
       "relationship_type": "broader_than",
-      "confidence": 1.0,
+      "confidence": 0.8,
       "provenance": "SNOMED_HIERARCHY"
     },
     {
