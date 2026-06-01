@@ -348,6 +348,8 @@
 #### Ch 14: Optimization / Operations Research
 
 * [Preface](chapter14-preface)
+* [14.1 — Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)
+  * [Python Example](chapter14.01-python-example)
 
 ---
 

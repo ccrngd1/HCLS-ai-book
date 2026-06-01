@@ -1,0 +1,641 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780290688286-000118-95cd94fd238dd699 iteration=1018 task_id=ch14-r01-draft persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/RECIPE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/STYLE-GUIDE.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/categories/14-optimization.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-1018/RECIPE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1018/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4249 bytes[0m from /tmp/ralph-worktrees/iter-1018/categories/14-optimization.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at a completed Chapter 1 recipe for reference on style and format:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m1[0m to [38;5;141m150[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m13791 bytes[0m from /tmp/ralph-worktrees/iter-1018/chapter01.01-insurance-card-scanning.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m150[0m to [38;5;141m450[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m20191 bytes[0m from /tmp/ralph-worktrees/iter-1018/chapter01.01-insurance-card-scanning.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a thorough understanding of the style, structure, and format. Let me also check the sidebar to understand the format:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/_Sidebar.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m19344 bytes[0m from /tmp/ralph-worktrees/iter-1018/_Sidebar.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have everything I need. Let me write the recipe for Chapter 14, Recipe 1: Appointment Slot Optimization.[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Recipe 14.1: Appointment Slot Optimization
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-200/month compute
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ## The Problem
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m Here's a scene that plays out at every outpatient clinic in the country: a scheduler stares at a template that says "30-minute slots, 8am to 5pm" and tries to fit a complex diabetic follow-up, a quick blood pressure recheck, and a new patient evaluation into the same rigid grid. The diabetic follow-up runs 45 minutes. The blood pressure recheck takes 10. The new patient needs a full hour. But the template doesn't care. Every slot is 30 minutes. So the follow-up runs over, the recheck patient waits 20 minutes for a 10-minute visit, and the new patient gets rushed.
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m This is not a scheduling problem. It's a template design problem.
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m Most clinics build their appointment templates once, based on gut feel and historical convention, and then never touch them again. "Dr. Martinez does 30-minute slots" becomes organizational gospel. Nobody asks whether 30 minutes is actually optimal for Dr. Martinez's patient mix, which skews heavily toward complex chronic disease management. Nobody models whether overbooking the 9am slots by one patient would recover the revenue lost to no-shows without creating unacceptable wait times.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m The numbers are genuinely painful. The average physician loses 14-18% of scheduled slots to no-shows and late cancellations. Clinics that don't overbook absorb that loss directly. Clinics that overbook uniformly create unpredictable wait times that drive patient dissatisfaction. Neither approach is optimal because neither approach uses data.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m Appointment slot optimization is the practice of using historical visit data, no-show patterns, and mathematical optimization to design templates that maximize throughput (patients seen per session) while respecting constraints on wait time, provider fatigue, and visit quality. It's one of the cleanest optimization problems in healthcare operations because the constraints are well-defined, the objective is measurable, and the data already exists in your scheduling system.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m ## The Technology: Constraint Optimization for Scheduling Templates
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m ### What Is Optimization?
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m Mathematical optimization is the discipline of finding the best solution from a set of feasible solutions, subject to constraints. In plain terms: you have a goal (maximize patients seen), you have rules you can't break (no visit shorter than its clinical minimum, no provider working past 6pm, no patient waiting more than 20 minutes), and you want the configuration that achieves the best goal while respecting all the rules.
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m The three components of any optimization problem:
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m 1. **Decision variables.** What you're choosing. In our case: slot durations by visit type, buffer times between slots, overbooking levels by time-of-day, and session start/end times.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m 2. **Objective function.** What you're maximizing or minimizing. Here: maximize weighted throughput (patients seen, weighted by visit revenue or clinical priority) while minimizing expected patient wait time. These two objectives conflict, which makes it interesting.
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m 3. **Constraints.** Rules that cannot be violated. Clinical minimums per visit type. Maximum session length. Maximum acceptable wait time. Overbooking limits. Break requirements.
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m ### Why This Is a Good Starter Optimization Problem
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m Appointment slot optimization sits in the sweet spot of operations research: complex enough to benefit from mathematical modeling, simple enough that a basic formulation produces meaningful results.
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m The decision space is small. You're choosing maybe 5-8 slot durations (one per visit type), 2-3 buffer configurations, and an overbooking percentage per hour block. That's maybe 30-50 decision variables. Compare that to nurse scheduling (thousands of variables) or OR block allocation (hundreds of competing constraints). A modern solver handles this in seconds.
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m The data requirements are modest. You need historical visit durations by type (your EHR has this), no-show rates by time-of-day and day-of-week (your scheduling system has this), and patient arrival patterns (check-in timestamps). Most health systems have years of this data sitting unused.
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m The feedback loop is fast. You change a template, run it for two weeks, and measure the impact on throughput, wait times, and provider satisfaction. Unlike strategic decisions that take months to evaluate, template changes produce measurable results quickly.
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m ### The Formulation
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m Let me walk through how you'd actually set this up mathematically. Don't worry if the notation feels dense; the concepts are straightforward.
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m **Decision variables:**
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m - `d[t]` = slot duration for visit type `t` (in minutes)
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m - `b[i]` = buffer time after slot `i` (in minutes)
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m - `o[h]` = overbooking level for hour block `h` (number of extra patients)
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m **Objective (simplified):**
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m Maximize: sum over all slots of (probability_patient_shows_up * revenue_weight[t])
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m Minimize: expected_wait_time across all patients
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m Combined: Maximize throughput - lambda * expected_wait_time
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m The `lambda` parameter controls the tradeoff. Higher lambda means you care more about wait times; lower lambda means you prioritize throughput. This is a dial your operations team tunes based on organizational priorities.
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m **Constraints:**
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m d[t] >= clinical_minimum[t]           // can't rush a complex visit
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m d[t] <= clinical_maximum[t]           // don't over-allocate simple visits
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m sum(d[i] + b[i]) <= session_length    // everything fits in the day
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m o[h] <= max_overbook[h]              // overbooking caps per hour
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m expected_wait[i] <= max_wait          // no patient waits too long
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m **The wait time calculation** is where it gets interesting. Expected wait time depends on the probability that previous patients' visits run long, which depends on the variance in visit duration, not just the mean. A visit type with mean 20 minutes and standard deviation 15 minutes creates much more downstream disruption than one with mean 25 minutes and standard deviation 3 minutes. Your model needs to account for this variance, which means you need the distribution of visit durations, not just the average.
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m ### Solver Selection
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m For a problem this size, you have several options:
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m **Linear Programming (LP) / Mixed-Integer Programming (MIP).** If you can linearize your constraints and objective (or approximate them as linear), commercial solvers like Gurobi or CPLEX, or open-source solvers like CBC or HiGHS, will find the global optimum in milliseconds. The catch: wait time calculations involve probability distributions, which aren't naturally linear. You can approximate them with piecewise linear functions or scenario-based approaches.
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m **Constraint Programming (CP).** Better for problems with complex logical constraints ("if visit type is new patient AND provider is part-time, then slot must be at least 45 minutes"). Google's OR-Tools CP-SAT solver is excellent and free.
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m **Simulation-based optimization.** Run a discrete-event simulation of the clinic day thousands of times with different template configurations, and pick the one that performs best on average. This handles stochastic elements (no-shows, variable durations) naturally but is computationally heavier. Good for validation even if you use an analytical solver for the initial solution.
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m **Heuristic approaches.** For a first pass, even a grid search over reasonable parameter ranges (slot durations in 5-minute increments, overbooking from 0-3 per hour) can find good solutions. Not optimal, but fast to implement and often good enough for an MVP.
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m For most healthcare organizations starting out, I'd recommend: use a MIP solver for the core template optimization (it's fast and gives provably optimal solutions for the linearized problem), then validate the top 3-5 solutions with a simulation to account for stochastic effects the linear model approximates.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m ### Batch vs. Real-Time
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m This is a batch optimization problem. You're not optimizing in real-time as patients arrive (that's a different problem, closer to Recipe 14.6). You're designing the template that will be used for the next scheduling period (typically 2-4 weeks out).
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m The optimization runs periodically: weekly, monthly, or when significant changes occur (new provider joins, patient mix shifts, seasonal patterns change). Each run produces a new template configuration. A human reviews and approves it before it goes live. This human-in-the-loop step is important: optimization can produce technically optimal but operationally bizarre templates (like a 7-minute slot followed by a 52-minute slot) that providers would reject.
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m ## General Architecture Pattern
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m [Historical Data] → [Feature Engineering] → [Optimization Model] → [Simulation Validation] → [Template Output] → [Human Review] → [EHR Template Update]
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m **Historical Data Collection.** Pull visit duration actuals (check-in to checkout), no-show rates, cancellation rates, and patient arrival patterns from your scheduling and EHR systems. You need at least 6 months of data per provider to capture seasonal patterns. Group by visit type, provider, day-of-week, and time-of-day.
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m **Feature Engineering.** Compute the statistics your model needs: mean and variance of visit duration per type, no-show probability by time slot, late arrival distribution, and provider-specific patterns. Some providers consistently run 5 minutes over; others consistently finish early. Your model should account for provider-specific behavior, not just system-wide averages.
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m **Optimization Model.** Formulate and solve the mathematical program. Inputs: statistical features from the previous step plus organizational constraints (session hours, break requirements, overbooking policies). Output: optimal slot durations, buffer times, and overbooking levels.
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m **Simulation Validation.** Take the proposed template and simulate 1,000+ clinic days using historical arrival and duration distributions. Measure expected throughput, wait times, overtime probability, and provider idle time. Compare against the current template using the same simulation. If the proposed template doesn't meaningfully outperform the current one, don't change it. Change fatigue is real.
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m **Human Review.** Present the proposed template alongside the simulation results to the operations team and affected providers. Show the tradeoffs explicitly: "This template sees 2 more patients per day but increases average wait time by 3 minutes." Let humans make the final call.
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m **EHR Integration.** Push the approved template into your scheduling system. Most EHRs support template APIs or bulk configuration. The integration is usually the least interesting technical piece but the most operationally painful one.
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m ## The AWS Implementation
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m ### Why These Services
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m **Amazon SageMaker for model training and optimization.** SageMaker provides the compute environment to run your optimization models and simulations. You can use SageMaker Processing jobs for the batch optimization runs (spin up compute, run the solver, shut down) without maintaining persistent infrastructure. For the simulation validation step, SageMaker's ability to parallelize across multiple instances lets you run thousands of simulation replications quickly.
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m **Amazon S3 for data lake and model artifacts.** Historical scheduling data exports, computed features, optimization results, and simulation outputs all live in S3. It's the durable backbone connecting pipeline stages. Partitioned by provider and date for efficient querying.
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m **AWS Lambda for orchestration and API.** Lambda coordinates the pipeline: triggers data extraction on schedule, kicks off SageMaker jobs, stores results, and exposes an API for the review interface. The optimization itself doesn't run in Lambda (too compute-heavy and time-limited), but Lambda is the glue.
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m **Amazon DynamoDB for template storage and versioning.** Stores the current and proposed templates per provider, with version history. Supports the review workflow (proposed vs. approved vs. active states) and rollback if a new template underperforms.
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m **Amazon QuickSight for visualization.** The human review step needs dashboards showing simulation results, before/after comparisons, and tradeoff curves. QuickSight connects directly to S3 and provides the visual layer without custom frontend development.
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m **AWS Step Functions for pipeline orchestration.** The end-to-end pipeline (extract data, compute features, run optimization, run simulation, store results, notify reviewers) has multiple steps with dependencies. Step Functions manages the workflow, handles retries on transient failures, and provides visibility into pipeline state.
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m ### Architecture Diagram
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m ```mermaid
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m flowchart TD
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m     A[EHR / Scheduling System] -->|Nightly Export| B[S3 Data Lake\nraw-scheduling-data/]
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m     B -->|Step Functions Trigger| C[Lambda\nfeature-engineering]
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m     C -->|Computed Stats| D[S3\nfeatures/]
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m     D --> E[SageMaker Processing\noptimization-solver]
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m     E -->|Proposed Templates| F[S3\noptimization-results/]
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m     F --> G[SageMaker Processing\nsimulation-validation]
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m     G -->|Simulation Results| H[S3\nsimulation-results/]
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m     H --> I[DynamoDB\ntemplate-store]
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m     I --> J[QuickSight\nReview Dashboard]
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m     J -->|Approved| K[Lambda\nehr-template-push]
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m     K --> A
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m     style B fill:#f9f,stroke:#333
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m     style E fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m     style I fill:#9ff,stroke:#333
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m ### Prerequisites
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m | Requirement | Details |
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m |-------------|---------|
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon QuickSight |
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m | **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m | **BAA** | AWS BAA signed (scheduling data contains patient names and visit reasons, which are PHI) |
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: VPC mode with encrypted volumes |
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m | **VPC** | SageMaker Processing jobs in VPC with no internet access; VPC endpoints for S3 and DynamoDB |
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m | **CloudTrail** | Enabled for all API calls; audit trail for template changes |
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m | **Sample Data** | Synthetic scheduling data. Use realistic visit type distributions but never real patient identifiers in dev. |
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m | **Cost Estimate** | SageMaker Processing: ~$2-5 per optimization run (ml.m5.xlarge, 10-30 min). S3 + DynamoDB + Lambda: negligible. Monthly total for weekly runs: $50-200. |
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m ### Ingredients
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m | AWS Service | Role |
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m |------------|------|
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m | **Amazon SageMaker** | Runs optimization solver and simulation validation as Processing jobs |
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m | **Amazon S3** | Stores historical data, features, optimization results, simulation outputs |
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m | **AWS Lambda** | Orchestrates data extraction, feature computation, and EHR template push |
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m | **Amazon DynamoDB** | Stores template versions with state management (proposed/approved/active) |
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m | **AWS Step Functions** | Coordinates the multi-step pipeline with error handling and retries |
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m | **Amazon QuickSight** | Visualization layer for human review of proposed templates |
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m | **AWS KMS** | Encryption key management for all data at rest |
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m ### Code
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m #### Walkthrough
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m **Step 1: Extract and prepare historical data.** The pipeline begins by pulling scheduling data from your EHR system. You need actual visit durations (not scheduled durations), visit type codes, provider IDs, appointment times, check-in times, and show/no-show status. Most EHRs expose this through reporting databases or bulk export APIs. The extraction runs nightly or weekly, appending new data to the historical store. Without accurate historical durations, the entire optimization is garbage-in-garbage-out. Scheduled duration tells you what the template says; actual duration tells you what really happens.
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m FUNCTION extract_scheduling_data(start_date, end_date):
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m     // Pull completed appointments from the EHR reporting database.
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m     // We need ACTUAL durations, not scheduled durations.
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m     // "Actual" means check-in to checkout, or room-in to room-out depending on your system.
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m     raw_data = query EHR database:
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m         SELECT appointment_id, provider_id, visit_type, scheduled_time,
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m                checkin_time, checkout_time, no_show_flag, cancellation_flag
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m         WHERE appointment_date BETWEEN start_date AND end_date
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m         AND status IN ('completed', 'no_show', 'cancelled')
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m     // Calculate actual duration for completed visits
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m     FOR each record in raw_data:
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m         IF record.no_show_flag == false AND record.cancellation_flag == false:
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m             record.actual_duration = minutes_between(record.checkin_time, record.checkout_time)
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m         ELSE:
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m             record.actual_duration = 0  // no-shows and cancellations consumed zero clinical time
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m     // Store in S3, partitioned by provider and month for efficient downstream queries
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m     write raw_data to S3 at "raw-scheduling-data/{provider_id}/{year}/{month}/"
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m     RETURN record count written
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m **Step 2: Compute statistical features.** This step transforms raw appointment records into the statistics the optimizer needs. For each provider and visit type combination, compute the mean and standard deviation of actual visit duration, the no-show rate by hour-of-day, and the late arrival distribution. The standard deviation is arguably more important than the mean: a visit type with high variance creates cascading delays that ripple through the entire afternoon. Skip this step and your optimizer will assume every 20-minute visit takes exactly 20 minutes, which is a fantasy.
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m FUNCTION compute_features(provider_id):
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m     // Load historical data for this provider (at least 6 months for seasonal stability)
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m     historical = load from S3 "raw-scheduling-data/{provider_id}/*"
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m     features = empty structure
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m     // Duration statistics by visit type
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m     FOR each visit_type in unique(historical.visit_type):
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m         type_records = filter historical where visit_type matches AND actual_duration > 0
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m         features.duration_stats[visit_type] = {
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m             mean:   average(type_records.actual_duration),
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m             stddev: standard_deviation(type_records.actual_duration),
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m             p90:    percentile(type_records.actual_duration, 90),  // 90th percentile for buffer planning
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m             count:  length(type_records)  // sample size for confidence
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m     // No-show rates by hour block
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m     FOR each hour_block in [8, 9, 10, 11, 12, 13, 14, 15, 16]:
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m         block_records = filter historical where hour(scheduled_time) == hour_block
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m         features.noshow_rate[hour_block] = count(no_show_flag == true) / count(block_records)
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m     // Late arrival distribution (minutes past scheduled time)
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m     arrived = filter historical where checkin_time is not null
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m     features.late_arrival = {
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m         mean:   average(minutes_between(scheduled_time, checkin_time)),
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m         stddev: standard_deviation(minutes_between(scheduled_time, checkin_time))
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m     // Store computed features
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m     write features to S3 at "features/{provider_id}/latest.json"
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m     RETURN features
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m **Step 3: Run the optimization solver.** This is the core of the recipe. Given the statistical features and organizational constraints, find the template configuration that maximizes throughput while keeping wait times acceptable. The solver explores the space of possible slot durations, buffer times, and overbooking levels to find the combination that best satisfies the objective function. For a typical clinic with 5-8 visit types and a single provider session, this solves in under a minute on modest hardware. The output is a proposed template: a sequence of slot types with durations and any overbooking recommendations.
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m FUNCTION optimize_template(features, constraints):
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m     // constraints includes: session_start, session_end, break_time, break_duration,
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m     //                       max_wait_minutes, max_overbook_per_hour, visit_type_mix
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m     // Define decision variables
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m     // d[t] = slot duration for visit type t (continuous, in minutes)
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m     // o[h] = overbooking count for hour h (integer, 0 to max_overbook)
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m     // b    = buffer time between slots (continuous, in minutes)
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m     model = create optimization model
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m     FOR each visit_type t:
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m         // Slot duration must be between clinical minimum and maximum
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m         add variable d[t] with bounds:
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m             lower = constraints.clinical_minimum[t]   // e.g., 10 min for BP recheck
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m             upper = constraints.clinical_maximum[t]   // e.g., 60 min for new patient
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m     FOR each hour_block h:
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m         add integer variable o[h] with bounds:
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m             lower = 0
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m             upper = constraints.max_overbook_per_hour  // e.g., 2
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m     add variable b (buffer) with bounds:
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m         lower = 0
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m         upper = 15  // no more than 15 minutes buffer between any two slots
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m     // Objective: maximize expected patients seen, penalized by expected wait
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m     // Expected patients = scheduled patients * (1 - noshow_rate) + overbooked * (1 - noshow_rate)
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m     // Expected wait is approximated using queuing theory (M/G/1 queue approximation)
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m     expected_throughput = SUM over hour_blocks h:
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m         (base_slots_per_hour[h] + o[h]) * (1 - features.noshow_rate[h])
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m     // Pollaczek-Khinchine formula approximation for expected wait
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m     // W = (rho * (cv^2 + 1)) / (2 * (1 - rho) * mu)
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m     // where rho = utilization, cv = coefficient of variation of service time
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m     expected_wait = compute_expected_wait(features.duration_stats, d, b)
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m     // Combined objective with tradeoff parameter lambda
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m     lambda = constraints.wait_penalty  // tunable: higher = more wait-averse
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m     set objective: MAXIMIZE expected_throughput - lambda * expected_wait
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m     // Constraints
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m     // Total scheduled time must fit in session
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m     session_minutes = minutes_between(constraints.session_start, constraints.session_end)
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m                       - constraints.break_duration
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m     add constraint: SUM(slots * (d[type_of_slot] + b)) <= session_minutes
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m     // Solve
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m     solution = solve model with time_limit = 300 seconds
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m     // Extract proposed template
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m     proposed_template = {
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m         slot_durations: { t: value(d[t]) for each visit_type t },
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m         buffer_minutes: value(b),
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m         overbooking:    { h: value(o[h]) for each hour_block h },
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m         expected_throughput: value(expected_throughput),
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m         expected_avg_wait:   value(expected_wait)
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m     RETURN proposed_template
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m **Step 4: Validate with simulation.** The optimization model makes simplifying assumptions (steady-state queuing, independent arrivals). Simulation tests the proposed template against messy reality. Run 1,000+ replications of a clinic day using the proposed template, drawing visit durations from the historical distribution, simulating no-shows probabilistically, and tracking actual wait times and overtime. Compare against the same simulation using the current template. If the proposed template doesn't beat the current one by a meaningful margin (say, 5% improvement in throughput or 10% reduction in wait time), don't recommend the change. Template changes have operational cost.
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m FUNCTION simulate_clinic_day(template, features, num_replications):
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m     results = empty list
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m     FOR rep = 1 to num_replications:
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m         // Generate a random clinic day using historical distributions
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m         schedule = generate_schedule_from_template(template)
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m         current_time = template.session_start
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m         wait_times = empty list
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m         patients_seen = 0
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m         FOR each slot in schedule:
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m             // Determine if patient shows up (Bernoulli draw based on no-show rate)
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m             shows_up = random() > features.noshow_rate[hour_of(slot.time)]
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m             
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m             IF shows_up:
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m                 // Draw actual visit duration from historical distribution for this type
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m                 actual_duration = draw_from_distribution(
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m                     mean = features.duration_stats[slot.visit_type].mean,
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m                     stddev = features.duration_stats[slot.visit_type].stddev
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m                 )
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m                 
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m                 // Patient wait = max(0, current_time - slot.scheduled_time)
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m                 patient_wait = max(0, current_time - slot.scheduled_time)
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m                 append patient_wait to wait_times
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m                 
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m                 // Provider finishes at current_time + actual_duration + buffer
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m                 current_time = max(current_time, slot.scheduled_time) + actual_duration + template.buffer
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m                 patients_seen = patients_seen + 1
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m             ELSE:
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m                 // No-show: time advances to next slot without clinical work
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m                 current_time = max(current_time, slot.scheduled_time + template.buffer)
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m         
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m         // Record this replication's outcomes
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m         append to results: {
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m             patients_seen:    patients_seen,
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m             avg_wait:         average(wait_times),
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m             max_wait:         max(wait_times),
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m             overtime_minutes: max(0, current_time - template.session_end),
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m             provider_idle:    compute_idle_time(schedule, current_time)
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m     // Aggregate across replications
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m     RETURN {
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m         mean_throughput:  average(results.patients_seen),
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m         mean_wait:        average(results.avg_wait),
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m         p95_wait:         percentile(results.avg_wait, 95),
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m         overtime_prob:    count(results.overtime_minutes > 0) / num_replications,
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m         mean_idle:        average(results.provider_idle)
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m **Step 5: Store and present for review.** Write the proposed template and simulation comparison to DynamoDB with a "proposed" status. Trigger a notification to the operations team. The review dashboard shows the current template performance alongside the proposed template performance, with explicit tradeoff visualization. Only after human approval does the template move to "active" status and get pushed to the EHR.
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, simulation_proposed):
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m     // Store the proposed template with full context for the reviewer
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m     write to DynamoDB table "template-store":
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m         provider_id      = provider_id
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m         version          = next_version_number(provider_id)
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m         status           = "proposed"                        // not active until approved
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m         created_at       = current UTC timestamp
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m         template         = proposed_template                 // the actual slot configuration
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m         simulation_current  = simulation_current            // how today's template performs
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m         simulation_proposed = simulation_proposed           // how the new one performs
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m         improvement      = {
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m             throughput_delta: simulation_proposed.mean_throughput - simulation_current.mean_throughput,
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m             wait_delta:      simulation_proposed.mean_wait - simulation_current.mean_wait,
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m             overtime_delta:  simulation_proposed.overtime_prob - simulation_current.overtime_prob
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m     // Notify operations team that a new template is ready for review
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m     send notification:
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m         to = operations_team_email
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m         subject = "New template proposed for {provider_id}"
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m         body = "Projected improvement: {improvement.throughput_delta} patients/day, "
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m                + "{improvement.wait_delta} min avg wait change. Review in dashboard."
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m     
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m     RETURN version
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter14.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m ### Expected Results
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m **Sample optimization output for a family medicine provider:**
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m ```json
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m {
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m   "provider_id": "DR-MARTINEZ-FM",
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m   "version": 7,
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m   "status": "proposed",
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m   "template": {
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m     "slot_durations": {
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m       "new_patient": 45,
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m       "follow_up_complex": 30,
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m       "follow_up_simple": 20,
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m       "procedure": 40,
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m       "bp_recheck": 10,
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m       "telehealth": 15
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m     },
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m     "buffer_minutes": 5,
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m     "overbooking": {
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m       "9": 1,
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m       "10": 1,
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m       "11": 0,
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m       "13": 1,
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m       "14": 1,
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m       "15": 0,
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m       "16": 0
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m   },
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m   "improvement": {
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m     "throughput_delta": 2.3,
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m     "wait_delta": -1.8,
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m     "overtime_delta": -0.05
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m   }
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m **Performance benchmarks:**
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m | Metric | Current Template | Optimized Template |
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m |--------|-----------------|-------------------|
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m | Patients per session | 18.2 | 20.5 |
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m | Average wait time | 14.3 min | 12.5 min |
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m | 95th percentile wait | 32 min | 26 min |
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m | Overtime probability | 22% | 17% |
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m | Provider idle time | 28 min/day | 18 min/day |
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m **Where it struggles:** Providers with highly variable patient mixes (one day is all complex, next day is all simple). Walk-in clinics where the schedule is meaningless by 10am. Clinics with shared resources (one MA supporting two providers) where the bottleneck isn't the provider's time. And any environment where the template is routinely overridden by schedulers who "know better" (which is a change management problem, not a technical one).
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m ## Why This Isn't Production-Ready
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m **EHR integration complexity.** Every EHR handles templates differently. Epic's template builder, Cerner's scheduling configuration, athenahealth's slot types: they all have different abstractions. The "push template to EHR" step in this recipe is hand-waved. In practice, it's often the hardest part of the project because EHR template APIs are poorly documented, rate-limited, or nonexistent. Some organizations resort to RPA (robotic process automation) to configure templates through the UI.
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m **Multi-provider dependencies.** This recipe optimizes one provider at a time. In reality, providers share MAs, rooms, and equipment. Optimizing Dr. Martinez's template in isolation might create a bottleneck at the shared lab draw station. Multi-provider optimization is a much harder problem (see Recipe 14.4 for nurse staffing, which touches similar shared-resource constraints).
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m **Seasonality and drift.** Patient mix changes seasonally (flu season, back-to-school physicals). A template optimized on summer data may underperform in January. Build in periodic re-optimization and monitor for drift between expected and actual performance.
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m ## The Honest Take
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m This is one of those problems where the math is the easy part. The hard part is getting people to trust the output.
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m I've seen optimization projects produce templates that are objectively better by every metric, and then watched them die because a provider said "I don't like having 10-minute slots, it feels rushed." The feeling matters. If a provider feels rushed, they'll run over regardless of what the template says, and your optimization is worthless. Build provider preferences into your constraints, not as an afterthought.
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m The overbooking piece is politically sensitive. "The computer says we should double-book the 9am slot" is a hard sell to a provider who remembers the last time they were double-booked and ran 45 minutes behind all morning. Present it as "the data shows that 9am has a 25% no-show rate, so booking one extra patient at 9am results in the expected panel size, not an overload." Framing matters enormously.
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m The biggest surprise: the variance in visit duration matters more than the mean. A provider whose visits are consistently 22 minutes (low variance) can be scheduled much more tightly than one whose visits range from 8 to 55 minutes (high variance), even if both have the same average. Most scheduling systems ignore variance entirely. That's where the biggest gains hide.
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m Start with one willing provider. Show results. Let word spread. Mandating optimized templates across a department without buy-in is a recipe for passive resistance.
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m ## Variations and Extensions
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m **Dynamic intra-day adjustment.** Instead of static templates, adjust remaining slots in real-time based on how the morning is going. If the first three patients all ran long, automatically extend afternoon buffers and notify patients of potential delays. This moves from batch optimization into online optimization territory and requires tighter EHR integration.
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m **Multi-objective Pareto optimization.** Rather than combining throughput and wait time into a single objective with a lambda parameter, generate the full Pareto frontier: the set of all templates where you can't improve one metric without worsening another. Present the frontier to decision-makers and let them choose their preferred tradeoff point. More sophisticated but produces better organizational alignment.
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m **Patient preference integration.** Some patients prefer early morning; others need after-work slots. Incorporate patient preference data into the template design to improve show rates (patients who get their preferred time are less likely to no-show). This connects to Recipe 4.1 (Appointment Reminder Channel Optimization) for a complete patient access optimization strategy.
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m ## Related Recipes
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m - **Recipe 7.1 (Appointment No-Show Prediction):** Provides the no-show probability estimates that feed into the overbooking optimization
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m - **Recipe 12.1 (Appointment Volume Forecasting):** Forecasts demand by visit type, informing how many slots of each type to include in the template
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m - **Recipe 14.4 (Nurse Staffing Optimization):** Extends the single-provider model to shared resource constraints across multiple providers
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m - **Recipe 14.7 (OR Case Sequencing):** Applies similar sequencing optimization to surgical cases, a more complex variant of the same pattern
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m ## Additional Resources
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m **AWS Documentation:**
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m - [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html)
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m - [Amazon SageMaker HIPAA Eligibility](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m - [Amazon QuickSight Embedding](https://docs.aws.amazon.com/quicksight/latest/user/embedded-analytics.html)
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    501[0m:[38;5;10m[49m **Optimization Libraries (used within SageMaker):**
+[0m[49m[38;5;10m+    502[0m:[38;5;10m[49m - [Google OR-Tools](https://developers.google.com/optimization): Open-source optimization suite with CP-SAT solver, excellent for scheduling problems
+[0m[49m[38;5;10m+    503[0m:[38;5;10m[49m - [PuLP](https://coin-or.github.io/pulp/): Python LP/MIP modeling library that interfaces with CBC, CPLEX, and Gurobi solvers
+[0m[49m[38;5;10m+    504[0m:[38;5;10m[49m - [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library for the validation step
+[0m[49m[38;5;10m+    505[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    506[0m:[38;5;10m[49m **AWS Solutions and Blogs:**
+[0m[49m[38;5;10m+    507[0m:[38;5;10m[49m - [Optimization with Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/): Search for scheduling and optimization use cases
+[0m[49m[38;5;10m+    508[0m:[38;5;10m[49m - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
+[0m[49m[38;5;10m+    509[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    510[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    511[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    512[0m:[38;5;10m[49m ## Estimated Implementation Time
+[0m[49m[38;5;10m+    513[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    514[0m:[38;5;10m[49m | Tier | Timeline |
+[0m[49m[38;5;10m+    515[0m:[38;5;10m[49m |------|----------|
+[0m[49m[38;5;10m+    516[0m:[38;5;10m[49m | **Basic** (single provider, manual data export, grid search optimization) | 2-3 weeks |
+[0m[49m[38;5;10m+    517[0m:[38;5;10m[49m | **Production-ready** (automated pipeline, MIP solver, simulation validation, review dashboard) | 6-8 weeks |
+[0m[49m[38;5;10m+    518[0m:[38;5;10m[49m | **With variations** (multi-provider, dynamic intra-day, Pareto frontier) | 12-16 weeks |
+[0m[49m[38;5;10m+    519[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    520[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    521[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    522[0m:[38;5;10m[49m ## Tags
+[0m[49m[38;5;10m+    523[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    524[0m:[38;5;10m[49m `optimization` · `operations-research` · `scheduling` · `appointment-template` · `constraint-programming` · `mixed-integer-programming` · `simulation` · `sagemaker` · `step-functions` · `simple` · `mvp` · `hipaa`
+[0m[49m[38;5;10m+    525[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    526[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    527[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    528[0m:[38;5;10m[49m *← [Chapter 14 Index](chapter14-index) · [Next: Recipe 14.2 - Patient-Provider Assignment →](chapter14.02-patient-provider-assignment)*
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow update the sidebar:[0m[0m
+I'll modify the following file: [38;5;141m_Sidebar.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  0, 0[0m:[39m[49m #### Ch 14: Optimization / Operations Research
+[0m[49m[39m  1, 1[0m:[39m[49m 
+[0m[49m[38;5;9m- 2   [0m:[38;5;9m[49m * [Preface](chapter14-preface)
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m * [Preface](chapter14-preface)
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m * [14.1 — Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)
+[0m[49m[38;5;10m+    4[0m:[38;5;10m[49m   * [Python Example](chapter14.01-python-example)
+[0m[K
+Updating: [38;5;141m_Sidebar.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mDone. Here's what I produced:[0m[0m
+[0m[0m
+[1mCreated:[22m [38;5;10mchapter14.01-appointment-slot-optimization.md[0m[0m[0m
+[0m[0m
+The recipe covers:[0m[0m
+- **The Problem:** Rigid appointment templates that ignore visit type variance, no-show patterns, and provider-specific behavior[0m[0m
+- **The Technology:** Constraint optimization fundamentals, formulation with decision variables/objective/constraints, solver selection (LP/MIP, CP, simulation-based, heuristic), and batch vs. real-time tradeoffs[0m[0m
+- **General Architecture:** Six-stage pipeline from historical data through human review to EHR template update[0m[0m
+- **AWS Implementation:** SageMaker Processing for solver/simulation, Step Functions for orchestration, DynamoDB for template versioning, QuickSight for review dashboards[0m[0m
+- **Pseudocode:** Five steps covering data extraction, feature engineering, optimization solving, simulation validation, and storage/notification[0m[0m
+- **Honest Take:** Variance matters more than mean, provider buy-in is harder than the math, overbooking framing is politically sensitive[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...⠴ Dividing up the work...⠦ Dividing up the work...⠧ Dividing up the work...⠇ Dividing up the work...⠏ Dividing up the work...⠋ Dividing up the work...⠙ Dividing up the work...⠹ Dividing up the work...⠸ Dividing up the work...⠼ Dividing up the work...[2K[1G[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 6.72 • Time: 4m 34s
+
+[0m[1G[0m[0m[?25h[1mUpdated:[22m [38;5;10m_Sidebar.md[0m with the new recipe entry.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-1018[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-1018[0m [38;5;244m(showing 1000 of 2487 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.126s[0m
+
+[38;5;141m> [0mNow let me read the recipe file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m35730 bytes[0m from /tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to check for em dashes (the [38;5;10m—[0m character) in the text:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1018/chapter14.01-appointment-slot-optimization.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me verify the required sections are present. I've confirmed from reading the file:[0m[0m
+[0m[0m
+1. [1mThe Problem[22m - Present (## The Problem)[0m[0m
+2. [1mThe Technology[22m - Present (## The Technology: Constraint Optimization for Scheduling Templates)[0m[0m
+3. [1mGeneral Architecture Pattern[22m - Present (## General Architecture Pattern)[0m[0m
+4. [1mAWS Implementation with pseudocode walkthrough[22m - Present (## The AWS Implementation, with detailed pseudocode in the ### Code / #### Walkthrough section)[0m[0m
+5. [1mThe Honest Take[22m - Present (## The Honest Take)[0m[0m
+6. [1mVariations[22m - Present (## Variations and Extensions)[0m[0m
+7. [1mNavigation links[22m - Present at the bottom (*← [Chapter 14 Index]... · [Next: Recipe 14.2...]*)[0m[0m
+8. [1mNo em dashes[22m - Confirmed, zero matches for [38;5;10m—[0m[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.45 • Time: 23s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Recipe contains all required sections: The Problem, The Technology, General Architecture Pattern, AWS Implementation with detailed pseudocode walkthrough (5 steps with code blocks), The Honest Take, Variations and Extensions, and navigation links at the bottom. No em dashes found in the prose. Voice is conversational and direct, consistent with the cookbook style."}
