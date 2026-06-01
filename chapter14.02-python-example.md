@@ -9,10 +9,10 @@
 You'll need a few Python packages:
 
 ```bash
-pip install pulp numpy boto3
+pip install pulp boto3
 ```
 
-PuLP is a modeling library for linear and mixed-integer programming. It ships with the CBC solver (open-source, no license required), which handles assignment problems with hundreds of patients and dozens of providers in seconds. NumPy provides utility functions for working with the preference and capacity matrices.
+PuLP is a modeling library for linear and mixed-integer programming. It ships with the CBC solver (open-source, no license required), which handles assignment problems with hundreds of patients and dozens of providers in seconds.
 
 Your environment needs AWS credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, and `dynamodb:GetItem`.
 
@@ -24,7 +24,6 @@ Before we get to the optimization logic, here's the configuration that defines t
 
 ```python
 import json
-import numpy as np
 from dataclasses import dataclass
 from decimal import Decimal
 
@@ -386,11 +385,13 @@ def solve_assignment(
         )
 
         # The weighted load of new assignments must fit within remaining capacity.
-        # We normalize by the average frequency weight so the constraint is in
-        # "patient equivalents" rather than raw visit counts.
-        avg_freq_weight = np.mean(list(FREQUENCY_WEIGHTS.values()))
+        # Each patient's frequency weight is measured in annual visits.
+        # Remaining capacity is in patient slots. We multiply remaining capacity
+        # by the average frequency weight to convert both sides to the same unit
+        # (weighted visit equivalents).
+        avg_freq_weight = sum(FREQUENCY_WEIGHTS.values()) / len(FREQUENCY_WEIGHTS)
         model += (
-            weighted_load <= remaining_capacity * avg_freq_weight / 4,
+            weighted_load <= remaining_capacity * avg_freq_weight,
             f"capacity_{prov_id}",
         )
 
