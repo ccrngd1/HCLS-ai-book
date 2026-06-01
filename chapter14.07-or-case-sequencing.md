@@ -130,7 +130,7 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 **Amazon S3 for historical data and model artifacts.** Duration prediction models, historical case logs, and optimization run artifacts (for audit and analysis) live in S3.
 
-**Amazon SQS (FIFO) for the replan queue.** When multiple events arrive in quick succession (common during the morning rush), an SQS FIFO queue buffers replan requests with content-based deduplication, ensuring they're processed sequentially. You don't want three concurrent replans fighting over the same schedule state. The FIFO ordering guarantees that replans execute in the order they were triggered, and the 5-minute deduplication window prevents replan storms from rapid-fire events.
+**Amazon SQS (FIFO) for the replan queue.** When multiple events arrive in quick succession (common during the morning rush), you don't want three concurrent replans fighting over the same schedule state. An SQS FIFO queue buffers replan requests with message-group-based ordering and deduplication ID windowing, ensuring they're processed sequentially. The FIFO ordering guarantees that replans execute in the order they were triggered, and the 5-minute deduplication window prevents replan storms from rapid-fire events.
 
 ### Architecture Diagram
 
