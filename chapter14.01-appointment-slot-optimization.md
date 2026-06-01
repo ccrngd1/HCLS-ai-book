@@ -316,6 +316,10 @@ FUNCTION optimize_template(features, constraints):
 
 ```
 FUNCTION simulate_clinic_day(template, features, num_replications):
+    // Note: this simulation assumes provider behavior doesn't change under the new
+    // template. In practice, providers may adjust their pace in response to shorter
+    // or longer slots. Treat results as directional estimates, not guarantees.
+    
     results = empty list
     
     FOR rep = 1 to num_replications:
@@ -390,11 +394,11 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
         }
     
     // Notify operations team that a new template is ready for review.
-    // IMPORTANT: Do not embed provider-specific metrics in the email body.
-    // Email traverses the internet and may not be encrypted end-to-end.
+    // IMPORTANT: Do not embed provider-specific metrics in the notification body.
+    // Notifications traverse channels that may not be encrypted end-to-end.
     // Send only a link to the authenticated review dashboard.
     send notification:
-        to = operations_team_email
+        to = operations_team_endpoint   // HTTPS endpoint or internal channel, not email
         subject = "New scheduling template ready for review"
         body = "A new template proposal is available. Review in the dashboard: {dashboard_url}"
     
@@ -508,7 +512,7 @@ Start with one willing provider. Show results. Let word spread. Mandating optimi
 **Optimization Libraries (used within SageMaker):**
 - [Google OR-Tools](https://developers.google.com/optimization): Open-source optimization suite with CP-SAT solver, excellent for scheduling problems
 - [PuLP](https://coin-or.github.io/pulp/): Python LP/MIP modeling library that interfaces with CBC, CPLEX, and Gurobi solvers
-- [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library for the validation step
+- [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library, useful for more complex multi-server validation scenarios
 
 **AWS Solutions and Blogs:**
 - [Optimization with Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/): Search for scheduling and optimization use cases
