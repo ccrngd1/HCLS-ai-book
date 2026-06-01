@@ -25,6 +25,7 @@ The following review findings were already incorporated into the recipe before t
 - **NET-2 (MEDIUM):** Lambda egress control guidance added (restrict outbound to VPC endpoints only).
 - **NET-3 (LOW):** Pinpoint-to-Kinesis service-side integration note added.
 - **VOICE-2 (LOW):** Sample Data row already uses conversational tone.
+- **VOICE-3 (LOW):** Related Recipes references are forward-references to planned recipes; acceptable for a cookbook written in parallel.
 - **Regulatory note:** FDA/CDS guidance paragraph added to Safety Constraints section.
 
 ### Deferred to TechWriter (TODO Markers)
