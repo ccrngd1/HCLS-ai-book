@@ -360,6 +360,8 @@
   * [Python Example](chapter14.05-python-example)
 * [14.6 — Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment)
   * [Python Example](chapter14.06-python-example)
+* [14.7 — OR Case Sequencing](chapter14.07-or-case-sequencing)
+  * [Python Example](chapter14.07-python-example)
 
 ---
 
