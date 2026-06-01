@@ -146,6 +146,7 @@ flowchart TD
     subgraph Optimization Pipeline
         SF[Step Functions: Orchestration]
         SM[SageMaker: Solver Execution]
+        EB[EventBridge: Scheduler]
         LAMBDA[Lambda: Release Management]
     end
 
@@ -162,7 +163,7 @@ flowchart TD
     SF --> SM
     SM --> DDB
     SM --> S3RAW
-    EventBridge --> LAMBDA
+    EB --> LAMBDA
     DDB --> LAMBDA
     LAMBDA --> DDB
     DDB --> API
@@ -464,7 +465,7 @@ Sample output from a quarterly optimization run:
 
 **Where It Struggles:**
 
-- When historical data is sparse (new hospital, new service line) the demand estimates are unreliable
+- When historical data is sparse (new hospital, new service line), the demand estimates are unreliable
 - When political constraints dominate (the chief of surgery insists on keeping blocks regardless of utilization), the model's recommendations get overridden
 - When case mix changes rapidly (pandemic surges, new surgeon with very different case profile), the trailing data lags reality
 - When the problem is highly constrained (many rooms with specialized equipment, tight staffing), feasible solutions may not exist without relaxing something
@@ -529,6 +530,8 @@ Instead of allocating blocks to services, allocate to individual surgeons. This 
 - [HiGHS Solver](https://highs.dev/) - High-performance open-source linear and mixed-integer solver
 
 <!-- TODO (TechWriter): Verify if there are specific aws-samples repos for optimization/scheduling workloads on SageMaker -->
+
+<!-- TODO (TechWriter): Add 2-3 AWS Solutions Library or AWS Blog links for optimization/OR workloads per RECIPE-GUIDE requirements -->
 
 ### Industry References
 
