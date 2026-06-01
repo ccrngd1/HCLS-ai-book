@@ -107,7 +107,7 @@ Graph databases have matured significantly in the last five years. Managed servi
 
 In healthcare specifically, knowledge graphs are seeing adoption for drug interaction checking (Recipe 13.4), clinical pathway modeling (Recipe 13.5), and terminology mapping (Recipe 13.8). Formulary navigation is one of the simpler applications because the source data is already well-structured (formulary files follow CMS-mandated formats) and the query patterns are predictable.
 
-The main challenge isn't the technology. It's the data pipeline: keeping the graph current as formularies change quarterly, handling mid-year amendments, and reconciling differences between the formulary file (what the plan says it covers) and the actual adjudication behavior (what the PBM actually pays for). More on that in the honest take.
+The main challenge isn't the technology. It's keeping the graph honest. The formulary file says one thing; the PBM's adjudication system sometimes does another. More on that gap in the honest take.
 
 ---
 
@@ -165,6 +165,10 @@ flowchart LR
 
 ### Prerequisites
 
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Split IAM permissions into read-only (query Lambda: neptune-db:ReadDataViaQuery, neptune-db:connect) and read-write (loader Lambda: neptune-db:ReadDataViaQuery, neptune-db:WriteDataViaQuery, neptune-db:connect). Add note about enabling Neptune IAM authentication on the cluster. -->
+
+<!-- TODO (TechWriter): Expert review N1 (HIGH). Expand VPC section to specify: Lambda in private subnets, required VPC endpoints (S3 gateway, CloudWatch Logs interface, STS interface for IAM auth), security group rules (Lambda SG -> Neptune SG on port 8182, Lambda SG -> Redis SG on port 6379), and NAT gateway requirement if Lambda needs internet access for RxNorm API calls. -->
+
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, API Gateway or AppSync, Amazon ElastiCache (Redis), AWS Step Functions (optional, for large loads) |
@@ -172,21 +176,22 @@ flowchart LR
 | **BAA** | AWS BAA signed. Formulary data itself may not be PHI, but when combined with patient plan membership at query time, the system handles PHI context. |
 | **Encryption** | Neptune: encryption at rest enabled at cluster creation (cannot be added later). S3: SSE-KMS. ElastiCache: encryption at rest and in-transit. All API calls over TLS. |
 | **VPC** | Neptune requires VPC deployment. Lambda resolvers must be in the same VPC with appropriate security groups. VPC endpoints for S3 and CloudWatch Logs. |
-| **CloudTrail** | Enabled: log all Neptune, S3, and API Gateway calls for audit trail. |
+| **CloudTrail** | Enabled: log all Neptune, S3, and API Gateway calls for audit trail. The query Lambda should also log each request (timestamp, requesting system, drug_id, plan_id) to CloudWatch Logs for application-level audit. These logs may contain PHI-adjacent data and should be encrypted and retained per HIPAA retention policies. |
 | **Sample Data** | CMS publishes [Part D formulary file layouts](https://www.cms.gov/medicare/prescription-drug-coverage/prescriptiondrugcovcontra) with sample data. Use synthetic plan data for development. |
-| **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). ElastiCache cache.r6g.large: ~$0.166/hr (~$121/month). Lambda and API Gateway costs negligible at typical query volumes. Total: ~$400/month for a single-plan deployment. |
+| **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). ElastiCache cache.r6g.large (Multi-AZ with automatic failover): ~$0.332/hr (~$242/month). Lambda and API Gateway costs negligible at typical query volumes. Total: ~$500/month for a single-plan deployment. For multi-plan deployments (10+ plans), expect Neptune db.r5.xlarge or larger (~$500-700/month) and proportionally larger Redis instances. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Neptune** | Stores the formulary knowledge graph; executes openCypher traversals |
+| **Amazon Neptune** | Stores the formulary knowledge graph; executes openCypher traversals. Use the reader endpoint for query Lambdas, writer endpoint for the loader Lambda. |
 | **Amazon S3** | Receives and archives formulary files |
 | **AWS Lambda** | Parses formulary files into graph format; resolves API queries against Neptune |
 | **API Gateway / AppSync** | Exposes formulary navigation as REST or GraphQL API |
-| **Amazon ElastiCache (Redis)** | Caches frequent query results; reduces Neptune load |
+| **Amazon ElastiCache (Redis)** | Caches frequent query results; reduces Neptune load. Deploy as a Multi-AZ replication group with automatic failover. Enable Redis AUTH and TLS in-transit. |
 | **AWS KMS** | Manages encryption keys for Neptune, S3, and ElastiCache |
 | **Amazon CloudWatch** | Metrics, logs, and alarms for query latency and graph load operations |
+| **Amazon SQS** | Dead letter queue for failed formulary parse/load events; triggers CloudWatch alarm on DLQ messages |
 
 ### Code
 
@@ -282,6 +287,8 @@ FUNCTION parse_formulary_file(bucket, key):
     RETURN vertices, edges
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling guidance for the ingest pipeline: SQS dead letter queue on the S3 event notification or Lambda async invocation config, CloudWatch alarm on DLQ messages, and note that for production the Step Functions orchestration (already mentioned as optional) should be considered mandatory for retry logic and execution history. Mention idempotency: MERGE operations prevent duplicates, but partial loads could leave the graph inconsistent without transaction boundaries. -->
+
 **Step 2: Load graph data into Neptune.** Take the parsed vertices and edges and load them into the graph database. Neptune supports bulk loading via its loader API (for initial loads) and individual upserts via openCypher MERGE statements (for incremental updates). The key decision: on a quarterly full formulary refresh, do you drop and rebuild, or do you merge? Merging preserves any enrichment you've added (like manually curated alternative relationships), but it's slower and risks stale data if a drug is removed from the formulary. The pragmatic approach: use a versioned subgraph per formulary effective date, and point queries at the current version. Skip this step and your parsed data sits in Lambda's memory doing nothing.
 
 ```
@@ -326,6 +333,8 @@ FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
     
     connection = connect_to(neptune_endpoint, port=8182, protocol="bolt")
     
+    // Note: parameterized queries ($drug_id, $plan_id) prevent graph query injection.
+    // Never build openCypher queries via string concatenation with user input.
     query = """
         // Start at the prescribed drug
         MATCH (prescribed:Drug {id: $drug_id})
@@ -362,6 +371,8 @@ FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
 
 **Step 4: Cache results for repeated queries.** The same drug-plan combinations get queried repeatedly. Atorvastatin under Blue Cross PPO Plan 1234 might get looked up hundreds of times a day across a health system. Caching these results in Redis avoids hitting Neptune for every request. The cache key combines drug ID and plan ID. Cache TTL aligns with formulary update frequency: set it to 24 hours during normal periods, and flush explicitly when you load new formulary data. Skip caching and your Neptune cluster will be oversized (and over-budget) to handle the query volume.
 
+<!-- TODO (TechWriter): Expert review S2 (HIGH). Add guidance on Redis security posture: (1) Enable ElastiCache AUTH (Redis AUTH token or IAM-based access control via ElastiCache for Redis 7.0+). (2) Note that cache keys containing plan_id create an access pattern log of medication inquiries per member; recommend using plan-type identifiers rather than member-specific plan IDs where possible, or document PHI implications if member-specific caching is required. (3) Confirm TLS in-transit is required for Lambda-to-Redis connections. -->
+
 ```
 FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoint):
     // Build a deterministic cache key from the query parameters
@@ -388,9 +399,14 @@ FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoin
 
 ```
 FUNCTION handle_formulary_query(request):
-    // Extract parameters from the API request
+    // Extract and validate parameters from the API request.
+    // Validate format before querying: drug_id should match RxNorm CUI or NDC pattern,
+    // plan_id should match expected plan identifier format.
     drug_id = request.params["drug_id"]       // RxNorm CUI or NDC
     plan_id = request.params["plan_id"]       // patient's benefit plan identifier
+    
+    IF NOT valid_drug_id_format(drug_id) OR NOT valid_plan_id_format(plan_id):
+        RETURN { status: "INVALID_INPUT", message: "Malformed drug_id or plan_id." }
     
     // First, check the tier of the prescribed drug itself
     prescribed_tier = get_drug_tier(drug_id, plan_id)
