@@ -46,7 +46,7 @@ RL has achieved superhuman performance in games (Go, Atari, StarCraft) and robot
 
 **Patient heterogeneity.** A 30-year-old trauma patient and a 75-year-old COPD patient have completely different weaning trajectories. The policy needs to handle this diversity, but you may have limited data for any specific patient subtype.
 
-**Confounding.** In historical data, sicker patients received more aggressive interventions. If you naively learn from this data, you might conclude that aggressive interventions cause bad outcomes (because the patients who received them were already sicker). This is the fundamental challenge of causal inference from observational data, and it's pervasive in offline RL.
+**Confounding.** In historical data, sicker patients received more aggressive interventions. If you naively learn from this data, you might conclude that aggressive interventions cause bad outcomes (because the patients who received them were already sicker). This is the core challenge of learning from observational data, and it shows up everywhere in offline RL.
 
 **Safety constraints.** Some actions are never acceptable regardless of expected reward. You can't let SpO2 drop below 88%. You can't extubate a patient who's deeply sedated. The policy must satisfy hard constraints, not just optimize expected outcomes.
 
@@ -152,16 +152,18 @@ flowchart TD
     style D fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add DLQ/error handling for Kinesis-to-Lambda path. Configure SQS dead-letter queue with bisect-on-error, CloudWatch alarm on DLQ depth, and staleness flagging when state updates exceed 15 minutes. This is a patient safety concern: silent data loss means stale state feeding recommendations. -->
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon Kinesis, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon EventBridge, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:PutItem`, `dynamodb:GetItem`, `s3:GetObject`, `s3:PutObject` |
+| **IAM Permissions** | Separate IAM roles per component. State Constructor Lambda: `kinesis:GetRecords` on patient stream, `dynamodb:PutItem` on patient-state table. Inference endpoint: `dynamodb:GetItem` on patient-state table, `sagemaker:InvokeEndpoint` on weaning-policy endpoint. Safety Filter Lambda: `dynamodb:GetItem`, write to recommendation API. Training pipeline: `s3:GetObject` on training-data bucket, `s3:PutObject` on model-artifacts bucket, `sagemaker:CreateTrainingJob`. Logging: `dynamodb:PutItem` on episode-log table, `s3:PutObject` on audit bucket. All permissions scoped to specific resource ARNs. |
 | **BAA** | Required. All patient data is PHI. |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption; SageMaker: KMS for training volumes and endpoints; all transit over TLS |
-| **VPC** | SageMaker endpoints and Lambda functions in VPC with VPC endpoints for all services. No public internet access for PHI-processing components. |
-| **CloudTrail** | Enabled for all API calls. Critical for audit trail of model recommendations and clinician decisions. |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption with minimum retention (24–48 hours, as PHI should not persist in the stream longer than operationally required); SageMaker: KMS for training volumes and endpoints; all transit over TLS |
+| **VPC** | SageMaker endpoints and Lambda functions in VPC with VPC endpoints for all services. Required endpoints: S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), Kinesis Data Streams (interface), CloudWatch Logs (interface), KMS (interface). No public internet access for PHI-processing components. |
+| **CloudTrail** | Enabled for all API calls. Enable DynamoDB Streams or CloudTrail data events for patient-state and episode-log tables to capture data-plane PHI access. Critical for audit trail of model recommendations and clinician decisions. |
 | **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset from MIT/Beth Israel Deaconess). Contains real ventilator data, de-identified. Appropriate for model development. |
 | **Cost Estimate** | SageMaker training: ~$50–200 per training run (depends on instance type and duration). SageMaker endpoint: ~$100–500/month (ml.m5.large). Kinesis, Lambda, DynamoDB: ~$200–500/month depending on patient volume. |
 
@@ -182,7 +184,7 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: State construction.** Raw clinical data arrives as a stream of events: a vital sign reading here, a ventilator parameter change there, a lab result an hour ago. The state constructor assembles these into a coherent snapshot of the patient's current condition. This is more complex than it sounds because data sources are asynchronous (vitals every 5 minutes, labs every 4-6 hours, vent settings on change), and you need to handle missing values gracefully. The state vector must capture not just current values but trends (is the patient improving or deteriorating?). Skip this step and the RL model receives garbage input, producing garbage recommendations.
+**Step 1: State construction.** Raw clinical data arrives as a stream of events: a vital sign reading here, a ventilator parameter change there, a lab result an hour ago. The state constructor assembles these into a coherent snapshot of the patient's current condition. This is more complex than it sounds because data sources are asynchronous (vitals every 5 minutes, labs every 4–6 hours, vent settings on change), and you need to handle missing values gracefully. The state vector must capture not just current values but trends (is the patient improving or deteriorating?). Skip this step and the RL model receives garbage input, producing garbage recommendations.
 
 ```
 FUNCTION construct_state(patient_id, current_time):
@@ -318,6 +320,8 @@ FUNCTION apply_safety_filter(recommendation, state):
 
 **Step 4: Recommendation delivery and logging.** The filtered recommendation is presented to the clinician and logged for audit and future training. Every recommendation, whether followed or overridden by the clinician, becomes training data for the next model iteration. The logging must capture enough context to reconstruct the decision: what the model saw, what it recommended, what the clinician did, and what happened next. Skip this step and you lose the feedback loop that makes the system improve over time.
 
+For regulatory defensibility, audit logs should also be written to an S3 bucket with Object Lock (compliance mode) or to CloudWatch Logs with a resource policy preventing deletion. DynamoDB serves the operational read path; the immutable archive serves the compliance path.
+
 ```
 FUNCTION deliver_and_log(patient_id, state, recommendation, timestamp):
     // Store the recommendation for the clinician dashboard
@@ -340,10 +344,13 @@ FUNCTION deliver_and_log(patient_id, state, recommendation, timestamp):
         // outcome will be filled in retrospectively
     })
 
+    // Write immutable copy to S3 Object Lock bucket for compliance
+    write_to_audit_archive(patient_id, timestamp, state, recommendation)
+
     RETURN recommendation
 ```
 
-**Step 5: Outcome tracking and episode completion.** After the clinician acts, the system tracks what happens. Did the patient tolerate the change? Did the SBT succeed? Was extubation successful (defined as no reintubation within 48 hours)? These outcomes become the reward signal for future training. An episode ends when the patient is successfully extubated, dies, transitions to tracheostomy, or is transferred. Skip this step and the model never learns from its recommendations.
+**Step 5: Outcome tracking and episode completion.** After the clinician acts, the system tracks what happens. Did the patient tolerate the change? Did the SBT succeed? Was extubation successful (defined as no reintubation within 48 hours)? These outcomes become the reward signal for future training. An episode begins when the patient meets initial weaning readiness screening criteria (e.g., FiO2 ≤ 60%, PEEP ≤ 10, hemodynamically stable, some respiratory drive present). Events before this point are acute stabilization, not weaning decisions. An episode ends when the patient is successfully extubated, dies, transitions to tracheostomy, or is transferred. Skip this step and the model never learns from its recommendations.
 
 ```
 FUNCTION track_outcome(patient_id, episode_id):
@@ -444,6 +451,10 @@ The state representation is another hidden challenge. I described a clean state 
 
 The reward function is where clinical judgment meets engineering, and it's surprisingly contentious. Is a patient who gets extubated at 72 hours and reintubated at 74 hours worse off than a patient who stays on the vent until 120 hours and extubates successfully? Most clinicians would say yes (reintubation is traumatic and risky), but how much worse? The reward weights encode clinical values, and reasonable clinicians disagree on those values.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback strategy: shadow traffic via SageMaker production variants, agreement rate monitoring between old/new models, defined rollback trigger (e.g., clinician override rate exceeds 50% for 48 hours). -->
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add operational monitoring guidance: feature distribution monitoring against training data stats, safety filter override rate tracking, clinician agreement rate over time as proxy for recommendation quality. Alert when features drift beyond 2 standard deviations for sustained periods. -->
+
 What I'd do differently if starting over: I'd spend 80% of my time on data quality and state representation, and 20% on the RL algorithm. The algorithm choice matters less than the quality of the state signal and the reward definition. I'd also start with a much simpler action space (binary: "ready for SBT" vs. "not ready") before attempting the full multi-action formulation.
 
 ---
@@ -477,9 +488,7 @@ What I'd do differently if starting over: I'd spend 80% of my time on data quali
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Key Research Papers:**
-- TODO: Verify and add citation for Komorowski et al. 2018 "The Artificial Intelligence Clinician" (Nature Medicine) on sepsis RL
-- TODO: Verify and add citation for Prasad et al. 2017 on RL for mechanical ventilation weaning
-- TODO: Verify and add citation for Conservative Q-Learning (Kumar et al. 2020)
+<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add full citations for: Komorowski et al. 2018 "The Artificial Intelligence Clinician" (Nature Medicine); Prasad et al. 2017 on RL for mechanical ventilation weaning; Kumar et al. 2020 Conservative Q-Learning. All are real papers but need verified DOI links. -->
 
 **Public Datasets:**
 - [MIMIC-III Clinical Database](https://physionet.org/content/mimiciii/) (PhysioNet, requires credentialed access)
