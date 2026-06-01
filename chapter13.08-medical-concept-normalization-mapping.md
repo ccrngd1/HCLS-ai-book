@@ -306,7 +306,7 @@ FUNCTION create_cross_terminology_links(umls_concepts):
             // UMLS synonymy judgments have a known error rate of ~2-3%, so even
             // exact matches don't get 1.0. Reserve 1.0 for manually curated mappings.
             confidence = CASE rel_type:
-                "exact_match":   0.95
+                "equivalent_to": 0.95
                 "broader_than":  0.80
                 "narrower_than": 0.80
                 "related_to":    0.60
@@ -315,7 +315,7 @@ FUNCTION create_cross_terminology_links(umls_concepts):
             append to cross_links: {
                 source:     concept_a,
                 target:     concept_b,
-                type:       rel_type,        // "exact_match", "broader_than", "narrower_than"
+                type:       rel_type,        // "equivalent_to", "broader_than", "narrower_than"
                 confidence: confidence,      // Varies by relationship type; 1.0 reserved for curated mappings
                 provenance: "UMLS_CUI_" + cui
             }
