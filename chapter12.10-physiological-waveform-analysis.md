@@ -100,7 +100,7 @@ At a conceptual level, continuous waveform analysis follows this pipeline:
 
 ### Why These Services
 
-**Amazon Kinesis Data Streams for waveform ingestion.** Physiological waveforms are the definition of high-throughput streaming data. Kinesis handles the continuous ingestion of millions of data points per second with guaranteed ordering within each shard. Each patient or device maps to a partition key, ensuring all data from one source stays in order. The 7-day retention window provides a buffer for reprocessing if your downstream analysis needs to be re-run.
+**Amazon Kinesis Data Streams for waveform ingestion.** Physiological waveforms are the definition of high-throughput streaming data. Kinesis handles the continuous ingestion of millions of data points per second with guaranteed ordering within each shard. Each session (patient-device combination) maps to a partition key, ensuring all data from one source stays in order. The 7-day retention window provides a buffer for reprocessing if your downstream analysis needs to be re-run.
 
 **AWS Lambda (or Amazon ECS/Fargate for sustained workloads) for preprocessing.** The preprocessing step (filtering, artifact detection, quality scoring) is computationally moderate but must run continuously. For lower-volume deployments, Lambda with Kinesis triggers works. For sustained high-throughput (dozens of beds, multiple waveform types), ECS/Fargate containers provide consistent compute without cold-start latency. Configure ECS Service Auto Scaling based on Kinesis iterator age (the lag between record arrival and processing). Target an iterator age under 5 seconds. Pre-provision a minimum task count that handles your typical census plus 20% headroom for burst scenarios like mass casualty events or shift-change admissions.
 
@@ -153,7 +153,7 @@ flowchart TD
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Kinesis Data Streams** | Ingests high-frequency waveform streams with per-patient ordering |
+| **Amazon Kinesis Data Streams** | Ingests high-frequency waveform streams with per-session ordering |
 | **Amazon ECS/Fargate** | Runs continuous preprocessing (filtering, artifact detection, quality scoring) |
 | **Amazon SageMaker** | Hosts trained waveform classification models on GPU endpoints (one per waveform type) |
 | **Amazon Timestream** | Stores classification results, quality metrics, and derived features for time-based queries |
