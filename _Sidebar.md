@@ -390,6 +390,8 @@
   * [Python Example](chapter15.07-python-example)
 * [15.8 — Chemotherapy Dose Optimization](chapter15.08-chemotherapy-dose-optimization)
   * [Python Example](chapter15.08-python-example)
+* [15.9 — Radiation Therapy Adaptive Planning](chapter15.09-radiation-therapy-adaptive-planning)
+  * [Python Example](chapter15.09-python-example)
 
 ---
 
