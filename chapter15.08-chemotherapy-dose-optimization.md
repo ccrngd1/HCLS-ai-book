@@ -64,7 +64,7 @@ So how do you validate a policy you can't test on patients? Three approaches, no
 
 <!-- TODO (TechWriter): Expert review A3 (LOW). CQL's conservatism partially mitigates confounding by staying close to historical behavior, but does not eliminate it. Consider adding a note about propensity-weighted trajectories or doubly-robust estimators for stronger causal claims. -->
 
-<!-- TODO: Verify current status of any prospective RL dosing trials (check clinicaltrials.gov) -->
+<!-- TODO (TechWriter): Verify current status of any prospective RL dosing trials (check clinicaltrials.gov) -->
 
 ### The MDP Formulation
 
@@ -665,7 +665,7 @@ If I were starting this project today, I'd begin with a single regimen at a sing
 - Gottesman et al., "Guidelines for reinforcement learning in healthcare," Nature Medicine, 2019
 - Tang et al., "Clinician-in-the-loop decision making: Reinforcement learning with near-optimal batch queries," NeurIPS, 2020
 - Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS, 2020
-<!-- TODO: Verify these citations are accurate and add DOIs -->
+<!-- TODO (TechWriter): Verify these citations are accurate and add DOIs if available -->
 
 **Regulatory Guidance:**
 - [FDA: Artificial Intelligence/Machine Learning (AI/ML)-Based Software as a Medical Device Action Plan](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-software-medical-device)
