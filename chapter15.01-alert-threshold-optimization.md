@@ -1,6 +1,6 @@
 # Recipe 15.1: Alert Threshold Optimization ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50–200/month (training infrastructure)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-200/month (training infrastructure)
 
 ---
 
@@ -148,6 +148,7 @@ flowchart TD
     B -->|Process| C[Lambda\nreward-calculator]
     C -->|Rewards + State| D[S3\ntraining-data/]
     C -->|Current State| E[DynamoDB\nalert-state]
+    C -->|Failed Events| DLQ[SQS Dead Letter Queue]
     
     D -->|Batch Training| F[SageMaker\nRL Training Job]
     F -->|Trained Policy| G[SageMaker Endpoint\npolicy-inference]
@@ -165,14 +166,14 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS DLQ for the Kinesis-to-Lambda reward calculator. Failed events should go to a dead letter queue for reprocessing. Note that systematic reward calculation failures should pause online learning to avoid training on biased reward signals. -->
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Expand on the DLQ pattern: failed reward calculation events go to SQS for reprocessing. Systematic reward calculation failures (e.g., EHR API down for hours) should pause online learning to avoid training on biased reward signals. -->
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `s3:GetObject`, `s3:PutObject`, `cloudwatch:PutMetricData` |
+| **AWS Services** | Amazon SageMaker, Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon CloudWatch, Amazon SQS |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `s3:GetObject`, `s3:PutObject`, `cloudwatch:PutMetricData`, `sqs:SendMessage` |
 | **BAA** | AWS BAA signed (alert data contains patient identifiers and clinical context) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption; all API calls over TLS |
 | **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints: S3 (gateway), DynamoDB (gateway), Kinesis Data Streams (interface), CloudWatch Logs (interface), SageMaker Runtime (interface) |
@@ -190,6 +191,7 @@ flowchart TD
 | **Amazon DynamoDB** | Stores current thresholds, safety bounds, state features, and adjustment history |
 | **Amazon S3** | Stores training datasets, model artifacts, and threshold change audit logs |
 | **Amazon CloudWatch** | Monitors alert-to-action ratios; triggers rollback on degradation |
+| **Amazon SQS** | Dead letter queue for failed reward calculations; prevents biased training data |
 | **AWS KMS** | Manages encryption keys for all data stores |
 
 ### Code
@@ -214,10 +216,11 @@ FUNCTION ingest_alert_event(event):
         staffing_ratio: current nurse-to-patient ratio on the unit
     }
     
-    // Write to the streaming ingestion layer for real-time processing
-    // Note: patient_id should be a one-way token (not raw MRN) for the RL pipeline.
-    // Restrict stream consumer access via IAM resource policies to only the
-    // reward-calculator Lambda and S3 archival process.
+    // Write to the streaming ingestion layer for real-time processing.
+    // Note: patient_id must be a one-way token (not raw MRN) for the RL pipeline.
+    // The tokenization happens at the EHR integration boundary, before data enters
+    // this stream. Restrict stream consumer access via IAM resource policies to only
+    // the reward-calculator Lambda and S3 archival process.
     write record to alert event stream
     RETURN record.alert_id
 ```
@@ -385,8 +388,8 @@ FUNCTION apply_threshold_safely(alert_type, unit, current_threshold, action):
         log warning: "Daily rate limit reached. No change applied."
         RETURN current_threshold  // no change
     
-    // Apply the change
-    // Note: In production, only the threshold-updater Lambda should have write access
+    // Apply the change.
+    // In production, only the threshold-updater Lambda should have write access
     // to this table. Block direct console/CLI writes and require a break-glass
     // procedure (with MFA and CloudTrail logging) for emergency manual overrides.
     write to threshold configuration store:
@@ -454,7 +457,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this in
 
 **A/B testing infrastructure.** Before full deployment, you need to run the RL-optimized thresholds on a subset of units while keeping others on static thresholds. This requires randomization at the unit level, outcome tracking across both arms, and statistical analysis of the difference. Plan for a 3-6 month pilot.
 
-**Regulatory considerations.** Alert threshold optimization likely does not require FDA clearance (it's adjusting configuration of existing systems, not making clinical decisions). But check with your compliance team. If the system is framed as a "clinical decision support" tool, different rules may apply.
+**Regulatory considerations.** Alert threshold optimization likely does not require FDA clearance (it's adjusting configuration of existing systems, not making clinical decisions). The FDA's 2022 guidance on Clinical Decision Support software provides a framework: if the system (1) is not intended to replace clinician judgment, (2) allows the clinician to independently review the basis for the recommendation, and (3) is intended for a healthcare professional, it may qualify for the CDS exemption under 21st Century Cures Act Section 3060. But check with your compliance team. If the system is framed as a "clinical decision support" tool, different rules may apply.
 
 ---
 
