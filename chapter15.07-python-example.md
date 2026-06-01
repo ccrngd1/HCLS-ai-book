@@ -442,6 +442,9 @@ def apply_safety_constraints(
         )
 
     # Constraint 5: Renal contraindications.
+    # NOTE: Contraindications override duration holds (Constraint 3) because
+    # safety trumps "give it more time." If eGFR drops below threshold while
+    # on metformin, the drug must be stopped regardless of duration.
     egfr = patient_data.get("egfr", 90)
     # Metformin contraindicated below eGFR 30
     if safe_action >= 1 and egfr < SAFETY_CONSTRAINTS["metformin_egfr_floor"]:
@@ -547,7 +550,10 @@ def build_episode_from_patient_history(patient_record: dict) -> list:
         # Build state from current visit
         hba1c_current = current_visit.get("hba1c", 7.0)
         hba1c_prev = prev_visit.get("hba1c", hba1c_current)
-        hba1c_trend = (hba1c_current - hba1c_prev) / DECISION_INTERVAL_MONTHS
+        # HbA1c trend: difference between this quarter and last quarter.
+        # This gives rate of change per quarter (not per month), matching
+        # the STATE_FEATURES bounds of [-2.0, 2.0].
+        hba1c_trend = hba1c_current - hba1c_prev
 
         state_data = {
             "hba1c_current": hba1c_current,
@@ -596,7 +602,7 @@ def build_episode_from_patient_history(patient_record: dict) -> list:
             **state_data,
             "hba1c_current": next_hba1c,
             "hba1c_prev_quarter": hba1c_current,
-            "hba1c_trend": (next_hba1c - hba1c_current) / DECISION_INTERVAL_MONTHS,
+            "hba1c_trend": next_hba1c - hba1c_current,
             "hypo_events_quarter": next_hypo,
             "current_treatment_level": action,
             "months_on_current_treatment": next_visit.get("months_on_treatment", 3),
@@ -644,8 +650,9 @@ def train_bcq_policy(
     - Low threshold (0.1): willing to recommend less common actions if Q-values
       support them. More aggressive.
 
-    For chronic disease, start conservative. Clinicians have decades of
-    experience encoded in their treatment patterns.
+    For chronic disease, lean conservative. Clinicians have decades of
+    experience encoded in their treatment patterns, and the BCQ threshold
+    is how you express respect for that experience in code.
 
     Args:
         episodes: List of episode dicts from build_episode_from_patient_history.
@@ -746,6 +753,13 @@ def _state_to_index(state_vector: np.ndarray, n_bins: int) -> int:
 
     These three features capture the core decision context:
     how controlled is the patient, what are they on, and are they taking it.
+
+    WARNING: This 3-feature discretization discards 13 state features entirely.
+    The policy cannot learn patient-specific treatment responses based on renal
+    function, cardiovascular risk, age, or comorbidities. In production, use a
+    neural network Q-function that takes the full 16-dimensional state vector
+    as input. The safety constraint layer partially compensates for this
+    limitation but cannot learn nuanced preferences.
     """
     key_features = [state_vector[0], state_vector[5], state_vector[12]]
     bins = np.clip(
@@ -767,7 +781,12 @@ def evaluate_policy_offline(
     discount: float = 0.95,
 ) -> dict:
     """
-    Estimate learned policy performance using weighted importance sampling.
+    Evaluate learned policy using concordance metrics against clinician decisions.
+
+    Full off-policy evaluation would use importance sampling or doubly-robust
+    estimators to estimate counterfactual policy value. We use concordance
+    metrics here for pedagogical clarity: how often does the policy agree
+    with clinicians, and what's the treatment intensity profile?
 
     For chronic disease RL, we care about:
     1. Estimated HbA1c distribution under the learned policy
@@ -965,7 +984,7 @@ def generate_treatment_recommendation(
     patient_data["hba1c_prev_quarter"] = patient_data.get("hba1c_current", new_hba1c)
     patient_data["hba1c_current"] = new_hba1c
     patient_data["hba1c_trend"] = (
-        (new_hba1c - patient_data["hba1c_prev_quarter"]) / DECISION_INTERVAL_MONTHS
+        new_hba1c - patient_data["hba1c_prev_quarter"]
     )
     # Merge visit observations
     patient_data.update({
@@ -1080,7 +1099,6 @@ if __name__ == "__main__":
         }
 
     # Patch for demo
-    import types
     fetch_patient_state_backup = fetch_patient_state
 
     try:
