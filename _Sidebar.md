@@ -352,6 +352,8 @@
   * [Python Example](chapter14.01-python-example)
 * [14.2 — Patient-Provider Assignment](chapter14.02-patient-provider-assignment)
   * [Python Example](chapter14.02-python-example)
+* [14.3 — Inventory Reorder Optimization](chapter14.03-inventory-reorder-optimization)
+  * [Python Example](chapter14.03-python-example)
 
 ---
 
