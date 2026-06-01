@@ -6,34 +6,56 @@
 
 ---
 
-## Changes Applied
+## Editorial Checklist
 
-1. **S1 (HIGH) — IAM clarity:** Added explicit note that EventBridge rules execute in the AWS service plane, clarifying why the rule's IAM role (not Lambda) needs `states:StartExecution`.
-2. **S2 (MEDIUM) — DynamoDB encryption:** Added "for CloudTrail audit visibility" rationale to the customer-managed KMS key specification.
-3. **N1 (HIGH) — VPC endpoint format:** Added explicit endpoint name `(com.amazonaws.{region}.states)` for Step Functions VPC endpoint so builders can copy-paste.
-4. **S3 (LOW) — Bucket policy:** Consolidated bucket policy enforcement details into the Encryption row for a single authoritative location.
+- [x] Grammar and mechanics: clean throughout
+- [x] Code formatting: all fenced blocks have language tags, inline code for service names and API calls
+- [x] Link verification: AWS documentation links are well-formed and plausible; six clinical/dataset URLs deferred as TODOs (V1)
+- [x] Header hierarchy: H1 title, H2 major sections, H3 subsections, H4 walkthrough; no skipped levels
+- [x] Readability: short paragraphs, active voice, no run-on sentences
+- [x] Voice drift check: no documentation-voice, no feature-list formatting, no announcement statements, zero em dashes, no LinkedIn-influencer tone
+- [x] RECIPE-GUIDE compliance: all required sections present in correct order (Problem, Technology, General Architecture, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code/Walkthrough, Expected Results, Honest Take, Variations, Related Recipes, Additional Resources, Implementation Time, Tags, Navigation)
+- [x] Vendor balance: ~70% vendor-agnostic (Problem + Technology + General Architecture + Honest Take) / ~30% AWS-specific (Implementation section)
+- [x] Python companion callout present and correctly linked
 
-## Findings Already Addressed in Draft
+---
 
-The following expert review findings were already incorporated before the edit pass:
-- A1 (HIGH): Cost guidance for low-volume deployments (async/serverless inference)
-- A2 (MEDIUM): DLQ and CloudWatch alarm on SNS topics
-- A3 (MEDIUM): Lambda memory (2048MB) and timeout (30s) specification
-- N2 (LOW): NAT Gateway note for EHR integration
-- S3 (LOW): Bucket policy note in "Why These Services" S3 paragraph
+## Expert Review Findings Disposition
 
-## Deferred to TechWriter
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| S1 | HIGH | IAM: Step Functions execution role + EventBridge trigger clarification | ADDRESSED in draft |
+| A1 | HIGH | Cost: serverless/async inference for low-volume deployments | ADDRESSED in draft |
+| N1 | HIGH | VPC: Step Functions endpoint with explicit format | ADDRESSED in draft |
+| S2 | MEDIUM | DynamoDB: customer-managed KMS key with rationale | ADDRESSED in draft |
+| A2 | MEDIUM | SNS: DLQ + CloudWatch alarm on urgent-referral DLQ | ADDRESSED in draft |
+| A3 | MEDIUM | Lambda: 2048MB memory, 30s timeout, provisioned concurrency | ADDRESSED in draft |
+| V1 | MEDIUM | Six URL placeholders in Additional Resources | DEFERRED to TechWriter (TODO marker at line 418) |
+| S3 | LOW | S3 bucket policy enforcement | ADDRESSED in draft |
+| N2 | LOW | NAT Gateway for EHR integration | ADDRESSED in draft |
+| V2 | LOW | Ingredients table SageMaker row voice | NO ACTION (table format constraints; cosmetic) |
 
-- **V1 (MEDIUM):** Six URL placeholders in Additional Resources require verification. TODO marker preserved at line 418.
+## Code Review Findings Disposition
 
-## Style Checklist
+Code review findings apply to the Python companion file (`chapter09.06-python-example.md`), not this main recipe. The pseudocode in the main recipe is correct and consistent with the clinical decision logic. No changes needed here.
 
-- [x] No em dashes
-- [x] No documentation-voice
-- [x] No fabricated URLs
-- [x] Header hierarchy correct (H1 → H2 → H3 → H4, no skips)
-- [x] 70/30 vendor balance maintained
-- [x] All RECIPE-GUIDE sections present in correct order
-- [x] Python companion callout present
-- [x] Active voice throughout
-- [x] Short paragraphs, no run-on sentences
+---
+
+## Changes Applied This Pass
+
+No substantive changes required. The recipe arrived in publishable condition with all HIGH and MEDIUM expert review findings already incorporated. This pass confirmed:
+
+1. Zero em dashes
+2. Zero documentation-voice instances
+3. Zero fabricated URLs (pending items are clearly marked as TODOs)
+4. Correct header hierarchy with no skipped levels
+5. All RECIPE-GUIDE sections present in correct order
+6. Strong 70/30 vendor balance
+7. Active voice throughout
+8. TODO marker for V1 correctly formatted for follow-up task generator
+
+---
+
+## Final Assessment
+
+Recipe 9.6 is publication-ready pending TechWriter resolution of the V1 URL verification TODO. The clinical content is accurate, the architecture is sound with all expert review gaps addressed, the voice is consistent with the book's style, and the regulatory considerations (FDA, HIPAA) are appropriately handled.
