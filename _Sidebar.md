@@ -234,6 +234,8 @@
   * [Python Example](chapter09.06-python-example)
 * [9.7 — Radiology AI Triage (Multi-Modality)](chapter09.07-radiology-ai-triage-multi-modality)
   * [Python Example](chapter09.07-python-example)
+* [9.8 — Pathology Slide Analysis](chapter09.08-pathology-slide-analysis)
+  * [Python Example](chapter09.08-python-example)
 
 ---
 
