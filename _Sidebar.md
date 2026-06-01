@@ -326,6 +326,8 @@
   * [Python Example](chapter13.01-python-example)
 * [13.2 — Provider Directory as Knowledge Graph](chapter13.02-provider-directory-knowledge-graph)
   * [Python Example](chapter13.02-python-example)
+* [13.3 — ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)
+  * [Python Example](chapter13.03-python-example)
 
 ---
 
