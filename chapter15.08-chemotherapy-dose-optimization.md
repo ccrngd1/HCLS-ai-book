@@ -1,6 +1,6 @@
 # Recipe 15.8: Chemotherapy Dose Optimization
 
-**Complexity:** Complex · **Phase:** Research/Clinical Validation · **Estimated Cost:** ~$2,000–$8,000/month (training infrastructure)
+**Complexity:** Complex · **Phase:** Research/Clinical Validation · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
 
 ---
 
@@ -60,7 +60,9 @@ Research groups have demonstrated offline RL policies that, when evaluated retro
 
 The methodological foundations are solid: fitted Q-iteration, conservative Q-learning (CQL), batch-constrained deep Q-networks, and model-based approaches have all been applied. The challenge is not algorithmic; it's validation. How do you prove a learned policy is safe before deploying it on patients?
 
-Current approaches to validation include: importance-weighted evaluation (estimating policy value from historical data), simulation with pharmacokinetic/pharmacodynamic (PK/PD) models, and expert review of recommended actions. None of these is as convincing as a randomized trial, and randomized trials of RL-based dosing are only beginning to be proposed.
+So how do you validate a policy you can't test on patients? Three approaches, none perfect: importance-weighted evaluation (estimate what would have happened using historical data), simulation with PK/PD models (build a fake patient and test on them), and expert review (show oncologists the recommendations and ask "would you do this?"). None is as convincing as a randomized trial, and randomized trials of RL-based dosing are only beginning to be proposed.
+
+<!-- TODO (TechWriter): Expert review A3 (LOW). CQL's conservatism partially mitigates confounding by staying close to historical behavior, but does not eliminate it. Consider adding a note about propensity-weighted trajectories or doubly-robust estimators for stronger causal claims. -->
 
 <!-- TODO: Verify current status of any prospective RL dosing trials (check clinicaltrials.gov) -->
 
@@ -77,7 +79,7 @@ For chemotherapy dose optimization, the Markov Decision Process (MDP) looks like
 - Cycle number and cumulative dose
 - Time since last treatment
 - Patient demographics (age, BSA, performance status)
-- Genetic markers (if available: DPYD, UGT1A1, etc.)
+- Genetic markers (if available: DPYD, UGT1A1, etc.). Note: pharmacogenomic data is subject to GINA and state genetic privacy laws beyond HIPAA. Segregate genetic data storage with additional access controls. Verify patient consent specifically covers use of genetic data in algorithmic decision support.
 
 **Action space (what the agent can decide):**
 - Dose level for each drug: discrete levels (100%, 75%, 50%, 25%, hold)
@@ -148,13 +150,13 @@ The practical implication: offline RL policies tend to be conservative. They imp
 
 **Amazon S3 for data lake.** Historical treatment trajectories, extracted features, trained model artifacts, and evaluation results all live in S3. The data volumes are moderate (thousands of patients, not millions of images), but the governance requirements are strict: versioning, encryption, access logging.
 
-**AWS Glue for ETL.** Extracting treatment trajectories from raw EHR data requires complex joins across lab results, medication administration records, imaging reports, and toxicity documentation. Glue handles the batch ETL that constructs clean trajectory datasets from messy clinical data.
+**AWS Glue for ETL.** Extracting treatment trajectories from raw EHR data requires complex joins across lab results, medication administration records, imaging reports, and toxicity documentation. Glue handles the batch ETL that constructs clean trajectory datasets from messy clinical data. Configure Glue jobs with a VPC connection to run within your VPC (Glue's default network runs outside your VPC boundary, which is unacceptable for PHI). Glue needs a NAT gateway or VPC endpoints for S3 access when running in VPC mode.
 
 **Amazon DynamoDB for state tracking.** In a deployed decision support system, the current patient state and recommendation history need low-latency access. DynamoDB stores the per-patient state vectors and the audit trail of recommendations made.
 
 **AWS Step Functions for pipeline orchestration.** The training pipeline (extract data, build trajectories, train model, evaluate, register) is a multi-step workflow with dependencies. Step Functions coordinates the stages and handles failures gracefully.
 
-**Amazon CloudWatch for monitoring.** Model performance metrics, recommendation acceptance rates, and outcome tracking all flow through CloudWatch for operational visibility.
+**Amazon CloudWatch for monitoring.** Model performance metrics, recommendation acceptance rates, and outcome tracking all flow through CloudWatch for operational visibility. Monitor for drift signals: recommendation acceptance rate dropping below 60% (clinicians disagreeing more often suggests the policy is out of step with current practice), patient state distributions shifting outside training data bounds, and outcome metrics degrading over time. Any of these should trigger a retraining cycle via Step Functions.
 
 ### Architecture Diagram
 
@@ -186,10 +188,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Step Functions, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **IAM Permissions** | Resource-scoped: `sagemaker:CreateTrainingJob`, `CreateEndpoint` (scoped by tag conditions); `s3:GetObject`, `PutObject` on trajectory and model buckets only; `glue:StartJobRun` on `chemo-trajectory-etl*` jobs; `dynamodb:PutItem`, `GetItem` on patient-state and audit tables only; `states:StartExecution` on the RL pipeline state machine. Use separate roles for: training pipeline, inference endpoint, ETL, and clinician dashboard. |
 | **BAA** | AWS BAA signed (required: treatment records are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for training volumes and endpoints; all transit over TLS |
-| **VPC** | Production: all services in VPC with VPC endpoints. SageMaker training and endpoints in private subnets. No public internet access for PHI-processing components. |
+| **VPC** | All services in VPC with VPC endpoints. SageMaker training and endpoints in private subnets. No public internet access for PHI-processing components. Endpoints needed: S3 gateway (free), DynamoDB gateway (free), SageMaker Runtime interface (~$7.50/month/AZ), SageMaker API interface, Glue interface, Step Functions interface, CloudWatch interface, KMS interface. Budget ~$45-90/month for interface endpoints across 2-3 AZs. |
 | **CloudTrail** | Enabled: log all API calls for HIPAA audit trail. Critical for tracking who accessed what patient data and when. |
 | **Data Requirements** | Minimum 500-1000 complete treatment trajectories per regimen. More is better. Must include labs, dosing records, imaging, toxicity grades, and outcomes. |
 | **Cost Estimate** | Training: $50-200 per training run (GPU instances, 4-12 hours). Inference endpoint: $200-800/month (ml.m5.xlarge). Storage and ETL: $100-500/month depending on data volume. |
@@ -200,8 +202,8 @@ flowchart TD
 |------------|------|
 | **Amazon SageMaker** | RL model training (custom containers), model hosting for inference, experiment tracking |
 | **Amazon S3** | Trajectory dataset storage, model artifact registry, evaluation results |
-| **AWS Glue** | ETL pipeline: EHR data to structured trajectories |
-| **Amazon DynamoDB** | Real-time patient state vectors, recommendation audit trail |
+| **AWS Glue** | ETL pipeline: EHR data to structured trajectories (runs in customer VPC) |
+| **Amazon DynamoDB** | Real-time patient state vectors, recommendation audit trail (append-only for audit records) |
 | **AWS Step Functions** | Training pipeline orchestration, retraining schedules |
 | **Amazon CloudWatch** | Monitoring: model drift, recommendation acceptance rates, outcome metrics |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
@@ -350,6 +352,11 @@ FUNCTION train_offline_rl_policy(trajectories, config):
         output_dim = 1                // scalar Q-value
     
     // CQL training loop.
+    // Note: The action space here is discrete (30 combinations of dose x timing x G-CSF).
+    // For discrete CQL, you can enumerate all 30 actions and compute Q-values for each,
+    // then the CQL penalty pushes down the max Q across all actions relative to the Q of
+    // the action actually taken. The random sampling formulation below is the continuous-action
+    // variant included for generality. For this specific problem, discrete CQL is simpler.
     FOR each epoch in range(config.num_epochs):
         FOR each batch in sample_batches(dataset, config.batch_size):
             
@@ -476,6 +483,10 @@ FUNCTION apply_safety_constraints(recommended_action, current_state, safety_rule
 FUNCTION generate_recommendation(patient_state, policy, safety_rules):
     // Generate a complete, explainable dosing recommendation for clinician review.
     
+    // Validate state vector before policy inference.
+    // Reject physiologically impossible values (catches EHR integration errors).
+    validate_state(patient_state)
+    
     // Get the policy's raw recommendation.
     raw_action = policy.recommend(patient_state)
     
@@ -514,9 +525,25 @@ FUNCTION generate_recommendation(patient_state, policy, safety_rules):
     }
     
     // Store recommendation for audit trail (regardless of whether clinician accepts it).
+    // Audit trail requirements for clinical decision support:
+    // 1. Append-only: no updates or deletes permitted on recommendation records
+    // 2. Tamper-evident: use S3 Object Lock (compliance mode) for archival copies
+    // 3. Retention: minimum 7 years (malpractice statute of limitations varies by state)
+    // 4. Access: read-only for clinicians and compliance; write-only for recommendation engine
+    // DynamoDB stores operational copies; S3 with Object Lock stores the compliance archive.
     store_recommendation(patient_state.patient_id, recommendation)
     
     RETURN recommendation
+
+FUNCTION validate_state(patient_state):
+    // Reject physiologically impossible values before policy inference.
+    // These catch EHR integration errors, not clinical edge cases.
+    ASSERT 0 <= patient_state.anc <= 50000, "ANC out of physiological range"
+    ASSERT 0 <= patient_state.platelets <= 1000000, "Platelets out of range"
+    ASSERT 0 < patient_state.creatinine <= 30, "Creatinine out of range"
+    ASSERT 0 < patient_state.bilirubin <= 50, "Bilirubin out of range"
+    ASSERT patient_state.cycle_number >= 1, "Invalid cycle number"
+    // If any validation fails: do not generate recommendation, alert clinician.
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -565,7 +592,7 @@ FUNCTION generate_recommendation(patient_state, policy, safety_rules):
 | Recommendation confidence (median) | 0.65-0.80 |
 | Training time (1000 trajectories) | 4-8 hours on GPU |
 | Inference latency | < 100ms per recommendation |
-| Clinician acceptance rate | TODO: no deployed systems to measure yet |
+| Clinician acceptance rate | Not yet measurable (no deployed systems) |
 
 **Where it struggles:**
 - Patients with rare tumor types or unusual pharmacogenomics (limited training data)
