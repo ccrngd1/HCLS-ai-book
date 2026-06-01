@@ -350,6 +350,8 @@
 * [Preface](chapter14-preface)
 * [14.1 — Appointment Slot Optimization](chapter14.01-appointment-slot-optimization)
   * [Python Example](chapter14.01-python-example)
+* [14.2 — Patient-Provider Assignment](chapter14.02-patient-provider-assignment)
+  * [Python Example](chapter14.02-python-example)
 
 ---
 
