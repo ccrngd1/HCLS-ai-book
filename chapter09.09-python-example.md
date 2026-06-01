@@ -9,7 +9,7 @@
 You'll need the AWS SDK for Python and a few numerical libraries:
 
 ```bash
-pip install boto3 numpy
+pip install boto3 numpy requests requests-aws4auth
 ```
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
@@ -250,6 +250,7 @@ def create_frame_extraction_job(procedure_id: str, video_s3_key: str) -> str:
         Role=MEDIACONVERT_ROLE_ARN,
         Queue=MEDIACONVERT_QUEUE_ARN,
         Settings=job_settings,
+        # MediaConvert uses a flat dict for tags (unlike SageMaker which uses Key/Value list)
         Tags={"procedure_id": procedure_id},
     )
 
@@ -262,6 +263,7 @@ def create_frame_extraction_job(procedure_id: str, video_s3_key: str) -> str:
 def filter_valid_frames(procedure_id: str) -> list:
     """
     After frame extraction, filter out non-informative frames.
+    Call this AFTER the MediaConvert job completes (poll with get_job or use EventBridge).
 
     Black frames (camera disconnected), completely white frames (lens fogging),
     and uniform-color frames (light source off) are useless for analysis.
@@ -595,6 +597,8 @@ def enforce_min_phase_duration(phases: np.ndarray, min_frames: int) -> np.ndarra
     No surgical phase lasts less than 30 seconds. If the model predicts
     a 5-second phase segment, it's almost certainly a misclassification.
     We merge it into whichever adjacent phase is longer.
+
+    NOTE: Single pass. For very noisy predictions, you might need to iterate until stable.
 
     Args:
         phases: 1D array of phase labels (already median-filtered).

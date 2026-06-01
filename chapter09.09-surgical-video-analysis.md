@@ -116,7 +116,7 @@ The pipeline for surgical video analysis follows this conceptual flow:
 
 **Amazon S3 for video storage.** Surgical video files are large (50-100 GB per procedure at full resolution) and write-once. S3 provides durable, encrypted storage with lifecycle policies to manage cost. Use S3 Intelligent-Tiering or transition to S3 Glacier for videos older than 90 days that aren't actively being analyzed. S3's multipart upload handles the large file sizes gracefully.
 
-**AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances.
+**AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all PHI processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.
 
 <!-- TODO (TechWriter): Expert review S1 (CRITICAL). Add PHI de-identification guidance for surgical video preprocessing: strip audio tracks (not needed for visual analysis but contain dense PHI), address pre-incision footage containing patient faces, sanitize video file metadata/headers, note OR monitor overlay detection for patient demographics displayed in-frame. -->
 
@@ -555,6 +555,8 @@ Real-time intraoperative use is the dream, but it's years away from routine clin
 One more thing: surgeon buy-in is everything. If the surgical staff perceives this as surveillance rather than a learning tool, adoption will be zero regardless of how good the technology is. Frame it as "your personal performance coach" not "big brother in the OR."
 
 Configure S3 lifecycle policies and DynamoDB TTL aligned with your institution's records retention policy. Typical surgical video retention is 7-10 years; check state-specific requirements. Implement a deletion workflow that removes video, frames, features, and index entries together when retention expires.
+
+When you deploy a new model version, decide whether to reprocess historical procedures. Store `model_version` in the index so you can filter by version. Consider maintaining a "gold standard" set of manually-annotated procedures for regression testing new models against.
 
 ---
 
