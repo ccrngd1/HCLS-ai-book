@@ -514,7 +514,7 @@ Start with one willing provider. Show results. Let word spread. Mandating optimi
 **Optimization Libraries (used within SageMaker):**
 - [Google OR-Tools](https://developers.google.com/optimization): Open-source optimization suite with CP-SAT solver, excellent for scheduling problems
 - [PuLP](https://coin-or.github.io/pulp/): Python LP/MIP modeling library that interfaces with CBC, CPLEX, and Gurobi solvers
-- [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library, useful for more complex multi-server validation scenarios
+- [SimPy](https://simpy.readthedocs.io/): Python discrete-event simulation library, useful for multi-server validation scenarios beyond the single-provider case
 
 **AWS Solutions and Blogs:**
 - [Optimization with Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/): Search for scheduling and optimization use cases
