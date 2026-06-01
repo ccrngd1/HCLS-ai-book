@@ -76,9 +76,9 @@ Both modes must use the same scoring function and respect the same constraints. 
 
 **Validation.** After the solver runs, verify the solution makes clinical sense. Check that all patients are assigned, no capacity limits are violated, and the distribution across providers is reasonable (flag if one provider gets more than 60% of new assignments). Generate human-readable rationale for each assignment explaining why that match was chosen.
 
-**Human Review.** Present proposed assignments to the panel management team with scores, rationale, and distribution summaries. They approve, reject, or override individual assignments. This step is non-negotiable in healthcare: optimization suggests, humans decide.
+**Human Review.** Present proposed assignments to the panel management team with scores, rationale, and distribution summaries. They approve, reject, or override individual assignments. This step is non-negotiable in healthcare. Optimization suggests; humans decide.
 
-**EHR Write-back.** After approval, update the EHR's panel attribution. This is typically an HL7 FHIR CareTeam resource update or a proprietary API call. Handle failures gracefully; a failed write-back should not leave your assignment table and the EHR out of sync.
+**EHR Write-back.** After approval, update the EHR's panel attribution. This is typically an HL7 FHIR CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.
 
 <!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a subsection or paragraph explaining how batch and incremental assignment modes coexist architecturally. The incremental case (single new patient, needs PCP immediately) uses a simplified greedy approach with the same scoring function. Discuss latency requirements (seconds vs. minutes) and how both modes share constraint/scoring logic. -->
 
