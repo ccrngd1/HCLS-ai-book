@@ -238,6 +238,8 @@
   * [Python Example](chapter09.08-python-example)
 * [9.9 — Surgical Video Analysis](chapter09.09-surgical-video-analysis)
   * [Python Example](chapter09.09-python-example)
+* [9.10 — Multi-Modal Imaging Fusion](chapter09.10-multi-modal-imaging-fusion)
+  * [Python Example](chapter09.10-python-example)
 
 ---
 
