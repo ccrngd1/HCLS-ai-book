@@ -34,7 +34,6 @@ import logging
 import datetime
 from datetime import timezone
 from decimal import Decimal
-from typing import Optional
 
 import boto3
 from botocore.config import Config
@@ -77,6 +76,9 @@ MAX_PHARMACY_PREPS_PER_HOUR = 8
 
 # Objective function weights. These encode your center's priorities.
 # Tune these based on what leadership cares about most.
+# Note: This simplified example only implements utilization and preference
+# objectives in the solver. The full weight structure is documented here
+# to show the production objective described in the main recipe's pseudocode.
 WEIGHTS = {
     "utilization": 0.35,       # fill those chairs
     "wait_time": 0.25,         # don't make patients sit in the lobby
@@ -173,6 +175,11 @@ def get_nursing_demand_at_offset(protocol_key: str, offset_minutes: int) -> floa
     This is the key function for workload leveling. At any point in time,
     we can ask "how much nursing attention does this patient need right now?"
     and sum across all patients to get total demand for that time period.
+
+    Note: This function is not used in the simplified optimizer below, which
+    uses average attention per protocol as an approximation. A production
+    implementation would call this function for each patient-period combination
+    to get phase-specific demand, enabling more accurate workload leveling.
     """
     protocol = PROTOCOLS[protocol_key]
     elapsed = 0
@@ -374,15 +381,12 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
     # --- Hard Constraints ---
 
     # Constraint 1: No two patients overlap in the same chair.
-    # We use interval variables and NoOverlap2D (or pairwise disjunctions).
-    # CP-SAT's AddNoOverlap works on intervals within the same resource.
-    # Since chair assignment is also a variable, we use a conditional approach:
-    # for each pair of patients, if they're in the same chair, their time
-    # intervals must not overlap.
+    # We use CP-SAT's conditional constraints with proper full reification.
+    # For each pair of patients: if they share a chair, one must finish
+    # (including turnover buffer) before the other starts.
 
     for i in range(num_patients):
         for j in range(i + 1, num_patients):
-            # Duration including turnover buffer
             duration_i = requests[i]["total_duration_minutes"] + TURNOVER_BUFFER_MINUTES
             duration_j = requests[j]["total_duration_minutes"] + TURNOVER_BUFFER_MINUTES
 
@@ -391,25 +395,19 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
             model.Add(chair_vars[i] == chair_vars[j]).OnlyEnforceIf(same_chair)
             model.Add(chair_vars[i] != chair_vars[j]).OnlyEnforceIf(same_chair.Not())
 
-            # If same chair, they must not overlap in time.
-            # Either i finishes before j starts, or j finishes before i starts.
-            no_overlap_ij = model.NewBoolVar(f"no_overlap_{i}_{j}")
+            # If same chair, enforce temporal ordering (i before j OR j before i).
+            # We use a single boolean to represent the ordering direction.
+            i_before_j = model.NewBoolVar(f"order_{i}_{j}")
+
+            # If same_chair AND i_before_j: i finishes before j starts
             model.Add(
                 start_vars[i] + duration_i <= start_vars[j]
-            ).OnlyEnforceIf(no_overlap_ij)
+            ).OnlyEnforceIf(same_chair, i_before_j)
+
+            # If same_chair AND NOT i_before_j: j finishes before i starts
             model.Add(
                 start_vars[j] + duration_j <= start_vars[i]
-            ).OnlyEnforceIf(no_overlap_ij.Not())
-
-            # If same chair, one of the ordering constraints must hold
-            model.AddBoolOr([no_overlap_ij, no_overlap_ij.Not()]).OnlyEnforceIf(same_chair)
-            # Actually, we need: if same_chair, then (i before j) OR (j before i)
-            i_before_j = model.NewBoolVar(f"i_before_j_{i}_{j}")
-            j_before_i = model.NewBoolVar(f"j_before_i_{i}_{j}")
-            model.Add(start_vars[i] + duration_i <= start_vars[j]).OnlyEnforceIf(i_before_j)
-            model.Add(start_vars[j] + duration_j <= start_vars[i]).OnlyEnforceIf(j_before_i)
-            # If same chair, at least one ordering must hold
-            model.AddBoolOr([i_before_j, j_before_i]).OnlyEnforceIf(same_chair)
+            ).OnlyEnforceIf(same_chair, i_before_j.Not())
 
     # Constraint 2: Nursing capacity per time period.
     # For each 15-minute period, the total nursing demand from all patients
@@ -437,10 +435,23 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
 
             # Boolean: does patient i overlap this period?
             # Patient i overlaps if: start_i < period_end AND start_i + duration > period_start
+            # We need full channeling: overlaps must be True when the patient
+            # is actually present, and False otherwise. Half-reification alone
+            # would let the solver set overlaps=False even when the patient is
+            # present, making the capacity constraint a no-op.
             overlaps = model.NewBoolVar(f"overlaps_{i}_p{period_idx}")
+
+            # Forward: if overlaps, then both conditions hold
             model.Add(start_vars[i] < period_end).OnlyEnforceIf(overlaps)
             model.Add(start_vars[i] + duration > period_start).OnlyEnforceIf(overlaps)
-            model.Add(start_vars[i] >= period_end).OnlyEnforceIf(overlaps.Not())
+
+            # Reverse: if NOT overlaps, then at least one condition is violated
+            # (patient ends before period starts, OR patient starts after period ends)
+            ends_before = model.NewBoolVar(f"ends_before_{i}_p{period_idx}")
+            starts_after = model.NewBoolVar(f"starts_after_{i}_p{period_idx}")
+            model.Add(start_vars[i] + duration <= period_start).OnlyEnforceIf(ends_before)
+            model.Add(start_vars[i] >= period_end).OnlyEnforceIf(starts_after)
+            model.AddBoolOr([ends_before, starts_after]).OnlyEnforceIf(overlaps.Not())
 
             # Compute average nursing attention for this protocol
             protocol = PROTOCOLS[req["protocol_key"]]
@@ -467,6 +478,10 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
     # Each patient's prep must start pharmacy_prep_minutes before their
     # chair start time. No more than MAX_PHARMACY_PREPS_PER_HOUR can
     # start in any given hour.
+    # Note: pharmacy operating hours may extend before center opening
+    # (e.g., pharmacy starts at 6 AM for 7 AM patients). This model only
+    # counts preps within center hours. Production systems would model
+    # pharmacy capacity on its own timeline.
 
     for hour_idx in range(len(resource_model["pharmacy_capacity_per_hour"])):
         hour_start = day_start + hour_idx * 60
@@ -479,16 +494,23 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
 
             # Boolean: does this patient's prep fall in this hour?
             # Prep start = start_vars[i] - prep_offset
+            # Full channeling: prep_in_hour must be True iff prep is in [hour_start, hour_end)
             prep_in_hour = model.NewBoolVar(f"prep_{i}_hour{hour_idx}")
+
+            # Forward: if prep_in_hour, prep start is within this hour
             model.Add(
                 start_vars[i] - prep_offset >= hour_start
             ).OnlyEnforceIf(prep_in_hour)
             model.Add(
                 start_vars[i] - prep_offset < hour_end
             ).OnlyEnforceIf(prep_in_hour)
-            model.Add(
-                start_vars[i] - prep_offset < hour_start
-            ).OnlyEnforceIf(prep_in_hour.Not())
+
+            # Reverse: if NOT prep_in_hour, prep is outside this hour
+            before_hour = model.NewBoolVar(f"prep_before_{i}_h{hour_idx}")
+            after_hour = model.NewBoolVar(f"prep_after_{i}_h{hour_idx}")
+            model.Add(start_vars[i] - prep_offset < hour_start).OnlyEnforceIf(before_hour)
+            model.Add(start_vars[i] - prep_offset >= hour_end).OnlyEnforceIf(after_hour)
+            model.AddBoolOr([before_hour, after_hour]).OnlyEnforceIf(prep_in_hour.Not())
 
             preps_in_hour.append(prep_in_hour)
 
@@ -502,11 +524,21 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
     # and the drug is administered at start_time, this is automatically satisfied
     # in our simplified model. In production, you'd track actual prep completion
     # time separately (pharmacy might prep early if they have capacity).
+    # The real drug stability risk is reactive: when a patient is delayed after
+    # prep is complete, check whether the drug will expire before the new start time.
 
     # --- Objective Function ---
 
     # We combine multiple objectives into a single weighted score.
     # CP-SAT maximizes, so we formulate all terms as "higher is better."
+    #
+    # Note: The WEIGHTS dict defined at module level captures the intended
+    # multi-objective balance (utilization, wait time, leveling, preferences).
+    # This simplified example only implements utilization (earliness) and
+    # preference satisfaction. A production implementation would add workload
+    # leveling (minimax nursing demand) and explicit wait-time minimization.
+    # The WEIGHTS dict is retained as documentation of the full objective
+    # structure described in the main recipe's pseudocode.
 
     objective_terms = []
 
@@ -522,35 +554,41 @@ def optimize_schedule(requests: list[dict], resource_model: dict) -> dict:
 
     # Objective 2: Patient preference satisfaction.
     # Bonus for scheduling within the patient's preferred window.
+    # We need full channeling so the solver can't claim preference is met
+    # when the patient is actually scheduled outside their window.
     preference_bonuses = []
     for i, req in enumerate(requests):
         pref_start = req["preferred_start_minutes"]
         pref_end = pref_start + req["preferred_window_minutes"]
 
         in_window = model.NewBoolVar(f"in_pref_{i}")
+
+        # Forward: if in_window, start is within [pref_start, pref_end]
         model.Add(start_vars[i] >= pref_start).OnlyEnforceIf(in_window)
         model.Add(start_vars[i] <= pref_end).OnlyEnforceIf(in_window)
-        model.Add(start_vars[i] < pref_start).OnlyEnforceIf(in_window.Not())
+
+        # Reverse: if NOT in_window, start is outside the window
+        # (before pref_start OR after pref_end)
+        too_early = model.NewBoolVar(f"too_early_{i}")
+        too_late = model.NewBoolVar(f"too_late_{i}")
+        model.Add(start_vars[i] < pref_start).OnlyEnforceIf(too_early)
+        model.Add(start_vars[i] > pref_end).OnlyEnforceIf(too_late)
+        model.AddBoolOr([too_early, too_late]).OnlyEnforceIf(in_window.Not())
 
         # Bonus of 100 points for being in the preferred window
         preference_bonuses.append(in_window)
 
     # Objective 3: Workload leveling.
     # Minimize the maximum nursing demand across all periods.
-    # We use a minimax formulation: introduce a variable "max_demand"
-    # and constrain it to be >= demand in every period, then minimize it.
-    # (Since we're maximizing overall, we subtract max_demand from objective.)
-
-    max_demand = model.NewIntVar(0, num_patients * 100, "max_demand")
-    # We already have the period demand constraints above. For the objective,
-    # we'd need to track actual demand per period. This is complex in CP-SAT
-    # with conditional variables, so we use the preference and earliness
-    # terms as our primary objectives for this example.
+    # A full implementation would track demand per period and use a minimax
+    # formulation (minimize the peak). This is complex with conditional
+    # variables in CP-SAT, so this simplified example relies on the nursing
+    # capacity constraint (Constraint 2) to prevent overload, and uses
+    # earliness + preferences as the optimization objectives.
 
     # Combine objectives
-    # Weight earliness (utilization proxy) and preferences
     model.Maximize(
-        sum(objective_terms)  # earliness terms
+        sum(objective_terms)  # earliness terms (utilization proxy)
         + 100 * sum(preference_bonuses)  # preference bonus
     )
 
@@ -771,6 +809,10 @@ def handle_disruption(
     A disruption to one patient should not cascade into rescheduling
     the entire day. Use buffers, swap chairs, or shift adjacent patients
     only when absolutely necessary.
+
+    Note: This function mutates the schedule dict in place for simplicity.
+    Production code would work on a copy and only commit changes after
+    validation, enabling rollback if the adjustment creates new conflicts.
     """
     assignments = schedule.get("assignments", [])
     affected = next((a for a in assignments if a["patient_id"] == patient_id), None)

@@ -161,15 +161,21 @@ The vendor-agnostic architecture for a chemotherapy scheduling optimization syst
 
 **AWS Step Functions for the multi-step scheduling workflow.** The full scheduling pipeline (pull orders, predict durations, run optimizer, validate constraints, publish schedule, notify pharmacy) has multiple steps with error handling and retry logic. Step Functions provides the orchestration with built-in state management and visibility.
 
-**Amazon DynamoDB for schedule state.** The current schedule is a rapidly-read, occasionally-updated data structure. DynamoDB's single-digit-millisecond reads support the real-time display needs (nurses checking the board, pharmacy checking prep sequence), and its conditional writes prevent race conditions when multiple adjustments happen simultaneously.
+**Amazon DynamoDB for schedule state.** Nurses check the schedule board constantly. The patient portal refreshes every 30 seconds. Pharmacy needs instant visibility into timing changes. You need single-digit-millisecond reads on a data structure that updates maybe 50 times per day but gets read thousands of times. DynamoDB's read performance and conditional writes (preventing race conditions when multiple adjustments happen simultaneously) fit this access pattern exactly.
 
 **Amazon EventBridge for event routing.** Schedule changes, patient arrivals, pharmacy completions, and disruption notifications all flow as events. EventBridge routes these to the appropriate handlers (Lambda functions) based on event type, enabling loose coupling between the scheduling engine and its consumers.
 
-**Amazon S3 for optimization artifacts.** Solver logs, schedule history, model training data, and audit trails all land in S3. This supports both compliance (you need to explain why a patient was scheduled when they were) and continuous improvement (analyzing historical schedules to tune the optimizer).
+**Amazon S3 for optimization artifacts.** Solver logs, schedule history, model training data, and audit trails all land in S3. This supports both compliance (you need to explain why a patient was scheduled when they were) and continuous improvement (analyzing historical schedules to tune the optimizer). Solver logs contain PHI (patient IDs, regimens, scheduling decisions), so store them in a dedicated bucket with S3 Object Lock for compliance retention (minimum 6 years per HIPAA), lifecycle policies transitioning to Glacier after 90 days, and bucket policies restricting access to the scheduling service role and authorized administrators.
 
 **AWS HealthLake or Amazon RDS for clinical data.** Treatment protocols, drug stability profiles, and patient treatment histories live in a clinical data store. HealthLake if you're working with FHIR resources; RDS (PostgreSQL) if you need relational queries across protocol definitions and scheduling rules.
 
+Note on API access patterns: the staff dashboard and pharmacy system are internal consumers (hospital network only), while the patient portal is internet-facing. Consider separate API Gateway stages: a private API with IAM authentication for internal consumers, and a public API with WAF, rate limiting, and Cognito/OIDC authentication for the patient portal.
+
 ### Architecture Diagram
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Add bidirectional arrow between Staff Dashboard and scheduling engine. Add paragraph describing human override mechanism: drag-and-drop reassignment, assignment locking, ad-hoc constraint addition, re-solve requests. Log all overrides with staff ID and reason. Track override frequency to identify missing model constraints. The recipe's Honest Take already advises "Allow overrides" but the architecture doesn't implement it. -->
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add failover/degradation subsection. The optimization layer enhances existing scheduling; it does not replace it. Define: if batch optimizer fails by 6 AM, fall back to template-based schedule. If real-time adjuster times out (>5s), route to human scheduler queue. Staff dashboard must show current schedule regardless of optimizer availability. Alert if batch job fails or real-time latency exceeds 5s for 3+ consecutive events. -->
 
 ```mermaid
 flowchart TD
@@ -205,10 +211,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | AWS Services | SageMaker, Lambda, Step Functions, DynamoDB, EventBridge, S3, API Gateway, CloudWatch |
-| IAM Permissions | sagemaker:InvokeEndpoint, dynamodb:PutItem/GetItem/Query, s3:GetObject/PutObject, states:StartExecution, events:PutEvents |
+| IAM Permissions | sagemaker:InvokeEndpoint (scoped to duration-prediction endpoint ARN), dynamodb:PutItem/GetItem/Query/UpdateItem (scoped to schedule-* and queue-* tables), s3:GetObject/PutObject (scoped to schedule-history and solver-logs buckets), states:StartExecution (scoped to batch-scheduler state machine), events:PutEvents (scoped to scheduling event bus), lambda:InvokeFunction (scoped to scheduling functions), logs:CreateLogGroup/CreateLogStream/PutLogEvents, kms:Decrypt/GenerateDataKey (scoped to scheduling CMK) |
 | BAA | Required. Patient treatment schedules are PHI. |
 | Encryption | S3 SSE-KMS, DynamoDB encryption at rest, TLS in transit for all API calls |
-| VPC | Production deployment in VPC with VPC endpoints for AWS services |
+| VPC | Production deployment in VPC with VPC endpoints for AWS services. Required endpoints: DynamoDB (gateway), S3 (gateway), SageMaker Runtime (interface), Step Functions (interface), EventBridge (interface), CloudWatch Logs (interface). No NAT Gateway required when all endpoints are configured. Security groups on interface endpoints restrict access to the scheduling Lambda security group only. |
 | CloudTrail | Audit logging for all schedule modifications (who changed what, when) |
 | Sample Data | Synthetic treatment orders with realistic regimen distributions. Never use real patient data in dev. |
 | Cost Estimate | ~$1,500/month (small center, 15 chairs) to ~$6,000/month (large center, 50+ chairs, real-time optimization) |
@@ -415,10 +421,19 @@ FUNCTION optimize_schedule(requests, resource_model, config):
     
     // Constraint: drug stability
     FOR EACH request IN requests:
+        // Note: In the batch schedule, this constraint ensures pharmacy prep
+        // is scheduled close enough to the patient's start time that the drug
+        // won't expire even with expected variance. The tighter real-time check
+        // (in Step 6) verifies actual prep completion against actual expected
+        // administration time when delays occur.
         model.add_constraint(
             request.start_var - prep_completion_time(request) 
             <= request.drug_stability_hours * 60
         )
+    // TODO (TechWriter): Expert review A3 (MEDIUM). prep_completion_time() is
+    // undefined. Reformulate: batch constraint should use start_var minus
+    // (prep_start + pharmacy_prep_minutes) <= stability_hours * 60 - buffer.
+    // Real drug stability risk is reactive (patient delayed after prep), handled in Step 6.
     
     // Objective: weighted combination
     objective = (
@@ -489,6 +504,10 @@ FUNCTION validate_and_publish(schedule, target_date):
             assignment.confirmed_arrival_time,
             assignment.estimated_duration
         )
+        // Note: notifications must respect patient communication preferences.
+        // Use the patient portal as the default secure channel. For SMS/email,
+        // require explicit consent and minimize PHI: "Your appointment is
+        // confirmed for 10:30 AM" rather than including regimen details.
     
     RETURN {schedule_id, violations_count: count(violations)}
 ```
@@ -496,6 +515,8 @@ FUNCTION validate_and_publish(schedule, target_date):
 ### Step 6: Handle Real-Time Adjustments
 
 The day-of reality never matches the plan perfectly. This function handles disruptions with minimal schedule impact.
+
+Schedule modification events should be authenticated and authorized. Define roles: front-desk staff can trigger arrival/delay/cancellation events; clinical staff can trigger duration extensions and treatment holds; system administrators can trigger resource unavailability. All modification events must include the authenticated user ID, and the real-time adjuster should validate authorization before executing changes.
 
 ```
 FUNCTION handle_disruption(disruption_event, current_schedule):
@@ -700,12 +721,13 @@ Some patients receive multiple treatments across different departments (radiatio
 
 - [Google OR-Tools](https://developers.google.com/optimization) - Open-source CP-SAT solver, excellent for scheduling problems
 - [HiGHS](https://highs.dev/) - Open-source MIP solver, good for linear formulations
-- TODO: Verify current availability of OR-Tools Lambda layer or container packaging guidance
+- OR-Tools can be packaged as a Lambda layer (~50MB) or deployed in a container image for Lambda or ECS. The CP-SAT solver is the recommended entry point for scheduling problems at infusion center scale.
 
 ### Healthcare Scheduling Research
 
-- TODO: Verify specific published references on chemotherapy scheduling optimization
-- TODO: Verify ASCO or ONS guidelines on infusion center operational standards
+- Hahn-Goldberg et al. (2014), "Dynamic optimization of chemotherapy outpatient scheduling with uncertainty," Health Care Management Science
+- Turkcan et al. (2012), "Chemotherapy operations planning and scheduling," IIE Transactions on Healthcare Systems Engineering
+- Oncology Nursing Society (ONS) publishes infusion center staffing and operational guidelines relevant to nursing ratio constraints
 
 ---
 
