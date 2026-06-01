@@ -105,6 +105,8 @@ The offline training process:
 
 The key challenge with offline learning is coverage. If you've never sent messages at 10pm, you have zero data about 10pm engagement. The offline model can't learn about time slots it's never observed. This is why you need some online exploration after deployment, even if the initial policy is trained offline.
 
+<!-- TODO (TechWriter): Expert review ARCH-1 (HIGH). Add offline policy evaluation (OPE) subsection here: cover doubly-robust estimation for deterministic historical policies, coverage limitations, confidence intervals, and deployment gates (only deploy if OPE estimate exceeds baseline by a statistically significant margin). -->
+
 ### Safety Constraints for Healthcare Notifications
 
 Even though notification timing is low-stakes compared to clinical RL, there are real constraints:
@@ -118,6 +120,8 @@ Even though notification timing is low-stakes compared to clinical RL, there are
 **Urgency overrides.** A medication interaction alert doesn't wait for the "optimal" time. Time-sensitive clinical notifications bypass the timing optimizer entirely. The system needs a clear priority hierarchy.
 
 **Opt-out respect.** If a patient has set "do not disturb" hours in their profile, those are absolute. The model doesn't get to override patient preferences, even if it thinks engagement would be higher.
+
+**Regulatory note:** Systems that optimize timing specifically to increase medication adherence may warrant review under FDA's Clinical Decision Support (CDS) guidance. The line between "informing" a patient and "driving" adherence behavior is genuinely ambiguous here. If your reward signal explicitly targets prescription refill completion, consult your regulatory team on CDS classification.
 
 ---
 
@@ -144,6 +148,8 @@ The system has four logical components that work together:
 
 The key architectural insight: the timing decision is decoupled from message generation. Upstream systems don't need to know about the optimization. They generate messages; the timing engine decides when to deliver them. This separation of concerns means you can add timing optimization to existing notification infrastructure without rewriting the message generation logic.
 
+**Multi-message coordination:** If a patient has multiple pending messages, the timing engine must serialize decisions for the same patient. Without coordination, parallel processing can schedule three messages to the same "optimal" slot, defeating the frequency cap. Implement a per-patient scheduling lock or deduplication check at schedule creation time: before creating a new schedule, verify no other schedule exists for this patient within a 2-hour window.
+
 ---
 
 ## The AWS Implementation
@@ -156,11 +162,15 @@ The key architectural insight: the timing decision is decoupled from message gen
 
 **Amazon DynamoDB for the patient context store.** Per-patient feature vectors need sub-millisecond reads at decision time. DynamoDB's key-value access pattern is ideal: look up patient ID, get their feature vector, pass it to the model. TTL on engagement history entries keeps the table from growing unbounded.
 
-**AWS Lambda for orchestration.** The timing decision is a stateless function: read message from queue, fetch patient context, call Personalize for a recommendation, schedule the delivery. Lambda's event-driven model fits perfectly. A scheduled Lambda also handles the "check for messages whose delivery window has arrived" pattern.
+<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add guidance on PHI behavioral profiling: (1) Scope DynamoDB read access to the timing engine Lambda role only via IAM resource conditions. (2) Define explicit TTL of 90-180 days on engagement history items. (3) Note that behavioral engagement profiles derived from health communications may constitute PHI under HIPAA and should be included in the facility's Notice of Privacy Practices. (4) Implement a patient profile deletion endpoint for right-of-access requests. -->
+
+**AWS Lambda for orchestration.** The timing decision is a stateless function: read message from queue, fetch patient context, call Personalize for a recommendation, schedule the delivery. Lambda's event-driven model fits perfectly. A scheduled Lambda also handles the "check for messages whose delivery window has arrived" pattern. Lambda security groups should restrict outbound traffic to VPC endpoints only (no internet egress). All AWS service calls in this architecture can be routed through VPC endpoints, eliminating the need for internet access entirely.
 
 **Amazon EventBridge Scheduler for timed delivery.** Once the model selects a send time, EventBridge Scheduler fires at that exact time to trigger the actual delivery. One-time schedules (not recurring) for each message. This replaces the need for a custom scheduler or cron-based polling.
 
-**Amazon Pinpoint for multi-channel delivery.** Pinpoint handles the actual send across SMS, push notification, and email. It also provides delivery and engagement tracking (opens, clicks) that feed back into the reward signal.
+<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Address EventBridge Scheduler silent failure mode: (1) Add a time validation check ensuring the selected slot is in the future with a minimum 2-minute buffer; if not, send immediately. (2) SQS message deletion should happen after schedule creation confirmation, not after the timing decision. Use SQS visibility timeout extension during processing and only delete after CreateSchedule returns success. (3) Add a DLQ on the SQS queue for messages that fail scheduling after retries. -->
+
+**Amazon Pinpoint for multi-channel delivery.** Pinpoint handles the actual send across SMS, push notification, and email. It also provides delivery and engagement tracking (opens, clicks) that feed back into the reward signal. Note: Pinpoint engagement event delivery to Kinesis is a service-side integration. Pinpoint writes to the Kinesis stream using an IAM role you configure, from the AWS service network. This does not traverse your VPC.
 
 **Amazon SageMaker (alternative to Personalize).** If you need more control over the bandit algorithm (custom reward functions, specific exploration strategies, or offline policy evaluation), SageMaker lets you train and deploy custom models. More work, more flexibility. Use Personalize first; graduate to SageMaker if you hit its limitations.
 
@@ -191,12 +201,12 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Personalize, SQS, DynamoDB, Lambda, EventBridge Scheduler, Pinpoint, Kinesis Data Streams |
-| **IAM Permissions** | `personalize:GetRecommendations`, `personalize:PutEvents`, `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `dynamodb:GetItem`, `dynamodb:PutItem`, `scheduler:CreateSchedule`, `mobiletargeting:SendMessages`, `kinesis:PutRecord` |
+| **IAM Permissions** | `personalize:GetRecommendations`, `personalize:PutEvents`, `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `dynamodb:GetItem`, `dynamodb:PutItem`, `scheduler:CreateSchedule`, `mobiletargeting:SendMessages`, `kinesis:PutRecord`. All permissions should be scoped to specific resource ARNs (queue ARN, table ARN, campaign ARN). The list above shows required actions; production IAM policies must include resource conditions. |
 | **BAA** | Required. Patient contact information and engagement patterns are PHI. |
-| **Encryption** | DynamoDB: encryption at rest (default). SQS: SSE-KMS. Kinesis: server-side encryption. S3 (training data): SSE-KMS. All transit over TLS. |
-| **VPC** | Production: Lambda in VPC with endpoints for DynamoDB, SQS, Kinesis, and Personalize. |
+| **Encryption** | DynamoDB: encryption at rest (default). SQS: SSE-KMS with customer-managed key. Kinesis: server-side encryption with customer-managed KMS key. S3 (training data): SSE-KMS. All transit over TLS. Ensure the Kinesis stream's KMS key policy grants the Pinpoint service principal decrypt access. |
+| **VPC** | Production: Lambda in VPC with endpoints for DynamoDB (gateway), S3 (gateway), SQS, Kinesis, Personalize, EventBridge Scheduler, Pinpoint (mobiletargeting), KMS, and CloudWatch Logs. Budget approximately $50-60/month for interface endpoints in a 3-AZ deployment. |
 | **CloudTrail** | Enabled for all API calls. Pinpoint message events logged separately. |
-| **Sample Data** | Historical message send logs with engagement outcomes. Minimum 1,000 interactions per message type for reasonable model quality. Synthetic data acceptable for development. |
+| **Sample Data** | You need at least 1,000 interactions per message type before the model learns anything useful. Synthetic data works fine for development. |
 | **Cost Estimate** | Personalize: ~$0.05/1000 recommendations + training costs. SQS, Lambda, DynamoDB: negligible at typical notification volumes. Pinpoint: per-message fees (SMS ~$0.01, push free, email ~$0.0001). |
 
 ### Ingredients
@@ -349,9 +359,13 @@ FUNCTION schedule_delivery(message, selected_slot):
 
 ```
 FUNCTION process_engagement_event(event):
-    // Map the engagement event back to the original send decision.
-    message_id = event.message_id
-    decision   = lookup_decision(message_id)
+    // Validate the event before processing. Verify the message_id exists in the
+    // decision log and the event timestamp is within the expected reward window
+    // (0-48 hours after send). Discard events that fail validation.
+    decision = lookup_decision(event.message_id)
+    IF decision is null OR event.timestamp > (decision.send_time + 48 hours):
+        log_invalid_event(event)
+        RETURN
 
     // Compute reward based on engagement level.
     reward = CASE event.type:
@@ -457,9 +471,11 @@ FUNCTION handle_engagement_timeout(message_id):
 
 **A/B testing infrastructure.** Before deploying the RL model, you need a proper A/B test comparing it against your current static timing. This means holdout groups, statistical significance testing, and guardrail metrics (opt-out rate, complaint rate) that can trigger automatic rollback.
 
+**Model rollback and canary deployment.** New Personalize campaigns should receive a small traffic percentage (5-10%) initially, with automatic rollback if opt-out rate exceeds 2x baseline or engagement drops below 80% of the previous model's performance over a 48-hour window. A bad model can permanently damage patient communication channels through increased opt-outs before anyone notices.
+
 **Timezone handling.** The pseudocode assumes you know the patient's timezone. In practice, you might only have a zip code (which maps to a timezone, usually) or a phone area code (which maps to nothing reliable since number portability). Build robust timezone inference.
 
-**Multi-message coordination.** If a patient has three pending messages, the timing engine needs to space them out, not stack them all at 6:30pm because that's individually optimal for each one. This requires a coordination layer above the per-message bandit.
+**Multi-message coordination.** If a patient has three pending messages, the timing engine needs to space them out, not stack them all at 6:30pm because that's individually optimal for each one. This requires a coordination layer above the per-message bandit (see the multi-message coordination note in the General Architecture section).
 
 ---
 
