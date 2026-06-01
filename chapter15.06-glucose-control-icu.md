@@ -12,9 +12,7 @@ The fundamental tension in ICU glucose management is brutal: hyperglycemia (too 
 
 Standard sliding scale protocols treat every patient the same. They say "if glucose is between 200-250, give 4 units." They don't account for the fact that this particular patient has been trending downward for the last three readings, or that their nutrition was just increased, or that their vasopressor dose changed (which affects insulin sensitivity). The protocol is a lookup table. The problem demands a controller.
 
-Tight glycemic control trials (like NICE-SUGAR) showed that aggressive glucose targets actually increased mortality, largely because the protocols caused too much hypoglycemia. The problem wasn't the goal of better glucose control. The problem was that static protocols can't adapt to individual patient dynamics in real time.
-
-This is a sequential decision problem. Every 1-4 hours, someone decides how much insulin to give. That decision depends on the current state (glucose level, trend, nutrition, medications) and affects future states. The consequences of each decision unfold over hours. And the penalty for getting it wrong is severe in one direction (hypoglycemia) and gradual in the other (sustained hyperglycemia). This is exactly the kind of problem reinforcement learning was designed for.
+The NICE-SUGAR trial demonstrated this gap definitively: tight glycemic control protocols actually increased mortality, largely because static protocols caused too much hypoglycemia. The problem wasn't the goal of better glucose control. The problem was that fixed rules can't adapt to individual patient dynamics in real time. Every 1-4 hours, someone decides how much insulin to give. That decision depends on the current state (glucose level, trend, nutrition, medications) and affects future states. The consequences of each decision unfold over hours. And the penalty for getting it wrong is severe in one direction (hypoglycemia) and gradual in the other (sustained hyperglycemia). This is exactly the kind of sequential decision problem that reinforcement learning was designed for.
 
 ---
 
@@ -141,6 +139,10 @@ flowchart TB
     style I fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling and circuit breaker pattern to the inference path. Specify behavior when SageMaker endpoint is unavailable or DynamoDB read fails (return explicit "no recommendation available, use standard protocol" rather than failing silently). Add CloudWatch alarms on Lambda error rates and endpoint 5xx responses. -->
+
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms. -->
+
 ### Prerequisites
 
 | Requirement | Details |
@@ -149,10 +151,16 @@ flowchart TB
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `states:StartExecution` |
 | **BAA** | AWS BAA signed (required: glucose readings and insulin doses are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for training volumes and endpoints; all API calls over TLS |
-| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, and CloudWatch Logs |
+| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, CloudWatch Logs, Step Functions, and KMS |
 | **CloudTrail** | Enabled: log all SageMaker and DynamoDB API calls for audit trail |
 | **Historical Data** | Minimum 5,000-10,000 ICU stays with hourly glucose measurements, insulin administration records, nutrition data, and outcome labels. De-identified for development; BAA-covered for production. |
 | **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large). DynamoDB and Lambda: negligible at clinical volumes. |
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permission list with role-separated guidance. Separate into at least 4 roles: (1) State Constructor Lambda with scoped DynamoDB and SageMaker InvokeEndpoint access, (2) Safety Constraint Lambda with read-only patient state and write to recommendation store, (3) Training Pipeline role with S3 and SageMaker training permissions, (4) Monitoring role with CloudWatch access. Add resource ARN constraints to all permissions. -->
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add latency budget note: target end-to-end < 3 seconds. State construction ~50-200ms, SageMaker inference ~50-200ms, safety constraints ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint. -->
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment. -->
 
 ### Ingredients
 
@@ -170,7 +178,7 @@ flowchart TB
 
 #### Walkthrough
 
-**Step 1: Episode construction from EHR data.** The first challenge is transforming raw EHR data into RL episodes. An episode is one ICU stay, discretized into decision intervals (typically 1-4 hours). At each timestep, you need the state (what the clinician observed), the action (what they did), and the reward (how things turned out). This step is where most of the engineering effort lives. EHR data is messy: glucose measurements arrive at irregular intervals, insulin orders don't always align with administration times, and nutrition changes happen asynchronously. You need to bin everything into consistent time windows and handle missing data gracefully. Skip this step or do it poorly, and your RL agent learns from garbage.
+**Step 1: Episode construction from EHR data.** The first challenge is transforming raw EHR data into RL episodes. An episode is one ICU stay, discretized into decision intervals (typically 1-4 hours). At each timestep, you need the state (what the clinician observed), the action (what they did), and the reward (how things turned out). This step is where most of the engineering effort lives. EHR data is messy: glucose measurements come from different sources (point-of-care meters, arterial blood gas analyzers, continuous glucose monitors) with different accuracies and different timestamps. Insulin orders don't always align with administration times, and nutrition changes happen asynchronously. You need to bin everything into consistent time windows and handle missing data gracefully. Skip this step or do it poorly, and your RL agent learns from garbage.
 
 ```
 FUNCTION build_episode(patient_icu_stay):
@@ -409,6 +417,8 @@ FUNCTION apply_safety_constraints(recommended_dose, patient_state, constraints):
 
 **Step 6: Clinical decision support interface.** The RL policy is deployed as a recommendation system, not an autonomous controller. The clinician sees the recommendation, the reasoning behind it, and can accept, modify, or override. Every interaction is logged for ongoing evaluation. This is critical: the system learns from clinician overrides (they indicate where the policy disagrees with expert judgment) and the outcomes of both followed and overridden recommendations provide ongoing validation data.
 
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance. -->
+
 ```
 FUNCTION generate_recommendation(patient_id, new_glucose_reading):
     // Called when a new glucose measurement is entered for an ICU patient.
@@ -510,6 +520,8 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
 **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
 
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note about de-identification requirements for production data feeding back into retraining. Clarify pseudonymization requirements for episode logs, IRB coverage for retraining pipeline, and PHI status of temporal glucose patterns (re-identification risk persists even after pseudonymization). -->
+
 ---
 
 ## The Honest Take
@@ -556,14 +568,14 @@ Clinician trust is the deployment bottleneck, not model accuracy. Even if your O
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Research References:**
-- TODO: Verify and add link to the NICE-SUGAR trial publication (NEJM 2009) on intensive vs. conventional glucose control
-- TODO: Verify and add link to Conservative Q-Learning (CQL) paper by Kumar et al. 2020
-- TODO: Verify and add link to Batch Constrained Q-Learning (BCQ) paper by Fujimoto et al. 2019
-- TODO: Verify and add link to UVA/Padova Type 1 Diabetes Simulator documentation
+- NICE-SUGAR Study Investigators. "Intensive versus Conventional Glucose Control in Critically Ill Patients." *New England Journal of Medicine* 360 (2009): 1283-1297.
+- Kumar, A., Zhou, A., Tucker, G., Levine, S. "Conservative Q-Learning for Offline Reinforcement Learning." *NeurIPS* (2020).
+- Fujimoto, S., Meger, D., Precup, D. "Off-Policy Deep Reinforcement Learning without Exploration." *ICML* (2019).
+- UVA/Padova Type 1 Diabetes Metabolic Simulator (FDA-accepted research platform for glucose control algorithm development).
 
 **Clinical Context:**
-- TODO: Verify and add link to Society of Critical Care Medicine glucose management guidelines
-- TODO: Verify and add link to ADA Standards of Care for inpatient glycemic management
+- Society of Critical Care Medicine (SCCM). Guidelines for the Use of an Insulin Infusion for the Management of Hyperglycemia in Critically Ill Patients.
+- American Diabetes Association. Standards of Care in Diabetes: Diabetes Care in the Hospital (updated annually).
 
 ---
 
