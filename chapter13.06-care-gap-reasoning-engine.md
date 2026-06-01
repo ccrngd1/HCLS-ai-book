@@ -269,7 +269,7 @@ FUNCTION assemble_patient_facts(patient_id, data_sources):
     RETURN facts
 ```
 
-**Step 3: Determine applicable recommendations.** This is where the reasoning happens. For each recommendation in the guideline ontology, evaluate whether its preconditions are satisfied by the patient's fact set. The ontological reasoning handles hierarchy traversal automatically: if the patient has ICD-10 code E11.9 (Type 2 Diabetes without complications), and the recommendation applies to "Diabetes Mellitus" (the parent class), the reasoner infers applicability through the subclass relationship. Exclusions are checked after inclusions: if any exclusion condition is present, the recommendation is skipped regardless of whether inclusions are met. Skip this step and you're just listing all possible recommendations without knowing which ones actually apply to this patient.
+**Step 3: Determine applicable recommendations.** This is where the reasoning happens. For each recommendation in the guideline ontology, evaluate whether its preconditions are satisfied by the patient's fact set. The ontological reasoning handles hierarchy traversal: if the patient has ICD-10 code E11.9 (Type 2 Diabetes without complications), and the recommendation applies to "Diabetes Mellitus" (the parent class), the reasoner resolves applicability through the subclass relationship using SPARQL property paths. Exclusions are checked after inclusions: if any exclusion condition is present, the recommendation is skipped regardless of whether inclusions are met. Skip this step and you're just listing all possible recommendations without knowing which ones actually apply to this patient.
 
 ```
 FUNCTION find_applicable_recommendations(patient_facts, knowledge_graph):
@@ -352,7 +352,7 @@ FUNCTION identify_gaps(applicable_recommendations, patient_facts, evaluation_dat
                 priority:           rec.priority,
                 frequency:          rec.frequency,
                 last_completed:     last_completed.service_date IF exists ELSE "never",
-                // TODO (TechWriter): Code review Finding 1 (WARNING). This formula is wrong.
+                // TODO (TechWriter): Code review Finding 1 (WARNING). days_overdue formula is wrong.
                 // days_between(cutoff_date, evaluation_date) always equals the frequency
                 // window size, not the actual overdue amount. Correct formula:
                 // days_between(last_completed.service_date, evaluation_date) - frequency_in_days
