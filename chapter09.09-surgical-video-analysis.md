@@ -165,7 +165,7 @@ flowchart TD
 | **VPC** | Production: SageMaker, OpenSearch, and Lambda in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, and Step Functions. OpenSearch domain must be VPC-only (no public endpoint for PHI data). Post-processing Lambda must be in the same VPC as the OpenSearch domain with security groups allowing HTTPS (443) to the OpenSearch domain's security group. |
 | **CloudTrail** | Enabled: log all S3, SageMaker, and DynamoDB API calls for HIPAA audit trail |
 | **GPU Instances** | SageMaker training: ml.p3.2xlarge or ml.g5.2xlarge minimum. Batch inference: ml.g5.xlarge. Budget for multi-day training runs. |
-| **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). All research datasets; real patient video requires IRB approval and proper de-identification. |
+| **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). These are research datasets. Real patient video requires IRB approval and proper de-identification. |
 | **Cost Estimate** | Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain. |
 
 <!-- TODO (TechWriter): Expert review S3 (HIGH). Expand IAM permissions into role-based groupings (Step Functions execution role, Lambda execution role, SageMaker execution role) with resource ARN scoping guidance rather than a flat list. -->
@@ -393,6 +393,8 @@ FUNCTION post_process(raw_predictions, sample_rate_fps):
 **Step 6: Store structured index and enable search.** The post-processed results become a structured, queryable record of the procedure. This step writes the phase timeline, instrument usage, and events to both a fast-lookup store (DynamoDB for procedure-level queries) and a search index (OpenSearch for cross-procedure queries). The dual-write pattern serves different access patterns: "show me the timeline for procedure X" hits DynamoDB; "find all procedures where bleeding occurred during Calot's triangle dissection" hits OpenSearch. Skip the search index and you lose the ability to do population-level quality analysis, which is half the value of automated video analysis.
 
 <!-- TODO (TechWriter): Expert review S2 (CRITICAL). Add access control model for surgeon-identifiable performance data: pseudonymize surgeon_id in the general search index with a separate restricted lookup table, add role-based access control for surgeon-identified queries, note peer review protection requirements (vary by state, require legal counsel review), and add CloudTrail-based audit logging for queries that resolve surgeon identity. -->
+
+<!-- TODO (TechWriter): Expert review S7 (MEDIUM). Define OpenSearch index mappings for procedure-phases and procedure-events indices: keyword fields for phase_name, event_type, procedure_type, surgeon_id; numeric fields for timestamps and durations; date field for procedure_date. Note that the temporal query pattern (event within a phase time range) works because events carry phase_context. -->
 
 ```
 FUNCTION store_results(procedure_id, analysis_results):
