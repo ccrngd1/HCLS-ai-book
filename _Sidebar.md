@@ -230,6 +230,8 @@
   * [Python Example](chapter09.04-python-example)
 * [9.5 — Chest X-Ray Triage](chapter09.05-chest-xray-triage)
   * [Python Example](chapter09.05-python-example)
+* [9.6 — Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening)
+  * [Python Example](chapter09.06-python-example)
 
 ---
 
