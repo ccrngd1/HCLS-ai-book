@@ -96,11 +96,11 @@ That last step is the integration challenge. Radiologists work in PACS (Picture 
 
 ### Why These Services
 
-**Amazon SageMaker for model hosting and inference.** Radiology AI models are large (often 100MB-1GB+) and require GPU inference for volumetric data. SageMaker endpoints provide managed GPU hosting with auto-scaling. You can host multiple models behind a single endpoint using multi-model endpoints, or dedicate endpoints per modality for isolation. SageMaker also handles model versioning, A/B testing, and monitoring, which matters when you're running FDA-cleared models that need version traceability.
+**Amazon SageMaker for model hosting and inference.** Radiology AI models are large (often 100MB-1GB+) and require GPU inference for volumetric data. SageMaker endpoints provide managed GPU hosting with auto-scaling. You can host multiple models behind a single endpoint using multi-model endpoints, or dedicate endpoints per modality for isolation. For production triage systems with strict latency SLAs, use dedicated endpoints per model. Multi-model endpoints reduce cost but introduce model-loading latency (10-30 seconds for a cold swap) that is unacceptable for safety-critical triage. The cost estimate in this recipe assumes dedicated always-on endpoints. SageMaker also handles model versioning, A/B testing, and monitoring, which matters when you're running FDA-cleared models that need version traceability.
 
 **Amazon S3 for DICOM storage.** Medical imaging generates enormous data volumes. A single CT study can be 200-500MB. S3 provides durable, encrypted storage at scale with lifecycle policies to manage retention. S3 also serves as the staging area between DICOM receipt and inference.
 
-**AWS Lambda and AWS Step Functions for orchestration.** The triage pipeline is a multi-step workflow: receive study, classify, route to models, aggregate results, update worklist. Step Functions provides visual workflow orchestration with built-in retry logic, error handling, and execution history. Lambda handles the lightweight steps (classification, routing, result aggregation). The inference step calls SageMaker endpoints.
+**AWS Lambda and AWS Step Functions for orchestration.** The triage pipeline is a multi-step workflow: receive study, classify, route to models, aggregate results, update worklist. Step Functions provides visual workflow orchestration with built-in retry logic, error handling, and execution history. Lambda handles the lightweight steps (classification, routing, result aggregation). The inference step calls SageMaker endpoints. Configure Step Functions error handling to catch inference failures and write a `TRIAGE_FAILED` status to DynamoDB. A study that fails triage remains at routine priority (safe default), but monitor the failure rate via CloudWatch and alert if it exceeds 1% over a rolling window.
 
 **Amazon DynamoDB for study tracking and results.** Each study needs a tracking record: when it arrived, which models ran, what they found, what priority was assigned, whether the radiologist acknowledged the alert. DynamoDB's key-value model with TTL support handles this cleanly.
 
@@ -141,10 +141,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | SageMaker, S3, Step Functions, Lambda, DynamoDB, HealthImaging, SNS, EC2 (DICOM receiver) |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `states:StartExecution`, `medical-imaging:*` |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint` (scoped to specific endpoint ARNs), `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `states:StartExecution`, `medical-imaging:GetImageFrame`, `medical-imaging:GetImageSet`, `medical-imaging:GetImageSetMetadata`, `medical-imaging:SearchImageSets`, `medical-imaging:StartDICOMImportJob` (ingestion path only). Use separate IAM roles for the DICOM receiver (write) and inference pipeline (read-only). |
 | **BAA** | Required. Medical images are PHI. |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoints: KMS encryption; all transit over TLS; HealthImaging: encrypted by default |
-| **VPC** | Production: all components in VPC with private subnets. VPC endpoints for S3, DynamoDB, SageMaker Runtime, Step Functions, SNS. DICOM receiver in private subnet with NLB for scanner connectivity. |
+| **VPC** | Production: all components in VPC with private subnets. VPC endpoints for S3, DynamoDB, SageMaker Runtime, Step Functions, SNS. DICOM receiver in private subnet with NLB for scanner connectivity. Scanner connectivity requires a network path from the hospital imaging VLAN to the VPC private subnet, typically via AWS Direct Connect or site-to-site VPN. Coordinate with hospital network engineering for firewall rules allowing DICOM traffic (TCP port 104 or 11112) from scanner IPs to the NLB. Budget 2-4 weeks for network provisioning at each site. |
 | **CloudTrail** | All API calls logged. Critical for FDA audit trail requirements. |
 | **GPU Instances** | SageMaker endpoints: ml.g4dn.xlarge minimum for single-model inference; ml.g5.xlarge for larger volumetric models. Budget for always-on endpoints (triage must be real-time). |
 | **Sample Data** | NIH ChestX-ray14 dataset (public, 112K images). RSNA Intracranial Hemorrhage Detection dataset. CQ500 dataset for CT head validation. Never use real patient imaging in dev. |
@@ -174,7 +174,7 @@ flowchart TD
 
 #### Walkthrough
 
-**Step 1: Receive and buffer the DICOM study.** Scanners send images as they're reconstructed, one DICOM instance (slice) at a time via DICOM C-STORE. A CT head might arrive as 200+ individual slices over 30-60 seconds. The system needs to buffer these and detect when the study is "complete" (all expected series have arrived). This is trickier than it sounds: there's no explicit "study complete" signal in DICOM. Common approaches include a timeout after the last received instance, or checking the NumberOfSeriesRelatedInstances against received count. Getting this wrong means either processing incomplete studies (missing slices = wrong inference) or waiting too long (defeating the purpose of fast triage).
+**Step 1: Receive and buffer the DICOM study.** Scanners send images as they're reconstructed, one DICOM instance (slice) at a time via DICOM C-STORE. A CT head might arrive as 200+ individual slices over 30-60 seconds. The system needs to buffer these and detect when the study is "complete" (all expected series have arrived). This is trickier than it sounds: there's no explicit "study complete" signal in DICOM. Common approaches include a timeout after the last received instance, or checking the NumberOfSeriesRelatedInstances against received count. Getting this wrong means either processing incomplete studies (missing slices = wrong inference) or waiting too long (defeating the purpose of fast triage). One additional failure mode: if a scanner drops connection mid-transfer, the timeout fires on an incomplete volume. If the received instance count is significantly below the expected count for the study type (e.g., a CT head with fewer than 100 slices when 150-300 is typical), flag the study as potentially incomplete and either skip inference or run with a lowered confidence threshold. Log incomplete studies for manual review.
 
 ```
 FUNCTION receive_dicom_study(dicom_instances):
@@ -358,7 +358,8 @@ FUNCTION update_worklist_and_notify(triage_result):
         study_uid  = triage_result.study_uid,
         priority   = triage_result.priority,
         findings   = triage_result.all_findings,
-        model_versions = get_active_model_versions()
+        model_versions = get_active_model_versions(),
+        preprocessing_versions = get_active_preprocessing_versions()
     )
 ```
 
@@ -399,6 +400,9 @@ FUNCTION update_worklist_and_notify(triage_result):
   "timestamp": "2026-03-15T14:22:08.341Z",
   "model_versions": {
     "ich_detection_model": "v2.3.1-fda-cleared"
+  },
+  "preprocessing_versions": {
+    "ich_preprocessing": "v1.2.0"
   }
 }
 ```
