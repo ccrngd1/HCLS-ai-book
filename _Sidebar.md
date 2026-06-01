@@ -232,6 +232,8 @@
   * [Python Example](chapter09.05-python-example)
 * [9.6 — Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening)
   * [Python Example](chapter09.06-python-example)
+* [9.7 — Radiology AI Triage (Multi-Modality)](chapter09.07-radiology-ai-triage-multi-modality)
+  * [Python Example](chapter09.07-python-example)
 
 ---
 
