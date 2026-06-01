@@ -1,6 +1,6 @@
 # Recipe 13.5: Clinical Pathway / Protocol Modeling
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.10–$0.50 per pathway query (graph traversal + reasoning)
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.10 to $0.50 per pathway query (graph traversal + reasoning)
 
 ---
 
