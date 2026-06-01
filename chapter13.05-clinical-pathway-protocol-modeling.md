@@ -572,7 +572,7 @@ The condition evaluation layer is where performance problems hide. If evaluating
 
 ## Related Recipes
 
-- **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** The allergy and drug interaction checks referenced in pathway conditions can leverage this recipe's interaction graph.
+- **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** The allergy and drug interaction checks referenced in pathway conditions can pull from this recipe's interaction graph.
 - **Recipe 13.6 (Care Gap Reasoning Engine):** Uses similar ontological reasoning patterns but focused on preventive care guidelines rather than acute treatment pathways.
 - **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Pathway applicability rules often reference diagnosis hierarchies modeled in this recipe.
 - **Recipe 7.5 (30-Day Readmission Risk):** Pathway compliance data can feed readmission risk models as a feature.
