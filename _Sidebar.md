@@ -384,6 +384,8 @@
   * [Python Example](chapter15.04-python-example)
 * [15.5 — Ventilator Weaning Protocols](chapter15.05-ventilator-weaning-protocols)
   * [Python Example](chapter15.05-python-example)
+* [15.6 — Glucose Control in ICU](chapter15.06-glucose-control-icu)
+  * [Python Example](chapter15.06-python-example)
 
 ---
 
