@@ -28,7 +28,7 @@ Before we get into solvers and algorithms, let's understand why this problem res
 
 **Multiple coupled resources.** Every infusion appointment simultaneously consumes: a chair (for the duration), a nurse (partially, with ratio constraints), pharmacy prep capacity (before the appointment), and sometimes specialized equipment (pumps, monitoring devices). You can't optimize chairs independently of nursing. A schedule that perfectly fills chairs but requires 12 nurses in hour 1 and 2 nurses in hour 5 is useless if you only have 8 nurses.
 
-**Variable durations.** Unlike a dentist appointment that's reliably 45 minutes, chemotherapy infusions range from 30 minutes to 8+ hours depending on the regimen. A patient on FOLFOX (a common colorectal cancer protocol) might need 46 hours across multiple days. A Herceptin infusion might be 30 minutes. The schedule has to accommodate this variance, and the variance isn't random; it's determined by the treatment protocol.
+**Variable durations.** Unlike a dentist appointment that's reliably 45 minutes, chemotherapy infusions range from 30 minutes to 8+ hours depending on the regimen. A patient on FOLFOX (a common colorectal cancer protocol) might need 46 hours of total infusion time spread across multiple days. A Herceptin infusion might be 30 minutes. The schedule has to accommodate this variance, and the variance isn't random; it's determined by the treatment protocol.
 
 **Temporal dependencies within a visit.** A single patient visit often has multiple phases: pre-medication (30 minutes), wait for reaction assessment (15 minutes), main infusion (variable), post-infusion observation (15-30 minutes). These phases have ordering constraints and minimum/maximum gaps between them. The nurse is needed for transitions but not necessarily for the entire infusion.
 
@@ -89,7 +89,7 @@ The choice of solver depends on your problem size and how quickly you need answe
 
 **Heuristic/Metaheuristic approaches.** For very large centers or when you need real-time rescheduling (a patient just cancelled, who takes their slot?), constructive heuristics followed by local search can produce good schedules in milliseconds. You sacrifice optimality guarantees but gain speed. Common approaches: priority-based dispatching rules (schedule highest-acuity patients first, then fill gaps), followed by swap-based improvement (try moving patients between slots and keep improvements).
 
-**Hybrid approaches.** The most practical production systems use a hybrid: MIP or CP for the overnight batch schedule (tomorrow's plan), heuristics for real-time adjustments during the day (handling disruptions), and simulation for what-if analysis (what happens if we add 5 more patients to Thursday?).
+**Hybrid approaches.** The most practical production systems use a combination: MIP or CP for the overnight batch schedule (tomorrow's plan), heuristics for real-time adjustments during the day (handling disruptions), and simulation for what-if analysis (what happens if we add 5 more patients to Thursday?).
 
 ### Real-Time vs. Batch Optimization
 
@@ -101,7 +101,7 @@ Like the ambulance dispatch problem (Recipe 14.8), chemotherapy scheduling opera
 
 **Operational (day-of).** The schedule is set, but reality intervenes. A patient is 30 minutes late. Lab results are delayed. A chair breaks. You need to reoptimize the remaining schedule without disrupting patients already in chairs. Solve time budget: seconds. This is where heuristics and incremental solvers earn their keep.
 
-**Reactive (real-time).** A patient has an adverse reaction and needs extended observation. A walk-in urgent case needs immediate treatment. The system must suggest the least-disruptive adjustment. This is constraint propagation: given the disruption, what's the minimum set of changes to maintain feasibility?
+**Reactive (real-time).** A patient has an adverse reaction and needs extended observation. A walk-in urgent case needs immediate treatment. The system must suggest the least-disruptive adjustment. This is constraint propagation: given the disruption, what's the minimum set of changes needed to maintain feasibility?
 
 ### The Pharmacy Coordination Problem
 
@@ -117,7 +117,7 @@ The pharmacy also has its own capacity constraints: number of hoods (sterile pre
 
 ### Workload Leveling
 
-One of the most impactful optimizations, and one that's invisible to patients, is workload leveling. Without optimization, infusion schedules tend to develop peaks: everyone wants the 8 AM slot, so the first two hours are chaos and the last two hours are empty. Nurses are overwhelmed at 9 AM and bored at 3 PM.
+One of the most impactful optimizations, and one that's invisible to patients, is workload leveling. Without optimization, infusion schedules tend to develop peaks: everyone wants the 8 AM slot, so the first two hours are chaos and the last two hours are empty. Nurses are overwhelmed at 9 AM and idle at 3 PM.
 
 Workload leveling means distributing the nursing demand evenly across the day. This isn't just about counting patients; it's about counting nursing attention units. A first-dose patient in their first 30 minutes requires 3x the nursing attention of a stable patient in hour 4 of their infusion. The leveling algorithm needs to account for the time-varying nursing demand profile of each patient's visit, not just their presence in a chair.
 
