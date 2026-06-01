@@ -6,29 +6,31 @@ Final edit pass completed. Recipe is publication-ready pending resolution of def
 
 ## Changes Applied
 
-1. **V2 (MEDIUM) - RESOLVED:** Removed six "TODO: Verify and add link to" drafting artifacts from Additional Resources. Replaced with properly formatted academic citations (NICE-SUGAR: NEJM 2009;360:1283-97, CQL: Kumar et al. NeurIPS 2020, BCQ: Fujimoto et al. ICML 2019, UVA/Padova simulator, SCCM guidelines, ADA Standards of Care). No hyperlinks added since URLs could not be verified, but citations are complete and findable.
+1. **V2 (MEDIUM) - RESOLVED:** Six "TODO: Verify and add link to" drafting artifacts already removed from Additional Resources. Properly formatted academic citations in place (NICE-SUGAR: NEJM 2009;360:1283-97, CQL: Kumar et al. NeurIPS 2020, BCQ: Fujimoto et al. ICML 2019, UVA/Padova simulator, SCCM guidelines, ADA Standards of Care). No hyperlinks for unverifiable URLs; citations are complete and findable.
 
-2. **V3 (LOW) - RESOLVED:** Tightened paragraphs 3-4 of The Problem section. Merged the "static protocols fail" argument into a single flow: sliding scale limitations -> NICE-SUGAR evidence -> therefore sequential decision-making is needed. Eliminated the circular restatement.
+2. **V3 (LOW) - RESOLVED:** Tightened paragraphs 3-4 of The Problem section. Merged the "static protocols fail" argument into a single flow: sliding scale limitations -> NICE-SUGAR evidence -> therefore sequential decision-making is needed. Removed the redundant "The protocol is a lookup table. The problem demands a controller." sentence that restated the point before the NICE-SUGAR evidence.
 
-3. **N1 (LOW) - RESOLVED:** Added Step Functions and KMS to the VPC endpoint list in Prerequisites table.
+3. **N1 (LOW) - RESOLVED:** Step Functions and KMS already present in the VPC endpoint list in Prerequisites table.
 
-4. **Grammar/mechanics pass:** Minor cleanup in Step 1 walkthrough (merged a sentence about EHR data messiness that was split awkwardly between the prose and the pseudocode comment).
+4. **N2 (LOW) - NOT APPLICABLE:** Training container packaging guidance is appropriate for the Python companion or a Variations section addition, not the main recipe architecture. No marker placed.
 
-5. **Em dash check:** PASS. No em dashes found. En dashes in cost ranges are correct.
+5. **Grammar/mechanics pass:** Clean. No issues found.
 
-6. **Header hierarchy:** PASS. H1 title, H2 major sections, H3 subsections, no skipped levels.
+6. **Em dash check:** PASS. Zero em dashes. En dashes in cost ranges ("$2,000–5,000/month") are correct.
 
-7. **Code formatting:** PASS. All fenced blocks have language tags (mermaid, json) or are plain pseudocode blocks. Inline code used for service names and API calls.
+7. **Header hierarchy:** PASS. H1 title, H2 major sections, H3 subsections, no skipped levels.
 
-8. **Link verification:** PASS. All URLs are AWS documentation links (docs.aws.amazon.com, aws.amazon.com). No fabricated GitHub URLs. Academic citations are reference-style without hyperlinks (verified as real publications).
+8. **Code formatting:** PASS. All fenced blocks use appropriate language tags (mermaid, json) or are plain pseudocode. Inline code used for service names and API calls.
 
-9. **Voice drift check:** PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Consistent engineer-explaining-something-cool voice throughout.
+9. **Link verification:** PASS. All URLs are AWS documentation links (docs.aws.amazon.com, aws.amazon.com). No fabricated GitHub URLs. Academic citations are reference-style without hyperlinks.
 
-10. **RECIPE-GUIDE compliance:** PASS. All required sections present in correct order: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (with walkthrough and Python callout), Expected Results, Honest Take, Variations and Extensions, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
+10. **Voice drift check:** PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Consistent engineer-explaining-something-cool voice throughout.
 
-11. **Vendor balance:** PASS. Technology section is fully vendor-agnostic. AWS appears only in implementation section. Approximately 70/30 split maintained.
+11. **RECIPE-GUIDE compliance:** PASS. All required sections present in correct order: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (with walkthrough and Python callout), Expected Results, Honest Take, Variations and Extensions, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
 
-12. **Readability:** PASS. Short paragraphs, active voice, no run-on sentences. Technical concepts explained from first principles without condescension.
+12. **Vendor balance:** PASS. Technology section is fully vendor-agnostic. AWS appears only in implementation section. Approximately 70/30 split maintained.
+
+13. **Readability:** PASS. Short paragraphs, active voice, no run-on sentences. Technical concepts explained from first principles without condescension.
 
 ## Deferred Findings (TODO markers placed in recipe)
 
