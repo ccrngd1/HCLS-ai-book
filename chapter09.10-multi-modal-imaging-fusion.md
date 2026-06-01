@@ -1,6 +1,6 @@
 # Recipe 9.10: Multi-Modal Imaging Fusion and Analysis
 
-**Complexity:** Complex · **Phase:** Specialized Clinical · **Estimated Cost:** ~$2.50–$8.00 per fusion study
+**Complexity:** Complex · **Phase:** Specialized Clinical · **Estimated Cost:** ~$2.50-$8.00 per fusion study
 
 ---
 
@@ -585,19 +585,11 @@ FUNCTION quality_assurance_review(fusion_result, clinical_context):
 
 ---
 
-## Why This Isn't Production-Ready
-
-**FDA regulatory pathway.** If the fusion results inform treatment decisions (radiation therapy planning, surgical navigation), the software is a medical device. FDA 510(k) clearance or De Novo classification is required. The registration algorithm, quality metrics, and clinical workflow all fall under regulatory scrutiny. This recipe demonstrates the technical pattern; regulatory compliance requires a quality management system, design controls, and clinical validation studies.
-
-**Model validation per anatomical site.** A registration model trained on brain images will not work for abdominal registration. Each anatomical site requires its own training data, validation dataset, and performance benchmarks. You cannot deploy a single "universal" registration model.
-
-**Integration with treatment planning systems.** Radiation therapy planning systems (Eclipse, RayStation, Pinnacle) have proprietary APIs and specific DICOM conformance requirements. The DICOM Registration Object and RT Structure Set formats must exactly match what the planning system expects. This integration work is vendor-specific and often requires collaboration with the TPS vendor.
-
-**Clinical validation study.** Before clinical deployment, you need a prospective study comparing automated registration quality against manual registration by expert clinicians. This typically involves 50-100 cases with expert-defined ground truth landmarks. The study design, statistical analysis plan, and results documentation are regulatory requirements.
-
----
-
 ## The Honest Take
+
+Let's start with the regulatory reality. If the fusion results inform treatment decisions (radiation therapy planning, surgical navigation), the software is a medical device. FDA 510(k) clearance or De Novo classification is required. The registration algorithm, quality metrics, and clinical workflow all fall under regulatory scrutiny. This recipe shows the technical pattern; regulatory compliance requires a quality management system, design controls, and clinical validation studies that typically involve 50-100 cases with expert-defined ground truth landmarks.
+
+A registration model trained on brain images will not work for abdominal registration. Each anatomical site requires its own training data, validation dataset, and performance benchmarks. You cannot deploy a single "universal" registration model. And integration with treatment planning systems (Eclipse, RayStation, Pinnacle) means dealing with proprietary APIs and specific DICOM conformance requirements. That integration work is vendor-specific and often requires collaboration with the TPS vendor.
 
 Multi-modal fusion is one of those problems where the technology has been "almost there" for 20 years. The difference now is that deep learning registration has finally made it fast enough for routine clinical workflows. When I say "fast enough," I mean the registration itself takes seconds instead of minutes. The full pipeline (ingest, preprocess, register, fuse, QA) still takes minutes, and the clinical review still takes a human.
 
@@ -648,7 +640,7 @@ The biggest operational headache isn't the registration algorithm. It's the DICO
 - [AWS for Health: Medical Imaging](https://aws.amazon.com/health/solutions/medical-imaging/): Overview of AWS medical imaging capabilities and customer stories
 - [Building Medical Imaging AI on AWS](https://aws.amazon.com/blogs/machine-learning/building-medical-imaging-ai-pipelines-with-amazon-sagemaker/): Architecture patterns for medical imaging ML pipelines on SageMaker
 
-<!-- TODO: Verify all URLs above are current and accessible -->
+<!-- TODO (TechWriter): Verify all URLs above are current and accessible -->
 
 ---
 
