@@ -157,7 +157,7 @@ flowchart TD
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns relevant to this recipe:
 >
-> - [`amazon-sagemaker-medical-imaging`](https://github.com/aws-samples/amazon-sagemaker-medical-imaging): SageMaker-based medical imaging inference pipelines including DICOM handling <!-- TODO: verify this repo still exists -->
+> - [`amazon-sagemaker-medical-imaging`](https://github.com/aws-samples/amazon-sagemaker-medical-imaging): SageMaker-based medical imaging inference pipelines including DICOM handling <!-- TODO (TechWriter): Verify this repo still exists and is public -->
 > - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): Working with AWS HealthImaging for DICOM storage and retrieval
 
 #### Walkthrough
@@ -452,11 +452,11 @@ That said, here's what will surprise you:
 
 **AWS Sample Repos:**
 - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): Code samples for AWS HealthImaging including DICOM import, retrieval, and metadata access
-- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment <!-- TODO: verify medical imaging specific examples exist in this repo -->
+- [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including real-time inference endpoint deployment <!-- TODO (TechWriter): Verify medical imaging specific examples exist in this repo -->
 
 **AWS Solutions and Blogs:**
-- [Guidance for Medical Imaging on AWS](https://aws.amazon.com/solutions/guidance/medical-imaging-on-aws/): Reference architecture for medical imaging workflows on AWS <!-- TODO: verify this specific solution page exists -->
-- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/build-a-medical-image-analysis-pipeline-on-aws/): Blog post covering end-to-end medical imaging ML pipelines <!-- TODO: verify this blog post URL -->
+- [Guidance for Medical Imaging on AWS](https://aws.amazon.com/solutions/guidance/medical-imaging-on-aws/): Reference architecture for medical imaging workflows on AWS <!-- TODO (TechWriter): Verify this specific solution page exists -->
+- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/build-a-medical-image-analysis-pipeline-on-aws/): Blog post covering end-to-end medical imaging ML pipelines <!-- TODO (TechWriter): Verify this blog post URL -->
 
 **Public Datasets (for development only):**
 - [NIH ChestX-ray14](https://nihcc.app.box.com/v/ChestXray-NIHCC): 112,120 frontal chest X-rays with 14 disease labels
