@@ -358,6 +358,8 @@
   * [Python Example](chapter14.04-python-example)
 * [14.5 — Operating Room Block Scheduling](chapter14.05-or-block-scheduling)
   * [Python Example](chapter14.05-python-example)
+* [14.6 — Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment)
+  * [Python Example](chapter14.06-python-example)
 
 ---
 
