@@ -356,6 +356,8 @@
   * [Python Example](chapter14.03-python-example)
 * [14.4 — Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization)
   * [Python Example](chapter14.04-python-example)
+* [14.5 — Operating Room Block Scheduling](chapter14.05-or-block-scheduling)
+  * [Python Example](chapter14.05-python-example)
 
 ---
 
