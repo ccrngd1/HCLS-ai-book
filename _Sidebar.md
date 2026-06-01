@@ -351,4 +351,10 @@
 
 ---
 
+#### Ch 15: Reinforcement Learning
+
+* [Preface](chapter15-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
