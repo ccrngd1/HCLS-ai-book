@@ -146,7 +146,8 @@ def discretize_action(iv_fluid_ml: float, vasopressor_dose: float) -> int:
     """
     # Find which bin the fluid volume falls into.
     # np.digitize returns the index of the bin: 0 means below first threshold,
-    # len(bins) means above the last threshold.
+    # len(bins) means above the last threshold. Values at bin edges go into the
+    # higher bin (right=False default), so 250 mL maps to level 1 ("minimal maintenance").
     fluid_level = int(np.digitize(iv_fluid_ml, FLUID_BINS_ML)) - 1
     fluid_level = max(0, min(fluid_level, NUM_FLUID_LEVELS - 1))
 
@@ -421,6 +422,10 @@ def apply_safety_constraints(state: np.ndarray, q_values: np.ndarray) -> np.ndar
     if sofa_score >= SAFETY_CONSTRAINTS["min_sofa_for_zero_treatment"]:
         masked_q[0] = -np.inf
 
+    # Note: Constraint 3 from the main recipe (lactate rising + high vaso -> don't reduce)
+    # requires access to the previous state to compute lactate trend. In production,
+    # include lactate_trend as a derived state feature or pass previous state to this function.
+
     # Fallback: if all actions are masked, unmask the most conservative non-zero action.
     # This shouldn't happen with well-designed constraints, but defensive coding matters
     # when patient safety is on the line.
@@ -567,6 +572,10 @@ def train_cql_policy(replay_buffer: ReplayBuffer, config: Dict) -> QNetwork:
                   f"CQL loss={cql_loss:.4f}, total={total_loss:.4f}")
 
     print("Training complete.")
+    # WARNING: This returns a network with UNCHANGED random weights because numpy
+    # does not support automatic differentiation. In a real PyTorch/TensorFlow
+    # implementation, the gradient descent steps above would optimize the weights
+    # over 50k iterations. Evaluation results below reflect random policy behavior.
     return q_network
 ```
 
@@ -623,7 +632,10 @@ def evaluate_policy_wis(
             policy_action = int(np.argmax(safe_q))
 
             # Policy probability: we treat argmax as deterministic (prob=1 for best action).
-            # A softer version would use a Boltzmann distribution over Q-values.
+            # Using 0.01 instead of 0.0 for non-selected actions avoids zero-weight
+            # trajectories (which would discard all data where the policy disagrees).
+            # This introduces small bias but reduces variance. In production, use a
+            # softmax (Boltzmann) distribution over Q-values for proper probabilities.
             pi_prob = 1.0 if policy_action == clinician_action else 0.01
 
             # Behavior probability: estimated from training data action frequencies.
@@ -711,6 +723,7 @@ def get_recommendation(
     q_values = q_network.forward(normalized_state)
 
     # Apply safety constraints (may mask out dangerous actions).
+    # Safety constraints use raw clinical values (e.g., MAP in mmHg), not normalized features.
     safe_q_values = apply_safety_constraints(raw_state, q_values)
 
     # Select best action and compute confidence.
