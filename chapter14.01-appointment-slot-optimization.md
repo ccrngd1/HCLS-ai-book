@@ -106,7 +106,9 @@ The optimization runs periodically (weekly is the sweet spot for most clinics; m
 
 **Optimization Model.** Formulate and solve the mathematical program. Inputs: statistical features from the previous step plus organizational constraints (session hours, break requirements, overbooking policies). Output: optimal slot durations, buffer times, and overbooking levels.
 
-**Simulation Validation.** Take the proposed template and simulate 1,000+ clinic days using historical arrival and duration distributions. Measure expected throughput, wait times, overtime probability, and provider idle time. Compare against the current template using the same simulation. If the proposed template doesn't meaningfully outperform the current one, don't change it. Change fatigue is real. Note: the simulation assumes provider behavior remains constant under the new template. In practice, providers may adjust their pace in response to shorter or longer slots. Treat simulation results as directional estimates, not guarantees. The post-deployment monitoring loop is what validates whether the template actually performs as predicted.
+**Simulation Validation.** Take the proposed template and simulate 1,000+ clinic days using historical arrival and duration distributions. Measure expected throughput, wait times, overtime probability, and provider idle time. Compare against the current template using the same simulation. If the proposed template doesn't meaningfully outperform the current one, don't change it. Change fatigue is real.
+
+Note: the simulation assumes provider behavior remains constant under the new template. In practice, providers may adjust their pace in response to shorter or longer slots. Treat simulation results as directional estimates, not guarantees. The post-deployment monitoring loop is what validates whether the template actually performs as predicted.
 
 **Human Review.** Present the proposed template alongside the simulation results to the operations team and affected providers. Show the tradeoffs explicitly: "This template sees 2 more patients per day but increases average wait time by 3 minutes." Let humans make the final call.
 
