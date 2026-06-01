@@ -101,7 +101,7 @@ This matters for implementation because it dramatically reduces the data require
 
 ### Why These Services
 
-**Amazon S3 for slide storage.** Whole slide images are large (2-5 GB each), write-once, and read-many. S3 provides durable, encrypted storage with lifecycle policies to tier older slides to cheaper storage classes. The S3 access patterns (random byte-range reads for tile serving) are well-supported.
+**Amazon S3 for slide storage.** Whole slide images are large (2-5 GB each), write-once, and read-many. S3 provides durable, encrypted storage with lifecycle policies to tier older slides to cheaper storage classes. The S3 access patterns (random byte-range reads for tile serving) are well-supported. For on-premises scanners, use AWS DataSync or Storage Gateway to handle the transfer reliably; budget 100+ Mbps dedicated bandwidth for a lab processing 200+ slides per day.
 
 **AWS Lambda for lightweight orchestration.** Triggering the analysis pipeline when a new slide arrives, coordinating steps, and handling notifications. Lambda is the glue, not the compute engine here.
 
@@ -111,9 +111,9 @@ This matters for implementation because it dramatically reduces the data require
 
 **Amazon DynamoDB for metadata and results.** Case metadata, processing status, and structured results (predictions, confidence scores, attention weights) are stored for fast lookup by case ID or slide ID.
 
-**Amazon CloudFront + S3 for tile serving.** The pathologist's viewer needs fast access to image tiles. CloudFront caches frequently accessed tiles (the regions the AI flagged) close to the viewer for low-latency display.
+**Amazon CloudFront + S3 for tile serving.** The pathologist's viewer needs fast access to image tiles. CloudFront caches frequently accessed tiles (the regions the AI flagged) close to the viewer for low-latency display. Because slide tiles and heatmap overlays are PHI, the distribution must use Origin Access Control (OAC) with signed URLs or signed cookies to restrict access to authenticated pathologist sessions. Public CloudFront distributions are not acceptable here. Configure TTLs to expire cached tiles after the viewing session ends.
 
-**Amazon SQS for work queue management.** Slides arrive throughout the day. A queue decouples slide arrival from processing capacity, enabling smooth scaling without dropped work.
+**Amazon SQS for work queue management.** Slides arrive throughout the day. A queue decouples slide arrival from processing capacity, enabling smooth scaling without dropped work. Configure a dead letter queue (DLQ) with a `maxReceiveCount` of 3 so slides that repeatedly fail processing move aside for manual investigation rather than cycling indefinitely. Monitor DLQ depth via CloudWatch alarm: a growing DLQ indicates a systemic issue (new scanner format, model degradation, infrastructure problem).
 
 ### Architecture Diagram
 
@@ -145,10 +145,10 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, AWS Lambda, AWS Step Functions, Amazon SageMaker, Amazon DynamoDB, Amazon SQS, Amazon CloudFront |
-| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateTransformJob`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sqs:SendMessage`, `sqs:ReceiveMessage`, `states:StartExecution` |
+| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `sagemaker:InvokeEndpoint`, `sagemaker:CreateTransformJob`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sqs:SendMessage`, `sqs:ReceiveMessage`, `states:StartExecution`. Distribute across separate roles per component: ingestion Lambda (S3 read, DynamoDB write, SQS send), Step Functions execution role (SageMaker, S3 read/write, DynamoDB write), tile-serving Lambda@Edge (S3 read only). |
 | **BAA** | AWS BAA signed (pathology slides are PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for model artifacts and data; all transit over TLS |
-| **VPC** | Production: SageMaker in VPC with VPC endpoints for S3, DynamoDB, SQS. Lambda functions in VPC with appropriate endpoints. |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: KMS for model artifacts and data, inter-container traffic encryption enabled (`EnableInterContainerTrafficEncryption=True`); all transit over TLS |
+| **VPC** | Production: SageMaker in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SQS (interface), SageMaker Runtime (interface), SageMaker API (interface), ECR (interface, for container image pulls), CloudWatch Logs (interface). Lambda functions in VPC with appropriate endpoints. Missing ECR endpoints are the most common cause of batch transform job failures in VPC-isolated deployments. |
 | **CloudTrail** | Enabled: log all S3, SageMaker, and DynamoDB API calls for HIPAA audit |
 | **GPU Instances** | SageMaker: ml.g4dn.xlarge (single slide) or ml.g5.2xlarge (batch). Feature extraction is GPU-bound. |
 | **Sample Data** | TCGA (The Cancer Genome Atlas) provides public whole slide images for development. Camelyon16/17 challenge datasets for breast cancer metastasis detection. Never use patient slides in dev without IRB approval and de-identification. |
@@ -324,6 +324,8 @@ FUNCTION extract_features(slide_id, s3_path, patch_coordinates):
         // Different labs/scanners produce different color profiles.
         // Without this, a model trained on Lab A's slides may fail on Lab B's slides.
         normalized_patches = stain_normalize(patch_images, method="macenko")
+        // NOTE: In production, consider separating stain normalization (CPU-bound)
+        // from feature extraction (GPU-bound) to improve GPU utilization.
 
         // Standard preprocessing: resize to model input size, normalize pixel values
         preprocessed = preprocess(normalized_patches,
@@ -342,7 +344,7 @@ FUNCTION extract_features(slide_id, s3_path, patch_coordinates):
     RETURN all_features
 ```
 
-**Step 5: MIL aggregation and classification.** The aggregation step takes the bag of patch features and produces slide-level predictions. An attention-based MIL model assigns importance weights to each patch and computes a weighted combination for classification. The attention weights are the key to interpretability: patches with high attention are the regions the model considers most diagnostic. The output includes both the prediction (e.g., "malignant, Gleason grade 4") and the attention heatmap for pathologist review.
+**Step 5: MIL aggregation and classification.** The aggregation step takes the bag of patch features and produces slide-level predictions. An attention-based MIL model assigns importance weights to each patch and computes a weighted combination for classification. The attention weights are the key to interpretability: patches with high attention are the regions the model considers most diagnostic. The output includes both the prediction (e.g., "malignant, Gleason grade 4") and the attention heatmap for pathologist review. For slides with more than 30,000 patches, the feature matrix alone exceeds 120 MB; consider running aggregation on a lightweight SageMaker endpoint or Fargate task rather than Lambda for these outliers.
 
 ```
 FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
@@ -463,6 +465,8 @@ The part that works better than expected: pathologist acceptance. Unlike radiolo
 **Biomarker prediction from H&E.** Recent research shows that certain molecular biomarkers (MSI status, HER2 expression, BRCA mutation status) can be predicted directly from H&E morphology without requiring expensive molecular testing. This is still research-stage for most biomarkers, but the clinical utility is enormous: predicting which patients need molecular testing vs. which can skip it.
 
 **Multi-stain integration.** Many diagnostic workflows require multiple stains on serial sections (H&E plus 3-5 IHC stains). Building systems that integrate findings across stains, registering serial sections to align tissue regions, and combining predictions from multiple stain-specific models.
+
+**Model versioning and safe deployment.** Use a model registry to track versions. Deploy new models in shadow mode (run inference but don't surface results to pathologists) for 2-4 weeks to compare performance against the production model on your specific scanner and stain profiles. For FDA-cleared indications, model updates may require a new 510(k) submission depending on the magnitude of the change.
 
 ---
 
