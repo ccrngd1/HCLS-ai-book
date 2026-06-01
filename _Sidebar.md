@@ -330,6 +330,8 @@
   * [Python Example](chapter13.03-python-example)
 * [13.4 — Drug-Drug Interaction Knowledge Base](chapter13.04-drug-drug-interaction-knowledge-base)
   * [Python Example](chapter13.04-python-example)
+* [13.5 — Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling)
+  * [Python Example](chapter13.05-python-example)
 
 ---
 
