@@ -12,7 +12,7 @@ Right now, she's mentally fusing these images in her head. She pulls up the MRI 
 
 This isn't just radiation oncology. Neurosurgeons fuse MRI with functional imaging (fMRI, DTI) to avoid eloquent cortex during resection. Cardiologists overlay PET perfusion maps on CT angiography to correlate anatomy with function. Orthopedic surgeons combine CT bone detail with MRI soft tissue visualization for complex joint reconstruction planning. Interventional radiologists fuse pre-procedure CT with real-time ultrasound for needle guidance.
 
-The common thread: each imaging modality captures different physical properties of tissue, and clinical decisions require integrating information across modalities. When that integration happens in a clinician's head, it's limited by human spatial reasoning, fatigued by long cases, and impossible to reproduce or audit. When it happens computationally, it can be precise, consistent, and quantifiable.
+The common thread: each imaging modality captures different physical properties of tissue, and clinical decisions require integrating information across modalities. When that integration happens in a clinician's head, it's limited by human spatial reasoning, degraded by fatigue during long cases, and impossible to reproduce or audit. When it happens computationally, it can be precise, consistent, and quantifiable.
 
 The scale of this problem is significant. Radiation therapy alone treats over 1 million patients annually in the US, and nearly every treatment plan involves multi-modal image fusion. Surgical planning for complex cases (brain tumors, cardiac surgery, orthopedic reconstruction) increasingly depends on fused imaging. The question isn't whether to fuse images computationally. It's how to do it well enough that clinicians trust the result.
 
@@ -46,11 +46,11 @@ Deformable registration algorithms fall into several families:
 
 **Different physics, different geometry.** CT and MRI don't just look different; they have fundamentally different spatial characteristics. CT has isotropic or near-isotropic resolution (0.5-1mm in all directions). MRI often has anisotropic resolution (1mm in-plane but 3-5mm slice thickness). PET has much coarser resolution (4-5mm). Fusing a 5mm PET voxel with a 0.5mm CT voxel requires interpolation decisions that affect the clinical interpretation.
 
-**Temporal mismatch.** The scans weren't acquired simultaneously. Between the CT on Monday and the MRI on Thursday, the tumor may have grown, edema may have changed, the patient may have lost weight. The "correct" registration doesn't exist because the anatomy has genuinely changed. The system must handle this gracefully, not pretend it isn't happening.
+**Temporal mismatch.** The scans weren't acquired simultaneously. Between the CT on Monday and the MRI on Thursday, the tumor may have grown, edema may have changed, the patient may have lost weight. The "correct" registration doesn't exist because the anatomy has genuinely changed between acquisitions. The system must handle this gracefully, not pretend it isn't happening.
 
 **Organ motion.** The liver moves 1-2cm with respiration. The prostate shifts based on bladder and rectal filling. The heart is constantly in motion. For abdominal and thoracic fusion, respiratory and cardiac gating (acquiring images at specific phases of the breathing/cardiac cycle) helps, but doesn't eliminate the problem.
 
-**No ground truth.** Unlike many ML problems, there's no definitive "correct answer" for deformable registration. You can't open the patient and measure where each voxel should map. Validation relies on surrogate metrics: landmark alignment error, contour overlap (Dice coefficient), inverse consistency (registering A to B and then B to A should give you back A). None of these fully captures clinical correctness.
+**No ground truth.** Unlike many ML problems, there's no definitive "correct answer" for deformable registration. You can't open the patient and measure where each voxel should map. Validation relies on surrogate metrics: landmark alignment error, contour overlap (Dice coefficient), and inverse consistency (registering A to B and then B to A should give you back A). None of these fully captures clinical correctness.
 
 **Computational cost.** Deformable registration of 3D medical volumes is computationally expensive. A single CT-to-MRI registration can take 5-30 minutes on CPU. GPU acceleration brings this to seconds or minutes, but the infrastructure requirements are non-trivial. Deep learning inference is faster but requires model training and validation per anatomical site.
 
@@ -104,7 +104,7 @@ At a conceptual level, multi-modal fusion follows this pipeline:
 
 **AWS Lambda for lightweight orchestration tasks.** DICOM header parsing, study matching (identifying which CT goes with which MRI for the same patient), notification dispatch, and quality metric computation are all short-lived, stateless tasks that fit Lambda's execution model.
 
-**Amazon HealthLake (DICOM store) for standards-compliant medical image management.** HealthLake provides a managed DICOMweb interface for storing and retrieving medical images, handling the complexity of DICOM metadata indexing, patient-level queries, and standards-based interoperability with clinical systems (PACS, treatment planning systems).
+**Amazon HealthLake (DICOM store) for standards-compliant medical image management.** HealthLake provides a managed DICOMweb interface for storing and retrieving medical images. It handles the complexity of DICOM metadata indexing, patient-level queries, and standards-based interoperability with clinical systems (PACS, treatment planning systems).
 
 **Amazon EC2 (GPU instances) for interactive registration validation.** Clinicians reviewing registration quality need interactive 3D visualization with sub-second response times. A GPU-backed visualization server (using VTK, 3D Slicer, or similar) provides the rendering performance needed for clinical review workflows.
 
@@ -494,11 +494,11 @@ FUNCTION quality_assurance_review(fusion_result, clinical_context):
     // Apply automated pass/fail criteria
     auto_flags = []
     IF qa_metrics.folding_pct > 0.5:
-        append "Jacobian folding exceeds 0.5%" to auto_flags
+        auto_flags.append("Jacobian folding exceeds 0.5%")
     IF qa_metrics.max_displacement > 50:  // mm
-        append "Maximum displacement exceeds 50mm (likely failure)" to auto_flags
+        auto_flags.append("Maximum displacement exceeds 50mm (likely failure)")
     IF any(qa_metrics.deformable_dice.values() < 0.7):
-        append "Structure overlap below 0.7 for one or more structures" to auto_flags
+        auto_flags.append("Structure overlap below 0.7 for one or more structures")
 
     // Create review task for clinical staff
     review_task = {
@@ -581,7 +581,7 @@ FUNCTION quality_assurance_review(fusion_result, clinical_context):
 | Cost per fusion study | $2.50-$8.00 |
 | Jacobian folding (acceptable) | < 0.5% of voxels |
 
-**Where it struggles:** Large deformations between time points (significant tumor growth or surgical resection between scans). Abdominal imaging with inconsistent respiratory phase. Low-resolution PET fused with high-resolution CT (the PET partial volume effect limits what you can meaningfully extract). Patients with metallic implants causing CT artifacts that confuse registration. And any scenario where the anatomy has genuinely changed between scans in ways that make "correct registration" undefined.
+**Where it struggles:** Large deformations between time points (significant tumor growth or surgical resection between scans). Abdominal imaging with inconsistent respiratory phase. Low-resolution PET fused with high-resolution CT (the PET partial volume effect limits what you can meaningfully extract). Patients with metallic implants causing CT artifacts that confuse registration. Any scenario where the anatomy has genuinely changed between scans in ways that make "correct registration" undefined.
 
 ---
 
@@ -589,11 +589,11 @@ FUNCTION quality_assurance_review(fusion_result, clinical_context):
 
 Let's start with the regulatory reality. If the fusion results inform treatment decisions (radiation therapy planning, surgical navigation), the software is a medical device. FDA 510(k) clearance or De Novo classification is required. The registration algorithm, quality metrics, and clinical workflow all fall under regulatory scrutiny. This recipe shows the technical pattern; regulatory compliance requires a quality management system, design controls, and clinical validation studies that typically involve 50-100 cases with expert-defined ground truth landmarks.
 
-A registration model trained on brain images will not work for abdominal registration. Each anatomical site requires its own training data, validation dataset, and performance benchmarks. You cannot deploy a single "universal" registration model. And integration with treatment planning systems (Eclipse, RayStation, Pinnacle) means dealing with proprietary APIs and specific DICOM conformance requirements. That integration work is vendor-specific and often requires collaboration with the TPS vendor.
+A registration model trained on brain images will not work for abdominal registration. Each anatomical site requires its own training data, validation dataset, and performance benchmarks. You cannot deploy a single "universal" registration model. Integration with treatment planning systems (Eclipse, RayStation, Pinnacle) means dealing with proprietary APIs and specific DICOM conformance requirements. That integration work is vendor-specific and often requires collaboration with the TPS vendor.
 
-Multi-modal fusion is one of those problems where the technology has been "almost there" for 20 years. The difference now is that deep learning registration has finally made it fast enough for routine clinical workflows. When I say "fast enough," I mean the registration itself takes seconds instead of minutes. The full pipeline (ingest, preprocess, register, fuse, QA) still takes minutes, and the clinical review still takes a human.
+Multi-modal fusion is one of those problems where the technology has been "almost there" for 20 years. The difference now is that deep learning registration has finally made it fast enough for routine clinical workflows. When I say "fast enough," I mean the registration itself takes seconds instead of minutes. The full pipeline (ingest, preprocess, register, fuse, QA) still takes minutes, and the clinical review still requires a human.
 
-The part that surprised me most: rigid registration is sufficient for brain imaging about 80% of the time. The skull constrains deformation so effectively that the expensive deformable step often adds minimal improvement. For brain cases, the real value of deformable registration is in the 20% of cases with significant mass effect, post-surgical changes, or edema that shifts midline structures. Build your pipeline to try rigid first and only invoke deformable when quality metrics indicate it's needed.
+The part that surprised me most: rigid registration is sufficient for brain imaging about 80% of the time. The skull constrains deformation so effectively that the expensive deformable step often adds minimal improvement. For brain cases, the real value of deformable registration shows up in the 20% of cases with significant mass effect, post-surgical changes, or edema that shifts midline structures. Build your pipeline to try rigid first and only invoke deformable when quality metrics indicate it's needed.
 
 The uncertainty quantification piece is where the field is heading, and it's genuinely important. A registration that reports "I aligned these images with 1.5mm accuracy" is useful. A registration that reports "I'm confident to 1mm in the frontal lobe but uncertain to 5mm near the skull base" is transformative for clinical decision-making. If you're building this today, invest in models that provide voxel-wise uncertainty estimates.
 
@@ -604,6 +604,7 @@ The biggest operational headache isn't the registration algorithm. It's the DICO
 ## Variations and Extensions
 
 **Real-time intraoperative fusion.** Combine pre-operative MRI with intraoperative ultrasound for surgical navigation. The challenge shifts from batch processing to real-time: registration must complete in under a second as the surgeon moves the ultrasound probe. Deep learning registration models are well-suited here, but the deformation model must account for brain shift (the brain deforms when the skull is opened and CSF drains). This is an active research area with commercial systems emerging.
+<!-- TODO (TechWriter): Verify commercial intraoperative fusion system names if adding examples -->
 
 **Longitudinal treatment response assessment.** Register the same patient's imaging at multiple time points (baseline, mid-treatment, post-treatment) to quantify tumor response. The deformation field itself becomes clinically meaningful: regions of high deformation may indicate tumor shrinkage or growth. Combine with PET SUV changes for multi-parametric response assessment. This requires careful handling of the "what changed because of treatment" vs. "what changed because of positioning" distinction.
 
@@ -640,7 +641,7 @@ The biggest operational headache isn't the registration algorithm. It's the DICO
 - [AWS for Health: Medical Imaging](https://aws.amazon.com/health/solutions/medical-imaging/): Overview of AWS medical imaging capabilities and customer stories
 - [Building Medical Imaging AI on AWS](https://aws.amazon.com/blogs/machine-learning/building-medical-imaging-ai-pipelines-with-amazon-sagemaker/): Architecture patterns for medical imaging ML pipelines on SageMaker
 
-<!-- TODO (TechWriter): Verify all URLs above are current and accessible -->
+<!-- TODO (TechWriter): Verify all URLs above are current and accessible. The SageMaker blog URL in particular may be fabricated. -->
 
 ---
 
