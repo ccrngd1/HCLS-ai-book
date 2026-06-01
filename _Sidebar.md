@@ -319,4 +319,10 @@
 
 ---
 
+#### Ch 13: Knowledge Graphs / Ontology
+
+* [Preface](chapter13-preface)
+
+---
+
 📑 [All Pages](gollum/overview) | 🕓 [Recent Changes](gollum/latest_changes)
