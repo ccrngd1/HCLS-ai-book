@@ -146,11 +146,15 @@ The key architectural insight: separate the real-time dispatch decision (latency
 
 ## The AWS Implementation
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a failover/degradation strategy section. The CAD system must retain native proximity-based dispatch as a fallback when the optimization layer is unavailable (timeout >3 seconds triggers fallback). This is mandatory for a life-safety system. Include fallback rate monitoring and alerting thresholds. -->
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Add dispatcher-in-the-loop mechanism to the architecture. The "Honest Take" section correctly advises recommendation mode, but the architecture shows direct assignment to MDT with no human confirmation step. Define auto-dispatch vs. recommendation mode by priority level, add dispatcher console component, log accept/reject actions for model improvement. -->
+
 ### Why These Services
 
-**Amazon Location Service for travel time and routing.** Location Service provides route calculation with real-time traffic awareness. It can compute travel times between arbitrary points on the road network, accounting for current conditions. For the dispatch optimizer, this replaces the need to build and maintain your own road network graph. It supports route matrices (many-to-many travel times), which is exactly what you need when evaluating multiple candidate units against a call location.
+**Amazon Location Service for travel time and routing.** You need road-network travel times that account for current traffic conditions. Amazon Location Service gives you this: route calculations between arbitrary points with real-time traffic awareness, including route matrices (many-to-many travel times), which is exactly what you need when evaluating multiple candidate units against a call location. It replaces the need to build and maintain your own road network graph.
 
-**AWS Lambda for the real-time dispatch function.** The dispatch decision is a short-lived, stateless computation: take the current fleet state and call details, score candidate units, return the best assignment. Lambda gives you sub-second cold starts (with provisioned concurrency for the dispatch function, you eliminate cold starts entirely), automatic scaling during high-call-volume periods, and no infrastructure to manage. The dispatch function must complete in under 2 seconds; Lambda's execution model fits this perfectly.
+**AWS Lambda for the real-time dispatch function.** The dispatch decision is a short-lived, stateless computation: take the current fleet state and call details, score candidate units, return the best assignment. Lambda gives you automatic scaling during high-call-volume periods and no infrastructure to manage. Provisioned concurrency is mandatory for the dispatch function (not optional). A cold start adding 2 seconds to a cardiac arrest dispatch is unacceptable. Set provisioned concurrency to handle your peak simultaneous dispatch rate (typically 3-5x your average concurrent dispatches to handle multi-casualty incident bursts). Monitor the `ProvisionedConcurrencySpilloverInvocations` metric; any spillover means a dispatch request hit a cold start. Target: zero spillover invocations.
 
 **Amazon DynamoDB for fleet state.** Unit locations, statuses, and capabilities change constantly. DynamoDB's single-digit-millisecond reads and writes make it ideal for the fleet state store. The dispatch function reads current state on every call; DynamoDB handles this access pattern without breaking a sweat. DynamoDB Streams can trigger downstream processing when state changes (e.g., a unit becomes available, triggering a coverage recalculation).
 
@@ -161,6 +165,8 @@ The key architectural insight: separate the real-time dispatch decision (latency
 **Amazon SageMaker for demand forecasting.** The demand forecast model (predicting where calls will come from in the next few hours) is a time-series ML model trained on historical call data. SageMaker hosts the trained model behind a real-time endpoint that the repositioning optimizer queries.
 
 **Amazon Kinesis Data Streams for GPS ingestion.** Ambulance GPS units report location every 5 to 15 seconds. That's a high-throughput stream of small messages. Kinesis ingests these, and a Lambda consumer updates the fleet state in DynamoDB. This decouples the GPS feed from the state store and handles burst traffic gracefully.
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add discussion of GPS device authentication and data validation. GPS/AVL devices typically connect through a vendor gateway that forwards to Kinesis via an authenticated API (API Gateway with API keys or IAM auth). Validate coordinates (within service area bounds, speed physically plausible, timestamp recent). Flag impossible movement patterns as potential device malfunction or spoofing. -->
 
 **Amazon EventBridge for hospital status updates.** Hospitals publish diversion status, ED census, and bed availability through various mechanisms. EventBridge provides a clean event bus for these updates, routing them to the appropriate consumers (the hospital selection component of the dispatch optimizer).
 
@@ -208,13 +214,15 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Location Service, AWS Lambda, Amazon DynamoDB, Amazon ElastiCache (Redis), AWS Step Functions, Amazon SageMaker, Amazon Kinesis Data Streams, Amazon EventBridge, Amazon API Gateway |
-| **IAM Permissions** | `geo:CalculateRoute`, `geo:CalculateRouteMatrix`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Query`, `kinesis:PutRecord`, `kinesis:GetRecords`, `sagemaker:InvokeEndpoint`, `states:StartExecution`, `elasticache:*` (cluster-scoped) |
+| **IAM Permissions** | `geo:CalculateRoute`, `geo:CalculateRouteMatrix`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Query`, `kinesis:PutRecord`, `kinesis:GetRecords`, `sagemaker:InvokeEndpoint`, `states:StartExecution`. ElastiCache Redis access is controlled via security groups (Lambda in the same VPC/subnet with appropriate SG rules). If using IAM-based authentication (Redis 7.0+), scope `elasticache:Connect` to the specific replication group ARN. |
 | **BAA** | Required. Patient location, call details, and destination hospital are PHI under HIPAA. |
-| **Encryption** | DynamoDB: encryption at rest (default). ElastiCache: in-transit and at-rest encryption enabled. Kinesis: server-side encryption with KMS. All API calls over TLS. |
-| **VPC** | Production: Lambda functions in VPC with VPC endpoints for DynamoDB, Kinesis, SageMaker, and CloudWatch Logs. ElastiCache must be in VPC (it always is). Location Service accessed via VPC endpoint or NAT Gateway. |
+| **Encryption** | DynamoDB: encryption at rest (default). ElastiCache: in-transit and at-rest encryption enabled. Kinesis: server-side encryption with customer-managed KMS CMK (automatic annual rotation enabled); restrict `kms:Decrypt` to the GPS processor Lambda execution role. All API calls over TLS. |
+| **VPC** | Production: Lambda functions in VPC with VPC endpoints for DynamoDB, Kinesis, SageMaker, and CloudWatch Logs. ElastiCache must be in VPC (it always is). Location Service accessed via VPC endpoint (preferred; keeps all traffic within the AWS network). Use NAT Gateway only if the Location Service VPC endpoint is not available in your region. |
 | **CloudTrail** | Enabled for all API calls. Dispatch decisions are auditable events. |
 | **Sample Data** | Synthetic call records with timestamps, locations, priorities. Synthetic fleet positions. Never use real patient data in dev. NEMSIS (National EMS Information System) provides de-identified dataset structures for testing. |
 | **Cost Estimate** | Location Service route calculations: $0.04 per request (batch matrix calls reduce this). Lambda: negligible at typical call volumes. DynamoDB: on-demand pricing, ~$50-200/month for a mid-size fleet. SageMaker endpoint: ~$100-500/month depending on instance. ElastiCache: ~$50-200/month for a small Redis cluster. Total: $2,000-8,000/month for a metro-area EMS system. |
+
+<!-- TODO (TechWriter): Expert review S6 (MEDIUM). Add dispatch decision audit trail specification. Every dispatch decision must be logged as an immutable audit record (full decision payload with all candidate scores, fleet state snapshot, travel times used, final assignment, and dispatcher accept/reject action). Store in DynamoDB table or S3 with object lock. Retention: minimum 7-10 years (state EMS record retention requirements vary). These records are legal documents and may be subpoenaed in malpractice cases. -->
 
 ### Ingredients
 
@@ -257,6 +265,9 @@ FUNCTION process_gps_update(gps_event):
             heading       = gps_event.heading
         WHERE unit_id = unit_id
         AND last_gps_time < timestamp   // only accept newer fixes
+    // If conditional write fails (out-of-order fix), catch the exception and discard.
+    // This is expected behavior, not an error. Log at DEBUG level for troubleshooting.
+    // Do NOT retry or raise; the newer fix is already in the table.
 
     // If the unit is currently en route to a call, recalculate ETA.
     unit_record = GET fleet_state_table WHERE unit_id = unit_id
@@ -572,8 +583,7 @@ Once a unit is dispatched and en route, continue monitoring the route for traffi
 ### Industry References
 
 - [NEMSIS (National EMS Information System)](https://nemsis.org/): National standard for EMS data collection and reporting. Useful for understanding data structures and benchmarking.
-- TODO: Verify link for NAEMD response time standards documentation
-- TODO: Verify link for specific OR papers on ambulance dispatch optimization (Gendreau et al., Brotcorne et al.)
+<!-- TODO (TechWriter): Expert review V1 (MEDIUM). Verify and add links for NAEMD response time standards documentation and OR papers on ambulance dispatch optimization (Gendreau et al. 2001, Brotcorne et al. 2003). Provide DOI links rather than potentially unstable URLs. -->
 
 ### Related Concepts
 
