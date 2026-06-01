@@ -351,11 +351,11 @@ FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decis
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 5–10 seconds (including quality check) |
-| Sensitivity (referable DR) | 87–97% (depends on model and threshold) |
-| Specificity (referable DR) | 85–95% |
-| Ungradable rate | 5–15% (population and camera dependent) |
-| Cost per screening | $0.50–$2.00 (dominated by SageMaker endpoint) |
+| End-to-end latency | 5-10 seconds (including quality check) |
+| Sensitivity (referable DR) | 87-97% (depends on model and threshold) |
+| Specificity (referable DR) | 85-95% |
+| Ungradable rate | 5-15% (population and camera dependent) |
+| Cost per screening | $0.50-$2.00 (dominated by SageMaker endpoint) |
 | Throughput | ~200 images/hour per endpoint |
 
 **Where it struggles:**
@@ -431,9 +431,9 @@ One more thing: the patients who most need screening (uncontrolled diabetes, mul
 
 | Tier | Timeline | What You Get |
 |------|----------|--------------|
-| **Basic** | 4–6 weeks | Quality gate + single model endpoint + DynamoDB storage + basic referral notification. Physician reviews all results. |
-| **Production-ready** | 3–5 months | Validated model with clinical study, Step Functions workflow, EHR integration, provider notifications, patient portal results, monitoring dashboard, regulatory documentation. |
-| **With variations** | 6–12 months | Multi-disease screening, longitudinal tracking, OCT integration, multi-site deployment with camera-specific calibration. |
+| **Basic** | 4-6 weeks | Quality gate + single model endpoint + DynamoDB storage + basic referral notification. Physician reviews all results. |
+| **Production-ready** | 3-5 months | Validated model with clinical study, Step Functions workflow, EHR integration, provider notifications, patient portal results, monitoring dashboard, regulatory documentation. |
+| **With variations** | 6-12 months | Multi-disease screening, longitudinal tracking, OCT integration, multi-site deployment with camera-specific calibration. |
 
 ---
 

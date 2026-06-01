@@ -9,10 +9,10 @@
 You'll need the AWS SDK for Python and a few image-handling libraries:
 
 ```bash
-pip install boto3 numpy Pillow
+pip install boto3 numpy Pillow scipy
 ```
 
-`Pillow` handles image loading and basic manipulation. `numpy` handles array operations for preprocessing. In a real deployment, you'd also need a deep learning framework (PyTorch or TensorFlow) for local preprocessing and potentially for running the quality assessment model locally. For this example, we keep it to standard libraries and let SageMaker handle the classification model.
+`Pillow` handles image loading and basic manipulation. `numpy` handles array operations for preprocessing. `scipy` provides signal processing functions used in the image quality assessment (Laplacian convolution for sharpness detection). In a real deployment, you'd also need a deep learning framework (PyTorch or TensorFlow) for local preprocessing and potentially for running the quality assessment model locally. For this example, we keep it to standard libraries and let SageMaker handle the classification model.
 
 Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, and `sns:Publish`.
 
@@ -586,7 +586,7 @@ def store_screening_result(
     DynamoDB requires Decimal for numeric values, not float.
     This is a known gotcha that will throw a TypeError if you forget.
     """
-    screening_id = f"scr-{datetime.now(timezone.utc).strftime('%Y-%m%d')}-{uuid.uuid4().hex[:5]}"
+    screening_id = f"scr-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:5]}"
 
     record = {
         "patient_id": patient_id,
@@ -607,6 +607,7 @@ def store_screening_result(
         "status": "COMPLETE",
     }
 
+    # DynamoDB key: patient_id (partition) + screening_date (sort)
     results_table.put_item(Item=record)
 
     logger.info(
@@ -617,7 +618,7 @@ def store_screening_result(
     return record
 
 
-def trigger_downstream_action(patient_id: str, screening_id: str, decision: dict):
+def trigger_downstream_action(patient_id: str, screening_id: str, image_key: str, decision: dict):
     """
     Trigger the appropriate notification based on the clinical decision.
 
@@ -629,6 +630,7 @@ def trigger_downstream_action(patient_id: str, screening_id: str, decision: dict
     message_base = {
         "patient_id": patient_id,
         "screening_id": screening_id,
+        "image_key": image_key,
         "severity_grade": decision["severity_grade"],
         "decision": decision["decision"],
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -656,7 +658,7 @@ def trigger_downstream_action(patient_id: str, screening_id: str, decision: dict
             Item={
                 "screening_id": screening_id,
                 "patient_id": patient_id,
-                "image_key": message_base.get("image_key", ""),
+                "image_key": image_key,
                 "raw_predictions": json.loads(
                     json.dumps(decision), parse_float=Decimal
                 ),
@@ -762,7 +764,7 @@ def run_screening_pipeline(patient_id: str, bucket: str, image_key: str) -> dict
     record = store_screening_result(
         patient_id, image_key, quality_result, predictions, decision
     )
-    trigger_downstream_action(patient_id, record["screening_id"], decision)
+    trigger_downstream_action(patient_id, record["screening_id"], image_key, decision)
     print(f"  ✓ Screening record stored: {record['screening_id']}")
 
     print(f"\n{'='*60}")
