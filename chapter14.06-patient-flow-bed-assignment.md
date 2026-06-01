@@ -137,9 +137,14 @@ The feedback loop is critical. Every time a human overrides the system's recomme
 
 **Amazon Kinesis Data Streams for real-time state ingestion.** ADT events arrive as a stream (HL7 messages, FHIR notifications, or custom events from the EHR). Kinesis handles the ingestion at whatever rate your hospital generates events (typically hundreds to low thousands per hour) with ordering guarantees within a shard. The stream serves as a buffer between the event source and your processing logic.
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add note on configuring a DLQ (SQS) on the Lambda event source mapping for Kinesis processing failures. A lost ADT event means state model diverges from reality. Alarm on DLQ depth and investigate immediately. -->
+<!-- TODO (TechWriter): Expert review A4 (LOW). Add brief shard count guidance: single shard sufficient for most single-hospital deployments (up to ~3,600 events/hour); partition by facility ID for multi-campus. -->
+
 **Amazon DynamoDB for the state model.** The live bed state needs single-digit-millisecond reads (the optimization engine queries it every few minutes) and fast writes (every ADT event updates it). DynamoDB's key-value model maps naturally to bed state: partition key is bed ID, attributes are current occupant, status, constraints, and timestamps. A GSI on unit gives you fast unit-level queries.
 
 **Amazon ElastiCache (Redis) for the working state and debounce logic.** The debounce timer ("wait 60 seconds after the last state change before re-optimizing") and the in-flight recommendation state (which assignments have been recommended but not yet accepted) live in Redis. It's faster than DynamoDB for this pattern and supports TTLs natively for expiring stale recommendations.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add note specifying ElastiCache Redis with Multi-AZ replication as minimum production config. Add graceful degradation strategy: if Redis unavailable, fall back to periodic EventBridge schedule; if in-flight state unreadable, treat all beds as potentially available and flag recommendations with lower confidence. -->
 
 **AWS Step Functions for the optimization pipeline.** The sequence of "gather current state, run optimizer, validate results, publish recommendations" is a short workflow that benefits from Step Functions' error handling and retry logic. If the optimizer fails or times out, Step Functions handles the retry without custom code.
 
@@ -211,6 +216,9 @@ flowchart TD
 | CloudTrail | Audit logging for all assignment decisions and overrides |
 | Sample Data | Synthetic ADT event streams with realistic arrival patterns. Synthetic bed inventory with constraint attributes. Never use real PHI in dev. |
 | Cost Estimate | ~$500-800/month base (Kinesis + DynamoDB + Lambda + ElastiCache). ~$1,000-1,500/month at scale with high event volumes and WebSocket connections. |
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add VPC endpoint list to prerequisites: DynamoDB (gateway), S3 (gateway), Kinesis (interface), Step Functions (interface), EventBridge (interface), CloudWatch Logs (interface), execute-api (interface), KMS (interface). Budget ~$50-60/month for interface endpoints in 3-AZ deployment. -->
+<!-- TODO (TechWriter): Expert review N2 (MEDIUM). Add paragraph in State Ingestion or prerequisites on EHR integration network path: Direct Connect + VPN backup for on-premises EHR; VPC peering/PrivateLink for cloud-hosted EHR; monitor connection health; surface stale-state warning if ADT feed down >5 minutes. -->
 
 ### Ingredients
 
@@ -457,6 +465,7 @@ FUNCTION publish_recommendations(recommendations):
             reasoning = rec.reasoning,
             alternatives = rec.alternatives
         )
+        // TODO (TechWriter): Expert review A3 (MEDIUM). Add note: expired recommendations should trigger re-optimization for the affected patient. Patient must never silently fall out of the pending queue because a recommendation timed out.
 
         // Push to bed management coordinator via WebSocket
         notify_bed_coordinator(
@@ -466,6 +475,9 @@ FUNCTION publish_recommendations(recommendations):
 
     // Track outcomes for feedback loop
     SCHEDULE check_recommendation_outcomes(recommendations, after_minutes=30)
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add guidance on PHI minimization in WebSocket payloads: push only MRN + bed + confidence score; serve clinical reasoning on-demand via authenticated REST API, not proactively to all connected sessions. -->
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note on WebSocket auth model: Lambda authorizer on $connect, unit-level filtering of recommendations, connection TTLs for idle sessions. -->
 
 FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=NULL):
     IF action == "ACCEPT":
@@ -479,6 +491,7 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
         log_override(recommendation_id, override_reason)
         // This is a learning signal: why did the human disagree?
         queue_for_model_review(recommendation_id, override_reason)
+        // TODO (TechWriter): Expert review S2 (MEDIUM). Add note recommending structured override reason codes (SAFETY_CONCERN, PATIENT_REQUEST, etc.) with optional free-text flagged as PHI-containing and subject to separate access controls and retention policies.
 
     ELSE IF action == "DEFER":
         // Not ready to decide yet (waiting for discharge, cleaning, etc.)
@@ -501,7 +514,6 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
   "recommendations": [
     {
       "patient_id": "PAT-88291",
-      "patient_name": "J. Martinez",
       "waiting_since": "2026-06-01T12:15:00Z",
       "wait_minutes": 135,
       "acuity": "STEP_DOWN",
@@ -552,10 +564,10 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
 
 **Where It Struggles:**
 
-- **Mass casualty events:** The model assumes normal arrival patterns. A sudden influx of 20+ patients overwhelms the optimization (too many assignments, too few beds, constraints become infeasible). You need a separate surge protocol that bypasses normal optimization.
-- **Behavioral health patients:** Placement constraints are complex and often undocumented (elopement risk, self-harm precautions, specific room configurations). The model frequently gets overridden for these patients.
-- **"Soft" bed blocks:** Some hospitals informally reserve beds for specific services ("those two beds are always for cardiology"). These aren't in any system but staff enforce them. The optimizer doesn't know about them and gets overridden.
-- **Discharge prediction uncertainty:** If your predicted discharge time is wrong by 2 hours, beds you planned on aren't available when you need them. The optimization is only as good as the discharge predictions feeding it.
+- **Mass casualty events:** The model assumes normal arrival patterns. A sudden influx of 20+ patients overwhelms the optimization (too many assignments, too few beds, constraints become infeasible). Don't try to optimize during a surge. Just place people safely and sort it out later. You need a separate surge protocol that bypasses normal optimization entirely.
+- **Behavioral health patients:** Placement constraints are complex and often undocumented (elopement risk, self-harm precautions, specific room configurations). We've seen 60%+ override rates for behavioral health placements. The model just doesn't have the context that experienced staff carry in their heads.
+- **"Soft" bed blocks:** Some hospitals informally reserve beds for specific services ("those two beds are always for cardiology"). These aren't in any system but staff enforce them religiously. The optimizer doesn't know about them and gets overridden, and you'll spend weeks tracking down why acceptance rates are low on certain units.
+- **Discharge prediction uncertainty:** If your predicted discharge time is wrong by 2 hours, beds you planned on aren't available when you need them. The optimization is only as good as the discharge predictions feeding it, and those predictions are often optimistic.
 
 ---
 
@@ -620,8 +632,8 @@ Build a separate optimization profile for surge conditions (pandemic, mass casua
 - [PuLP: Linear Programming in Python](https://coin-or.github.io/pulp/)
 
 ### Healthcare Operations Research
-- TODO: Verify link for IHI patient flow resources
-- TODO: Verify link for AHRQ hospital capacity management toolkit
+- [IHI: Optimizing Patient Flow](http://www.ihi.org/resources/Pages/IHIWhitePapers/OptimizingPatientFlow.aspx) - Institute for Healthcare Improvement white paper on flow improvement strategies
+- [AHRQ: Hospital Capacity Stress](https://www.ahrq.gov/patient-safety/settings/hospital/resource/index.html) - Agency for Healthcare Research and Quality resources on hospital capacity management
 
 ---
 
