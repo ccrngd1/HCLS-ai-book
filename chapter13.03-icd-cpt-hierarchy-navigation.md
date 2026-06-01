@@ -100,7 +100,7 @@ The queries you'll actually run against a medical code hierarchy graph fall into
 
 ### Why These Services
 
-**Amazon Neptune for graph storage and traversal.** Neptune is AWS's managed graph database, supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For ICD/CPT hierarchy navigation, the property graph model with openCypher is the natural fit: codes are nodes with properties, relationships are typed edges with metadata. Neptune handles the index management, replication, and backup that you'd otherwise manage yourself. It's also on the HIPAA eligible services list, which matters because code assignments on claims are PHI-adjacent (they're part of the designated record set).
+**Amazon Neptune for graph storage and traversal.** Neptune is AWS's managed graph database, supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For ICD/CPT hierarchy navigation, the property graph model with openCypher is the natural fit: codes are nodes with properties, relationships are typed edges with metadata. Neptune handles the index management, replication, and backup that you'd otherwise manage yourself. It's also on the HIPAA eligible services list, which matters because code assignments on claims are PHI-adjacent (they're part of the designated record set). Use Neptune's reader endpoint for query traffic and the cluster (writer) endpoint for bulk loads so read and write workloads don't compete.
 
 **Amazon S3 for source file staging.** CMS and AMA publish code files as downloadable archives. These land in S3 as the first step of the ingestion pipeline. S3 also serves as the staging area for Neptune bulk load operations, which expect source data in S3.
 
@@ -137,20 +137,20 @@ flowchart TD
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, Amazon API Gateway, Amazon ElastiCache (Redis) |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `s3:GetObject`, `s3:PutObject`, `elasticache:*` (scoped to cluster), `lambda:InvokeFunction` |
-| **BAA** | AWS BAA signed. Code assignments linked to patients are part of the designated record set. |
+| **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, Amazon API Gateway, Amazon ElastiCache (Redis), AWS KMS |
+| **IAM Permissions** | Query handler Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN). ETL Lambda: `neptune-db:WriteDataViaQuery`, `neptune-db:ReadDataViaQuery`, `neptune-db:GetLoaderStatus` (scoped to cluster ARN). Both: `s3:GetObject`, `s3:PutObject` (scoped to relevant buckets), `kms:Decrypt`, `kms:GenerateDataKey` (scoped to S3 encryption key). |
+| **BAA** | BAA must be signed. Code assignments linked to patients are PHI (part of the designated record set). |
 | **Encryption** | Neptune: encryption at rest (enabled at cluster creation, cannot be added later). S3: SSE-KMS. ElastiCache: in-transit and at-rest encryption. All API calls over TLS. |
-| **VPC** | Neptune requires VPC deployment. Lambda functions must be in the same VPC with appropriate security groups. VPC endpoints for S3 and CloudWatch Logs. |
-| **CloudTrail** | Enabled for Neptune API calls and S3 access logging. |
+| **VPC** | Neptune requires VPC deployment. Lambda functions in same VPC with security groups: Lambda SG allows outbound to Neptune (port 8182), ElastiCache (port 6379), and VPC endpoints (port 443). Neptune SG allows inbound from Lambda SG on 8182. ElastiCache SG allows inbound from Lambda SG on 6379. VPC endpoints required: S3 (gateway), CloudWatch Logs (interface), KMS (interface). If Lambdas have no NAT/internet egress, also add Neptune management endpoint. |
+| **CloudTrail** | Enabled for Neptune API calls and S3 access logging. Enable Neptune audit logging via cluster parameter group (`neptune_enable_audit_log = 1`) for query-level audit trail. |
 | **Sample Data** | CMS publishes ICD-10-CM files at [cms.gov/medicare/coding-billing/icd-10-codes](https://www.cms.gov/medicare/coding-billing/icd-10-codes). CPT requires AMA license. Use ICD-10-CM (free) for development; add CPT when licensed. |
-| **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). ElastiCache cache.t3.medium: ~$0.068/hr (~$50/month). Lambda and API Gateway negligible at query volumes under 1M/month. |
+| **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). Neptune I/O: ~$0.20 per million requests (at 1M queries/month with 85% cache hit rate, expect ~150K Neptune I/Os, negligible; spikes during cache-cold periods post-update). ElastiCache cache.t3.medium: ~$0.068/hr (~$50/month). Lambda and API Gateway negligible at query volumes under 1M/month. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Neptune** | Stores code hierarchy as property graph; executes traversal queries |
+| **Amazon Neptune** | Stores code hierarchy as property graph; executes traversal queries (reader endpoint for queries, cluster endpoint for loads) |
 | **Amazon S3** | Stages source code files and Neptune bulk load CSVs |
 | **AWS Lambda** | ETL pipeline (parse/transform/load) and query handler |
 | **Amazon API Gateway** | REST interface for downstream consumers |
@@ -261,7 +261,7 @@ FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
     RETURN nodes, edges
 ```
 
-**Step 3: Bulk load into Neptune.** Neptune's bulk loader expects CSV files in S3 with specific header conventions. Node files need `~id`, `~label`, and property columns. Edge files need `~id`, `~from`, `~to`, `~label`, and property columns. This step transforms the parsed data into that format and triggers the load. Bulk loading is dramatically faster than inserting nodes one at a time via Gremlin or openCypher (minutes vs. hours for 70,000+ nodes). The load is idempotent if you use consistent IDs: reloading the same file updates existing nodes rather than creating duplicates.
+**Step 3: Bulk load into Neptune.** Neptune's bulk loader expects CSV files in S3 with specific header conventions. Node files need `~id`, `~label`, and property columns. Edge files need `~id`, `~from`, `~to`, `~label`, and property columns. This step transforms the parsed data into that format and triggers the load. Bulk loading is dramatically faster than inserting nodes one at a time via Gremlin or openCypher (minutes vs. hours for 70,000+ nodes). For true upsert behavior (updating existing nodes with new property values on reload), use `mode=AUTO` with `updateSingleCardinalityProperties=TRUE`. Without these parameters, reloading a file with changed descriptions will skip existing nodes rather than updating them.
 
 ```
 FUNCTION load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket):
@@ -283,8 +283,10 @@ FUNCTION load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket
         format      = "csv"
         iamRoleArn  = neptune_load_role_arn    // Neptune needs an IAM role to read from S3
         region      = current_region
+        mode        = "AUTO"                   // upsert: update existing, insert new
         failOnError = "FALSE"                  // log errors but continue loading valid records
         parallelism = "HIGH"                   // use all available loader threads
+        updateSingleCardinalityProperties = "TRUE"  // update properties on existing nodes
 
     // Monitor load status
     WHILE load is not complete:
@@ -303,27 +305,45 @@ FUNCTION load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket
 FUNCTION handle_query(request):
     code       = request.path_params.code          // e.g., "E11"
     query_type = request.path_params.query_type    // "children", "ancestors", "crosswalks", "exclusions"
-    depth      = request.query_params.depth OR 99  // how many levels to traverse (default: all)
-    version    = request.query_params.version OR "current"
+    depth      = request.query_params.depth OR 10  // how many levels to traverse (default: 10)
+    version    = request.query_params.version OR current_fiscal_year()
+    page_size  = request.query_params.limit OR 100
+    offset     = request.query_params.offset OR 0
 
-    // Check cache first (traversals are deterministic per version)
-    cache_key = build_cache_key(code, query_type, depth, version)
+    // Validate input: reject malformed codes at the API layer.
+    // ICD-10 pattern: letter + digits + optional dot + digits
+    // CPT pattern: "CPT:" prefix + 4-5 digits
+    IF code does not match "^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$"
+       AND code does not match "^(CPT:)?[0-9]{4,5}$":
+        RETURN 400 Bad Request ("Invalid code format")
+
+    // Clamp depth to prevent unreasonably broad traversals
+    depth = max(1, min(depth, 20))
+
+    // Check cache first.
+    // Key includes resolved version (not "current") to avoid ambiguity across updates.
+    cache_key = build_cache_key(code, query_type, depth, version, page_size, offset)
     cached = lookup cache_key in Redis
     IF cached is not null:
         RETURN cached
 
-    // Build the appropriate openCypher query
+    // Build the appropriate openCypher query.
+    // Note: Neptune openCypher does not support parameterized variable-length
+    // path bounds. The depth value must be interpolated as a literal integer
+    // (safe here because we validated it as an integer above).
     IF query_type == "children":
         // Find all descendants up to specified depth
         cypher = "
-            MATCH path = (start {id: $code})<-[:IS_CHILD_OF*1..$depth]-(descendant)
+            MATCH path = (start {id: $code})<-[:IS_CHILD_OF*1..{depth}]-(descendant)
             WHERE descendant.version = $version
             RETURN descendant.id AS code,
                    descendant.description AS description,
                    descendant.is_billable AS billable,
                    length(path) AS depth_level
             ORDER BY descendant.id
+            SKIP $offset LIMIT $page_size
         "
+        // {depth} is interpolated as a literal integer, not a parameter
 
     ELSE IF query_type == "ancestors":
         // Walk up the hierarchy to the chapter level
@@ -339,27 +359,29 @@ FUNCTION handle_query(request):
         // Find all codes in the other system linked by cross-walk edges
         target_system = request.query_params.target OR "CPT"
         cypher = "
-            MATCH (start {id: $code})-[:CROSS_WALKS_TO]->(target)
-            WHERE target.label = $target_system
+            MATCH (start {id: $code})-[r:CROSS_WALKS_TO]->(target)
+            WHERE target.`~label` = $target_system
             RETURN target.id AS code,
                    target.description AS description,
-                   relationship.payer AS payer,
-                   relationship.effective AS effective_date
+                   r.payer AS payer,
+                   r.effective AS effective_date
+            SKIP $offset LIMIT $page_size
         "
 
     ELSE IF query_type == "exclusions":
         // Find codes that cannot be reported together with this one
         cypher = "
-            MATCH (start {id: $code})-[:EXCLUDES1]-(excluded)
+            MATCH (start {id: $code})-[r:EXCLUDES1]-(excluded)
             RETURN excluded.id AS code,
                    excluded.description AS description,
                    'EXCLUDES1' AS exclusion_type
         "
 
-    // Execute against Neptune
-    result = execute_cypher(neptune_endpoint, cypher, params={code, depth, version})
+    // Execute against Neptune (use reader endpoint for queries)
+    result = execute_cypher(neptune_reader_endpoint, cypher, params={code, version, offset, page_size})
 
-    // Cache the result (TTL = until next version update, or 24 hours as safety)
+    // Cache the result.
+    // TTL = 24 hours. After a version update, flush the cache (see Step 5).
     store cache_key -> result in Redis with TTL 86400
 
     RETURN format_as_json(result)
@@ -403,6 +425,10 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
         IF edge does not exist in current graph:
             create edge with effective_date = new_version
 
+    // Flush the Redis cache after a successful version update.
+    // All cached traversal results may now be stale.
+    flush Redis cache (or at minimum, flush keys matching the updated version)
+
     log "Version update complete: {new_codes.count} added, {retired_codes.count} retired, {modified.count} modified"
 ```
 
@@ -432,6 +458,7 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
   ],
   "total_results": 147,
   "truncated": true,
+  "next_offset": 9,
   "query_time_ms": 23
 }
 ```
@@ -467,7 +494,7 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 | Cache hit rate (production) | 85-95% for popular codes |
 | Graph size | ~80,000 nodes, ~500,000 edges (ICD + CPT + cross-walks) |
 
-**Where it struggles:** Very broad subtree queries (like "all children of Chapter 4" which returns thousands of codes) can be slow without pagination. Cross-walk queries for codes with hundreds of valid pairings need result limits. And the annual version transition creates a brief period where the cache is cold and query latency spikes.
+**Where it struggles:** Very broad subtree queries (like "all children of Chapter 4" which returns thousands of codes) can be slow without pagination. Cross-walk queries for codes with hundreds of valid pairings need result limits. And the annual version transition creates a brief period where the cache is cold and query latency spikes (and Neptune I/O costs spike correspondingly).
 
 ---
 
@@ -481,7 +508,7 @@ The CPT side is worse because it requires an AMA license, the data formats are p
 
 The version transition is the other gotcha. Your first annual update will reveal edge cases in your SUPERSEDED_BY logic. Codes don't always map one-to-one when they're retired. Sometimes one code splits into three. Sometimes three codes merge into one. The GEMs (General Equivalence Mappings) files handle this, but they're approximate mappings, not exact equivalences. Your analytics team will need to understand that "E11.65 in FY2024" and "E11.65 in FY2025" might not mean exactly the same clinical concept if the code definition was refined.
 
-One more thing: Neptune's openCypher support is good but not complete. If you're coming from Neo4j, some Cypher features you're used to (like APOC procedures) don't exist. Test your query patterns against Neptune specifically during development, not just against a local Neo4j instance.
+One more thing: Neptune's openCypher support is good but not complete. If you're coming from Neo4j, some Cypher features you're used to (like APOC procedures) don't exist. Variable-length path bounds must be literal integers, not parameters. Test your query patterns against Neptune specifically during development, not just against a local Neo4j instance.
 
 ---
 
@@ -489,7 +516,7 @@ One more thing: Neptune's openCypher support is good but not complete. If you're
 
 **Coding assistance with similarity search.** Combine the hierarchy graph with a text embedding model. When a coder types a free-text description ("chest wall pain after coughing"), embed it, find the nearest code descriptions in vector space, then use the graph to show the full context: parent codes, sibling codes, and exclusions. The graph turns a flat similarity search into a navigable decision tree.
 
-**Payer-specific rule overlays.** Different payers have different medical necessity rules (which ICD codes justify which CPT codes). Model each payer's rules as a separate edge set in the same graph, tagged by payer ID. A single query can then answer "is this ICD/CPT combination valid for Blue Cross?" by filtering cross-walk edges to that payer. This eliminates maintaining separate lookup tables per payer.
+**Payer-specific rule overlays.** Different payers have different medical necessity rules (which ICD codes justify which CPT codes). Model each payer's rules as a separate edge set in the same graph, tagged by payer ID. A single query can then answer "is this ICD/CPT combination valid for Blue Cross?" by filtering cross-walk edges to that payer. This eliminates maintaining separate lookup tables per payer. Important: if you implement payer-specific cross-walks, include the payer ID in the cache key to prevent cross-tenant data leakage. The base hierarchy cache (public ICD/CPT structure) is safe to share, but payer-specific results must be isolated.
 
 **Real-time claim editing integration.** Connect the graph API to your claims adjudication pipeline. Before a claim is submitted, query the graph for exclusion violations (codes that can't be billed together), bundling opportunities (multiple codes that should be a single code), and medical necessity validation (does the diagnosis justify the procedure?). This catches errors before they become denials.
 
