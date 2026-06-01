@@ -1,0 +1,634 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780272741154-000060-1d965cf04cb32f2d iteration=903 task_id=ch09-r07-draft persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/RECIPE-GUIDE.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/categories/09-computer-vision.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-903/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-903/RECIPE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4249 bytes[0m from /tmp/ralph-worktrees/iter-903/categories/09-computer-vision.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me look at a completed Chapter 1 recipe for reference on quality and style:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m1[0m to [38;5;141m150[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m13791 bytes[0m from /tmp/ralph-worktrees/iter-903/chapter01.01-insurance-card-scanning.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me see more of this recipe and also check the [38;5;10m_Sidebar.md[0m:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter01.01-insurance-card-scanning.md[0m, from line [38;5;141m150[0m to [38;5;141m400[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/_Sidebar.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m18913 bytes[0m from /tmp/ralph-worktrees/iter-903/chapter01.01-insurance-card-scanning.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m17131 bytes[0m from /tmp/ralph-worktrees/iter-903/_Sidebar.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a thorough understanding of the style, structure, and quality expected. Let me write the recipe for 9.7 Radiology AI Triage Multi-Modality.[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Recipe 9.7: Radiology AI Triage (Multi-Modality) 🏥
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m **Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.50–$2.00 per study
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ## The Problem
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m A radiologist at a mid-size hospital reads somewhere between 50 and 100 studies per shift. CT heads, chest X-rays, abdominal MRIs, spine CTs. They arrive in the worklist in the order they were completed by the scanner. First in, first out. No intelligence. No prioritization.
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m Buried in that queue might be a CT head showing a large epidural hematoma. The patient is in the ED, deteriorating. The neurosurgeon needs the read to proceed with evacuation. But the study is sitting at position 47 in the worklist because it happened to arrive after a batch of routine outpatient knee MRIs. The radiologist won't get to it for another 90 minutes at current pace.
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m This is not a hypothetical. Delayed reads on critical findings are a well-documented source of patient harm in radiology. The ACR (American College of Radiology) has published guidelines on critical result communication precisely because the problem is so common. The issue is not that radiologists are slow. They're fast. The issue is that the worklist has no concept of clinical urgency. It treats a screening mammogram and a trauma CT with the same priority.
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m Multi-modality radiology AI triage solves this by running inference on incoming studies across CT, MRI, and X-ray, detecting critical findings (pneumothorax, intracranial hemorrhage, pulmonary embolism, cervical spine fracture, aortic dissection), and bumping those studies to the top of the worklist. The radiologist still reads everything. The AI just changes the order. Triage, not diagnosis.
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m The "multi-modality" part is what makes this genuinely hard. A chest X-ray model and a head CT model are completely different architectures trained on completely different data. Unifying them into a single triage system that integrates cleanly with the radiologist's existing workflow (PACS, RIS, worklist) is an engineering challenge that goes well beyond training a good model.
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m ## The Technology: How AI Reads Medical Images
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m ### Deep Learning for Medical Imaging
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m Medical imaging AI is built on convolutional neural networks (CNNs) and, increasingly, vision transformers. The core idea: take a medical image (or volume, in the case of CT/MRI), pass it through a deep neural network, and produce a classification or detection output. "Is there a pneumothorax in this chest X-ray?" "Where is the hemorrhage in this CT head?"
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m The models are trained on large annotated datasets where radiologists have labeled thousands of images with ground truth findings. The network learns to associate pixel patterns with clinical findings. After training, it can process a new, unseen image and produce a prediction with an associated confidence score.
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m For 2D modalities (X-ray), this is relatively straightforward: a single image goes in, a classification comes out. For 3D modalities (CT, MRI), the input is a volume of hundreds of slices. The model needs to reason across the entire volume, not just individual slices. This is computationally heavier and architecturally different. 3D CNNs, 2.5D approaches (processing adjacent slices together), and slice-level aggregation are all common strategies.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m ### The Multi-Model Challenge
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m Here's the thing that makes multi-modality triage fundamentally different from single-finding detection: you're not running one model. You're running many.
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m A typical multi-modality triage system might include:
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m - Chest X-ray: pneumothorax, large pleural effusion, tension pneumothorax, widened mediastinum
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m - CT Head: intracranial hemorrhage (epidural, subdural, subarachnoid, intraparenchymal), midline shift, mass effect
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m - CT Chest (PE protocol): pulmonary embolism, aortic dissection
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m - CT Spine: cervical fracture, unstable spine injury
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m - CT Abdomen: free air (perforation), large AAA
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m Each of these is a separate model (or a multi-task model trained on that specific modality). They have different input requirements, different preprocessing pipelines, different inference times, and different performance characteristics. Orchestrating all of them behind a single triage interface is the engineering problem.
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m ### DICOM and the Imaging Ecosystem
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m Medical images live in DICOM format (Digital Imaging and Communications in Medicine). DICOM is not just an image format; it's a communication protocol, a metadata standard, and a workflow specification all in one. Every study that comes off a scanner is a collection of DICOM objects containing pixel data plus rich metadata: patient demographics, study description, modality, body part, acquisition parameters, referring physician, accession number.
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m The triage system needs to:
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m 1. Receive DICOM studies as they're produced by scanners
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m 2. Route each study to the appropriate model based on modality and body part
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m 3. Run inference
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m 4. Communicate results back to the radiologist's worklist
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m That last step is the integration challenge. Radiologists work in PACS (Picture Archiving and Communication System) and read from a worklist managed by the RIS (Radiology Information System). The triage system needs to modify worklist priority without disrupting the radiologist's existing workflow. This typically happens via HL7 messages or DICOM worklist modifications, depending on the PACS vendor.
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m ### What Makes This Hard (Beyond the Models)
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m **Modality routing.** When a study arrives, the system needs to determine which model(s) to run. A "CT Chest" might need both the PE model and the pneumothorax model. A "CT Head and Neck" might need the head hemorrhage model and the cervical spine model. Routing logic based on DICOM metadata (Modality, StudyDescription, BodyPartExamined) sounds simple until you encounter the wild inconsistency of how technologists populate these fields across different sites and scanner vendors.
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m **Preprocessing variability.** A CT from a GE scanner and a CT from a Siemens scanner have different pixel spacing, different reconstruction kernels, different windowing defaults. The model expects normalized input. Your preprocessing pipeline needs to handle this variability without manual configuration per scanner.
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m **Latency constraints.** Triage is only useful if it happens fast. If the AI takes 20 minutes to process a study, the radiologist has already read past it. Target: results within 5 minutes of study completion, ideally under 2 minutes. For a CT with 500+ slices, that's a meaningful compute requirement.
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m **False positive management.** A triage system that cries wolf loses trust immediately. If the AI bumps 30% of studies to "critical" priority, radiologists will ignore it within a week. False positive rates need to be extremely low (under 5%) for the system to maintain clinical trust. This often means setting confidence thresholds conservatively, which trades sensitivity for specificity.
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m **FDA regulatory pathway.** In the US, radiology AI triage products are regulated as medical devices. Most are cleared through the 510(k) pathway as Class II devices. Each clinical indication (pneumothorax detection, ICH detection, PE detection) typically requires its own clearance. You cannot just train a model and deploy it. The regulatory pathway adds 12-18 months and significant cost per indication.
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m **Integration with existing workflow.** Radiologists are creatures of habit (reasonably so; their workflow is optimized for throughput). A triage system that requires them to check a separate screen, log into a different application, or change their reading pattern will fail. The priority change must appear natively in their existing worklist. This means deep integration with the specific PACS/RIS vendor at each site.
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m ### The General Architecture Pattern
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m [Scanner] → [DICOM Router] → [Study Classifier] → [Model Selector] → [Inference Engine(s)]
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m                                                                               ↓
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m [Worklist Manager] ← [Priority Aggregator] ← [Finding Consolidator] ← [Model Results]
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m **DICOM Router:** Receives studies from scanners via DICOM C-STORE. Buffers until the study is complete (all series received). Forwards to the classifier.
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m **Study Classifier:** Examines DICOM metadata to determine modality, body part, and protocol. Decides which model(s) are applicable.
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m **Model Selector:** Maps the classified study to one or more inference models. Handles the case where a single study needs multiple models (e.g., CT chest needs both PE and pneumothorax models).
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m **Inference Engine(s):** Runs the actual deep learning models. Each model has its own preprocessing pipeline (windowing, resampling, normalization) and its own inference runtime. GPU-accelerated for CT/MRI volumes.
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m **Finding Consolidator:** Collects results from all models that ran on a given study. Deduplicates findings. Assigns severity scores.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m **Priority Aggregator:** Translates findings into a worklist priority. "Intracranial hemorrhage with midline shift" = STAT. "Small pleural effusion" = routine. The mapping from findings to priority levels is clinically defined and site-configurable.
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m **Worklist Manager:** Communicates the priority back to the RIS/PACS. This is the integration point that varies most across deployments.
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m ## The AWS Implementation
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m ### Why These Services
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m **Amazon SageMaker for model hosting and inference.** Radiology AI models are large (often 100MB-1GB+) and require GPU inference for volumetric data. SageMaker endpoints provide managed GPU hosting with auto-scaling. You can host multiple models behind a single endpoint using multi-model endpoints, or dedicate endpoints per modality for isolation. SageMaker also handles model versioning, A/B testing, and monitoring, which matters when you're running FDA-cleared models that need version traceability.
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m **Amazon S3 for DICOM storage.** Medical imaging generates enormous data volumes. A single CT study can be 200-500MB. S3 provides durable, encrypted storage at scale with lifecycle policies to manage retention. S3 also serves as the staging area between DICOM receipt and inference.
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m **AWS Lambda and AWS Step Functions for orchestration.** The triage pipeline is a multi-step workflow: receive study, classify, route to models, aggregate results, update worklist. Step Functions provides visual workflow orchestration with built-in retry logic, error handling, and execution history. Lambda handles the lightweight steps (classification, routing, result aggregation). The inference step calls SageMaker endpoints.
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m **Amazon DynamoDB for study tracking and results.** Each study needs a tracking record: when it arrived, which models ran, what they found, what priority was assigned, whether the radiologist acknowledged the alert. DynamoDB's key-value model with TTL support handles this cleanly.
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m **AWS HealthImaging for DICOM management.** AWS HealthImaging (formerly Amazon HealthLake Imaging) is purpose-built for medical imaging. It provides a DICOM-compliant data store with sub-second image retrieval, lossless compression, and native integration with the AWS ecosystem. It handles DICOM parsing, metadata indexing, and pixel data storage without you building a custom DICOM server.
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m **Amazon SNS for alerting.** Critical findings need to reach the radiologist immediately, not just reprioritize the worklist. SNS provides multi-channel notification (push, SMS, email) for STAT-level findings.
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m ### Architecture Diagram
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m ```mermaid
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m flowchart TD
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m     A[🏥 Scanner / Modality] -->|DICOM C-STORE| B[DICOM Receiver\nEC2 or HealthImaging]
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m     B -->|Study Complete| C[Step Functions\nTriage Orchestrator]
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m     C -->|Classify Study| D[Lambda\nStudy Classifier]
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m     D -->|Route to Models| C
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m     C -->|CT Head| E[SageMaker Endpoint\nICH Model]
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m     C -->|Chest X-Ray| F[SageMaker Endpoint\nCXR Model]
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m     C -->|CT Chest PE| G[SageMaker Endpoint\nPE Model]
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m     C -->|CT Spine| H[SageMaker Endpoint\nSpine Model]
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m     E --> I[Lambda\nResult Aggregator]
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m     F --> I
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m     G --> I
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m     H --> I
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m     I -->|Priority Assignment| J[DynamoDB\nStudy Results]
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m     I -->|STAT Finding| K[SNS\nCritical Alert]
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m     I -->|Worklist Update| L[HL7/DICOM\nRIS Integration]
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m     style B fill:#f9f,stroke:#333
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m     style E fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m     style F fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m     style G fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m     style H fill:#ff9,stroke:#333
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m     style J fill:#9ff,stroke:#333
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m ### Prerequisites
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m | Requirement | Details |
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m |-------------|---------|
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m | **AWS Services** | SageMaker, S3, Step Functions, Lambda, DynamoDB, HealthImaging, SNS, EC2 (DICOM receiver) |
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m | **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `states:StartExecution`, `medical-imaging:*` |
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m | **BAA** | Required. Medical images are PHI. |
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoints: KMS encryption; all transit over TLS; HealthImaging: encrypted by default |
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m | **VPC** | Production: all components in VPC with private subnets. VPC endpoints for S3, DynamoDB, SageMaker Runtime, Step Functions, SNS. DICOM receiver in private subnet with NLB for scanner connectivity. |
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m | **CloudTrail** | All API calls logged. Critical for FDA audit trail requirements. |
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m | **GPU Instances** | SageMaker endpoints: ml.g4dn.xlarge minimum for single-model inference; ml.g5.xlarge for larger volumetric models. Budget for always-on endpoints (triage must be real-time). |
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m | **Sample Data** | NIH ChestX-ray14 dataset (public, 112K images). RSNA Intracranial Hemorrhage Detection dataset. CQ500 dataset for CT head validation. Never use real patient imaging in dev. |
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m | **Cost Estimate** | SageMaker GPU endpoints (4 models, ml.g4dn.xlarge): ~$3,000/month always-on. S3 storage: ~$0.023/GB/month. Step Functions: ~$0.025 per 1000 state transitions. Per-study inference cost: ~$0.50-$2.00 depending on modality and number of models invoked. |
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m ### Ingredients
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m | AWS Service | Role |
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m |------------|------|
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m | **Amazon SageMaker** | Hosts trained radiology AI models on GPU endpoints; handles inference at scale |
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m | **AWS HealthImaging** | DICOM-native storage and retrieval; handles study ingestion and metadata indexing |
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m | **Amazon S3** | Stores preprocessed image arrays for inference; archives raw DICOM |
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m | **AWS Step Functions** | Orchestrates the multi-step triage pipeline with retry and error handling |
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m | **AWS Lambda** | Study classification, model routing, result aggregation, priority assignment |
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m | **Amazon DynamoDB** | Tracks study status, model results, priority assignments, acknowledgments |
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m | **Amazon SNS** | Delivers critical finding alerts to radiologists and referring physicians |
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m | **AWS KMS** | Encryption key management for all data stores and endpoints |
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m | **Amazon CloudWatch** | Latency monitoring, model performance metrics, alerting on pipeline failures |
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m ### Code
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m > **Reference implementations:** The following AWS resources demonstrate patterns used in this recipe:
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m >
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker model deployment patterns including multi-model endpoints and real-time inference
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m > - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): AWS HealthImaging integration patterns for DICOM ingestion and retrieval
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m > - [AWS HealthImaging Developer Guide](https://docs.aws.amazon.com/healthimaging/latest/devguide/what-is.html): DICOM store setup, import jobs, and pixel data access
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m #### Walkthrough
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m **Step 1: Receive and buffer the DICOM study.** Scanners send images as they're reconstructed, one DICOM instance (slice) at a time via DICOM C-STORE. A CT head might arrive as 200+ individual slices over 30-60 seconds. The system needs to buffer these and detect when the study is "complete" (all expected series have arrived). This is trickier than it sounds: there's no explicit "study complete" signal in DICOM. Common approaches include a timeout after the last received instance, or checking the NumberOfSeriesRelatedInstances against received count. Getting this wrong means either processing incomplete studies (missing slices = wrong inference) or waiting too long (defeating the purpose of fast triage).
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m FUNCTION receive_dicom_study(dicom_instances):
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m     // Buffer incoming DICOM instances, grouped by StudyInstanceUID.
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m     // StudyInstanceUID is the unique identifier for a complete imaging study.
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m     study_uid = dicom_instances[0].StudyInstanceUID
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m     // Store each instance as it arrives.
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m     // In practice, this writes to HealthImaging or S3 with study_uid as the prefix.
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m     FOR each instance in dicom_instances:
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m         store instance to imaging_store under study_uid
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m     // Detect study completion.
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m     // Strategy: wait for a configurable quiet period (no new instances for N seconds).
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m     // Alternative: compare received instance count against expected count from DICOM metadata.
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m     IF no_new_instances_for(study_uid, timeout=60_seconds):
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m         trigger_triage_pipeline(study_uid)
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m **Step 2: Classify the study and select models.** Once the study is complete, examine its DICOM metadata to determine what kind of study it is and which AI models should analyze it. This routing decision is based on Modality (CT, MR, CR/DX), BodyPartExamined, StudyDescription, and sometimes ProtocolName. The challenge: these fields are inconsistently populated across sites. "CT HEAD W/O CONTRAST" at one hospital might be "CT Brain Non-Con" at another. Build a flexible classifier that handles variations, and log unrecognized study types for manual mapping updates.
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m FUNCTION classify_and_route(study_uid):
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m     // Retrieve DICOM metadata for the study (not pixel data, just headers).
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m     metadata = get_study_metadata(study_uid)
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m     modality          = metadata.Modality            // "CT", "MR", "CR", "DX"
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m     body_part         = metadata.BodyPartExamined    // "HEAD", "CHEST", "SPINE", etc.
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m     study_description = metadata.StudyDescription    // Free text, varies wildly by site
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m     protocol          = metadata.ProtocolName        // Sometimes more specific than description
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m     // Model routing table: maps (modality + body_part + keywords) to model endpoints.
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m     // This is site-configurable and requires ongoing maintenance.
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m     applicable_models = []
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m     IF modality == "CT" AND body_part in ["HEAD", "BRAIN"]:
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m         applicable_models.append("ich_detection_model")
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m     IF modality == "CT" AND body_part == "CHEST":
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m         applicable_models.append("pe_detection_model")
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m         IF "ANGIO" in study_description OR "PE" in protocol:
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m             // PE-protocol CT gets higher priority for PE model
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m             applicable_models.append("pe_detection_model_high_sensitivity")
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m     IF modality in ["CR", "DX"] AND body_part == "CHEST":
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m         applicable_models.append("cxr_pneumothorax_model")
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m         applicable_models.append("cxr_critical_findings_model")
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m     IF modality == "CT" AND body_part in ["SPINE", "CSPINE"]:
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m         applicable_models.append("cervical_fracture_model")
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m     IF length(applicable_models) == 0:
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m         // No models available for this study type. Log and skip.
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m         log_unroutable_study(study_uid, metadata)
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m         RETURN []
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m     RETURN applicable_models
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m **Step 3: Preprocess and run inference.** Each model has specific input requirements. A chest X-ray model expects a single 2D image resized to 512x512 or 1024x1024 pixels, normalized to [0,1]. A CT head model expects a 3D volume resampled to uniform voxel spacing (typically 1mm isotropic), windowed to brain/subdural windows, and potentially cropped to the region of interest. Preprocessing is model-specific and must handle the variability of real-world scanner output (different pixel spacings, different bit depths, different photometric interpretations). Get preprocessing wrong and model performance degrades silently. You won't get an error; you'll get confident wrong answers.
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m FUNCTION run_inference(study_uid, model_name):
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m     // Load pixel data from the imaging store.
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m     pixel_data = load_pixel_data(study_uid)
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m     // Apply model-specific preprocessing.
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m     // Each model has a registered preprocessing pipeline.
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m     preprocessed = PREPROCESS_REGISTRY[model_name].transform(pixel_data)
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m     // Example for CT head ICH model:
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m     //   1. Resample to 1mm isotropic voxel spacing
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m     //   2. Apply brain window (W:80, L:40) and subdural window (W:200, L:75)
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m     //   3. Normalize to [0, 1]
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m     //   4. Resize to model input dimensions (e.g., 256x256x32 slices)
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m     // Call the SageMaker endpoint for this model.
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m     response = invoke_sagemaker_endpoint(
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m         endpoint_name = MODEL_ENDPOINTS[model_name],
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m         payload       = serialize(preprocessed),
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m         content_type  = "application/x-npy"  // numpy array format
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m     // Parse model output: findings with confidence scores and localizations.
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m     findings = parse_model_response(response)
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m     // Example output:
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m     // [
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m     //   { finding: "intracranial_hemorrhage", subtype: "subdural", confidence: 0.94,
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m     //     location: { slice_range: [45, 62], hemisphere: "left" } },
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m     //   { finding: "midline_shift", confidence: 0.87, shift_mm: 6.2 }
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m     // ]
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m     RETURN findings
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m **Step 4: Aggregate findings and assign priority.** Multiple models may run on a single study, each producing its own findings. This step consolidates all findings, deduplicates where models overlap, and maps the combined findings to a clinical priority level. Priority assignment is the critical clinical decision: it determines worklist order. The mapping from findings to priority must be defined by radiologists and site medical directors, not by engineers. Common priority levels: STAT (read within 15 minutes), Urgent (read within 1 hour), Routine (standard queue order).
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m // Priority mapping: clinically defined, site-configurable.
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m PRIORITY_RULES = {
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m     "STAT": [
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m         // Findings that require immediate radiologist attention
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m         { finding: "intracranial_hemorrhage", min_confidence: 0.85 },
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m         { finding: "tension_pneumothorax", min_confidence: 0.80 },
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m         { finding: "aortic_dissection", min_confidence: 0.85 },
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m         { finding: "midline_shift", min_confidence: 0.80, min_shift_mm: 5 },
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m         { finding: "pulmonary_embolism", subtype: "saddle", min_confidence: 0.85 }
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m     ],
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m     "URGENT": [
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m         // Findings that should be read within 1 hour
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m         { finding: "pneumothorax", min_confidence: 0.80 },
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m         { finding: "pulmonary_embolism", min_confidence: 0.80 },
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m         { finding: "cervical_fracture", min_confidence: 0.80 },
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m         { finding: "large_pleural_effusion", min_confidence: 0.85 }
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m     ]
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m     // Everything else remains "ROUTINE"
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m FUNCTION assign_priority(study_uid, all_findings):
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m     // all_findings is the combined output from all models that ran on this study.
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m     assigned_priority = "ROUTINE"
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m     triggering_findings = []
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m     // Check STAT rules first (highest priority wins).
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m     FOR each rule in PRIORITY_RULES["STAT"]:
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m         FOR each finding in all_findings:
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m             IF finding.finding == rule.finding
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m                AND finding.confidence >= rule.min_confidence
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m                AND (rule has no additional criteria OR additional criteria met):
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m                 assigned_priority = "STAT"
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m                 triggering_findings.append(finding)
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m     // If not STAT, check URGENT rules.
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m     IF assigned_priority != "STAT":
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m         FOR each rule in PRIORITY_RULES["URGENT"]:
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m             FOR each finding in all_findings:
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m                 IF finding.finding == rule.finding
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m                    AND finding.confidence >= rule.min_confidence:
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m                     assigned_priority = "URGENT"
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m                     triggering_findings.append(finding)
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m     RETURN {
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m         study_uid:           study_uid,
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m         priority:            assigned_priority,
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m         triggering_findings: triggering_findings,
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m         all_findings:        all_findings,
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m         timestamp:           current_utc_time()
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m **Step 5: Update worklist and notify.** The final step communicates the priority back to the radiologist's workflow. For STAT findings, this means both reprioritizing the study in the worklist AND sending an immediate alert. The worklist update mechanism depends entirely on your PACS/RIS vendor. Common integration patterns: HL7 ORM messages to the RIS, DICOM Modality Worklist updates, or vendor-specific APIs. Some modern PACS systems support FHIR-based integrations. This is the step where vendor-specific integration work dominates. Plan for it.
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m FUNCTION update_worklist_and_notify(triage_result):
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m     // Store the triage result for audit trail and dashboard.
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m     write_to_database("study_triage_results", triage_result)
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m     IF triage_result.priority == "STAT":
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m         // Immediate alert: radiologist needs to read this NOW.
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m         send_alert(
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m             channel    = "critical_findings",
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m             message    = format_stat_alert(triage_result),
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m             recipients = get_on_call_radiologists()
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m     IF triage_result.priority in ["STAT", "URGENT"]:
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m         // Reprioritize in the worklist.
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m         // This is PACS/RIS-vendor-specific. Examples:
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m         //   - Send HL7 ORM^O01 message with updated priority field
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m         //   - Call PACS vendor API to modify study priority
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m         //   - Update DICOM worklist entry via DIMSE
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m         update_ris_priority(
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m             accession_number = triage_result.accession_number,
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m             new_priority     = triage_result.priority,
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m             reason           = triage_result.triggering_findings[0].finding,
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m             ai_confidence    = triage_result.triggering_findings[0].confidence
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m     // Log the complete triage decision for regulatory audit.
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m     log_audit_event(
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m         event_type = "AI_TRIAGE_DECISION",
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m         study_uid  = triage_result.study_uid,
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m         priority   = triage_result.priority,
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m         findings   = triage_result.all_findings,
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m         model_versions = get_active_model_versions()
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m ### Expected Results
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m **Sample output for a CT Head with intracranial hemorrhage:**
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m ```json
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m {
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m   "study_uid": "1.2.840.113619.2.416.3.2831.2024031412345",
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m   "accession_number": "RAD-2026-048271",
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m   "modality": "CT",
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m   "body_part": "HEAD",
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m   "models_invoked": ["ich_detection_model"],
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m   "inference_time_seconds": 4.2,
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m   "findings": [
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m     {
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m       "finding": "intracranial_hemorrhage",
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m       "subtype": "subdural",
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m       "confidence": 0.94,
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m       "location": {
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m         "hemisphere": "left",
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m         "max_thickness_mm": 12,
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m         "slice_range": [45, 62]
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m       }
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m     },
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m     {
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m       "finding": "midline_shift",
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m       "confidence": 0.87,
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m       "shift_mm": 6.2,
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m       "direction": "right_to_left"
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m   ],
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m   "assigned_priority": "STAT",
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m   "triggering_findings": ["intracranial_hemorrhage", "midline_shift"],
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m   "timestamp": "2026-03-15T14:22:08.341Z",
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m   "model_versions": {
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m     "ich_detection_model": "v2.3.1-fda-cleared"
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m   }
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m **Performance benchmarks:**
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m | Metric | Typical Value |
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m |--------|---------------|
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m | End-to-end latency (X-ray) | 15-30 seconds from study complete to worklist update |
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m | End-to-end latency (CT volume) | 60-180 seconds depending on slice count |
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m | ICH detection sensitivity | 90-95% at 5% false positive rate |
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m | Pneumothorax detection sensitivity | 85-92% at 5% false positive rate |
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m | PE detection sensitivity | 80-90% at 10% false positive rate |
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m | System availability target | 99.9% (triage is safety-critical) |
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m | Cost per CT study | ~$1.00-$2.00 (GPU inference dominant) |
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m | Cost per X-ray study | ~$0.10-$0.30 |
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m **Where it struggles:**
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m - Subtle findings at the threshold of human detection (small subdural hematomas, subsegmental PE)
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m - Studies with significant motion artifact or poor contrast timing
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m - Unusual anatomy (post-surgical, congenital variants) that the model hasn't seen in training
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m - Multi-finding studies where one critical finding masks another
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m - Edge cases in modality routing (combined studies, non-standard protocols)
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m ## The Honest Take
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m Multi-modality radiology AI triage is one of those systems where the ML is actually the easy part. Training a good ICH detector or pneumothorax classifier is well-understood. The hard parts are everything around the model: DICOM integration, worklist modification, PACS vendor cooperation, FDA clearance per indication, and (most importantly) radiologist trust.
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m The false positive problem is existential for these systems. I've seen deployments where the AI flagged 15-20% of studies as "urgent" in the first week. Radiologists ignored it by day three. You need to be ruthlessly conservative with your confidence thresholds at launch. It's better to miss a few true positives initially and build trust than to flood the worklist with false alarms and lose credibility permanently.
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m The PACS integration is where projects die. Every PACS vendor (GE, Philips, Siemens, Fuji, Sectra, Agfa) has a different integration model. Some have open APIs. Some require custom HL7 interfaces. Some require you to go through their marketplace. Budget 3-6 months just for the integration work at each site, and don't assume what worked at Hospital A will work at Hospital B even if they run the same PACS.
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m FDA clearance is non-negotiable for clinical deployment in the US. Each indication (ICH, PE, pneumothorax) is typically a separate 510(k) submission. The regulatory timeline is 12-18 months per indication. If you're building this in-house rather than buying a cleared product, factor that into your roadmap. Most health systems buy rather than build for this reason.
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m The thing that surprised me most: radiologists actually like these systems when they work well. The resistance is not to AI triage conceptually. It's to bad implementations that generate noise. Get the false positive rate below 5% and integrate cleanly into the existing worklist, and adoption follows naturally.
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m ## Variations and Extensions
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m **Quantitative reporting.** Beyond binary detection, add measurement capabilities: hemorrhage volume estimation, PE clot burden scoring, pneumothorax percentage. These quantitative outputs help radiologists prioritize within the "urgent" category and provide structured data for downstream clinical decision-making.
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m **Longitudinal comparison.** For follow-up studies, automatically retrieve the prior study and run comparison inference. "New hemorrhage since prior" or "interval increase in effusion size" is more clinically actionable than a standalone detection. This requires patient matching and prior study retrieval from the archive, adding complexity but significant clinical value.
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m **Referring physician notification.** Extend the alerting beyond radiology. When a STAT finding is detected, automatically notify the referring/ordering physician (typically the ED attending for trauma cases). This closes the communication loop that the ACR critical results guidelines require, reducing the time from finding detection to clinical action.
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m ## Related Recipes
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m - **Recipe 9.1 (Image Quality Assessment):** Run quality checks before inference to avoid wasting GPU cycles on non-diagnostic images
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m - **Recipe 9.5 (Chest X-Ray Triage):** Single-modality version of this pattern; simpler starting point for teams new to radiology AI
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m - **Recipe 9.6 (Diabetic Retinopathy Screening):** Another FDA-regulated imaging AI use case with similar regulatory considerations
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m - **Recipe 14.3 (Radiology Worklist Optimization):** Complementary recipe covering non-AI worklist optimization (scheduling, load balancing)
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m - **Recipe 12.10 (Physiological Waveform Analysis):** Similar real-time inference pattern applied to continuous monitoring data
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m ## Additional Resources
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m **AWS Documentation:**
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m - [Amazon SageMaker Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html)
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m - [Amazon SageMaker Multi-Model Endpoints](https://docs.aws.amazon.com/sagemaker/latest/dg/multi-model-endpoints.html)
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m - [AWS HealthImaging Developer Guide](https://docs.aws.amazon.com/healthimaging/latest/devguide/what-is.html)
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m - [AWS HealthImaging Pricing](https://aws.amazon.com/healthimaging/pricing/)
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m - [Architecting for HIPAA on AWS](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m **AWS Sample Repos:**
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m - [`aws-healthimaging-samples`](https://github.com/aws-samples/aws-healthimaging-samples): HealthImaging integration patterns including DICOM import and pixel data retrieval
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Model deployment patterns including real-time endpoints and multi-model hosting
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m **Industry Resources:**
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m - [ACR Practice Parameter for Communication of Diagnostic Imaging Findings](https://www.acr.org/Clinical-Resources/Reporting-and-Communication): Critical results communication guidelines that triage systems support
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m - [FDA AI/ML-Based Software as Medical Device (SaMD) Action Plan](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-enabled-medical-devices): Regulatory framework for AI medical devices
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m - [DICOM Standard](https://www.dicomstandard.org/): The imaging interoperability standard that governs all medical image communication
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m ## Estimated Implementation Time
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m | Scope | Timeline |
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m |-------|----------|
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m | **Basic** (single modality, single finding, no PACS integration) | 3-4 months |
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m | **Production** (multi-modality, PACS integrated, FDA-cleared models) | 12-18 months |
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m | **With variations** (quantitative reporting, longitudinal comparison, multi-site) | 18-24 months |
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m **Tags:** `computer-vision`, `radiology`, `triage`, `multi-modality`, `dicom`, `sagemaker`, `healthimaging`, `fda`, `critical-findings`, `worklist`
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m | [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-index) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m |:---|:---:|---:|
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me update the [38;5;10m_Sidebar.md[0m to include the new recipe:[0m[0m
+I'll modify the following file: [38;5;141m_Sidebar.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[39m  0, 0[0m:[39m[49m * [9.6 — Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening)
+[0m[49m[39m  1, 1[0m:[39m[49m   * [Python Example](chapter09.06-python-example)
+[0m[49m[38;5;10m+    2[0m:[38;5;10m[49m * [9.7 — Radiology AI Triage (Multi-Modality)](chapter09.07-radiology-ai-triage-multi-modality)
+[0m[49m[38;5;10m+    3[0m:[38;5;10m[49m   * [Python Example](chapter09.07-python-example)
+[0m[49m[39m  2, 4[0m:[39m[49m 
+[0m[49m[39m  3, 5[0m:[39m[49m ---
+[0m[K
+Updating: [38;5;141m_Sidebar.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mLet me verify the file was created correctly:[0m[0m
+I will run the following command: [38;5;141mwc -l /tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md[0m[38;5;244m (using tool: shell)[0m
+Purpose: Check line count of the new recipe
+
+500 /tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md
+[38;5;244m - Completed in 0.11s[0m
+
+[38;5;141m> [0mThe recipe is complete. Here's a summary of what was delivered:[0m[0m
+[0m[0m
+[1mFile created:[22m [38;5;10mchapter09.07-radiology-ai-triage-multi-modality.md[0m (500 lines)[0m[0m
+[0m[0m
+[1mStructure follows RECIPE-GUIDE.md:[22m[0m[0m
+- **The Problem:** Vivid scenario of delayed critical reads due to FIFO worklists, human impact, scale of the pain[0m[0m
+- **The Technology:** Deep learning for medical imaging, multi-model orchestration, DICOM ecosystem, preprocessing variability, FDA regulatory pathway, PACS integration challenges (all vendor-agnostic)[0m[0m
+- **General Architecture Pattern:** DICOM Router → Study Classifier → Model Selector → Inference Engines → Finding Consolidator → Priority Aggregator → Worklist Manager[0m[0m
+- **AWS Implementation:** SageMaker (GPU inference), HealthImaging (DICOM store), S3, Step Functions, Lambda, DynamoDB, SNS with full prerequisites table, ingredients, architecture diagram, and 5-step pseudocode walkthrough[0m[0m
+- **Expected Results:** Sample JSON output, performance benchmarks table, honest failure modes[0m[0m
+- **The Honest Take:** False positive management, PACS integration as project killer, FDA timeline, radiologist trust[0m[0m
+- **Variations:** Quantitative reporting, longitudinal comparison, referring physician notification[0m[0m
+- **Related Recipes:** Cross-references to 9.1, 9.5, 9.6, 14.3, 12.10[0m[0m
+- **Additional Resources:** AWS docs, sample repos, industry resources (ACR, FDA, DICOM standard)[0m[0m
+- **Estimated Implementation Time:** 3-4 months basic to 18-24 months full[0m[0m
+[0m[0m
+[1mSidebar updated[22m with the new recipe entry.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 7.12 • Time: 3m 29s
+
+[0m[1G[0m[0m[?25h[1mStyle compliance:[22m No em dashes, no fake URLs, no documentation-voice, 70/30 vendor split, engineer-explaining-over-lunch tone throughout.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: Directory not found: /tmp/ralph-worktrees/iter-903/chapters
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-903[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-903[0m [38;5;244m(showing 1000 of 2223 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.169s[0m
+
+[38;5;141m> [0mNow let me read the recipe file:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m34498 bytes[0m from /tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I need to check for em dashes (the [38;5;10m—[0m character) in the content:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-903/chapter09.07-radiology-ai-triage-multi-modality.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes found. Now let me verify all required sections are present:[0m[0m
+[0m[0m
+1. [1mThe Problem[22m - ✅ Present[0m[0m
+2. [1mThe Technology[22m - ✅ Present (as "The Technology: How AI Reads Medical Images")[0m[0m
+3. [1mGeneral Architecture Pattern[22m - ✅ Present (subsection within The Technology)[0m[0m
+4. [1mAWS Implementation with pseudocode walkthrough[22m - ✅ Present (with detailed pseudocode in Steps 1-5)[0m[0m
+5. [1mThe Honest Take[22m - ✅ Present[0m[0m
+6. [1mVariations[22m - ✅ Present (as "Variations and Extensions")[0m[0m
+7. [1mNavigation links[22m - ✅ Present (bottom of file with prev/index/next links)[0m[0m
+[0m[0m
+No em dashes found. The prose is direct, conversational, and technically grounded, matching the project voice of a practical O'Reilly-style cookbook.[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 3.93 • Time: 23s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Recipe contains all required sections: The Problem, The Technology (with General Architecture Pattern subsection), AWS Implementation with detailed pseudocode walkthrough (5 steps), The Honest Take, Variations and Extensions, and navigation links. No em dashes found. Prose matches project voice: direct, conversational, technically specific, with appropriate healthcare context."}
