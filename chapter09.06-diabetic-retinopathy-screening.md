@@ -86,13 +86,13 @@ This is a classic image classification problem, and deep learning has gotten rem
 
 **Amazon SageMaker for model hosting.** Diabetic retinopathy models are large (typically 50-200MB) and require GPU inference for acceptable latency. SageMaker endpoints provide managed GPU hosting with auto-scaling, model versioning, and A/B testing capabilities. For a screening program processing hundreds of images per day, a real-time endpoint makes sense. For batch processing (end-of-day reads), SageMaker Batch Transform is more cost-effective.
 
-**Amazon S3 for image storage.** Fundus images are large (typically 2-10MB each) and must be retained for regulatory compliance, quality audits, and potential reprocessing when models are updated. S3 with SSE-KMS encryption provides durable, compliant storage with lifecycle policies for long-term retention.
+**Amazon S3 for image storage.** Fundus images are large (typically 2-10MB each) and must be retained for regulatory compliance, quality audits, and potential reprocessing when models are updated. S3 with SSE-KMS encryption provides durable, compliant storage with lifecycle policies for long-term retention. Apply a bucket policy enforcing SSE-KMS on all uploads (`aws:SecureTransport` condition) and restricting access to the Lambda execution role and authorized administrative principals.
 
-**AWS Lambda for orchestration.** The screening workflow (receive image, check quality, invoke model, apply decision logic, store results, trigger notifications) is a sequence of short-lived operations. Lambda handles the orchestration without persistent infrastructure. For the quality assessment step, a lightweight model can run on Lambda with up to 10GB ephemeral storage.
+**AWS Lambda for orchestration.** The screening workflow (receive image, check quality, invoke model, apply decision logic, store results, trigger notifications) is a sequence of short-lived operations. Lambda handles the orchestration without persistent infrastructure. For the quality assessment step, a lightweight model can run on Lambda with up to 10GB ephemeral storage. Configure the quality assessment Lambda with at least 2048MB memory and 30-second timeout; a CNN-based quality model on full-resolution fundus images needs the headroom. Consider provisioned concurrency to avoid cold-start latency on the first screening of the day.
 
 **Amazon DynamoDB for screening results.** Each screening event produces a structured result (patient ID, date, eye, grade, confidence, referral decision, model version). DynamoDB provides fast point lookups by patient ID and supports the audit trail requirements. Time-to-live (TTL) is not appropriate here because results must be retained indefinitely for compliance.
 
-**Amazon SNS for notifications.** When a screening result requires urgent referral (proliferative DR or significant DME), the system needs to notify the ordering provider immediately. SNS provides reliable message delivery to multiple channels (email, SMS, webhook to EHR).
+**Amazon SNS for notifications.** When a screening result requires urgent referral (proliferative DR or significant DME), the system needs to notify the ordering provider immediately. SNS provides reliable message delivery to multiple channels (email, SMS, webhook to EHR). Configure a dead-letter queue (SQS) on each SNS topic. For the urgent-referrals topic, add a CloudWatch alarm on the DLQ message count so failed notifications trigger an immediate operational alert.
 
 **AWS Step Functions for complex workflows.** The full screening pipeline has branching logic (quality pass/fail, gradable/ungradable, referral/no-referral) and may need human review for borderline cases. Step Functions provides visual workflow orchestration with built-in retry logic and error handling.
 
@@ -120,15 +120,15 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon SNS |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`, `states:StartExecution` |
+| **IAM Permissions** | **Lambda execution role:** `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `sns:Publish`. **Step Functions execution role:** `lambda:InvokeFunction` (scoped to screening Lambda ARNs). **EventBridge rule role:** `states:StartExecution` (S3 event triggers Step Functions via EventBridge). |
 | **BAA** | AWS BAA signed (required: retinal images are PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker endpoint: KMS encryption for model artifacts and inference data; all API calls over TLS |
-| **VPC** | Production: SageMaker endpoint in VPC, Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, SNS, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest with customer-managed KMS key (CMK); SageMaker endpoint: KMS encryption for model artifacts and inference data; all API calls over TLS |
+| **VPC** | Production: SageMaker endpoint in VPC, Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, Step Functions, SNS, and CloudWatch Logs. If EHR integration requires outbound HTTPS to external endpoints, configure a NAT Gateway or place the integration Lambda in a subnet with internet access. |
 | **CloudTrail** | Enabled: log all SageMaker inference calls, S3 access, and DynamoDB writes for HIPAA audit trail |
 | **Model** | Pre-trained DR classification model (EfficientNet or similar). You bring your own model or license a validated one. AWS does not provide a pre-built DR grading model. |
 | **FDA Considerations** | If deploying as autonomous diagnostic: FDA clearance required. If deploying as physician-reviewed triage: regulatory path varies by use. Consult regulatory counsel. |
 | **Sample Data** | Public datasets for development: EyePACS (Kaggle), Messidor-2, APTOS 2019. Never use real patient images in dev without IRB approval and proper de-identification. |
-| **Cost Estimate** | SageMaker GPU endpoint (ml.g4dn.xlarge): ~$0.74/hour. At 100 images/day with 5-second inference: endpoint cost dominates at ~$530/month. S3 and DynamoDB negligible at this scale. |
+| **Cost Estimate** | SageMaker GPU endpoint (ml.g4dn.xlarge): ~$0.74/hour. At 100 images/day with 5-second inference: endpoint cost dominates at ~$530/month. For programs processing fewer than 50 images/day, consider SageMaker Asynchronous Inference or Serverless Inference endpoints (scale to zero when idle, 10-30 second latency). The always-on real-time endpoint becomes cost-effective above ~200 images/day. S3 and DynamoDB negligible at screening scale. |
 
 ### Ingredients
 
@@ -415,6 +415,7 @@ One more thing: the patients who most need screening (uncontrolled diabetes, mul
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **Clinical and Regulatory References:**
+<!-- TODO (TechWriter): Expert review V1 (MEDIUM). Verify and fill all six URLs below before publication. Remove entries where URLs cannot be confirmed. -->
 - TODO: Verify current FDA guidance document URL for AI/ML-based Software as a Medical Device (SaMD)
 - TODO: Verify URL for IDx-DR (Digital Diagnostics) FDA De Novo clearance summary
 - TODO: Verify URL for AAO Diabetic Retinopathy Preferred Practice Pattern
