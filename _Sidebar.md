@@ -338,6 +338,8 @@
   * [Python Example](chapter13.07-python-example)
 * [13.8 — Medical Concept Normalization and Mapping](chapter13.08-medical-concept-normalization-mapping)
   * [Python Example](chapter13.08-python-example)
+* [13.9 — Literature-Derived Knowledge Graph](chapter13.09-literature-derived-knowledge-graph)
+  * [Python Example](chapter13.09-python-example)
 
 ---
 
