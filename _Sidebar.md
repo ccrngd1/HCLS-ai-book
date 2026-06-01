@@ -322,6 +322,8 @@
 #### Ch 13: Knowledge Graphs / Ontology
 
 * [Preface](chapter13-preface)
+* [13.1 — Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)
+  * [Python Example](chapter13.01-python-example)
 
 ---
 
