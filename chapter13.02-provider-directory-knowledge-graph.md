@@ -452,7 +452,7 @@ FUNCTION apply_incremental_update(change_event):
     log_change_event(change_event)
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune Gremlin client, check out the [Python Example](chapter13.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Neptune's openCypher endpoint, check out the [Python Example](chapter13.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
@@ -559,7 +559,7 @@ One more thing: don't underestimate the specialty hierarchy. "Cardiology" means 
 
 - **Recipe 5.2 (Provider NPI Matching):** Covers the entity resolution techniques needed to match providers across source systems during the ingest phase
 - **Recipe 13.1 (Drug Formulary Navigation):** Uses similar graph modeling patterns for navigating hierarchical drug data
-- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Demonstrates taxonomy traversal patterns applicable to the specialty hierarchy
+- **Recipe 13.3 (ICD/CPT Hierarchy Navigation):** Uses taxonomy traversal patterns applicable to the specialty hierarchy
 - **Recipe 4.3 (Provider Directory Search Optimization):** Covers the search ranking and personalization layer that sits on top of this graph
 - **Recipe 14.3 (Network Adequacy Optimization):** Uses the provider graph as input for network adequacy compliance calculations
 
