@@ -12,7 +12,7 @@ You'll need the AWS SDK for Python and a few supporting libraries:
 pip install boto3 requests
 ```
 
-Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (`neptune-db:*` scoped to your cluster), S3 (`s3:GetObject` and `s3:PutObject` on the staging bucket), and network access to Neptune from within your VPC.
+Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs permissions for Neptune (`neptune-db:ReadDataViaQuery`, `neptune-db:WriteDataViaQuery`, `neptune-db:connect`, and `neptune-db:StartLoaderJob` scoped to your cluster), S3 (`s3:GetObject` and `s3:PutObject` on the staging bucket), and network access to Neptune from within your VPC. In production, split read and write permissions into separate roles (see the main recipe's Prerequisites table).
 
 Neptune doesn't use IAM for query authentication by default (it uses VPC-level network isolation). If you've enabled IAM auth on your cluster, you'll need to sign requests with SigV4. This example assumes VPC network access without IAM auth for simplicity.
 
@@ -271,6 +271,8 @@ def build_location_nodes_csv(providers: list[dict]) -> str:
         seen_locations.add(loc_key)
 
         # Location ID is a hash of the address for deterministic dedup.
+        # In production, use a UUID or SHA-256 prefix to avoid collisions
+        # at scale (32-bit hash collides at ~50K entries via birthday paradox).
         loc_id = f"location:{hash(loc_key) & 0xFFFFFFFF:08x}"
 
         writer.writerow([
@@ -445,10 +447,10 @@ def trigger_bulk_load(s3_source: str) -> dict:
         source=s3_source,
         format="csv",
         iamRoleArn=NEPTUNE_LOAD_ROLE_ARN,
-        region=AWS_REGION,
-        failOnError="FALSE",       # log errors, don't abort entire load
+        s3BucketRegion=AWS_REGION,
+        failOnError=False,         # log errors, don't abort entire load
         parallelism="MEDIUM",      # balance speed vs. cluster load
-        updateSingleCardinalityProperties="TRUE",  # overwrite existing properties
+        updateSingleCardinalityProperties=True,  # overwrite existing properties
     )
 
     load_id = response["payload"]["loadId"]
@@ -563,7 +565,6 @@ def search_providers(
     query = """
     MATCH (p:Provider)-[:HAS_SPECIALTY]->(s:Specialty)
     WHERE s.nucc_code IN $specialty_codes
-    AND p.accepting_new = true
     MATCH (p)-[:PRACTICES_AT]->(loc:Location)
     WHERE loc.state = $state
     """
@@ -572,6 +573,11 @@ def search_providers(
         "specialty_codes": specialty_codes,
         "state": state,
     }
+
+    # Filter by accepting status. Most patient-facing searches want
+    # only providers accepting new patients, but admin views may need all.
+    if accepting_new:
+        query += "AND p.accepting_new = true\n"
 
     # Add optional filters. Each one narrows the traversal.
     if zip_code:
@@ -648,6 +654,10 @@ def get_specialty_subtree(root_code: str) -> list[str]:
     """
     # openCypher variable-length path pattern.
     # *0.. means "zero or more hops," which includes the starting node itself.
+    # Edge direction: child -[:IS_SUBSPECIALTY]-> parent (child points to its parent).
+    # So (child)-[:IS_SUBSPECIALTY*0..]->(root) finds all nodes that can
+    # reach root by following parent pointers upward, giving us the full
+    # subtree beneath root (all descendants + root itself via *0..).
     query = """
     MATCH (root:Specialty {nucc_code: $root_code})
     MATCH (child:Specialty)-[:IS_SUBSPECIALTY*0..]->(root)
@@ -678,6 +688,11 @@ def get_specialty_subtree(root_code: str) -> list[str]:
 *The pseudocode calls this `apply_incremental_update(change_event)`. Between bulk loads, provider data changes constantly. A provider stops accepting patients, moves locations, or leaves a network. These changes need to propagate to the graph quickly via direct mutations.*
 
 ```python
+# Whitelist of properties that can be updated via incremental mutations.
+# This prevents injection of arbitrary property names into the query.
+UPDATABLE_FIELDS = {"accepting_new", "telehealth", "gender"}
+
+
 def update_provider_property(npi: str, field: str, value) -> dict:
     """
     Update a single property on a provider node.
@@ -687,21 +702,24 @@ def update_provider_property(npi: str, field: str, value) -> dict:
 
     Args:
         npi:   Provider's NPI (unique identifier)
-        field: Property name to update
+        field: Property name to update (must be in UPDATABLE_FIELDS)
         value: New value for the property
 
     Returns:
         Query result confirming the update.
     """
-    query = """
-    MATCH (p:Provider {npi: $npi})
-    SET p[$field] = $value
-    RETURN p.npi AS npi, p[$field] AS updated_value
-    """
+    # Validate field name against whitelist. Dynamic property names
+    # require string interpolation into the query (openCypher doesn't
+    # support parameterized property names). Without this check, a
+    # caller could inject arbitrary property mutations.
+    if field not in UPDATABLE_FIELDS:
+        raise ValueError(
+            f"Field '{field}' is not updatable. Allowed: {UPDATABLE_FIELDS}"
+        )
 
     # openCypher doesn't support dynamic property names via parameters
-    # in all implementations. Use string formatting for the field name
-    # (safe here because field comes from our code, not user input).
+    # in all implementations. Use string formatting for the field name.
+    # The whitelist check above ensures only known-safe field names reach here.
     query = f"""
     MATCH (p:Provider {{npi: $npi}})
     SET p.{field} = $value
