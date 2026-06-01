@@ -334,6 +334,8 @@
   * [Python Example](chapter13.05-python-example)
 * [13.6 — Care Gap Reasoning Engine](chapter13.06-care-gap-reasoning-engine)
   * [Python Example](chapter13.06-python-example)
+* [13.7 — Disease-Gene-Drug Relationship Graph](chapter13.07-disease-gene-drug-relationship-graph)
+  * [Python Example](chapter13.07-python-example)
 
 ---
 
