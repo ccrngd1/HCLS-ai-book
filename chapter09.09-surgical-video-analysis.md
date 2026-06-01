@@ -118,9 +118,13 @@ The pipeline for surgical video analysis follows this conceptual flow:
 
 **AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances.
 
+<!-- TODO (TechWriter): Expert review S1 (CRITICAL). Add PHI de-identification guidance for surgical video preprocessing: strip audio tracks (not needed for visual analysis but contain dense PHI), address pre-incision footage containing patient faces, sanitize video file metadata/headers, note OR monitor overlay detection for patient demographics displayed in-frame. -->
+
 **Amazon SageMaker for model training and batch inference.** Surgical video models require GPU compute for both training and inference. SageMaker provides managed training jobs with spot instance support (critical for the multi-day training runs these models require) and batch transform for processing video backlogs. For the feature extraction backbone, SageMaker's built-in support for PyTorch and distributed training across multiple GPUs is essential.
 
 **AWS Step Functions for pipeline orchestration.** The video analysis pipeline has multiple stages with dependencies, error handling requirements, and variable execution times. A single procedure might take 15-60 minutes to process depending on length. Step Functions manages the state machine: trigger on video upload, run preprocessing, launch inference, handle failures with retries, and write results.
+
+<!-- TODO (TechWriter): Expert review S5 (HIGH). Address SageMaker Batch Transform cold start (5-15 min provisioning overhead). Recommend batching strategies for medium volume (5-20 procedures/day) and real-time endpoints for high volume (>20/day). Adjust cost estimate to account for amortized cold start. -->
 
 **Amazon DynamoDB for the structured index.** Phase timelines, instrument logs, and event flags are time-series data with procedure-level access patterns. DynamoDB's flexible schema handles the varying output structures across procedure types, and its query performance supports the interactive visualization use case.
 
@@ -155,14 +159,16 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, AWS Elemental MediaConvert, Amazon SageMaker, AWS Step Functions, Amazon DynamoDB, Amazon OpenSearch Service, AWS Lambda, Amazon API Gateway, Amazon CloudWatch |
-| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `mediaconvert:CreateJob`, `sagemaker:CreateTransformJob`, `sagemaker:CreateTrainingJob`, `dynamodb:PutItem`, `dynamodb:Query`, `es:ESHttpPost`, `es:ESHttpGet`, `states:StartExecution` |
+| **IAM Permissions** | `s3:GetObject`, `s3:PutObject`, `s3:ListBucket`, `mediaconvert:CreateJob`, `mediaconvert:GetJob`, `sagemaker:CreateTransformJob`, `sagemaker:DescribeTransformJob`, `sagemaker:CreateTrainingJob`, `dynamodb:PutItem`, `dynamodb:Query`, `es:ESHttpPost`, `es:ESHttpGet`, `lambda:InvokeFunction`, `states:StartExecution`, `states:DescribeExecution`, `kms:Decrypt`, `kms:GenerateDataKey`, `logs:CreateLogGroup`, `logs:PutLogEvents` |
 | **BAA** | AWS BAA signed (surgical video is PHI; even de-identified video may contain identifiable features) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest; OpenSearch: encryption at rest and node-to-node encryption; all transit over TLS; SageMaker: volume encryption on training and inference instances |
-| **VPC** | Production: SageMaker, OpenSearch, and Lambda in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. OpenSearch domain must be VPC-only (no public endpoint for PHI data). |
+| **VPC** | Production: SageMaker, OpenSearch, and Lambda in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, and Step Functions. OpenSearch domain must be VPC-only (no public endpoint for PHI data). Post-processing Lambda must be in the same VPC as the OpenSearch domain with security groups allowing HTTPS (443) to the OpenSearch domain's security group. |
 | **CloudTrail** | Enabled: log all S3, SageMaker, and DynamoDB API calls for HIPAA audit trail |
 | **GPU Instances** | SageMaker training: ml.p3.2xlarge or ml.g5.2xlarge minimum. Batch inference: ml.g5.xlarge. Budget for multi-day training runs. |
-| **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). These are research datasets; never use real patient video without IRB approval and proper de-identification. |
+| **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). These are research datasets. Real patient video requires IRB approval and proper de-identification. |
 | **Cost Estimate** | Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain. |
+
+<!-- TODO (TechWriter): Expert review S3 (HIGH). Expand IAM permissions into role-based groupings (Step Functions execution role, Lambda execution role, SageMaker execution role) with resource ARN scoping guidance rather than a flat list. -->
 
 ### Ingredients
 
@@ -217,6 +223,8 @@ FUNCTION ingest_video(video_file, metadata):
 
     RETURN procedure_id
 ```
+
+<!-- TODO (TechWriter): Expert review A5 (HIGH). Add failure handling guidance: Step Functions catch-all state writing to a DLQ (SQS), CloudWatch alarm on DLQ depth, and a scheduled Lambda scanning for procedures stuck in "ingested" or "processing" status beyond a threshold for automatic retry. -->
 
 **Step 2: Frame extraction and preprocessing.** Raw surgical video at 30 fps contains far more temporal redundancy than the analysis models need. Phase transitions happen over seconds, not frames. This step extracts frames at a configurable sample rate (typically 1 fps for phase recognition, up to 5 fps for instrument detection), resizes them to the model's expected input resolution, and filters out non-informative frames (black frames from camera disconnection, completely obscured frames from lens fogging). The output is a sequence of clean, consistently-sized frames ready for feature extraction. Skip this step and you'll burn 30x more GPU compute on redundant frames with no accuracy improvement.
 
@@ -384,6 +392,8 @@ FUNCTION post_process(raw_predictions, sample_rate_fps):
 
 **Step 6: Store structured index and enable search.** The post-processed results become a structured, queryable record of the procedure. This step writes the phase timeline, instrument usage, and events to both a fast-lookup store (DynamoDB for procedure-level queries) and a search index (OpenSearch for cross-procedure queries). The dual-write pattern serves different access patterns: "show me the timeline for procedure X" hits DynamoDB; "find all procedures where bleeding occurred during Calot's triangle dissection" hits OpenSearch. Skip the search index and you lose the ability to do population-level quality analysis, which is half the value of automated video analysis.
 
+<!-- TODO (TechWriter): Expert review S2 (CRITICAL). Add access control model for surgeon-identifiable performance data: pseudonymize surgeon_id in the general search index with a separate restricted lookup table, add role-based access control for surgeon-identified queries, note peer review protection requirements (vary by state, require legal counsel review), and add CloudTrail-based audit logging for queries that resolve surgeon identity. -->
+
 ```
 FUNCTION store_results(procedure_id, analysis_results):
     // Write the full procedure analysis to DynamoDB.
@@ -543,6 +553,8 @@ The part that surprised me most: the hardest engineering challenge isn't the ML.
 Real-time intraoperative use is the dream, but it's years away from routine clinical deployment for most applications. The liability question alone ("the AI said the anatomy was safe and the surgeon proceeded and there was an injury") is enough to keep legal departments awake at night. Post-hoc analysis for quality improvement and training is where the near-term value lives.
 
 One more thing: surgeon buy-in is everything. If the surgical staff perceives this as surveillance rather than a learning tool, adoption will be zero regardless of how good the technology is. Frame it as "your personal performance coach" not "big brother in the OR."
+
+Configure S3 lifecycle policies and DynamoDB TTL aligned with your institution's records retention policy. Typical surgical video retention is 7-10 years; check state-specific requirements. Implement a deletion workflow that removes video, frames, features, and index entries together when retention expires.
 
 ---
 
