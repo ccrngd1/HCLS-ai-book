@@ -376,6 +376,8 @@
 * [Preface](chapter15-preface)
 * [15.1 — Alert Threshold Optimization](chapter15.01-alert-threshold-optimization)
   * [Python Example](chapter15.01-python-example)
+* [15.2 — Notification Timing Optimization](chapter15.02-notification-timing-optimization)
+  * [Python Example](chapter15.02-python-example)
 
 ---
 
