@@ -90,7 +90,7 @@ For most healthcare organizations starting out, I'd recommend: use a MIP solver 
 
 This is a batch optimization problem. You're not optimizing in real-time as patients arrive (that's a different problem, closer to Recipe 14.6). You're designing the template that will be used for the next scheduling period (typically 2-4 weeks out).
 
-The optimization runs periodically: weekly, monthly, or when significant changes occur (new provider joins, patient mix shifts, seasonal patterns change). Each run produces a new template configuration. A human reviews and approves it before it goes live. This human-in-the-loop step is important: optimization can produce technically optimal but operationally bizarre templates (like a 7-minute slot followed by a 52-minute slot) that providers would reject.
+The optimization runs periodically (weekly is the sweet spot for most clinics; monthly if your patient mix is stable). Each run produces a new template configuration. A human reviews and approves it before it goes live. This human-in-the-loop step is important: optimization can produce technically optimal but operationally bizarre templates (like a 7-minute slot followed by a 52-minute slot) that providers would reject.
 
 ---
 
@@ -106,11 +106,13 @@ The optimization runs periodically: weekly, monthly, or when significant changes
 
 **Optimization Model.** Formulate and solve the mathematical program. Inputs: statistical features from the previous step plus organizational constraints (session hours, break requirements, overbooking policies). Output: optimal slot durations, buffer times, and overbooking levels.
 
-**Simulation Validation.** Take the proposed template and simulate 1,000+ clinic days using historical arrival and duration distributions. Measure expected throughput, wait times, overtime probability, and provider idle time. Compare against the current template using the same simulation. If the proposed template doesn't meaningfully outperform the current one, don't change it. Change fatigue is real.
+**Simulation Validation.** Take the proposed template and simulate 1,000+ clinic days using historical arrival and duration distributions. Measure expected throughput, wait times, overtime probability, and provider idle time. Compare against the current template using the same simulation. If the proposed template doesn't meaningfully outperform the current one, don't change it. Change fatigue is real. Note: the simulation assumes provider behavior remains constant under the new template. In practice, providers may adjust their pace in response to shorter or longer slots. Treat simulation results as directional estimates, not guarantees. The post-deployment monitoring loop is what validates whether the template actually performs as predicted.
 
 **Human Review.** Present the proposed template alongside the simulation results to the operations team and affected providers. Show the tradeoffs explicitly: "This template sees 2 more patients per day but increases average wait time by 3 minutes." Let humans make the final call.
 
 **EHR Integration.** Push the approved template into your scheduling system. Most EHRs support template APIs or bulk configuration. The integration is usually the least interesting technical piece but the most operationally painful one.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a dedicated paragraph or subsection describing the post-deployment monitoring feedback loop: compare actual throughput, wait times, and overtime against simulation predictions for 1-2 weeks after go-live. If actual performance deviates beyond a threshold (e.g., wait times 50% higher than predicted), alert operations and provide one-click rollback to the previous template version in DynamoDB. This is an architectural requirement, not a future nice-to-have. -->
 
 ---
 
@@ -124,7 +126,7 @@ The optimization runs periodically: weekly, monthly, or when significant changes
 
 **AWS Lambda for orchestration and API.** Lambda coordinates the pipeline: triggers data extraction on schedule, kicks off SageMaker jobs, stores results, and exposes an API for the review interface. The optimization itself doesn't run in Lambda (too compute-heavy and time-limited), but Lambda is the glue.
 
-**Amazon DynamoDB for template storage and versioning.** Stores the current and proposed templates per provider, with version history. Supports the review workflow (proposed vs. approved vs. active states) and rollback if a new template underperforms.
+**Amazon DynamoDB for template storage and versioning.** Stores the current and proposed templates per provider, with version history. Supports the review workflow (proposed vs. approved vs. active states) and rollback if a new template underperforms. For multi-department deployments, scope access using IAM condition keys (`dynamodb:LeadingKeys`) so that each department can only read and modify its own providers' templates.
 
 **Amazon QuickSight for visualization.** The human review step needs dashboards showing simulation results, before/after comparisons, and tradeoff curves. QuickSight connects directly to S3 and provides the visual layer without custom frontend development.
 
@@ -159,7 +161,7 @@ flowchart TD
 | **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
 | **BAA** | AWS BAA signed (scheduling data contains patient names and visit reasons, which are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: VPC mode with encrypted volumes |
-| **VPC** | SageMaker Processing jobs in VPC with no internet access; VPC endpoints for S3 and DynamoDB |
+| **VPC** | SageMaker Processing jobs in VPC with no internet access; VPC endpoints for S3 (gateway), DynamoDB (gateway), CloudWatch Logs (interface), and STS (interface). If using custom container images, add ECR endpoints (dkr and api). Security groups should allow outbound HTTPS (443) to VPC endpoint prefix lists. |
 | **CloudTrail** | Enabled for all API calls; audit trail for template changes |
 | **Sample Data** | Synthetic scheduling data. Use realistic visit type distributions but never real patient identifiers in dev. |
 | **Cost Estimate** | SageMaker Processing: ~$2-5 per optimization run (ml.m5.xlarge, 10-30 min). S3 + DynamoDB + Lambda: negligible. Monthly total for weekly runs: $50-200. |
@@ -375,6 +377,9 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
         version          = next_version_number(provider_id)
         status           = "proposed"                        // not active until approved
         created_at       = current UTC timestamp
+        approved_by      = null                              // populated on approval
+        approved_at      = null                              // populated on approval
+        approval_notes   = null                              // reviewer rationale
         template         = proposed_template                 // the actual slot configuration
         simulation_current  = simulation_current            // how today's template performs
         simulation_proposed = simulation_proposed           // how the new one performs
@@ -384,12 +389,14 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
             overtime_delta:  simulation_proposed.overtime_prob - simulation_current.overtime_prob
         }
     
-    // Notify operations team that a new template is ready for review
+    // Notify operations team that a new template is ready for review.
+    // IMPORTANT: Do not embed provider-specific metrics in the email body.
+    // Email traverses the internet and may not be encrypted end-to-end.
+    // Send only a link to the authenticated review dashboard.
     send notification:
         to = operations_team_email
-        subject = "New template proposed for {provider_id}"
-        body = "Projected improvement: {improvement.throughput_delta} patients/day, "
-               + "{improvement.wait_delta} min avg wait change. Review in dashboard."
+        subject = "New scheduling template ready for review"
+        body = "A new template proposal is available. Review in the dashboard: {dashboard_url}"
     
     RETURN version
 ```

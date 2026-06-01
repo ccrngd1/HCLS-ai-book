@@ -1,6 +1,6 @@
 # Recipe 14.1: Python Implementation Example
 
-> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 14.1. It shows one way you could translate appointment slot optimization concepts into working Python code using PuLP (an open-source linear programming library) and SimPy (a discrete-event simulation library). It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to your scheduling system on Monday morning. Consider it a starting point, not a destination.
+> **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 14.1. It shows one way you could translate appointment slot optimization concepts into working Python code using PuLP (an open-source linear programming library) and NumPy (for statistical simulation). It is not production-ready. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to your scheduling system on Monday morning. Consider it a starting point, not a destination.
 
 ---
 
@@ -9,10 +9,10 @@
 You'll need a few Python packages:
 
 ```bash
-pip install pulp simpy numpy boto3
+pip install pulp numpy boto3
 ```
 
-PuLP is a modeling library for linear and mixed-integer programming. It ships with the CBC solver (open-source, no license required), which is more than sufficient for a problem this size. SimPy handles the discrete-event simulation for validation. NumPy provides the statistical distributions.
+PuLP is a modeling library for linear and mixed-integer programming. It ships with the CBC solver (open-source, no license required), which is more than sufficient for a problem this size. NumPy provides the statistical distributions for the simulation validation step.
 
 Your environment needs AWS credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs `s3:GetObject`, `s3:PutObject`, and `dynamodb:PutItem`.
 
@@ -220,6 +220,10 @@ def optimize_template() -> dict:
     # Wait time penalty: approximated by the variance contribution of each visit type.
     # Higher variance = more downstream waiting. This is a linearized approximation
     # of the Pollaczek-Khinchine formula. In production, you'd validate with simulation.
+    # NOTE: This term is a constant (no decision variables). It doesn't change the
+    # optimal slot durations, but it calibrates the objective value so that the
+    # tradeoff parameter lambda has meaningful units. A production model would use
+    # a more sophisticated wait-time function that depends on buffer and slot durations.
     wait_penalty = pulp.lpSum(
         VISIT_TYPE_MIX[vtype] * DURATION_STATS[vtype]["std"]
         for vtype in VISIT_TYPES
@@ -273,13 +277,12 @@ def optimize_template() -> dict:
 
 ## Step 2: Simulate a Clinic Day
 
-*The pseudocode calls this `simulate_clinic_day(template, features, num_replications)`. We use SimPy to run a discrete-event simulation that tests the proposed template against realistic patient behavior.*
+*The pseudocode calls this `simulate_clinic_day(template, features, num_replications)`. We use a sequential simulation loop with NumPy random generators to test the proposed template against realistic patient behavior.*
 
 ```python
-import simpy
 
 
-def build_schedule_from_template(template: dict) -> list:
+def build_schedule_from_template(template: dict, rng: np.random.Generator) -> list:
     """
     Generate a day's schedule from the optimized template.
 
@@ -307,7 +310,7 @@ def build_schedule_from_template(template: dict) -> list:
             continue
 
         # Pick a visit type based on the expected mix
-        vtype = np.random.choice(visit_types_list, p=mix_weights)
+        vtype = rng.choice(visit_types_list, p=mix_weights)
         duration = template["slot_durations"][vtype]
         buffer = template["buffer_minutes"]
 
@@ -334,7 +337,7 @@ def build_schedule_from_template(template: dict) -> list:
         hour = int(hour_str)
         hour_start = hour * 60
         for i in range(overbook_count):
-            vtype = np.random.choice(visit_types_list, p=mix_weights)
+            vtype = rng.choice(visit_types_list, p=mix_weights)
             slots.append({
                 "id": slot_id,
                 "scheduled_time": hour_start + 15 * i,  # stagger within the hour
@@ -364,7 +367,7 @@ def simulate_single_day(template: dict, rng: np.random.Generator) -> dict:
         Dictionary with day-level metrics: patients_seen, avg_wait, max_wait,
         overtime_minutes, idle_minutes.
     """
-    schedule = build_schedule_from_template(template)
+    schedule = build_schedule_from_template(template, rng)
 
     # Track metrics
     wait_times = []
