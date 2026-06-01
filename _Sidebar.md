@@ -332,6 +332,8 @@
   * [Python Example](chapter13.04-python-example)
 * [13.5 — Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling)
   * [Python Example](chapter13.05-python-example)
+* [13.6 — Care Gap Reasoning Engine](chapter13.06-care-gap-reasoning-engine)
+  * [Python Example](chapter13.06-python-example)
 
 ---
 
