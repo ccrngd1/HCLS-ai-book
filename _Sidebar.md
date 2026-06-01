@@ -336,6 +336,8 @@
   * [Python Example](chapter13.06-python-example)
 * [13.7 — Disease-Gene-Drug Relationship Graph](chapter13.07-disease-gene-drug-relationship-graph)
   * [Python Example](chapter13.07-python-example)
+* [13.8 — Medical Concept Normalization and Mapping](chapter13.08-medical-concept-normalization-mapping)
+  * [Python Example](chapter13.08-python-example)
 
 ---
 
