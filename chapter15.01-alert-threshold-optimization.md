@@ -71,6 +71,8 @@ For alert threshold optimization, the practical answer is: **start offline, depl
 
 You train the initial policy on historical data. You validate it against held-out periods. You deploy it with hard safety bounds and monitoring. And then you allow it to make small online adjustments within those bounds, with automatic rollback if alert-to-action ratios deteriorate.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Offline policy evaluation methodology is mentioned but never described. Add a subsection describing OPE basics: the counterfactual evaluation challenge, doubly robust estimators as a practical starting point, comparison against behavior policy baseline, and validation via short online A/B test before full deployment. -->
+
 ### The Contextual Bandit Simplification
 
 Here's a pragmatic observation: for many alert threshold problems, you don't actually need full RL. A contextual bandit formulation is often sufficient and much simpler to implement.
@@ -163,6 +165,8 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS DLQ for the Kinesis-to-Lambda reward calculator. Failed events should go to a dead letter queue for reprocessing. Note that systematic reward calculation failures should pause online learning to avoid training on biased reward signals. -->
+
 ### Prerequisites
 
 | Requirement | Details |
@@ -171,7 +175,7 @@ flowchart TD
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:InvokeEndpoint`, `kinesis:GetRecords`, `kinesis:PutRecord`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `s3:GetObject`, `s3:PutObject`, `cloudwatch:PutMetricData` |
 | **BAA** | AWS BAA signed (alert data contains patient identifiers and clinical context) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption; all API calls over TLS |
-| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints for S3, DynamoDB, Kinesis, CloudWatch Logs |
+| **VPC** | Production: Lambda and SageMaker in VPC with VPC endpoints: S3 (gateway), DynamoDB (gateway), Kinesis Data Streams (interface), CloudWatch Logs (interface), SageMaker Runtime (interface) |
 | **CloudTrail** | Enabled: log all threshold changes for audit trail (who changed what, when, and why) |
 | **Data Requirements** | Minimum 6 months of historical alert data with clinician response timestamps. More is better. Need alert type, threshold that triggered, patient context, and response action. |
 | **Cost Estimate** | SageMaker training: ~$5-20 per training run (weekly). Endpoint: ~$50-100/month (ml.m5.large). Kinesis: ~$15-30/month. Lambda + DynamoDB: negligible. Total: ~$80-150/month. |
@@ -203,7 +207,7 @@ FUNCTION ingest_alert_event(event):
         alert_type:     category (e.g., "heart_rate_high", "potassium_high", "spo2_low")
         threshold_used: the numeric threshold that triggered this alert (e.g., 100 bpm)
         actual_value:   the patient's actual value that crossed the threshold (e.g., 103 bpm)
-        patient_id:     de-identified patient reference
+        patient_id:     de-identified patient reference (tokenized, not raw MRN)
         unit:           clinical unit (e.g., "ICU-3A", "MedSurg-2B")
         timestamp:      when the alert fired (UTC)
         patient_acuity: current acuity score if available
@@ -211,6 +215,9 @@ FUNCTION ingest_alert_event(event):
     }
     
     // Write to the streaming ingestion layer for real-time processing
+    // Note: patient_id should be a one-way token (not raw MRN) for the RL pipeline.
+    // Restrict stream consumer access via IAM resource policies to only the
+    // reward-calculator Lambda and S3 archival process.
     write record to alert event stream
     RETURN record.alert_id
 ```
@@ -220,6 +227,8 @@ FUNCTION ingest_alert_event(event):
 ```
 // Reward weights: these encode clinical priorities.
 // Adjust based on your institution's risk tolerance.
+// In production, store these in a configuration store (e.g., Parameter Store or DynamoDB)
+// with versioning and clinical committee approval workflow for changes.
 REWARD_ACTION_TAKEN     = +1.0    // alert led to a clinical action: good
 REWARD_DISMISSED        = -0.3    // alert was dismissed quickly: noise, but mild penalty
 REWARD_MISSED_EVENT     = -5.0    // clinical event occurred with no preceding alert: very bad
@@ -249,6 +258,11 @@ FUNCTION calculate_reward(alert_event, clinician_response, patient_outcome):
     // Check for missed events: did something bad happen WITHOUT an alert?
     // This is computed separately on a schedule, not per-alert.
     // See Step 3 for the missed-event detection logic.
+    
+    // Note: when multiple alerts fire for the same patient within a short window
+    // and a single action follows, attribution is ambiguous. A practical heuristic
+    // is shared credit (distribute reward across all alerts in the window) or
+    // clinical-relevance-based attribution if that mapping is available from the EHR.
     
     RETURN reward
 ```
@@ -372,6 +386,9 @@ FUNCTION apply_threshold_safely(alert_type, unit, current_threshold, action):
         RETURN current_threshold  // no change
     
     // Apply the change
+    // Note: In production, only the threshold-updater Lambda should have write access
+    // to this table. Block direct console/CLI writes and require a break-glass
+    // procedure (with MFA and CloudTrail logging) for emergency manual overrides.
     write to threshold configuration store:
         alert_type:     alert_type
         unit:           unit
@@ -423,7 +440,7 @@ FUNCTION apply_threshold_safely(alert_type, unit, current_threshold, action):
 | Threshold update frequency | Every 4-8 hours (once per shift) |
 | Rollback trigger rate | < 5% of update cycles |
 
-**Where it struggles:** Units with highly variable patient populations (the state distribution shifts faster than the policy can adapt). Alert types where "acted on" is ambiguous (was the order related to the alert or coincidental?). Night shifts with skeleton staffing where response patterns differ fundamentally from day shifts. And the cold-start problem: new alert types or new units have no historical data to learn from.
+**Where it struggles:** Units with highly variable patient populations (the state distribution shifts faster than the policy can adapt). Alert types where "acted on" is ambiguous (was the order related to the alert or coincidental?). Night shifts with skeleton staffing where response patterns differ fundamentally from day shifts. And the cold-start problem: new alert types or new units have no historical data to learn from. For cold starts, initialize with the institution's current static thresholds as the baseline policy. The agent starts by observing without acting (pure exploitation of the existing policy) until it accumulates enough data (typically 2-4 weeks) to begin cautious exploration.
 
 ---
 
