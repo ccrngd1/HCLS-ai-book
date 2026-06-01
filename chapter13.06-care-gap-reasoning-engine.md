@@ -90,13 +90,15 @@ The reasoning engine operates in three phases:
 
 ### Why These Services
 
+<!-- TODO (TechWriter): Expert review A1 (CRITICAL). Neptune does NOT natively support OWL reasoning/inference. The claim below that "the query engine handles the inference automatically" is factually incorrect. Neptune stores RDF/OWL data and queries it with SPARQL, but hierarchy traversal requires explicit SPARQL property paths (e.g., rdfs:subClassOf*) or pre-materialized inferred triples. Rewrite this section to use SPARQL property paths for hierarchy traversal, or integrate a third-party reasoner (e.g., RDFox). Remove all claims of "native" OWL inference. See AWS blog "Use semantic reasoning to infer new facts from your RDF graph by integrating RDFox with Amazon Neptune" (Feb 2023) for the correct pattern. -->
+
 **Amazon Neptune for the knowledge graph.** Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because it natively supports ontological reasoning through OWL (Web Ontology Language) inference. You can define class hierarchies (coronary artery disease subClassOf cardiovascular disease) and the query engine handles the inference automatically. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.
 
 **AWS Lambda for patient evaluation orchestration.** Each patient evaluation is a bounded, stateless operation: assemble facts, query the graph, score the gaps, return results. Lambda handles the per-patient compute without requiring persistent infrastructure. For batch population evaluation (running all 50,000 patients overnight), Lambda's concurrency model scales naturally.
 
 **Amazon S3 for guideline ontology storage and versioning.** The guideline ontology (OWL/RDF files) needs versioning, audit trails, and a clean deployment path. S3 with versioning enabled provides all three. When guidelines update annually, you upload the new ontology version, load it into Neptune, and the reasoning automatically reflects the changes.
 
-**AWS Step Functions for batch orchestration.** Evaluating an entire population requires coordination: partition the patient list, fan out Lambda invocations, collect results, handle failures, and produce summary reports. Step Functions provides the orchestration with built-in retry logic and error handling.
+**AWS Step Functions for batch orchestration.** Evaluating an entire population requires coordination: partition the patient list, fan out Lambda invocations, collect results, handle failures, and produce summary reports. Step Functions provides the orchestration with built-in retry logic and error handling. Configure the Map state with `MaxConcurrency` to control Neptune load. Set `Retry` with exponential backoff for Lambda timeout and Neptune throttling errors. Configure a `Catch` block that writes failed patient IDs to an SQS dead-letter queue for investigation. After batch completion, report the failure rate; if more than 5% of patients fail evaluation, alert the operations team.
 
 **Amazon DynamoDB for gap result storage.** The output of the reasoning engine (per-patient gap lists) needs fast point lookups by patient ID for care management workflows and batch scans for population-level reporting. DynamoDB handles both access patterns efficiently.
 
@@ -146,16 +148,18 @@ flowchart TD
     style G fill:#f9f,stroke:#333
 ```
 
+Here's what you need before you start building:
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Neptune, AWS Lambda, Amazon S3, AWS Step Functions, Amazon DynamoDB, AWS Glue |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `lambda:InvokeFunction`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `states:StartExecution`, `glue:StartJobRun` |
+| **AWS Services** | Amazon Neptune, AWS Lambda, Amazon S3, AWS Step Functions, Amazon DynamoDB, AWS Glue, Amazon SQS (DLQ) |
+| **IAM Permissions** | Evaluation Lambda: `neptune-db:ReadDataViaQuery` (scoped to cluster ARN). Ontology loader (separate role): `neptune-db:WriteDataViaQuery`, `neptune-db:GetGraphSummary`. Both: `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `states:StartExecution`, `glue:StartJobRun`. The evaluation Lambda should never have write access to the knowledge graph. |
 | **BAA** | AWS BAA signed (patient conditions, demographics, and care history are PHI) |
 | **Encryption** | Neptune: encryption at rest enabled at cluster creation (cannot be added later); S3: SSE-KMS; DynamoDB: encryption at rest (default); all connections over TLS |
-| **VPC** | Neptune requires VPC deployment. Lambda in same VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. Neptune accessible only via private subnet. |
-| **CloudTrail** | Enabled for all API calls. Neptune audit logs enabled for SPARQL query logging. |
+| **VPC** | Neptune requires VPC deployment. Ensure VPC has `enableDnsHostnames` and `enableDnsSupport` set to true (required for Neptune endpoint resolution). Lambda in same VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. Neptune accessible only via private subnet. Security group on Neptune must allow inbound TCP 8182 from the Lambda security group. Neptune does not need a VPC endpoint because it runs inside your VPC; Lambda connects directly via the private subnet. |
+| **CloudTrail** | Enabled for all API calls. Neptune audit logs enabled for SPARQL query logging. CloudWatch Logs retention for Neptune audit logs: minimum 6 years per HIPAA retention requirements. Consider tiering to S3 Glacier after 90 days for cost optimization. |
 | **Sample Data** | Synthetic patient populations with known conditions. Use CMS Synthetic Medicare data or Synthea-generated records. Never use real PHI in development. |
 | **Cost Estimate** | Neptune db.r5.large: ~$0.58/hr (~$420/month). Lambda: negligible at batch volumes. DynamoDB: on-demand pricing, ~$1.25 per million writes. Total for 50K patient monthly evaluation: ~$450/month. |
 
@@ -169,6 +173,7 @@ flowchart TD
 | **AWS Step Functions** | Orchestrates batch population evaluation with fan-out/fan-in |
 | **Amazon DynamoDB** | Stores per-patient care gap results for downstream consumption |
 | **AWS Glue** | Assembles patient facts from heterogeneous data sources |
+| **Amazon SQS** | Dead-letter queue for failed patient evaluations |
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Metrics, logs, and alarms for pipeline health |
 
@@ -413,10 +418,15 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
     // (get all evaluations for patient X over time to track gap closure).
     WRITE record TO "care-gap-results" table
 
-    // If high-priority gaps exist, publish an event for real-time care management
+    // If high-priority gaps exist, publish an event for real-time care management.
+    // The SNS topic must be encrypted with a KMS CMK. Subscribers must be within
+    // the same VPC or connected via PrivateLink. Minimize PHI in the event payload;
+    // consumers query DynamoDB for full details.
     IF any gap in scored_gaps has composite_score > HIGH_PRIORITY_THRESHOLD:
-        PUBLISH event to notification topic:
-            patient_id, high_priority_gap_count, top_gap_action_needed
+        PUBLISH event to encrypted SNS topic:
+            patient_id, high_priority_gap_count
+            // Omit clinical details from the event; consumers look up full
+            // gap data from DynamoDB using the patient_id.
 
     RETURN record
 ```
@@ -474,6 +484,8 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 
 **Performance benchmarks:**
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). The 45-minute batch estimate doesn't match the per-patient latency math (100 Lambdas × 500 patients × 200-500ms = 2-4 minutes, not 45). Either show the math behind the 45-minute estimate (what's the bottleneck: Step Functions orchestration overhead? Neptune connection pooling?) or correct it. Also add Neptune connection management guidance: reuse connections across invocations, set neptune_query_timeout, monitor SparqlRequestsPerSec. -->
+
 | Metric | Typical Value |
 |--------|---------------|
 | Per-patient evaluation latency | 200-500ms |
@@ -527,7 +539,7 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 **AWS Documentation:**
 - [Amazon Neptune Developer Guide](https://docs.aws.amazon.com/neptune/latest/userguide/intro.html)
 - [Amazon Neptune SPARQL Reference](https://docs.aws.amazon.com/neptune/latest/userguide/sparql.html)
-- [Amazon Neptune OWL Reasoning](https://docs.aws.amazon.com/neptune/latest/userguide/features-sparql-reasoning.html)
+- [Amazon Neptune SPARQL Property Paths](https://docs.aws.amazon.com/neptune/latest/userguide/sparql-query-hints-property-path.html)
 - [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Amazon Neptune Pricing](https://aws.amazon.com/neptune/pricing/)
