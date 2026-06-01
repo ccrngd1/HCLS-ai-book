@@ -593,7 +593,7 @@ The condition evaluation layer is where performance problems hide. If evaluating
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): General Neptune examples including graph data modeling, loading, and querying patterns
 - [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Ontology modeling in Neptune, directly relevant to clinical knowledge representation
 
-<!-- TODO: Verify if there are additional healthcare-specific Neptune samples available -->
+<!-- TODO (TechWriter): Verify if there are additional healthcare-specific Neptune samples available on aws-samples. -->
 
 **AWS Solutions and Blogs:**
 - [Building a Knowledge Graph on AWS](https://aws.amazon.com/blogs/database/building-a-knowledge-graph-application-with-amazon-neptune/): Architecture patterns for knowledge graph applications on Neptune
