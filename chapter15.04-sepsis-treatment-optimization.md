@@ -30,7 +30,7 @@ The core components:
 - **Policy (π):** The learned mapping from states to actions. This is what we're trying to optimize.
 - **Value function (V or Q):** An estimate of the expected cumulative future reward from a given state (or state-action pair). The policy is derived from this.
 
-What we're optimizing: find the policy π that maximizes expected cumulative reward. The math: π* = argmax E[Σ γ^t * r_t], where γ discounts future rewards (we care about long-term survival but prefer getting there sooner).
+What we're optimizing: find the policy π that maximizes expected cumulative reward. The math: π* = argmax E[Σ γ^t * r_t], where γ discounts future rewards (we care about long-term survival, but prefer getting there sooner).
 
 ### Offline RL: Learning from Historical Data
 
