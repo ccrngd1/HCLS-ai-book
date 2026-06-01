@@ -40,7 +40,7 @@ This distinction matters enormously in healthcare. A federated architecture lets
 
 Federated querying sounds simple until you try to build it. Here's what makes it hard:
 
-**Schema heterogeneity.** Each institution models their knowledge differently. One uses SNOMED codes for diseases. Another uses ICD-10. One represents drug interactions as edges between drug nodes. Another represents them as intermediate "interaction" nodes with severity properties. Before you can query across graphs, you need a shared understanding of what the entities and relationships mean. This is the ontology alignment problem, and it's genuinely unsolved in the general case.
+**Schema heterogeneity.** Each institution models their knowledge differently. One uses SNOMED codes for diseases. Another uses ICD-10. One represents drug interactions as edges between drug nodes. Another represents them as intermediate "interaction" nodes with severity properties. Before you can query across graphs, you need a shared understanding of what the entities and relationships mean. This is the ontology alignment problem, and nobody has cracked it for the general case.
 
 **Query decomposition.** A federated query like "find all known treatments for condition X with evidence level A or B" needs to be broken into sub-queries that each source graph can answer. The federation layer needs to know which graphs might have relevant data (query routing), how to translate the query into each graph's local schema (query rewriting), and how to combine partial results (result merging). Each of these is a research problem in its own right.
 
@@ -84,7 +84,7 @@ A federated clinical knowledge network has these logical components:
 
 **Provenance Tracking.** Every result carries metadata: which source provided it, what evidence supports it, when it was last updated, and what confidence level the source assigns. This lets consumers make informed decisions about which knowledge to trust.
 
-**Result Assembly.** Partial results from multiple sources are merged, deduplicated, ranked, and presented as a unified response. Deduplication is non-trivial: two sources might report the same drug interaction with different severity ratings. The assembler needs conflict resolution strategies.
+**Result Assembly.** Partial results from multiple sources are merged, deduplicated, ranked, and presented as a unified response. Deduplication is non-trivial: two sources might report the same drug interaction with different severity ratings. The assembler needs conflict resolution strategies. For safety-critical knowledge (drug interactions rated "high" severity), the assembler should surface all perspectives with their provenance rather than silently picking a winner. A clinician needs to see that two sources disagree on severity, not just the "winning" answer.
 
 ---
 
@@ -94,15 +94,17 @@ A federated clinical knowledge network has these logical components:
 
 **Amazon Neptune for local graph databases.** Neptune is AWS's managed graph database service supporting both RDF/SPARQL and property graph (Gremlin/openCypher) models. For a federated network, each participating institution runs their own Neptune cluster. Neptune handles the storage, indexing, and query execution for local graphs. Its support for both graph models means institutions can choose whichever fits their existing data better. Neptune's IAM integration and VPC isolation provide the security boundary each institution needs.
 
-**AWS AppSync for the federation API layer.** AppSync provides a managed GraphQL API that can aggregate data from multiple backend sources. In this architecture, AppSync serves as the federation query router: it receives a federated query, decomposes it, dispatches sub-queries to multiple Neptune endpoints (via Lambda resolvers), and assembles the results. GraphQL's type system maps naturally to knowledge graph schemas, and AppSync's built-in authorization (Cognito, IAM, API keys) handles the multi-tenant access control.
+**AWS AppSync for the federation API layer.** AppSync provides a managed GraphQL API that can aggregate data from multiple backend sources. In this architecture, AppSync serves as the client-facing federation API: it receives a federated query, passes it to the orchestration layer, and returns assembled results. GraphQL's type system maps naturally to knowledge graph schemas, and AppSync's built-in authorization (Cognito, IAM, API keys) handles the multi-tenant access control. Note: AppSync has a 30-second request timeout and 1MB response payload limit. For federations with more than 5 sources or complex multi-hop queries, consider placing AWS Step Functions Express Workflows behind AppSync to handle the orchestration (Step Functions Express supports up to 5-minute execution and handles parallel dispatch natively via Parallel and Map states).
 
 **AWS Lambda for query translation and routing.** Lambda functions handle the schema translation between the federated query language and each institution's local graph schema. Each institution registers a Lambda-based adapter that knows how to translate federated queries into their local SPARQL or Gremlin dialect. Lambda's stateless execution model fits perfectly: each query is independent, and the translation logic is pure computation.
 
 **Amazon S3 for the ontology registry.** The shared ontology mappings, concept dictionaries, and schema alignment files live in S3. These are versioned, auditable configuration artifacts. When a new institution joins the federation or updates their local schema, the mapping files in S3 are updated. Lambda functions load these mappings at query time.
 
-**AWS PrivateLink for secure cross-account connectivity.** Federated queries cross institutional boundaries, which in AWS terms means crossing AWS accounts. PrivateLink provides private, encrypted connectivity between VPCs in different accounts without traversing the public internet. Each institution exposes their Neptune query endpoint via PrivateLink, and the federation layer connects to it privately.
+**AWS PrivateLink for secure cross-account connectivity.** Federated queries cross institutional boundaries, which in AWS terms means crossing AWS accounts. PrivateLink provides private, encrypted connectivity between VPCs in different accounts without traversing the public internet. Each institution exposes their query adapter behind an API Gateway with IAM authorization. The federation layer assumes a cross-account IAM role (defined per institution in the source catalog) to invoke the institutional API Gateway endpoint. PrivateLink provides network isolation; IAM provides authentication and authorization. Both layers are required.
 
-**Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation.
+**AWS KMS for encryption key management.** Each institution manages their own KMS CMK for their Neptune cluster and local data. The federation control plane account owns separate CMKs for the source catalog (DynamoDB) and ontology registry (S3). Cross-account query results are returned as plaintext over the PrivateLink TLS channel; the federation layer does not need decrypt access to institutional KMS keys because Neptune handles decryption internally before returning query results.
+
+**Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation. Note: query content in audit logs is treated as PHI because queries may reveal patient conditions. Audit log access must be restricted to authorized compliance personnel. Consider hashing or tokenizing clinical concept identifiers in audit records while retaining the full query in a separate, access-controlled audit store for compliance investigations.
 
 **AWS Organizations for multi-account governance.** The federation operates across multiple AWS accounts (one per institution). Organizations provides centralized governance: service control policies, consolidated billing, and cross-account IAM role management.
 
@@ -123,26 +125,26 @@ flowchart TB
     end
 
     subgraph "Institution A (Neptune)"
-        F[Lambda\nQuery Adapter A]
+        F[API Gateway + Lambda\nQuery Adapter A]
         G[Neptune Cluster A]
         F --> G
     end
 
     subgraph "Institution B (Neptune)"
-        H[Lambda\nQuery Adapter B]
+        H[API Gateway + Lambda\nQuery Adapter B]
         I[Neptune Cluster B]
         H --> I
     end
 
     subgraph "Institution C (Neptune)"
-        J[Lambda\nQuery Adapter C]
+        J[API Gateway + Lambda\nQuery Adapter C]
         K[Neptune Cluster C]
         J --> K
     end
 
-    C -->|PrivateLink| F
-    C -->|PrivateLink| H
-    C -->|PrivateLink| J
+    C -->|PrivateLink + IAM| F
+    C -->|PrivateLink + IAM| H
+    C -->|PrivateLink + IAM| J
 
     F --> L[Lambda\nResult Assembler]
     H --> L
@@ -160,12 +162,12 @@ flowchart TB
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Neptune, AWS AppSync, AWS Lambda, Amazon S3, Amazon DynamoDB, AWS PrivateLink, AWS Organizations, Amazon CloudWatch, AWS CloudTrail |
-| **IAM Permissions** | `neptune-db:*` (scoped to cluster), `appsync:GraphQL`, `lambda:InvokeFunction`, `s3:GetObject`, `dynamodb:GetItem`, `dynamodb:Query` |
+| **AWS Services** | Amazon Neptune, AWS AppSync, AWS Lambda, Amazon S3, Amazon DynamoDB, AWS PrivateLink, AWS Organizations, Amazon CloudWatch, AWS CloudTrail, AWS KMS, Amazon API Gateway |
+| **IAM Permissions** | Federation layer (read-only): `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus`, `neptune-db:CancelQuery` (scoped to cluster ARN). Write access to Neptune remains with each institution's internal data pipeline roles only. Additional: `appsync:GraphQL`, `lambda:InvokeFunction`, `s3:GetObject`, `dynamodb:GetItem`, `dynamodb:Query` |
 | **BAA** | AWS BAA signed for all participating accounts (knowledge derived from PHI requires BAA coverage) |
 | **Encryption** | Neptune: encryption at rest (enabled at cluster creation, cannot be added later); S3: SSE-KMS; DynamoDB: encryption at rest; all cross-account traffic over PrivateLink (TLS in transit) |
-| **VPC** | Each institution's Neptune in a private subnet. PrivateLink endpoints for cross-account access. No public endpoints. VPC Flow Logs enabled. |
-| **CloudTrail** | Enabled in all participating accounts. Federated query audit trail must capture: requester identity, query content, sources contacted, results returned. |
+| **VPC** | Each institution's Neptune in a private subnet. PrivateLink endpoints for cross-account access. No public endpoints. VPC Flow Logs enabled. Gateway VPC endpoints for S3 and DynamoDB in the federation control plane VPC. Interface VPC endpoints for KMS and CloudWatch Logs. No NAT Gateway required for federation Lambda functions. |
+| **CloudTrail** | Enabled in all participating accounts. Federated query audit trail must capture: requester identity, query content (treated as PHI), sources contacted, results returned. Audit log access restricted to authorized compliance personnel. |
 | **Multi-Account** | AWS Organizations with one account per participating institution. Cross-account IAM roles for federation layer access. |
 | **Sample Data** | Public biomedical ontologies (SNOMED CT subset, RxNorm, DrugBank open data) for development. Never use institution-specific clinical knowledge in shared dev environments. |
 | **Cost Estimate** | Neptune: ~$0.35/hr per instance (db.r5.large) per institution. Lambda: negligible at query volumes. PrivateLink: $0.01/GB + $0.01/hr per endpoint. Total: ~$2,500-5,000/month per participating node. |
@@ -175,11 +177,12 @@ flowchart TB
 | AWS Service | Role |
 |------------|------|
 | **Amazon Neptune** | Local knowledge graph storage and SPARQL/Gremlin query execution at each institution |
-| **AWS AppSync** | Federation API layer; receives queries, orchestrates decomposition and assembly |
+| **AWS AppSync** | Client-facing federation API; receives queries and returns assembled results |
 | **AWS Lambda** | Query decomposition, schema translation (per-institution adapters), result assembly |
 | **Amazon S3** | Ontology registry; stores shared concept mappings and schema alignment files |
 | **Amazon DynamoDB** | Source catalog; tracks participating institutions, their capabilities, and sharing policies |
-| **AWS PrivateLink** | Secure cross-account connectivity between federation layer and institutional Neptune clusters |
+| **AWS PrivateLink** | Secure cross-account connectivity between federation layer and institutional API Gateways |
+| **Amazon API Gateway** | IAM-authenticated entry point at each institution, fronting the query adapter Lambda |
 | **AWS Organizations** | Multi-account governance and cross-account role management |
 | **Amazon CloudWatch** | Query latency metrics, error rates, federation health monitoring |
 | **AWS CloudTrail** | Audit trail for all federated queries and access decisions |
@@ -204,7 +207,12 @@ FUNCTION register_source(institution_id, capabilities, endpoint_config, sharing_
         sharing_policy:   sharing_policy,          // rules governing what can be shared and with whom
                                                    // e.g., { "drug_interactions": "public", "patient_derived": "research_only" }
         registered_at:    current UTC timestamp,
-        status:           "active"                 // can be set to "suspended" to temporarily disable
+        status:           "active",                // can be set to "suspended" to temporarily disable
+        health: {
+            consecutive_failures: 0,               // circuit breaker counter
+            last_success:         null,            // timestamp of last successful query
+            last_failure:         null             // timestamp of last failed query
+        }
     }
 
     // Write to the source catalog (DynamoDB table).
@@ -241,7 +249,7 @@ FUNCTION load_ontology_mapping(source_institution_id, mapping_version):
     RETURN parsed mapping_file
 ```
 
-**Step 3: Decompose a federated query.** When a clinician asks a question like "what drug interactions are known for Metformin in patients with renal impairment?", the federation layer needs to figure out which sources might have relevant answers and how to ask each one. This is query decomposition. The decomposer consults the source catalog to identify sources with relevant capabilities, loads the ontology mapping for each source, and rewrites the query into each source's local query language. It then dispatches all sub-queries in parallel. This is the heart of the federation engine. Get it wrong and you either miss relevant sources (incomplete results) or flood irrelevant sources with queries they can't answer (wasted latency and cost).
+**Step 3: Decompose a federated query.** When a clinician asks a question like "what drug interactions are known for Metformin in patients with renal impairment?", the federation layer needs to figure out which sources might have relevant answers and how to ask each one. This is query decomposition. The decomposer consults the source catalog to identify sources with relevant capabilities, loads the ontology mapping for each source, and rewrites the query into each source's local query language. It then dispatches all sub-queries in parallel with per-source timeouts and circuit breaker protection. This is the heart of the federation engine. Get it wrong and you either miss relevant sources (incomplete results) or flood irrelevant sources with queries they can't answer (wasted latency and cost).
 
 ```
 FUNCTION decompose_and_route(federated_query, requester_context):
@@ -258,11 +266,25 @@ FUNCTION decompose_and_route(federated_query, requester_context):
         WHERE capabilities OVERLAPS query_domains
         AND status = "active"
 
-    // For each candidate source, check sharing policy against requester context.
+    // Circuit breaker check: skip sources that have failed repeatedly.
+    // If a source has timed out or errored on 3+ consecutive queries within
+    // the last 5 minutes, mark it as "degraded" and skip it until a health
+    // check succeeds. This prevents one slow source from dragging down every query.
+    healthy_candidates = empty list
+    FOR each source in candidate_sources:
+        IF source.health.consecutive_failures >= 3
+           AND (now - source.health.last_failure) < 5 minutes:
+            // Source is in circuit-breaker open state. Skip it.
+            log warning "Skipping degraded source: {source.institution_id}"
+            CONTINUE
+        ELSE:
+            append source to healthy_candidates
+
+    // For each healthy candidate, check sharing policy against requester context.
     // The requester_context includes: who is asking, from which institution,
     // for what purpose (clinical care, research, quality improvement).
     authorized_sources = empty list
-    FOR each source in candidate_sources:
+    FOR each source in healthy_candidates:
         IF evaluate_sharing_policy(source.sharing_policy, requester_context):
             append source to authorized_sources
 
@@ -279,14 +301,31 @@ FUNCTION decompose_and_route(federated_query, requester_context):
         append to sub_queries: {
             source:      source,
             local_query: local_query,
-            endpoint:    source.endpoint
+            endpoint:    source.endpoint,
+            timeout:     source.timeout OR default 3 seconds  // per-source timeout
         }
 
     // Dispatch all sub-queries in parallel. Don't wait for one to finish
     // before sending the next. Network latency is the bottleneck in federation.
-    results = execute_all_in_parallel(sub_queries)
+    // Per-source timeout: if a source doesn't respond within its configured
+    // timeout, mark it as timed_out but don't block the overall response.
+    results = empty list
+    timed_out = empty list
+    FOR each sub_query in sub_queries (IN PARALLEL):
+        TRY with timeout = sub_query.timeout:
+            response = invoke sub_query.endpoint with sub_query.local_query
+            append response to results
+            // Reset circuit breaker on success
+            update source.health: consecutive_failures = 0, last_success = now
+        ON TIMEOUT:
+            append sub_query.source.institution_id to timed_out
+            // Increment circuit breaker counter
+            update source.health: consecutive_failures += 1, last_failure = now
+        ON ERROR:
+            append sub_query.source.institution_id to timed_out
+            update source.health: consecutive_failures += 1, last_failure = now
 
-    RETURN results
+    RETURN { results: results, timed_out: timed_out }
 ```
 
 **Step 4: Execute a local query with access control.** Each institution's query adapter receives a translated query from the federation layer, validates the requester's authorization, executes the query against the local Neptune graph, and returns results with provenance metadata attached. This is where institutional governance is enforced. The adapter can filter results based on fine-grained policies: "share drug interaction data with any federation member, but restrict patient-derived treatment outcomes to approved research collaborators only." The adapter also attaches provenance to every result: where it came from, what evidence supports it, and when it was last validated. Skip the access control and you've built a data breach. Skip the provenance and clinicians can't assess the trustworthiness of results.
@@ -467,6 +506,8 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 
 **Network partition handling.** If a source is unreachable, the federation returns partial results. The consumer application needs to clearly communicate that results are incomplete and which sources were unavailable. Silent partial results are dangerous in clinical contexts.
 
+**Single-region deployment.** The federation control plane (source catalog, ontology registry, API layer) runs in one AWS region. A regional outage disables the entire federation. Production deployments should consider DynamoDB Global Tables for the source catalog, S3 Cross-Region Replication for the ontology registry, and a multi-region API layer with Route 53 failover.
+
 ---
 
 ## The Honest Take
@@ -514,13 +555,7 @@ One more thing: the "competitive advantage" concern is real but often overstated
 - [Amazon Neptune Pricing](https://aws.amazon.com/neptune/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
-**AWS Sample Repos:**
-- TODO: Verify existence of Neptune-specific sample repos for healthcare knowledge graphs
-- TODO: Check for aws-samples repos demonstrating cross-account Neptune federation patterns
-
-**AWS Solutions and Blogs:**
-- TODO: Search AWS blog for Neptune + healthcare knowledge graph posts
-- TODO: Check AWS Solutions Library for graph-based healthcare architectures
+<!-- TODO (TechWriter): Expert review V1 (LOW). Resolve AWS Sample Repos and AWS Solutions/Blogs subsections: find real Neptune healthcare knowledge graph repos or remove these subsections entirely. -->
 
 **External Standards:**
 - [SPARQL 1.1 Federated Query (W3C)](https://www.w3.org/TR/sparql11-federated-query/)

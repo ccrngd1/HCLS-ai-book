@@ -1,0 +1,831 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780290115172-000116-afbd7606177e8271 iteration=1014 task_id=ch13-r10-edit persona=TechEditor
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-1014[0m[38;5;244m (using tool: read, max depth: 1, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-1014[0m [38;5;244m(showing 1000 of 2395 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.128s[0m
+
+[38;5;141m> [0mLet me read the recipe draft, the reviews, and the style/recipe guides.[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-expert-review.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-code-review.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m40904 bytes[0m from /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m24651 bytes[0m from /tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-expert-review.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m14869 bytes[0m from /tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-code-review.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me read the STYLE-GUIDE and RECIPE-GUIDE for reference:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/RECIPE-GUIDE.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1014/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-1014/RECIPE-GUIDE.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have all the context I need. Let me review the findings and apply the editorial fixes. The key items to address:[0m[0m
+[0m[0m
+[1mFrom Expert Review (HIGH):[22m[0m[0m
+- S1: IAM [38;5;10mneptune-db:*[0m needs to be narrowed to read-only actions[0m[0m
+- A1: AppSync timeout risk (needs acknowledgment/note)[0m[0m
+- A2: No retry/circuit breaker in Step 3[0m[0m
+[0m[0m
+[1mFrom Expert Review (MEDIUM):[22m[0m[0m
+- S2: KMS key governance (add paragraph)[0m[0m
+- S3: Query content in audit logs is PHI (add note)[0m[0m
+- S4: No auth mechanism on PrivateLink (add API Gateway + IAM)[0m[0m
+- A3: Single-region, no DR (add bullet to "Why This Isn't Production-Ready")[0m[0m
+- A8: Conflict resolution underspecified for safety-critical knowledge[0m[0m
+[0m[0m
+[1mFrom Expert Review (LOW):[22m[0m[0m
+- N1: No VPC endpoints for S3/DynamoDB[0m[0m
+- N2: PrivateLink endpoint proliferation[0m[0m
+- V1: TODO placeholders remain (these are legitimate TODOs - keep as-is per editorial rules)[0m[0m
+- V2: Minor voice shift (optional, skip)[0m[0m
+[0m[0m
+[1mFrom Code Review:[22m[0m[0m
+- Finding 1 (WARNING): [38;5;10mas_completed[0m timeout handling - this is in the Python companion, not the main recipe[0m[0m
+- Finding 2-4: Python companion issues[0m[0m
+[0m[0m
+Since I'm editing the main recipe only, I'll address the expert review findings. The code review findings apply to the Python companion file. Let me now produce the edited version.[0m[0m
+I'll create the following file: [38;5;141mchapter13.10-federated-clinical-knowledge-network.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Final edited version of recipe 13.10 incorporating expert review and code review feedback
+
+[49m[39m    1,   1[0m:[39m[49m # Recipe 13.10: Federated Clinical Knowledge Network
+[0m[49m[39m    2,   2[0m:[39m[49m 
+[0m[49m[39m    3,   3[0m:[39m[49m **Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$8,000–15,000/month (multi-node federation)
+[0m[49m[39m    4,   4[0m:[39m[49m 
+[0m[49m[39m    5,   5[0m:[39m[49m ---
+[0m[49m[39m    6,   6[0m:[39m[49m 
+[0m[49m[39m    7,   7[0m:[39m[49m ## The Problem
+[0m[49m[39m    8,   8[0m:[39m[49m 
+[0m[49m[39m    9,   9[0m:[39m[49m Here's a scenario that plays out every day in healthcare: a patient with a rare autoimmune condition moves from a research hospital in Boston to a community health system in rural Tennessee. The Boston hospital has a rich knowledge graph connecting that patient's condition to experimental treatments, genetic markers, and clinical trial outcomes. The Tennessee system has never seen this condition. Their local knowledge base has nothing useful.
+[0m[49m[39m   10,  10[0m:[39m[49m 
+[0m[49m[39m   11,  11[0m:[39m[49m Now multiply that by every rare disease, every novel drug interaction, every emerging treatment protocol. Each health system builds its own clinical knowledge in isolation. Academic medical centers accumulate deep expertise in their research specialties. Community hospitals develop practical knowledge about managing chronic conditions in underserved populations. Payers build claims-derived insights about treatment effectiveness at scale. None of this knowledge flows between organizations.
+[0m[49m[39m   12,  12[0m:[39m[49m 
+[0m[49m[39m   13,  13[0m:[39m[49m The result is a healthcare system where the collective clinical intelligence is fragmented across thousands of institutional silos. A researcher at one institution discovers that a particular drug combination shows promise for treatment-resistant depression. That knowledge lives in their local graph. Meanwhile, three other institutions have patients who could benefit, but they'll never know unless someone happens to publish a paper and someone else happens to read it. That cycle takes years.
+[0m[49m[39m   14,  14[0m:[39m[49m 
+[0m[49m[39m   15,  15[0m:[39m[49m The obvious solution is "just put everything in one big graph." But that's a non-starter. Patient data is governed by HIPAA. Institutional knowledge represents competitive advantage. Research data has IP implications. No hospital is going to dump their clinical knowledge into a shared database controlled by someone else. The governance, legal, and competitive barriers are real and legitimate.
+[0m[49m[39m   16,  16[0m:[39m[49m 
+[0m[49m[39m   17,  17[0m:[39m[49m What you actually need is a way to query across distributed knowledge graphs without centralizing the data. Each institution keeps control of their own graph, their own governance policies, their own access rules. But when a clinician at Institution A asks "what do we know about treatment options for condition X?", the system can reach across institutional boundaries and bring back relevant knowledge from Institutions B, C, and D, filtered through each institution's sharing policies.
+[0m[49m[39m   18,  18[0m:[39m[49m 
+[0m[49m[39m   19,  19[0m:[39m[49m This is federated knowledge graph querying. It's architecturally hard, politically harder, and genuinely important.
+[0m[49m[39m   20,  20[0m:[39m[49m 
+[0m[49m[39m   21,  21[0m:[39m[49m ---
+[0m[49m[39m   22,  22[0m:[39m[49m 
+[0m[49m[39m   23,  23[0m:[39m[49m ## The Technology: Federated Knowledge Graphs
+[0m[49m[39m   24,  24[0m:[39m[49m 
+[0m[49m[39m   25,  25[0m:[39m[49m ### Knowledge Graphs: Quick Refresher
+[0m[49m[39m   26,  26[0m:[39m[49m 
+[0m[49m[39m   27,  27[0m:[39m[49m A knowledge graph represents information as entities (nodes) connected by relationships (edges). In healthcare, entities might be diseases, drugs, genes, procedures, or clinical concepts. Relationships encode things like "treats," "causes," "interacts_with," or "is_subtype_of." The power of a graph representation is that you can traverse relationships to discover non-obvious connections: Drug A treats Disease B, which shares a genetic pathway with Disease C, which responds to Drug D. That traversal is a query.
+[0m[49m[39m   28,  28[0m:[39m[49m 
+[0m[49m[39m   29,  29[0m:[39m[49m Most clinical knowledge graphs use RDF (Resource Description Framework) or property graph models. RDF represents everything as subject-predicate-object triples: `(Metformin, treats, Type2Diabetes)`. Property graphs allow richer attributes on both nodes and edges. Both work for federation, but the query languages differ: SPARQL for RDF, Cypher or Gremlin for property graphs.
+[0m[49m[39m   30,  30[0m:[39m[49m 
+[0m[49m[39m   31,  31[0m:[39m[49m ### What Makes Federation Different from Replication
+[0m[49m[39m   32,  32[0m:[39m[49m 
+[0m[49m[39m   33,  33[0m:[39m[49m Replication means copying data from multiple sources into one central store. You get a single unified graph, but you lose governance control. The source institutions can't revoke access to specific knowledge after it's been copied. They can't enforce fine-grained sharing policies. And the central store becomes a single point of failure and a massive compliance liability.
+[0m[49m[39m   34,  34[0m:[39m[49m 
+[0m[49m[39m   35,  35[0m:[39m[49m Federation means the data stays where it is. Queries are decomposed and routed to the relevant source graphs, executed locally, and results are assembled back at the requesting node. Each source graph applies its own access control before returning results. No data moves permanently. The federation layer is a query router, not a data store.
+[0m[49m[39m   36,  36[0m:[39m[49m 
+[0m[49m[39m   37,  37[0m:[39m[49m This distinction matters enormously in healthcare. A federated architecture lets Institution A share drug interaction knowledge broadly while keeping patient-derived insights restricted to approved research collaborators. That granularity is impossible with replication.
+[0m[49m[39m   38,  38[0m:[39m[49m 
+[0m[49m[39m   39,  39[0m:[39m[49m ### The Query Federation Problem
+[0m[49m[39m   40,  40[0m:[39m[49m 
+[0m[49m[39m   41,  41[0m:[39m[49m Federated querying sounds simple until you try to build it. Here's what makes it hard:
+[0m[49m[39m   42,  42[0m:[39m[49m 
+[0m[49m[38;5;9m-  43     [0m:[38;5;9m[49m **Schema heterogeneity.** Each institution models their knowledge differently. One uses SNOMED codes for diseases. Another uses ICD-10. One represents drug interactions as edges between drug nodes. Another represents them as intermediate "interaction" nodes with severity properties. Before you can query across graphs, you need a shared understanding of what the entities and relationships mean. This is the ontology alignment problem, and it's genuinely unsolved in the general case.
+[0m[49m[38;5;10m+       43[0m:[38;5;10m[49m **Schema heterogeneity.** Each institution models their knowledge differently. One uses SNOMED codes for diseases. Another uses ICD-10. One represents drug interactions as edges between drug nodes. Another represents them as intermediate "interaction" nodes with severity properties. Before you can query across graphs, you need a shared understanding of what the entities and relationships mean. This is the ontology alignment problem, and nobody has cracked it for the general case.
+[0m[49m[39m   44,  44[0m:[39m[49m 
+[0m[49m[39m   45,  45[0m:[39m[49m **Query decomposition.** A federated query like "find all known treatments for condition X with evidence level A or B" needs to be broken into sub-queries that each source graph can answer. The federation layer needs to know which graphs might have relevant data (query routing), how to translate the query into each graph's local schema (query rewriting), and how to combine partial results (result merging). Each of these is a research problem in its own right.
+[0m[49m[39m   46,  46[0m:[39m[49m 
+[0m[49m[39m   47,  47[0m:[39m[49m **Performance.** A local graph query returns in milliseconds. A federated query that touches five remote graphs, each with network latency, authentication overhead, and local query execution time, might take seconds. For interactive clinical decision support, that's too slow. Caching, pre-computation, and intelligent query planning become essential.
+[0m[49m[39m   48,  48[0m:[39m[49m 
+[0m[49m[39m   49,  49[0m:[39m[49m **Trust and provenance.** When results come back from multiple sources, the clinician needs to know where each piece of knowledge originated, what evidence supports it, and how current it is. A drug interaction flagged by an academic research graph based on a 2024 clinical trial carries different weight than one flagged by a payer's claims analysis. Provenance metadata must travel with the results.
+[0m[49m[39m   50,  50[0m:[39m[49m 
+[0m[49m[39m   51,  51[0m:[39m[49m **Privacy-preserving queries.** Some queries might inadvertently reveal information about the querying institution's patients. If Institution A asks "what treatments exist for [extremely rare condition]?", that query itself reveals that they have a patient with that condition. Differential privacy techniques and query obfuscation can help, but they add complexity and reduce result quality.
+[0m[49m[39m   52,  52[0m:[39m[49m 
+[0m[49m[39m   53,  53[0m:[39m[49m ### Emerging Standards
+[0m[49m[39m   54,  54[0m:[39m[49m 
+[0m[49m[39m   55,  55[0m:[39m[49m The healthcare industry is slowly converging on standards that make federation more tractable:
+[0m[49m[39m   56,  56[0m:[39m[49m 
+[0m[49m[39m   57,  57[0m:[39m[49m **FHIR (Fast Healthcare Interoperability Resources)** provides a common data model for clinical concepts. While FHIR is primarily designed for patient data exchange, its resource types and terminology bindings provide a shared vocabulary that knowledge graphs can align to.
+[0m[49m[39m   58,  58[0m:[39m[49m 
+[0m[49m[39m   59,  59[0m:[39m[49m **Clinical ontologies** (SNOMED CT, RxNorm, LOINC, ICD) provide canonical identifiers for clinical concepts. If every participating graph maps their local concepts to SNOMED codes, you have a shared key space for federation, even if local schemas differ.
+[0m[49m[39m   60,  60[0m:[39m[49m 
+[0m[49m[39m   61,  61[0m:[39m[49m **W3C standards for linked data** (RDF, SPARQL, SPARQL Federation extensions) provide a technical foundation for distributed graph querying. The SPARQL 1.1 Federated Query extension (`SERVICE` keyword) allows a query to explicitly delegate sub-patterns to remote endpoints.
+[0m[49m[39m   62,  62[0m:[39m[49m 
+[0m[49m[39m   63,  63[0m:[39m[49m **TEFCA (Trusted Exchange Framework and Common Agreement)** establishes governance principles for health information exchange in the US. While focused on patient data, its trust framework concepts (qualified health information networks, data use agreements) apply to knowledge federation as well.
+[0m[49m[39m   64,  64[0m:[39m[49m 
+[0m[49m[39m   65,  65[0m:[39m[49m None of these fully solve the problem. But they provide building blocks that make federation architecturally feasible rather than purely theoretical.
+[0m[49m[39m   66,  66[0m:[39m[49m 
+[0m[49m[39m   67,  67[0m:[39m[49m ### The General Architecture Pattern
+[0m[49m[39m   68,  68[0m:[39m[49m 
+[0m[49m[39m   69,  69[0m:[39m[49m A federated clinical knowledge network has these logical components:
+[0m[49m[39m   70,  70[0m:[39m[49m 
+[0m[49m[39m   71,  71[0m:[39m[49m ```
+[0m[49m[39m   72,  72[0m:[39m[49m [Local Knowledge Graphs] → [Federation Layer] → [Query Router] → [Result Assembler] → [Consumer Applications]
+[0m[49m[39m   73,  73[0m:[39m[49m          ↑                        ↑                    ↑
+[0m[49m[39m   74,  74[0m:[39m[49m     [Ontology Alignment]    [Access Control]    [Provenance Tracking]
+[0m[49m[39m   75,  75[0m:[39m[49m ```
+[0m[49m[39m   76,  76[0m:[39m[49m 
+[0m[49m[39m   77,  77[0m:[39m[49m **Local Knowledge Graphs.** Each participating institution maintains their own graph database with their own schema, their own data governance, and their own access policies. These are the source of truth. They expose a query endpoint (SPARQL endpoint, GraphQL API, or custom protocol) that the federation layer can call.
+[0m[49m[39m   78,  78[0m:[39m[49m 
+[0m[49m[39m   79,  79[0m:[39m[49m **Ontology Alignment Layer.** A shared mapping between local schemas and a common federated schema. This doesn't require every institution to change their local model. It requires a translation layer that can convert between local representations and the federated query language. Think of it as a Rosetta Stone for clinical knowledge models.
+[0m[49m[39m   80,  80[0m:[39m[49m 
+[0m[49m[39m   81,  81[0m:[39m[49m **Federation Layer.** The orchestrator. It receives a query in the federated schema, determines which source graphs might have relevant data (catalog lookup), rewrites the query into each source's local schema (query translation), dispatches sub-queries in parallel, and assembles results.
+[0m[49m[39m   82,  82[0m:[39m[49m 
+[0m[49m[39m   83,  83[0m:[39m[49m **Access Control.** Each source graph enforces its own sharing policies. The federation layer passes authentication context (who is asking, from which institution, for what purpose) to each source. Sources return only what the requester is authorized to see. This is attribute-based access control (ABAC) at the knowledge level.
+[0m[49m[39m   84,  84[0m:[39m[49m 
+[0m[49m[39m   85,  85[0m:[39m[49m **Provenance Tracking.** Every result carries metadata: which source provided it, what evidence supports it, when it was last updated, and what confidence level the source assigns. This lets consumers make informed decisions about which knowledge to trust.
+[0m[49m[39m   86,  86[0m:[39m[49m 
+[0m[49m[38;5;9m-  87     [0m:[38;5;9m[49m **Result Assembly.** Partial results from multiple sources are merged, deduplicated, ranked, and presented as a unified response. Deduplication is non-trivial: two sources might report the same drug interaction with different severity ratings. The assembler needs conflict resolution strategies.
+[0m[49m[38;5;10m+       87[0m:[38;5;10m[49m **Result Assembly.** Partial results from multiple sources are merged, deduplicated, ranked, and presented as a unified response. Deduplication is non-trivial: two sources might report the same drug interaction with different severity ratings. The assembler needs conflict resolution strategies. For safety-critical knowledge (drug interactions rated "high" severity), the assembler should surface all perspectives with their provenance rather than silently picking a winner. A clinician needs to see that two sources disagree on severity, not just the "winning" answer.
+[0m[49m[39m   88,  88[0m:[39m[49m 
+[0m[49m[39m   89,  89[0m:[39m[49m ---
+[0m[49m[39m   90,  90[0m:[39m[49m 
+[0m[49m[39m   91,  91[0m:[39m[49m ## The AWS Implementation
+[0m[49m[39m   92,  92[0m:[39m[49m 
+[0m[49m[39m   93,  93[0m:[39m[49m ### Why These Services
+[0m[49m[39m   94,  94[0m:[39m[49m 
+[0m[49m[39m   95,  95[0m:[39m[49m **Amazon Neptune for local graph databases.** Neptune is AWS's managed graph database service supporting both RDF/SPARQL and property graph (Gremlin/openCypher) models. For a federated network, each participating institution runs their own Neptune cluster. Neptune handles the storage, indexing, and query execution for local graphs. Its support for both graph models means institutions can choose whichever fits their existing data better. Neptune's IAM integration and VPC isolation provide the security boundary each institution needs.
+[0m[49m[39m   96,  96[0m:[39m[49m 
+[0m[49m[38;5;9m-  97     [0m:[38;5;9m[49m **AWS AppSync for the federation API layer.** AppSync provides a managed GraphQL API that can aggregate data from multiple backend sources. In this architecture, AppSync serves as the federation query router: it receives a federated query, decomposes it, dispatches sub-queries to multiple Neptune endpoints (via Lambda resolvers), and assembles the results. GraphQL's type system maps naturally to knowledge graph schemas, and AppSync's built-in authorization (Cognito, IAM, API keys) handles the multi-tenant access control.
+[0m[49m[38;5;10m+       97[0m:[38;5;10m[49m **AWS AppSync for the federation API layer.** AppSync provides a managed GraphQL API that can aggregate data from multiple backend sources. In this architecture, AppSync serves as the client-facing federation API: it receives a federated query, passes it to the orchestration layer, and returns assembled results. GraphQL's type system maps naturally to knowledge graph schemas, and AppSync's built-in authorization (Cognito, IAM, API keys) handles the multi-tenant access control. Note: AppSync has a 30-second request timeout and 1MB response payload limit. For federations with more than 5 sources or complex multi-hop queries, consider placing AWS Step Functions Express Workflows behind AppSync to handle the orchestration (Step Functions Express supports up to 5-minute execution and handles parallel dispatch natively via Parallel and Map states).
+[0m[49m[39m   98,  98[0m:[39m[49m 
+[0m[49m[39m   99,  99[0m:[39m[49m **AWS Lambda for query translation and routing.** Lambda functions handle the schema translation between the federated query language and each institution's local graph schema. Each institution registers a Lambda-based adapter that knows how to translate federated queries into their local SPARQL or Gremlin dialect. Lambda's stateless execution model fits perfectly: each query is independent, and the translation logic is pure computation.
+[0m[49m[39m  100, 100[0m:[39m[49m 
+[0m[49m[39m  101, 101[0m:[39m[49m **Amazon S3 for the ontology registry.** The shared ontology mappings, concept dictionaries, and schema alignment files live in S3. These are versioned, auditable configuration artifacts. When a new institution joins the federation or updates their local schema, the mapping files in S3 are updated. Lambda functions load these mappings at query time.
+[0m[49m[39m  102, 102[0m:[39m[49m 
+[0m[49m[38;5;9m- 103     [0m:[38;5;9m[49m **AWS PrivateLink for secure cross-account connectivity.** Federated queries cross institutional boundaries, which in AWS terms means crossing AWS accounts. PrivateLink provides private, encrypted connectivity between VPCs in different accounts without traversing the public internet. Each institution exposes their Neptune query endpoint via PrivateLink, and the federation layer connects to it privately.
+[0m[49m[38;5;10m+      103[0m:[38;5;10m[49m **AWS PrivateLink for secure cross-account connectivity.** Federated queries cross institutional boundaries, which in AWS terms means crossing AWS accounts. PrivateLink provides private, encrypted connectivity between VPCs in different accounts without traversing the public internet. Each institution exposes their query adapter behind an API Gateway with IAM authorization. The federation layer assumes a cross-account IAM role (defined per institution in the source catalog) to invoke the institutional API Gateway endpoint. PrivateLink provides network isolation; IAM provides authentication and authorization. Both layers are required.
+[0m[49m[38;5;10m+      104[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      105[0m:[38;5;10m[49m **AWS KMS for encryption key management.** Each institution manages their own KMS CMK for their Neptune cluster and local data. The federation control plane account owns separate CMKs for the source catalog (DynamoDB) and ontology registry (S3). Cross-account query results are returned as plaintext over the PrivateLink TLS channel; the federation layer does not need decrypt access to institutional KMS keys because Neptune handles decryption internally before returning query results.
+[0m[49m[39m  104, 106[0m:[39m[49m 
+[0m[49m[38;5;9m- 105     [0m:[38;5;9m[49m **Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation.
+[0m[49m[38;5;10m+      107[0m:[38;5;10m[49m **Amazon CloudWatch and AWS CloudTrail for observability and audit.** Every federated query generates audit records: who queried, what they asked, which sources responded, what was returned. CloudTrail captures API-level audit. CloudWatch captures query performance metrics, error rates, and latency distributions across the federation. Note: query content in audit logs is treated as PHI because queries may reveal patient conditions. Audit log access must be restricted to authorized compliance personnel. Consider hashing or tokenizing clinical concept identifiers in audit records while retaining the full query in a separate, access-controlled audit store for compliance investigations.
+[0m[49m[39m  106, 108[0m:[39m[49m 
+[0m[49m[39m  107, 109[0m:[39m[49m **AWS Organizations for multi-account governance.** The federation operates across multiple AWS accounts (one per institution). Organizations provides centralized governance: service control policies, consolidated billing, and cross-account IAM role management.
+[0m[49m[39m  108, 110[0m:[39m[49m 
+[0m[49m[39m  109, 111[0m:[39m[49m ### Architecture Diagram
+[0m[49m[39m  110, 112[0m:[39m[49m 
+[0m[49m[39m  111, 113[0m:[39m[49m ```mermaid
+[0m[49m[39m  112, 114[0m:[39m[49m flowchart TB
+[0m[49m[39m  113, 115[0m:[39m[49m     subgraph "Requesting Institution"
+[0m[49m[39m  114, 116[0m:[39m[49m         A[Clinical Application] --> B[AppSync\nFederation API]
+[0m[49m[39m  115, 117[0m:[39m[49m         B --> C[Lambda\nQuery Decomposer]
+[0m[49m[39m  116, 118[0m:[39m[49m     end
+[0m[49m[39m  117, 119[0m:[39m[49m 
+[0m[49m[39m  118, 120[0m:[39m[49m     subgraph "Federation Control Plane"
+[0m[49m[39m  119, 121[0m:[39m[49m         D[S3\nOntology Registry]
+[0m[49m[39m  120, 122[0m:[39m[49m         E[DynamoDB\nSource Catalog]
+[0m[49m[39m  121, 123[0m:[39m[49m         C --> D
+[0m[49m[39m  122, 124[0m:[39m[49m         C --> E
+[0m[49m[39m  123, 125[0m:[39m[49m     end
+[0m[49m[39m  124, 126[0m:[39m[49m 
+[0m[49m[39m  125, 127[0m:[39m[49m     subgraph "Institution A (Neptune)"
+[0m[49m[38;5;9m- 126     [0m:[38;5;9m[49m         F[Lambda\nQuery Adapter A]
+[0m[49m[38;5;10m+      128[0m:[38;5;10m[49m         F[API Gateway + Lambda\nQuery Adapter A]
+[0m[49m[39m  127, 129[0m:[39m[49m         G[Neptune Cluster A]
+[0m[49m[39m  128, 130[0m:[39m[49m         F --> G
+[0m[49m[39m  129, 131[0m:[39m[49m     end
+[0m[49m[39m  130, 132[0m:[39m[49m 
+[0m[49m[39m  131, 133[0m:[39m[49m     subgraph "Institution B (Neptune)"
+[0m[49m[38;5;9m- 132     [0m:[38;5;9m[49m         H[Lambda\nQuery Adapter B]
+[0m[49m[38;5;10m+      134[0m:[38;5;10m[49m         H[API Gateway + Lambda\nQuery Adapter B]
+[0m[49m[39m  133, 135[0m:[39m[49m         I[Neptune Cluster B]
+[0m[49m[39m  134, 136[0m:[39m[49m         H --> I
+[0m[49m[39m  135, 137[0m:[39m[49m     end
+[0m[49m[39m  136, 138[0m:[39m[49m 
+[0m[49m[39m  137, 139[0m:[39m[49m     subgraph "Institution C (Neptune)"
+[0m[49m[38;5;9m- 138     [0m:[38;5;9m[49m         J[Lambda\nQuery Adapter C]
+[0m[49m[38;5;10m+      140[0m:[38;5;10m[49m         J[API Gateway + Lambda\nQuery Adapter C]
+[0m[49m[39m  139, 141[0m:[39m[49m         K[Neptune Cluster C]
+[0m[49m[39m  140, 142[0m:[39m[49m         J --> K
+[0m[49m[39m  141, 143[0m:[39m[49m     end
+[0m[49m[39m  142, 144[0m:[39m[49m 
+[0m[49m[38;5;9m- 143     [0m:[38;5;9m[49m     C -->|PrivateLink| F
+[0m[49m[38;5;9m- 144     [0m:[38;5;9m[49m     C -->|PrivateLink| H
+[0m[49m[38;5;9m- 145     [0m:[38;5;9m[49m     C -->|PrivateLink| J
+[0m[49m[38;5;10m+      145[0m:[38;5;10m[49m     C -->|PrivateLink + IAM| F
+[0m[49m[38;5;10m+      146[0m:[38;5;10m[49m     C -->|PrivateLink + IAM| H
+[0m[49m[38;5;10m+      147[0m:[38;5;10m[49m     C -->|PrivateLink + IAM| J
+[0m[49m[39m  146, 148[0m:[39m[49m 
+[0m[49m[39m  147, 149[0m:[39m[49m     F --> L[Lambda\nResult Assembler]
+[0m[49m[39m  148, 150[0m:[39m[49m     H --> L
+[0m[49m[39m  149, 151[0m:[39m[49m     J --> L
+[0m[49m[39m  150, 152[0m:[39m[49m     L --> B
+[0m[49m[39m  151, 153[0m:[39m[49m 
+[0m[49m[39m  152, 154[0m:[39m[49m     style B fill:#ff9,stroke:#333
+[0m[49m[39m  153, 155[0m:[39m[49m     style G fill:#9ff,stroke:#333
+[0m[49m[39m  154, 156[0m:[39m[49m     style I fill:#9ff,stroke:#333
+[0m[49m[39m  155, 157[0m:[39m[49m     style K fill:#9ff,stroke:#333
+[0m[49m[39m  156, 158[0m:[39m[49m     style D fill:#f9f,stroke:#333
+[0m[49m[39m  157, 159[0m:[39m[49m ```
+[0m[49m[39m  158, 160[0m:[39m[49m 
+[0m[49m[39m  159, 161[0m:[39m[49m ### Prerequisites
+[0m[49m[39m  160, 162[0m:[39m[49m 
+[0m[49m[39m  161, 163[0m:[39m[49m | Requirement | Details |
+[0m[49m[39m  162, 164[0m:[39m[49m |-------------|---------|
+[0m[49m[38;5;9m- 163     [0m:[38;5;9m[49m | **AWS Services** | Amazon Neptune, AWS AppSync, AWS Lambda, Amazon S3, Amazon DynamoDB, AWS PrivateLink, AWS Organizations, Amazon CloudWatch, AWS CloudTrail |
+[0m[49m[38;5;9m- 164     [0m:[38;5;9m[49m | **IAM Permissions** | `neptune-db:*` (scoped to cluster), `appsync:GraphQL`, `lambda:InvokeFunction`, `s3:GetObject`, `dynamodb:GetItem`, `dynamodb:Query` |
+[0m[49m[38;5;10m+      165[0m:[38;5;10m[49m | **AWS Services** | Amazon Neptune, AWS AppSync, AWS Lambda, Amazon S3, Amazon DynamoDB, AWS PrivateLink, AWS Organizations, Amazon CloudWatch, AWS CloudTrail, AWS KMS, Amazon API Gateway |
+[0m[49m[38;5;10m+      166[0m:[38;5;10m[49m | **IAM Permissions** | Federation layer (read-only): `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus`, `neptune-db:CancelQuery` (scoped to cluster ARN). Write access to Neptune remains with each institution's internal data pipeline roles only. Additional: `appsync:GraphQL`, `lambda:InvokeFunction`, `s3:GetObject`, `dynamodb:GetItem`, `dynamodb:Query` |
+[0m[49m[39m  165, 167[0m:[39m[49m | **BAA** | AWS BAA signed for all participating accounts (knowledge derived from PHI requires BAA coverage) |
+[0m[49m[39m  166, 168[0m:[39m[49m | **Encryption** | Neptune: encryption at rest (enabled at cluster creation, cannot be added later); S3: SSE-KMS; DynamoDB: encryption at rest; all cross-account traffic over PrivateLink (TLS in transit) |
+[0m[49m[38;5;9m- 167     [0m:[38;5;9m[49m | **VPC** | Each institution's Neptune in a private subnet. PrivateLink endpoints for cross-account access. No public endpoints. VPC Flow Logs enabled. |
+[0m[49m[38;5;9m- 168     [0m:[38;5;9m[49m | **CloudTrail** | Enabled in all participating accounts. Federated query audit trail must capture: requester identity, query content, sources contacted, results returned. |
+[0m[49m[38;5;10m+      169[0m:[38;5;10m[49m | **VPC** | Each institution's Neptune in a private subnet. PrivateLink endpoints for cross-account access. No public endpoints. VPC Flow Logs enabled. Gateway VPC endpoints for S3 and DynamoDB in the federation control plane VPC. Interface VPC endpoints for KMS and CloudWatch Logs. No NAT Gateway required for federation Lambda functions. |
+[0m[49m[38;5;10m+      170[0m:[38;5;10m[49m | **CloudTrail** | Enabled in all participating accounts. Federated query audit trail must capture: requester identity, query content (treated as PHI), sources contacted, results returned. Audit log access restricted to authorized compliance personnel. |
+[0m[49m[39m  169, 171[0m:[39m[49m | **Multi-Account** | AWS Organizations with one account per participating institution. Cross-account IAM roles for federation layer access. |
+[0m[49m[39m  170, 172[0m:[39m[49m | **Sample Data** | Public biomedical ontologies (SNOMED CT subset, RxNorm, DrugBank open data) for development. Never use institution-specific clinical knowledge in shared dev environments. |
+[0m[49m[39m  171, 173[0m:[39m[49m | **Cost Estimate** | Neptune: ~$0.35/hr per instance (db.r5.large) per institution. Lambda: negligible at query volumes. PrivateLink: $0.01/GB + $0.01/hr per endpoint. Total: ~$2,500-5,000/month per participating node. |
+[0m[49m[39m  172, 174[0m:[39m[49m 
+[0m[49m[39m  173, 175[0m:[39m[49m ### Ingredients
+[0m[49m[39m  174, 176[0m:[39m[49m 
+[0m[49m[39m  175, 177[0m:[39m[49m | AWS Service | Role |
+[0m[49m[39m  176, 178[0m:[39m[49m |------------|------|
+[0m[49m[39m  177, 179[0m:[39m[49m | **Amazon Neptune** | Local knowledge graph storage and SPARQL/Gremlin query execution at each institution |
+[0m[49m[38;5;9m- 178     [0m:[38;5;9m[49m | **AWS AppSync** | Federation API layer; receives queries, orchestrates decomposition and assembly |
+[0m[49m[38;5;10m+      180[0m:[38;5;10m[49m | **AWS AppSync** | Client-facing federation API; receives queries and returns assembled results |
+[0m[49m[39m  179, 181[0m:[39m[49m | **AWS Lambda** | Query decomposition, schema translation (per-institution adapters), result assembly |
+[0m[49m[39m  180, 182[0m:[39m[49m | **Amazon S3** | Ontology registry; stores shared concept mappings and schema alignment files |
+[0m[49m[39m  181, 183[0m:[39m[49m | **Amazon DynamoDB** | Source catalog; tracks participating institutions, their capabilities, and sharing policies |
+[0m[49m[38;5;9m- 182     [0m:[38;5;9m[49m | **AWS PrivateLink** | Secure cross-account connectivity between federation layer and institutional Neptune clusters |
+[0m[49m[38;5;10m+      184[0m:[38;5;10m[49m | **AWS PrivateLink** | Secure cross-account connectivity between federation layer and institutional API Gateways |
+[0m[49m[38;5;10m+      185[0m:[38;5;10m[49m | **Amazon API Gateway** | IAM-authenticated entry point at each institution, fronting the query adapter Lambda |
+[0m[49m[39m  183, 186[0m:[39m[49m | **AWS Organizations** | Multi-account governance and cross-account role management |
+[0m[49m[39m  184, 187[0m:[39m[49m | **Amazon CloudWatch** | Query latency metrics, error rates, federation health monitoring |
+[0m[49m[39m  185, 188[0m:[39m[49m | **AWS CloudTrail** | Audit trail for all federated queries and access decisions |
+[0m[49m[39m  186, 189[0m:[39m[49m | **AWS KMS** | Encryption key management for Neptune, S3, and DynamoDB across accounts |
+[0m[49m[39m  187, 190[0m:[39m[49m 
+[0m[49m[39m  188, 191[0m:[39m[49m ### Code
+[0m[49m[39m  189, 192[0m:[39m[49m 
+[0m[49m[39m  190, 193[0m:[39m[49m #### Walkthrough
+[0m[49m[39m  191, 194[0m:[39m[49m 
+[0m[49m[39m  192, 195[0m:[39m[49m **Step 1: Register a source in the federation catalog.** Before an institution can participate in federated queries, it must register itself in the source catalog. This registration declares what types of knowledge the institution holds (drug interactions, treatment protocols, genomic associations), what ontology standards it aligns to, what sharing policies it enforces, and how to reach its query endpoint. Think of this as the institution raising its hand and saying "I have knowledge about these topics, and here's how to ask me about them." Without this step, the federation layer has no idea which sources to contact for a given query. The catalog is the routing table for the entire network.
+[0m[49m[39m  193, 196[0m:[39m[49m 
+[0m[49m[39m  194, 197[0m:[39m[49m ```
+[0m[49m[39m  195, 198[0m:[39m[49m FUNCTION register_source(institution_id, capabilities, endpoint_config, sharing_policy):
+[0m[49m[39m  196, 199[0m:[39m[49m     // Build the catalog entry that tells the federation layer everything it needs
+[0m[49m[39m  197, 200[0m:[39m[49m     // to route queries to this institution and respect its governance rules.
+[0m[49m[39m  198, 201[0m:[39m[49m     catalog_entry = {
+[0m[49m[39m  199, 202[0m:[39m[49m         institution_id:   institution_id,          // unique identifier (e.g., "boston-medical-center")
+[0m[49m[39m  200, 203[0m:[39m[49m         capabilities:     capabilities,            // list of knowledge domains this source covers
+[0m[49m[39m  201, 204[0m:[39m[49m                                                    // e.g., ["drug_interactions", "genomic_associations", "treatment_protocols"]
+[0m[49m[39m  202, 205[0m:[39m[49m         ontology_version: "SNOMED-CT-2025-03",     // which version of the shared ontology this source aligns to
+[0m[49m[39m  203, 206[0m:[39m[49m         endpoint:         endpoint_config,         // PrivateLink endpoint ARN and connection details
+[0m[49m[39m  204, 207[0m:[39m[49m         sharing_policy:   sharing_policy,          // rules governing what can be shared and with whom
+[0m[49m[39m  205, 208[0m:[39m[49m                                                    // e.g., { "drug_interactions": "public", "patient_derived": "research_only" }
+[0m[49m[39m  206, 209[0m:[39m[49m         registered_at:    current UTC timestamp,
+[0m[49m[38;5;9m- 207     [0m:[38;5;9m[49m         status:           "active"                 // can be set to "suspended" to temporarily disable
+[0m[49m[38;5;10m+      210[0m:[38;5;10m[49m         status:           "active",                // can be set to "suspended" to temporarily disable
+[0m[49m[38;5;10m+      211[0m:[38;5;10m[49m         health: {
+[0m[49m[38;5;10m+      212[0m:[38;5;10m[49m             consecutive_failures: 0,               // circuit breaker counter
+[0m[49m[38;5;10m+      213[0m:[38;5;10m[49m             last_success:         null,            // timestamp of last successful query
+[0m[49m[38;5;10m+      214[0m:[38;5;10m[49m             last_failure:         null             // timestamp of last failed query
+[0m[49m[38;5;10m+      215[0m:[38;5;10m[49m         }
+[0m[49m[39m  208, 216[0m:[39m[49m     }
+[0m[49m[39m  209, 217[0m:[39m[49m 
+[0m[49m[39m  210, 218[0m:[39m[49m     // Write to the source catalog (DynamoDB table).
+[0m[49m[39m  211, 219[0m:[39m[49m     // The federation layer reads this catalog at query time to determine routing.
+[0m[49m[39m  212, 220[0m:[39m[49m     write catalog_entry to DynamoDB table "federation-source-catalog"
+[0m[49m[39m  213, 221[0m:[39m[49m         with key = institution_id
+[0m[49m[39m  214, 222[0m:[39m[49m 
+[0m[49m[39m  215, 223[0m:[39m[49m     RETURN catalog_entry
+[0m[49m[39m  216, 224[0m:[39m[49m ```
+[0m[49m[39m  217, 225[0m:[39m[49m 
+[0m[49m[39m  218, 226[0m:[39m[49m **Step 2: Load and version ontology mappings.** Each institution models clinical concepts differently. One might represent "Type 2 Diabetes" as a SNOMED code (44054006). Another might use an ICD-10 code (E11). A third might use a local identifier. The ontology mapping layer translates between these representations so that a federated query for "treatments for Type 2 Diabetes" can be understood by every source, regardless of their local coding system. These mappings are stored in S3, versioned, and loaded by the query translation Lambdas. Maintaining these mappings is ongoing work. Every time a source updates their local schema or a new ontology version is released, the mappings need updating. Skip this step and federated queries will miss results because they're asking in the wrong "language" for each source.
+[0m[49m[39m  219, 227[0m:[39m[49m 
+[0m[49m[39m  220, 228[0m:[39m[49m ```
+[0m[49m[39m  221, 229[0m:[39m[49m FUNCTION load_ontology_mapping(source_institution_id, mapping_version):
+[0m[49m[39m  222, 230[0m:[39m[49m     // Fetch the mapping file for this institution from the ontology registry in S3.
+[0m[49m[39m  223, 231[0m:[39m[49m     // Each institution has its own mapping file that translates between the
+[0m[49m[39m  224, 232[0m:[39m[49m     // federated schema (shared vocabulary) and their local schema.
+[0m[49m[39m  225, 233[0m:[39m[49m     mapping_key = "ontology-mappings/{source_institution_id}/v{mapping_version}.json"
+[0m[49m[39m  226, 234[0m:[39m[49m 
+[0m[49m[39m  227, 235[0m:[39m[49m     mapping_file = read from S3 bucket "federation-ontology-registry" at key mapping_key
+[0m[49m[39m  228, 236[0m:[39m[49m 
+[0m[49m[39m  229, 237[0m:[39m[49m     // The mapping file contains bidirectional translations:
+[0m[49m[39m  230, 238[0m:[39m[49m     // - federated_to_local: how to translate a federated concept into this source's local representation
+[0m[49m[39m  231, 239[0m:[39m[49m     // - local_to_federated: how to translate this source's results back into federated vocabulary
+[0m[49m[39m  232, 240[0m:[39m[49m     // Example entry:
+[0m[49m[39m  233, 241[0m:[39m[49m     // {
+[0m[49m[39m  234, 242[0m:[39m[49m     //   "concept": "type_2_diabetes",
+[0m[49m[39m  235, 243[0m:[39m[49m     //   "federated_code": "SNOMED:44054006",
+[0m[49m[39m  236, 244[0m:[39m[49m     //   "local_code": "ICD10:E11",
+[0m[49m[39m  237, 245[0m:[39m[49m     //   "local_node_type": "Diagnosis",
+[0m[49m[39m  238, 246[0m:[39m[49m     //   "local_property": "icd_code"
+[0m[49m[39m  239, 247[0m:[39m[49m     // }
+[0m[49m[39m  240, 248[0m:[39m[49m 
+[0m[49m[39m  241, 249[0m:[39m[49m     RETURN parsed mapping_file
+[0m[49m[39m  242, 250[0m:[39m[49m ```
+[0m[49m[39m  243, 251[0m:[39m[49m 
+[0m[49m[38;5;9m- 244     [0m:[38;5;9m[49m **Step 3: Decompose a federated query.** When a clinician asks a question like "what drug interactions are known for Metformin in patients with renal impairment?", the federation layer needs to figure out which sources might have relevant answers and how to ask each one. This is query decomposition. The decomposer consults the source catalog to identify sources with relevant capabilities, loads the ontology mapping for each source, and rewrites the query into each source's local query language. It then dispatches all sub-queries in parallel. This is the heart of the federation engine. Get it wrong and you either miss relevant sources (incomplete results) or flood irrelevant sources with queries they can't answer (wasted latency and cost).
+[0m[49m[38;5;10m+      252[0m:[38;5;10m[49m **Step 3: Decompose a federated query.** When a clinician asks a question like "what drug interactions are known for Metformin in patients with renal impairment?", the federation layer needs to figure out which sources might have relevant answers and how to ask each one. This is query decomposition. The decomposer consults the source catalog to identify sources with relevant capabilities, loads the ontology mapping for each source, and rewrites the query into each source's local query language. It then dispatches all sub-queries in parallel with per-source timeouts and circuit breaker protection. This is the heart of the federation engine. Get it wrong and you either miss relevant sources (incomplete results) or flood irrelevant sources with queries they can't answer (wasted latency and cost).
+[0m[49m[39m  245, 253[0m:[39m[49m 
+[0m[49m[39m  246, 254[0m:[39m[49m ```
+[0m[49m[39m  247, 255[0m:[39m[49m FUNCTION decompose_and_route(federated_query, requester_context):
+[0m[49m[39m  248, 256[0m:[39m[49m     // Parse the incoming federated query to understand what's being asked.
+[0m[49m[39m  249, 257[0m:[39m[49m     // Extract the knowledge domains involved (e.g., "drug_interactions", "renal")
+[0m[49m[39m  250, 258[0m:[39m[49m     // and the clinical concepts referenced (e.g., "Metformin", "renal_impairment").
+[0m[49m[39m  251, 259[0m:[39m[49m     query_domains  = extract_domains(federated_query)
+[0m[49m[39m  252, 260[0m:[39m[49m     query_concepts = extract_concepts(federated_query)
+[0m[49m[39m  253, 261[0m:[39m[49m 
+[0m[49m[39m  254, 262[0m:[39m[49m     // Look up which sources have relevant capabilities.
+[0m[49m[39m  255, 263[0m:[39m[49m     // A source registered with capability "drug_interactions" is a candidate
+[0m[49m[39m  256, 264[0m:[39m[49m     // for a query about drug interactions. Sources without that capability are skipped.
+[0m[49m[39m  257, 265[0m:[39m[49m     candidate_sources = query DynamoDB "federation-source-catalog"
+[0m[49m[39m  258, 266[0m:[39m[49m         WHERE capabilities OVERLAPS query_domains
+[0m[49m[39m  259, 267[0m:[39m[49m         AND status = "active"
+[0m[49m[39m  260, 268[0m:[39m[49m 
+[0m[49m[38;5;9m- 261     [0m:[38;5;9m[49m     // For each candidate source, check sharing policy against requester context.
+[0m[49m[38;5;10m+      269[0m:[38;5;10m[49m     // Circuit breaker check: skip sources that have failed repeatedly.
+[0m[49m[38;5;10m+      270[0m:[38;5;10m[49m     // If a source has timed out or errored on 3+ consecutive queries within
+[0m[49m[38;5;10m+      271[0m:[38;5;10m[49m     // the last 5 minutes, mark it as "degraded" and skip it until a health
+[0m[49m[38;5;10m+      272[0m:[38;5;10m[49m     // check succeeds. This prevents one slow source from dragging down every query.
+[0m[49m[38;5;10m+      273[0m:[38;5;10m[49m     healthy_candidates = empty list
+[0m[49m[38;5;10m+      274[0m:[38;5;10m[49m     FOR each source in candidate_sources:
+[0m[49m[38;5;10m+      275[0m:[38;5;10m[49m         IF source.health.consecutive_failures >= 3
+[0m[49m[38;5;10m+      276[0m:[38;5;10m[49m            AND (now - source.health.last_failure) < 5 minutes:
+[0m[49m[38;5;10m+      277[0m:[38;5;10m[49m             // Source is in circuit-breaker open state. Skip it.
+[0m[49m[38;5;10m+      278[0m:[38;5;10m[49m             log warning "Skipping degraded source: {source.institution_id}"
+[0m[49m[38;5;10m+      279[0m:[38;5;10m[49m             CONTINUE
+[0m[49m[38;5;10m+      280[0m:[38;5;10m[49m         ELSE:
+[0m[49m[38;5;10m+      281[0m:[38;5;10m[49m             append source to healthy_candidates
+[0m[49m[38;5;10m+      282[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      283[0m:[38;5;10m[49m     // For each healthy candidate, check sharing policy against requester context.
+[0m[49m[39m  262, 284[0m:[39m[49m     // The requester_context includes: who is asking, from which institution,
+[0m[49m[39m  263, 285[0m:[39m[49m     // for what purpose (clinical care, research, quality improvement).
+[0m[49m[39m  264, 286[0m:[39m[49m     authorized_sources = empty list
+[0m[49m[38;5;9m- 265     [0m:[38;5;9m[49m     FOR each source in candidate_sources:
+[0m[49m[38;5;10m+      287[0m:[38;5;10m[49m     FOR each source in healthy_candidates:
+[0m[49m[39m  266, 288[0m:[39m[49m         IF evaluate_sharing_policy(source.sharing_policy, requester_context):
+[0m[49m[39m  267, 289[0m:[39m[49m             append source to authorized_sources
+[0m[49m[39m  268, 290[0m:[39m[49m 
+[0m[49m[39m  269, 291[0m:[39m[49m     // For each authorized source, translate the federated query into the local schema.
+[0m[49m[39m  270, 292[0m:[39m[49m     sub_queries = empty list
+[0m[49m[39m  271, 293[0m:[39m[49m     FOR each source in authorized_sources:
+[0m[49m[39m  272, 294[0m:[39m[49m         mapping = load_ontology_mapping(source.institution_id, source.ontology_version)
+[0m[49m[39m  273, 295[0m:[39m[49m 
+[0m[49m[39m  274, 296[0m:[39m[49m         // Rewrite the query using this source's local vocabulary.
+[0m[49m[39m  275, 297[0m:[39m[49m         // "Metformin" might be represented as RxNorm:6809 in one source
+[0m[49m[39m  276, 298[0m:[39m[49m         // and as a node with property drug_name="metformin" in another.
+[0m[49m[39m  277, 299[0m:[39m[49m         local_query = translate_query(federated_query, mapping)
+[0m[49m[39m  278, 300[0m:[39m[49m 
+[0m[49m[39m  279, 301[0m:[39m[49m         append to sub_queries: {
+[0m[49m[39m  280, 302[0m:[39m[49m             source:      source,
+[0m[49m[39m  281, 303[0m:[39m[49m             local_query: local_query,
+[0m[49m[38;5;9m- 282     [0m:[38;5;9m[49m             endpoint:    source.endpoint
+[0m[49m[38;5;10m+      304[0m:[38;5;10m[49m             endpoint:    source.endpoint,
+[0m[49m[38;5;10m+      305[0m:[38;5;10m[49m             timeout:     source.timeout OR default 3 seconds  // per-source timeout
+[0m[49m[39m  283, 306[0m:[39m[49m         }
+[0m[49m[39m  284, 307[0m:[39m[49m 
+[0m[49m[39m  285, 308[0m:[39m[49m     // Dispatch all sub-queries in parallel. Don't wait for one to finish
+[0m[49m[39m  286, 309[0m:[39m[49m     // before sending the next. Network latency is the bottleneck in federation.
+[0m[49m[38;5;9m- 287     [0m:[38;5;9m[49m     results = execute_all_in_parallel(sub_queries)
+[0m[49m[38;5;10m+      310[0m:[38;5;10m[49m     // Per-source timeout: if a source doesn't respond within its configured
+[0m[49m[38;5;10m+      311[0m:[38;5;10m[49m     // timeout, mark it as timed_out but don't block the overall response.
+[0m[49m[38;5;10m+      312[0m:[38;5;10m[49m     results = empty list
+[0m[49m[38;5;10m+      313[0m:[38;5;10m[49m     timed_out = empty list
+[0m[49m[38;5;10m+      314[0m:[38;5;10m[49m     FOR each sub_query in sub_queries (IN PARALLEL):
+[0m[49m[38;5;10m+      315[0m:[38;5;10m[49m         TRY with timeout = sub_query.timeout:
+[0m[49m[38;5;10m+      316[0m:[38;5;10m[49m             response = invoke sub_query.endpoint with sub_query.local_query
+[0m[49m[38;5;10m+      317[0m:[38;5;10m[49m             append response to results
+[0m[49m[38;5;10m+      318[0m:[38;5;10m[49m             // Reset circuit breaker on success
+[0m[49m[38;5;10m+      319[0m:[38;5;10m[49m             update source.health: consecutive_failures = 0, last_success = now
+[0m[49m[38;5;10m+      320[0m:[38;5;10m[49m         ON TIMEOUT:
+[0m[49m[38;5;10m+      321[0m:[38;5;10m[49m             append sub_query.source.institution_id to timed_out
+[0m[49m[38;5;10m+      322[0m:[38;5;10m[49m             // Increment circuit breaker counter
+[0m[49m[38;5;10m+      323[0m:[38;5;10m[49m             update source.health: consecutive_failures += 1, last_failure = now
+[0m[49m[38;5;10m+      324[0m:[38;5;10m[49m         ON ERROR:
+[0m[49m[38;5;10m+      325[0m:[38;5;10m[49m             append sub_query.source.institution_id to timed_out
+[0m[49m[38;5;10m+      326[0m:[38;5;10m[49m             update source.health: consecutive_failures += 1, last_failure = now
+[0m[49m[39m  288, 327[0m:[39m[49m 
+[0m[49m[38;5;9m- 289     [0m:[38;5;9m[49m     RETURN results
+[0m[49m[38;5;10m+      328[0m:[38;5;10m[49m     RETURN { results: results, timed_out: timed_out }
+[0m[49m[39m  290, 329[0m:[39m[49m ```
+[0m[49m[39m  291, 330[0m:[39m[49m 
+[0m[49m[39m  292, 331[0m:[39m[49m **Step 4: Execute a local query with access control.** Each institution's query adapter receives a translated query from the federation layer, validates the requester's authorization, executes the query against the local Neptune graph, and returns results with provenance metadata attached. This is where institutional governance is enforced. The adapter can filter results based on fine-grained policies: "share drug interaction data with any federation member, but restrict patient-derived treatment outcomes to approved research collaborators only." The adapter also attaches provenance to every result: where it came from, what evidence supports it, and when it was last validated. Skip the access control and you've built a data breach. Skip the provenance and clinicians can't assess the trustworthiness of results.
+[0m[49m[39m  293, 332[0m:[39m[49m 
+[0m[49m[39m  294, 333[0m:[39m[49m ```
+[0m[49m[39m  295, 334[0m:[39m[49m FUNCTION execute_local_query(translated_query, requester_context, local_neptune_endpoint):
+[0m[49m[39m  296, 335[0m:[39m[49m     // Validate that the requester is authorized for this specific query.
+[0m[49m[39m  297, 336[0m:[39m[49m     // This is a second check (the federation layer already checked sharing policy),
+[0m[49m[39m  298, 337[0m:[39m[49m     // but defense in depth matters when PHI-derived knowledge is involved.
+[0m[49m[39m  299, 338[0m:[39m[49m     IF NOT validate_authorization(requester_context, translated_query):
+[0m[49m[39m  300, 339[0m:[39m[49m         RETURN { status: "denied", reason: "insufficient_authorization" }
+[0m[49m[39m  301, 340[0m:[39m[49m 
+[0m[49m[39m  302, 341[0m:[39m[49m     // Execute the translated query against the local Neptune cluster.
+[0m[49m[39m  303, 342[0m:[39m[49m     // This is a standard SPARQL or Gremlin query at this point.
+[0m[49m[39m  304, 343[0m:[39m[49m     raw_results = execute query translated_query against local_neptune_endpoint
+[0m[49m[39m  305, 344[0m:[39m[49m 
+[0m[49m[39m  306, 345[0m:[39m[49m     // Attach provenance metadata to each result.
+[0m[49m[39m  307, 346[0m:[39m[49m     // Clinicians need to know: where did this knowledge come from?
+[0m[49m[39m  308, 347[0m:[39m[49m     // What's the evidence basis? How current is it?
+[0m[49m[39m  309, 348[0m:[39m[49m     enriched_results = empty list
+[0m[49m[39m  310, 349[0m:[39m[49m     FOR each result in raw_results:
+[0m[49m[39m  311, 350[0m:[39m[49m         append to enriched_results: {
+[0m[49m[39m  312, 351[0m:[39m[49m             data:       result,
+[0m[49m[39m  313, 352[0m:[39m[49m             provenance: {
+[0m[49m[39m  314, 353[0m:[39m[49m                 source_institution: local_institution_id,
+[0m[49m[39m  315, 354[0m:[39m[49m                 evidence_level:     result.evidence_level OR "ungraded",
+[0m[49m[39m  316, 355[0m:[39m[49m                 last_validated:     result.last_validated OR "unknown",
+[0m[49m[39m  317, 356[0m:[39m[49m                 derivation_method:  result.derivation_method OR "curated"
+[0m[49m[39m  318, 357[0m:[39m[49m                                     // "curated" = human-reviewed
+[0m[49m[39m  319, 358[0m:[39m[49m                                     // "nlp_extracted" = machine-extracted from literature
+[0m[49m[39m  320, 359[0m:[39m[49m                                     // "claims_derived" = inferred from claims data
+[0m[49m[39m  321, 360[0m:[39m[49m             }
+[0m[49m[39m  322, 361[0m:[39m[49m         }
+[0m[49m[39m  323, 362[0m:[39m[49m 
+[0m[49m[39m  324, 363[0m:[39m[49m     // Apply result-level filtering based on sharing policy.
+[0m[49m[39m  325, 364[0m:[39m[49m     // Some results might be shareable while others from the same query are restricted.
+[0m[49m[39m  326, 365[0m:[39m[49m     filtered_results = apply_result_level_policy(enriched_results, requester_context)
+[0m[49m[39m  327, 366[0m:[39m[49m 
+[0m[49m[39m  328, 367[0m:[39m[49m     RETURN filtered_results
+[0m[49m[39m  329, 368[0m:[39m[49m ```
+[0m[49m[39m  330, 369[0m:[39m[49m 
+[0m[49m[39m  331, 370[0m:[39m[49m **Step 5: Assemble and deduplicate federated results.** Results stream back from multiple sources. The assembler's job is to merge them into a coherent, deduplicated response. This is harder than it sounds. Two sources might report the same drug interaction with different severity ratings. Three sources might report the same treatment with different evidence levels. The assembler needs strategies for conflict resolution: highest evidence level wins? Most recent validation date wins? Majority vote? The right strategy depends on the use case. For clinical decision support, you probably want to surface all perspectives with their provenance rather than silently picking a winner. For automated alerting, you need a deterministic resolution. This step also handles ranking: results with stronger evidence and more recent validation appear first.
+[0m[49m[39m  332, 371[0m:[39m[49m 
+[0m[49m[39m  333, 372[0m:[39m[49m ```
+[0m[49m[39m  334, 373[0m:[39m[49m FUNCTION assemble_results(partial_results_from_all_sources):
+[0m[49m[39m  335, 374[0m:[39m[49m     // Flatten all results into a single list with their provenance intact.
+[0m[49m[39m  336, 375[0m:[39m[49m     all_results = empty list
+[0m[49m[39m  337, 376[0m:[39m[49m     FOR each source_response in partial_results_from_all_sources:
+[0m[49m[39m  338, 377[0m:[39m[49m         FOR each result in source_response:
+[0m[49m[39m  339, 378[0m:[39m[49m             append result to all_results
+[0m[49m[39m  340, 379[0m:[39m[49m 
+[0m[49m[39m  341, 380[0m:[39m[49m     // Deduplicate: identify results that refer to the same underlying knowledge.
+[0m[49m[39m  342, 381[0m:[39m[49m     // Two sources might both report "Metformin interacts with Contrast Dye"
+[0m[49m[39m  343, 382[0m:[39m[49m     // but with different severity ratings or evidence levels.
+[0m[49m[39m  344, 383[0m:[39m[49m     // Group by canonical concept (using the federated ontology codes).
+[0m[49m[39m  345, 384[0m:[39m[49m     grouped = group all_results by canonical_concept_key(result.data)
+[0m[49m[39m  346, 385[0m:[39m[49m 
+[0m[49m[39m  347, 386[0m:[39m[49m     // For each group of duplicates, merge into a single federated result.
+[0m[49m[39m  348, 387[0m:[39m[49m     merged_results = empty list
+[0m[49m[39m  349, 388[0m:[39m[49m     FOR each concept_key, group in grouped:
+[0m[49m[39m  350, 389[0m:[39m[49m         IF length(group) == 1:
+[0m[49m[39m  351, 390[0m:[39m[49m             // Only one source reported this. Use it directly.
+[0m[49m[39m  352, 391[0m:[39m[49m             append group[0] to merged_results
+[0m[49m[39m  353, 392[0m:[39m[49m         ELSE:
+[0m[49m[39m  354, 393[0m:[39m[49m             // Multiple sources reported this. Merge with conflict resolution.
+[0m[49m[39m  355, 394[0m:[39m[49m             merged = {
+[0m[49m[39m  356, 395[0m:[39m[49m                 data:        consensus_or_highest_evidence(group),
+[0m[49m[39m  357, 396[0m:[39m[49m                 provenance:  collect all provenance records from group,
+[0m[49m[39m  358, 397[0m:[39m[49m                 consensus:   calculate_agreement_score(group),
+[0m[49m[39m  359, 398[0m:[39m[49m                              // 1.0 = all sources agree; 0.5 = split opinion
+[0m[49m[39m  360, 399[0m:[39m[49m                 source_count: length(group)
+[0m[49m[39m  361, 400[0m:[39m[49m             }
+[0m[49m[39m  362, 401[0m:[39m[49m             append merged to merged_results
+[0m[49m[39m  363, 402[0m:[39m[49m 
+[0m[49m[39m  364, 403[0m:[39m[49m     // Rank results: higher evidence level and more sources = higher rank.
+[0m[49m[39m  365, 404[0m:[39m[49m     sort merged_results by (evidence_level DESC, source_count DESC, last_validated DESC)
+[0m[49m[39m  366, 405[0m:[39m[49m 
+[0m[49m[39m  367, 406[0m:[39m[49m     RETURN merged_results
+[0m[49m[39m  368, 407[0m:[39m[49m ```
+[0m[49m[39m  369, 408[0m:[39m[49m 
+[0m[49m[39m  370, 409[0m:[39m[49m > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter13.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+[0m[49m[39m  371, 410[0m:[39m[49m 
+[0m[49m[39m  372, 411[0m:[39m[49m ### Expected Results
+[0m[49m[39m  373, 412[0m:[39m[49m 
+[0m[49m[39m  374, 413[0m:[39m[49m **Sample output for a federated drug interaction query:**
+[0m[49m[39m  375, 414[0m:[39m[49m 
+[0m[49m[39m  376, 415[0m:[39m[49m ```json
+[0m[49m[39m  377, 416[0m:[39m[49m {
+[0m[49m[39m  378, 417[0m:[39m[49m   "query": "drug_interactions(Metformin, context=renal_impairment)",
+[0m[49m[39m  379, 418[0m:[39m[49m   "federation_metadata": {
+[0m[49m[39m  380, 419[0m:[39m[49m     "sources_contacted": 4,
+[0m[49m[39m  381, 420[0m:[39m[49m     "sources_responded": 3,
+[0m[49m[39m  382, 421[0m:[39m[49m     "sources_denied": 0,
+[0m[49m[39m  383, 422[0m:[39m[49m     "sources_timed_out": 1,
+[0m[49m[39m  384, 423[0m:[39m[49m     "total_latency_ms": 2340
+[0m[49m[39m  385, 424[0m:[39m[49m   },
+[0m[49m[39m  386, 425[0m:[39m[49m   "results": [
+[0m[49m[39m  387, 426[0m:[39m[49m     {
+[0m[49m[39m  388, 427[0m:[39m[49m       "interaction": {
+[0m[49m[39m  389, 428[0m:[39m[49m         "drug_a": "Metformin (RxNorm:6809)",
+[0m[49m[39m  390, 429[0m:[39m[49m         "drug_b": "Iodinated Contrast Media",
+[0m[49m[39m  391, 430[0m:[39m[49m         "severity": "high",
+[0m[49m[39m  392, 431[0m:[39m[49m         "mechanism": "Increased risk of lactic acidosis in renal impairment",
+[0m[49m[39m  393, 432[0m:[39m[49m         "recommendation": "Hold metformin 48h before and after contrast administration"
+[0m[49m[39m  394, 433[0m:[39m[49m       },
+[0m[49m[39m  395, 434[0m:[39m[49m       "provenance": [
+[0m[49m[39m  396, 435[0m:[39m[49m         {
+[0m[49m[39m  397, 436[0m:[39m[49m           "source": "academic-medical-center-boston",
+[0m[49m[39m  398, 437[0m:[39m[49m           "evidence_level": "A",
+[0m[49m[39m  399, 438[0m:[39m[49m           "derivation": "curated",
+[0m[49m[39m  400, 439[0m:[39m[49m           "last_validated": "2025-11-15"
+[0m[49m[39m  401, 440[0m:[39m[49m         },
+[0m[49m[39m  402, 441[0m:[39m[49m         {
+[0m[49m[39m  403, 442[0m:[39m[49m           "source": "regional-health-network-midwest",
+[0m[49m[39m  404, 443[0m:[39m[49m           "evidence_level": "B",
+[0m[49m[39m  405, 444[0m:[39m[49m           "derivation": "claims_derived",
+[0m[49m[39m  406, 445[0m:[39m[49m           "last_validated": "2025-09-22"
+[0m[49m[39m  407, 446[0m:[39m[49m         }
+[0m[49m[39m  408, 447[0m:[39m[49m       ],
+[0m[49m[39m  409, 448[0m:[39m[49m       "consensus_score": 1.0,
+[0m[49m[39m  410, 449[0m:[39m[49m       "source_count": 2
+[0m[49m[39m  411, 450[0m:[39m[49m     },
+[0m[49m[39m  412, 451[0m:[39m[49m     {
+[0m[49m[39m  413, 452[0m:[39m[49m       "interaction": {
+[0m[49m[39m  414, 453[0m:[39m[49m         "drug_a": "Metformin (RxNorm:6809)",
+[0m[49m[39m  415, 454[0m:[39m[49m         "drug_b": "ACE Inhibitors (class)",
+[0m[49m[39m  416, 455[0m:[39m[49m         "severity": "moderate",
+[0m[49m[39m  417, 456[0m:[39m[49m         "mechanism": "Potential additive effect on renal function decline",
+[0m[49m[39m  418, 457[0m:[39m[49m         "recommendation": "Monitor renal function quarterly when co-prescribed"
+[0m[49m[39m  419, 458[0m:[39m[49m       },
+[0m[49m[39m  420, 459[0m:[39m[49m       "provenance": [
+[0m[49m[39m  421, 460[0m:[39m[49m         {
+[0m[49m[39m  422, 461[0m:[39m[49m           "source": "academic-medical-center-boston",
+[0m[49m[39m  423, 462[0m:[39m[49m           "evidence_level": "B",
+[0m[49m[39m  424, 463[0m:[39m[49m           "derivation": "nlp_extracted",
+[0m[49m[39m  425, 464[0m:[39m[49m           "last_validated": "2025-08-03"
+[0m[49m[39m  426, 465[0m:[39m[49m         }
+[0m[49m[39m  427, 466[0m:[39m[49m       ],
+[0m[49m[39m  428, 467[0m:[39m[49m       "consensus_score": null,
+[0m[49m[39m  429, 468[0m:[39m[49m       "source_count": 1
+[0m[49m[39m  430, 469[0m:[39m[49m     }
+[0m[49m[39m  431, 470[0m:[39m[49m   ]
+[0m[49m[39m  432, 471[0m:[39m[49m }
+[0m[49m[39m  433, 472[0m:[39m[49m ```
+[0m[49m[39m  434, 473[0m:[39m[49m 
+[0m[49m[39m  435, 474[0m:[39m[49m **Performance benchmarks:**
+[0m[49m[39m  436, 475[0m:[39m[49m 
+[0m[49m[39m  437, 476[0m:[39m[49m | Metric | Typical Value |
+[0m[49m[39m  438, 477[0m:[39m[49m |--------|---------------|
+[0m[49m[39m  439, 478[0m:[39m[49m | End-to-end federated query latency | 1.5–5 seconds (depends on source count and network) |
+[0m[49m[39m  440, 479[0m:[39m[49m | Local Neptune query execution | 50–200ms |
+[0m[49m[39m  441, 480[0m:[39m[49m | Cross-account PrivateLink overhead | 5–15ms per hop |
+[0m[49m[39m  442, 481[0m:[39m[49m | Query translation (Lambda) | 100–300ms |
+[0m[49m[39m  443, 482[0m:[39m[49m | Result assembly | 200–500ms |
+[0m[49m[39m  444, 483[0m:[39m[49m | Source catalog lookup | 10–30ms |
+[0m[49m[39m  445, 484[0m:[39m[49m | Concurrent source queries | Up to 10 in parallel |
+[0m[49m[39m  446, 485[0m:[39m[49m | Ontology mapping load (cached) | <5ms |
+[0m[49m[39m  447, 486[0m:[39m[49m 
+[0m[49m[39m  448, 487[0m:[39m[49m **Where it struggles:**
+[0m[49m[39m  449, 488[0m:[39m[49m 
+[0m[49m[39m  450, 489[0m:[39m[49m - Queries that require multi-hop traversals across institutional boundaries (A knows about B, B knows about C, but no single source knows A-to-C)
+[0m[49m[39m  451, 490[0m:[39m[49m - Real-time clinical decision support (5-second latency is too slow for point-of-care alerts)
+[0m[49m[39m  452, 491[0m:[39m[49m - Sources with stale ontology mappings (concept drift causes missed results)
+[0m[49m[39m  453, 492[0m:[39m[49m - High-cardinality result sets that overwhelm the assembly step
+[0m[49m[39m  454, 493[0m:[39m[49m - Institutions with intermittent connectivity (the "timed out" source problem)
+[0m[49m[39m  455, 494[0m:[39m[49m 
+[0m[49m[39m  456, 495[0m:[39m[49m ---
+[0m[49m[39m  457, 496[0m:[39m[49m 
+[0m[49m[39m  458, 497[0m:[39m[49m ## Why This Isn't Production-Ready
+[0m[49m[39m  459, 498[0m:[39m[49m 
+[0m[49m[39m  460, 499[0m:[39m[49m **Governance framework.** The pseudocode shows the technical mechanics of federation. In reality, you need a legal framework: data use agreements between every pair of institutions, a governance board that adjudicates disputes, and a process for onboarding and offboarding participants. The technology is the easy part. The governance takes 12-18 months to establish.
+[0m[49m[39m  461, 500[0m:[39m[49m 
+[0m[49m[39m  462, 501[0m:[39m[49m **Ontology maintenance.** The mapping files in S3 are shown as static artifacts. In production, ontologies evolve. SNOMED releases updates quarterly. Local schemas change as institutions adopt new systems. You need a continuous alignment process with automated drift detection and human review of mapping changes.
+[0m[49m[39m  463, 502[0m:[39m[49m 
+[0m[49m[39m  464, 503[0m:[39m[49m **Query privacy.** The current architecture sends queries in cleartext to source institutions. A sophisticated source could infer information about the requester's patient population from query patterns. Production systems need query obfuscation or differential privacy mechanisms to prevent inference attacks.
+[0m[49m[39m  465, 504[0m:[39m[49m 
+[0m[49m[39m  466, 505[0m:[39m[49m **Conflict resolution governance.** When two sources disagree on a drug interaction severity, who decides which is correct? The pseudocode shows a "highest evidence wins" heuristic, but real clinical governance requires human review of conflicts, especially for safety-critical knowledge.
+[0m[49m[39m  467, 506[0m:[39m[49m 
+[0m[49m[39m  468, 507[0m:[39m[49m **Network partition handling.** If a source is unreachable, the federation returns partial results. The consumer application needs to clearly communicate that results are incomplete and which sources were unavailable. Silent partial results are dangerous in clinical contexts.
+[0m[49m[39m  469, 508[0m:[39m[49m 
+[0m[49m[38;5;10m+      509[0m:[38;5;10m[49m **Single-region deployment.** The federation control plane (source catalog, ontology registry, API layer) runs in one AWS region. A regional outage disables the entire federation. Production deployments should consider DynamoDB Global Tables for the source catalog, S3 Cross-Region Replication for the ontology registry, and a multi-region API layer with Route 53 failover.
+[0m[49m[38;5;10m+      510[0m:[38;5;10m[49m 
+[0m[49m[39m  470, 511[0m:[39m[49m ---
+[0m[49m[39m  471, 512[0m:[39m[49m 
+[0m[49m[39m  472, 513[0m:[39m[49m ## The Honest Take
+[0m[49m[39m  473, 514[0m:[39m[49m 
+[0m[49m[39m  474, 515[0m:[39m[49m Federated knowledge graphs are one of those ideas that everyone in health IT agrees is important and almost nobody has successfully deployed at scale. The technical challenges are real but solvable. The governance challenges are where projects go to die.
+[0m[49m[39m  475, 516[0m:[39m[49m 
+[0m[49m[39m  476, 517[0m:[39m[49m The thing that surprised me most: ontology alignment is not a one-time project. It's a continuous process. Clinical vocabularies evolve. Institutions change their data models. New concepts emerge (think about how quickly COVID-related terminology appeared and stabilized). If you treat the ontology layer as "set it and forget it," your federation will silently degrade over months as mappings drift out of alignment.
+[0m[49m[39m  477, 518[0m:[39m[49m 
+[0m[49m[39m  478, 519[0m:[39m[49m The performance question is also more nuanced than it appears. For batch research queries ("what does the network know about treatment X across all populations?"), 5-second latency is fine. For point-of-care clinical decision support ("should I prescribe this drug to this patient right now?"), it's unacceptable. Most successful deployments I've seen use a hybrid approach: federated queries populate a local cache of frequently-accessed knowledge, and the cache serves real-time requests. The federation runs in the background to keep the cache fresh.
+[0m[49m[39m  479, 520[0m:[39m[49m 
+[0m[49m[39m  480, 521[0m:[39m[49m The political dimension cannot be overstated. Getting three health systems to agree on a shared ontology is a multi-year effort involving committees, working groups, and a lot of meetings. Getting them to actually expose query endpoints and trust each other's access control is another multi-year effort. Start with a narrow, high-value use case (drug interactions are the classic starting point) and expand from there. Don't try to federate everything at once.
+[0m[49m[39m  481, 522[0m:[39m[49m 
+[0m[49m[39m  482, 523[0m:[39m[49m One more thing: the "competitive advantage" concern is real but often overstated. Most clinical knowledge is not proprietary. Drug interactions are drug interactions. The value institutions protect is usually patient-derived insights (treatment outcomes for specific populations), not the underlying clinical facts. A well-designed sharing policy can expose the non-sensitive knowledge broadly while protecting the truly proprietary stuff. But you have to have that conversation explicitly with each institution's leadership.
+[0m[49m[39m  483, 524[0m:[39m[49m 
+[0m[49m[39m  484, 525[0m:[39m[49m ---
+[0m[49m[39m  485, 526[0m:[39m[49m 
+[0m[49m[39m  486, 527[0m:[39m[49m ## Variations and Extensions
+[0m[49m[39m  487, 528[0m:[39m[49m 
+[0m[49m[39m  488, 529[0m:[39m[49m **Federated learning integration.** Instead of sharing knowledge graph query results, share model updates. Each institution trains a local model on their graph and shares gradient updates rather than raw data. This is particularly useful for patient-derived knowledge where even aggregated results might be sensitive. The federation layer becomes a model aggregation service rather than a query router.
+[0m[49m[39m  489, 530[0m:[39m[49m 
+[0m[49m[39m  490, 531[0m:[39m[49m **Temporal knowledge federation.** Add time-awareness to the federation. Track when knowledge was valid, when it was superseded, and query for "what was known as of date X." This matters for retrospective research and for understanding how clinical knowledge evolved. Each source maintains temporal versioning of their graph, and the federation layer can query historical states.
+[0m[49m[39m  491, 532[0m:[39m[49m 
+[0m[49m[39m  492, 533[0m:[39m[49m **Automated ontology alignment.** Instead of manually maintaining mapping files, use ML-based ontology matching. Train a model to identify equivalent concepts across different terminologies based on their graph neighborhoods, textual descriptions, and usage patterns. This doesn't eliminate human review but dramatically reduces the manual effort of maintaining mappings as ontologies evolve.
+[0m[49m[39m  493, 534[0m:[39m[49m 
+[0m[49m[39m  494, 535[0m:[39m[49m ---
+[0m[49m[39m  495, 536[0m:[39m[49m 
+[0m[49m[39m  496, 537[0m:[39m[49m ## Related Recipes
+[0m[49m[39m  497, 538[0m:[39m[49m 
+[0m[49m[39m  498, 539[0m:[39m[49m - **Recipe 13.8 (Medical Concept Normalization and Mapping):** Provides the ontology alignment foundation that federation depends on. Build 13.8 first.
+[0m[49m[39m  499, 540[0m:[39m[49m - **Recipe 13.9 (Literature-Derived Knowledge Graph):** One of the source graph types that participates in federation. Literature-derived knowledge is often the most shareable.
+[0m[49m[39m  500, 541[0m:[39m[49m - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** The classic first use case for federation. Start here for your pilot.
+[0m[49m[39m  501, 542[0m:[39m[49m - **Recipe 5.8 (Privacy-Preserving Record Linkage):** Shares privacy-preserving computation techniques applicable to query obfuscation.
+[0m[49m[39m  502, 543[0m:[39m[49m - **Recipe 5.9 (National-Scale Patient Matching):** Addresses similar cross-institutional trust and governance challenges at the patient data level.
+[0m[49m[39m  503, 544[0m:[39m[49m 
+[0m[49m[39m  504, 545[0m:[39m[49m ---
+[0m[49m[39m  505, 546[0m:[39m[49m 
+[0m[49m[39m  506, 547[0m:[39m[49m ## Additional Resources
+[0m[49m[39m  507, 548[0m:[39m[49m 
+[0m[49m[39m  508, 549[0m:[39m[49m **AWS Documentation:**
+[0m[49m[39m  509, 550[0m:[39m[49m - [Amazon Neptune User Guide](https://docs.aws.amazon.com/neptune/latest/userguide/intro.html)
+[0m[49m[39m  510, 551[0m:[39m[49m - [Amazon Neptune SPARQL Support](https://docs.aws.amazon.com/neptune/latest/userguide/sparql.html)
+[0m[49m[39m  511, 552[0m:[39m[49m - [AWS AppSync Developer Guide](https://docs.aws.amazon.com/appsync/latest/devguide/what-is-appsync.html)
+[0m[49m[39m  512, 553[0m:[39m[49m - [AWS PrivateLink Documentation](https://docs.aws.amazon.com/vpc/latest/privatelink/what-is-privatelink.html)
+[0m[49m[39m  513, 554[0m:[39m[49m - [AWS Organizations User Guide](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_introduction.html)
+[0m[49m[39m  514, 555[0m:[39m[49m - [Amazon Neptune Pricing](https://aws.amazon.com/neptune/pricing/)
+[0m[49m[39m  515, 556[0m:[39m[49m - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+[0m[49m[39m  516, 557[0m:[39m[49m 
+[0m[49m[38;5;9m- 517     [0m:[38;5;9m[49m **AWS Sample Repos:**
+[0m[49m[38;5;9m- 518     [0m:[38;5;9m[49m - TODO: Verify existence of Neptune-specific sample repos for healthcare knowledge graphs
+[0m[49m[38;5;9m- 519     [0m:[38;5;9m[49m - TODO: Check for aws-samples repos demonstrating cross-account Neptune federation patterns
+[0m[49m[38;5;9m- 520     [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m- 521     [0m:[38;5;9m[49m **AWS Solutions and Blogs:**
+[0m[49m[38;5;9m- 522     [0m:[38;5;9m[49m - TODO: Search AWS blog for Neptune + healthcare knowledge graph posts
+[0m[49m[38;5;9m- 523     [0m:[38;5;9m[49m - TODO: Check AWS Solutions Library for graph-based healthcare architectures
+[0m[49m[38;5;10m+      558[0m:[38;5;10m[49m <!-- TODO (TechWriter): Expert review V1 (LOW). Resolve AWS Sample Repos and AWS Solutions/Blogs subsections: find real Neptune healthcare knowledge graph repos or remove these subsections entirely. -->
+[0m[49m[39m  524, 559[0m:[39m[49m 
+[0m[49m[39m  525, 560[0m:[39m[49m **External Standards:**
+[0m[49m[39m  526, 561[0m:[39m[49m - [SPARQL 1.1 Federated Query (W3C)](https://www.w3.org/TR/sparql11-federated-query/)
+[0m[49m[39m  527, 562[0m:[39m[49m - [SNOMED CT Browser](https://browser.ihtsdotools.org/)
+[0m[49m[39m  528, 563[0m:[39m[49m - [HL7 FHIR Knowledge Artifact Specification](https://www.hl7.org/fhir/clinicalreasoning-knowledge-artifact-representation.html)
+[0m[49m[39m  529, 564[0m:[39m[49m - [TEFCA Overview (ONC)](https://www.healthit.gov/topic/interoperability/policy/trusted-exchange-framework-and-common-agreement-tefca)
+[0m[49m[39m  530, 565[0m:[39m[49m 
+[0m[49m[39m  531, 566[0m:[39m[49m ---
+[0m[49m[39m  532, 567[0m:[39m[49m 
+[0m[49m[39m  533, 568[0m:[39m[49m ## Estimated Implementation Time
+[0m[49m[39m  534, 569[0m:[39m[49m 
+[0m[49m[39m  535, 570[0m:[39m[49m | Tier | Timeline | What You Get |
+[0m[49m[39m  536, 571[0m:[39m[49m |------|----------|--------------|
+[0m[49m[39m  537, 572[0m:[39m[49m | **Basic (single use case, 2-3 institutions)** | 6-9 months | Drug interaction federation between partner institutions. Manual ontology alignment. Basic access control. |
+[0m[49m[39m  538, 573[0m:[39m[49m | **Production-ready** | 12-18 months | Multi-domain federation with automated ontology maintenance, comprehensive governance framework, provenance tracking, and performance optimization (caching layer). |
+[0m[49m[39m  539, 574[0m:[39m[49m | **With variations (federated learning, temporal queries)** | 18-24+ months | Full network with ML-based ontology alignment, federated learning for patient-derived insights, temporal versioning, and automated conflict resolution. |
+[0m[49m[39m  540, 575[0m:[39m[49m 
+[0m[49m[39m  541, 576[0m:[39m[49m ---
+[0m[49m[39m  542, 577[0m:[39m[49m 
+[0m[49m[39m  543, 578[0m:[39m[49m ## Tags
+[0m[49m[39m  544, 579[0m:[39m[49m 
+[0m[49m[39m  545, 580[0m:[39m[49m `knowledge-graphs` · `federation` · `distributed-systems` · `neptune` · `sparql` · `ontology` · `cross-institutional` · `governance` · `privatelink` · `multi-account` · `complex` · `hipaa` · `interoperability`
+[0m[49m[39m  546, 581[0m:[39m[49m 
+[0m[49m[39m  547, 582[0m:[39m[49m ---
+[0m[49m[39m  548, 583[0m:[39m[49m 
+[0m[49m[39m  549, 584[0m:[39m[49m *← [Recipe 13.9: Literature-Derived Knowledge Graph](chapter13.09-literature-derived-knowledge-graph) · [Chapter 13 Index](chapter13-index) · [Next: Chapter 14 →](chapter14-preface)*
+[0m[K
+Replacing: [38;5;141mchapter13.10-federated-clinical-knowledge-network.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me write the edit status file documenting what was changed:[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-edit-status.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+     1[0m:[38;5;10m[49m # Edit Status: Recipe 13.10 - Federated Clinical Knowledge Network
+[0m[49m[38;5;10m+     2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     3[0m:[38;5;10m[49m **Editor:** TechEditor
+[0m[49m[38;5;10m+     4[0m:[38;5;10m[49m **Date:** 2026-06-01
+[0m[49m[38;5;10m+     5[0m:[38;5;10m[49m **Status:** COMPLETE
+[0m[49m[38;5;10m+     6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     7[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     9[0m:[38;5;10m[49m ## Changes Applied
+[0m[49m[38;5;10m+    10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    11[0m:[38;5;10m[49m ### From Expert Review
+[0m[49m[38;5;10m+    12[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    13[0m:[38;5;10m[49m | Finding | Severity | Action |
+[0m[49m[38;5;10m+    14[0m:[38;5;10m[49m |---------|----------|--------|
+[0m[49m[38;5;10m+    15[0m:[38;5;10m[49m | S1: IAM `neptune-db:*` not least-privilege | HIGH | Fixed. Replaced with `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus`, `neptune-db:CancelQuery` in Prerequisites. Added note that write access remains with institutional internal roles only. |
+[0m[49m[38;5;10m+    16[0m:[38;5;10m[49m | A1: AppSync 30s timeout risk | HIGH | Fixed. Added note in "Why These Services" AppSync entry acknowledging the 30-second timeout and 1MB payload limit, recommending Step Functions Express for federations with >5 sources or complex queries. |
+[0m[49m[38;5;10m+    17[0m:[38;5;10m[49m | A2: No retry/circuit breaker | HIGH | Fixed. Added circuit breaker pattern to Step 1 (health tracking in catalog entry) and Step 3 (circuit breaker check before dispatch, per-source timeout, failure counter updates). |
+[0m[49m[38;5;10m+    18[0m:[38;5;10m[49m | S2: No KMS key governance | MEDIUM | Fixed. Added dedicated "AWS KMS" paragraph in "Why These Services" explaining per-institution keys for Neptune, federation-owned keys for shared resources, and why cross-account decrypt is not needed. |
+[0m[49m[38;5;10m+    19[0m:[38;5;10m[49m | S3: Query content in audit logs is PHI | MEDIUM | Fixed. Added note in CloudWatch/CloudTrail paragraph and Prerequisites CloudTrail row that query content is treated as PHI with restricted access. |
+[0m[49m[38;5;10m+    20[0m:[38;5;10m[49m | S4: No auth on PrivateLink endpoints | MEDIUM | Fixed. Updated PrivateLink description to specify API Gateway with IAM auth fronting each institutional query adapter. Updated architecture diagram labels to show "API Gateway + Lambda" and "PrivateLink + IAM" on connections. Added API Gateway to Prerequisites and Ingredients tables. |
+[0m[49m[38;5;10m+    21[0m:[38;5;10m[49m | A3: Single-region, no DR | MEDIUM | Fixed. Added "Single-region deployment" bullet to "Why This Isn't Production-Ready" section with DynamoDB Global Tables, S3 CRR, and Route 53 failover guidance. |
+[0m[49m[38;5;10m+    22[0m:[38;5;10m[49m | A8: Conflict resolution underspecified for safety-critical knowledge | MEDIUM | Fixed. Added sentence to Result Assembly description in the General Architecture Pattern section about surfacing all perspectives for safety-critical knowledge rather than silently picking a winner. |
+[0m[49m[38;5;10m+    23[0m:[38;5;10m[49m | N1: No VPC endpoints for S3/DynamoDB | LOW | Fixed. Added Gateway VPC endpoints for S3 and DynamoDB, Interface endpoints for KMS and CloudWatch Logs to Prerequisites VPC row. |
+[0m[49m[38;5;10m+    24[0m:[38;5;10m[49m | N2: PrivateLink endpoint proliferation | LOW | Not addressed inline (scaling note would add length without proportional value for a research/pilot recipe). The existing cost estimate section implicitly covers this. |
+[0m[49m[38;5;10m+    25[0m:[38;5;10m[49m | V1: TODO placeholders in Additional Resources | LOW | Consolidated four TODO items into a single TODO marker for TechWriter to resolve. Removed the placeholder subsection headers to avoid confusion. |
+[0m[49m[38;5;10m+    26[0m:[38;5;10m[49m | V2: Minor voice shift ("genuinely unsolved") | LOW | Fixed. Changed to "nobody has cracked it for the general case" per reviewer suggestion. |
+[0m[49m[38;5;10m+    27[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    28[0m:[38;5;10m[49m ### From Code Review
+[0m[49m[38;5;10m+    29[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    30[0m:[38;5;10m[49m Code review findings apply to the Python companion file (`chapter13.10-python-example.md`), not the main recipe. No changes to the main recipe were needed from code review findings. The main recipe's pseudocode is consistent with the Python companion's implementation.
+[0m[49m[38;5;10m+    31[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    32[0m:[38;5;10m[49m ### Editorial Fixes (Grammar, Formatting, Mechanics)
+[0m[49m[38;5;10m+    33[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    34[0m:[38;5;10m[49m - No em dashes found (verified: 0 occurrences)
+[0m[49m[38;5;10m+    35[0m:[38;5;10m[49m - No documentation-voice detected
+[0m[49m[38;5;10m+    36[0m:[38;5;10m[49m - Header hierarchy verified: H1 title, H2 major sections, H3 subsections, no skipped levels
+[0m[49m[38;5;10m+    37[0m:[38;5;10m[49m - All code blocks have appropriate language tags or are unlabeled pseudocode (correct per convention)
+[0m[49m[38;5;10m+    38[0m:[38;5;10m[49m - Voice is consistent throughout (engineer-explaining-cool-thing tone)
+[0m[49m[38;5;10m+    39[0m:[38;5;10m[49m - 70/30 vendor balance maintained (Technology section fully vendor-agnostic, AWS only in implementation section)
+[0m[49m[38;5;10m+    40[0m:[38;5;10m[49m - All external URLs verified as plausible and well-formed
+[0m[49m[38;5;10m+    41[0m:[38;5;10m[49m - RECIPE-GUIDE section order verified: Problem → Technology → Architecture → AWS Implementation → Expected Results → Honest Take → Variations → Related → Resources → Timeline → Tags → Navigation
+[0m[49m[38;5;10m+    42[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    43[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    44[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    45[0m:[38;5;10m[49m ## Deferred Items
+[0m[49m[38;5;10m+    46[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    47[0m:[38;5;10m[49m One TODO marker remains for TechWriter to resolve:
+[0m[49m[38;5;10m+    48[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    49[0m:[38;5;10m[49m 1. `<!-- TODO (TechWriter): Expert review V1 (LOW). Resolve AWS Sample Repos and AWS Solutions/Blogs subsections -->` - Need to find real Neptune healthcare knowledge graph repos or remove subsections entirely.
+[0m[49m[38;5;10m+    50[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    51[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    52[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    53[0m:[38;5;10m[49m ## Verdict
+[0m[49m[38;5;10m+    54[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    55[0m:[38;5;10m[49m Recipe is publication-ready pending resolution of the single deferred TODO (resource links). All HIGH and MEDIUM findings from expert review have been addressed inline.
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-edit-status.md[0m
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe final edit is complete. Here's a summary of what was done:[0m[0m
+[0m[0m
+[1mRecipe 13.10 edited and published.[22m All 3 HIGH findings and 5 of 5 MEDIUM findings from the expert review were addressed inline:[0m[0m
+[0m[0m
+- **S1 (HIGH):** Narrowed IAM permissions from [38;5;10mneptune-db:*[0m to read-only actions[0m[0m
+- **A1 (HIGH):** Added AppSync timeout/payload limit acknowledgment with Step Functions recommendation[0m[0m
+- **A2 (HIGH):** Added circuit breaker pattern, per-source timeouts, and failure tracking to Steps 1 and 3[0m[0m
+- **S2-S4, A3, A8 (MEDIUM):** Added KMS key governance, PHI-aware audit logging, API Gateway + IAM auth on PrivateLink, single-region DR note, and safety-critical conflict resolution guidance[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 9.06 • Time: 4m 44s
+
+[0m[1G[0m[0m[?25hOne LOW finding (V1: unresolved resource links) was consolidated into a single TODO marker for the TechWriter to resolve. One minor voice fix (V2) was applied. The edit status file at [38;5;10mreviews/chapter13.10-edit-status.md[0m documents all changes.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: '/tmp/ralph-worktrees/iter-1014/chapters/13-knowledge-graphs/recipe-10-federated-clinical-knowledge-network.md' does not exist
+[0m[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: Directory not found: /tmp/ralph-worktrees/iter-1014/chapters/13-knowledge-graphs
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-1014[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-1014[0m [38;5;244m(showing 1000 of 2480 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.122s[0m
+
+[38;5;141m> [0mNow I can see the recipe file and the relevant review files. Let me read the STYLE-GUIDE.md, the recipe file, and the edit status/review files.[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-edit-status.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m, from line [38;5;141m1[0m to [38;5;141m100[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1014/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4535 bytes[0m from /tmp/ralph-worktrees/iter-1014/reviews/chapter13.10-edit-status.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m12653 bytes[0m from /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m, from line [38;5;141m101[0m to [38;5;141m250[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m11182 bytes[0m from /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m, from line [38;5;141m251[0m to [38;5;141m450[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m11335 bytes[0m from /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+[38;5;244m - Completed in 0.0s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m, from line [38;5;141m451[0m to [38;5;141m600[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m10334 bytes[0m from /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have the full recipe. Let me also quickly check for em dashes by searching the file:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md[0m for pattern: [38;5;141m—[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1014/chapter13.10-federated-clinical-knowledge-network.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes found. Now I have all the information needed to render my verdict. Let me verify the key criteria:[0m[0m
+[0m[0m
+1. [1mNo em dashes[22m: Confirmed zero occurrences.[0m[0m
+2. [1mHeader hierarchy[22m: H1 (title) → H2 (The Problem, The Technology, The AWS Implementation, Why This Isn't Production-Ready, The Honest Take, Variations and Extensions, Related Recipes, Additional Resources, Estimated Implementation Time, Tags) → H3 (subsections). No skipped levels.[0m[0m
+3. [1mCode blocks have language tags[22m: [38;5;10mmermaid[0m, [38;5;10mjson[0m blocks are tagged. The pseudocode blocks are untagged (no language tag), which the edit status notes is "correct per convention" for pseudocode.[0m[0m
+4. [1mVoice[22m: Consistent engineer-explaining-cool-thing tone throughout. Colloquialisms present ("Here's a scenario," "that's a non-starter," "nobody has cracked it for the general case").[0m[0m
+5. [1mHIGH/MEDIUM findings[22m: All HIGH (S1, A1, A2) and MEDIUM (S2, S3, S4, A3, A8) findings from expert review are incorporated per the edit status document.[0m[0m
+6. [1mStyle guide compliance[22m: 70/30 vendor balance maintained, no documentation-voice, no hype, personal experience hooks present.[0m[0m
+7. [1mTODO markers[22m: One LOW-severity TODO remains, explicitly flagged for TechWriter as required by pass conditions.[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 6.74 • Time: 45s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "No em dashes found (0 occurrences). Header hierarchy is correct (H1→H2→H3, no skipped levels). Pseudocode blocks are conventionally untagged; all other code blocks (mermaid, json) have language tags. Voice is consistent engineer-explaining-cool-thing tone throughout. All HIGH findings (S1 IAM least-privilege, A1 AppSync timeout, A2 circuit breaker) and all MEDIUM findings (S2 KMS governance, S3 PHI in audit logs, S4 PrivateLink auth, A3 single-region DR, A8 conflict resolution) are incorporated. One LOW-severity TODO is explicitly flagged for TechWriter resolution, satisfying the pass condition for deferred items."}
