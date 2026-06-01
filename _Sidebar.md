@@ -236,6 +236,8 @@
   * [Python Example](chapter09.07-python-example)
 * [9.8 — Pathology Slide Analysis](chapter09.08-pathology-slide-analysis)
   * [Python Example](chapter09.08-python-example)
+* [9.9 — Surgical Video Analysis](chapter09.09-surgical-video-analysis)
+  * [Python Example](chapter09.09-python-example)
 
 ---
 
