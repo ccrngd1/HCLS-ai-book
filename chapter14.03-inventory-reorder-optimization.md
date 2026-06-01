@@ -98,7 +98,7 @@ The practical architecture for most health systems: batch optimization sets the 
 
 **Demand Forecasting:** Predict future demand for each item using historical consumption data. Time series models, seasonal decomposition, or ML-based forecasters. The output is a demand distribution (mean and variance), not just a point estimate. Recipe 12.2 covers supply inventory forecasting in detail.
 
-**Parameter Estimation:** From the demand forecast, estimate the parameters the optimizer needs: expected demand during lead time, demand variance, lead time distribution, holding cost per unit per day, ordering cost per order, and stockout cost (often modeled as a service level constraint rather than a dollar cost, because pricing a clinical stockout is philosophically fraught).
+**Parameter Estimation:** From the demand forecast, estimate the parameters the optimizer needs: expected demand during lead time, demand variance, lead time distribution, holding cost per unit per day, ordering cost per order, and stockout cost (often modeled as a service level constraint rather than a dollar cost, because putting a dollar value on "we ran out of blood products" is a conversation nobody wants to have).
 
 **Optimization Solver:** Takes the parameters and constraints, solves for optimal reorder points and order quantities. Outputs a policy for each item: "reorder when inventory drops to X units; order Y units."
 
@@ -120,7 +120,7 @@ The practical architecture for most health systems: batch optimization sets the 
 
 **Amazon S3 for data lake and model artifacts.** Historical consumption data, demand forecasts, optimization results, and audit trails all live in S3. Parquet format for analytical queries, JSON for operational data.
 
-**Amazon DynamoDB for the policy store.** Reorder policies need low-latency point lookups (the execution engine checks policies by item ID). DynamoDB's key-value model fits perfectly. Policies are small documents (reorder point, order quantity, last updated timestamp, criticality tier).
+**Amazon DynamoDB for the policy store.** Reorder policies need low-latency point lookups (the execution engine checks policies by item ID). DynamoDB's key-value model fits perfectly. Policies are small documents (reorder point, order quantity, last updated timestamp, criticality tier). Write access should be restricted to the optimization pipeline role only; the execution engine needs read access (GetItem) but should never modify policies directly.
 
 **Amazon EventBridge for scheduling and event routing.** Triggers the nightly batch optimization, routes inventory-level events from the ERP integration, and dispatches order generation events.
 
@@ -155,10 +155,11 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Lambda, Step Functions, SageMaker, ECS Fargate, DynamoDB, S3, EventBridge, CloudWatch |
-| **IAM Permissions** | `states:StartExecution`, `sagemaker:InvokeEndpoint`, `ecs:RunTask`, `dynamodb:GetItem/PutItem`, `s3:GetObject/PutObject`, `events:PutEvents` |
+| **IAM Permissions** | Per-component roles (see below). Step Functions execution role: `lambda:InvokeFunction`, `ecs:RunTask`, `sagemaker:InvokeEndpoint`. Lambda (parameter estimation): `s3:GetObject`, `sagemaker:InvokeEndpoint`, `s3:PutObject`. Lambda (execution engine): `dynamodb:GetItem`, `events:PutEvents`. ECS task role: `s3:GetObject` (parameters bucket), `s3:PutObject` (results bucket), `dynamodb:PutItem` (policies table only). Scope all permissions to specific resource ARNs. |
 | **BAA** | Required if inventory data links to patient procedures (surgical supply consumption tied to case records) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS |
-| **VPC** | Production: ECS tasks and Lambda in VPC with endpoints for S3, DynamoDB, SageMaker |
+| **VPC** | Production: ECS tasks and Lambda in VPC with endpoints for S3 (gateway), DynamoDB (gateway), SageMaker (interface), Step Functions (interface), CloudWatch Logs (interface), EventBridge (interface), KMS (interface if using CMK). Note: gateway endpoints are free; interface endpoints cost ~$7.20/month per AZ. |
+| **Network (ERP)** | ERP connectivity typically uses AWS Direct Connect or Site-to-Site VPN for on-premises systems, or VPC PrivateLink for SaaS inventory platforms. Ensure the integration path is covered under your BAA if inventory data is linked to patient procedures. |
 | **CloudTrail** | Enabled for audit trail of policy changes and order generation |
 | **Sample Data** | Historical consumption data (item, quantity, date, location). Synthetic data generators available for testing. Never use data linkable to patient records in dev. |
 | **Cost Estimate** | SageMaker inference: ~$50/month (ml.m5.large endpoint for forecasting). ECS Fargate solver: ~$5-20/month (nightly 10-minute task). Lambda + DynamoDB + S3: ~$10-30/month. Total: $65-200/month depending on item count and forecast complexity. |
@@ -295,6 +296,10 @@ FUNCTION estimate_parameters(snapshot, forecasts):
         // Typical range: $20-$75 per order in healthcare procurement.
         ordering_cost = 50.00  // dollars per order placed
 
+        // Annual demand: total expected consumption over a year.
+        // Derived from the forecast's daily rate. The solver needs this for ordering cost calculation.
+        annual_demand = (forecast.demand_mean / horizon_days) * 365
+
         params = {
             item_id:                item.item_id,
             demand_during_lt_mean:  demand_during_lt_mean,
@@ -307,7 +312,9 @@ FUNCTION estimate_parameters(snapshot, forecasts):
             shelf_life_days:        item.shelf_life_days,
             storage_volume:         item.storage_volume,
             criticality:            item.criticality,
-            service_level:          service_level
+            service_level:          service_level,
+            annual_demand:          annual_demand,
+            daily_demand_mean:      forecast.demand_mean / horizon_days
         }
         append params to parameters
 
@@ -341,26 +348,27 @@ FUNCTION solve_optimization(parameters, constraints):
     // Ordering cost ~ (annual_demand / Q) * ordering_cost_per_order
     total_cost = 0
     FOR each item in parameters:
-        annual_demand = item.demand_during_lt_mean * (365 / lead_time_days)
         avg_inventory = Q[item.item_id] / 2 + item.safety_stock
         holding = avg_inventory * item.daily_holding_cost * 365
-        ordering = (annual_demand / Q[item.item_id]) * item.ordering_cost
+        ordering = (item.annual_demand / Q[item.item_id]) * item.ordering_cost
         total_cost = total_cost + holding + ordering
 
     model.set_objective(MINIMIZE, total_cost)
 
     // Constraint: total inventory value must not exceed budget.
-    budget_expr = sum of (r[item.item_id] * item.unit_cost) for all items
+    // Use peak inventory (r + Q) for worst-case budget planning: this is the maximum
+    // inventory level, reached the moment a new order arrives when stock is at the reorder point.
+    budget_expr = sum of ((r[item.item_id] + Q[item.item_id]) * item.unit_cost) for all items
     model.add_constraint(budget_expr <= constraints.total_budget)
 
     // Constraint: total storage volume must not exceed capacity.
-    storage_expr = sum of (r[item.item_id] * item.storage_volume) for all items
+    // Also uses peak inventory (r + Q) since you need space for the full delivery.
+    storage_expr = sum of ((r[item.item_id] + Q[item.item_id]) * item.storage_volume) for all items
     model.add_constraint(storage_expr <= constraints.total_storage_cubic_ft)
 
     // Constraint: for perishable items, order quantity should be consumable before expiration.
     FOR each item in parameters WHERE item.shelf_life_days is not null:
-        daily_demand = item.demand_during_lt_mean / lead_time_days
-        max_qty_before_expiry = daily_demand * item.shelf_life_days * 0.8  // 80% safety margin
+        max_qty_before_expiry = item.daily_demand_mean * item.shelf_life_days * 0.8  // 80% safety margin
         model.add_constraint(Q[item.item_id] <= max_qty_before_expiry)
 
     // Solve with time limit.
@@ -371,6 +379,11 @@ FUNCTION solve_optimization(parameters, constraints):
         // Log which constraints are binding for human review.
         log_infeasibility_analysis(model)
         RETURN { status: "infeasible", binding_constraints: model.get_iis() }
+
+    IF result.status == "error" OR result.status == "unbounded":
+        // Solver encountered a problem. Keep current policies active (fail-safe).
+        log_solver_error(result)
+        RETURN { status: "error", message: result.error_message }
 
     // Extract optimal policies.
     policies = empty list
@@ -393,7 +406,7 @@ FUNCTION solve_optimization(parameters, constraints):
     }
 ```
 
-**Step 5: Validate and store policies.** Before committing new policies to the operational store, validate them against sanity checks. A reorder point that jumped 500% overnight probably indicates a data issue, not a genuine need. Compare new policies against current ones and flag dramatic changes for human review. Once validated, write to the policy store with versioning so you can track policy evolution over time and roll back if needed.
+**Step 5: Validate and store policies.** Before committing new policies to the operational store, validate them against sanity checks. A reorder point that jumped 500% overnight probably indicates a data issue, not a genuine need. Compare new policies against current ones and flag dramatic changes for human review. Once validated, write to the policy store with versioning so you can track policy evolution over time and roll back if needed. A GSI on `solver_run_id` enables efficient rollback: query all policies from a specific run and revert them in batch.
 
 ```
 FUNCTION validate_and_store(solver_result, current_policies):
@@ -444,6 +457,8 @@ FUNCTION validate_and_store(solver_result, current_policies):
 
 **Step 6: Execute reorder decisions.** The execution engine runs continuously (or on inventory-level-change events from the ERP). When an item's effective inventory (on-hand plus on-order) drops to or below its reorder point, generate a purchase order. This step is deliberately simple: all the intelligence lives in the policy calculation. The execution layer just compares numbers and triggers orders. This separation means you can update policies without touching execution logic, and you can test new policies in simulation before deploying them.
 
+Reorder events are written to an immutable audit log (S3 with Object Lock or a dedicated CloudWatch Log Group with a retention policy). Each log entry includes the decision inputs (current level, reorder point, policy version) alongside the action taken, enabling full traceability for procurement audits.
+
 ```
 FUNCTION check_and_reorder(inventory_event):
     // Triggered when an item's inventory level changes (consumption, receipt, adjustment).
@@ -483,7 +498,7 @@ FUNCTION check_and_reorder(inventory_event):
         // Submit to procurement system.
         submit_purchase_order(order)
 
-        // Log for audit and performance tracking.
+        // Log to immutable audit store with full decision context.
         log_reorder_event(order)
 
         RETURN { action: "order_placed", order: order }
@@ -580,7 +595,6 @@ Start with the basic model. Get the data pipeline right. Prove value on a subset
 
 **AWS Solutions and Blogs:**
 - [Improving Forecast Accuracy with Machine Learning](https://aws.amazon.com/solutions/implementations/improving-forecast-accuracy-with-machine-learning/): Deployable solution for demand forecasting
-- [Optimizing Hospital Operations with Machine Learning on AWS](https://aws.amazon.com/blogs/machine-learning/): TODO: verify specific blog post URL exists
 
 ---
 

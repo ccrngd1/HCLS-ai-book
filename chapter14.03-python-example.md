@@ -334,7 +334,7 @@ def solve_inventory_optimization(
     col_indices = []
     for i, item in enumerate(parameters):
         lb = int(math.ceil(item["safety_stock"]))
-        ub = lb * 10  # generous upper bound
+        ub = max(lb * 10, 100)  # generous upper bound; floor of 100 prevents zero-range for low-variability items
         # Objective coefficient: holding cost for the reorder point portion.
         # Total holding cost = (Q/2 + r) * daily_holding * 365, but Q is fixed,
         # so the variable part is r * daily_holding * 365.
@@ -371,18 +371,27 @@ def solve_inventory_optimization(
         -highspy.kHighsInf,
         total_storage_cuft,
         len(storage_indices),
-        storage_coeffs,  # Note: this should be storage_coeffs
+        storage_indices,
+        storage_coeffs,
     )
 
     # Solve.
     h.run()
 
     status = h.getModelStatus()
-    info = h.getInfoValue("objective_function_value")
 
     if status == highspy.HighsModelStatus.kInfeasible:
         logger.warning("Model is infeasible. Constraints are too tight.")
         return {"status": "infeasible", "policies": []}
+
+    # Guard against non-solution states (solver errors, unbounded, etc.).
+    if status not in (
+        highspy.HighsModelStatus.kOptimal,
+        highspy.HighsModelStatus.kObjectiveBound,
+        highspy.HighsModelStatus.kTimeLimit,
+    ):
+        logger.warning("Solver failed: status=%s", status)
+        return {"status": "error", "solver_status": str(status), "policies": []}
 
     # Extract solution.
     solution = h.getSolution()
