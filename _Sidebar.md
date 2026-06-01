@@ -340,6 +340,8 @@
   * [Python Example](chapter13.08-python-example)
 * [13.9 — Literature-Derived Knowledge Graph](chapter13.09-literature-derived-knowledge-graph)
   * [Python Example](chapter13.09-python-example)
+* [13.10 — Federated Clinical Knowledge Network](chapter13.10-federated-clinical-knowledge-network)
+  * [Python Example](chapter13.10-python-example)
 
 ---
 
