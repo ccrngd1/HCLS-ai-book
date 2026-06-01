@@ -386,6 +386,8 @@
   * [Python Example](chapter15.05-python-example)
 * [15.6 — Glucose Control in ICU](chapter15.06-glucose-control-icu)
   * [Python Example](chapter15.06-python-example)
+* [15.7 — Chronic Disease Treatment Personalization](chapter15.07-chronic-disease-treatment-personalization)
+  * [Python Example](chapter15.07-python-example)
 
 ---
 
