@@ -64,7 +64,7 @@ Building a drug interaction knowledge graph requires integrating multiple author
 
 **RxNorm** (National Library of Medicine): The standard vocabulary for clinical drugs. Provides the node identities: normalized drug names, ingredient relationships, dose forms, and therapeutic classes. RxNorm is the backbone that lets you connect "Lipitor 20mg tablet" to "atorvastatin" to "HMG-CoA reductase inhibitors." Without RxNorm normalization, you'd be comparing brand names to generics to ingredients and getting nowhere.
 
-**DrugBank**: A comprehensive database of drug properties including targets, enzymes, transporters, and carriers. This is where you get the mechanistic relationships: which enzymes metabolize which drugs, which transporters move which drugs across membranes, which receptors each drug binds to. DrugBank provides the "why" behind interactions. It has both a free academic version and a commercial version with additional curated content.
+**DrugBank**: A comprehensive database of drug properties including targets, enzymes, transporters, and carriers. This is where you get the mechanistic relationships: which enzymes metabolize which drugs, which transporters move which drugs across membranes, which receptors each drug binds to. DrugBank provides the "why" behind interactions. It has both a free academic version and a commercial version with additional curated content. (The free academic version is surprisingly complete for mechanism data. The commercial version adds curated clinical significance ratings that save you months of manual annotation.)
 
 **FDA Structured Product Labeling (SPL)**: The official drug labels in machine-readable XML format. The "Drug Interactions" section of each label contains FDA-reviewed interaction information. The challenge is that this information is in semi-structured text, not clean relational data. NLP extraction is needed to convert label text into graph edges.
 
@@ -127,15 +127,15 @@ Not all interactions are created equal, and your graph needs to represent this. 
 
 ### Why These Services
 
-**Amazon Neptune for the interaction knowledge graph.** Neptune's property graph model (queried via openCypher or Gremlin) is the natural fit for drug interaction data. Drugs, enzymes, and clinical effects are nodes. Mechanistic relationships are typed edges with properties like inhibition strength, evidence level, and source. Neptune supports both property graph and RDF modes, which matters here because RxNorm and some ontology sources are natively RDF. You can load RDF ontology data via SPARQL and query the application-level interaction graph via openCypher, all in the same cluster. Neptune's read replicas handle the query load from clinical systems while the writer endpoint handles knowledge base updates.
+**Amazon Neptune for the interaction knowledge graph.** Neptune's property graph model (queried via openCypher or Gremlin) is the natural fit for drug interaction data. Drugs, enzymes, and clinical effects are nodes. Mechanistic relationships are typed edges with properties like inhibition strength, evidence level, and source. Neptune supports both property graph and RDF modes, which matters here because RxNorm and some ontology sources are natively RDF. You can load RDF ontology data via SPARQL and query the application-level interaction graph via openCypher, all in the same cluster. Neptune's read replicas handle the query load from clinical systems while the writer endpoint handles knowledge base updates. Configure at least one read replica in a separate AZ for high availability. During a failover event (30-60 seconds), the interaction-engine Lambda should retry with exponential backoff (3 retries, starting at 200ms). If Neptune remains unreachable, return a degraded response indicating the check is temporarily unavailable rather than silently passing orders unchecked.
 
 **Amazon S3 for source data staging and versioning.** Drug interaction sources (RxNorm downloads, DrugBank exports, FDA SPL files) land in S3 as the first step of ingestion. S3 versioning provides an audit trail of every source file version that contributed to the current graph state. This matters for regulatory traceability: if a clinician asks "why did the system flag this interaction?", you need to trace back to the specific source data and version.
 
-**AWS Lambda for ingestion orchestration and interaction queries.** The ingestion pipeline (parse sources, normalize, load to Neptune) runs on a schedule (weekly for most sources). Individual Lambda functions handle each source's parsing logic. For the query path, Lambda functions behind API Gateway translate clinical queries ("check these 5 drugs for interactions") into graph traversals, execute them against Neptune, score the results, and return structured responses. The stateless nature of Lambda fits both workloads.
+**AWS Lambda for ingestion orchestration and interaction queries.** The ingestion pipeline (parse sources, normalize, load to Neptune) runs on a schedule (weekly for most sources). Individual Lambda functions handle each source's parsing logic. For the query path, Lambda functions behind API Gateway translate clinical queries ("check these 5 drugs for interactions") into graph traversals, execute them against Neptune, score the results, and return structured responses. The stateless nature of Lambda fits both workloads. Because VPC-attached Lambda functions incur additional cold start latency (ENI creation, 1-5 seconds), configure Provisioned Concurrency (minimum 2-5 instances) on the interaction-engine Lambda to eliminate cold starts on the clinical query path. Alternatively, use a scheduled CloudWatch Events rule to keep the function warm during clinical operating hours.
 
-**Amazon Comprehend Medical for FDA label extraction.** FDA Structured Product Labeling files contain drug interaction information in semi-structured text. Comprehend Medical extracts medication entities, dosages, and relationships from this text, providing the raw material that the ingestion pipeline converts into graph edges. It handles medical terminology, abbreviations, and the specific linguistic patterns found in drug labels.
+**Amazon Comprehend Medical for FDA label extraction.** FDA Structured Product Labeling files contain drug interaction information in semi-structured text. Comprehend Medical extracts medication entities, dosages, and relationships from this text, providing the raw material that the ingestion pipeline converts into graph edges. It handles medical terminology, abbreviations, and the specific linguistic patterns found in drug labels. Note: FDA SPL files are public documents, not PHI. The Comprehend Medical calls in the ingestion pipeline process public drug label text. The PHI surface area in this system is on the query path (patient medication lists) and in the audit logs, not in the knowledge graph itself.
 
-**Amazon ElastiCache (Redis) for interaction result caching.** Many interaction checks are repeated frequently (common drug combinations in a hospital formulary). Caching scored interaction results for stable medication pairs avoids redundant graph traversals. Cache invalidation triggers when the underlying graph is updated with new source data.
+**Amazon ElastiCache (Redis) for interaction result caching.** Many interaction checks are repeated frequently (common drug combinations in a hospital formulary). Caching scored interaction results for stable medication pairs avoids redundant graph traversals. Cache invalidation triggers when the underlying graph is updated with new source data. Enable Redis AUTH token (rotated via Secrets Manager) so that only authorized Lambda functions can read cached clinical data. The interaction-engine Lambda retrieves the AUTH token from Secrets Manager at cold start.
 
 **Amazon EventBridge for update orchestration.** Source data updates arrive on different schedules. EventBridge rules trigger the appropriate ingestion Lambda when new source files land in S3, when scheduled update windows arrive, or when manual refresh is requested. This decouples the update schedule from the ingestion logic.
 
@@ -205,11 +205,11 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, Amazon API Gateway, Amazon ElastiCache (Redis), Amazon Comprehend Medical, Amazon EventBridge, AWS KMS |
-| **IAM Permissions** | Interaction engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN). Ingestion Lambdas: `neptune-db:WriteDataViaQuery`, `neptune-db:ReadDataViaQuery`, `s3:GetObject` (source bucket), `comprehend:DetectEntitiesV2`, `comprehend:InferRxNorm`. Normalizer Lambda: `neptune-db:WriteDataViaQuery`, `neptune-db:GetLoaderStatus`. All: `kms:Decrypt`, `kms:GenerateDataKey` (scoped to encryption keys). |
+| **IAM Permissions** | Interaction engine Lambda: `neptune-db:ReadDataViaQuery`, `neptune-db:GetQueryStatus` (scoped to cluster ARN), `secretsmanager:GetSecretValue` (scoped to Redis AUTH secret ARN). Ingestion Lambdas: `neptune-db:WriteDataViaQuery`, `neptune-db:ReadDataViaQuery`, `s3:GetObject` (source bucket), `comprehend:DetectEntitiesV2`, `comprehend:InferRxNorm`. Normalizer Lambda: `neptune-db:WriteDataViaQuery`, `neptune-db:GetLoaderStatus`. All: `kms:Decrypt`, `kms:GenerateDataKey` (scoped to encryption keys). |
 | **BAA** | Required. Drug interaction checks are performed in the context of patient care and reference patient medication lists (PHI). |
 | **Encryption** | Neptune: encryption at rest enabled at cluster creation. S3: SSE-KMS for source data and staging buckets. ElastiCache: in-transit and at-rest encryption. All API traffic over TLS 1.2+. |
-| **VPC** | Neptune requires VPC deployment. Lambda functions in same VPC. Security groups: Lambda SG allows outbound to Neptune (8182), ElastiCache (6379), and VPC endpoints (443). Neptune SG allows inbound from Lambda SG on 8182. VPC endpoints: S3 (gateway), Comprehend (interface), CloudWatch Logs (interface), KMS (interface). |
-| **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled (`neptune_enable_audit_log = 1`). Interaction query logs retained for clinical audit trail (who checked what, when, what was returned). |
+| **VPC** | Neptune requires VPC deployment. Lambda functions in same VPC. Security groups: Lambda SG allows outbound to Neptune (8182), ElastiCache (6379), and VPC endpoints (443). Neptune SG allows inbound from Lambda SG on 8182. VPC endpoints: S3 (gateway), Comprehend (interface), CloudWatch Logs (interface), KMS (interface). Ingestion Lambdas access source data via the S3 gateway endpoint. If direct API access to external data sources is needed (e.g., DrugBank API), add a NAT Gateway or download source files to S3 outside the VPC first. |
+| **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled (`neptune_enable_audit_log = 1`). The interaction-engine Lambda logs each request and response to a dedicated CloudWatch Logs log group (KMS-encrypted, exported to S3 for long-term retention). Each log entry captures: timestamp, requesting system identifier, patient context hash (not raw patient ID), medication list checked, interactions returned with scores, and processing time. Retention: minimum 7 years per state medical record retention laws. This log group contains PHI (medication lists in patient context) and requires the same access controls as the Neptune cluster. |
 | **Sample Data** | RxNorm: free download from [NLM UMLS](https://www.nlm.nih.gov/research/umls/rxnorm/docs/rxnormfiles.html). DrugBank: academic license free, commercial license required for production. FDA SPL: [DailyMed](https://dailymed.nlm.nih.gov/dailymed/spl-resources-all-drug-labels.cfm). MED-RT: free from [VA NDF-RT](https://evs.nci.nih.gov/ftp1/NDF-RT/). |
 | **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). Neptune I/O: ~$0.20/million requests. ElastiCache cache.t3.medium: ~$50/month. Comprehend Medical: ~$0.01 per 100 characters (one-time label processing ~$50-100 total). Lambda + API Gateway: negligible at clinical query volumes. Total steady-state: ~$350-400/month for a single-institution deployment. |
 
@@ -415,6 +415,8 @@ This is the core clinical function. Given a list of medications, traverse the gr
 
 This step is what clinicians actually interact with. If it's too slow (over 500ms), it won't be used in real-time prescribing workflows. If it returns too many low-significance results, clinicians will ignore it entirely.
 
+For polypharmacy patients (15+ medications, common in elderly populations), pair count grows quadratically (25 medications = 300 pairs). Consider a tiered strategy: check only new or changed medications against the existing list in real time, then run the full pairwise check asynchronously and update the patient's interaction profile. The cache in Step 5 partially addresses this for stable medication combinations, but the first check for a complex patient will still be slow without tiering.
+
 ```
 FUNCTION check_interactions(medication_list, patient_context):
     // medication_list: [{rxcui, dose, frequency, duration}, ...]
@@ -511,6 +513,8 @@ FUNCTION check_interactions(medication_list, patient_context):
 
 Clinical systems need sub-second response times. Caching interaction results for common drug combinations avoids redundant graph traversals while ensuring freshness when the knowledge base updates.
 
+Important: after the normalizer Lambda completes a graph update, it should publish an EventBridge event (`graph.updated`) that triggers a cache flush. This flush invalidates all cached entries (or selectively invalidates entries containing affected drugs). Without explicit invalidation, the system could serve stale "no interaction found" results for up to the full TTL after a new interaction is added to the graph. For a safety-critical system, stale cache is a patient safety risk. The TTL below (24 hours) serves as a backstop, not the primary invalidation mechanism.
+
 ```
 FUNCTION serve_interaction_check(request):
     // request: {medications: [...], patient_context: {...}}
@@ -531,8 +535,8 @@ FUNCTION serve_interaction_check(request):
     result = check_interactions(request.medications, request.patient_context)
     
     // Cache the raw interaction paths (before patient-specific scoring)
-    // TTL aligned with knowledge base update frequency
-    CACHE_SET("interactions:" + med_key, result.raw_paths, TTL=7_DAYS)
+    // TTL is a safety backstop; primary invalidation is event-driven on graph update
+    CACHE_SET("interactions:" + med_key, result.raw_paths, TTL=24_HOURS)
     
     RETURN result
 ```
@@ -621,7 +625,7 @@ Sample interaction check response:
 
 ## The Honest Take
 
-Here's what I've learned building these systems:
+Here's what I've learned building these systems (mostly by getting it wrong first):
 
 **Alert fatigue is the real enemy, not missing interactions.** Every drug interaction system I've seen starts with the goal of "catch everything" and ends up being ignored because it catches too much. The hard engineering problem isn't finding interactions. It's *not* alerting on the ones that don't matter for this specific patient at this specific dose. Your significance scoring algorithm will get more engineering attention than your graph traversal logic.
 
