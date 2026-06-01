@@ -324,6 +324,8 @@
 * [Preface](chapter13-preface)
 * [13.1 — Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)
   * [Python Example](chapter13.01-python-example)
+* [13.2 — Provider Directory as Knowledge Graph](chapter13.02-provider-directory-knowledge-graph)
+  * [Python Example](chapter13.02-python-example)
 
 ---
 
