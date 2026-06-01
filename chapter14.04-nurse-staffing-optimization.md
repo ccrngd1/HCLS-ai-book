@@ -100,17 +100,17 @@ The conceptual pipeline for nurse staffing optimization:
 [Data Collection] → [Demand Forecasting] → [Constraint Formulation] → [Solver Execution] → [Schedule Publication] → [Real-Time Adjustment]
 ```
 
-**Data Collection.** Gather the inputs: staff roster (names, certifications, FTE status, contract hours), availability (PTO, restrictions, preferences), historical patterns (typical call-off rates, seasonal volume), and unit requirements (minimum staffing by shift, skill mix needs). This data lives across multiple systems: HR/payroll, the EHR (for census/acuity), time-and-attendance, and often a separate scheduling application.
+**Data Collection.** Gather the inputs: staff roster (names, certifications, FTE status, contract hours), availability (PTO, restrictions, preferences), historical patterns (typical call-off rates, seasonal volume), and unit requirements (minimum staffing by shift, skill mix needs). This data lives across multiple systems: HR/payroll, the EHR (for census/acuity), time-and-attendance, and often a separate scheduling application. Staff preference data (which may include sensitive personal information like medical restrictions or childcare constraints) should be stored with tighter access controls than the general roster and treated as ephemeral: delete assembled problem definitions containing preferences after the solver completes.
 
-**Demand Forecasting.** Predict how many nurses you'll need per unit per shift. This combines historical census patterns, known admissions (scheduled surgeries), seasonal trends, and day-of-week effects. The forecast drives the "demand" side of the optimization. See Recipe 12.5 (Hospital Census Forecasting) for the forecasting component.
+**Demand Forecasting.** Predict how many nurses you'll need per unit per shift. This combines historical census patterns, known admissions (scheduled surgeries), seasonal trends, and day-of-week effects. The forecast drives the "demand" side of the optimization. See Recipe 12.5 (Hospital Census Forecasting) for the forecasting component. If the forecasting service is unavailable (or during initial deployment before sufficient history exists), fall back to a static staffing matrix based on unit type and historical averages (e.g., "med-surg 36-bed unit: 7 day / 6 evening / 5 night as baseline"). Store this fallback as configuration.
 
 **Constraint Formulation.** Translate business rules, labor agreements, and preferences into mathematical constraints. This is the intellectual core of the system. Each rule becomes an equation or inequality that the solver must respect. The formulation must be maintained as rules change (new union contract, new state regulation, new unit opening).
 
 **Solver Execution.** Feed the formulated problem to an optimization engine. For batch scheduling, allow minutes of runtime and aim for near-optimal solutions. For real-time adjustments, constrain runtime to seconds and accept good-enough solutions.
 
-**Schedule Publication.** Present the generated schedule to the nurse manager for review, allow manual adjustments (the solver doesn't know about the interpersonal conflict between Nurse A and Nurse B), and publish to staff. Track which adjustments were made manually; these are signals for improving the model.
+**Schedule Publication.** Present the generated schedule to the nurse manager for review, allow manual adjustments (the solver doesn't know about the interpersonal conflict between Nurse A and Nurse B), and publish to staff. Track which adjustments were made manually; these are signals for improving the model. Manual overrides should flow through the same event bus as automated assignments, with a distinct event type capturing who made the change, what was changed, and the stated reason.
 
-**Real-Time Adjustment.** When disruptions occur (call-offs, census spikes, patient transfers), re-run the solver with the current state as a starting point. Minimize changes to the existing schedule. Produce ranked recommendations for coverage (who to call, estimated likelihood of acceptance based on historical patterns).
+**Real-Time Adjustment.** When disruptions occur (call-offs, census spikes, patient transfers), re-run the solver with the current state as a starting point. Minimize changes to the existing schedule. Produce ranked recommendations for coverage (who to call, in what order). Use concurrency control (optimistic locking or transactions) to prevent race conditions when multiple disruptions arrive simultaneously.
 
 ---
 
@@ -118,17 +118,17 @@ The conceptual pipeline for nurse staffing optimization:
 
 ### Why These Services
 
-**Amazon SageMaker for solver hosting.** The optimization solver (whether you're using OR-Tools, HiGHS, or a commercial solver) needs compute. SageMaker provides managed infrastructure for running optimization workloads: you package your solver as a container, deploy it as an endpoint for real-time requests, or run batch transform jobs for schedule generation. SageMaker handles auto-scaling, so your real-time endpoint can handle burst requests (multiple call-offs on a holiday morning) without pre-provisioning.
+**Amazon SageMaker for solver hosting.** The optimization solver (whether you're using OR-Tools, HiGHS, or a commercial solver) needs compute. SageMaker provides managed infrastructure for running optimization workloads: you package your solver as a container, deploy it as an endpoint for real-time requests, or run batch transform jobs for schedule generation. For the real-time path (where 2-5 second response times are required), configure a minimum instance count of 1 so the endpoint never scales to zero. Cold starts on SageMaker endpoints can take 3-5 minutes, which is incompatible with the "nurse called off at 5 AM" scenario. An alternative for the real-time path: run the solver directly in Lambda (OR-Tools fits in a Lambda deployment package under 250MB), trading the 15-minute maximum runtime and 10GB memory limit for guaranteed cold-start latency under 10 seconds. The batch path benefits from SageMaker's larger instance types and longer runtimes.
 
 **AWS Lambda for orchestration and event handling.** The glue between systems: receiving call-off notifications, triggering reoptimization, publishing results. Lambda's event-driven model fits the real-time adjustment workflow perfectly. A call-off event arrives, Lambda assembles the current state, invokes the solver endpoint, and routes the recommendation.
 
-**Amazon DynamoDB for schedule state.** The current schedule, staff availability, and constraint parameters need fast read/write access. DynamoDB's key-value model works well for schedule lookups (get all shifts for nurse X, get all nurses for shift Y on date Z). Global secondary indexes support the multiple access patterns.
+**Amazon DynamoDB for schedule state.** The current schedule, staff availability, and constraint parameters need fast read/write access. DynamoDB's key-value model works well for schedule lookups (get all shifts for nurse X, get all nurses for shift Y on date Z). Global secondary indexes support the multiple access patterns. For the real-time path, use DynamoDB conditional writes or transactions to prevent race conditions: before assigning a nurse to cover a gap, verify atomically that she hasn't already been assigned by a concurrent request.
 
-**Amazon EventBridge for event routing.** Call-offs, census changes, and schedule publications are events that trigger downstream workflows. EventBridge provides the event bus that connects the scheduling system to notification services, dashboards, and audit logs.
+**Amazon EventBridge for event routing.** Call-offs, census changes, schedule publications, and manual overrides are events that trigger downstream workflows. EventBridge provides the event bus that connects the scheduling system to notification services, dashboards, and audit logs.
 
 **Amazon S3 for historical data and model artifacts.** Historical schedules, demand forecasts, and solver configurations live in S3. The batch scheduling pipeline reads from S3 (staff data, constraints, demand forecast) and writes results back.
 
-**Amazon SNS for notifications.** When the solver recommends coverage options, nurses need to be notified. SNS handles multi-channel delivery (SMS, push notification, email) with delivery tracking.
+**Amazon SNS for notifications.** When the solver recommends coverage options, nurses need to be notified. SNS handles multi-channel delivery (SMS, push notification, email) with delivery tracking. Important: SMS messages traverse carrier networks in plaintext beyond the AWS boundary. Coverage request notifications sent via SMS should contain only the shift time, unit name, and overtime status. Never include patient census, acuity, or reason-for-need in SMS notifications. For richer context, use push notifications via an encrypted mobile app with certificate pinning and at-rest encryption on the device.
 
 ### Architecture Diagram
 
@@ -166,14 +166,14 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, AWS Lambda, Amazon DynamoDB, Amazon EventBridge, Amazon S3, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sns:Publish`, `events:PutEvents` |
+| **IAM Permissions** | `sagemaker:InvokeEndpoint`, `dynamodb:GetItem/PutItem/Query`, `s3:GetObject/PutObject`, `sns:Publish`, `events:PutEvents`. Production: scope DynamoDB permissions to specific table ARNs per function. Use separate IAM roles for assembly, solver invocation, and publication functions. |
 | **BAA** | Required: staff schedules combined with unit assignments can constitute workforce PHI adjacent data; census/acuity data is PHI |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS; SNS messages encrypted in transit |
-| **VPC** | Production: Lambda and SageMaker in VPC with endpoints for DynamoDB, S3, and CloudWatch Logs |
-| **CloudTrail** | Enabled: audit all schedule modifications and solver invocations |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS; SNS messages encrypted in transit (note: SMS delivery beyond AWS is plaintext) |
+| **VPC** | Production: Lambda and SageMaker in VPC with endpoints: S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), EventBridge (interface), SNS (interface), CloudWatch Logs (interface), KMS (interface). Interface endpoints cost ~$7-8/month each in a 3-AZ deployment (~$35-50/month total). |
+| **CloudTrail** | Enabled: audit all schedule modifications, solver invocations, and manual overrides |
 | **Solver** | Google OR-Tools CP-SAT (open-source, Apache 2.0) or HiGHS (open-source, MIT) packaged in SageMaker container. Commercial options: Gurobi, CPLEX (require separate licensing) |
 | **Sample Data** | Synthetic staff roster with certifications, shift patterns, and availability. Never use real employee data in dev. |
-| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large): ~$0.12/hr (~$86/month). Lambda invocations: negligible. DynamoDB on-demand: ~$5-20/month depending on schedule size. Total: ~$100-200/month for a single hospital. |
+| **Cost Estimate** | SageMaker real-time endpoint (ml.m5.large, min 1 instance): ~$0.12/hr (~$86/month). Lambda invocations: negligible. DynamoDB on-demand: ~$5-20/month depending on schedule size. Total: ~$100-200/month for a single hospital. |
 
 ### Ingredients
 
@@ -182,7 +182,7 @@ flowchart TD
 | **Amazon SageMaker** | Hosts optimization solver as a managed endpoint; handles batch and real-time requests |
 | **AWS Lambda** | Orchestrates problem assembly, solver invocation, and result routing |
 | **Amazon DynamoDB** | Stores current schedule state, staff availability, and constraint parameters |
-| **Amazon EventBridge** | Routes scheduling events (call-offs, census changes, schedule publications) |
+| **Amazon EventBridge** | Routes scheduling events (call-offs, census changes, schedule publications, manual overrides) |
 | **Amazon S3** | Stores historical data, demand forecasts, solver configurations, and model artifacts |
 | **Amazon SNS** | Delivers coverage request notifications to nurses via SMS/push |
 | **Amazon CloudWatch** | Monitors solver performance, staffing coverage metrics, and system health |
@@ -205,7 +205,11 @@ FUNCTION assemble_scheduling_problem(schedule_period):
     // This comes from the demand forecasting model (Recipe 12.5).
     // Output: for each (unit, shift, day) tuple, a required headcount
     // and required skill mix (e.g., "at least 1 charge RN, 2 tele-certified").
+    // Fallback: if forecasting service is unavailable, use static staffing
+    // matrix from configuration (unit type -> baseline headcount per shift).
     demand_forecast = fetch from forecasting service for schedule_period
+    IF demand_forecast is unavailable:
+        demand_forecast = load static staffing matrix from configuration
     
     // Pull constraints: the rules that govern valid schedules.
     // These are stored as configuration, not code, because they change
@@ -220,6 +224,9 @@ FUNCTION assemble_scheduling_problem(schedule_period):
     
     // Pull preferences: what do individual nurses want?
     // Stored as soft constraints with penalty weights.
+    // NOTE: Preference data may contain sensitive personal information
+    // (medical restrictions, childcare constraints). Treat as ephemeral:
+    // delete the assembled problem definition after the solver completes.
     preferences = fetch from staff preference system
     // Example: Nurse Smith prefers day shifts (weight: 3),
     //          Nurse Jones prefers no more than 2 weekends/month (weight: 5)
@@ -317,7 +324,9 @@ FUNCTION formulate_optimization_model(problem):
     RETURN model
 ```
 
-**Step 3: Solve and extract the schedule.** Hand the formulated model to the solver engine and let it work. For batch scheduling, you can afford to let it run for minutes. The solver will explore the solution space using branch-and-bound (for MIP) or propagation-and-search (for CP), progressively finding better solutions until it either proves optimality or hits a time limit. The output is the set of variable assignments: which nurse works which shift on which day. You then translate those assignments back into a human-readable schedule. If the solver returns "infeasible" (no valid schedule exists given the constraints), that's actually valuable information: it means you're understaffed for the demand, and you need to relax a constraint or add staff.
+**Step 3: Solve and extract the schedule.** Hand the formulated model to the solver engine and let it work. For batch scheduling, you can afford to let it run for minutes. The solver will explore the solution space using branch-and-bound (for MIP) or propagation-and-search (for CP), progressively finding better solutions until it either proves optimality or hits a time limit. The output is the set of variable assignments: which nurse works which shift on which day. You then translate those assignments back into a human-readable schedule.
+
+If the solver returns "infeasible" (no valid schedule exists given the constraints), that's actually valuable information: it means you're understaffed for the demand, and you need to relax a constraint or add staff. Modern solvers support Irreducible Infeasible Subsystem (IIS) analysis that identifies the minimal set of conflicting constraints. For example: "Nurse RN-4821 has approved PTO on June 14, but she is the only charge-certified nurse available for the night shift that day." This tells the manager exactly which constraint to relax: approve overtime for another charge nurse, or negotiate the PTO.
 
 ```
 FUNCTION solve_and_extract(model, time_limit_seconds):
@@ -333,9 +342,10 @@ FUNCTION solve_and_extract(model, time_limit_seconds):
     
     // Check solver status
     IF result.status == "INFEASIBLE":
-        // No valid schedule exists. This is important information.
-        // Return the infeasibility diagnosis so the manager knows
-        // which constraints conflict.
+        // No valid schedule exists. Return the conflict analysis so the
+        // manager knows which constraints conflict and what to relax.
+        // IIS analysis identifies the smallest set of constraints that
+        // cannot all be satisfied simultaneously.
         RETURN { status: "infeasible", diagnosis: result.conflict_analysis() }
     
     IF result.status == "OPTIMAL" OR result.status == "FEASIBLE":
@@ -370,6 +380,8 @@ FUNCTION solve_and_extract(model, time_limit_seconds):
 ```
 
 **Step 4: Handle real-time disruptions.** The batch schedule is the plan. Reality is what happens next. When a nurse calls off, the system needs to find coverage fast. This step takes the current schedule state, removes the unavailable nurse, and re-solves with tight constraints: minimize changes to the existing schedule, find the best available replacement, and rank options by likelihood of acceptance. The solver runs in seconds, not minutes, because the problem is much smaller (you're only filling one or two gaps, not rebuilding the entire schedule).
+
+Concurrency matters here. If two call-offs arrive simultaneously (not uncommon on a holiday morning), both requests read the same schedule state and may identify the same top candidate. Use a DynamoDB conditional write or transaction to verify the candidate is still unscheduled before assigning coverage. Without this, you risk double-booking a nurse to two units.
 
 ```
 FUNCTION handle_calloff(calloff_event):
@@ -407,16 +419,25 @@ FUNCTION handle_calloff(calloff_event):
     // Sort by score (best candidates first)
     sort candidates by score descending
     
+    // Before auto-assigning, use a conditional write to verify the candidate
+    // is still unscheduled (prevents race conditions from concurrent call-offs)
+    IF candidates[0].score > AUTO_THRESHOLD:
+        success = conditional_write_assignment(candidates[0], gap)
+        // ConditionExpression: attribute_not_exists(nurse_id) on that shift/day
+        IF not success:
+            // Another concurrent request assigned this nurse; try next candidate
+            retry with candidates[1]
+    
     // Return ranked recommendations
     RETURN {
         gap:          gap,
         candidates:   candidates[0:10],  // top 10 options
-        auto_assign:  candidates[0] if candidates[0].score > AUTO_THRESHOLD else null,
+        auto_assign:  candidates[0] if auto-assigned else null,
         notify_list:  candidates[0:5]    // nurses to contact for voluntary pickup
     }
 ```
 
-**Step 5: Publish and notify.** The generated schedule (or coverage recommendation) needs to reach the right people. For batch schedules, publish to the scheduling system and notify all affected staff. For real-time coverage, send targeted notifications to the ranked candidate list. Track responses (accepted, declined, no response) to improve future scoring. Every schedule change gets an audit record.
+**Step 5: Publish and notify.** The generated schedule (or coverage recommendation) needs to reach the right people. For batch schedules, publish to the scheduling system and notify all affected staff. For real-time coverage, send targeted notifications to the ranked candidate list. Track responses (accepted, declined, no response) to improve future scoring. Every schedule change gets an audit record, whether automated or manual.
 
 ```
 FUNCTION publish_schedule(schedule, schedule_type):
@@ -432,6 +453,7 @@ FUNCTION publish_schedule(schedule, schedule_type):
             is_overtime:    assignment.is_overtime
             published_at:   current UTC timestamp
             schedule_type:  schedule_type  // "batch" or "realtime_adjustment"
+            version:        increment version for optimistic locking
     
     // Notify affected staff
     IF schedule_type == "batch":
@@ -443,11 +465,15 @@ FUNCTION publish_schedule(schedule, schedule_type):
     
     ELSE IF schedule_type == "coverage_request":
         // Notify ranked candidates for voluntary pickup
+        // IMPORTANT: SMS notifications must contain ONLY shift time, unit name,
+        // and overtime status. No patient census, acuity, or reason-for-need.
+        // SMS traverses carrier networks in plaintext beyond AWS.
+        // For richer context, use push notifications via encrypted mobile app.
         FOR each candidate in schedule.notify_list:
             send notification via SNS:
                 channel:  candidate.nurse.preferred_notification_channel
-                message:  format_coverage_request(schedule.gap, candidate)
-                // Include: shift details, overtime status, response deadline
+                message:  format_coverage_request_sanitized(schedule.gap, candidate)
+                // Include only: shift time, unit name, overtime yes/no, response deadline
     
     // Emit event for downstream systems (dashboards, audit, analytics)
     publish event to EventBridge:
@@ -455,12 +481,13 @@ FUNCTION publish_schedule(schedule, schedule_type):
         detail_type: "SchedulePublished"
         detail:      { schedule_id, schedule_type, period, metrics }
     
-    // Audit trail
+    // Audit trail (covers both automated and manual changes)
     write audit record:
         action:     "schedule_published"
         timestamp:  current UTC timestamp
         schedule:   schedule summary (not full detail, for log size)
         metrics:    schedule.metrics
+        modified_by: "system" or manager_id for manual overrides
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Google OR-Tools, check out the [Python Example](chapter14.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
@@ -571,9 +598,7 @@ Start with a single unit. Prove it works. Then expand. Trying to optimize across
 - [Google OR-Tools Nurse Scheduling Example](https://developers.google.com/optimization/scheduling/employee_scheduling)
 - [HiGHS Optimization Solver](https://highs.dev/)
 
-**Healthcare Scheduling Research:**
-- TODO: Verify link for Burke et al. "The State of the Art of Nurse Rostering" survey paper
-- TODO: Verify link for INFORMS Healthcare conference proceedings on nurse scheduling
+<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add URLs for Burke et al. "The State of the Art of Nurse Rostering" survey paper and INFORMS Healthcare conference proceedings, or remove this subsection if links cannot be verified. -->
 
 ---
 

@@ -144,10 +144,11 @@ STAFF_ROSTER = [
 
 # Demand: how many nurses are needed per shift per day.
 # In production, this comes from a census forecasting model (Recipe 12.5).
-# For a 36-bed med-surg unit, typical staffing is 5 nurses on days, 4 on nights.
+# For this small example roster (8 nurses), we use reduced demand.
+# A real 36-bed med-surg unit would need 5 day / 4 night with 40+ nurses.
 DEMAND = {
-    "day": 5,
-    "night": 4,
+    "day": 3,
+    "night": 2,
 }
 
 # At least one charge-certified nurse must be on every shift.
@@ -156,7 +157,7 @@ CHARGE_REQUIRED_PER_SHIFT = 1
 # PTO blocks: nurses who are unavailable on specific days (0-indexed from period start).
 PTO_BLOCKS = {
     "RN-003": [2, 3, 4],       # Priya is off days 2-4
-    "RN-006": [0, 1, 6, 7],   # David is off days 0-1 and 6-7
+    "RN-006": [0, 1, 5, 6],   # David is off days 0-1 and 5-6
 }
 
 # Schedule period: 7 days (one week). Production would typically be 14 days.
@@ -326,7 +327,7 @@ def formulate_model(problem):
         # Create an auxiliary variable for overtime (shifts above target)
         overtime = model.NewIntVar(0, num_days, f"overtime_{nurse['id']}")
         model.Add(overtime >= total_shifts - target_shifts)
-        model.Add(overtime >= 0)
+        # Note: overtime >= 0 is already enforced by the variable's lower bound (0).
         penalties.append(overtime * PENALTY_WEIGHTS["overtime"])
 
     # Weekend fairness: penalize deviation from average weekend shifts.
