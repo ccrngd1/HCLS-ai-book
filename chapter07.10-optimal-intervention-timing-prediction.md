@@ -1,6 +1,6 @@
 # Recipe 7.10: Optimal Intervention Timing Prediction
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,500–8,000/month (model training + inference)
+**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,500-8,000/month (model training + inference)
 
 ---
 
@@ -106,7 +106,7 @@ For most healthcare organizations starting this work, the practical approach is 
 
 <!-- TODO (TechWriter): Expert review ARC-1 (HIGH). Add model monitoring/drift detection to the architecture: SageMaker Model Monitor for feature distribution tracking, periodic recalibration job comparing predicted vs. observed event rates, CloudWatch alarm when C-index drops below 0.65, and a model health dashboard showing calibration curves over time. -->
 
-**Amazon SageMaker for model training and hosting.** Dynamic survival models require custom architectures (RNNs, transformers) trained on longitudinal patient data. SageMaker handles the GPU training infrastructure you need for sequence models, plus experiment tracking and real-time inference endpoints. The model registry handles versioning as you retrain on new outcome data.
+**Amazon SageMaker for model training and hosting.** Dynamic survival models require custom architectures (RNNs, transformers) trained on longitudinal patient data. SageMaker handles the GPU training infrastructure you need for sequence models, plus experiment tracking and real-time inference endpoints. The model registry handles versioning as you retrain on new outcome data, which matters here because timing models need frequent recalibration.
 
 **AWS Glue and Amazon S3 for longitudinal data assembly.** Building patient timelines from disparate source systems (EHR extracts, claims feeds, pharmacy data, ADT feeds) is an ETL-heavy workload. Glue handles the transformation logic; S3 provides the durable data lake layer. Glue's support for incremental processing matters here because patient timelines need daily updates, not full rebuilds.
 
