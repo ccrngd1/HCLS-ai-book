@@ -184,7 +184,7 @@ flowchart TD
 
 **Step 1: Feature engineering pipeline.** Raw EHR data is not suitable for similarity computation. Lab values arrive at different times, diagnoses accumulate over years, medications change. This step transforms raw clinical data into a fixed-length feature vector per patient: one row, one patient, all relevant characteristics normalized and ready for distance computation. The feature engineering runs nightly (or weekly, depending on data freshness requirements) and produces a versioned snapshot. Without this step, you'd be comparing raw, sparse, temporal clinical records directly, which is computationally intractable and clinically meaningless.
 
-```
+```pseudocode
 FUNCTION engineer_patient_features(patient_id, raw_clinical_data):
     // Transform raw clinical records into a fixed-length feature vector.
     // Each patient becomes a single row with standardized, comparable values.
@@ -235,7 +235,7 @@ FUNCTION engineer_patient_features(patient_id, raw_clinical_data):
 
 A note on minimum cohort size: aim for at least 500-1,000 patients in a condition-specific index to provide meaningful diversity of neighbors. Below that threshold, consider broader condition groupings or display a warning that the comparison pool is limited.
 
-```
+```pseudocode
 FUNCTION build_similarity_index(feature_store_path, index_config):
     // Load all patient feature vectors from the feature store.
     // Each row is one patient; each column is one engineered feature.
@@ -268,7 +268,7 @@ FUNCTION build_similarity_index(feature_store_path, index_config):
 
 **Step 3: Query for similar patients.** When a care manager requests similarity for a specific patient, look up that patient's current feature vector, query the index for the k nearest neighbors, and return the matched patient IDs with their distance scores. The distance score is important: it tells you how confident you should be in the similarity. A nearest neighbor at distance 0.1 is much more informative than one at distance 2.5. If all neighbors are far away, the system should say "no strong matches found" rather than returning poor matches with false confidence.
 
-```
+```pseudocode
 FUNCTION find_similar_patients(query_patient_id, k=20, max_distance=None):
     // Look up the query patient's current feature vector.
     query_features = get_patient_features(query_patient_id)
@@ -308,7 +308,7 @@ FUNCTION find_similar_patients(query_patient_id, k=20, max_distance=None):
 
 **Step 4: Aggregate outcomes for similar patients.** Finding similar patients is only half the job. The value comes from examining what happened to them. This step retrieves outcome data for the matched cohort and aggregates it into actionable summaries: what interventions were used, what percentage achieved target goals, what adverse events occurred, and what the typical timeline looked like. The aggregation must be honest about sample size. If only 3 similar patients exist, the confidence in any conclusion is low, and the system should communicate that clearly.
 
-```
+```pseudocode
 FUNCTION aggregate_outcomes(similar_patients, outcome_config):
     // Retrieve outcome records for all similar patients.
     // Outcomes include: goal achievement, interventions received, adverse events, timeline.
@@ -356,7 +356,7 @@ FUNCTION aggregate_outcomes(similar_patients, outcome_config):
 
 The DynamoDB cache stores derived PHI (patient IDs and outcome summaries) and should be treated as a PHI data store subject to your organization's retention and amendment policies. DynamoDB TTL deletion is eventually consistent (items may persist up to 48 hours past expiration), so do not rely on TTL alone as a hard deletion guarantee for compliance purposes. If source patient data is corrected or a patient exercises amendment rights, implement an explicit cache invalidation mechanism rather than waiting for TTL expiry.
 
-```
+```pseudocode
 FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
     // Cache results in DynamoDB with TTL matching feature store refresh interval.
     cache_record = {
