@@ -8,7 +8,7 @@
 
 ## Verdict: PASS (Python companion only)
 
-The Python companion is editorially clean and ready for publication. No edits required. All review findings have been addressed or correctly deferred with properly formatted TODO markers.
+The Python companion is editorially clean and ready for publication. All review findings have been addressed or correctly deferred with properly formatted TODO markers. No edits required on this pass.
 
 ---
 
@@ -59,7 +59,7 @@ The Python companion is editorially clean and ready for publication. No edits re
 ## Remaining TODOs in File
 
 1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). ... -->` (line 1)
-2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line ~302, inside code block)
+2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line 302, inside code block)
 
 Both correctly formatted for the follow-up task generator.
 
@@ -67,13 +67,16 @@ Both correctly formatted for the follow-up task generator.
 
 ## Changes This Pass
 
-No edits applied. Full editorial verification confirmed:
+No edits applied. Full independent editorial verification confirmed:
 - Zero em dashes or en dashes
 - All 9 code fences have language tags (1 bash, 8 python)
 - Both TODO markers correctly formatted with finding IDs (C1, A3) on same line
 - Voice consistent with STYLE-GUIDE.md throughout
 - Structure follows RECIPE-GUIDE.md for Python companions
 - All resolved findings verified in place
+- `datetime.now(timezone.utc)` used correctly (no deprecated `utcnow()`)
+- Normalization applied before feature importance multiplication (A1 fix verified)
+- Gap to Production comprehensive: covers S1, S2, S3, A2, A4, N1
 
 ---
 
