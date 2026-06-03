@@ -545,9 +545,6 @@ def upload_training_data(df: pd.DataFrame, bucket: str = DATA_BUCKET) -> str:
 Here's the full pipeline assembled into a single callable flow. This demonstrates the end-to-end sequence from data generation through scoring and storage.
 
 ```python
-import json
-
-
 def run_ed_prediction_pipeline():
     """
     Run the complete ED visit prediction pipeline.
