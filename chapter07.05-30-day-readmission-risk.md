@@ -86,7 +86,7 @@ The ethical framing matters: are you using the score to help high-risk patients 
 
 The readmission risk pipeline has five logical stages:
 
-```
+```text
 [Discharge Event Detection] → [Feature Assembly] → [Model Scoring] → [Risk Stratification] → [Intervention Routing]
 ```
 
@@ -172,8 +172,6 @@ flowchart TD
 
 **Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for one to two weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
 
-**Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for one to two weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -218,7 +216,7 @@ flowchart TD
 
 **What goes wrong if you skip it:** You score patients who shouldn't be scored (observation stays aren't subject to readmission penalties), waste compute on irrelevant events, and pollute your outcome tracking with non-qualifying encounters.
 
-```
+```pseudocode
 FUNCTION handle_discharge_event(event):
     // Parse the ADT message (HL7 A03 or FHIR Encounter update)
     patient_id = event.patient_identifier
@@ -257,7 +255,7 @@ FUNCTION handle_discharge_event(event):
 
 **What goes wrong if you skip it:** The model receives incomplete or stale data, producing unreliable risk scores. Missing features (especially prior utilization history) dramatically reduce predictive accuracy.
 
-```
+```pseudocode
 FUNCTION assemble_features(discharge_info):
     patient_id = discharge_info.patient_id
     encounter_id = discharge_info.encounter_id
@@ -344,7 +342,7 @@ FUNCTION assemble_features(discharge_info):
 
 **What goes wrong if you skip it:** Obviously you don't get a risk score. But more subtly, if you skip the preprocessing and validation step, you'll send malformed features to the model and get garbage predictions without any error signal.
 
-```
+```pseudocode
 FUNCTION score_patient(feature_vector):
     // Validate feature completeness
     required_features = ["length_of_stay", "admissions_past_6mo",
@@ -389,7 +387,7 @@ FUNCTION score_patient(feature_vector):
 
 **What goes wrong if you skip it:** A probability of 0.42 means nothing to a care transition nurse. They need "high risk, prioritize for home health referral." Without stratification and routing, the model output sits in a database and nobody acts on it.
 
-```
+```pseudocode
 FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
     probability = score_result.probability
 
@@ -482,7 +480,7 @@ FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
 
 **What goes wrong if you skip it:** Your model silently degrades over time as patient populations shift, coding practices change, or new care programs alter readmission patterns. Without monitoring, you won't know your predictions are wrong until someone manually audits them months later.
 
-```
+```pseudocode
 FUNCTION track_outcomes_and_monitor():
     // Run daily: check for readmissions among previously scored patients
     scored_patients = DYNAMODB_QUERY("readmission-risk-scores",
