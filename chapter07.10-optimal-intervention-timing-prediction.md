@@ -586,6 +586,8 @@ FUNCTION generate_explanation(scored_result):
 | False urgency rate (flagged but no event within 30 days) | 30-45% |
 | Cost per patient scored | ~$0.02 (inference + compute) |
 
+Without provisioned concurrency, Lambda cold starts in VPC can push real-time path latency to 10-15 seconds. For this use case, single-digit-second latency is acceptable because recommendations land on a care manager worklist, not in a real-time clinical workflow. The batch path (daily scoring) handles the majority of patients; the real-time path is for acute events only.
+
 **Where it struggles:**
 
 - Patients with very sparse data (new enrollees, infrequent utilizers) produce unreliable trajectories
