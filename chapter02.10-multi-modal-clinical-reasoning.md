@@ -2,6 +2,7 @@
 
 **Complexity:** Complex · **Phase:** Research → Controlled Pilot · **Estimated Cost:** ~$0.40-$4.00 per reasoning run (up to $5-$8 for worst-case comprehensive scenarios)
 
+
 ---
 
 ## The Problem
@@ -177,8 +178,7 @@ The overall flow looks like this:
     → [Tiering and Uncertainty Rendering]
     → [Render with Evidence Links to Each Modality Source]
     → [Log Full Provenance for Audit and Regulatory Evidence]
-```
-
+```text
 **Trigger.** An ED presentation, a new admission, a clinician-requested reasoning run, a planned oncology treatment-selection conversation, a multidisciplinary tumor board preparation. Scoped triggers work better than any-time-anywhere triggers for multi-modal reasoning. Start narrow.
 
 **Fetch patient context.** Pull the FHIR bundle (as in Recipe 2.9) and also pull pointers to the imaging studies, ECG recordings, pathology reports, and other modality-specific items in their native systems. At this stage the system knows what exists; it hasn't interpreted any of it yet.
@@ -209,7 +209,7 @@ The overall flow looks like this:
 
 **Amazon Bedrock for the reasoning layer.** A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under AWS BAA.
 
-**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
+**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
 
 **Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
 
@@ -311,9 +311,7 @@ flowchart TB
     style INV fill:#ffb,stroke:#333
     style ARCH fill:#f9f,stroke:#333
     style HRQ fill:#f99,stroke:#333
-```
-
-
+```text
 ### Prerequisites
 
 | Requirement | Details |
@@ -397,14 +395,13 @@ FUNCTION start_reasoning_run(trigger):
         state_machine_arn = MM_REASONING_STATE_MACHINE_ARN
         name              = run_id
         input             = {
-            run_id:       run_id,
-            trigger:      trigger,
-            scenario:     trigger.scenario
+            run_id: run_id,
+            trigger: trigger,
+            scenario: trigger.scenario
         }
 
     RETURN { run_id: run_id }
-```
-
+```text
 **Step 2: Parallel modality ingestion.** Each modality's ingestion runs as an independent Lambda invocation. The inventory of what was successfully ingested and what failed flows into the next stage.
 
 ```pseudocode
@@ -443,32 +440,31 @@ FUNCTION ingest_imaging(run_id, patient_id, scenario):
             // vendor_output is a structured result: e.g., PE probability + localization
             IF vendor_output is present:
                 append {
-                    finding_type:    vendor_output.finding_type,
-                    probability:     vendor_output.probability,
-                    localization:    vendor_output.localization,
-                    vendor_name:     vendor_output.vendor_name,
-                    clearance_info:  vendor_output.clearance,
-                    study_uid:       metadata.study_instance_uid,
-                    timestamp:       vendor_output.produced_at
+                    finding_type: vendor_output.finding_type,
+                    probability: vendor_output.probability,
+                    localization: vendor_output.localization,
+                    vendor_name: vendor_output.vendor_name,
+                    clearance_info: vendor_output.clearance,
+                    study_uid: metadata.study_instance_uid,
+                    timestamp: vendor_output.produced_at
                 } to cleared_ai_outputs
 
         append {
-            modality_type:      "imaging",
-            study_modality:     metadata.modality,        // CT, MR, CR, etc.
-            study_description:  metadata.study_description,
-            study_date:         metadata.study_date,
-            study_uid:          metadata.study_instance_uid,
-            report_text:        report.content,
-            report_entities:    report_entities,
-            radlex_mapped:      radlex_mapped,
+            modality_type: "imaging",
+            study_modality: metadata.modality,        // CT, MR, CR, etc.
+            study_description: metadata.study_description,
+            study_date: metadata.study_date,
+            study_uid: metadata.study_instance_uid,
+            report_text: report.content,
+            report_entities: report_entities,
+            radlex_mapped: radlex_mapped,
             cleared_ai_outputs: cleared_ai_outputs,
-            pacs_deep_link:     build_pacs_deep_link(metadata),
-            source_id:          f"imaging:{metadata.study_instance_uid}"
+            pacs_deep_link: build_pacs_deep_link(metadata),
+            source_id: f"imaging:{metadata.study_instance_uid}"
         } to imaging_records
 
     RETURN imaging_records
-```
-
+```text
 ```pseudocode
 FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
@@ -504,22 +500,21 @@ FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
                 body          = { waveform_reference: ecg.derived_from_reference }
 
         append {
-            modality_type:             "ecg",
-            ecg_date:                  ecg.effective_date_time,
-            machine_interpretation:    machine_interp,
-            clinician_overread:        overread,
-            hr:                        hr,
-            qtc:                       qtc,
-            qrs:                       qrs,
-            axis:                      axis,
-            foundation_model_output:   foundation_model_output,
-            source_id:                 f"ecg:{ecg.id}",
-            deep_link:                 build_ecg_deep_link(ecg)
+            modality_type: "ecg",
+            ecg_date: ecg.effective_date_time,
+            machine_interpretation: machine_interp,
+            clinician_overread: overread,
+            hr: hr,
+            qtc: qtc,
+            qrs: qrs,
+            axis: axis,
+            foundation_model_output: foundation_model_output,
+            source_id: f"ecg:{ecg.id}",
+            deep_link: build_ecg_deep_link(ecg)
         } to ecg_records
 
     RETURN ecg_records
-```
-
+```text
 ```pseudocode
 FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
@@ -542,32 +537,32 @@ FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
     FOR each loinc, obs_list in labs_by_loinc:
         IF length(obs_list) >= 2:
             lab_trends[loinc] = {
-                current_value:     obs_list[-1].value,
-                current_date:      obs_list[-1].effective_date_time,
-                prior_value:       obs_list[-2].value,
-                prior_date:        obs_list[-2].effective_date_time,
-                delta_value:       obs_list[-1].value - obs_list[-2].value,
-                delta_percent:     percent_change(obs_list[-2].value, obs_list[-1].value),
-                trend_slope:       compute_slope(obs_list),   // over last 90 days
-                classification:    classify_trend(obs_list),  // stable, rising, falling, volatile
+                current_value: obs_list[-1].value,
+                current_date: obs_list[-1].effective_date_time,
+                prior_value: obs_list[-2].value,
+                prior_date: obs_list[-2].effective_date_time,
+                delta_value: obs_list[-1].value - obs_list[-2].value,
+                delta_percent: percent_change(obs_list[-2].value, obs_list[-1].value),
+                trend_slope: compute_slope(obs_list),   // over last 90 days
+                classification: classify_trend(obs_list),  // stable, rising, falling, volatile
                 baseline_if_known: derive_baseline(obs_list)
             }
         ELSE IF length(obs_list) == 1:
             lab_trends[loinc] = {
-                current_value:     obs_list[0].value,
-                current_date:      obs_list[0].effective_date_time,
-                prior_value:       null,
-                classification:    "single_value"
+                current_value: obs_list[0].value,
+                current_date: obs_list[0].effective_date_time,
+                prior_value: null,
+                classification: "single_value"
             }
 
     // Vitals summary
     vitals_loincs = {
-        hr:    "8867-4",
-        sbp:   "8480-6",
-        dbp:   "8462-4",
-        rr:    "9279-1",
-        temp:  "8310-5",
-        spo2:  "59408-5"
+        hr: "8867-4",
+        sbp: "8480-6",
+        dbp: "8462-4",
+        rr: "9279-1",
+        temp: "8310-5",
+        spo2: "59408-5"
     }
     vitals_summary = dict
     FOR each name, loinc in vitals_loincs:
@@ -577,15 +572,14 @@ FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
                               date: "ge" + hours_ago(24) }
         vitals_summary[name] = {
             most_recent: most_recent(recent_vitals),
-            min:         minimum(recent_vitals),
-            max:         maximum(recent_vitals),
+            min: minimum(recent_vitals),
+            max: maximum(recent_vitals),
             flagged_events: abnormal_events(recent_vitals)
         }
 
     RETURN { lab_trends: lab_trends, vitals_summary: vitals_summary,
              source_id: f"labs_vitals:{patient_id}" }
-```
-
+```text
 ```pseudocode
 FUNCTION ingest_notes(run_id, patient_id, scenario):
 
@@ -609,20 +603,19 @@ FUNCTION ingest_notes(run_id, patient_id, scenario):
         // e.g., assessment and plan sections, reason-for-visit, notable findings
 
         append {
-            modality_type:    "note",
-            note_type:        note.category,           // progress, consult, discharge, etc.
-            specialty:        note.author_specialty if available,
-            note_date:        note.date,
-            content:          note.content,
-            entities:         entities,
-            ontology_mapped:  { rxnorm: rxnorm, icd10: icd10, snomed: snomed },
-            key_passages:     key_passages,
-            source_id:        f"note:{note.id}"
+            modality_type: "note",
+            note_type: note.category,           // progress, consult, discharge, etc.
+            specialty: note.author_specialty if available,
+            note_date: note.date,
+            content: note.content,
+            entities: entities,
+            ontology_mapped: { rxnorm: rxnorm, icd10: icd10, snomed: snomed },
+            key_passages: key_passages,
+            source_id: f"note:{note.id}"
         } to notes
 
     RETURN notes
-```
-
+```text
 ```pseudocode
 FUNCTION ingest_structured_context(run_id, patient_id):
 
@@ -637,9 +630,7 @@ FUNCTION ingest_structured_context(run_id, patient_id):
     // derived (eGFR, BMI, Child-Pugh as applicable)
 
     RETURN structured
-```
-
-
+```text
 **Step 3: Normalize, annotate, and build the modality inventory.** Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.
 
 <!-- TODO (TechWriter, from expert review A2): each ingestion function currently
@@ -664,47 +655,47 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
     // Build the unified patient state
     patient_state = {
         structured_context: structured,
-        imaging_records:    imaging,
-        ecg_records:        ecg,
-        lab_trends:         labs_vitals.lab_trends,
-        vitals_summary:     labs_vitals.vitals_summary,
-        notes:              notes
+        imaging_records: imaging,
+        ecg_records: ecg,
+        lab_trends: labs_vitals.lab_trends,
+        vitals_summary: labs_vitals.vitals_summary,
+        notes: notes
     }
 
     // Build the modality inventory describing what is present and its recency
     modality_inventory = {
         structured_context: {
-            present:     true,
-            recency:     "current",
-            confidence:  "high"
+            present: true,
+            recency: "current",
+            confidence: "high"
         },
         imaging: {
-            present:      length(imaging) > 0,
-            count:        length(imaging),
-            most_recent:  most_recent_date(imaging),
-            modalities:   unique(imaging map to .study_modality),
+            present: length(imaging) > 0,
+            count: length(imaging),
+            most_recent: most_recent_date(imaging),
+            modalities: unique(imaging map to .study_modality),
             cleared_ai_present: any(imaging, has cleared_ai_outputs)
         },
         ecg: {
-            present:      length(ecg) > 0,
-            count:        length(ecg),
-            most_recent:  most_recent_date(ecg)
+            present: length(ecg) > 0,
+            count: length(ecg),
+            most_recent: most_recent_date(ecg)
         },
         labs: {
-            present:                length(labs_vitals.lab_trends) > 0,
-            current_and_trended:    count_where(labs_vitals.lab_trends,
+            present: length(labs_vitals.lab_trends) > 0,
+            current_and_trended: count_where(labs_vitals.lab_trends,
                                                  classification in ["rising","falling","stable"]),
-            single_values_only:     count_where(labs_vitals.lab_trends,
+            single_values_only: count_where(labs_vitals.lab_trends,
                                                  classification == "single_value")
         },
         vitals: {
-            present:         length(labs_vitals.vitals_summary) > 0,
-            recency:         "current_encounter"
+            present: length(labs_vitals.vitals_summary) > 0,
+            recency: "current_encounter"
         },
         notes: {
-            present:  length(notes) > 0,
-            count:    length(notes),
-            types:    unique(notes map to .note_type),
+            present: length(notes) > 0,
+            count: length(notes),
+            types: unique(notes map to .note_type),
             most_recent: most_recent_date(notes)
         }
     }
@@ -713,8 +704,7 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
     // Source IDs are stable within a run and used in the reasoning output
 
     RETURN { patient_state: patient_state, modality_inventory: modality_inventory }
-```
-
+```text
 **Step 4: Scope gate.** Given the scenario and the modality inventory, decide whether the reasoning run should proceed. If a recent run covered the same scenario without material changes, suppress. If critical modalities are missing for the scenario, either scope down or defer with an explanatory output.
 
 <!-- TODO (TechWriter, from expert review A4): the "scoped_to" rewrite for
@@ -743,9 +733,9 @@ FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
     // changes include: new imaging study, new ECG, lab value crossing a
     // clinical threshold, new note of a relevant type, medication change.
     decision = {
-        proceed:      false,
-        reason:       "",
-        scoped_to:    null,
+        proceed: false,
+        reason: "",
+        scoped_to: null,
         defer_reason: null
     }
 
@@ -786,8 +776,7 @@ FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
     decision.scoped_to = scenario
     decision.reason = "all_required_modalities_present"
     RETURN decision
-```
-
+```text
 **Step 5: Deterministic safety checks.** Same pattern as Recipe 2.9. Drug interactions, allergies, contraindications, renal and hepatic dose flags. The outputs are hard inputs to the reasoning prompt.
 
 ```pseudocode
@@ -798,8 +787,7 @@ FUNCTION run_safety_checks(structured_context, proposed_medications_if_any):
                                                         proposed_medications_if_any)
 
     RETURN safety_findings
-```
-
+```text
 **Step 6: Retrieval.** Pull the relevant guidelines, institutional protocols, and (optionally) case analogs. Retrieval is scoped by the scenario, the patient's characteristics, and the modality inventory.
 
 ```pseudocode
@@ -842,12 +830,11 @@ FUNCTION retrieve_supporting_content(scenario, patient_state, modality_inventory
             append results to case_analog_results
 
     RETURN {
-        guidelines:    guideline_results,
-        protocols:     protocol_results,
-        case_analogs:  case_analog_results
+        guidelines: guideline_results,
+        protocols: protocol_results,
+        case_analogs: case_analog_results
     }
-```
-
+```text
 **Step 7: The reasoning layer.** Build the prompt with the modality inventory, patient state, retrieved content, and safety findings. The prompt enforces multi-hypothesis reasoning, evidence-for-and-against per hypothesis, explicit handling of missing modalities, verbatim preservation, cross-modality consistency, and citation discipline.
 
 ```pseudocode
@@ -1042,8 +1029,7 @@ FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
     RETURN { status: "GENERATED",
              reasoning: reasoning_json,
              id_to_source: id_to_source }
-```
-
+```text
 **Step 8: Post-generation validation.** Belt-and-suspenders on Guardrails. Every citation resolves; every number appears verbatim in a source; every graded term appears verbatim; every safety finding is represented; no claim contradicts another modality; no recommendation falls outside scope.
 
 ```pseudocode
@@ -1138,8 +1124,7 @@ FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
                  augmentation: augmentation }
 
     RETURN { status: "ROUTED_TO_HUMAN_REVIEW", unverified: unverified }
-```
-
+```text
 **Orchestration gate between Step 8 and Step 9.** Validation status is the last safety gate before the clinician UI. The orchestrator must distinguish `VALIDATED` from `ROUTED_TO_HUMAN_REVIEW`. Only `VALIDATED` proceeds to Step 9 and becomes a delivered reasoning output. `ROUTED_TO_HUMAN_REVIEW` is a terminal state: the trace is archived for audit, the run is recorded as pending clinical review, and the reasoning does not render to the clinician.
 
 ```pseudocode
@@ -1166,8 +1151,7 @@ FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
         // Do NOT call tier_render_archive. Do NOT return rendered reasoning
         // to the clinician UI.
         RETURN { next_step: "terminal_review_queue" }
-```
-
+```text
 **Step 9: Tier, render, and archive.** Score against prior runs for suppression. Render with deep links to every modality source. Archive the full provenance.
 
 ```pseudocode
@@ -1194,13 +1178,13 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
                 numbered[cit] = next_num
                 source = id_to_source[cit]
                 entry = {
-                    number:       next_num,
-                    source_id:    cit,
-                    modality:     source.modality_type,
-                    formatted:    format_source_for_display(source),
-                    deep_link:    deep_link_for_source(source),
-                    recency:      recency_label(source),
-                    source_type:  source.source_type_if_literature
+                    number: next_num,
+                    source_id: cit,
+                    modality: source.modality_type,
+                    formatted: format_source_for_display(source),
+                    deep_link: deep_link_for_source(source),
+                    recency: recency_label(source),
+                    source_type: source.source_type_if_literature
                 }
                 append entry to bibliography
                 next_num += 1
@@ -1209,21 +1193,21 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
     rendered_recs = substitute_citations(tiered, numbered)
 
     rendered = {
-        run_id:                            run_id,
-        patient_id:                        patient_id,
-        encounter_id:                      encounter_id,
-        scenario:                          scope_decision.scoped_to,
-        overall_assessment:                reasoning.overall_assessment,
-        recommendations:                   rendered_recs,
-        cross_modality_contradictions:    reasoning.cross_modality_contradictions,
-        safety_findings_included:          reasoning.safety_findings_included,
-        insufficient_to_answer:            reasoning.what_is_insufficient_to_answer,
-        modalities_used:                   reasoning.modalities_used,
-        modalities_absent_and_relevant:   reasoning.modalities_absent_and_relevant,
-        overall_uncertainty:               reasoning.overall_uncertainty,
-        uncertainty_rationale:             reasoning.uncertainty_rationale,
-        bibliography:                      bibliography,
-        disclaimer:                        "This output is decision support synthesizing "
+        run_id: run_id,
+        patient_id: patient_id,
+        encounter_id: encounter_id,
+        scenario: scope_decision.scoped_to,
+        overall_assessment: reasoning.overall_assessment,
+        recommendations: rendered_recs,
+        cross_modality_contradictions: reasoning.cross_modality_contradictions,
+        safety_findings_included: reasoning.safety_findings_included,
+        insufficient_to_answer: reasoning.what_is_insufficient_to_answer,
+        modalities_used: reasoning.modalities_used,
+        modalities_absent_and_relevant: reasoning.modalities_absent_and_relevant,
+        overall_uncertainty: reasoning.overall_uncertainty,
+        uncertainty_rationale: reasoning.uncertainty_rationale,
+        bibliography: bibliography,
+        disclaimer: "This output is decision support synthesizing "
                                          + "available multi-modal evidence. Review each "
                                          + "cited source before acting. The clinician is "
                                          + "the decision-maker."
@@ -1232,16 +1216,16 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
     // Archive the full provenance
     write to S3: f"mm-reasoning-runs/{run_id}/rendered.json" = rendered
     write to S3: f"mm-reasoning-runs/{run_id}/trace.json" = {
-        trigger:               trace.trigger,
-        scope_decision:        scope_decision,
-        modality_inventory:    trace.modality_inventory,
-        retrieval_trace:       trace.retrieval_trace,
-        safety_findings:       trace.safety_findings,
-        prompt_version:        trace.prompt_version,
-        model_id:              trace.model_id,
-        raw_model_output:      trace.raw_model_output,
-        validation_result:     trace.validation_result,
-        generated_at:          current UTC timestamp
+        trigger: trace.trigger,
+        scope_decision: scope_decision,
+        modality_inventory: trace.modality_inventory,
+        retrieval_trace: trace.retrieval_trace,
+        safety_findings: trace.safety_findings,
+        prompt_version: trace.prompt_version,
+        model_id: trace.model_id,
+        raw_model_output: trace.raw_model_output,
+        validation_result: trace.validation_result,
+        generated_at: current UTC timestamp
     }
 
     update DynamoDB: run_id with status = "DELIVERED"
@@ -1253,8 +1237,7 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
         - OverallUncertaintyDistribution
 
     RETURN { status: "DELIVERED", rendered: rendered }
-```
-
+```text
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 
@@ -1426,8 +1409,7 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
   "validation_status": "VALIDATED",
   "processing_time_ms": 18200
 }
-```
-
+```text
 **Performance benchmarks:**
 
 | Metric | Typical Value |
