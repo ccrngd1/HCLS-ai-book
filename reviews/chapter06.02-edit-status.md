@@ -18,14 +18,14 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 - [x] Link verification: one internal link to nonexistent main recipe (expected, covered by TODO)
 - [x] Header hierarchy: H1 title only, H2 for sections, no skipped levels
 - [x] Readability: short paragraphs, active voice, no run-on sentences
-- [x] Voice drift check: no documentation-voice, no em dashes, no anti-patterns
-- [x] Code block language tags: all 9 opening blocks tagged
+- [x] Voice drift check: no documentation-voice, no em dashes (zero U+2014 / U+2013), no anti-patterns
+- [x] Code block language tags: all 9 opening fences tagged (1 bash, 7 python, 1 text)
 - [x] RECIPE-GUIDE compliance: all Python companion sections present and ordered correctly
 - [x] Vendor balance: N/A for Python companion (inherently AWS-specific; balance evaluated on main recipe)
 
 ## Review Findings Incorporated
 
-### Code Review (all addressed)
+### Code Review (all addressed in current file)
 
 | # | Severity | Status | Resolution |
 |---|----------|--------|------------|
@@ -37,10 +37,10 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 
 | # | Severity | Status | Note |
 |---|----------|--------|------|
-| ARCH-CRITICAL | CRITICAL | Deferred | Main recipe must be written; TODO marker placed |
+| ARCH-CRITICAL | CRITICAL | Deferred | Main recipe must be written; TODO marker placed at line 644 |
 | SEC-1 | MEDIUM | Deferred | CMK guidance needed in main recipe Prerequisites |
 | SEC-2 | MEDIUM | Deferred | Opaque identifiers discussion needed in main recipe |
-| SEC-3 | MEDIUM | Addressed | VPC callout added to Python companion Setup section |
+| SEC-3 | MEDIUM | Addressed | VPC callout present in Python companion Setup section |
 | ARCH-1 | MEDIUM | Deferred | k-selection methodology needed in main recipe Technology |
 | ARCH-2 | MEDIUM | Deferred | Segment stability needed in main recipe Architecture |
 | NET-1 | MEDIUM | Deferred | Gateway endpoint spec needed in main recipe Prerequisites |
@@ -49,10 +49,16 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 ## Blocking Issue
 
 The main recipe file must be written before this recipe can be considered complete.
-The TODO marker at line 644 of the Python companion captures all deferred findings.
+The TODO marker at the end of the Python companion captures all deferred findings.
 
-## No Changes Made to Python Companion
+## Changes Made This Pass
 
-The file passed all editorial checks without modification. All code review findings
-were already incorporated into the current version. The existing TODO marker accurately
-captures all expert review findings that require the main recipe to resolve.
+None. The file passed all editorial checks without modification. All code review
+findings were already incorporated. The existing TODO marker accurately captures
+all expert review findings that require the main recipe to resolve.
+
+## Final Validation Scans
+
+- Em dash (U+2014) search: **0 found** (compliant)
+- En dash (U+2013) search: **0 found** (compliant)
+- Bare opening fences (``` without language tag): **0 found** (compliant)
