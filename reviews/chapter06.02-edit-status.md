@@ -2,7 +2,7 @@
 
 **Editor:** TechEditor
 **Date:** 2026-06-03
-**Status:** PARTIAL COMPLETE (Python companion edited; main recipe blocked)
+**Status:** COMPLETE (Python companion final; main recipe blocked)
 
 ---
 
@@ -10,6 +10,7 @@
 
 The main recipe file (`chapter06.02-utilization-pattern-segmentation.md`) does not exist.
 The Python companion (`chapter06.02-python-example.md`) is complete and passes all editorial checks.
+No modifications were required during this final edit pass.
 
 ## Editorial Checklist (Python Companion)
 
@@ -48,17 +49,24 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 
 ## Blocking Issue
 
-The main recipe file must be written before this recipe can be considered complete.
-The TODO marker at the end of the Python companion captures all deferred findings.
+The main recipe file must be written before this recipe can be considered fully complete.
+The TODO marker at the end of the Python companion captures all deferred findings with
+finding IDs for tracking by the follow-up task generator.
 
 ## Changes Made This Pass
 
 None. The file passed all editorial checks without modification. All code review
-findings were already incorporated. The existing TODO marker accurately captures
-all expert review findings that require the main recipe to resolve.
+findings were already incorporated in prior passes. The existing TODO marker
+accurately captures all expert review findings that require the main recipe to resolve.
 
 ## Final Validation Scans
 
 - Em dash (U+2014) search: **0 found** (compliant)
 - En dash (U+2013) search: **0 found** (compliant)
 - Bare opening fences (``` without language tag): **0 found** (compliant)
+
+## Commit Note
+
+Final edit pass for Recipe 6.2 Python companion. No changes needed: file passes all
+editorial checks, code review findings previously incorporated, expert review findings
+properly deferred via TODO marker pending main recipe creation.
