@@ -1,19 +1,30 @@
 ---
 id: ch12-r05-python
-title: "Python Companion: Hospital Census Forecasting"
+title: 'Python Companion: Hospital Census Forecasting'
 target_persona: TechWriter
-tags: [chapter12, recipe, python]
-depends_on: [ch12-r05-draft]
+tags:
+- chapter12
+- recipe
+- python
+depends_on:
+- ch12-r05-draft
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter12.05-python-example.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechCodeReviewer
-    pass_condition: >-
-      Python code uses correct boto3 API calls, includes proper error handling comments, demonstrates the recipe pattern end-to-end, and has no placeholder or stub implementations.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter12.05-python-example.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter12.05-python-example.md
+- type: persona_review
+  name: quality-review
+  persona: TechCodeReviewer
+  pass_condition: Python code uses correct boto3 API calls, includes proper error
+    handling comments, demonstrates the recipe pattern end-to-end, and has no placeholder
+    or stub implementations.
 ---
+
 
 ## Objective
 Create Python companion code for recipe 12.5 Hospital Census Forecasting.

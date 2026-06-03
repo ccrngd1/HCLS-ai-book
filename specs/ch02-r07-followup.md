@@ -1,26 +1,40 @@
 ---
 id: ch02-r07-followup
-title: "Follow-up: address review findings for ch02-r07"
+title: 'Follow-up: address review findings for ch02-r07'
 target_persona: TechWriter
-tags: [chapter02, recipe, followup]
-depends_on: [ch02-r07-edit]
+tags:
+- chapter02
+- recipe
+- followup
+depends_on:
+- ch02-r07-edit
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter02.07-literature-search-evidence-synthesis.md]
-  - type: shell
-    name: no-todo-markers-for-tracked-findings
-    commands:
-      - |
-        python -c "import re,sys,pathlib; t=pathlib.Path('chapter02.07-literature-search-evidence-synthesis.md').read_text(encoding='utf-8'); ids=['A1', 'A2', 'A3', 'A4', 'A5', 'S1', 'S2']; missing=[i for i in ids if re.search(r'TODO[^\\n]*'+re.escape(i)+r'\\b', t)]; sys.exit(0 if not missing else (sys.stderr.write('unresolved findings still TODO: '+', '.join(missing)+chr(10)) or 1))"
-  - type: persona_review
-    name: findings-resolved
-    persona: TechExpertReviewer
-    pass_condition: >-
-      All findings listed in the Instructions section (A1, A2, A3, A4, A5, S1, S2)
-      are either resolved in the recipe text or explicitly closed with a
-      reasoned non-action note. No new HIGH or MEDIUM findings introduced.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter02.07-literature-search-evidence-synthesis.md
+- type: shell
+  name: no-todo-markers-for-tracked-findings
+  commands:
+  - 'python -c "import re,sys,pathlib; t=pathlib.Path(''chapter02.07-literature-search-evidence-synthesis.md'').read_text(encoding=''utf-8'');
+    ids=[''A1'', ''A2'', ''A3'', ''A4'', ''A5'', ''S1'', ''S2'']; missing=[i for i
+    in ids if re.search(r''TODO[^\\n]*''+re.escape(i)+r''\\b'', t)]; sys.exit(0 if
+    not missing else (sys.stderr.write(''unresolved findings still TODO: ''+'', ''.join(missing)+chr(10))
+    or 1))"
+
+    '
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter02.07-literature-search-evidence-synthesis.md
+- type: persona_review
+  name: findings-resolved
+  persona: TechExpertReviewer
+  pass_condition: All findings listed in the Instructions section (A1, A2, A3, A4,
+    A5, S1, S2) are either resolved in the recipe text or explicitly closed with a
+    reasoned non-action note. No new HIGH or MEDIUM findings introduced.
 ---
+
 
 ## Objective
 Address the HIGH and MEDIUM findings flagged in code review and expert

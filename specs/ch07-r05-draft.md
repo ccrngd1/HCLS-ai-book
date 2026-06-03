@@ -1,19 +1,30 @@
 ---
 id: ch07-r05-draft
-title: "Draft: 30-Day Readmission Risk"
+title: 'Draft: 30-Day Readmission Risk'
 target_persona: TechWriter
-tags: [chapter07, recipe, draft]
-depends_on: [ch07-preface]
+tags:
+- chapter07
+- recipe
+- draft
+depends_on:
+- ch07-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter07.05-30-day-readmission-risk.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter07.05-30-day-readmission-risk.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter07.05-30-day-readmission-risk.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft the recipe for 30-Day Readmission Risk.

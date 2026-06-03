@@ -1,19 +1,29 @@
 ---
 id: ch12-r01-code-review
-title: "Code Review: Appointment Volume Forecasting"
+title: 'Code Review: Appointment Volume Forecasting'
 target_persona: TechCodeReviewer
-tags: [chapter12, recipe, code-review]
-depends_on: [ch12-r01-python]
+tags:
+- chapter12
+- recipe
+- code-review
+depends_on:
+- ch12-r01-python
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [reviews/chapter12.01-code-review.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      Review verifies API correctness, identifies real issues with severity ratings, and provides specific actionable fixes with code snippets.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - reviews/chapter12.01-code-review.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py reviews/chapter12.01-code-review.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: Review verifies API correctness, identifies real issues with severity
+    ratings, and provides specific actionable fixes with code snippets.
 ---
+
 
 ## Objective
 Perform code review for recipe 12.1 Python companion.

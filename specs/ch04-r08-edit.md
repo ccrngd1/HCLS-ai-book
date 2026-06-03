@@ -1,23 +1,32 @@
 ---
 id: ch04-r08-edit
-title: "Final Edit: Treatment Response Prediction"
+title: 'Final Edit: Treatment Response Prediction'
 target_persona: TechEditor
-tags: [chapter04, recipe, edit]
-depends_on: [ch04-r08-code-review, ch04-r08-expert-review]
+tags:
+- chapter04
+- recipe
+- edit
+depends_on:
+- ch04-r08-code-review
+- ch04-r08-expert-review
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter04.08-treatment-response-prediction.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      No style guide violations, no em dashes, correct header hierarchy,
-      all code blocks have language tags, voice consistent with
-      STYLE-GUIDE.md. HIGH/MEDIUM technical findings from reviews are
-      either incorporated or explicitly flagged as TODO markers for the
-      TechWriter.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter04.08-treatment-response-prediction.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter04.08-treatment-response-prediction.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: No style guide violations, no em dashes, correct header hierarchy,
+    all code blocks have language tags, voice consistent with STYLE-GUIDE.md. HIGH/MEDIUM
+    technical findings from reviews are either incorporated or explicitly flagged
+    as TODO markers for the TechWriter.
 ---
+
 
 ## Objective
 Produce the final edited version of Treatment Response Prediction.

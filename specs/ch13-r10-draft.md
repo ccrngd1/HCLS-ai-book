@@ -1,19 +1,30 @@
 ---
 id: ch13-r10-draft
-title: "Draft: Federated Clinical Knowledge Network"
+title: 'Draft: Federated Clinical Knowledge Network'
 target_persona: TechWriter
-tags: [chapter13, recipe, draft]
-depends_on: [ch13-preface]
+tags:
+- chapter13
+- recipe
+- draft
+depends_on:
+- ch13-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter13.10-federated-clinical-knowledge-network.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter13.10-federated-clinical-knowledge-network.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter13.10-federated-clinical-knowledge-network.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft the recipe for Federated Clinical Knowledge Network using knowledge graphs.

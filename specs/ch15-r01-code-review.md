@@ -1,19 +1,29 @@
 ---
 id: ch15-r01-code-review
-title: "Code Review: Alert Threshold Optimization"
+title: 'Code Review: Alert Threshold Optimization'
 target_persona: TechCodeReviewer
-tags: [chapter15, recipe, code-review]
-depends_on: [ch15-r01-python]
+tags:
+- chapter15
+- recipe
+- code-review
+depends_on:
+- ch15-r01-python
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [reviews/chapter15.01-code-review.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      Review verifies API correctness, identifies real issues with severity ratings, and provides specific actionable fixes with code snippets.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - reviews/chapter15.01-code-review.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py reviews/chapter15.01-code-review.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: Review verifies API correctness, identifies real issues with severity
+    ratings, and provides specific actionable fixes with code snippets.
 ---
+
 
 ## Objective
 Review the Python companion code for Alert Threshold Optimization.

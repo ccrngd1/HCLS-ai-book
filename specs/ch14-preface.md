@@ -1,19 +1,28 @@
 ---
 id: ch14-preface
-title: "Chapter 14 Preface: Optimization / Operations Research"
+title: 'Chapter 14 Preface: Optimization / Operations Research'
 target_persona: TechWriter
-tags: [chapter14, preface]
+tags:
+- chapter14
+- preface
 depends_on: []
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter14-preface.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Preface introduces chapter scope, covers progression from simple to complex use cases, addresses healthcare-specific challenges, and matches project voice with no em dashes or documentation tone.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter14-preface.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter14-preface.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Preface introduces chapter scope, covers progression from simple
+    to complex use cases, addresses healthcare-specific challenges, and matches project
+    voice with no em dashes or documentation tone.
 ---
+
 
 ## Objective
 Write the preface for Chapter 14 covering Optimization and Operations Research patterns in healthcare.

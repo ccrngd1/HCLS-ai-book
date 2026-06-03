@@ -1,23 +1,32 @@
 ---
 id: ch11-r01-edit
-title: "Final Edit: FAQ Chatbot"
+title: 'Final Edit: FAQ Chatbot'
 target_persona: TechEditor
-tags: [chapter11, recipe, edit]
-depends_on: [ch11-r01-code-review, ch11-r01-expert-review]
+tags:
+- chapter11
+- recipe
+- edit
+depends_on:
+- ch11-r01-code-review
+- ch11-r01-expert-review
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter11.01-faq-chatbot.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      No style guide violations, no em dashes, correct header hierarchy,
-      all code blocks have language tags, voice consistent with
-      STYLE-GUIDE.md. HIGH/MEDIUM technical findings from reviews are
-      either incorporated or explicitly flagged as TODO markers for the
-      TechWriter.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter11.01-faq-chatbot.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter11.01-faq-chatbot.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: No style guide violations, no em dashes, correct header hierarchy,
+    all code blocks have language tags, voice consistent with STYLE-GUIDE.md. HIGH/MEDIUM
+    technical findings from reviews are either incorporated or explicitly flagged
+    as TODO markers for the TechWriter.
 ---
+
 
 ## Objective
 Perform final edit for recipe 11.1 incorporating review feedback.

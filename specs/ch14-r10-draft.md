@@ -1,19 +1,30 @@
 ---
 id: ch14-r10-draft
-title: "Draft: Health System Network Design"
+title: 'Draft: Health System Network Design'
 target_persona: TechWriter
-tags: [chapter14, recipe, draft]
-depends_on: [ch14-preface]
+tags:
+- chapter14
+- recipe
+- draft
+depends_on:
+- ch14-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter14.10-health-system-network-design.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter14.10-health-system-network-design.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter14.10-health-system-network-design.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft the recipe for Health System Network Design using optimization techniques.

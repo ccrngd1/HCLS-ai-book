@@ -1,19 +1,30 @@
 ---
 id: ch15-r06-draft
-title: "Draft: Glucose Control in ICU"
+title: 'Draft: Glucose Control in ICU'
 target_persona: TechWriter
-tags: [chapter15, recipe, draft]
-depends_on: [ch15-preface]
+tags:
+- chapter15
+- recipe
+- draft
+depends_on:
+- ch15-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter15.06-glucose-control-icu.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter15.06-glucose-control-icu.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter15.06-glucose-control-icu.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft the recipe for Glucose Control in ICU using reinforcement learning.

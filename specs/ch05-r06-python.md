@@ -1,19 +1,30 @@
 ---
 id: ch05-r06-python
-title: "Python Companion: Claims-to-Clinical Data Linkage"
+title: 'Python Companion: Claims-to-Clinical Data Linkage'
 target_persona: TechWriter
-tags: [chapter05, recipe, python]
-depends_on: [ch05-r06-draft]
+tags:
+- chapter05
+- recipe
+- python
+depends_on:
+- ch05-r06-draft
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter05.06-python-example.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechCodeReviewer
-    pass_condition: >-
-      Python code uses correct boto3 API calls, includes proper error handling comments, demonstrates the recipe pattern end-to-end, and has no placeholder or stub implementations.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter05.06-python-example.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter05.06-python-example.md
+- type: persona_review
+  name: quality-review
+  persona: TechCodeReviewer
+  pass_condition: Python code uses correct boto3 API calls, includes proper error
+    handling comments, demonstrates the recipe pattern end-to-end, and has no placeholder
+    or stub implementations.
 ---
+
 
 ## Objective
 Create the Python companion code for Claims-to-Clinical Data Linkage.

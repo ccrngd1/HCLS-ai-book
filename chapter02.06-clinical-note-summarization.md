@@ -121,7 +121,7 @@ What it doesn't do, and this has to be stated clearly, is remove the need for ca
 
 At a high level, the pipeline looks like this:
 
-```
+```text
 [Summary Request]
     → [Define Scope & Audience]
     → [Retrieve Source Documents]
@@ -270,7 +270,7 @@ flowchart TB
 
 **Step 1: Receive the summary request and resolve context.** A clinician triggers a summary request from inside the EHR or a handoff tool. The request carries the patient identifier, encounter identifier (or time window), the requesting clinician's identity and specialty, the use case (handoff, consult review, pre-visit prep, discharge summary draft), and any format preferences. This step validates the request, logs the access, and initializes state.
 
-```
+```pseudocode
 FUNCTION receive_summary_request(request):
     // request.patient_id:         FHIR Patient ID
     // request.scope:              "current_encounter" | "last_6_months" | "all_time" | custom window
@@ -311,7 +311,7 @@ FUNCTION receive_summary_request(request):
 
 **Step 2: Retrieve source documents.** Pull the notes and structured data that fall inside the request's scope. Scope matters: a handoff summary should look at the current encounter; a pre-visit summary for a new specialty consult may want to look at the entire relevant history. Structured data (allergies, active problems, current medications) is pulled even when scope is narrow, because those categories belong in every summary regardless of the time window. Critically, retrieval must filter out notes from restricted data categories (42 CFR Part 2 substance-use-treatment records, HIV-related content, adolescent confidential notes, genetic test results) unless the requesting user has a specific disclosure consent on file. Access control is enforced at the retrieval layer, not bolted on downstream.
 
-```
+```pseudocode
 FUNCTION retrieve_source_documents(patient_id, scope, encounter_id, requesting_user):
     // Pull notes based on scope
     IF scope == "current_encounter":
@@ -386,7 +386,7 @@ FUNCTION retrieve_source_documents(patient_id, scope, encounter_id, requesting_u
 
 **Step 3: Chunk and preprocess notes.** Turn the flat list of notes into processable chunks. A single note is often a reasonable chunk; very long notes (an H&P or a multi-page consult) may need sub-chunking. Preprocessing removes boilerplate (EHR-generated headers and footers, standard signatures, macro text) and normalizes dates. This step also tags notes with their service, author, and encounter_id so the extraction can attribute content correctly and enforce encounter boundaries (preventing the "fact blending across visits" failure mode described earlier).
 
-```
+```pseudocode
 FUNCTION chunk_and_preprocess(notes):
     chunks = empty list
 
@@ -422,7 +422,7 @@ FUNCTION chunk_and_preprocess(notes):
 
 **Step 4: Extract structured facts per chunk (parallel).** Each chunk goes through an extraction step that produces a structured object: what this chunk contains in categorized, attributed form. Parallel execution (via Step Functions Map state) keeps total latency manageable for long charts. Comprehend Medical runs alongside the LLM extraction for the categories where negation-aware NLP adds the most value: medications, conditions, allergies.
 
-```
+```pseudocode
 FUNCTION extract_chunk_facts(chunk):
     // Prompt the LLM to extract into a fielded schema.
     // The prompt is specialty-neutral; filtering for specialty happens later.
@@ -504,7 +504,7 @@ FUNCTION extract_chunk_facts(chunk):
 
 **Step 5: Aggregate and deduplicate.** Combine the per-chunk structured objects into a single patient-level structured object. Deduplicate facts that appear across multiple notes, but keep the mention count and the date range over which the fact appeared (a fact mentioned in 12 of 15 progress notes is more likely to still be true than a fact mentioned once). Reconcile conflicts where possible, flag them where not.
 
-```
+```pseudocode
 FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
     aggregated = {
         active_problems:       empty dict,     // keyed by normalized problem name
@@ -624,7 +624,7 @@ FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
 
 **Step 6: Apply the must-include checklist.** Before generation, verify that the aggregated object covers every required category for this summary type. If allergies are empty but the retrieved structured data had allergies, something went wrong in aggregation. If active problems is empty but the patient has an active chart, something went wrong in aggregation. Missing categories either get backfilled from structured data or get flagged as gaps that the generated prose must acknowledge.
 
-```
+```pseudocode
 FUNCTION apply_must_include_checklist(aggregated, use_case, retrieved_structured_data):
     checklist = required_categories_for_use_case(use_case)
     // For "handoff": [allergies, active_problems, current_medications, code_status,
@@ -661,7 +661,7 @@ FUNCTION apply_must_include_checklist(aggregated, use_case, retrieved_structured
 
 **Step 7: Generate the summary prose.** Now the writing step. The aggregated structured object is the input; the prompt takes the specialty, use case, and format parameters; the output is a section-wise prose summary with explicit section headers. The generation uses Bedrock Guardrails' contextual grounding check with the aggregated object as the reference context, which rejects responses that score below a configured grounding threshold.
 
-```
+```pseudocode
 FUNCTION generate_summary_prose(aggregated, request_params):
     // Build a prompt that enforces:
     // - Section structure appropriate for the use case
@@ -778,7 +778,7 @@ The exhausted-retry state is tracked in DynamoDB as `status = "VALIDATION_EXHAUS
 
 **Step 8: Validate claims and attach provenance.** Belt-and-suspenders alongside the Guardrails grounding check. Parse the generated prose, identify specific claims (dates, doses, named findings, named recommendations), and verify each one against the structured object. Attach source-note links so the clinician can click into any claim to see the note it came from. This is the feature that turns "a summary I have to trust" into "a summary I can verify."
 
-```
+```pseudocode
 FUNCTION validate_and_attach_provenance(summary_text, provenance, aggregated):
     unverified = empty list
     provenance_map = empty dict    // maps (section, claim_text) -> source_note_id
@@ -821,7 +821,7 @@ FUNCTION validate_and_attach_provenance(summary_text, provenance, aggregated):
 
 **Step 9: Render and deliver.** The content is clinician-facing markdown. Rendering differs by destination. An EHR sidebar wants compact markdown. A handoff tool may want structured sections with collapsible detail. A PDF for printed handoff wants a different layout. The archive in S3 always keeps both the raw markdown and the structured provenance so the summary can be re-rendered later in any format.
 
-```
+```pseudocode
 FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_params):
     // Archive raw content and provenance
     write to S3: "final-summaries/{summary_id}/summary.md" = summary_text

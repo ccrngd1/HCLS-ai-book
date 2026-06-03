@@ -1,19 +1,30 @@
 ---
 id: ch10-r04-draft
-title: "Draft: Medical Transcription Dictation"
+title: 'Draft: Medical Transcription Dictation'
 target_persona: TechWriter
-tags: [chapter10, recipe, draft]
-depends_on: [ch10-preface]
+tags:
+- chapter10
+- recipe
+- draft
+depends_on:
+- ch10-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter10.04-medical-transcription-dictation.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter10.04-medical-transcription-dictation.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter10.04-medical-transcription-dictation.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft recipe 10.4 on Medical Transcription Dictation.

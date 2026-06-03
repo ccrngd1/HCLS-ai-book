@@ -1,19 +1,29 @@
 ---
 id: ch08-r01-code-review
-title: "Code Review: Chief Complaint Classification"
+title: 'Code Review: Chief Complaint Classification'
 target_persona: TechCodeReviewer
-tags: [chapter08, recipe, code-review]
-depends_on: [ch08-r01-python]
+tags:
+- chapter08
+- recipe
+- code-review
+depends_on:
+- ch08-r01-python
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [reviews/chapter08.01-code-review.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      Review verifies API correctness, identifies real issues with severity ratings, and provides specific actionable fixes with code snippets.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - reviews/chapter08.01-code-review.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py reviews/chapter08.01-code-review.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: Review verifies API correctness, identifies real issues with severity
+    ratings, and provides specific actionable fixes with code snippets.
 ---
+
 
 ## Objective
 Review the Python companion code for Chief Complaint Classification.

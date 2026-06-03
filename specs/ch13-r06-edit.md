@@ -1,23 +1,32 @@
 ---
 id: ch13-r06-edit
-title: "Final Edit: Care Gap Reasoning Engine"
+title: 'Final Edit: Care Gap Reasoning Engine'
 target_persona: TechEditor
-tags: [chapter13, recipe, edit]
-depends_on: [ch13-r06-code-review, ch13-r06-expert-review]
+tags:
+- chapter13
+- recipe
+- edit
+depends_on:
+- ch13-r06-code-review
+- ch13-r06-expert-review
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter13.06-care-gap-reasoning-engine.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      No style guide violations, no em dashes, correct header hierarchy,
-      all code blocks have language tags, voice consistent with
-      STYLE-GUIDE.md. HIGH/MEDIUM technical findings from reviews are
-      either incorporated or explicitly flagged as TODO markers for the
-      TechWriter.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter13.06-care-gap-reasoning-engine.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter13.06-care-gap-reasoning-engine.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: No style guide violations, no em dashes, correct header hierarchy,
+    all code blocks have language tags, voice consistent with STYLE-GUIDE.md. HIGH/MEDIUM
+    technical findings from reviews are either incorporated or explicitly flagged
+    as TODO markers for the TechWriter.
 ---
+
 
 ## Objective
 Produce the final edited version of the Care Gap Reasoning Engine recipe.

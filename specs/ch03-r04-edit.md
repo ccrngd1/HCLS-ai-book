@@ -1,23 +1,32 @@
 ---
 id: ch03-r04-edit
-title: "Final Edit: Medication Dispensing Anomalies"
+title: 'Final Edit: Medication Dispensing Anomalies'
 target_persona: TechEditor
-tags: [chapter03, recipe, edit]
-depends_on: [ch03-r04-code-review, ch03-r04-expert-review]
+tags:
+- chapter03
+- recipe
+- edit
+depends_on:
+- ch03-r04-code-review
+- ch03-r04-expert-review
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter03.04-medication-dispensing-anomalies.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechExpertReviewer
-    pass_condition: >-
-      No style guide violations, no em dashes, correct header hierarchy,
-      all code blocks have language tags, voice consistent with
-      STYLE-GUIDE.md. HIGH/MEDIUM technical findings from reviews are
-      either incorporated or explicitly flagged as TODO markers for the
-      TechWriter.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter03.04-medication-dispensing-anomalies.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter03.04-medication-dispensing-anomalies.md
+- type: persona_review
+  name: quality-review
+  persona: TechExpertReviewer
+  pass_condition: No style guide violations, no em dashes, correct header hierarchy,
+    all code blocks have language tags, voice consistent with STYLE-GUIDE.md. HIGH/MEDIUM
+    technical findings from reviews are either incorporated or explicitly flagged
+    as TODO markers for the TechWriter.
 ---
+
 
 ## Objective
 Produce the final edited version of Medication Dispensing Anomalies.

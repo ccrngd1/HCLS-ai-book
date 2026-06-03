@@ -1,19 +1,30 @@
 ---
 id: ch10-r08-expert-review
-title: "Expert Review: Voice Biomarker Detection"
+title: 'Expert Review: Voice Biomarker Detection'
 target_persona: TechExpertReviewer
-tags: [chapter10, recipe, expert-review]
-depends_on: [ch10-r08-draft]
+tags:
+- chapter10
+- recipe
+- expert-review
+depends_on:
+- ch10-r08-draft
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [reviews/chapter10.08-expert-review.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechCodeReviewer
-    pass_condition: >-
-      Review covers clinical accuracy, architectural soundness, security considerations, and provides prioritized findings (HIGH/MEDIUM/LOW) with concrete remediation steps.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - reviews/chapter10.08-expert-review.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py reviews/chapter10.08-expert-review.md
+- type: persona_review
+  name: quality-review
+  persona: TechCodeReviewer
+  pass_condition: Review covers clinical accuracy, architectural soundness, security
+    considerations, and provides prioritized findings (HIGH/MEDIUM/LOW) with concrete
+    remediation steps.
 ---
+
 
 ## Objective
 Perform expert review for recipe 10.8 draft.

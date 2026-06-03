@@ -1,19 +1,30 @@
 ---
 id: ch10-r05-expert-review
-title: "Expert Review: Patient-Facing Voice Assistant"
+title: 'Expert Review: Patient-Facing Voice Assistant'
 target_persona: TechExpertReviewer
-tags: [chapter10, recipe, expert-review]
-depends_on: [ch10-r05-draft]
+tags:
+- chapter10
+- recipe
+- expert-review
+depends_on:
+- ch10-r05-draft
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [reviews/chapter10.05-expert-review.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechCodeReviewer
-    pass_condition: >-
-      Review covers clinical accuracy, architectural soundness, security considerations, and provides prioritized findings (HIGH/MEDIUM/LOW) with concrete remediation steps.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - reviews/chapter10.05-expert-review.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py reviews/chapter10.05-expert-review.md
+- type: persona_review
+  name: quality-review
+  persona: TechCodeReviewer
+  pass_condition: Review covers clinical accuracy, architectural soundness, security
+    considerations, and provides prioritized findings (HIGH/MEDIUM/LOW) with concrete
+    remediation steps.
 ---
+
 
 ## Objective
 Perform expert review for recipe 10.5 draft.

@@ -1,19 +1,30 @@
 ---
 id: ch14-r02-draft
-title: "Draft: Patient-Provider Assignment"
+title: 'Draft: Patient-Provider Assignment'
 target_persona: TechWriter
-tags: [chapter14, recipe, draft]
-depends_on: [ch14-preface]
+tags:
+- chapter14
+- recipe
+- draft
+depends_on:
+- ch14-preface
 validation:
-  - type: file_exists
-    name: output-file-exists
-    paths: [chapter14.02-patient-provider-assignment.md]
-  - type: persona_review
-    name: quality-review
-    persona: TechEditor
-    pass_condition: >-
-      Recipe includes The Problem, The Technology, General Architecture Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations, and navigation links. Prose matches project voice with no em dashes.
+- type: file_exists
+  name: output-file-exists
+  paths:
+  - chapter14.02-patient-provider-assignment.md
+- type: shell
+  name: auto-fix-style
+  commands:
+  - python fix_style.py chapter14.02-patient-provider-assignment.md
+- type: persona_review
+  name: quality-review
+  persona: TechEditor
+  pass_condition: Recipe includes The Problem, The Technology, General Architecture
+    Pattern, AWS Implementation with pseudocode walkthrough, The Honest Take, Variations,
+    and navigation links. Prose matches project voice with no em dashes.
 ---
+
 
 ## Objective
 Draft the recipe for Patient-Provider Assignment using optimization techniques.
