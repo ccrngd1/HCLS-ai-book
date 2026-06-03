@@ -159,7 +159,7 @@ The payoff, when it works, is real. The cases where multi-modal reasoning helps 
 
 The overall flow looks like this:
 
-```
+```text
 [Trigger: Clinical Scenario or Clinician Query]
     → [Fetch Patient Context (FHIR + Modality Inventory)]
     → [Modality-Specific Ingestion]
@@ -209,7 +209,7 @@ The overall flow looks like this:
 
 **Amazon Bedrock for the reasoning layer.** A capable generation model (Claude Sonnet or equivalent) handles the multi-hypothesis reasoning and synthesis. A cheaper fast model (Claude Haiku, Nova Lite, or equivalent) handles scenario classification, modality inventory summarization, and retrieval planning. Bedrock is the right fit because the workload needs grounded generation with structured output and because it is HIPAA-eligible under AWS BAA.
 
-**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
+**Amazon Bedrock Guardrails for contextual grounding enforcement.** Every reasoning output runs through a contextual grounding check against the assembled input context (modality interpretations, retrieved sources, patient data). Grounding failures trigger retry or reject. For multi-modal reasoning the grounding enforcement is non-negotiable because the stakes of fabrication are higher than in unimodal cases. For this recipe, a contextual grounding threshold at or above 0.85 is the conservative starting point; tune upward for scenarios where fabrication tolerance is lowest (oncology treatment selection, critical-care decisions) and re-evaluate per scenario during clinical validation. The same Guardrail policy must also have input-side prompt-attack filters enabled, because retrieved modality content (reports, notes, guidelines, protocols, vendor AI outputs) is an untrusted-input surface, not verified instructions.
 
 **Amazon HealthLake for the FHIR-native patient context.** HealthLake is the natural store for the structured clinical data layer. The reasoning pipeline queries HealthLake for the FHIR bundle at the start of each run.
 
@@ -370,7 +370,7 @@ flowchart TB
      This pattern has recurred across multiple Chapter 2 recipes and is a
      candidate for a chapter-wide appendix. -->
 
-```
+```pseudocode
 FUNCTION start_reasoning_run(trigger):
     // trigger.type: "ed_presentation", "admission", "oncology_treatment_planning",
     //               "clinician_request", etc.
@@ -407,7 +407,7 @@ FUNCTION start_reasoning_run(trigger):
 
 **Step 2: Parallel modality ingestion.** Each modality's ingestion runs as an independent Lambda invocation. The inventory of what was successfully ingested and what failed flows into the next stage.
 
-```
+```pseudocode
 FUNCTION ingest_imaging(run_id, patient_id, scenario):
 
     // Determine which imaging studies are relevant for this scenario and patient
@@ -469,7 +469,7 @@ FUNCTION ingest_imaging(run_id, patient_id, scenario):
     RETURN imaging_records
 ```
 
-```
+```pseudocode
 FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
     // ECGs are typically referenced as Observation or DocumentReference in FHIR
@@ -520,7 +520,7 @@ FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
     RETURN ecg_records
 ```
 
-```
+```pseudocode
 FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
     // The scenario determines which labs matter; pull a generous set to start
@@ -586,7 +586,7 @@ FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
              source_id: f"labs_vitals:{patient_id}" }
 ```
 
-```
+```pseudocode
 FUNCTION ingest_notes(run_id, patient_id, scenario):
 
     // Pull recent notes relevant to the scenario
@@ -623,7 +623,7 @@ FUNCTION ingest_notes(run_id, patient_id, scenario):
     RETURN notes
 ```
 
-```
+```pseudocode
 FUNCTION ingest_structured_context(run_id, patient_id):
 
     // Reuse the pattern from Recipe 2.9 for normalized patient facts
@@ -658,7 +658,7 @@ FUNCTION ingest_structured_context(run_id, patient_id):
      rendered output re-associates reasoning to the patient via run_id plus
      patient_id; identifiers do not need to round-trip through the prompt. -->
 
-```
+```pseudocode
 FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
 
     // Build the unified patient state
@@ -729,7 +729,7 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
      defer when the recommended modality is effectively required for that
      sub-scenario (for example ECG for ACS-inclusive reasoning). -->
 
-```
+```pseudocode
 FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
 
     // recent_runs is a DynamoDB query on the mm-reasoning-runs table by
@@ -790,7 +790,7 @@ FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
 
 **Step 5: Deterministic safety checks.** Same pattern as Recipe 2.9. Drug interactions, allergies, contraindications, renal and hepatic dose flags. The outputs are hard inputs to the reasoning prompt.
 
-```
+```pseudocode
 FUNCTION run_safety_checks(structured_context, proposed_medications_if_any):
 
     // See Recipe 2.9 Step 4 for the full expansion; the same function applies here
@@ -802,7 +802,7 @@ FUNCTION run_safety_checks(structured_context, proposed_medications_if_any):
 
 **Step 6: Retrieval.** Pull the relevant guidelines, institutional protocols, and (optionally) case analogs. Retrieval is scoped by the scenario, the patient's characteristics, and the modality inventory.
 
-```
+```pseudocode
 FUNCTION retrieve_supporting_content(scenario, patient_state, modality_inventory):
 
     queries = derive_retrieval_queries(scenario, patient_state, modality_inventory)
@@ -850,7 +850,7 @@ FUNCTION retrieve_supporting_content(scenario, patient_state, modality_inventory
 
 **Step 7: The reasoning layer.** Build the prompt with the modality inventory, patient state, retrieved content, and safety findings. The prompt enforces multi-hypothesis reasoning, evidence-for-and-against per hypothesis, explicit handling of missing modalities, verbatim preservation, cross-modality consistency, and citation discipline.
 
-```
+```pseudocode
 FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
                                   retrieved, safety_findings, scope_decision):
 
@@ -1046,7 +1046,7 @@ FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
 
 **Step 8: Post-generation validation.** Belt-and-suspenders on Guardrails. Every citation resolves; every number appears verbatim in a source; every graded term appears verbatim; every safety finding is represented; no claim contradicts another modality; no recommendation falls outside scope.
 
-```
+```pseudocode
 FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
                               modality_inventory, scope_decision, retry_count):
 
@@ -1142,7 +1142,7 @@ FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
 
 **Orchestration gate between Step 8 and Step 9.** Validation status is the last safety gate before the clinician UI. The orchestrator must distinguish `VALIDATED` from `ROUTED_TO_HUMAN_REVIEW`. Only `VALIDATED` proceeds to Step 9 and becomes a delivered reasoning output. `ROUTED_TO_HUMAN_REVIEW` is a terminal state: the trace is archived for audit, the run is recorded as pending clinical review, and the reasoning does not render to the clinician.
 
-```
+```pseudocode
 FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
     IF validation_result.status == "VALIDATED":
         // Fall through to Step 9: tier, render, archive, deliver.
@@ -1170,7 +1170,7 @@ FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
 
 **Step 9: Tier, render, and archive.** Score against prior runs for suppression. Render with deep links to every modality source. Archive the full provenance.
 
-```
+```pseudocode
 FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
                                run_id, scope_decision):
 
