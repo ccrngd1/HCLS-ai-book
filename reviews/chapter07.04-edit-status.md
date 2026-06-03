@@ -8,7 +8,7 @@
 
 ## Verdict: PASS (Python companion only)
 
-The Python companion is editorially clean and ready for publication. All review findings have been addressed or correctly deferred with properly formatted TODO markers. No edits required on this pass.
+The Python companion is editorially clean and ready for publication. All review findings have been addressed or correctly deferred with properly formatted TODO markers. No edits required.
 
 ---
 
@@ -21,7 +21,7 @@ The Python companion is editorially clean and ready for publication. All review 
 | Link verification | PASS. No external URLs. One relative link to main recipe (target file doesn't exist yet, covered by C1 TODO). |
 | Header hierarchy | PASS. H1 for title, H2 for major sections. No skipped levels. |
 | Readability | PASS. Short paragraphs, active voice, no run-on sentences. |
-| Voice drift | PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Conversational engineer-explaining tone throughout. |
+| Voice drift | PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Engineer-explaining tone throughout. |
 | Code block language tags | PASS. All 9 opening fences have correct tags (1 bash, 8 python). |
 | RECIPE-GUIDE compliance | PARTIAL. Python companion structure correct (opening callout, setup, config, steps, pipeline runner, gap to production). Main recipe missing (C1). |
 | Vendor balance | N/A for Python companion (inherently AWS-specific). |
@@ -47,7 +47,7 @@ The Python companion is editorially clean and ready for publication. All review 
 | S1 (IAM not resource-scoped) | MEDIUM | RESOLVED | Gap to Production covers role separation with specific role breakdown. |
 | S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Gap to Production covers CMK guidance for PHI tables. |
 | S3 (consumer access differentiation) | MEDIUM | RESOLVED | Gap to Production covers field-level access by consumer identity. |
-| A2 (temporal validation) | MEDIUM | RESOLVED | Strong WARNING comment in train function (Step 2). Gap to Production section reinforces. |
+| A2 (temporal validation) | MEDIUM | RESOLVED | Strong WARNING comment in train function (Step 2). Gap to Production reinforces. |
 | A3 (calibration check) | MEDIUM | DEFERRED | TODO marker at line 302 inside code block. TechWriter to add calibration_curve snippet. |
 | A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production section includes real-world AUC context (0.70-0.78). |
 | N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment added near boto3 client creation in Step 5. |
@@ -67,7 +67,7 @@ Both correctly formatted for the follow-up task generator.
 
 ## Changes This Pass
 
-No edits applied. Full independent editorial verification confirmed:
+No edits applied. Independent editorial verification confirmed:
 - Zero em dashes or en dashes
 - All 9 code fences have language tags (1 bash, 8 python)
 - Both TODO markers correctly formatted with finding IDs (C1, A3) on same line
