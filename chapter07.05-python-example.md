@@ -450,9 +450,12 @@ def score_patient(model, feature_vector: dict, feature_columns: list) -> dict:
     Returns:
         Dict with probability, risk tier, and contributing factors.
     """
-    # IMPORTANT: Callers should impute missing values before calling this function.
+    # IMPORTANT: Callers MUST impute missing values before calling this function.
     # The pipeline's run_scoring_pipeline() handles imputation. If you call
-    # score_patient() directly, impute first or you'll get unreliable predictions.
+    # score_patient() directly, impute first or you'll get garbage predictions.
+    # scikit-learn's GradientBoostingClassifier does NOT handle missing-value
+    # sentinels natively (unlike XGBoost). The -999 below is a safety fallback
+    # for unexpected nulls that slip past imputation, not a designed input path.
     #
     # Assemble features in the order the model expects
     features = []
@@ -629,8 +632,8 @@ def store_risk_score(
     ttl_timestamp = int((discharge_dt + timedelta(days=45)).timestamp())
 
     # Convert floats to Decimal (DynamoDB requirement)
-    # This includes nested numerics in risk_drivers (DynamoDB rejects floats
-    # even inside lists and maps).
+    # DynamoDB's TypeSerializer rejects Python floats even when nested inside
+    # lists and maps. Every numeric value at any nesting depth must be Decimal.
     item = {
         "patient_id": patient_id,
         "encounter_id": encounter_id,
