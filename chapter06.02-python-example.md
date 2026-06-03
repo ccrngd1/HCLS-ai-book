@@ -625,7 +625,7 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 **Error handling and retries.** Every AWS call here can fail. S3 writes can fail on network issues. DynamoDB batch writes can return unprocessed items if you hit throughput limits. A production system wraps all external calls in retry logic with exponential backoff, logs failures with enough context to debug, and has a dead-letter mechanism for members who couldn't be assigned.
 
-**DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration.
+**DataFrame iteration at scale.** The `store_results()` function uses `df.iterrows()`, which is fine for 5,000 members but slow for millions. At scale, replace with `df.itertuples()` or `df.to_dict("records")` for significantly faster row iteration. The `batch_writer()` context manager already handles DynamoDB batching, so the bottleneck is purely the Python-side iteration.
 
 **DynamoDB data types.** This example already wraps `total_allowed_12m` in `Decimal(str(value))` for DynamoDB. If you add any new float-valued field to the DynamoDB item, wrap it the same way. Plain Python floats will raise a `TypeError` from boto3 at write time.
 
