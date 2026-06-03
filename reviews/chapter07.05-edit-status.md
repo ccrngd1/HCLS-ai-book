@@ -39,11 +39,11 @@
 
 ### Editorial Fixes (Final Pass)
 
-- Fixed 8 malformed code block closings: `\`\`\`text` (incorrectly used as closing fence) replaced with proper `\`\`\`` throughout main recipe (lines 91, 170, 248, 334, 378, 470, 525, 561)
+- Fixed 7 malformed code block closings: `\`\`\`text` used as closing fences replaced with plain `\`\`\`` (lines 91, 170, 248, 334, 378, 470, 525, 561 in original; now properly closed)
 - Verified zero em dashes (U+2014) in both files
 - Verified zero en dashes (U+2013) in both files
-- Verified all code fences have language tags (text, mermaid, pseudocode, json, python, bash)
-- Verified no bare ``` openings exist
+- Verified all opening code fences have language tags (text, mermaid, pseudocode, json, python, bash)
+- Verified all closing fences are bare (no language tag)
 - Verified header hierarchy correct (H1 title, H2 major sections, H3 subsections, H4 steps)
 - Verified no documentation-voice detected
 - Verified RECIPE-GUIDE sections all present in correct order
@@ -56,7 +56,7 @@
 
 1. `<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add dead letter queue guidance... -->`
 2. `<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify feature store architecture... -->`
-3. `// TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance retention requirements... //`
+3. `// TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance retention requirements...`
 
 ---
 
