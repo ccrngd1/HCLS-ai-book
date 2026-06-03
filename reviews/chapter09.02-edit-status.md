@@ -1,7 +1,7 @@
 # Edit Status: Recipe 9.2 - Patient Photo Verification
 
 **Editor:** TechEditor
-**Date:** 2026-05-31
+**Date:** 2026-06-03
 **Status:** COMPLETE (Python companion) / BLOCKED (main recipe missing)
 
 ---
@@ -10,17 +10,18 @@
 
 The Python companion (`chapter09.02-python-example.md`) is editorially complete and ready for publication. The main recipe file (`chapter09.02-patient-photo-verification.md`) does not exist and must be written by the TechWriter before the full recipe can ship.
 
-## What Was Edited
+## Changes Applied (This Pass)
 
-**Python companion (`chapter09.02-python-example.md`):**
+No changes required. The file was already in publishable condition from the prior edit pass. This final review confirms:
 
-- Code review Issue 1 (WARNING): `UnmatchedFaces` comment corrected to accurately describe API semantics
-- Code review Issue 2 (NOTE): Similarity sentinel value comment added explaining 0.0 is not the real score
-- Code review Issue 3 (NOTE): `Attributes` parameter fixed from `["QUALITY", "DEFAULT"]` to `["DEFAULT"]` with explanatory comment
-- SEC-2 (HIGH): BAA requirement note added to Setup section
-- SEC-1 (MEDIUM): IAM permissions separated into verification-time vs. enrollment-time with resource-scoping guidance
-- Removed redundant sentence in opening callout
-- All TODO markers correctly formatted with finding IDs for follow-up tracking
+- All code review findings (Issues 1-3) previously incorporated
+- All expert review HIGH/CRITICAL findings deferred via properly formatted TODO markers
+- SEC-2 BAA note present in Setup section
+- IAM permissions correctly separated (verification-time vs. enrollment-time)
+- Zero em dashes (U+2014) or en dashes (U+2013)
+- All 7 fenced code blocks have language tags (1x bash, 6x python)
+- No documentation-voice, no LinkedIn tone, no announcement statements
+- Voice consistent with STYLE-GUIDE.md throughout
 
 ## Editorial Checklist Results
 
@@ -28,12 +29,13 @@ The Python companion (`chapter09.02-python-example.md`) is editorially complete 
 |-------|--------|
 | Grammar and mechanics | PASS |
 | Code formatting | PASS (all fenced blocks have language tags, inline code for service names) |
-| Link verification | PASS (one internal cross-reference to main recipe, flagged via TODO) |
+| Link verification | PASS (cross-reference to main recipe flagged via ARCH-1 TODO) |
 | Header hierarchy | PASS (H1 title, H2 sections, no skipped levels) |
 | Readability | PASS (short paragraphs, active voice, no run-on sentences) |
 | Voice drift | PASS (no documentation-voice, no em dashes, no LinkedIn tone) |
-| RECIPE-GUIDE compliance | N/A for Python companion (structure requirements apply to main recipe) |
-| Vendor balance | N/A for Python companion (100% AWS is expected for the code file) |
+| Code block language tags | PASS (7/7 opening fences have tags) |
+| RECIPE-GUIDE compliance | N/A for Python companion |
+| Vendor balance | N/A for Python companion (100% AWS expected) |
 
 ## Blocking Issues
 
