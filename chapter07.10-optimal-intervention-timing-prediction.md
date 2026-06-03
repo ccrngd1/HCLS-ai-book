@@ -80,7 +80,7 @@ For most healthcare organizations starting this work, the practical approach is 
 
 ## General Architecture Pattern
 
-```
+```text
 [Longitudinal Data Assembly] → [Feature Engineering (Temporal)] → [Dynamic Survival Model] → [Intervention Window Scoring] → [Decision Engine] → [Care Team Delivery]
 ```
 
@@ -207,7 +207,7 @@ flowchart TD
 
 **Step 1: Assemble patient timelines.** The foundation of any timing model is a complete, time-ordered sequence of clinical events for each patient. This step pulls data from multiple source systems (EHR, claims, pharmacy, labs) and aligns everything on a unified timeline. Each event gets a timestamp, an event type, and relevant attributes. The output is one record per patient containing their full event history, sorted chronologically. This is the hardest engineering step in the entire pipeline. Healthcare data is fragmented across systems with different identifiers, different time zones, and different update frequencies. Getting this right is 60% of the work. Skip this step or do it poorly, and your model trains on incomplete or misaligned data, producing timing predictions that are systematically wrong.
 
-```
+```pseudocode
 FUNCTION assemble_patient_timeline(patient_id, lookback_days=730):
     // Pull events from each source system for this patient.
     // lookback_days controls how far back we look (2 years is typical for chronic conditions).
@@ -294,7 +294,7 @@ FUNCTION assemble_patient_timeline(patient_id, lookback_days=730):
 
 **Step 2: Engineer temporal features.** Raw events aren't directly useful for a timing model. You need features that capture temporal dynamics: how fast things are changing, how long since key events occurred, whether patterns are accelerating or decelerating. This step transforms the raw timeline into a feature vector at each time step, creating the input the survival model needs. The features here are specifically designed to capture inflection points, not just current state. A patient whose A1C has been 8.5 for two years is different from a patient whose A1C just jumped from 7.0 to 8.5 in one quarter, even though their current value is similar. Skip this step and feed raw events directly to the model, and it will struggle to learn timing patterns because the signal is buried in noise.
 
-```
+```pseudocode
 FUNCTION engineer_temporal_features(timeline, observation_date):
     // Compute features that capture the temporal dynamics at a specific observation point.
     // These features are computed for each "time step" during training,
@@ -360,7 +360,7 @@ FUNCTION engineer_temporal_features(timeline, observation_date):
 
 **Step 3: Train the dynamic survival model.** This is where the temporal features become a timing prediction. The model learns, from historical patient trajectories and their outcomes, to estimate the hazard function at each time step. During training, it sees thousands of patient timelines with known event times and learns which feature patterns precede events, and crucially, how far in advance those patterns appear. The output is a model that can take any patient's current feature vector and predict their hazard trajectory over the next N days. This trajectory is what enables timing decisions: a flat trajectory means "no urgency," a rising trajectory means "window is opening," and a peaked trajectory means "window may be closing."
 
-```
+```pseudocode
 FUNCTION train_survival_model(training_data):
     // training_data contains:
     //   - patient timelines (feature sequences)
@@ -417,7 +417,7 @@ FUNCTION train_survival_model(training_data):
 
 **Step 4: Score intervention windows.** This is the decision layer. Given a patient's predicted hazard trajectory, determine whether now is the right time to intervene. The logic encodes clinical beliefs about intervention effectiveness: interventions work best when risk is rising but hasn't peaked (the patient is deteriorating but hasn't yet reached crisis). Too early and the intervention is premature; too late and it's reactive rather than preventive. The scoring function produces an "intervention urgency" score and a recommended action window (e.g., "intervene within the next 3-5 days"). Skip this step and you're back to static risk scoring: you know who's at risk but not when to act.
 
-```
+```pseudocode
 FUNCTION score_intervention_window(patient_id, hazard_trajectory):
     // hazard_trajectory is an array of predicted daily hazard values
     // for the next N days (e.g., 30 days).
@@ -493,7 +493,7 @@ FUNCTION score_intervention_window(patient_id, hazard_trajectory):
 
 **Step 5: Generate and deliver recommendations.** The final step assembles the scored patients into an actionable worklist for the care team. It applies operational constraints (care manager capacity, patient contact preferences, time of day), ranks patients by intervention urgency, and writes the recommendations to the delivery layer. The "why now" explanation is critical: care managers won't act on a score without understanding what changed. This step generates a human-readable explanation of why this patient, why today. Skip this step and you have a model that produces numbers but doesn't change behavior.
 
-```
+```pseudocode
 FUNCTION generate_recommendations(scored_patients, care_team_capacity):
     // scored_patients: list of intervention window scores from Step 4
     // care_team_capacity: how many outreach slots are available today
