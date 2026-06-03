@@ -14,12 +14,12 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 ## Editorial Checklist (Python Companion)
 
 - [x] Grammar and mechanics: clean
-- [x] Code formatting: all fenced blocks have language tags (bash, python, text)
+- [x] Code formatting: all fenced blocks have language tags (1 bash, 7 python, 1 text)
 - [x] Link verification: one internal link to nonexistent main recipe (expected, covered by TODO)
 - [x] Header hierarchy: H1 title only, H2 for sections, no skipped levels
 - [x] Readability: short paragraphs, active voice, no run-on sentences
 - [x] Voice drift check: no documentation-voice, no em dashes (zero U+2014 / U+2013), no anti-patterns
-- [x] Code block language tags: all 9 opening fences tagged (1 bash, 7 python, 1 text)
+- [x] Code block language tags: all 9 opening fences tagged
 - [x] RECIPE-GUIDE compliance: all Python companion sections present and ordered correctly
 - [x] Vendor balance: N/A for Python companion (inherently AWS-specific; balance evaluated on main recipe)
 
@@ -37,7 +37,7 @@ The Python companion (`chapter06.02-python-example.md`) is complete and passes a
 
 | # | Severity | Status | Note |
 |---|----------|--------|------|
-| ARCH-CRITICAL | CRITICAL | Deferred | Main recipe must be written; TODO marker placed at line 644 |
+| ARCH-CRITICAL | CRITICAL | Deferred | Main recipe must be written; TODO marker at end of file |
 | SEC-1 | MEDIUM | Deferred | CMK guidance needed in main recipe Prerequisites |
 | SEC-2 | MEDIUM | Deferred | Opaque identifiers discussion needed in main recipe |
 | SEC-3 | MEDIUM | Addressed | VPC callout present in Python companion Setup section |
