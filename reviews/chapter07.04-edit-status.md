@@ -8,7 +8,7 @@
 
 ## Verdict: PASS (Python companion only)
 
-The Python companion is editorially clean and ready for publication. No edits required this pass. All review findings have been addressed or correctly deferred.
+The Python companion is editorially clean and ready for publication. No edits required. All review findings have been addressed or correctly deferred with properly formatted TODO markers.
 
 ---
 
@@ -19,10 +19,10 @@ The Python companion is editorially clean and ready for publication. No edits re
 | Grammar and mechanics | PASS. Clean throughout. |
 | Code formatting | PASS. All fenced blocks have correct language tags (`python` or `bash`). Inline code used correctly for service names and API calls. |
 | Link verification | PASS. No external URLs. One relative link to main recipe (target file doesn't exist yet, covered by C1 TODO). |
-| Header hierarchy | PASS. H1 for title, H2 for major sections, H3 within code comments only. No skipped levels. |
+| Header hierarchy | PASS. H1 for title, H2 for major sections. No skipped levels. |
 | Readability | PASS. Short paragraphs, active voice, no run-on sentences. |
 | Voice drift | PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Conversational engineer-explaining tone throughout. |
-| Code block language tags | PASS. All 9 opening fences have correct tags (1 bash, 8 python). 9 closing fences correctly bare. |
+| Code block language tags | PASS. All 9 opening fences have correct tags (1 bash, 8 python). |
 | RECIPE-GUIDE compliance | PARTIAL. Python companion structure correct (opening callout, setup, config, steps, pipeline runner, gap to production). Main recipe missing (C1). |
 | Vendor balance | N/A for Python companion (inherently AWS-specific). |
 
@@ -32,8 +32,8 @@ The Python companion is editorially clean and ready for publication. No edits re
 
 | Search | Result |
 |--------|--------|
-| Em dash character (U+2014) "—" | Zero found. PASS. |
-| En dash character (U+2013) "–" | Zero found. PASS. |
+| Em dash character (U+2014) | Zero found. PASS. |
+| En dash character (U+2013) | Zero found. PASS. |
 | Bare ``` without language tag (opening fences only) | Zero found. All 9 opening fences have tags. PASS. |
 
 ---
@@ -74,7 +74,6 @@ No edits applied. Full editorial verification confirmed:
 - Voice consistent with STYLE-GUIDE.md throughout
 - Structure follows RECIPE-GUIDE.md for Python companions
 - All resolved findings verified in place
-- No documentation-voice, no hype, no LinkedIn-influencer tone
 
 ---
 
