@@ -37,17 +37,17 @@
 | N3 | NOTE | Accepted | Global importance as proxy for per-patient explanation is fine for teaching |
 | N4 | NOTE | Accepted | Synthetic encounter ID collisions are negligible for demo data |
 
-### Editorial Checklist
+### Editorial Fixes (This Pass)
 
-- [x] No em dashes (U+2014) found
-- [x] No en dashes (U+2013) found
-- [x] All code fences have language tags (text, mermaid, pseudocode, json, python, bash)
-- [x] Header hierarchy correct (H1 title, H2 major sections, H3 subsections)
-- [x] No documentation-voice detected
-- [x] No bare code fence openings
-- [x] RECIPE-GUIDE sections all present in correct order
-- [x] Vendor balance maintained (~70/30)
-- [x] All TODO markers include finding IDs on same line
+- Fixed 8 malformed code block closings: `\`\`\`text` (used as closing fence) replaced with proper `\`\`\`` throughout main recipe
+- Verified no em dashes (U+2014) present
+- Verified no en dashes (U+2013) present
+- Verified all code fences have language tags (text, mermaid, pseudocode, json)
+- Verified header hierarchy correct (H1 title, H2 major sections, H3 subsections, H4 steps)
+- Verified no documentation-voice detected
+- Verified RECIPE-GUIDE sections all present in correct order
+- Verified vendor balance maintained (~70/30)
+- Verified all TODO markers include finding IDs on same line
 
 ---
 
