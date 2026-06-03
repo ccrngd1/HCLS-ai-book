@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.02-patient-education-content-matching.md
+  - python3 fix_style.py chapter04.02-patient-education-content-matching.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

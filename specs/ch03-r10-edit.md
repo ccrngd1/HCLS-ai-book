@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter03.10-epidemic-outbreak-detection.md
+  - python3 fix_style.py chapter03.10-epidemic-outbreak-detection.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

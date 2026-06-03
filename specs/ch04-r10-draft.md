@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.10-dynamic-treatment-regime-recommendation.md
+  - python3 fix_style.py chapter04.10-dynamic-treatment-regime-recommendation.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

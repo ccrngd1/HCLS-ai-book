@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter12.04-lab-result-trend-analysis.md
+  - python3 fix_style.py chapter12.04-lab-result-trend-analysis.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

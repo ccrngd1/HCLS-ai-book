@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.03-payer-mix-financial-risk-clustering.md
+  - python3 fix_style.py chapter06.03-payer-mix-financial-risk-clustering.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

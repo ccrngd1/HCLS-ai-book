@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter05.08-privacy-preserving-record-linkage.md
+  - python3 fix_style.py chapter05.08-privacy-preserving-record-linkage.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

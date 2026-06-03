@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter05.01-internal-duplicate-patient-detection.md
+  - python3 fix_style.py chapter05.01-internal-duplicate-patient-detection.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

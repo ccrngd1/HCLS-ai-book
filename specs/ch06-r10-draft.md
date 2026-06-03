@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.10-multi-morbidity-pattern-discovery.md
+  - python3 fix_style.py chapter06.10-multi-morbidity-pattern-discovery.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

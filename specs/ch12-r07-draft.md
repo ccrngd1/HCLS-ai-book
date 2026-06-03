@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter12.07-vital-sign-trajectory-monitoring.md
+  - python3 fix_style.py chapter12.07-vital-sign-trajectory-monitoring.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

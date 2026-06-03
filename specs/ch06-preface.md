@@ -14,7 +14,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06-preface.md
+  - python3 fix_style.py chapter06-preface.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

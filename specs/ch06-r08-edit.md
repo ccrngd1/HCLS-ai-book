@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.08-disease-subtype-discovery.md
+  - python3 fix_style.py chapter06.08-disease-subtype-discovery.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

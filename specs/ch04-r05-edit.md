@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.05-medication-adherence-intervention-targeting.md
+  - python3 fix_style.py chapter04.05-medication-adherence-intervention-targeting.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

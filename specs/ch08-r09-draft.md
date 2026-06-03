@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter08.09-temporal-relationship-extraction.md
+  - python3 fix_style.py chapter08.09-temporal-relationship-extraction.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

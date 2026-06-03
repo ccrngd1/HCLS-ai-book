@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter15.02-notification-timing-optimization.md
+  - python3 fix_style.py chapter15.02-notification-timing-optimization.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

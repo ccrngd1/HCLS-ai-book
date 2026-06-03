@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter14.05-operating-room-block-scheduling.md
+  - python3 fix_style.py chapter14.05-operating-room-block-scheduling.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

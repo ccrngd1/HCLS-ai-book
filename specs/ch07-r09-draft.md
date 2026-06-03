@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter07.09-mortality-risk-scoring-icu.md
+  - python3 fix_style.py chapter07.09-mortality-risk-scoring-icu.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter15.03-clinical-trial-adaptive-randomization.md
+  - python3 fix_style.py chapter15.03-clinical-trial-adaptive-randomization.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

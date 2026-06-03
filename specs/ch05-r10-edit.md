@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter05.10-deceased-patient-resolution-reconciliation.md
+  - python3 fix_style.py chapter05.10-deceased-patient-resolution-reconciliation.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter12.08-disease-progression-trajectory-modeling.md
+  - python3 fix_style.py chapter12.08-disease-progression-trajectory-modeling.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

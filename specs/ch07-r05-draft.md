@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter07.05-30-day-readmission-risk.md
+  - python3 fix_style.py chapter07.05-30-day-readmission-risk.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

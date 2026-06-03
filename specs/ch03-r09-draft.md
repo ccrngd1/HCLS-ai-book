@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter03.09-cybersecurity-access-pattern-anomalies.md
+  - python3 fix_style.py chapter03.09-cybersecurity-access-pattern-anomalies.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

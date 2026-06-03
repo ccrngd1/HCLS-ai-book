@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter13.02-provider-directory-knowledge-graph.md
+  - python3 fix_style.py chapter13.02-provider-directory-knowledge-graph.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

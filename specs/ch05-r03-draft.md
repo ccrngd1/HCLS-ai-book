@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter05.03-address-standardization-household-linkage.md
+  - python3 fix_style.py chapter05.03-address-standardization-household-linkage.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

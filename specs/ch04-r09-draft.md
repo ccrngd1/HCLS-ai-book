@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.09-personalized-care-plan-generation.md
+  - python3 fix_style.py chapter04.09-personalized-care-plan-generation.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

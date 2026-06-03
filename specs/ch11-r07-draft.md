@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter11.07-chronic-disease-management-coach.md
+  - python3 fix_style.py chapter11.07-chronic-disease-management-coach.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

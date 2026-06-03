@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter15.04-sepsis-treatment-optimization.md
+  - python3 fix_style.py chapter15.04-sepsis-treatment-optimization.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

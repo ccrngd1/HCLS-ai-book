@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter09.02-patient-photo-verification.md
+  - python3 fix_style.py chapter09.02-patient-photo-verification.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

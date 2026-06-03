@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.06-care-gap-prioritization.md
+  - python3 fix_style.py chapter04.06-care-gap-prioritization.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

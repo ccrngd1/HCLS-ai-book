@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter13.05-clinical-pathway-protocol-modeling.md
+  - python3 fix_style.py chapter13.05-clinical-pathway-protocol-modeling.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

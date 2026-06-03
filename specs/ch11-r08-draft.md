@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter11.08-mental-health-support-bot.md
+  - python3 fix_style.py chapter11.08-mental-health-support-bot.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

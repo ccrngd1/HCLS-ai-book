@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter02.06-clinical-note-summarization.md
+  - python3 fix_style.py chapter02.06-clinical-note-summarization.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter10.04-medical-transcription-dictation.md
+  - python3 fix_style.py chapter10.04-medical-transcription-dictation.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

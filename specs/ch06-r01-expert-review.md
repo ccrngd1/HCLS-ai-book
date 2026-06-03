@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py reviews/chapter06.01-expert-review.md
+  - python3 fix_style.py reviews/chapter06.01-expert-review.md
 - type: persona_review
   name: quality-review
   persona: TechCodeReviewer

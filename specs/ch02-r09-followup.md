@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: no-todo-markers-for-tracked-findings
   commands:
-  - 'python -c "import re,sys,pathlib; t=pathlib.Path(''chapter02.09-clinical-decision-support-synthesis.md'').read_text(encoding=''utf-8'');
+  - 'python3 -c "import re,sys,pathlib; t=pathlib.Path(''chapter02.09-clinical-decision-support-synthesis.md'').read_text(encoding=''utf-8'');
     ids=[''A1'', ''A2'', ''A3'', ''S1'', ''S2'']; missing=[i for i in ids if re.search(r''TODO[^\\n]*''+re.escape(i)+r''\\b'',
     t)]; sys.exit(0 if not missing else (sys.stderr.write(''unresolved findings still
     TODO: ''+'', ''.join(missing)+chr(10)) or 1))"
@@ -25,7 +25,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter02.09-clinical-decision-support-synthesis.md
+  - python3 fix_style.py chapter02.09-clinical-decision-support-synthesis.md
 - type: persona_review
   name: findings-resolved
   persona: TechExpertReviewer

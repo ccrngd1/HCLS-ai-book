@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter12.02-supply-inventory-forecasting.md
+  - python3 fix_style.py chapter12.02-supply-inventory-forecasting.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

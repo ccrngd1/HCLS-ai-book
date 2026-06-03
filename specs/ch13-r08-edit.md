@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter13.08-medical-concept-normalization-mapping.md
+  - python3 fix_style.py chapter13.08-medical-concept-normalization-mapping.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

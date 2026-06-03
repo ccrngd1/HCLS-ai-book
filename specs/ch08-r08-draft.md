@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter08.08-clinical-assertion-classification.md
+  - python3 fix_style.py chapter08.08-clinical-assertion-classification.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

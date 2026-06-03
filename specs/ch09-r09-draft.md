@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter09.09-surgical-video-analysis.md
+  - python3 fix_style.py chapter09.09-surgical-video-analysis.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

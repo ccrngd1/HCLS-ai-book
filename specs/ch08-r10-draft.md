@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter08.10-phenotype-extraction-research.md
+  - python3 fix_style.py chapter08.10-phenotype-extraction-research.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

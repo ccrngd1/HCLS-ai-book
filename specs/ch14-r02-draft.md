@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter14.02-patient-provider-assignment.md
+  - python3 fix_style.py chapter14.02-patient-provider-assignment.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

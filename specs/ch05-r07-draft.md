@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter05.07-longitudinal-patient-matching-name-changes.md
+  - python3 fix_style.py chapter05.07-longitudinal-patient-matching-name-changes.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

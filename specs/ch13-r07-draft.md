@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter13.07-disease-gene-drug-relationship-graph.md
+  - python3 fix_style.py chapter13.07-disease-gene-drug-relationship-graph.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

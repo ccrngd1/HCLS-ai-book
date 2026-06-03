@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter14.06-patient-flow-bed-assignment.md
+  - python3 fix_style.py chapter14.06-patient-flow-bed-assignment.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

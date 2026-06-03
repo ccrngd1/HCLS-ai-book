@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter08.03-icd-10-code-suggestion.md
+  - python3 fix_style.py chapter08.03-icd-10-code-suggestion.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

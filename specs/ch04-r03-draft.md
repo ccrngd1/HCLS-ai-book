@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter04.03-provider-directory-search-optimization.md
+  - python3 fix_style.py chapter04.03-provider-directory-search-optimization.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

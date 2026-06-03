@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter10.05-patient-facing-voice-assistant.md
+  - python3 fix_style.py chapter10.05-patient-facing-voice-assistant.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

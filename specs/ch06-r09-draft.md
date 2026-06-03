@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.09-social-determinant-phenotyping.md
+  - python3 fix_style.py chapter06.09-social-determinant-phenotyping.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter11.01-faq-chatbot.md
+  - python3 fix_style.py chapter11.01-faq-chatbot.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

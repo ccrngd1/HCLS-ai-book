@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter08.06-sdoh-extraction.md
+  - python3 fix_style.py chapter08.06-sdoh-extraction.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter09.06-diabetic-retinopathy-screening.md
+  - python3 fix_style.py chapter09.06-diabetic-retinopathy-screening.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

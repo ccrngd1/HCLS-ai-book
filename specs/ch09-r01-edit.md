@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter09.01-image-quality-assessment.md
+  - python3 fix_style.py chapter09.01-image-quality-assessment.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

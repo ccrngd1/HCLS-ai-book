@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter07.01-appointment-no-show-prediction.md
+  - python3 fix_style.py chapter07.01-appointment-no-show-prediction.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

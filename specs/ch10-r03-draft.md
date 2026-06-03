@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter10.03-voice-to-text-ehr-navigation.md
+  - python3 fix_style.py chapter10.03-voice-to-text-ehr-navigation.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

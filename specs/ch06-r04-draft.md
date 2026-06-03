@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.04-disease-severity-stratification.md
+  - python3 fix_style.py chapter06.04-disease-severity-stratification.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

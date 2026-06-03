@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter13.01-drug-formulary-navigation.md
+  - python3 fix_style.py chapter13.01-drug-formulary-navigation.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

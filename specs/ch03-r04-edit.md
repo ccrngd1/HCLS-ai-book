@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter03.04-medication-dispensing-anomalies.md
+  - python3 fix_style.py chapter03.04-medication-dispensing-anomalies.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

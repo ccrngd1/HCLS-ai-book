@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter09.08-pathology-slide-analysis.md
+  - python3 fix_style.py chapter09.08-pathology-slide-analysis.md
 - type: persona_review
   name: quality-review
   persona: TechEditor

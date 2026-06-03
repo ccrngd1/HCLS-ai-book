@@ -17,7 +17,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter06.07-clinical-trial-patient-matching.md
+  - python3 fix_style.py chapter06.07-clinical-trial-patient-matching.md
 - type: persona_review
   name: quality-review
   persona: TechExpertReviewer

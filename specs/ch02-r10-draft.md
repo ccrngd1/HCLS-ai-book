@@ -16,7 +16,7 @@ validation:
 - type: shell
   name: auto-fix-style
   commands:
-  - python fix_style.py chapter02.10-multi-modal-clinical-reasoning.md
+  - python3 fix_style.py chapter02.10-multi-modal-clinical-reasoning.md
 - type: persona_review
   name: quality-review
   persona: TechEditor
