@@ -2,7 +2,7 @@
 
 **Editor:** TechEditor
 **Date:** 2026-06-03
-**Verdict:** COMPLETE (code fence formatting fixed)
+**Verdict:** COMPLETE
 
 ---
 
@@ -34,7 +34,7 @@
 
 ### Code Fence Closing Delimiters (8 fixes)
 
-All 8 closing code fences used ` ```text ` instead of ` ``` `. This would break markdown rendering by treating the closing fence as a new opening tagged block. Fixed all 8 occurrences:
+All 8 closing code fences used ` ```text ` instead of ` ``` `. This broke markdown rendering by treating the closing fence as a new opening tagged block, creating nested/broken code sections. Fixed all 8 occurrences:
 
 1. Line 85 (architecture pattern text block)
 2. Line 174 (mermaid diagram)
@@ -45,17 +45,21 @@ All 8 closing code fences used ` ```text ` instead of ` ``` `. This would break 
 7. Line 547 (Step 5 pseudocode)
 8. Line 568 (JSON example)
 
+### Python Companion
+
+No changes needed. Code review Issue 1 (deprecated `datetime.utcnow()`) was already addressed in the draft (uses `datetime.now(timezone.utc)`). Issue 2 (slope threshold comment) was already addressed in the draft.
+
 ---
 
 ## Review Findings Disposition
 
 ### HIGH Findings (deferred as TODO markers)
 
-| Finding | Status | Location |
-|---------|--------|----------|
-| SEC-1: Data minimization for delivery layer | Deferred (TODO marker at line 97) | After Step 5 in General Architecture |
-| ARC-1: Model monitoring/drift detection | Deferred (TODO marker at line 107) | Before SageMaker paragraph in Why These Services |
-| ARC-2: DynamoDB TTL expiration handling | Deferred (TODO marker at line 117) | Before DynamoDB paragraph in Why These Services |
+| Finding | Status | Location in file |
+|---------|--------|------------------|
+| SEC-1: Data minimization for delivery layer | Deferred (TODO marker) | Line 96, after General Architecture Step 5 |
+| ARC-1: Model monitoring/drift detection | Deferred (TODO marker) | Line 106, before SageMaker paragraph in Why These Services |
+| ARC-2: DynamoDB TTL expiration handling | Deferred (TODO marker) | Line 116, before DynamoDB paragraph in Why These Services |
 
 ### MEDIUM Findings (all incorporated in draft)
 
@@ -83,4 +87,4 @@ All 8 closing code fences used ` ```text ` instead of ` ``` `. This would break 
 
 ## Summary
 
-Fixed 8 broken code fence closing delimiters that used ` ```text ` instead of plain ` ``` `. This was a rendering-breaking formatting error that would cause markdown parsers to treat closing fences as new opening blocks, creating nested/broken code sections. All MEDIUM and LOW expert review findings were already incorporated into the draft. The three HIGH findings remain as TODO markers for the TechWriter.
+Fixed 8 broken code fence closing delimiters that used ` ```text ` instead of plain ` ``` `. This was a rendering-breaking formatting error. All MEDIUM and LOW expert review findings were already incorporated into the draft by the TechWriter. The three HIGH findings remain as TODO markers for the TechWriter to address in a follow-up pass. Python companion required no changes (code review issues were already resolved).
