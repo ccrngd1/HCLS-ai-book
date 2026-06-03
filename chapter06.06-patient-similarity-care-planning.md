@@ -1,7 +1,9 @@
-<!-- EDITED: TechEditor pass complete. All code review and expert review findings addressed
-     inline (S2, S3, S4, A2, A3, N1, N2, V2, V3) or deferred via TODO (A1, S1).
-     Editorial checklist: zero em/en dashes, all code blocks tagged, header hierarchy correct,
-     no voice drift, RECIPE-GUIDE compliant, 70/30 vendor balance maintained. -->
+<!-- EDITED: TechEditor final pass verified 2026-06-03. All code review and expert review
+     findings addressed inline (S2, S3, S4, A2, A3, N1, N2, V2, V3) or deferred via TODO (A1, S1).
+     Editorial checklist: zero em/en dashes, all code blocks tagged (8/8 with language),
+     header hierarchy correct (H1>H2>H3>H4, no skips), no voice drift, no documentation-voice,
+     RECIPE-GUIDE compliant, 70/30 vendor balance maintained. Ready for publication pending
+     TechWriter resolution of deferred TODOs (A1, S1). -->
 
 # Recipe 6.6: Patient Similarity for Care Planning
 
