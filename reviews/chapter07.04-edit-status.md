@@ -1,7 +1,7 @@
 # Edit Status: Recipe 7.4 - ED Visit Prediction (Python Companion)
 
 **Editor:** TechEditor
-**Date:** 2026-05-31
+**Date:** 2026-06-03
 **File:** `chapter07.04-python-example.md`
 
 ---
@@ -22,6 +22,7 @@ The Python companion is editorially clean and ready for publication once the mai
 | Header hierarchy | PASS. H1 for title, H2 for sections. No skipped levels. |
 | Readability | PASS. Short paragraphs, active voice, no run-on sentences. |
 | Voice drift | PASS. No em dashes, no documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. |
+| Code block language tags | PASS. All 9 opening fences have correct tags (1 bash, 8 python). |
 | RECIPE-GUIDE compliance | PARTIAL. Python companion structure is correct (opening callout, setup, config, steps, pipeline runner, gap to production). Main recipe is missing (C1). |
 | Vendor balance | N/A for Python companion (inherently AWS-specific). Assessed on main recipe. |
 
@@ -37,7 +38,7 @@ The Python companion is editorially clean and ready for publication once the mai
 | S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Addressed in Gap to Production with CMK guidance. |
 | S3 (consumer access differentiation) | MEDIUM | RESOLVED | Addressed in Gap to Production with field-access guidance. |
 | A2 (temporal validation) | MEDIUM | RESOLVED | Strong WARNING comment in train function. Gap to Production section covers it. |
-| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker at line 303. TechWriter to add calibration_curve snippet. |
+| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker at line 302. TechWriter to add calibration_curve snippet. |
 | A4 (synthetic data benchmark) | LOW | RESOLVED | Added to Gap to Production section. |
 | N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment added near boto3 client creation. |
 | V3 (documentation-voice) | LOW | RESOLVED | "So that's what we give it." phrasing used. |
@@ -48,7 +49,7 @@ The Python companion is editorially clean and ready for publication once the mai
 ## Remaining TODOs in File
 
 1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). ... -->` (line 1)
-2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line 303, inside code block)
+2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line 302, inside code block)
 
 Both are correctly formatted for the follow-up task generator.
 
@@ -56,4 +57,4 @@ Both are correctly formatted for the follow-up task generator.
 
 ## Summary
 
-No edits required. The Python companion has already incorporated all actionable review feedback. The code is syntactically correct, the voice is consistent with STYLE-GUIDE.md, and the structure follows RECIPE-GUIDE.md for Python companions. The blocking issue (C1: missing main recipe) is correctly deferred to the TechWriter with a TODO marker.
+No edits required on this pass. The Python companion had already incorporated all actionable review feedback from a prior editorial pass. The code is syntactically correct, uses timezone-aware datetimes, normalizes features before explanation, and includes prominent warnings where needed. The voice is consistent with STYLE-GUIDE.md. The structure follows RECIPE-GUIDE.md for Python companions. The two remaining TODOs (C1, A3) are correctly deferred to the TechWriter.
