@@ -20,7 +20,7 @@ Your environment needs credentials configured (via environment variables, an ins
 - `dynamodb:PutItem` and `dynamodb:BatchWriteItem` (storing segment profiles and member assignments)
 - `sagemaker:CreateProcessingJob` (only if running at scale via SageMaker Processing; not required for this example)
 
-> **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints (free, route-table based) for S3 and DynamoDB. Use an Interface endpoint for CloudWatch Logs. See the Gap to Production section at the end for the full list of production requirements.
+> **Production note:** This example runs without VPC configuration for simplicity. Any environment processing real member data must deploy within a VPC with private subnets and Gateway endpoints (free, route-table based) for S3 and DynamoDB. Use an Interface endpoint for CloudWatch Logs. See "The Gap Between This and Production" at the end for the full list of production requirements.
 
 ---
 
