@@ -28,6 +28,16 @@ The Python companion is editorially clean and ready for publication once the mai
 
 ---
 
+## Final Mandatory Checks
+
+| Search | Result |
+|--------|--------|
+| Em dash character (U+2014) | Zero found. PASS. |
+| En dash character (U+2013) | Zero found. PASS. |
+| Bare ``` without language tag | Zero found. All 9 opening fences have tags. PASS. |
+
+---
+
 ## Review Findings Disposition
 
 | Finding | Severity | Status | Notes |
@@ -55,6 +65,18 @@ Both are correctly formatted for the follow-up task generator.
 
 ---
 
+## Changes This Pass
+
+No edits applied. File confirmed clean on all checklist items. Prior editorial pass had already incorporated all actionable review feedback. This pass verified:
+- Zero em dashes or en dashes
+- All code fences have language tags
+- Both TODO markers correctly formatted with finding IDs
+- Voice consistent with STYLE-GUIDE.md
+- Structure follows RECIPE-GUIDE.md for Python companions
+- All resolved findings verified in place (normalization fix, WARNING comments, VPC endpoint comment, Gap to Production expansions, timezone-aware datetimes)
+
+---
+
 ## Summary
 
-No edits required on this pass. The Python companion had already incorporated all actionable review feedback from a prior editorial pass. The code is syntactically correct, uses timezone-aware datetimes, normalizes features before explanation, and includes prominent warnings where needed. The voice is consistent with STYLE-GUIDE.md. The structure follows RECIPE-GUIDE.md for Python companions. The two remaining TODOs (C1, A3) are correctly deferred to the TechWriter.
+The Python companion for Recipe 7.4 is in final publishable form. The two deferred TODOs (C1: write main recipe, A3: add calibration snippet) are correctly assigned to the TechWriter. No further editorial intervention needed on this file until the main recipe is drafted, at which point the recipe pair should go through the full review pipeline.
