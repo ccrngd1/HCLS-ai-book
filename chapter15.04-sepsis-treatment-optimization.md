@@ -1,6 +1,6 @@
 # Recipe 15.4: Sepsis Treatment Optimization
 
-**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000–$8,000/month (training infrastructure)
+**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
 
 ---
 
@@ -79,7 +79,7 @@ The standard formulation (following the influential work by Komorowski et al., 2
 
 ### General Architecture Pattern
 
-```
+```text
 [EHR Data] → [Cohort Selection & Preprocessing] → [State/Action/Reward Construction]
     → [Offline RL Training] → [Off-Policy Evaluation] → [Clinical Validation]
     → [Decision Support Interface]
@@ -189,7 +189,7 @@ flowchart TD
 
 This involves identifying patients meeting Sepsis-3 criteria (suspected infection plus acute organ dysfunction, operationalized as a SOFA score increase of 2 or more points), extracting their time-series data at regular intervals, and formatting it into (state, action, reward, next_state) tuples. The time alignment matters: vitals might be recorded every 15 minutes, labs every 6 hours, and medications at irregular intervals. Everything gets aligned to a consistent time grid (typically 4-hour windows). Skip this step or do it sloppily, and your RL agent learns from noise rather than signal.
 
-```
+```pseudocode
 FUNCTION build_sepsis_trajectories(ehr_database, start_date, end_date):
     // Step 1a: Identify sepsis patients using Sepsis-3 criteria.
     // Sepsis-3 = suspected infection + organ dysfunction (SOFA increase >= 2).
@@ -251,7 +251,7 @@ FUNCTION build_sepsis_trajectories(ehr_database, start_date, end_date):
 
 **Step 2: State representation and action discretization.** The raw features need to be transformed into a representation the RL algorithm can work with. For tabular methods (FQI with discrete states), this means clustering the continuous feature vectors into a manageable number of discrete states. For neural network methods, it means normalization and potentially dimensionality reduction. The action discretization maps continuous treatment doses into bins. The choice of bin boundaries matters: you want clinically meaningful thresholds, not arbitrary quantiles. A vasopressor dose of 0 is qualitatively different from 0.01 mcg/kg/min, which is different from 0.3 mcg/kg/min. The bins should reflect these clinical breakpoints.
 
-```
+```pseudocode
 // Action discretization: 5 levels each for fluids and vasopressors.
 // These thresholds are based on clinical practice patterns, not arbitrary quantiles.
 
@@ -304,7 +304,7 @@ FUNCTION construct_state(time_step):
 
 **Step 3: Offline RL training with safety constraints.** This is where the policy is actually learned. We use Conservative Q-Learning (CQL) because it explicitly addresses the distribution shift problem by penalizing overestimation of Q-values for actions that are rare in the training data. This is critical in healthcare: if clinicians rarely gave zero fluids to hypotensive patients (because that would be dangerous), we don't want the algorithm to optimistically assume that action would work well. CQL stays conservative, preferring actions that are well-supported by the data. The safety constraint layer adds hard limits: the policy cannot recommend actions that violate clinical safety boundaries regardless of what the Q-function says.
 
-```
+```pseudocode
 FUNCTION train_sepsis_policy(trajectories, config):
     // Initialize the Q-network: maps (state, action) -> expected cumulative reward.
     // Two networks for stability (standard in deep RL: target network lags behind).
@@ -359,7 +359,7 @@ FUNCTION train_sepsis_policy(trajectories, config):
 
 **Step 4: Safety constraint layer.** This is non-negotiable. The learned policy must respect hard clinical boundaries regardless of what the Q-function suggests. These constraints encode domain knowledge that should never be violated: minimum vasopressor support for severely hypotensive patients, maximum fluid volumes to prevent overload, and contraindicated actions based on patient-specific factors. Think of this as a guardrail around the RL policy. The policy suggests; the safety layer vetoes dangerous suggestions.
 
-```
+```pseudocode
 FUNCTION apply_safety_constraints(state, candidate_actions):
     // Hard constraints that override the learned policy.
     // These represent clinical boundaries that should never be crossed.
@@ -403,7 +403,7 @@ FUNCTION apply_safety_constraints(state, candidate_actions):
 
 **Step 5: Off-policy evaluation.** Before anyone even thinks about showing this to a clinician, you need to estimate how well the learned policy would have performed compared to what actually happened. This is off-policy evaluation (OPE), and it's the hardest part of the entire pipeline. You're asking: "If we had followed this policy instead of what the clinicians did, would patients have done better?" You can't know for certain without actually deploying it (which you won't do without extensive validation). OPE gives you an estimate with uncertainty bounds. Use multiple methods and be honest about the limitations.
 
-```
+```pseudocode
 FUNCTION evaluate_policy_offline(learned_policy, test_trajectories, behavior_policy):
     // Method 1: Weighted Importance Sampling (WIS)
     // Idea: reweight historical outcomes by the probability ratio of the learned policy
@@ -447,7 +447,7 @@ FUNCTION evaluate_policy_offline(learned_policy, test_trajectories, behavior_pol
 
 **Step 6: Clinical decision support interface.** If (and only if) the policy passes off-policy evaluation, clinical review, and institutional approval, it can be deployed as a decision support tool. Not an autonomous agent. A recommendation system that shows clinicians what the policy suggests, along with confidence information and the reasoning (which state features are driving the recommendation). The clinician always makes the final decision. The system is advisory only.
 
-```
+```pseudocode
 FUNCTION serve_recommendation(patient_state, policy_endpoint):
     // Package the current patient state into the format the model expects.
     state_vector = construct_state(patient_state)
