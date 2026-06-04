@@ -52,7 +52,7 @@ Let me walk through how you'd actually set this up mathematically. Don't worry i
 - `o[h]` = overbooking level for hour block `h` (number of extra patients)
 
 **Objective (simplified):**
-```
+```text
 Maximize: sum over all slots of (probability_patient_shows_up * revenue_weight[t])
 Minimize: expected_wait_time across all patients
 
@@ -62,7 +62,7 @@ Combined: Maximize throughput - lambda * expected_wait_time
 The `lambda` parameter controls the tradeoff. Higher lambda means you care more about wait times; lower lambda means you prioritize throughput. This is a dial your operations team tunes based on organizational priorities.
 
 **Constraints:**
-```
+```text
 d[t] >= clinical_minimum[t]           // can't rush a complex visit
 d[t] <= clinical_maximum[t]           // don't over-allocate simple visits
 sum(d[i] + b[i]) <= session_length    // everything fits in the day
@@ -96,7 +96,7 @@ The optimization runs periodically (weekly is the sweet spot for most clinics; m
 
 ## General Architecture Pattern
 
-```
+```text
 [Historical Data] → [Feature Engineering] → [Optimization Model] → [Simulation Validation] → [Template Output] → [Human Review] → [EHR Template Update]
 ```
 
@@ -132,20 +132,24 @@ Note: the simulation assumes provider behavior remains constant under the new te
 
 **Amazon QuickSight for visualization.** The human review step needs dashboards showing simulation results, before/after comparisons, and tradeoff curves. QuickSight connects directly to S3 and provides the visual layer without custom frontend development.
 
-**AWS Step Functions for pipeline orchestration.** The end-to-end pipeline (extract data, compute features, run optimization, run simulation, store results, notify reviewers) has multiple steps with dependencies. Step Functions manages the workflow, handles retries on transient failures, and provides visibility into pipeline state.
+**AWS Step Functions for pipeline orchestration.** The end-to-end pipeline (extract data, compute features, run optimization, run simulation, store results, notify reviewers) has multiple steps with dependencies. Step Functions manages the workflow, handles retries on transient failures, and provides visibility into pipeline state. For multi-provider deployments, use Step Functions' Map state with a configurable concurrency limit to stay within SageMaker service quotas.
 
 ### Architecture Diagram
 
 ```mermaid
 flowchart TD
     A[EHR / Scheduling System] -->|Nightly Export| B[S3 Data Lake\nraw-scheduling-data/]
-    B -->|Step Functions Trigger| C[Lambda\nfeature-engineering]
+    B --> SF[Step Functions\nPipeline Orchestrator]
+    SF -->|Trigger| C[Lambda\nfeature-engineering]
     C -->|Computed Stats| D[S3\nfeatures/]
-    D --> E[SageMaker Processing\noptimization-solver]
+    SF -->|Trigger| E[SageMaker Processing\noptimization-solver]
+    D --> E
     E -->|Proposed Templates| F[S3\noptimization-results/]
-    F --> G[SageMaker Processing\nsimulation-validation]
+    SF -->|Trigger| G[SageMaker Processing\nsimulation-validation]
+    F --> G
     G -->|Simulation Results| H[S3\nsimulation-results/]
-    H --> I[DynamoDB\ntemplate-store]
+    SF -->|Store| I[DynamoDB\ntemplate-store]
+    H --> I
     I --> J[QuickSight\nReview Dashboard]
     J -->|Approved| K[Lambda\nehr-template-push]
     K --> A
@@ -153,6 +157,7 @@ flowchart TD
     style B fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style I fill:#9ff,stroke:#333
+    style SF fill:#f96,stroke:#333
 ```
 
 ### Prerequisites
@@ -160,7 +165,8 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **IAM Permissions (orchestration)** | `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
+| **IAM Permissions (SageMaker execution role)** | `s3:GetObject` on `features/*`, `s3:PutObject` on `optimization-results/*` and `simulation-results/*`. This role should not have DynamoDB or Step Functions access. |
 | **BAA** | AWS BAA signed (scheduling data contains patient names and visit reasons, which are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SageMaker: VPC mode with encrypted volumes |
 | **VPC** | SageMaker Processing jobs in VPC with no internet access; VPC endpoints for S3 (gateway), DynamoDB (gateway), CloudWatch Logs (interface), and STS (interface). If using custom container images, add ECR endpoints (dkr and api). Security groups should allow outbound HTTPS (443) to VPC endpoint prefix lists. |
@@ -186,7 +192,7 @@ flowchart TD
 
 **Step 1: Extract and prepare historical data.** The pipeline begins by pulling scheduling data from your EHR system. You need actual visit durations (not scheduled durations), visit type codes, provider IDs, appointment times, check-in times, and show/no-show status. Most EHRs expose this through reporting databases or bulk export APIs. The extraction runs nightly or weekly, appending new data to the historical store. Without accurate historical durations, the entire optimization is garbage-in-garbage-out. Scheduled duration tells you what the template says; actual duration tells you what really happens.
 
-```
+```pseudocode
 FUNCTION extract_scheduling_data(start_date, end_date):
     // Pull completed appointments from the EHR reporting database.
     // We need ACTUAL durations, not scheduled durations.
@@ -213,7 +219,7 @@ FUNCTION extract_scheduling_data(start_date, end_date):
 
 **Step 2: Compute statistical features.** This step transforms raw appointment records into the statistics the optimizer needs. For each provider and visit type combination, compute the mean and standard deviation of actual visit duration, the no-show rate by hour-of-day, and the late arrival distribution. The standard deviation is arguably more important than the mean: a visit type with high variance creates cascading delays that ripple through the entire afternoon. Skip this step and your optimizer will assume every 20-minute visit takes exactly 20 minutes, which is a fantasy.
 
-```
+```pseudocode
 FUNCTION compute_features(provider_id):
     // Load historical data for this provider (at least 6 months for seasonal stability)
     historical = load from S3 "raw-scheduling-data/{provider_id}/*"
@@ -224,10 +230,10 @@ FUNCTION compute_features(provider_id):
     FOR each visit_type in unique(historical.visit_type):
         type_records = filter historical where visit_type matches AND actual_duration > 0
         features.duration_stats[visit_type] = {
-            mean:   average(type_records.actual_duration),
+            mean: average(type_records.actual_duration),
             stddev: standard_deviation(type_records.actual_duration),
-            p90:    percentile(type_records.actual_duration, 90),  // 90th percentile for buffer planning
-            count:  length(type_records)  // sample size for confidence
+            p90: percentile(type_records.actual_duration, 90),  // 90th percentile for buffer planning
+            count: length(type_records)  // sample size for confidence
         }
     
     // No-show rates by hour block
@@ -238,7 +244,7 @@ FUNCTION compute_features(provider_id):
     // Late arrival distribution (minutes past scheduled time)
     arrived = filter historical where checkin_time is not null
     features.late_arrival = {
-        mean:   average(minutes_between(scheduled_time, checkin_time)),
+        mean: average(minutes_between(scheduled_time, checkin_time)),
         stddev: standard_deviation(minutes_between(scheduled_time, checkin_time))
     }
     
@@ -250,7 +256,7 @@ FUNCTION compute_features(provider_id):
 
 **Step 3: Run the optimization solver.** This is the core of the recipe. Given the statistical features and organizational constraints, find the template configuration that maximizes throughput while keeping wait times acceptable. The solver explores the space of possible slot durations, buffer times, and overbooking levels to find the combination that best satisfies the objective function. For a typical clinic with 5-8 visit types and a single provider session, this solves in under a minute on modest hardware. The output is a proposed template: a sequence of slot types with durations and any overbooking recommendations.
 
-```
+```pseudocode
 FUNCTION optimize_template(features, constraints):
     // constraints includes: session_start, session_end, break_time, break_duration,
     //                       max_wait_minutes, max_overbook_per_hour, visit_type_mix
@@ -306,9 +312,9 @@ FUNCTION optimize_template(features, constraints):
     proposed_template = {
         slot_durations: { t: value(d[t]) for each visit_type t },
         buffer_minutes: value(b),
-        overbooking:    { h: value(o[h]) for each hour_block h },
+        overbooking: { h: value(o[h]) for each hour_block h },
         expected_throughput: value(expected_throughput),
-        expected_avg_wait:   value(expected_wait)
+        expected_avg_wait: value(expected_wait)
     }
     
     RETURN proposed_template
@@ -316,7 +322,7 @@ FUNCTION optimize_template(features, constraints):
 
 **Step 4: Validate with simulation.** The optimization model makes simplifying assumptions (steady-state queuing, independent arrivals). Simulation tests the proposed template against messy reality. Run 1,000+ replications of a clinic day using the proposed template, drawing visit durations from the historical distribution, simulating no-shows probabilistically, and tracking actual wait times and overtime. Compare against the same simulation using the current template. If the proposed template doesn't beat the current one by a meaningful margin (say, 5% improvement in throughput or 10% reduction in wait time), don't recommend the change. Template changes have operational cost.
 
-```
+```pseudocode
 FUNCTION simulate_clinic_day(template, features, num_replications):
     // Note: this simulation assumes provider behavior doesn't change under the new
     // template. In practice, providers may adjust their pace in response to shorter
@@ -356,26 +362,26 @@ FUNCTION simulate_clinic_day(template, features, num_replications):
         
         // Record this replication's outcomes
         append to results: {
-            patients_seen:    patients_seen,
-            avg_wait:         average(wait_times),
-            max_wait:         max(wait_times),
+            patients_seen: patients_seen,
+            avg_wait: average(wait_times),
+            max_wait: max(wait_times),
             overtime_minutes: max(0, current_time - template.session_end),
-            provider_idle:    compute_idle_time(schedule, current_time)
+            provider_idle: compute_idle_time(schedule, current_time)
         }
     
     // Aggregate across replications
     RETURN {
-        mean_throughput:  average(results.patients_seen),
-        mean_wait:        average(results.avg_wait),
-        p95_wait:         percentile(results.avg_wait, 95),
-        overtime_prob:    count(results.overtime_minutes > 0) / num_replications,
-        mean_idle:        average(results.provider_idle)
+        mean_throughput: average(results.patients_seen),
+        mean_wait: average(results.avg_wait),
+        p95_wait: percentile(results.avg_wait, 95),
+        overtime_prob: count(results.overtime_minutes > 0) / num_replications,
+        mean_idle: average(results.provider_idle)
     }
 ```
 
 **Step 5: Store and present for review.** Write the proposed template and simulation comparison to DynamoDB with a "proposed" status. Trigger a notification to the operations team. The review dashboard shows the current template performance alongside the proposed template performance, with explicit tradeoff visualization. Only after human approval does the template move to "active" status and get pushed to the EHR.
 
-```
+```pseudocode
 FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, simulation_proposed):
     // Store the proposed template with full context for the reviewer
     write to DynamoDB table "template-store":
@@ -391,8 +397,8 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
         simulation_proposed = simulation_proposed           // how the new one performs
         improvement      = {
             throughput_delta: simulation_proposed.mean_throughput - simulation_current.mean_throughput,
-            wait_delta:      simulation_proposed.mean_wait - simulation_current.mean_wait,
-            overtime_delta:  simulation_proposed.overtime_prob - simulation_current.overtime_prob
+            wait_delta: simulation_proposed.mean_wait - simulation_current.mean_wait,
+            overtime_delta: simulation_proposed.overtime_prob - simulation_current.overtime_prob
         }
     
     // Notify operations team that a new template is ready for review.
