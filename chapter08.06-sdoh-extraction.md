@@ -6,83 +6,92 @@
 
 ## The Problem
 
-Here's a statistic that should bother anyone who works in healthcare: somewhere between 30% and 55% of health outcomes are driven by social and economic factors, not by clinical care. Housing instability, food insecurity, unemployment, social isolation, transportation barriers. These are the things that determine whether your patient can actually follow the care plan you just wrote. And yet, in most health systems, this information is trapped in unstructured text, invisible to the systems that coordinate care.
+A 62-year-old patient with poorly controlled diabetes shows up to their endocrinologist every three months, gets their A1c checked, gets a medication adjustment, and goes home. The A1c never improves. The care team adjusts insulin, adds a GLP-1, tries a CGM. Nothing sticks. What nobody has surfaced from the chart is a social worker note from eight months ago mentioning the patient lives alone, lost their job, and has been skipping meals because they can't afford food consistently.
 
-A social worker writes "Pt reports living in car for 3 weeks after eviction." A primary care physician notes "patient unable to afford medications, skipping doses." A nurse documents "no reliable transportation to dialysis appointments." A behavioral health intake form reads "client recently lost job, experiencing food insecurity."
+This isn't a rare scenario. It's the default state of clinical documentation. Social determinants of health (SDOH), the non-medical factors that influence health outcomes (housing, food security, employment, transportation, social isolation, financial strain), are buried in free-text notes across the chart. They show up in social work assessments, nursing intake notes, discharge summaries, and sometimes as a single sentence in a progress note: "Patient reports difficulty affording medications." That sentence is clinically explosive. It explains treatment failure, predicts readmission risk, and should trigger a resource referral. But it sits in paragraph four of a seven-page note, invisible to the prescribing physician, the care manager, and the risk stratification algorithm.
 
-This information exists. People are writing it down. But it's buried in progress notes, social work assessments, discharge summaries, and care coordination records. It's not coded. It's not structured. It doesn't feed into risk models. It doesn't trigger referrals. It doesn't show up in population health dashboards. And when a care manager opens that patient's chart six months later, they have to read through dozens of notes to find the sentence that says "this patient doesn't have a stable place to live."
+The structured data problem is clear: SDOH information lives in free text because there hasn't been a standard way to capture it structurally until recently. ICD-10 introduced Z-codes for SDOH (Z55-Z65 range: education, employment, housing, economic circumstances, social environment), but they're massively under-coded. Studies consistently show that fewer than 2% of encounters that document social needs in notes have corresponding Z-codes on the claim. The information exists. It's just trapped in prose.
 
-The clinical consequences are real. A patient with uncontrolled diabetes who is food insecure needs a fundamentally different care plan than one who has stable housing and reliable meals. A heart failure patient without transportation to cardiology appointments will end up in the ED. A new mother experiencing domestic violence needs resources that have nothing to do with postpartum checkups. If your systems can't surface these factors, you're treating diseases in isolation from the lives your patients are actually living.
+Extracting SDOH from clinical text means building a system that can read thousands of notes, find the sparse mentions of social factors, classify them into meaningful categories, determine whether they represent an active need or a resolved one, and surface that information where it can drive interventions. The payoff is enormous: population health programs can target outreach, care managers can prioritize caseloads, and risk models can incorporate the single strongest predictor of health outcomes that most systems currently ignore.
 
-Payers care about this too. CMS has been pushing SDOH documentation through Z-codes (ICD-10-CM codes Z55-Z65), and value-based contracts increasingly include social risk adjustment. But Z-code capture rates are abysmal. Most clinicians don't code social factors even when they document them. The information is in the notes. It's just not in the structured data.
-
-Extracting SDOH from clinical text is one of those problems where the concept sounds straightforward ("just find the sentences about housing") and the reality is genuinely hard. Let me explain why.
+Let's talk about why this is harder than it sounds.
 
 ---
 
 ## The Technology: Extracting Social Context from Clinical Language
 
-### What Are Social Determinants of Health?
+### What Makes SDOH Different from Medical NLP
 
-SDOH is typically organized into five domains (following the Healthy People 2030 framework):
+Most clinical NLP focuses on extracting medical concepts: diagnoses, medications, procedures, lab values. These have well-defined terminologies (ICD-10, RxNorm, CPT, LOINC), relatively consistent phrasing, and decades of annotated training data. "The patient has type 2 diabetes" is easy to detect. The concept is explicit, the terminology is standardized, and the assertion is clear.
 
-1. **Economic Stability:** Employment, income, debt, food affordability, housing costs
-2. **Education Access and Quality:** Literacy, language barriers, educational attainment
-3. **Healthcare Access and Quality:** Insurance status, transportation to care, provider availability
-4. **Neighborhood and Built Environment:** Housing quality, safety, environmental exposures, food deserts
-5. **Social and Community Context:** Social isolation, incarceration history, domestic violence, discrimination
+SDOH extraction is fundamentally different, and it's harder for several reasons that compound each other.
 
-Each domain contains dozens of specific factors. Housing alone includes: homelessness, housing instability, inadequate housing (lead paint, mold, overcrowding), housing cost burden, and temporary housing. And each of those can appear in text in hundreds of different ways.
+**Sparse mentions.** In a typical clinical note, medical concepts appear densely. A single progress note might mention five diagnoses, three medications, and two procedures. SDOH mentions are sparse: maybe one sentence in a five-page note, or maybe nothing at all. Most notes contain zero SDOH information. Your system will process thousands of notes to find hundreds of relevant mentions. The signal-to-noise ratio is brutal.
 
-### Why This Is Hard
+**Inconsistent language.** There's no standard way to document homelessness. A social worker might write "patient is currently unhoused," while a physician writes "lives in shelter," a nurse writes "no stable housing," and a discharge planner writes "disposition complicated by housing instability." All mean the same thing. Unlike medication names (which have finite brand/generic mappings), social determinant language is open-ended natural language with no controlled vocabulary in practice.
 
-SDOH extraction is harder than most clinical NLP tasks for a few specific reasons:
+**Implicit mentions.** The hardest SDOH information isn't stated directly. "Patient missed three appointments last month" doesn't say "transportation barrier," but transportation is a common reason. "Patient reports not filling prescription" doesn't say "financial hardship," but cost is the most common barrier. Extracting these implicit mentions requires inference, and inference means either very sophisticated models or accepting that you'll miss a significant portion of cases.
 
-**Sparse mentions.** In a typical clinical note, SDOH information might appear in one sentence out of fifty. The signal-to-noise ratio is terrible. A discharge summary that's 2,000 words might contain exactly one relevant sentence: "Patient reports difficulty affording medications." Compare this to medication extraction, where drug names appear on nearly every line of a medication reconciliation note.
+**Context sensitivity.** "Patient lives with daughter" is positive social support. "Patient lives with daughter who is also disabled" is a different story entirely. "Patient was homeless" (past tense) is very different from "patient is homeless" (active need). The same phrase in a family history section means something different than in the social history section. Context determines meaning, and context in clinical text is often ambiguous.
 
-**Inconsistent language.** There's no standard vocabulary for documenting social factors. A physician writes "homeless." A social worker writes "experiencing homelessness." A nurse writes "lives in shelter." An intake form says "housing status: unstable." A progress note says "pt reports sleeping at different friends' houses." These all mean the same thing, but they look nothing alike to a pattern matcher.
+**Documentation variation by role.** Social workers write detailed assessments of housing, food access, and support systems. Physicians often compress the same information into a single line: "Social: lives alone, retired." Nursing intake forms ask structured screening questions. Each documentation style requires different extraction approaches.
 
-**Contextual interpretation required.** "Patient was referred to food pantry" is different from "patient reports food insecurity." The first implies a positive resource connection (problem being addressed). The second is an active unmet need. Your extraction system needs to distinguish between current risk, past risk that's been resolved, and risk that's being actively addressed. This is assertion classification territory (Recipe 8.8), and it matters because the downstream action is completely different for each.
+### The NLP Pipeline for SDOH
 
-**Documenter variation.** Social workers write detailed social assessments with structured headings. Physicians mention SDOH as one-liners buried in a review of systems or assessment plan. Nurses document barriers to care in discharge instructions. Each discipline uses different conventions, different vocabularies, and embeds the information in different parts of the document. A single NLP model needs to handle all of them.
+The extraction pipeline has several stages, each with its own challenges:
 
-**Sensitivity and bias.** SDOH data touches on poverty, race, substance use, domestic violence, and immigration status. Extracting this information and attaching it to patient records creates real ethical obligations. You need to think about who sees it, how it's used, and whether it could be weaponized (denied insurance, child protective services involvement, immigration enforcement). These aren't hypothetical concerns.
+**Section detection.** Clinical notes have implicit structure: social history, family history, review of systems, assessment and plan. SDOH information concentrates in the social history section (if one exists), but also appears in assessment/plan sections ("refer to food bank"), discharge summaries ("patient needs home health due to lack of caregiver"), and nursing notes. Section detection helps you focus attention but must not become a filter that drops relevant mentions in unexpected locations.
 
-### The NLP Techniques
+**Named entity recognition (NER) for social concepts.** This is the core extraction step: identifying spans of text that describe social determinants. Unlike medical NER (where you're looking for drug names or diagnosis codes), SDOH NER must recognize longer, more complex phrases. "Lives in a shelter" is a housing entity. "Can't afford insulin" is a financial strain entity. "No family nearby" is a social isolation entity. The entity boundaries are less crisp than medical entities, and the variety of surface forms is much larger.
 
-SDOH extraction typically combines several NLP approaches:
+**Category classification.** Once you've identified an SDOH mention, you need to classify it into a domain. The most common taxonomies draw from the Gravity Project's SDOH Clinical Care standards or the National Academy of Medicine's categories:
 
-**Named Entity Recognition (NER):** Identify spans of text that mention SDOH-related concepts. "Living in car" is a housing-related entity. "Lost job last month" is an employment-related entity. Custom NER models trained on SDOH-annotated clinical text outperform general biomedical NER models because the entity types are social, not clinical.
+- Housing instability and homelessness
+- Food insecurity
+- Transportation barriers
+- Financial strain and employment
+- Social isolation and support
+- Education and health literacy
+- Interpersonal safety (domestic violence, elder abuse)
+- Utility insecurity
 
-**Text Classification:** At the sentence or section level, classify text into SDOH domains. "Is this sentence about housing, food security, transportation, or something else?" Multi-label classification, because a single sentence can touch multiple domains ("patient lost job and was evicted" hits both economic stability and housing).
+Each domain has its own vocabulary patterns and contextual cues.
 
-**Negation and Assertion Detection:** Distinguish between present problems, absent problems, and resolved problems. "Patient denies food insecurity" is a negation. "Housing stable after shelter placement" is resolved. "Reports difficulty affording rent" is active. Getting this wrong means either missing real needs or creating false alerts.
+**Assertion classification.** Is this an active need, a resolved one, a risk factor, or a resource that's already connected? "Patient was referred to food bank last month and reports adequate intake now" contains both a historical need (food insecurity) and a current resolution. This temporal and status reasoning is critical for operationalizing the output. Surfacing a "resolved" need as "active" wastes care manager time and erodes trust in the system.
 
-**Relation Extraction:** Connect the extracted SDOH mention to other entities. Who is experiencing the social need (the patient? a family member?)? What time frame (current? past?)? How severe (temporary setback vs. chronic condition)?
+**Normalization.** Mapping extracted mentions to standard codes (ICD-10 Z-codes, LOINC social determinant panels, SNOMED social context concepts) enables interoperability and population-level analytics. This step bridges the gap between free-text extraction and structured data that EHRs and analytics platforms can consume.
 
-**Rule-based Post-processing:** Pattern matching and lookup tables for common SDOH phrases that the ML model might miss. "S/H: homeless" in a social history section. "Undomiciled" as a single-word mention. "SDoH screen positive" in a screening tool note. Rules catch the formulaic patterns; ML catches the creative natural language.
+### The State of the Art
+
+SDOH NLP has matured significantly since 2020. Several approaches coexist:
+
+**Rule-based systems.** Pattern matching with dictionaries of SDOH-related terms. Fast, interpretable, and surprisingly effective for high-prevalence categories like housing and food. Brittle on implicit mentions and novel phrasing. Good for a first pass; insufficient alone.
+
+**Traditional ML classifiers.** Train a classifier (logistic regression, SVM, or gradient-boosted trees) on labeled sentences or note sections. Features include bag-of-words, word embeddings, and section headers. Requires annotated training data, which is expensive to create for SDOH because the mention density is so low (annotators read many pages to label a few sentences).
+
+**Pre-trained clinical language models.** Fine-tune models like ClinicalBERT, BioBERT, or PubMedBERT on SDOH-annotated data. These models understand clinical language structure and can generalize better from smaller training sets. The current best-performing approach for research benchmarks.
+
+**Hybrid systems.** Combine rule-based high-precision extraction (for common, explicit patterns) with ML-based extraction (for implicit and unusual mentions). The rules catch "patient is homeless" reliably; the model catches "patient has been staying with friends since the eviction."
+
+The honest reality: even the best systems achieve 70-85% F1 scores on SDOH extraction, depending on the category and dataset. Housing and food are easier (more explicit language). Transportation and social isolation are harder (more implicit). Financial strain falls somewhere in between. These numbers matter because they set expectations for what your production system will actually deliver.
 
 ### The General Architecture Pattern
 
-The extraction pipeline looks like this at a conceptual level:
-
 ```text
-[Clinical Notes] → [Section Detection] → [Sentence Scoring] → [Entity/Concept Extraction]
-                                                                        ↓
-[Assertion Classification] → [SDOH Domain Mapping] → [Structured Output] → [Integration]
+[Clinical Notes] → [Section Detection] → [SDOH Entity Recognition] → [Category + Assertion Classification] → [Code Normalization] → [Structured Store] → [Downstream Consumers]
 ```
 
-**Section Detection:** Identify which part of the note you're reading. Social history sections and social work notes are high-yield. The assessment/plan section often contains one-liner SDOH mentions. Discharge instructions reference barriers. Section awareness helps you tune sensitivity: in a social history section, you can be more aggressive about extraction because the prior probability of SDOH content is higher.
+**Clinical notes ingestion.** Notes arrive from the EHR, either in real-time (via HL7/FHIR event streams) or in batch (nightly extracts). The system must handle multiple note types: social work assessments, progress notes, nursing intake, discharge summaries. Each type has different SDOH density and documentation patterns.
 
-**Sentence Scoring:** Before running expensive entity extraction on every sentence in the note, run a fast binary classifier: "does this sentence contain SDOH-relevant content?" This filtering step keeps your pipeline efficient. Most sentences in a clinical note are clinically focused ("blood pressure 140/90, increased lisinopril to 20mg") and contain zero social information.
+**Section detection.** Identify the note structure and tag sections. Weight processing toward social history and assessment/plan sections, but don't exclude other sections entirely. Some systems apply a quick "relevance filter" (does this note even mention social concepts?) before full extraction, to reduce processing volume.
 
-**Entity/Concept Extraction:** For sentences that pass the filter, extract the specific SDOH concepts. This might be a span-based NER model ("experiencing [homelessness]_HOUSING") or a classification model that assigns SDOH categories to the entire sentence.
+**Entity recognition.** Identify text spans that describe social determinants. This is the core NLP step. Output: a list of text spans with start/end positions, each flagged as a potential SDOH mention.
 
-**Assertion Classification:** Determine the status of each extracted concept. Present? Absent (denied/screened negative)? Historical? Being addressed? This step prevents false positives from negated mentions and distinguishes active needs from resolved ones.
+**Classification.** For each identified mention, classify the domain (housing, food, transportation, etc.) and the assertion status (active need, resolved, at risk, resource connected). Some systems merge entity recognition and classification into a single model pass; others separate them for interpretability.
 
-**SDOH Domain Mapping:** Map the extracted concepts to a standardized SDOH taxonomy. Different organizations use different frameworks (Healthy People 2030, Gravity Project SDOH ontology, ICD-10 Z-codes, LOINC SDOH assessment codes). Your output should map to at least one standard to enable interoperability.
+**Normalization.** Map each classified mention to standard terminology codes. This enables structured queries ("show me all patients with active food insecurity") and populates structured data fields that EHR systems and analytics platforms can consume.
 
-**Integration:** Push structured SDOH data into downstream systems: problem lists, care management platforms, risk stratification models, referral engines, population health dashboards.
+**Storage and indexing.** Structured extraction results go into a patient-level store, indexed by patient, date, category, and status. This store feeds downstream consumers: care management platforms, risk stratification engines, population health dashboards, and quality reporting systems.
 
 ---
 
@@ -90,35 +99,36 @@ The extraction pipeline looks like this at a conceptual level:
 
 ### Why These Services
 
-**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's healthcare-specific NLP service. It extracts medical entities from clinical text, including some social determinants. Its `MEDICAL_CONDITION` and `TIME_EXPRESSION` entity types capture clinically relevant mentions, and you can use the detected entities as features. However, Comprehend Medical doesn't have a dedicated SDOH entity type, so we combine it with a custom classification layer for SDOH-specific extraction.
+**Amazon Comprehend Medical for entity extraction.** Comprehend Medical is AWS's managed clinical NLP service. While its primary strength is medical entity extraction (medications, conditions, procedures), it also extracts "Protected Health Information" attributes and can identify social-context phrases when combined with custom classification. More importantly, it handles the foundational NLP work (tokenization, sentence detection, negation, section awareness) that you'd otherwise build from scratch. For SDOH specifically, you'll use Comprehend Medical's entity extraction as a first pass, then layer custom classification on top.
 
-**Amazon Comprehend (Custom Classification) for SDOH domain classification.** Train a custom multi-label text classifier on sentences labeled with SDOH domains. Comprehend's custom classification allows you to build models without managing infrastructure. You label training data, Comprehend trains and hosts the model, and you get an API endpoint.
+**Amazon Comprehend (custom classification) for SDOH categorization.** The non-medical Comprehend service supports custom text classification. Train a multi-label classifier on annotated SDOH sentences to classify extracted mentions into domains (housing, food, transportation, etc.) and assertion statuses (active, resolved, risk). Custom classifiers in Comprehend handle the training infrastructure, hyperparameter tuning, and endpoint management.
 
-**Amazon SageMaker for custom NER.** For SDOH-specific entity extraction beyond what Comprehend Medical provides, train a custom NER model on SageMaker. This handles the nuanced spans ("living in car," "skipping doses due to cost") that generic medical NER misses. SageMaker gives you full control over model architecture and training data.
+**AWS Lambda for orchestration.** Each note triggers a stateless extraction pipeline: retrieve the note text, call Comprehend Medical, post-process entities, call the custom classifier, normalize codes, and store results. Lambda's event-driven model fits the per-note processing pattern.
 
-**AWS Lambda for orchestration.** The extraction pipeline is a sequence of API calls (split text into sentences, classify, extract entities, apply assertions, map to taxonomy) that fits the stateless, event-driven Lambda model. Processing a single note takes 2-8 seconds depending on length.
+**Amazon S3 for note storage and training data.** Raw notes, annotated training corpora, and extraction results all live in S3. The training data bucket feeds Comprehend custom classifier training jobs. The results bucket feeds downstream analytics.
 
-**Amazon DynamoDB for extraction results.** Store structured SDOH findings per patient with efficient lookups by patient ID, encounter, or SDOH domain. Supports the downstream query patterns that care management platforms need.
+**Amazon DynamoDB for patient-level SDOH profiles.** The structured output (patient X has active food insecurity as of date Y, source note Z) goes into DynamoDB for fast point lookups by patient ID. Care management systems query this table to populate patient context cards.
 
-**Amazon S3 for note storage and model artifacts.** Clinical notes arrive in S3 (from EHR data feeds), and extraction results archive there for compliance and reprocessing.
+**Amazon SQS for decoupling ingestion from processing.** Notes arrive at unpredictable rates (batch dumps at night, real-time feeds during clinic hours). SQS buffers the incoming note events and feeds Lambda at a controlled rate, preventing throttling on downstream services.
 
 ### Architecture Diagram
 
 ```mermaid
-flowchart LR
-    A[Clinical Notes\nS3 Data Lake] -->|S3 Event / Batch| B[Lambda\nSDOH Orchestrator]
-    B -->|Sentence Splitting\n& Filtering| C[Comprehend Custom\nSDOH Classifier]
-    C -->|SDOH Sentences| B
-    B -->|Entity Extraction| D[SageMaker Endpoint\nSDOH NER]
-    B -->|Medical Context| E[Comprehend Medical]
-    D -->|SDOH Entities| B
-    E -->|Negation/Assertions| B
-    B -->|Structured Output| F[DynamoDB\nSDOH Findings]
-    B -->|Raw Archive| G[S3\nExtraction Archive]
-    F -->|API| H[Care Management\nPopulation Health]
+flowchart TD
+    A[EHR / Note Feed] -->|HL7/FHIR Events| B[SQS Queue\nsdoh-notes-inbox]
+    B -->|Trigger| C[Lambda\nsdoh-extractor]
+    C -->|DetectEntities| D[Comprehend Medical]
+    D -->|Medical Entities| C
+    C -->|Classify SDOH Sentences| E[Comprehend\nCustom Classifier]
+    E -->|Domain + Assertion| C
+    C -->|Normalized Results| F[DynamoDB\nsdoh-profiles]
+    C -->|Raw Extractions| G[S3\nsdoh-results/]
+    F -->|Query| H[Care Management\nPlatform]
+    G -->|Analytics| I[Population Health\nDashboard]
 
-    style C fill:#ff9,stroke:#333
-    style D fill:#f9f,stroke:#333
+    style B fill:#f9f,stroke:#333
+    style D fill:#ff9,stroke:#333
+    style E fill:#ff9,stroke:#333
     style F fill:#9ff,stroke:#333
 ```
 
@@ -126,346 +136,358 @@ flowchart LR
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon Comprehend (custom classifier), Amazon Comprehend Medical, Amazon SageMaker (inference endpoint), AWS Lambda, Amazon DynamoDB, Amazon S3 |
-| **IAM Permissions** | `comprehend:ClassifyDocument`, `comprehend:DetectEntities` (custom endpoint), `comprehendmedical:DetectEntitiesV2`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query` |
-| **BAA** | AWS BAA signed (required: clinical notes contain PHI; SDOH data itself is highly sensitive) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SageMaker endpoint: KMS encrypted; all API calls over TLS; Lambda CloudWatch Logs: KMS encryption configured |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, SageMaker Runtime, Comprehend, Comprehend Medical, and CloudWatch Logs |
-| **CloudTrail** | Enabled: log all Comprehend, SageMaker, and S3 API calls for HIPAA audit |
-| **Training Data** | SDOH-annotated clinical notes. The MIMIC-III/IV dataset has been used in research. The Social Work Assessment corpus or de-identified notes from your own system are ideal. Gravity Project reference materials for taxonomy alignment. Never use real PHI in model development without IRB approval and proper de-identification. |
-| **Cost Estimate** | Comprehend Custom Classification: ~$0.0005/unit (100 chars). Comprehend Medical: ~$0.01 per unit (100 chars). SageMaker real-time endpoint: ~$0.05-0.10/hour (ml.m5.large). Lambda + DynamoDB negligible. Per-note cost varies by length: ~$0.02-0.08 for a typical 500-2000 word note. |
+| **AWS Services** | Amazon Comprehend Medical, Amazon Comprehend (Custom Classification), AWS Lambda, Amazon S3, Amazon DynamoDB, Amazon SQS |
+| **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehend:ClassifyDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:GetItem`, `sqs:ReceiveMessage`, `sqs:DeleteMessage` |
+| **BAA** | AWS BAA signed (clinical notes contain PHI) |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SQS: SSE-KMS; Lambda environment variables: KMS encrypted; all API calls over TLS |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, Comprehend, and CloudWatch Logs |
+| **CloudTrail** | Enabled: log all Comprehend Medical, Comprehend, and S3 API calls for HIPAA audit trail |
+| **DynamoDB PITR** | Enable Point-in-Time Recovery for the SDOH profiles table |
+| **Training Data** | Annotated clinical notes with SDOH labels. Minimum 1,000 labeled sentences across categories for custom classifier training. Use de-identified data (MIMIC, i2b2/n2c2 SDOH shared task datasets) for initial model development. Never use real PHI in training without IRB and data governance approval. |
+| **Cost Estimate** | Comprehend Medical DetectEntitiesV2: $0.01 per 100 characters (a typical note is 3,000-8,000 characters, so $0.30-$0.80/note). Comprehend Custom Classification: $0.0005 per unit. At scale, batch inference via Comprehend's async jobs reduces cost significantly. Budget $0.02-$0.08 per note all-in depending on note length. |
 
 ### Ingredients
 
 | AWS Service | Role |
 |------------|------|
-| **Amazon Comprehend (Custom)** | Multi-label sentence classifier for SDOH domain detection |
-| **Amazon Comprehend Medical** | Medical entity extraction and negation/assertion detection |
-| **Amazon SageMaker** | Custom NER model endpoint for SDOH-specific entity spans |
-| **AWS Lambda** | Pipeline orchestration: split, classify, extract, assemble |
-| **Amazon DynamoDB** | Structured SDOH findings store with patient-level queries |
-| **Amazon S3** | Note ingestion, model artifacts, extraction archive |
-| **AWS KMS** | Encryption key management for all data at rest |
-| **Amazon CloudWatch** | Metrics, logs, alarms for extraction quality monitoring |
+| **Amazon Comprehend Medical** | Extracts medical entities, identifies negation/assertion context, provides foundational NLP |
+| **Amazon Comprehend (Custom)** | Classifies extracted sentences into SDOH domains and assertion statuses |
+| **AWS Lambda** | Orchestrates per-note extraction pipeline |
+| **Amazon S3** | Stores raw notes, training data, and batch extraction results |
+| **Amazon DynamoDB** | Stores patient-level structured SDOH profiles for real-time queries |
+| **Amazon SQS** | Buffers note ingestion events, decouples EHR feed from processing |
+| **AWS KMS** | Manages encryption keys for all data stores |
+| **Amazon CloudWatch** | Logs, metrics, alarms for extraction failures, latency, and throughput |
 
 ### Code
 
+> **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
+>
+> - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP pipeline integrating Comprehend Medical with FHIR for structured clinical data extraction
+> - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Custom classification and entity recognition examples for Amazon Comprehend
+
 #### Walkthrough
 
-**Step 1: Note ingestion and section detection.** Clinical notes arrive in S3 from EHR data feeds (HL7 FHIR DocumentReference, CDA documents, or flat text exports). The first processing step identifies the note type and splits it into logical sections. Social history sections, social work assessments, and care coordination notes are high-priority for SDOH content. The assessment/plan and discharge instructions sections are secondary targets. Purely clinical sections (lab results, vital signs) can be skipped entirely to save processing cost. Skip this step and you waste compute on sections that will never contain SDOH information, and you lose the contextual signal that section headers provide.
+**Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the EHR feed. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
 
 ```pseudocode
-FUNCTION ingest_and_section(bucket, key):
-    // Retrieve the clinical note from storage
-    note_text = read object from S3 at bucket/key
+// SDOH relevance keywords: terms that suggest the note may contain social determinant information.
+// This is a high-recall filter, not a precision tool. False positives are cheap (we just run NLP on a note
+// that turns out to have nothing). False negatives are expensive (we miss a real SDOH mention).
+SDOH_KEYWORDS = [
+    "housing", "homeless", "unhoused", "shelter", "evict",
+    "food", "hungry", "meal", "nutrition", "food bank", "SNAP",
+    "transportation", "ride", "bus", "car",
+    "employ", "job", "unemploy", "income", "afford", "financial",
+    "isolat", "alone", "support", "caregiver",
+    "utility", "electric", "heat", "water",
+    "safe", "violence", "abuse",
+    "education", "literacy", "language barrier",
+    "incarcerat", "legal", "immigration"
+]
 
-    // Parse metadata: patient ID, encounter ID, note type, author role
-    metadata = extract_metadata(note_text)
+FUNCTION should_process_note(note_text):
+    // Convert to lowercase for case-insensitive matching.
+    lower_text = lowercase(note_text)
 
-    // Split into sections using header patterns
-    // Clinical notes use predictable section headers:
-    // "SOCIAL HISTORY:", "HPI:", "ASSESSMENT/PLAN:", etc.
-    sections = split_by_section_headers(note_text)
+    // Check if any keyword appears anywhere in the note.
+    // This is intentionally permissive: we'd rather process an irrelevant note
+    // than miss one that mentions "patient lost housing last week."
+    FOR each keyword in SDOH_KEYWORDS:
+        IF keyword appears in lower_text:
+            RETURN true  // found a signal, process this note
 
-    // Tag each section with SDOH relevance priority
-    // High: Social History, Social Work Assessment, Barriers to Care
-    // Medium: Assessment/Plan, Discharge Instructions, Care Coordination
-    // Low/Skip: Lab Results, Vital Signs, Medications, Imaging
-    FOR each section in sections:
-        section.priority = assign_sdoh_priority(section.header)
-
-    // Return sections ordered by priority (high first)
-    // This lets us stop early if processing budget is constrained
-    RETURN metadata, sections sorted by priority descending
+    RETURN false  // no SDOH-related terms detected, skip full extraction
 ```
 
-**Step 2: Sentence-level SDOH classification.** For each high-priority section, split into sentences and run each through the custom SDOH classifier. This is the filtering step that identifies which sentences contain SDOH-relevant content. The classifier is a multi-label model trained on sentences annotated with SDOH domains (housing, food, employment, transportation, social support, safety, education, financial). Most sentences will score below threshold and get discarded. A typical social history section of 10 sentences might yield 3-5 SDOH-relevant ones. A progress note might yield 0-1. This step is critical for precision: without it, downstream extraction runs on every sentence and produces a flood of false positives from clinically focused text that mentions social concepts tangentially.
+**Step 2: Section detection and sentence segmentation.** Clinical notes have implicit structure. Social history sections, assessment/plan sections, and social work assessments have the highest SDOH density. Identifying sections helps with downstream assertion classification (a mention in "family history" means something different than one in "social history"). Segment the note into sentences because SDOH classification works at the sentence level. Each sentence becomes a candidate for SDOH labeling. Skip this step and you lose the contextual cues that distinguish "patient has housing" (social history, positive assertion) from "patient's mother was homeless" (family history, different patient).
 
 ```pseudocode
+// Common section headers in clinical notes. These aren't standardized across EHRs,
+// so the pattern list needs to be generous. Case-insensitive matching.
+SECTION_PATTERNS = {
+    "social_history": ["social history", "social hx", "shx", "psychosocial"],
+    "assessment_plan": ["assessment", "plan", "a/p", "assessment and plan"],
+    "family_history": ["family history", "family hx", "fhx"],
+    "discharge_summary": ["discharge", "disposition"],
+    "nursing_intake": ["intake", "admission screening", "social screening"]
+}
+
+// Priority sections: process these first and weight their results higher.
+// SDOH mentions in social history or social work notes are more likely to represent
+// actual patient needs than mentions in family history or review of systems.
+HIGH_PRIORITY_SECTIONS = ["social_history", "assessment_plan", "nursing_intake", "discharge_summary"]
+
+FUNCTION segment_note(note_text):
+    // Split the note into sections based on header patterns.
+    sections = detect_sections(note_text, SECTION_PATTERNS)
+
+    // For each section, split into individual sentences.
+    // Each sentence will be independently evaluated for SDOH content.
+    segmented = empty list
+    FOR each section in sections:
+        sentences = split_into_sentences(section.text)
+        FOR each sentence in sentences:
+            append to segmented: {
+                text: sentence,
+                section_type: section.type,        // which section this came from
+                is_priority: section.type in HIGH_PRIORITY_SECTIONS,
+                position: character offset in original note  // for traceability
+            }
+
+    RETURN segmented
+```
+
+**Step 3: Entity extraction with Comprehend Medical.** Pass the note (or priority sections) through Amazon Comprehend Medical's DetectEntitiesV2 API. This provides medical entity extraction with negation detection and attribute linkage. While Comprehend Medical doesn't have a dedicated "SDOH" entity category, it extracts relevant context: mentions of medical conditions (which may co-occur with social factors), negation cues (which help with assertion classification), and protected health information attributes. The real value here is the foundational NLP: sentence boundaries, negation scope, and entity span detection that you'd otherwise build manually. The SDOH-specific classification happens in the next step.
+
+```pseudocode
+FUNCTION extract_medical_context(note_text):
+    // Call Comprehend Medical to get the foundational NLP layer.
+    // This gives us entity spans, negation detection, and attribute linkage.
+    response = call ComprehendMedical.DetectEntitiesV2 with:
+        Text = note_text   // full note text (Comprehend Medical handles up to 20,000 characters)
+
+    // Pull out entities and their traits (negation, assertion modifiers).
+    entities = response.Entities
+
+    // Build a negation map: which character spans are within a negation scope?
+    // "Patient denies food insecurity" should not be flagged as active food insecurity.
+    negation_spans = empty list
+    FOR each entity in entities:
+        FOR each trait in entity.Traits:
+            IF trait.Name == "NEGATION":
+                append to negation_spans: {
+                    begin: entity.BeginOffset,
+                    end: entity.EndOffset
+                }
+
+    RETURN {
+        entities: entities,        // all detected medical entities
+        negation_spans: negation_spans   // spans that are negated (for assertion step)
+    }
+```
+
+**Step 4: SDOH sentence classification.** This is the core extraction step. For each sentence identified in Step 2, determine whether it contains SDOH information, and if so, classify it into a domain and assertion status. Use the Amazon Comprehend custom classifier trained on SDOH-annotated sentences. The classifier outputs a domain label (housing, food, transportation, financial, social_isolation, safety, education, utility, none) and an assertion label (active_need, resolved, at_risk, resource_connected). Sentences classified as "none" are discarded. Cross-reference with the negation spans from Step 3: if a sentence's SDOH mention falls within a negation scope, override the assertion to "absent." Skip this step and you have raw text with no structured meaning.
+
+```pseudocode
+// SDOH domain categories aligned with the Gravity Project taxonomy.
 SDOH_DOMAINS = [
     "housing_instability",
     "food_insecurity",
-    "transportation_barriers",
+    "transportation_barrier",
     "financial_strain",
-    "employment_issues",
     "social_isolation",
-    "interpersonal_violence",
-    "education_barriers",
-    "legal_issues",
-    "utility_difficulties"
+    "interpersonal_safety",
+    "education_literacy",
+    "utility_insecurity"
 ]
 
-CLASSIFICATION_THRESHOLD = 0.60  // minimum confidence to consider a sentence SDOH-relevant
+// Assertion statuses that determine how downstream systems should act.
+ASSERTION_STATUSES = ["active_need", "resolved", "at_risk", "resource_connected", "absent"]
 
-FUNCTION classify_sentences(sections):
-    sdoh_candidates = empty list
+// Confidence threshold: only accept classifications above this score.
+// SDOH extraction errors are costly (false positives trigger unnecessary outreach,
+// false negatives miss real needs). Tune based on your tolerance.
+CONFIDENCE_THRESHOLD = 0.75
 
-    FOR each section in sections WHERE section.priority >= MEDIUM:
-        sentences = split_into_sentences(section.text)
+FUNCTION classify_sdoh_sentences(segmented_sentences, negation_spans):
+    sdoh_findings = empty list
 
-        FOR each sentence in sentences:
-            // Call the custom Comprehend classifier endpoint
-            // Returns a list of SDOH domain labels with confidence scores
-            result = call Comprehend.ClassifyDocument with:
-                text     = sentence
-                endpoint = SDOH_CLASSIFIER_ENDPOINT_ARN
+    FOR each sentence in segmented_sentences:
+        // Call the Comprehend custom classifier endpoint.
+        // The classifier was trained on labeled SDOH sentences and returns
+        // probability scores for each domain and assertion category.
+        classification = call Comprehend.ClassifyDocument with:
+            Text         = sentence.text
+            EndpointArn  = SDOH_CLASSIFIER_ENDPOINT
 
-            // Keep sentences where at least one SDOH domain scores above threshold
-            relevant_labels = filter result.Labels WHERE score >= CLASSIFICATION_THRESHOLD
+        // The response includes classes sorted by confidence score.
+        top_domain = classification.Classes[0]  // highest-scoring domain
 
-            IF relevant_labels is not empty:
-                append to sdoh_candidates: {
-                    sentence: sentence,
-                    section_header: section.header,
-                    domains: relevant_labels,   // which SDOH domains were detected
-                    top_score: max score from relevant_labels
-                }
+        // Skip sentences classified as "none" (no SDOH content).
+        IF top_domain.Name == "none":
+            CONTINUE
 
-    RETURN sdoh_candidates
-```
+        // Check confidence against threshold.
+        IF top_domain.Score < CONFIDENCE_THRESHOLD:
+            CONTINUE  // not confident enough to surface this
 
-**Step 3: SDOH entity extraction.** For sentences that passed the classifier filter, extract specific SDOH entity spans using the custom NER model hosted on SageMaker. The NER model identifies the exact text spans that describe social needs: "living in car," "unable to afford medications," "no transportation to appointments." Entity types include SDOH_FACTOR (the social determinant itself), SEVERITY (acute, chronic, mild), TIMEFRAME (current, past, 3 weeks), and RESOURCE (food pantry, shelter, Medicaid). This granularity matters because "patient was homeless 5 years ago" and "patient is currently homeless" require completely different care management responses.
+        // Determine assertion status.
+        // First check: does this sentence overlap with a negation span from Step 3?
+        is_negated = check_negation_overlap(sentence.position, negation_spans)
 
-```pseudocode
-FUNCTION extract_sdoh_entities(sdoh_candidates):
-    findings = empty list
-
-    FOR each candidate in sdoh_candidates:
-        // Call the custom SageMaker NER endpoint
-        // Input: sentence text
-        // Output: list of entity spans with types, offsets, and confidence
-        ner_result = call SageMaker.InvokeEndpoint with:
-            endpoint = SDOH_NER_ENDPOINT_NAME
-            body     = { "text": candidate.sentence }
-
-        // Parse the NER response into structured entities
-        entities = parse_ner_response(ner_result)
-
-        FOR each entity in entities:
-            append to findings: {
-                text: entity.text,           // "living in car"
-                entity_type: entity.type,           // SDOH_FACTOR, SEVERITY, TIMEFRAME, RESOURCE
-                sdoh_domains: candidate.domains,     // from classifier: ["housing_instability"]
-                confidence: entity.confidence,
-                source_sentence: candidate.sentence,
-                section: candidate.section_header,
-                offsets: entity.start, entity.end
-            }
-
-    RETURN findings
-```
-
-**Step 4: Assertion and negation detection.** Not every SDOH mention represents an active need. "Patient denies food insecurity" is a negative finding. "Housing stable after shelter placement" indicates a resolved issue. "If patient loses job, may need assistance" is hypothetical. This step uses Amazon Comprehend Medical's assertion detection to classify each finding as POSITIVE (active need), NEGATIVE (denied/screened negative), CONDITIONAL (hypothetical), or RESOLVED (previously present, now addressed). Comprehend Medical's `Trait` field includes `NEGATION` detection, and we supplement with rule-based patterns for SDOH-specific assertion language. Skip this step and you'll flood care managers with false alerts from negated screenings and resolved historical needs.
-
-```pseudocode
-ASSERTION_PATTERNS = {
-    "NEGATIVE": ["denies", "no evidence of", "screened negative", "not experiencing",
-                 "does not report", "stable", "adequate", "sufficient"],
-    "RESOLVED": ["resolved", "connected to", "receiving services", "placed in",
-                 "obtained housing", "enrolled in", "no longer"],
-    "CONDITIONAL": ["if", "may need", "at risk for", "should consider", "potential"]
-}
-
-FUNCTION classify_assertions(findings, original_sentences):
-    FOR each finding in findings:
-        // First pass: use Comprehend Medical for negation detection
-        cm_result = call ComprehendMedical.DetectEntitiesV2 with:
-            text = finding.source_sentence
-
-        // Check if Comprehend Medical detected negation traits
-        // on entities overlapping with our SDOH finding
-        has_negation = check_negation_traits(cm_result, finding.offsets)
-
-        IF has_negation:
-            finding.assertion = "NEGATIVE"
+        IF is_negated:
+            assertion = "absent"
         ELSE:
-            // Second pass: rule-based assertion patterns for SDOH context
-            finding.assertion = match_assertion_patterns(
-                finding.source_sentence,
-                finding.text,
-                ASSERTION_PATTERNS
-            )
-            // Default to POSITIVE if no negation/resolution pattern matched
-            IF finding.assertion is NULL:
-                finding.assertion = "POSITIVE"
+            // Use the classifier's assertion output (trained as a secondary label).
+            assertion = determine_assertion(sentence.text, classification)
 
-    RETURN findings
+        append to sdoh_findings: {
+            text: sentence.text,
+            domain: top_domain.Name,
+            domain_score: top_domain.Score,
+            assertion: assertion,
+            section: sentence.section_type,
+            is_priority: sentence.is_priority,
+            source_offset: sentence.position
+        }
+
+    RETURN sdoh_findings
 ```
 
-**Step 5: Taxonomy mapping and Z-code suggestion.** Map each positive finding to standardized terminologies. The Gravity Project SDOH Clinical Care ontology provides a structured vocabulary. ICD-10-CM Z-codes (Z55-Z65) provide billable diagnosis codes. LOINC provides assessment instrument codes. This mapping enables interoperability: downstream systems that understand SNOMED, ICD-10, or Gravity Project codes can consume the findings without parsing free text. It also supports the growing regulatory push for SDOH Z-code capture. The mapping table is a curated crosswalk between your internal SDOH domain labels and the relevant standard codes.
+**Step 5: Code normalization.** Map each SDOH finding to standard terminology codes for interoperability. The primary targets are ICD-10-CM Z-codes (for billing and quality reporting) and LOINC panel codes (for structured SDOH screening results). This normalization enables your extraction results to flow into EHR structured fields, quality dashboards, and population health platforms without custom integration per consumer. The mapping table is based on the Gravity Project's value sets, which define the crosswalk between SDOH domains and standard codes. Skip this step and your extractions remain free-text labels that no downstream system can consume without custom parsing.
 
 ```json
 {
     "housing_instability": {
         "icd10": ["Z59.0", "Z59.1", "Z59.8"],
-        "gravity_project": ["homelessness", "housing-instability", "inadequate-housing"],
-        "display": ["Homelessness", "Inadequate housing", "Housing instability"],
-        "z_code_descriptions": {
-            "Z59.0": "Homelessness",
-            "Z59.1": "Inadequate housing",
-            "Z59.8": "Other problems related to housing and economic circumstances"
-        }
+        "loinc": ["71802-3"],
+        "snomed": ["32911000"],
+        "display": "Problems related to housing and economic circumstances"
     },
     "food_insecurity": {
-        "icd10": ["Z59.41", "Z59.48"],
-        "gravity_project": ["food-insecurity"],
-        "display": ["Food insecurity", "Lack of adequate food"],
-        "z_code_descriptions": {
-            "Z59.41": "Food insecurity",
-            "Z59.48": "Other specified lack of adequate food"
-        }
+        "icd10": ["Z59.4", "Z59.48"],
+        "loinc": ["88122-7"],
+        "snomed": ["733423003"],
+        "display": "Lack of adequate food and safe drinking water"
     },
-    "transportation_barriers": {
+    "transportation_barrier": {
         "icd10": ["Z59.82"],
-        "gravity_project": ["transportation-insecurity"],
-        "display": ["Transportation insecurity"],
-        "z_code_descriptions": {
-            "Z59.82": "Transportation insecurity"
-        }
+        "loinc": ["93031-3"],
+        "snomed": ["160695008"],
+        "display": "Transportation insecurity"
     },
     "financial_strain": {
-        "icd10": ["Z59.86", "Z59.7"],
-        "gravity_project": ["financial-insecurity"],
-        "display": ["Financial insecurity", "Insufficient social insurance"],
-        "z_code_descriptions": {
-            "Z59.86": "Financial insecurity",
-            "Z59.7": "Insufficient social insurance and welfare support"
-        }
+        "icd10": ["Z59.5", "Z59.6", "Z59.7", "Z56.0"],
+        "loinc": ["76513-1"],
+        "snomed": ["454061000124102"],
+        "display": "Financial strain and employment problems"
     },
     "social_isolation": {
         "icd10": ["Z60.2", "Z60.4"],
-        "gravity_project": ["social-isolation"],
-        "display": ["Social isolation", "Social exclusion"],
-        "z_code_descriptions": {
-            "Z60.2": "Problems related to living alone",
-            "Z60.4": "Social exclusion and rejection"
-        }
+        "loinc": ["76506-5"],
+        "snomed": ["422587007"],
+        "display": "Social isolation and inadequate social support"
     },
-    "interpersonal_violence": {
-        "icd10": ["Z63.0", "Z65.4"],
-        "gravity_project": ["intimate-partner-violence"],
-        "display": ["Intimate partner violence", "Victim of crime"],
-        "z_code_descriptions": {
-            "Z63.0": "Problems in relationship with spouse or partner",
-            "Z65.4": "Victim of crime and terrorism"
-        }
+    "interpersonal_safety": {
+        "icd10": ["Z63.0", "T74", "T76"],
+        "loinc": ["76501-6"],
+        "snomed": ["706893006"],
+        "display": "Interpersonal violence and safety concerns"
+    },
+    "education_literacy": {
+        "icd10": ["Z55.0", "Z55.9"],
+        "loinc": ["82589-3"],
+        "snomed": ["105421008"],
+        "display": "Problems related to education and literacy"
+    },
+    "utility_insecurity": {
+        "icd10": ["Z59.81"],
+        "loinc": ["93033-9"],
+        "snomed": ["None"],
+        "display": "Utility insecurity"
     }
 }
 ```
 
 ```pseudocode
-FUNCTION map_to_taxonomy(findings):
-    structured_findings = empty list
+FUNCTION normalize_to_codes(sdoh_findings, code_map):
+    normalized = empty list
 
-    FOR each finding in findings WHERE finding.assertion == "POSITIVE":
-        // Look up the primary SDOH domain for this finding
-        primary_domain = finding.sdoh_domains[0].label
+    FOR each finding in sdoh_findings:
+        domain = finding.domain
 
-        // Get the standardized codes from the crosswalk
-        codes = SDOH_TAXONOMY_MAP[primary_domain]
-
-        IF codes is not NULL:
-            append to structured_findings: {
-                patient_id: metadata.patient_id,
-                encounter_id: metadata.encounter_id,
-                sdoh_domain: primary_domain,
-                extracted_text: finding.text,
-                source_sentence: finding.source_sentence,
-                source_section: finding.section,
+        // Look up the standard codes for this domain.
+        IF domain in code_map:
+            codes = code_map[domain]
+            append to normalized: {
+                text: finding.text,
+                domain: finding.domain,
                 assertion: finding.assertion,
-                confidence: finding.confidence,
-                suggested_icd10: codes.icd10,
-                gravity_codes: codes.gravity_project,
-                display_terms: codes.display,
-                extraction_time: current UTC timestamp
+                confidence: finding.domain_score,
+                section: finding.section,
+                icd10_codes: codes.icd10,    // for billing and quality reporting
+                loinc_codes: codes.loinc,    // for structured screening results
+                snomed_codes: codes.snomed,  // for clinical interoperability
+                display: codes.display   // human-readable label
             }
 
-    RETURN structured_findings
+    RETURN normalized
 ```
 
-**Step 6: Store and surface findings.** Write structured SDOH findings to DynamoDB with keys that support the queries care management platforms need: "all SDOH findings for patient X," "all patients with active housing instability," "all findings from encounter Y." Include the full provenance chain (which note, which section, which sentence) so reviewers can verify accuracy. Set a TTL strategy if your organization requires SDOH data to age out, though most will want longitudinal tracking.
+**Step 6: Store patient-level SDOH profile.** Write the normalized findings to the patient's SDOH profile in DynamoDB. The profile is a living document: new extractions add to it, resolved needs get updated, and the history is preserved for longitudinal analysis. Each finding includes provenance (which note, which sentence, which date) so care managers can trace back to the source. The profile supports queries like "show me all patients with active food insecurity in my panel" and "what SDOH needs were identified for this patient in the last 6 months?" Skip this step and extractions are ephemeral, useful for one-time reporting but not for ongoing care coordination.
 
 ```pseudocode
-FUNCTION store_findings(structured_findings):
-    FOR each finding in structured_findings:
-        // Write to DynamoDB with composite keys for flexible querying
-        // Partition key: patient_id (enables all-findings-for-patient queries)
-        // Sort key: domain#timestamp (enables filtering by domain and time ordering)
-        write record to DynamoDB table "sdoh-findings":
-            pk                = finding.patient_id
-            sk                = finding.sdoh_domain + "#" + finding.extraction_time
-            encounter_id      = finding.encounter_id
-            domain            = finding.sdoh_domain
-            extracted_text    = finding.extracted_text
-            source_sentence   = finding.source_sentence
-            source_section    = finding.source_section
-            assertion         = finding.assertion
-            confidence        = finding.confidence
-            suggested_icd10   = finding.suggested_icd10
-            gravity_codes     = finding.gravity_codes
-            needs_review      = (finding.confidence < 0.80)
-            reviewed          = false
-            review_outcome    = NULL
+FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
+    FOR each finding in findings:
+        // Write each finding as an item in the SDOH profile table.
+        // Partition key: patient_id. Sort key: domain + note_date (for history).
+        write to DynamoDB table "sdoh-profiles":
+            patient_id    = patient_id
+            sort_key      = finding.domain + "#" + note_date   // enables range queries by domain
+            domain        = finding.domain
+            assertion     = finding.assertion
+            confidence    = finding.confidence
+            source_text   = finding.text          // the original sentence (for reviewer context)
+            source_note   = note_id               // link back to the full note
+            note_date     = note_date             // when the note was written
+            extraction_ts = current UTC timestamp  // when extraction happened
+            icd10_codes   = finding.icd10_codes
+            loinc_codes   = finding.loinc_codes
+            display       = finding.display
+            reviewed      = false                  // flag for human validation workflow
 
-    // Also write a summary record for population health queries
-    // "How many patients have active food insecurity?"
-    update_population_health_counters(structured_findings)
-
-    RETURN count of findings written
+    // Also update a "current status" summary record for the patient.
+    // This is the record that care management platforms query for the patient's
+    // active SDOH needs at a glance.
+    update_current_status(patient_id, findings)
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-**Sample output for a social work progress note:**
+**Sample output for a social work assessment note:**
 
 ```json
 {
-  "patient_id": "PAT-2847193",
-  "encounter_id": "ENC-20260115-0042",
-  "findings": [
-    {
-      "sdoh_domain": "housing_instability",
-      "extracted_text": "living in car for 3 weeks after eviction",
-      "source_sentence": "Pt reports living in car for 3 weeks after eviction from apartment.",
-      "source_section": "Social History",
-      "assertion": "POSITIVE",
-      "confidence": 0.94,
-      "suggested_icd10": ["Z59.0", "Z59.1"],
-      "gravity_codes": ["homelessness", "housing-instability"],
-      "needs_review": false
-    },
-    {
-      "sdoh_domain": "food_insecurity",
-      "extracted_text": "difficulty affording meals",
-      "source_sentence": "Reports difficulty affording meals, eating once daily.",
-      "source_section": "Social History",
-      "assertion": "POSITIVE",
-      "confidence": 0.91,
-      "suggested_icd10": ["Z59.41"],
-      "gravity_codes": ["food-insecurity"],
-      "needs_review": false
-    },
-    {
-      "sdoh_domain": "transportation_barriers",
-      "extracted_text": "no reliable transportation",
-      "source_sentence": "No reliable transportation to clinic appointments since losing vehicle.",
-      "source_section": "Barriers to Care",
-      "assertion": "POSITIVE",
-      "confidence": 0.88,
-      "suggested_icd10": ["Z59.82"],
-      "gravity_codes": ["transportation-insecurity"],
-      "needs_review": false
-    }
-  ],
-  "extraction_timestamp": "2026-01-15T10:42:18Z",
-  "note_type": "Social Work Progress Note",
-  "total_sentences_processed": 34,
-  "sdoh_sentences_identified": 7,
-  "positive_findings": 3,
-  "negative_findings": 2,
-  "resolved_findings": 1
+    "patient_id": "PAT-2026-00847",
+    "note_id": "NOTE-SW-20260215-003",
+    "note_date": "2026-02-15",
+    "extraction_timestamp": "2026-02-15T18:44:22Z",
+    "findings": [
+        {
+            "domain": "food_insecurity",
+            "assertion": "active_need",
+            "confidence": 0.92,
+            "source_text": "Patient reports skipping meals 3-4 times per week due to cost",
+            "icd10_codes": ["Z59.4"],
+            "loinc_codes": ["88122-7"],
+            "display": "Lack of adequate food and safe drinking water"
+        },
+        {
+            "domain": "housing_instability",
+            "assertion": "at_risk",
+            "confidence": 0.84,
+            "source_text": "Lease expires next month and patient has not been able to find affordable options",
+            "icd10_codes": ["Z59.8"],
+            "loinc_codes": ["71802-3"],
+            "display": "Problems related to housing and economic circumstances"
+        },
+        {
+            "domain": "social_isolation",
+            "assertion": "active_need",
+            "confidence": 0.78,
+            "source_text": "Lives alone, no family in the area, reports feeling isolated since spouse passed",
+            "icd10_codes": ["Z60.2"],
+            "loinc_codes": ["76506-5"],
+            "display": "Social isolation and inadequate social support"
+        }
+    ],
+    "notes_processed": 1,
+    "sentences_evaluated": 47,
+    "sdoh_sentences_found": 5,
+    "below_threshold": 2
 }
 ```
 
@@ -473,96 +495,97 @@ FUNCTION store_findings(structured_findings):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 3-8 seconds per note (varies by length) |
-| Sentence classification accuracy | 85-92% F1 (SDOH relevance binary) |
-| Domain classification accuracy | 78-88% F1 (multi-label, varies by domain) |
-| Entity extraction accuracy | 75-85% F1 (span-level) |
-| Assertion classification accuracy | 88-94% (positive vs. negative) |
-| False positive rate | 8-15% (findings that aren't real needs) |
-| Cost per note (500 words) | ~$0.02 |
-| Cost per note (2000 words) | ~$0.08 |
-| Throughput | ~20-40 notes/minute (single Lambda) |
+| End-to-end latency per note | 3-8 seconds (depending on note length) |
+| Precision (explicit mentions) | 82-90% |
+| Recall (explicit mentions) | 75-85% |
+| Precision (implicit mentions) | 55-70% |
+| Recall (implicit mentions) | 40-55% |
+| F1 score (overall, explicit + implicit) | 70-82% |
+| Cost per note | $0.02-$0.08 (varies with note length) |
+| Throughput | ~20 notes/second (Lambda concurrency limited) |
+| Notes with SDOH findings | 8-15% (varies by care setting) |
 
 **Where it struggles:**
 
-- Implicit SDOH mentions: "Patient lives with sister's family" (possible overcrowding, or healthy support system?)
-- Ambiguous severity: "Sometimes skips meals" (occasional budgeting or genuine food insecurity?)
-- Cultural context: "Large extended family in household" (overcrowding concern vs. cultural norm)
-- Documenter shorthand: "Hx of DV" without elaboration
-- Notes that describe social strengths rather than needs (employed, housed, supported) getting misclassified as SDOH findings
-- Temporal reasoning: distinguishing "was homeless 5 years ago" from "is currently homeless" when the language is ambiguous
+- Implicit mentions ("missed three appointments" without explicitly naming transportation as the reason)
+- Notes from specialties that rarely document social context (radiology, pathology)
+- Distinguishing patient needs from caregiver/family member needs
+- Temporal reasoning on long notes with both historical and current social information
+- Documentation in languages other than English (requires multilingual models or translation preprocessing)
+- Very short notes with minimal context (one-liner social history: "Social: lives alone")
 
 ---
 
 ## The Honest Take
 
-SDOH extraction is one of those areas where the technology works well enough to be useful and poorly enough to require human oversight on every output. The gap between "we detected something" and "this patient needs a housing referral" is larger than it looks.
+SDOH extraction is one of those problems that looks tractable until you start counting what you're missing. The explicit mentions (patient reports food insecurity, patient is homeless) are genuinely easy to extract. You'll get 85-90% of those with a well-trained classifier. That's the part that demos well.
 
-The hardest thing I've seen teams struggle with is the definition problem. What counts as "food insecurity"? Is a patient who says "money is tight" experiencing financial strain for SDOH purposes? Where's the threshold between "mentioned social context" and "actionable social need"? You need your clinical operations and social work teams to define these boundaries before you train a model. If you let engineers make these decisions, you'll build something technically correct and clinically useless.
+The hard part is everything else. The implicit mentions are where the real clinical value lives, and they're where NLP systems struggle most. "Patient didn't fill the prescription" is probably financial strain. "Patient missed follow-up" is probably transportation or childcare. "Patient's A1c worsening despite education" might be food insecurity. These inferences require clinical reasoning that goes beyond text pattern matching, and current systems catch maybe half of them.
 
-The classifier accuracy numbers look decent in aggregate (85%+ F1) but the domain-level performance varies enormously. Housing and food insecurity are relatively easy to detect because the language is more explicit. Social isolation and interpersonal violence are much harder because they're often documented obliquely or not at all. Don't quote aggregate numbers to your stakeholders. Show them per-domain performance.
+The assertion problem is sneakier than you'd expect. "Was referred to food bank" doesn't mean the patient went. "Has housing voucher" doesn't mean they've found housing. "Daughter helps with meals" sounds like resolution until you learn the daughter lives two hours away and visits monthly. The gap between "documented" and "resolved" is where care coordination lives, and it's hard to capture from text alone.
 
-The sensitivity question haunts this work. You're extracting information about poverty, domestic violence, homelessness, and substance use. Attaching this data to patient records has real consequences. Some patients don't want this documented. Some documentation was written without the patient's explicit knowledge that it would be surfaced programmatically. Build consent workflows. Build access controls. Think hard about who can see SDOH findings and in what context.
+The training data problem is real. Public datasets (MIMIC, i2b2/n2c2 shared tasks) are useful for initial model development, but they don't represent your patient population's documentation patterns. Your social workers document differently than academic medical center social workers. Your community health center notes look different than tertiary care notes. Plan for a local annotation effort: 200-500 notes labeled by clinical staff who understand your documentation conventions. It's expensive and slow, but it's what separates a demo from a system people trust.
 
-The thing that surprised me most: the highest-yield source documents aren't physician notes. They're social work assessments, behavioral health intakes, and care coordination notes. If your EHR data feed only includes physician documentation, you're missing the majority of SDOH documentation in your system.
+One thing that surprised me: the highest-value output isn't the individual extraction. It's the patient-level longitudinal profile. A single mention of food insecurity is a data point. Three mentions across six months, with no "resource connected" mentions in between, is a care gap that demands intervention. Build the profile view early, because that's what care managers actually use.
 
 ---
 
 ## Variations and Extensions
 
-**Screening tool integration.** Many health systems use standardized SDOH screening instruments (PRAPARE, AHC HRSN, WellRx). These produce structured data but only capture point-in-time snapshots. Combine NLP-extracted findings with screening tool results for a longitudinal view. Use extracted findings to identify patients who should be re-screened.
+**Screening questionnaire integration.** Combine NLP-extracted SDOH data with structured screening results (PRAPARE, AHC-HRSN, or proprietary tools). Structured screenings have higher precision but lower coverage (only administered during specific encounters). NLP extraction has broader coverage but lower precision. Merging both gives you the best of each: use structured results as ground truth when available, NLP as gap-filling when no screening was administered.
 
-**Automated referral generation.** When a positive SDOH finding is detected with high confidence, automatically generate a referral to the appropriate community resource. Connect to a closed-loop referral platform (like Unite Us or Aunt Bertha/findhelp). The extraction output maps directly to resource categories. This closes the gap between identification and action.
+**Community resource matching.** Connect identified needs to available resources automatically. When food insecurity is detected, query a community resource database (like 211 or Aunt Bertha/findhelp.org integrations) for food banks, SNAP enrollment assistance, or meal delivery programs in the patient's zip code. Output a suggested referral for care manager review rather than auto-generating referrals (the human-in-the-loop prevents inappropriate referrals for resolved needs).
 
-**Population health SDOH dashboards.** Aggregate extracted SDOH findings at the panel, clinic, or health system level. Show prevalence rates by domain, geographic clustering of social needs, trends over time. Enables population-level interventions (food pantry partnerships, transportation program expansion) based on data rather than anecdote.
+**Population health analytics and Z-code improvement.** Use the extraction results to identify the gap between documented SDOH and coded SDOH. Report to coding teams: "These 3,000 encounters have SDOH documented in notes but no Z-code on the claim." This improves revenue (Z-codes support risk adjustment and quality reporting), surfaces population needs to payers, and demonstrates the organization's SDOH burden for grant applications and community benefit reporting.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 8.5 (Problem List Extraction):** Uses similar NER and assertion classification techniques but for clinical problems rather than social factors
-- **Recipe 8.8 (Clinical Assertion Classification):** Deep dive on the assertion detection step that SDOH extraction relies on
-- **Recipe 6.9 (Social Determinant Phenotyping):** Uses SDOH-extracted data for cohort-level clustering and population segmentation
-- **Recipe 7.6 (Rising Risk Identification):** SDOH findings are powerful features for risk stratification models
-- **Recipe 13.6 (Care Gap Reasoning Engine):** Knowledge graphs that incorporate SDOH for holistic care gap identification
+- **Recipe 6.9 (Social Determinant Phenotyping):** Uses clustering to identify SDOH phenotype subgroups across populations, consuming this recipe's extraction output as input features
+- **Recipe 8.5 (Problem List Extraction):** Shares the section detection and assertion classification patterns; SDOH extraction extends the same pipeline to non-medical concepts
+- **Recipe 8.8 (Clinical Assertion Classification):** The assertion classification model (present, absent, possible, historical) is the same technology applied to medical entities
+- **Recipe 7.6 (Rising Risk Identification):** SDOH features dramatically improve risk models; this recipe provides the structured SDOH input that risk models consume
+- **Recipe 4.6 (Care Gap Prioritization):** Active SDOH needs represent care gaps that personalization engines can prioritize for outreach
 
 ---
 
 ## Additional Resources
 
 **AWS Documentation:**
-- [Amazon Comprehend Medical Documentation](https://docs.aws.amazon.com/comprehend-medical/latest/dev/what-is.html)
+- [Amazon Comprehend Medical DetectEntitiesV2 API Reference](https://docs.aws.amazon.com/comprehend-medical/latest/api/API_DetectEntitiesV2.html)
 - [Amazon Comprehend Custom Classification](https://docs.aws.amazon.com/comprehend/latest/dg/how-document-classification.html)
-- [Amazon SageMaker Inference Endpoints](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html)
-- [Amazon Comprehend Medical DetectEntitiesV2 API](https://docs.aws.amazon.com/comprehend-medical/latest/dev/API_medical_DetectEntitiesV2.html)
+- [Amazon Comprehend Medical Pricing](https://aws.amazon.com/comprehend/medical/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
-**Standards and Ontologies:**
-- [Gravity Project (HL7 SDOH Clinical Care)](https://thegravityproject.net/): The primary interoperability standard for SDOH data exchange
-- [ICD-10-CM Z-codes for SDOH (Z55-Z65)](https://www.cms.gov/medicare/coding-billing/icd-10-codes): CMS guidance on social determinant coding
-- [LOINC SDOH Assessment Panels](https://loinc.org/sdoh/): Standardized codes for SDOH screening instruments
-- [Healthy People 2030 SDOH Framework](https://health.gov/healthypeople/priority-areas/social-determinants-health): Federal framework organizing SDOH into five domains
+**AWS Sample Repos:**
+- [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): End-to-end pipeline integrating Comprehend Medical entity extraction with FHIR resource generation
+- [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Custom classifier training and deployment examples for Amazon Comprehend
 
-**Research and Background:**
-- TODO: Verify current URL for "Social Determinants of Health Extraction from Clinical Notes" (JAMIA or similar)
-- TODO: Verify current URL for Gravity Project implementation guides with FHIR mappings
+**Industry Standards and References:**
+- [Gravity Project SDOH Clinical Care Standards](https://thegravityproject.net/): Defines SDOH domain value sets, code mappings, and FHIR implementation guides
+- [CMS ICD-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
+- [HL7 FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
+
+<!-- TODO: Verify that the amazon-comprehend-medical-fhir-integration repo still exists and is maintained -->
+<!-- TODO: Verify current Comprehend Medical pricing for DetectEntitiesV2 -->
 
 ---
 
 ## Estimated Implementation Time
 
-| Tier | Timeline | What You Get |
-|------|----------|--------------|
-| **Basic** | 4-6 weeks | Rule-based extraction for top 3 SDOH domains, keyword matching, no assertion detection |
-| **Production-ready** | 10-14 weeks | Custom classifier + NER model, assertion detection, Z-code mapping, human review queue |
-| **With variations** | 16-20 weeks | Add referral automation, population health dashboards, screening tool integration, feedback loop |
+| Phase | Duration | Notes |
+|-------|----------|-------|
+| **Basic** (keyword filter + Comprehend Medical + rule-based domains) | 3-4 weeks | Gets you explicit extraction with reasonable precision |
+| **Production-ready** (custom classifier, assertion logic, DynamoDB profiles, monitoring) | 8-12 weeks | Requires annotated training data and classifier iteration |
+| **With variations** (screening integration, resource matching, population analytics) | 14-20 weeks | Community resource integration and analytics layer add significant scope |
 
 ---
 
 ## Tags
 
-`nlp` · `sdoh` · `social-determinants` · `comprehend-medical` · `comprehend-custom` · `sagemaker` · `ner` · `classification` · `z-codes` · `gravity-project` · `care-management` · `population-health` · `medium-complex` · `hipaa`
+`nlp` · `sdoh` · `social-determinants` · `comprehend-medical` · `comprehend-custom` · `text-classification` · `entity-extraction` · `population-health` · `care-management` · `medium-complex` · `lambda` · `dynamodb` · `sqs` · `hipaa`
 
 ---
 
