@@ -101,7 +101,7 @@ Each of these is a natural graph traversal. The query language (Gremlin, Cypher,
 
 ## General Architecture Pattern
 
-```
+```text
 [Source Systems] → [Ingest & Reconcile] → [Graph Database] → [Query API] → [Applications]
 ```
 
@@ -202,7 +202,7 @@ flowchart TD
 
 **Step 1: Define the graph schema.** Before loading any data, you need to define your node labels, edge types, and property keys. This isn't a formal DDL like in relational databases (Neptune is schema-free), but having a documented schema ensures consistency across your ETL pipeline and query layer. The schema defines what your graph can represent and, just as importantly, what it cannot. Skip this step and you'll end up with inconsistent property names, duplicate edge types, and queries that silently return incomplete results because someone spelled "PRACTICES_AT" as "practices_at" in one loader job.
 
-```
+```text
 // Node labels and their core properties
 NODE Provider:
     npi             // National Provider Identifier (unique)
@@ -246,19 +246,19 @@ NODE Facility:
     cms_id          // CMS Certification Number if applicable
 
 // Edge types with optional properties
-EDGE PRACTICES_AT:      Provider -> Location  (effective_date, end_date)
-EDGE HAS_SPECIALTY:     Provider -> Specialty (primary: boolean)
-EDGE HAS_PRIVILEGES:    Provider -> Facility  (privilege_type)
-EDGE MEMBER_OF:         Provider -> Organization
-EDGE IN_NETWORK:        Provider -> Network   (effective_date, term_date)
-EDGE LOCATED_IN:        Location -> Facility
-EDGE IS_SUBSPECIALTY:   Specialty -> Specialty
-EDGE COVERS_FOR:        Provider -> Provider  (coverage_type)
+EDGE PRACTICES_AT: Provider -> Location  (effective_date, end_date)
+EDGE HAS_SPECIALTY: Provider -> Specialty (primary: boolean)
+EDGE HAS_PRIVILEGES: Provider -> Facility  (privilege_type)
+EDGE MEMBER_OF: Provider -> Organization
+EDGE IN_NETWORK: Provider -> Network   (effective_date, term_date)
+EDGE LOCATED_IN: Location -> Facility
+EDGE IS_SUBSPECIALTY: Specialty -> Specialty
+EDGE COVERS_FOR: Provider -> Provider  (coverage_type)
 ```
 
 **Step 2: Ingest and reconcile source data.** Provider data arrives from multiple systems, each with its own format and its own version of the truth. The NPI registry gives you names, taxonomy codes, and practice addresses. Credentialing systems give you privileges and board certifications. Payer rosters give you network participation. The reconciliation logic must handle conflicts (which address is current?), deduplication (is "John Smith MD" at this NPI the same as "J. Smith" in the credentialing file?), and temporal validity (this network contract expired last month). This is the hardest engineering work in the entire pipeline. Skip it and your graph will contain contradictions that produce wrong answers to patient queries.
 
-```
+```pseudocode
 FUNCTION ingest_provider_data(sources):
     // Phase 1: Extract raw records from each source
     npi_records       = parse_nppes_file(sources.npi_file)        // CMS NPPES download
@@ -309,7 +309,7 @@ FUNCTION ingest_provider_data(sources):
 
 **Step 3: Load the graph.** Neptune's bulk loader is the efficient path for initial loads and large batch updates. It reads CSV files from S3 in a specific format (node files with ~id, ~label, and property columns; edge files with ~id, ~from, ~to, ~label, and property columns). For incremental updates (a provider changes their accepting-new-patients status), use direct Gremlin or openCypher mutations rather than re-loading the entire graph. The bulk loader is idempotent for nodes (same ID overwrites), but edges need careful handling to avoid duplicates: generate deterministic edge IDs (for example, a hash of from_id + to_id + edge_label + effective_date) so that re-loading the same file doesn't create duplicate edges.
 
-```
+```pseudocode
 FUNCTION load_graph(node_files, edge_files, neptune_endpoint):
     // Upload reconciled CSV files to the Neptune load bucket
     FOR each file in node_files + edge_files:
@@ -342,7 +342,7 @@ FUNCTION load_graph(node_files, edge_files, neptune_endpoint):
 
 **Step 4: Build the query layer.** This is where the graph pays off. Each search request becomes a traversal that reads like the question being asked. The query layer translates application-level parameters (specialty, ZIP, network, gender, languages) into a graph traversal that starts at the most selective constraint and fans out. Query optimization matters here: starting from the network node (which connects to thousands of providers) is less efficient than starting from a specific ZIP code's geographic area (which connects to dozens of locations). The query planner should choose the narrowest entry point.
 
-```
+```pseudocode
 FUNCTION search_providers(params):
     // params: specialty, zip_code, network_id, gender, language,
     //         accepting_new, max_distance_miles, limit
@@ -412,7 +412,7 @@ FUNCTION get_specialty_and_subspecialties(specialty_code):
 
 **Step 5: Handle incremental updates.** The bulk load handles the initial population and periodic full refreshes. But provider data changes constantly: a provider stops accepting patients, moves to a new location, joins or leaves a network. These changes need to propagate to the graph within hours (or minutes for critical changes like network terminations). The incremental update path uses direct graph mutations rather than re-loading.
 
-```
+```pseudocode
 FUNCTION apply_incremental_update(change_event):
     // change_event contains: entity_type, entity_id, change_type, new_values
 
