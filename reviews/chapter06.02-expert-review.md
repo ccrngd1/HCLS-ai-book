@@ -2,20 +2,18 @@
 
 **Reviewed by:** Technical Expert Panel (Security / Architecture / Networking / Voice)
 **Recipe:** Chapter 6.2 -- Utilization Pattern Segmentation
-**Date:** 2026-05-30
+**Date:** 2026-06-04
 **Severity Legend:** 🔴 Critical · 🟠 High · 🟡 Medium · 🔵 Low · ✅ Praise
 
 ---
 
 ## Executive Summary
 
-The main recipe file (`chapter06.02-utilization-pattern-segmentation.md`) does not exist. Only the Python companion (`chapter06.02-python-example.md`) is available for review. This is a CRITICAL finding: the expert review pipeline requires a main recipe to evaluate for clinical accuracy, architectural soundness, vendor balance, and completeness. The Python companion cannot be evaluated against pseudocode consistency, architecture diagrams, or the Problem/Technology/Build structure mandated by RECIPE-GUIDE.md because those sections have not been written.
+Recipe 6.2 is a strong, well-structured piece that covers utilization pattern segmentation comprehensively. The Problem section is engaging and clinically grounded. The Technology section teaches clustering concepts thoroughly and vendor-agnostically. The AWS Implementation is appropriately scoped with good service justifications. The Honest Take addresses real-world pitfalls including the critically important equity audit.
 
-The Python companion itself (reviewed below as supplementary analysis) is high-quality: well-structured, pedagogically sound, and implements a clean KMeans-based utilization segmentation pipeline with appropriate healthcare context. However, the absence of the main recipe means the full expert review cannot be completed.
+**Verdict: PASS**
 
-**Verdict: FAIL**
-
-The recipe fails due to 1 CRITICAL finding (main recipe file missing) which blocks the entire review process.
+No CRITICAL findings. Two HIGH findings identified (IAM permissions overly broad, missing data retention/deletion guidance for PHI). Six MEDIUM and two LOW findings provide polish opportunities. The recipe is architecturally sound, clinically appropriate, and operationally actionable.
 
 ---
 
@@ -23,143 +21,192 @@ The recipe fails due to 1 CRITICAL finding (main recipe file missing) which bloc
 
 ---
 
-## Security Review (Based on Python Companion Only)
+## Security Review
 
-### 🟡 SEC-1: No KMS Customer-Managed Key Specified for S3 Writes
+### 🟠 SEC-1: IAM Permissions Listed Are Overly Broad
 
-**Finding:** The `store_results()` function uses `ServerSideEncryption="aws:kms"` which defaults to the AWS-managed KMS key. For PHI workloads, organizations typically require a customer-managed key (CMK) for key rotation control, cross-account access policies, and audit trail granularity. The "Gap to Production" section mentions "KMS CMKs" but the code uses the default key.
+**Finding:** The Prerequisites table lists permissions like `s3:GetObject` and `s3:PutObject` without resource constraints. For a PHI workload, these permissions should be scoped to specific bucket ARNs and key prefixes. The listing suggests a single role with access to SageMaker, S3, Glue, DynamoDB, and Athena, which violates least-privilege. A real deployment needs separate execution roles for each pipeline stage (Glue ETL role, SageMaker Processing role, SageMaker Training role, Batch Transform role, DynamoDB writer role).
 
-**Location:** `store_results()`, `s3_client.put_object()` call.
+**Location:** Prerequisites table, "IAM Permissions" row.
 
-**Fix:** This is acceptable for a teaching example (the Gap section acknowledges it). In the main recipe's Prerequisites table, specify: "Use a customer-managed KMS key (`SSEKMSKeyId` parameter) for production. The AWS-managed key is sufficient for development but does not provide key policy control or cross-account access management."
-
----
-
-### 🟡 SEC-2: Member IDs in DynamoDB May Be Direct Identifiers
-
-**Finding:** The code writes `member_id` (format: `MBR-000000`) as the DynamoDB partition key alongside utilization metrics (`ed_visits_12m`, `inpatient_admits_12m`, `total_allowed_12m`). If `member_id` maps directly to a health plan member identifier, this table contains individually identifiable utilization data (PHI). The code comments say "Never log member IDs or PHI in production" but the DynamoDB table design stores them without discussing access control.
-
-**Location:** `store_results()`, DynamoDB `batch_writer` loop; Config section `RESULTS_TABLE_NAME`.
-
-**Fix:** The main recipe (when written) should discuss: (1) whether member_id should be an opaque surrogate key, (2) IAM policy scoping for the DynamoDB table, (3) DynamoDB encryption at rest (enabled by default but should be explicitly stated). The Python companion's Gap section partially covers this under "VPC and encryption" but should add access control guidance.
+**Fix:** Add a note: "Production: decompose into per-stage IAM roles. Each SageMaker job gets its own execution role scoped to the specific S3 prefixes it reads from and writes to. The DynamoDB writer role should only have PutItem on the member-segments table. Never grant a single role all of these permissions." Alternatively, add a brief "IAM Role Decomposition" paragraph in the architecture section.
 
 ---
 
-### 🟡 SEC-3: No VPC Configuration in Code or Setup Section
+### 🟠 SEC-2: No Data Retention or Deletion Guidance for PHI
 
-**Finding:** The Setup section lists IAM permissions but does not mention VPC requirements. The Gap section states "A production pipeline handling member utilization data (which is PHI under HIPAA) runs inside a VPC with private subnets and VPC endpoints for S3 and DynamoDB." This is correct but the gap between the example (no VPC) and production (VPC required for PHI) should be more prominent.
+**Finding:** The recipe stores PHI (utilization data tied to member IDs) in S3, DynamoDB, and potentially SageMaker volumes. There is no discussion of data retention policies, right-to-deletion (relevant for CCPA and some state laws), or S3 lifecycle rules for aged-out segment assignments. For HIPAA-covered entities, retention policies are mandatory.
 
-**Location:** Setup section; Gap to Production section.
+**Location:** Missing entirely. Should appear in Prerequisites or Architecture section.
 
-**Fix:** Add a callout in the Setup section: "This example runs without VPC configuration for simplicity. For any environment processing real member data, deploy within a VPC with private subnets and VPC endpoints for S3 and DynamoDB. See the main recipe's Prerequisites table for the full network architecture."
-
----
-
-### ✅ SEC-PRAISE: PHI Awareness in Logging
-
-The code includes `# Never log member IDs or PHI in production` and the logger statements only output aggregate counts and metrics, never individual member data. The Gap section explicitly calls out VPC, encryption, and HIPAA context. This demonstrates appropriate security awareness for a teaching example.
+**Fix:** Add to Prerequisites table or as a paragraph after the architecture diagram: "Configure S3 Lifecycle rules to transition historical runs to S3 Glacier after 90 days and delete after the organization's retention period (typically 6-7 years for medical records, per state law). DynamoDB items should include a TTL attribute or be overwritten on each run. SageMaker processing volumes are ephemeral but ensure the output KMS key has appropriate deletion policies."
 
 ---
 
-## Architecture Review (Based on Python Companion Only)
+### 🟡 SEC-3: DynamoDB Table Lacks Fine-Grained Access Control Discussion
 
-### 🔴 ARCH-CRITICAL: Main Recipe File Does Not Exist
+**Finding:** Step 6 writes member_id, segment_name, and model_version to DynamoDB for "real-time operational lookup" by care management platforms. The table effectively contains a roster of all members with their behavioral classification. No discussion of who can read this table, whether condition-based access policies (IAM conditions on leading key patterns) are needed, or whether downstream consumers get direct table access vs. an API layer.
 
-**Finding:** The file `chapter06.02-utilization-pattern-segmentation.md` does not exist in the repository. The Python companion references it in its closing line: "See [Recipe 6.2: Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard." This link is broken. The RECIPE-GUIDE.md mandates a main recipe with: The Problem, The Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Pseudocode Walkthrough, Expected Results, The Honest Take, Variations, Related Recipes, and Additional Resources. None of these exist.
+**Location:** Step 6 pseudocode and the "Why These Services" entry for DynamoDB.
 
-**Location:** Entire recipe. The main file is missing.
-
-**Fix:** Write the main recipe file before this review can be completed. The Python companion is ready and waiting for its parent recipe.
+**Fix:** Add a sentence to the DynamoDB section: "Downstream systems should access segment assignments through an API layer (API Gateway + Lambda or direct service integration) rather than direct DynamoDB reads. This enables request-level logging, rate limiting, and IAM policy enforcement per consumer."
 
 ---
 
-### 🟡 ARCH-1: Fixed K=5 Without Elbow Method or Validation in Code
+### 🟡 SEC-4: No Mention of SageMaker Inter-Container Traffic Encryption
 
-**Finding:** The code hardcodes `N_CLUSTERS = 5` with a comment "4-6 is typical for utilization segmentation." The Gap section discusses choosing k ("run the elbow method and silhouette analysis across k=3 to k=8") but the code doesn't demonstrate this. For a teaching example, showing how to validate k would be more instructive than hardcoding it.
+**Finding:** When SageMaker runs distributed processing or training jobs on multiple instances, inter-container traffic is unencrypted by default. For PHI workloads, enable inter-container traffic encryption.
 
-**Location:** Config section, `N_CLUSTERS`; `cluster_members()` function.
+**Location:** Prerequisites table, "Encryption" row mentions KMS-encrypted volumes and output but not inter-container encryption.
 
-**Fix:** This is acceptable for a teaching example given the Gap section's discussion. The main recipe should include a "Choosing k" subsection in the Technology section explaining the elbow method and silhouette analysis, with guidance on involving clinical stakeholders in the final decision.
-
----
-
-### 🟡 ARCH-2: No Discussion of Segment Stability Across Runs in Code
-
-**Finding:** The Gap section mentions segment stability ("if 30% of your population changes segments every month, your segments are unstable") but the code doesn't demonstrate any stability tracking. For a population health use case, segment stability is critical because care management programs are built around segments. The main recipe should address this architecturally.
-
-**Location:** Gap to Production section (mentions it); no code implementation.
-
-**Fix:** The main recipe should include segment stability as a first-class architectural concern, not just a production gap. Suggest: track segment transitions in a separate DynamoDB table or S3 dataset; require 2 consecutive qualifying runs before reassignment; alert when transition rates exceed thresholds.
+**Fix:** Add to Encryption row: "Inter-container traffic encryption enabled for multi-instance jobs (adds ~5-10% overhead but required for PHI)." For this recipe's scale (single ml.m5.xlarge), it's less relevant, but the guidance should be stated for when users scale up.
 
 ---
 
-### ✅ ARCH-PRAISE: Algorithm Selection Justification Is Excellent
+### ✅ SEC-PRAISE: BAA and Encryption Baseline Correctly Stated
 
-The `cluster_members()` docstring provides a clear, honest justification for KMeans over DBSCAN, Gaussian Mixture, and hierarchical clustering. The tradeoff acknowledgment ("KMeans assumes spherical clusters of similar size. Real utilization data is skewed") is technically accurate and the explanation of why this is acceptable for the use case is well-reasoned.
-
----
-
-### ✅ ARCH-PRAISE: Synthetic Data Generation Is Clinically Realistic
-
-The population distribution (60% healthy, 20% episodic, 12% chronic, 5% rising risk, 3% high utilizer) aligns with typical commercial health plan populations. The feature correlations within each archetype (e.g., high utilizers have high ED visits AND high Rx fills AND high specialist visits) produce realistic multivariate patterns that will cluster meaningfully.
+The Prerequisites table explicitly requires a signed AWS BAA, SSE-KMS for S3, DynamoDB encryption at rest, TLS in transit, and KMS-encrypted SageMaker volumes. CloudTrail is required for audit. This is the correct baseline for a HIPAA workload.
 
 ---
 
-## Networking Review (Based on Python Companion Only)
+### ✅ SEC-PRAISE: VPC with No Internet Access for SageMaker Jobs
 
-### 🟡 NET-1: No VPC Endpoint Guidance for S3 and DynamoDB
-
-**Finding:** The code makes direct API calls to S3 and DynamoDB without VPC endpoint configuration. The Gap section mentions "VPC endpoints for S3 and DynamoDB" but doesn't specify Gateway vs. Interface endpoints. For a batch pipeline writing 5,000+ items to DynamoDB and uploading JSON to S3, Gateway endpoints (free) are appropriate and should be specified.
-
-**Location:** Gap to Production section, "VPC and encryption" paragraph.
-
-**Fix:** The main recipe's Prerequisites table should specify: "S3 Gateway endpoint (free, route-table based) and DynamoDB Gateway endpoint (free). Interface endpoint for CloudWatch Logs. No Interface endpoints needed for S3/DynamoDB in this batch pattern."
+The Prerequisites table specifies "SageMaker jobs in VPC with no internet access; VPC endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs." This is the correct security posture for PHI processing.
 
 ---
 
-### ✅ NET-PRAISE: TLS in Transit Is Implicit
+## Architecture Review
 
-All boto3 calls use HTTPS by default. The code doesn't disable certificate verification or use custom endpoints. This is correct baseline behavior.
+### 🟡 ARCH-1: No Dead Letter Queue or Error Handling in Pipeline
 
----
+**Finding:** The pipeline is described as a linear flow: Extract -> Feature Engineering -> Normalize -> Cluster -> Profile -> Store. There is no discussion of what happens when a stage fails. If the SageMaker Training Job fails mid-run, does the pipeline retry? Is there a DLQ for members that fail feature engineering (missing data, impossible values)? For a monthly batch pipeline processing 250K-5M members, some percentage will have data quality issues.
 
-## Voice Review (Based on Python Companion Only)
+**Location:** Architecture Diagram (linear flow); pseudocode steps 1-6.
 
-### 🟡 VOICE-1: Cannot Evaluate 70/30 Vendor Balance Without Main Recipe
-
-**Finding:** The STYLE-GUIDE.md mandates 70% vendor-agnostic prose and 30% AWS-specific implementation. The Python companion is inherently 100% AWS-specific (it's boto3 code). The vendor balance can only be evaluated against the main recipe, which does not exist.
-
-**Location:** Entire recipe (main file missing).
-
-**Fix:** Write the main recipe with a substantial Technology section covering utilization segmentation concepts, KMeans fundamentals, feature engineering for healthcare claims data, and segment interpretation, all vendor-agnostic. The AWS-specific implementation section should be the minority of the prose.
+**Fix:** Add a brief paragraph after the architecture diagram: "Each SageMaker Pipeline step should include a FailStep with notification (SNS to the data engineering team). Members that fail feature engineering (null encounter dates, impossible values) should be flagged in a quarantine partition in S3 for manual review rather than silently dropped. CloudWatch alarms on step failures and on output record counts (fewer assignments than expected members triggers investigation)."
 
 ---
 
-### 🔵 VOICE-2: Python Companion Voice Is Strong
+### 🟡 ARCH-2: Batch Transform May Be Overkill for K-Means Scoring
 
-**Finding:** The Python companion's voice is excellent. The opening callout ("Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy against your entire member population on Monday morning") is exactly the right tone. Comments explain "why" not just "what." The Gap section is honest and comprehensive. No em dashes detected. No documentation-voice.
+**Finding:** The architecture uses SageMaker Batch Transform for segment assignment. For K-Means, "scoring" is just computing distances to k centroids and picking the nearest one. This is a numpy operation that takes seconds on 500K members. Spinning up a Batch Transform job (which provisions instances, loads a model artifact, processes input/output S3 paths) adds infrastructure complexity and latency for a trivially fast computation. A SageMaker Processing Job that does feature engineering AND clustering in a single step would be simpler and cheaper.
 
-**Location:** Throughout the Python companion.
+**Location:** Architecture Diagram, "SageMaker Batch Transform" step; "Why These Services" section for SageMaker.
 
-**Fix:** None needed. Preserve this voice in the main recipe.
+**Fix:** This is an acceptable architectural choice (it separates concerns and allows model versioning), but add a note: "For K-Means specifically, the scoring step is computationally trivial. An alternative pattern is to include scoring within the same Processing Job that computes features, reducing pipeline stages and infrastructure. Batch Transform becomes more valuable when you graduate to more complex models (GMMs, ensemble methods) or when you need to score new members independently of the monthly full-population run."
 
 ---
 
-### ✅ VOICE-PRAISE: Zero Em Dashes
+### 🟡 ARCH-3: No Discussion of Concurrency/Locking for DynamoDB Writes
 
-Scanned the entire Python companion for em dashes (U+2014), en dashes (U+2013), and double-hyphen substitutes. None found. The recipe uses colons, semicolons, parentheses, and sentence restructuring throughout. Fully compliant with the style guide.
+**Finding:** Step 6 writes all segment assignments to DynamoDB after each run. If a downstream system reads member-segments during a write (mid-batch), it could get stale data for some members and fresh data for others. For a 250K-member population, the batch write could take several minutes. There's no discussion of atomic cutover or versioning.
+
+**Location:** Step 6 pseudocode, "Store segment assignments for operational use."
+
+**Fix:** Add a note: "For atomic cutover, consider writing to a new DynamoDB table (member-segments-v2) and swapping the alias/pointer after all writes complete. Alternatively, include a version attribute in each item and have consumers filter on the latest version. For most population health use cases, the brief inconsistency window during writes is acceptable because downstream systems (care management, dashboards) tolerate minutes-old data."
+
+---
+
+### ✅ ARCH-PRAISE: Feature Engineering Guidance Is Excellent
+
+The separation of volume, intensity, temporal, and complexity features with clear rationale for each is architecturally sound. The explicit warning about cost features dominating clustering is a common real-world pitfall that many architects learn the hard way. The normalization guidance (log1p + robust scaling) is the correct default for healthcare utilization data.
+
+---
+
+### ✅ ARCH-PRAISE: Validation Framework Is Comprehensive
+
+The combination of internal metrics (silhouette, Davies-Bouldin, Calinski-Harabasz) with external clinical validation ("present profiles to a population health medical director") is exactly right. Too many ML recipes stop at mathematical metrics. The emphasis on operational validation (segments must map to different interventions) grounds the architecture in business value.
+
+---
+
+### ✅ ARCH-PRAISE: Cost Estimate Is Realistic and Specific
+
+$10-20/month for a 250K-member population with specific per-component breakdown. This is accurate for SageMaker Processing + Training at the stated instance types and durations. Helpful for architecture decision-makers who need to justify the build.
+
+---
+
+## Networking Review
+
+### 🟡 NET-1: VPC Endpoints Listed Without Specifying Gateway vs. Interface
+
+**Finding:** The Prerequisites table says "VPC endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs" without distinguishing types. S3 and DynamoDB use Gateway endpoints (free, route-table based). SageMaker API and CloudWatch Logs use Interface endpoints (ENI-based, ~$7.20/month each + data processing charges). This distinction matters for cost estimation and network architecture.
+
+**Location:** Prerequisites table, "VPC" row.
+
+**Fix:** Expand to: "Gateway endpoints for S3 and DynamoDB (free). Interface endpoints for SageMaker API (`com.amazonaws.{region}.sagemaker.api`), SageMaker Runtime, and CloudWatch Logs. Interface endpoints add ~$15-20/month but are required for VPC-isolated SageMaker jobs to communicate with the control plane."
+
+---
+
+### 🔵 NET-2: No Mention of NAT Gateway Avoidance
+
+**Finding:** The recipe correctly states "no internet access" for SageMaker VPC configuration, but doesn't explicitly state that this means no NAT Gateway is needed (saving ~$32/month per AZ). For readers less familiar with VPC networking, the cost savings of VPC-endpoint-only architectures vs. NAT-based architectures is worth noting.
+
+**Location:** Prerequisites table, "VPC" row.
+
+**Fix:** Optional enhancement: "The VPC endpoint approach eliminates the need for NAT Gateways, saving ~$32/month per AZ while improving security posture (no internet egress path for PHI)."
+
+---
+
+### ✅ NET-PRAISE: Data-in-Transit Security Is Correctly Addressed
+
+All data movement is within AWS (S3 to SageMaker, SageMaker to DynamoDB), all over TLS by default. The VPC isolation with endpoints means PHI never traverses the public internet. This is the correct network architecture for HIPAA workloads.
+
+---
+
+## Voice Review
+
+### 🟡 VOICE-1: Two Em Dashes Detected
+
+**Finding:** The recipe contains em dashes (or double-hyphens used as em dashes) that violate the absolute prohibition in STYLE-GUIDE.md.
+
+**Location:**
+1. The Problem section: "they know; they just can't get there, or they don't trust the system, or they have untreated behavioral health needs that drive crisis utilization" -- this is fine (semicolons used correctly), but checking for actual em dashes...
+
+After careful re-scan: No U+2014 em dashes found. The recipe uses colons, semicolons, parentheses, and sentence restructuring throughout. **This finding is withdrawn.**
+
+---
+
+### 🔵 VOICE-2: Minor Doc-Voice Creep in "Why These Services" Section
+
+**Finding:** The "Why These Services" section uses slightly more formal, documentation-style language than the rest of the recipe. Phrases like "SageMaker provides managed infrastructure for the entire ML lifecycle" and "It's the durable backbone that connects every stage of the pipeline" are fine individually but the section overall reads more like AWS documentation than the conversational engineer-at-a-whiteboard tone in the Problem and Technology sections.
+
+**Location:** "Why These Services" subsection, all six service paragraphs.
+
+**Fix:** Minor. The formality is appropriate for this section (it's justifying architectural choices) and doesn't cross into marketing language. No action required, but note for consistency: the S3 paragraph ("It's the durable backbone") is the most doc-voice of the bunch.
+
+---
+
+### ✅ VOICE-PRAISE: Problem Section Is Outstanding
+
+The opening scenario with four patient archetypes is exactly the right voice: passionate, specific, and makes the reader feel the problem. The parenthetical "(they know; they just can't get there, or they don't trust the system...)" is perfect CC voice. The energy of "Let's build the thing that actually finds these patterns" closes the section with momentum.
+
+---
+
+### ✅ VOICE-PRAISE: Honest Take Is Genuinely Honest
+
+The equity audit paragraph ("If your 'disengaged' segment is 60% Black patients while your overall population is 25% Black, that's not a behavioral finding. That's a system access finding.") is powerful, direct, and clinically important. This is the self-deprecating expertise and intellectual honesty the style guide calls for.
+
+---
+
+### ✅ VOICE-PRAISE: 70/30 Vendor Balance Is Well-Maintained
+
+The Problem section (0% AWS), Technology section (0% AWS), and General Architecture Pattern (0% AWS) are entirely vendor-agnostic. AWS appears only in the Implementation section. Rough word count: ~3,500 words vendor-agnostic vs. ~1,500 words AWS-specific. This is approximately 70/30, compliant with the style guide.
+
+---
+
+### ✅ VOICE-PRAISE: Zero Em Dashes Confirmed
+
+Full scan of the document confirms zero U+2014 (em dash), zero U+2013 (en dash used as em dash), and zero "--" double-hyphen substitutes. Fully compliant.
 
 ---
 
 ## Stage 2: Expert Discussion
 
-**Primary conflict:** The CRITICAL finding (missing main recipe) renders most expert lenses unable to complete their full evaluation. Security, Architecture, and Networking reviews are limited to what can be inferred from the Python companion and its Gap section. Voice review cannot evaluate vendor balance.
+**Security vs. Architecture conflict on DynamoDB:** Security wants an API layer in front of DynamoDB (SEC-3). Architecture notes that direct DynamoDB reads are the simplest pattern for care management platforms (low-latency, no additional infrastructure). Resolution: the recipe should mention the API layer as a best practice but acknowledge that direct DynamoDB access with appropriate IAM policies is acceptable for internal systems within the same AWS account and VPC. The API layer becomes necessary when external systems or cross-account consumers need access.
 
-**Resolution:** The CRITICAL finding takes absolute priority. The MEDIUM findings documented above are provisional: they identify concerns that the main recipe MUST address when written, based on what the Python companion reveals about the implementation approach.
+**Architecture's Batch Transform concern (ARCH-2) vs. recipe's educational goals:** The Batch Transform pattern is slightly over-engineered for K-Means but teaches a generalizable pattern (separate training from inference). For a cookbook recipe, teaching the general pattern is more valuable than optimizing for the specific algorithm. Resolution: keep the architecture but add a note about when the simpler single-step pattern is appropriate.
 
-**Cross-cutting observation:** The Python companion is unusually well-written for a file that precedes its parent recipe. The Gap section effectively serves as a requirements document for the main recipe's architecture and security sections. When the main recipe is written, it should address every concern raised in the Gap section as first-class architectural guidance, not afterthoughts.
-
-**Bias and equity concern (from Python companion Gap section):** The statement "Members in underserved areas may appear 'healthy' (low utilization) when they're actually unable to access care" is critically important for this use case. The main recipe MUST address this in the Technology section and The Honest Take. Utilization-based segmentation without equity adjustment can systematically under-serve the populations that need the most help. This is both a clinical accuracy concern and an ethical obligation.
+**Cross-cutting equity concern:** All experts agree the equity audit in The Honest Take is critically important and well-placed. Security adds: the equity audit itself must be run with appropriate access controls (demographic data is sensitive and the analysis results could be misused). Architecture adds: the equity check should be automated as a pipeline validation step, not just a one-time manual review.
 
 ---
 
@@ -167,61 +214,39 @@ Scanned the entire Python companion for em dashes (U+2014), en dashes (U+2013), 
 
 | # | Severity | Expert | Location | Finding | Fix |
 |---|----------|--------|----------|---------|-----|
-| ARCH-CRITICAL | 🔴 CRITICAL | Architecture | Entire recipe | Main recipe file (`chapter06.02-utilization-pattern-segmentation.md`) does not exist. Python companion references it via broken link. Full architectural review impossible. | Write the main recipe following RECIPE-GUIDE.md structure before re-running expert review. |
-| SEC-1 | 🟡 MEDIUM | Security | `store_results()`, S3 put_object | Uses AWS-managed KMS key; production requires CMK for PHI | Main recipe Prerequisites should specify CMK requirement |
-| SEC-2 | 🟡 MEDIUM | Security | `store_results()`, DynamoDB writes | Member IDs stored without access control discussion | Main recipe should discuss opaque identifiers and IAM scoping |
-| SEC-3 | 🟡 MEDIUM | Security | Setup section | No VPC mentioned in setup; gap to production is large | Add VPC callout in Setup; main recipe must specify full network architecture |
-| ARCH-1 | 🟡 MEDIUM | Architecture | Config, `N_CLUSTERS` | Fixed k=5 without validation demonstration | Main recipe Technology section should cover k selection methodology |
-| ARCH-2 | 🟡 MEDIUM | Architecture | Gap section (mentions stability) | Segment stability not architecturally addressed | Main recipe should treat stability as first-class design concern |
-| NET-1 | 🟡 MEDIUM | Networking | Gap section, VPC paragraph | No Gateway vs. Interface endpoint specification | Main recipe Prerequisites should specify endpoint types |
-| VOICE-1 | 🟡 MEDIUM | Voice | Entire recipe | Cannot evaluate 70/30 vendor balance without main recipe | Write main recipe with substantial vendor-agnostic Technology section |
-| VOICE-2 | 🔵 LOW | Voice | Python companion throughout | Voice is strong; no issues | Preserve this voice in main recipe |
+| SEC-1 | 🟠 HIGH | Security | Prerequisites, IAM Permissions | IAM permissions listed without resource scoping; single-role anti-pattern for PHI | Add note on per-stage role decomposition with resource-scoped ARNs |
+| SEC-2 | 🟠 HIGH | Security | Missing from recipe | No data retention, lifecycle, or deletion guidance for PHI stored in S3/DynamoDB | Add retention policy guidance (S3 Lifecycle, DynamoDB TTL, state law requirements) |
+| SEC-3 | 🟡 MEDIUM | Security | Step 6, DynamoDB writes | No access control discussion for segment assignment table | Add API layer recommendation or IAM scoping guidance |
+| SEC-4 | 🟡 MEDIUM | Security | Prerequisites, Encryption | Missing inter-container traffic encryption for SageMaker | Add to Encryption row for multi-instance scaling |
+| ARCH-1 | 🟡 MEDIUM | Architecture | Architecture Diagram, Steps 1-6 | No error handling, DLQ, or quarantine for pipeline failures | Add failure handling paragraph with CloudWatch alarms |
+| ARCH-2 | 🟡 MEDIUM | Architecture | Architecture Diagram, Batch Transform | Batch Transform adds unnecessary complexity for K-Means scoring | Add note acknowledging simpler single-step alternative |
+| ARCH-3 | 🟡 MEDIUM | Architecture | Step 6 pseudocode | No atomic cutover or versioning for DynamoDB writes during batch update | Add versioning or table-swap guidance for consistency |
+| NET-1 | 🟡 MEDIUM | Networking | Prerequisites, VPC row | Gateway vs. Interface endpoints not distinguished | Specify endpoint types with cost implications |
+| VOICE-2 | 🔵 LOW | Voice | Why These Services | Slightly formal tone vs. rest of recipe | Minor; no action required |
+| NET-2 | 🔵 LOW | Networking | Prerequisites, VPC row | NAT Gateway avoidance not explicitly noted | Optional cost-saving enhancement |
 
 ---
 
-## Final Verdict: **FAIL**
+## Final Verdict: **PASS**
 
-The recipe fails due to 1 CRITICAL finding: the main recipe file does not exist. The Python companion is well-written and ready, but the expert review pipeline requires the main recipe (Problem, Technology, Architecture, Prerequisites, Pseudocode, Honest Take) to evaluate clinical accuracy, architectural soundness, vendor balance, and completeness.
+The recipe passes with 2 HIGH findings (both security-related, both addressable with short additions), 6 MEDIUM findings, and 2 LOW findings. No CRITICAL issues. The recipe is:
 
-**To resolve:** Write `chapter06.02-utilization-pattern-segmentation.md` following RECIPE-GUIDE.md structure, then re-run this expert review. The Python companion's Gap section provides an excellent roadmap for what the main recipe should cover.
+- **Clinically accurate:** The utilization archetypes, feature engineering approach, and segment interpretation are all standard population health methodology.
+- **Architecturally sound:** The pipeline is appropriate for the scale, the service selections are justified, and the batch pattern matches the use case.
+- **Operationally actionable:** The segments directly map to intervention strategies, and the recipe is explicit about this requirement.
+- **Honest about limitations:** The equity audit, segment instability, cost feature trap, and denominator problem are all real pitfalls acknowledged candidly.
+- **Well-voiced:** Matches the style guide, maintains vendor balance, and teaches concepts before jumping to implementation.
 
----
-
-## Provisional Guidance for Main Recipe (When Written)
-
-Based on the Python companion analysis, the main recipe MUST address:
-
-1. **Equity and bias** (Technology section): Utilization-based segmentation encodes access disparities. Low utilization may indicate barriers, not health. Cross-reference with SDOH data. This is not optional.
-
-2. **Segment stability** (Architecture section): Members shift between segments over time. Define a stability mechanism (2-run qualification, rolling windows, transition tracking). Care managers cannot build programs around unstable segments.
-
-3. **Choosing k** (Technology section): Explain elbow method, silhouette analysis, and clinical validation. The "right" k depends on how many distinct intervention programs the organization can operate.
-
-4. **Feature engineering depth** (Technology section): The Python companion uses 8 raw features. Discuss derived features (ED-to-outpatient ratio, Rx complexity, care fragmentation, trend features) that improve segment separation in production.
-
-5. **VPC and encryption** (Prerequisites): Full network architecture with Gateway endpoints for S3/DynamoDB, private subnets, CMK for S3 encryption, DynamoDB encryption at rest.
-
-6. **Access control** (Prerequisites/Architecture): The segment assignments table contains utilization data for the entire member population. Specify IAM role decomposition, opaque identifiers, and sensitivity classification.
+The HIGH findings (IAM scoping and data retention) should be addressed before final publication but do not compromise the recipe's educational value or architectural correctness.
 
 ---
 
-## Additional Notes
+## Strengths Worth Preserving
 
-**Python companion strengths worth preserving:**
-- The synthetic data generation with realistic population distributions is excellent teaching material
-- The algorithm selection justification (KMeans over alternatives) is clear and honest
-- The silhouette score interpretation with healthcare-specific ranges (0.3-0.5 typical) is accurate
-- The Gap to Production section is comprehensive and covers the right concerns
-- The bias/equity callout is critically important and well-stated
-- DynamoDB Decimal handling is correct and the gotcha is documented
-- The "sketchpad version" framing in the opening callout sets appropriate expectations
-
-**Domain accuracy validation (Python companion):**
-- KMeans for utilization segmentation: Standard and appropriate approach
-- 5 segments (Healthy, Episodic, Chronic, Rising Risk, High Utilizer): Matches common population health taxonomy
-- Population distribution (60/20/12/5/3): Realistic for commercial health plan
-- Feature set (ED visits, inpatient, outpatient, Rx, preventive, specialist, telehealth, cost): Covers the key utilization dimensions
-- StandardScaler before KMeans: Correct (prevents cost column from dominating Euclidean distance)
-- 99th percentile outlier clipping: Appropriate for healthcare cost data (heavy right tail)
-- Silhouette score 0.3-0.5 for utilization data: Accurate expectation
-- Cost-based segment ordering: Reasonable heuristic for initial labeling (validated by clinical review in production)
+1. **Problem section patient archetypes** -- four distinct patients that make the reader feel the problem immediately
+2. **"Cost features are a trap" warning** -- this is the single most common mistake in utilization segmentation, and it's called out prominently
+3. **Equity audit in Honest Take** -- "That's not a behavioral finding. That's a system access finding." is powerful and necessary
+4. **Validation framework** -- combining internal metrics with clinical stakeholder validation is the right approach
+5. **Feature engineering depth** -- the separation of volume/intensity/temporal/complexity with normalization guidance is production-ready advice
+6. **Cost estimates** -- specific, realistic, and broken down by component
+7. **"Where it struggles" section** -- honest about new members, single-event bias, homogeneous populations, and temporal lag
