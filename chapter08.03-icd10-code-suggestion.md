@@ -1,6 +1,8 @@
 # Recipe 8.3: ICD-10 Code Suggestion
 
-**Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.01-0.05 per note processed
+**Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.05-0.15 per note (section-targeted)
+
+<!-- TODO (TechWriter): Confirm cost estimate. Body text says $0.05-0.15 section-targeted, $0.40-1.00 full text. Original header had $0.01-0.05 which understates. -->
 
 ---
 
@@ -590,13 +592,13 @@ One more thing: don't overlook the cost model. At $0.01 per 100 characters, proc
 - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integrating Comprehend Medical with FHIR resources, relevant for EHR integration patterns
 - [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare claims processing with Comprehend Medical, includes ICD-10 inference patterns and CloudFormation templates
 
-<!-- TODO: Verify these repo URLs still exist and are public -->
+<!-- TODO (TechWriter): Verify these repo URLs still exist and are public -->
 
 **AWS Solutions and Blogs:**
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical/): Deep dive on entity extraction and ICD-10 inference from clinical text
 - [Building NLP-Powered Clinical Decision Support with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-nlp-powered-clinical-decision-support/): Architecture patterns for real-time clinical NLP at scale
 
-<!-- TODO: Verify blog URLs are current -->
+<!-- TODO (TechWriter): Verify blog URLs are current -->
 
 **External References:**
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates
