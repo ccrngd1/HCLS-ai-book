@@ -137,13 +137,16 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend, Comprehend Medical, S3, Lambda, DynamoDB, QuickSight, EventBridge, SNS |
-| **IAM Permissions** | `comprehend:DetectSentiment`, `comprehend:ClassifyDocument`, `comprehend:DetectPiiEntities`, `comprehendmedical:DetectPHI`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query` |
+| **IAM Permissions** | Each Lambda function needs its own execution role scoped to minimum resources. PHI-detection Lambda: `comprehendmedical:DetectPHI`, `s3:GetObject` on `feedback-raw/*`, `s3:PutObject` on `feedback-redacted/*`. Sentiment Lambda: `comprehend:DetectSentiment`, `s3:GetObject` on `feedback-redacted/*`. Aspect Lambda: `comprehend:ClassifyDocument`, `dynamodb:PutItem` on `sentiment-results` table ARN, `events:PutEvents`. The PHI boundary between raw and redacted buckets is the core security control; IAM must enforce it. |
 | **BAA** | Required: patient feedback often contains PHI (names, dates, diagnoses mentioned in free text) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda logs: KMS-encrypted CloudWatch log groups; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Comprehend, DynamoDB, and CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS with customer-managed key; DynamoDB: encryption at rest (default, verify enabled); Lambda logs: KMS-encrypted CloudWatch log groups; all API calls over TLS |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), Comprehend (interface), Comprehend Medical (interface, separate from Comprehend), and CloudWatch Logs (interface). Note: EventBridge does not have a VPC endpoint; the alerting Lambda requires NAT Gateway connectivity or should write alert records to DynamoDB for a non-VPC Lambda to forward. |
 | **CloudTrail** | Enabled: log all Comprehend and S3 API calls for audit trail |
+| **Data Retention** | Configure S3 lifecycle rules on `feedback-raw/` (contains PHI): transition to Glacier after 30 days, expire per your organization's retention policy (typically 6-7 years for non-clinical operational data, verify with compliance). Enable S3 Object Lock if regulatory hold is required. The `feedback-redacted/` bucket has lower sensitivity but should still have a defined lifecycle. |
+| **Training Data** | Custom aspect classifier requires minimum 200 labeled examples per aspect category (10 categories = 2,000+ examples). Format: CSV with text and category columns per Comprehend Custom Classification requirements. Training time: 30-60 minutes. Budget 2-4 weeks for initial labeling by patient experience staff who understand both the aspect taxonomy and clinical context. |
+| **Error Handling** | Configure SQS dead-letter queues on each Lambda function. Failed items route to DLQ for investigation and replay. CloudWatch alarm on DLQ message count > 0 alerts operations. Systematic failures (new feedback format causing parse errors) can silently drop thousands of items, creating misleading aggregate trends. |
 | **Sample Data** | Synthetic patient feedback. CMS publishes [HCAHPS survey results](https://data.cms.gov/provider-data/topics/hospitals/overall-hospital-quality-star-rating) (aggregate only). Generate synthetic verbatim comments for development. Never use real patient feedback in non-production environments without proper de-identification. |
-| **Cost Estimate** | Comprehend DetectSentiment: $0.0001 per unit (100 chars). For average 500-char feedback: ~$0.0005/item. PHI detection adds ~$0.01/item. Custom classification: $0.0005/item. At 50,000 items/month: ~$550/month total. |
+| **Cost Estimate** | Comprehend DetectSentiment: $0.0001 per unit (100 chars). For average 500-char feedback: ~$0.0005/item. PHI detection adds ~$0.01/item. Custom classification: $0.0005/item. Custom classification endpoint hosting: $0.50/hour per inference unit ($360/month minimum, always-on). At 50,000 items/month: ~$910/month total (including endpoint). For batch processing (non-real-time), use Comprehend async classification jobs instead of a real-time endpoint to eliminate hosting cost. |
 
 ### Ingredients
 
@@ -158,6 +161,7 @@ flowchart LR
 | **Amazon EventBridge** | Routes trend alerts to appropriate teams |
 | **AWS KMS** | Encryption key management for all PHI-containing resources |
 | **Amazon CloudWatch** | Metrics, logs, and alarms for pipeline health |
+| **Amazon SQS** | Dead-letter queues for failed processing items |
 
 ### Code
 
@@ -241,6 +245,10 @@ ASPECT_TAXONOMY = [
 FUNCTION extract_aspects(redacted_text, document_sentiment):
     // Split text into sentences for finer-grained analysis.
     // A single feedback item often covers multiple aspects across sentences.
+    // NOTE: Use a proper sentence tokenizer (like spaCy's sentencizer or NLTK's
+    // Punkt) that handles abbreviations (Dr., dept., etc.). Simple period-splitting
+    // will break on these. For very short feedback (< 2 sentences), classify the
+    // entire text as one unit rather than splitting.
     sentences = split_into_sentences(redacted_text)
 
     aspect_results = empty list
@@ -301,6 +309,10 @@ FUNCTION store_analysis_result(source_metadata, sentiment, aspects):
         feedback_date     = source_metadata.submitted_date        // when patient submitted
 
     // If needs_attention, also emit an event for real-time alerting.
+    // IMPORTANT: Do not include feedback text in the event payload. The alert
+    // routes to external systems (Slack, PagerDuty) that may not be BAA-covered.
+    // Include only the feedback_id so reviewers can look up the full text through
+    // the authorized dashboard.
     IF needs_attention:
         emit event to EventBridge:
             source     = "patient-sentiment-pipeline"
@@ -417,7 +429,7 @@ One more thing: be careful about who sees the raw comments. Patient experience t
 **AWS Documentation:**
 - [Amazon Comprehend Sentiment Analysis](https://docs.aws.amazon.com/comprehend/latest/dg/how-sentiment.html)
 - [Amazon Comprehend Custom Classification](https://docs.aws.amazon.com/comprehend/latest/dg/how-document-classification.html)
-- [Amazon Comprehend Medical DetectPHI](https://docs.aws.amazon.com/comprehend-medical/latest/dev/textract-phi.html)
+- [Amazon Comprehend Medical DetectPHI](https://docs.aws.amazon.com/comprehend-medical/latest/dev/how-medical-phi.html)
 - [Amazon Comprehend Pricing](https://aws.amazon.com/comprehend/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
