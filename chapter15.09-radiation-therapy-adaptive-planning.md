@@ -237,7 +237,7 @@ flowchart TB
 |------------|------|
 | **Amazon SageMaker** | RL agent training, simulator calibration, policy validation |
 | **Amazon S3** | Data lake for treatment records, imaging features, trained models |
-| **AWS Step Functions** | Orchestrates training pipeline (extract → engineer → train → validate) |
+| **AWS Step Functions** | Orchestrates training pipeline (extract, engineer, train, validate) |
 | **Amazon DynamoDB** | Patient state history for fast inference lookups |
 | **AWS Lambda** | State extraction and policy inference at treatment time |
 | **Amazon CloudWatch** | Monitoring, alerting, recommendation tracking |
