@@ -1,266 +1,268 @@
 # Expert Review: Recipe 7.4 - ED Visit Prediction
 
 **Reviewed by:** Technical Expert Panel (Security, Architecture, Networking, Voice)
-**Date:** 2026-05-31
-**Recipe file:** `chapter07.04-ed-visit-prediction.md` (MISSING)
-**Python companion:** `chapter07.04-python-example.md` (reviewed)
+**Date:** 2026-06-04
+**Recipe file:** `chapter07.04-ed-visit-prediction.md`
 
 ---
 
 ## Overall Assessment
 
-The main recipe file (`chapter07.04-ed-visit-prediction.md`) does not exist. The Python companion exists and is well-written, but the recipe pipeline requires the main recipe to be drafted before expert review can be meaningfully completed. The Python companion references the main recipe at its footer: "See [Recipe 7.4](chapter07.04-ed-visit-prediction) for the full architectural walkthrough, pseudocode, and honest take on where ED prediction gets complicated."
+This is one of the strongest recipes in the predictive analytics chapter. The problem framing is exceptional: the opening paragraph about the diabetic patient at 2 AM, the COPD patient who missed pulmonary rehab, and the asthmatic kid whose family didn't have a nebulizer immediately grounds the reader in the human cost. The technology section is genuinely educational, covering the prediction problem formulation, what makes ED prediction harder than other risk models, feature engineering families ordered by predictive importance, model architecture choices, calibration, and the general pipeline. All without a single vendor name until the AWS section.
 
-Without the main recipe, the expert panel cannot evaluate:
-- The Problem section (clinical framing, emotional stakes)
-- The Technology section (vendor-agnostic teaching of ED prediction concepts)
-- The General Architecture Pattern (cloud-neutral pipeline design)
-- The AWS-specific implementation (service selection rationale, architecture diagram)
-- Prerequisites table (IAM, BAA, encryption, VPC, cost estimate)
-- Pseudocode walkthrough (the primary teaching artifact)
-- Expected Results and performance benchmarks
-- The Honest Take (production lessons)
-- Variations and Extensions
-- Additional Resources (verified links)
+The architecture is well-suited to the batch-scoring use case. The emphasis that "the model is 20% of the work" and the operational integration is the other 80% is the kind of insight that saves organizations from building technically excellent systems that produce no outcomes. The calibration discussion is clinically sound. The fairness and bias discussion in "Why This Isn't Production-Ready" addresses a critical issue that many cookbooks skip.
 
-The review below evaluates the Python companion for issues that would carry into the main recipe, and flags the missing file as a blocking issue.
+The recipe correctly identifies the fundamental ceiling on accuracy (partially preventable outcomes trained on all outcomes), the multi-dimensionality problem (clinical vs. behavioral vs. social drivers), and the operational challenge (predictions without intervention pathways are useless).
+
+**Verdict: PASS**
+
+No CRITICAL findings. Two HIGH findings. Four MEDIUM findings. Three LOW findings.
 
 ---
 
-## Verdict: **FAIL**
-
-**Reason:** CRITICAL finding (C1). The main recipe file does not exist. The Python companion cannot stand alone; it is explicitly framed as a supplement to the main recipe. No architectural guidance, prerequisites, pseudocode, or vendor-agnostic teaching content exists for this recipe.
+## Stage 1: Independent Expert Reviews
 
 ---
 
 ## Security Expert Review
 
-*Reviewed against the Python companion only. Main recipe security posture (IAM table, BAA, VPC, encryption) cannot be evaluated.*
+### What's Done Well
 
-### What's Done Well (Python Companion)
+- BAA requirement is explicitly stated with correct rationale ("patient claims and clinical data are PHI")
+- Encryption is comprehensive: S3 SSE-KMS for all buckets, DynamoDB encryption at rest, SageMaker KMS for training volumes/model artifacts/batch transform output, Glue security configuration with KMS, all traffic over TLS
+- VPC requirements specify private subnets with VPC endpoints for S3, DynamoDB, SageMaker API, and CloudWatch Logs
+- "No internet egress for PHI-processing components" is explicitly stated
+- VPC Flow Logs are required
+- CloudTrail enabled for full HIPAA audit trail across SageMaker, Glue, S3, and DynamoDB
+- DynamoDB PITR enabled for audit and incident response
+- "Never use real patient data in non-production environments" is present
+- CMS Synthetic Medicare Claims (SynPUF) is correctly cited for development data
 
-- S3 upload uses `ServerSideEncryption="aws:kms"` for PHI-adjacent training data.
-- DynamoDB `Decimal(str(...))` pattern correctly avoids float precision issues.
-- DynamoDB TTL auto-expires stale predictions after the prediction window.
-- IAM permissions in the Setup section are specific (not `*` wildcards): `s3:GetObject`, `s3:PutObject`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `sagemaker:InvokeEndpoint`, `dynamodb:PutItem`, `dynamodb:Query`.
-- The "Gap Between This and Production" section explicitly calls out IAM least-privilege, VPC + VPC endpoints, and KMS CMKs.
-- Synthetic data generation avoids any real PHI.
+### Issue S1: IAM Permissions Are Not Least-Privilege (HIGH)
 
-### Issue S1: IAM Permissions Not Resource-Scoped (MEDIUM)
+**Location:** Prerequisites table, "IAM Permissions" row
 
-**Location:** Python companion, Setup section
+**The problem:** The listed permissions (`sagemaker:CreateTransformJob`, `sagemaker:CreateTrainingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution`, `athena:StartQueryExecution`) are presented as a flat list with no resource scoping or role separation.
 
-**The problem:** The Setup section lists IAM permissions (`s3:GetObject`, `s3:PutObject` on "your data bucket", `sagemaker:CreateTrainingJob`, etc.) but doesn't specify resource ARNs. The phrasing "on your data bucket" is directionally correct but a reader may interpret this as bucket-level `s3:*` rather than prefix-scoped access. The SageMaker permissions are listed without endpoint ARN scoping.
+This pipeline has at least five distinct execution contexts:
 
-More importantly, all permissions are listed for a single "IAM role or user," implying a single execution identity for the entire pipeline. The training job, scoring job, and DynamoDB writer should be separate roles.
+1. Glue ETL role (needs S3 read on source buckets, S3 write on feature store bucket)
+2. SageMaker execution role (needs S3 read on feature store, S3 write on model artifacts and scoring output, KMS decrypt/encrypt)
+3. Step Functions execution role (needs to invoke Glue, SageMaker Batch Transform, Lambda)
+4. Lambda role for post-processing (needs DynamoDB PutItem, S3 read on scoring output)
+5. Lambda role for API score lookup (needs DynamoDB GetItem only)
 
-**Suggested fix:** This belongs in the main recipe's Prerequisites table (which doesn't exist). When the main recipe is written, split permissions into: (1) SageMaker execution role (S3 read/write on model bucket, KMS decrypt), (2) Scoring Lambda/job role (SageMaker InvokeEndpoint on specific endpoint ARN, DynamoDB PutItem/BatchWriteItem on specific table ARN), (3) Data upload role (S3 PutObject on training prefix only).
+Presenting these as a single permission set implies a single role with combined privileges. A compromised Lambda function for API lookups would also have permissions to start training jobs and write to DynamoDB. This violates least-privilege and increases the blast radius of a credential compromise.
 
-### Issue S2: DynamoDB Table Has No Encryption Specification (MEDIUM)
+**Suggested fix:** Replace the flat permission list with a note: "These permissions are distributed across service-specific IAM roles. Each role is scoped to its minimum required actions and resource ARNs. The Glue role accesses only source and feature store buckets. The SageMaker role has no DynamoDB access. The API Lambda role has DynamoDB GetItem only on the risk scores table. See the Python companion for role separation patterns."
 
-**Location:** Python companion, Step 5 (store_risk_scores)
+### Issue S2: SHAP Values and Risk Drivers Stored Without Access Tiering (MEDIUM)
 
-**The problem:** The DynamoDB table `ed-risk-scores` stores `patient_id`, `risk_score`, `risk_tier`, and `top_factors`. This is PHI (patient identifiers linked to health predictions). The code uses `dynamodb.Table(RISK_SCORES_TABLE)` without any mention of encryption configuration. DynamoDB encrypts at rest by default (AWS-owned key), but HIPAA best practice requires customer-managed KMS keys for PHI tables to maintain key rotation control and audit trail.
+**Location:** Step 5 pseudocode, `top_drivers` field in DynamoDB; Expected Results JSON
 
-The "Gap to Production" section mentions "VPC and network isolation" and "IAM least-privilege" but does not mention DynamoDB encryption with CMK.
+**The problem:** The `top_drivers` field in DynamoDB contains explanations like "Medication adherence dropped to 42% for metformin" and "No PCP visit in 7 months." This is stored alongside `patient_id` and served via API Gateway + Lambda to "care management workflow tools."
 
-**Suggested fix:** Add to the Gap to Production section: "DynamoDB encrypts at rest by default with an AWS-owned key. For PHI tables, use a customer-managed KMS key (CMK) to maintain control over key rotation, access policies, and CloudTrail audit of key usage. Specify this when creating the table, not after."
+The recipe states the API serves "care management systems" but doesn't differentiate access levels. A care manager seeing medication adherence detail is appropriate. A patient-facing portal or a less-privileged downstream system should not see the full behavioral profile. The recipe also doesn't mention access controls on the API Gateway itself (IAM authorization, API keys, or Cognito).
 
-### Issue S3: Risk Scores Served Without Consumer Access Differentiation (MEDIUM)
+**Suggested fix:** Add a sentence after the DynamoDB/API description: "Scope API Gateway access with IAM authorization or Cognito user pools. Not all consumers need the full risk driver detail. Care managers need the complete explanation; patient-facing systems should see only the risk tier and recommended action. Use IAM conditions or separate API endpoints to restrict field-level access based on the caller's identity."
 
-**Location:** Python companion, Step 5 comments
+### Issue S3: Outreach Lists Published Without Specifying Encryption for Care Management Queue (MEDIUM)
 
-**The problem:** The comments state two consumers: "Care management platform: queries by risk_tier (via GSI) to build daily outreach worklists" and "EHR integration: queries by patient_id to show risk badges at the point of care." Both consumers access the same table with the same data, including `top_factors` (e.g., "ed_visits_last_12m, has_chf, lives_alone").
+**Location:** Step 5 pseudocode, `PUBLISH care_manager_list TO care_management_queue`
 
-The `top_factors` field exposes behavioral and social determinant data. An EHR risk badge showing "lives_alone" as a contributing factor could be inappropriate in certain clinical contexts or if visible to the patient in a portal. No guidance on restricting which fields different consumers can access.
+**The problem:** The pseudocode publishes patient lists (containing patient_id, risk_score, risk_tier, top_drivers, recommended_action) to a "care_management_queue" and "patient_engagement_system." These are PHI payloads leaving the secure data lake perimeter. The recipe doesn't specify what this queue is (SQS, SNS, EventBridge, direct API call) or what encryption/access controls apply to it.
 
-**Suggested fix:** Add a note: "In production, consider separating the detailed `top_factors` into a separate DynamoDB attribute or table that requires elevated IAM permissions. The EHR badge may only need `risk_tier` (HIGH/MEDIUM/LOW), while care managers need the full explanation. Use IAM conditions or application-layer filtering to restrict field access by consumer identity."
+**Suggested fix:** Add: "The outreach delivery mechanism (SQS, SNS, or direct API integration) must use encryption at rest (SSE-KMS for SQS) and enforce IAM policies restricting which principals can receive messages. If using SNS, disable HTTP subscriptions; use only HTTPS or SQS targets within the same VPC. The outreach list contains PHI and must be treated with the same security posture as the source data."
+
+### Issue S4: Model Artifact Integrity Not Addressed (LOW)
+
+**Location:** Step 3 pseudocode, `LOAD_MODEL(model_artifact)`
+
+**The problem:** The pipeline loads a model artifact during batch scoring. There's no mention of verifying model artifact integrity (hash validation, signed model artifacts, or model registry version pinning). If the S3 bucket containing model artifacts were compromised, a tampered model could produce biased scores that route patients to incorrect interventions.
+
+**Suggested fix:** Add a brief note in the Step 3 explanation: "In production, validate the model artifact checksum against the model registry before scoring. SageMaker Model Registry provides versioning and approval workflows that prevent unapproved models from entering the scoring pipeline."
 
 ---
 
 ## Architecture Expert Review
 
-*Evaluated based on the Python companion's pipeline design. The main recipe's architecture diagram, General Architecture Pattern, and service selection rationale cannot be reviewed.*
+### What's Done Well
 
-### What's Done Well (Python Companion)
+- Batch scoring is correctly chosen over real-time for this use case (weekly features, 30-90 day prediction window, no need for sub-second latency)
+- Step Functions for orchestration is the right pattern for a multi-step pipeline with dependencies
+- DynamoDB for operational score lookups is appropriate (low-latency reads, TTL via `expires_at`)
+- The capacity-based stratification approach (set thresholds to match care management bandwidth) is operationally sound and avoids the common anti-pattern of generating unactionable lists
+- SageMaker Batch Transform is correctly chosen over persistent endpoints (cost-effective for weekly batch runs)
+- The architecture clearly separates data aggregation, feature engineering, scoring, and delivery
 
-- Pipeline follows a clear pedagogical progression: Config, Data, Training, Evaluation, Scoring, Storage, S3 upload.
-- Gradient boosted trees are well-justified for this problem (tabular data, <50 features, interaction effects, explainability needs).
-- Risk tier thresholds are externalized as constants with operational context (nurse capacity, outreach cadence).
-- The evaluation function focuses on clinically relevant metrics (precision at threshold, tier distribution) rather than just AUC.
-- The "Gap Between This and Production" section is comprehensive: temporal validation, calibration, fairness, SHAP, drift detection, retraining, consent, error handling.
-- DynamoDB TTL correctly auto-expires stale predictions.
-- Filtering LOW risk patients before DynamoDB write is operationally sound.
+### Issue A1: No Dead Letter Queue or Error Handling in Pipeline (HIGH)
 
-### Issue A1: Per-Patient Explanation Method Is Actively Misleading (HIGH)
+**Location:** Architecture diagram and Step Functions description
 
-**Location:** Python companion, Step 4, `score_patients()`, contribution calculation
+**The problem:** The recipe describes Step Functions as providing "built-in retry logic and failure notifications" but doesn't show or discuss what happens when individual steps fail. Specific gaps:
 
-```python
-contributions = patient_features * feature_importances
-top_indices = np.argsort(contributions)[-3:][::-1]
-```
+1. If the Glue ETL job fails mid-run, are partial features written to S3? Can the next scoring cycle pick up stale features from a previous run and produce scores based on outdated data?
+2. If SageMaker Batch Transform fails for a subset of patients (malformed input rows), are partial results written? Does the pipeline proceed with incomplete scoring?
+3. If DynamoDB writes fail (throttling, capacity), are failed patient scores lost? Is there a DLQ for retry?
+4. If the outreach list delivery fails, does the pipeline still report success? Do care managers get Monday's list?
 
-**The problem:** This multiplies raw feature values by global feature importances. Feature scale dominates the result. A patient with `age=75` (importance 0.05) gets contribution 3.75, while `ed_visits_last_12m=4` (importance 0.30) gets contribution 1.2. The code reports "age" as the top factor when the model actually relies on ED visit history for that prediction.
+In healthcare, silent partial failures are dangerous. A pipeline that scores 90% of patients and silently drops 10% (potentially the highest-risk ones if they have unusual data patterns) is worse than a pipeline that fails loudly and delays the entire list.
 
-This output feeds a care manager worklist with "top contributing factors." Care managers would see misleading explanations and potentially make incorrect outreach decisions (e.g., focusing on age-related interventions when the actual driver is recent ED utilization patterns).
+**Suggested fix:** Add a paragraph after the architecture diagram or in the Step Functions description: "Each pipeline step should validate output completeness before proceeding. The Glue job should verify output row counts match input patient counts. The Batch Transform step should check for scoring failures and route failed patients to a DLQ for manual review rather than dropping them silently. The DynamoDB write step should use BatchWriteItem with retry logic and alert on unprocessed items. The pipeline should fail loudly (SNS alert to on-call) if any step produces fewer than 95% of expected outputs."
 
-The comment acknowledges this is a simplification and points to SHAP, but the code produces actively wrong per-patient attributions that would mislead clinical users. For a teaching example, this teaches a pattern that produces incorrect results.
+### Issue A2: No Data Versioning or Lineage Tracking (MEDIUM)
 
-**Suggested fix:** Either:
-1. Normalize features before multiplying: `patient_normalized = (X.iloc[idx] - X.min()) / (X.max() - X.min() + 1e-8)` then multiply by importances.
-2. Or replace with a simpler heuristic: report the top global feature importances for features where the patient has above-median values.
-3. Add a prominent warning: "WARNING: This approach produces incorrect per-patient attributions due to feature scale differences. Do not show these explanations to clinicians. Use SHAP values for any patient-facing or clinician-facing explanations."
+**Location:** The Technology section, "The General Architecture Pattern"; AWS Implementation
 
-### Issue A2: No Temporal Validation in Training Step (MEDIUM)
+**The problem:** The recipe mentions "you can always trace a risk score back to the specific features that produced it" but doesn't describe how. There's no mention of:
+- Partitioning the feature store by scoring date (S3 prefix = `features/scoring_date=2026-06-01/`)
+- Storing which model version produced each score (mentioned in DynamoDB output but not in the pipeline design)
+- Retaining historical feature snapshots for model retraining and audit
 
-**Location:** Python companion, Step 2, `train_ed_prediction_model()`
+If a clinician asks "why was this patient flagged high-risk last month?" you need to retrieve the specific feature values and model version from that scoring cycle. The recipe implies this is possible ("full lineage") but doesn't show how it's implemented.
 
-```python
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-```
+**Suggested fix:** Add a brief note to the Data Aggregation step or the S3 data lake description: "Partition the feature store by scoring_date in S3 (e.g., `s3://features/scoring_date=2026-06-01/`). Retain historical feature snapshots for at least 12 months to support audit queries, model retraining on historical features, and incident investigation. Each DynamoDB record already includes model_version; pair this with the date-partitioned feature store for full score lineage."
 
-**The problem:** The code uses a random train/test split. The "Gap to Production" section correctly identifies this as a problem ("Random splits leak future information and produce optimistic AUC estimates"). But the teaching code demonstrates the wrong pattern. A reader copying this code gets inflated performance metrics and a false sense of model quality.
+### Issue A3: Cost Estimate May Be Low for Production Scale (LOW)
 
-For ED prediction specifically, temporal patterns matter: flu season, holiday periods, and seasonal behavioral changes all affect ED utilization. A random split mixes future and past data, making the model appear better than it will perform when deployed forward in time.
+**Location:** Prerequisites table, "Cost Estimate" row; header cost ("~$0.03 per patient per scoring cycle")
 
-**Suggested fix:** The code already has a comment noting temporal validation is needed. Strengthen it: "IMPORTANT: This random split is for demonstration only. In production, you MUST use a temporal split (e.g., train on months 1-9, test on months 10-12). Random splits produce optimistically biased AUC estimates for time-dependent outcomes like ED visits. A model that shows AUC 0.82 on a random split may drop to 0.72 on a temporal split."
+**The problem:** The estimate of "$10-40 for a 100K member population" seems reasonable for compute costs alone but omits:
+- S3 storage for 24 months of historical data across 5 source systems
+- DynamoDB read capacity for API lookups (depends on query volume from care management tools)
+- CloudWatch custom metrics and alarms
+- Step Functions state transitions
+- Data transfer if source systems are in different accounts or regions
 
-### Issue A3: No Model Calibration Step (MEDIUM)
+The $0.03 per patient per cycle figure is plausible for the Glue + SageMaker compute portion but the total operational cost including storage, monitoring, and API serving is likely 2-3x higher.
 
-**Location:** Python companion, Step 3, `evaluate_model()`; Gap to Production section
+**Suggested fix:** Add a qualifier: "Compute cost per scoring cycle is $10-40 for 100K patients. Total operational cost including S3 storage (24-month lookback across 5 sources), DynamoDB provisioned capacity for API serving, CloudWatch monitoring, and Step Functions orchestration is typically $100-300/month at this scale."
 
-**The problem:** The evaluation step computes AUC-ROC, average precision, and precision at threshold. It does not assess calibration (whether a predicted probability of 0.70 corresponds to a 70% actual event rate). The Gap to Production section correctly identifies calibration as critical ("Calibration matters because care managers make resource allocation decisions based on these numbers").
+### Issue A4: Scoring Frequency vs. Intervention Timing (LOW)
 
-For ED prediction, calibration is especially important because the risk tiers are probability-based (HIGH >= 0.70, MEDIUM >= 0.40). If the model is poorly calibrated (e.g., patients scored at 0.70 actually have a 45% event rate), the tier assignments are meaningless and care management resources are misallocated.
+**Location:** The Technology section, "The Prediction Problem" subsection
 
-Gradient boosted trees are known to produce poorly calibrated probabilities out of the box. The Gap to Production section mentions Platt scaling and isotonic regression but the code doesn't demonstrate either.
+**The problem:** The recipe says "Most production systems settle on 30 or 60 days, scoring patients weekly or biweekly" and later mentions the Variations section's real-time scoring at care transitions. However, there's a gap: the recipe doesn't address what happens between scoring cycles when a patient has a high-signal event (hospitalization, ED visit, medication discontinuation).
 
-**Suggested fix:** Add a brief calibration check to the evaluation function, even if simplified:
+The Variations section covers this but frames it as an extension. In practice, for ED prediction specifically, the between-cycle gap is critical because ED visits often cluster (one visit predicts another within days, not weeks). A patient who had an ED visit Tuesday morning won't be rescored until the next weekly batch run, potentially missing a critical intervention window.
 
-```python
-# Quick calibration check: bin predictions and compare to actual rates
-from sklearn.calibration import calibration_curve
-fraction_of_positives, mean_predicted_value = calibration_curve(y_test, y_prob, n_bins=5)
-# Log the calibration gap
-for actual, predicted in zip(fraction_of_positives, mean_predicted_value):
-    logger.info("Predicted: %.2f, Actual: %.2f (gap: %.2f)", predicted, actual, abs(predicted - actual))
-```
-
-### Issue A4: Synthetic Data Generation Creates Circular Validation (LOW)
-
-**Location:** Python companion, Step 1, `generate_synthetic_patients()`
-
-**The problem:** The synthetic data generates outcomes using a logistic model with known feature weights, then trains a gradient boosted tree to recover those weights. This guarantees good performance metrics because the model is learning a pattern that was explicitly encoded. The comment correctly notes "This is NOT how you'd build a real model (that's circular)."
-
-This is LOW because the comment is clear and the purpose is pedagogical. But a reader who runs this code and sees AUC 0.85+ may develop unrealistic expectations for real-world ED prediction performance (literature typically shows AUC 0.70-0.78).
-
-**Suggested fix:** Add expected real-world performance context: "Note: This synthetic data produces artificially high AUC because the outcome was generated from the same features the model uses. Real-world ED prediction models typically achieve AUC 0.70-0.78 due to unmeasured confounders, data quality issues, and temporal drift. Don't use synthetic-data performance as a benchmark for production readiness."
+**Suggested fix:** This is adequately covered in Variations and is labeled as an extension, so it's a minor note. Consider adding a single sentence in the main architecture: "Note that weekly scoring creates a blind spot for rapid-onset risk. The Variations section describes event-triggered rescoring for critical transitions."
 
 ---
 
 ## Networking Expert Review
 
-*The main recipe's VPC configuration, Prerequisites table, and architecture diagram cannot be reviewed. Evaluating only what's stated in the Python companion.*
-
 ### What's Done Well
 
-- The Gap to Production section explicitly states: "Patient data (even derived risk scores) is PHI. The scoring job runs in a private subnet with VPC endpoints for SageMaker, DynamoDB, and S3. No internet egress."
-- CloudTrail logging is mentioned for audit trail.
+- VPC endpoints specified for S3, DynamoDB, SageMaker API, and CloudWatch Logs
+- "No internet egress for PHI-processing components" is explicitly stated
+- VPC Flow Logs are required
+- All traffic over TLS is specified
+- Private subnets for SageMaker and Glue
 
-### Issue N1: No VPC Endpoint Guidance in Code Comments (LOW)
+### Issue N1: VPC Endpoint for Glue Not Explicitly Listed (MEDIUM)
 
-**Location:** Python companion, Step 5 (DynamoDB), Step 6 (S3)
+**Location:** Prerequisites table, "VPC" row
 
-**The problem:** The boto3 clients are created with default configuration (`boto3.resource("dynamodb")`, `boto3.client("s3")`). In a VPC with no internet egress, these calls route through VPC endpoints automatically if configured. But the code doesn't mention that VPC endpoints must exist for these calls to succeed in a private subnet. A developer deploying this in a locked-down VPC would get timeout errors with no guidance on why.
+**The problem:** The VPC row says "SageMaker and Glue in private subnets with VPC endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs." Glue jobs in a private subnet need the Glue VPC endpoint (`com.amazonaws.region.glue`) to communicate with the Glue service API for job status updates and data catalog access. Without it, Glue jobs in a private subnet with no internet egress will fail to start or report status.
 
-**Suggested fix:** Add a comment near the boto3 client creation: "In a VPC with no internet egress (required for PHI workloads), ensure gateway VPC endpoints exist for S3 and DynamoDB, and interface VPC endpoints for SageMaker Runtime. Without these, boto3 calls will timeout."
+The listed endpoints are S3, DynamoDB, SageMaker API, and CloudWatch Logs. Missing: Glue, STS (needed for IAM role assumption), and KMS (needed for envelope encryption operations).
+
+**Suggested fix:** Expand the VPC endpoint list: "VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker API, SageMaker Runtime, Glue, STS, KMS, and CloudWatch Logs (all interface endpoints)."
+
+### Issue N2: No Mention of Cross-Account Data Access Pattern (LOW)
+
+**Location:** Architecture diagram, Data Sources section
+
+**The problem:** The architecture shows five data sources (Claims, EHR Encounters, Pharmacy Fills, Lab Results, SDOH Indicators) all in "S3 / Data Lake." In many healthcare organizations, these sources live in separate AWS accounts (a claims data warehouse account, an EHR integration account, a pharmacy benefits account). The recipe doesn't address cross-account S3 access patterns, which require bucket policies, cross-account IAM roles, or AWS RAM.
+
+**Suggested fix:** Add a brief note: "If source data resides in separate AWS accounts (common in large health systems), use cross-account IAM roles with external IDs for the Glue job to assume. Alternatively, replicate source data into the analytics account using S3 Replication with KMS re-encryption. Avoid bucket policies that grant broad cross-account access."
+
+### Issue N3: API Gateway Endpoint Type Not Specified (LOW)
+
+**Location:** Architecture diagram, "API Gateway + Lambda / Score Lookup API"
+
+**The problem:** The recipe doesn't specify whether this is a Regional, Edge-optimized, or Private API Gateway endpoint. For a healthcare internal system serving care management tools, this should almost certainly be a Private API Gateway (accessible only within the VPC or via VPC endpoint from peered networks). A Regional or Edge-optimized endpoint would expose the risk score API to the public internet (even with authentication).
+
+**Suggested fix:** Add: "Deploy API Gateway as a Private endpoint accessible only within the VPC. Care management systems in peered VPCs or connected via Direct Connect access the API through an interface VPC endpoint for API Gateway. This ensures risk score data never traverses the public internet."
 
 ---
 
 ## Voice Reviewer
 
-*The main recipe's Problem section, Technology section, and Honest Take cannot be reviewed for voice. Evaluating the Python companion's tone.*
-
 ### What's Done Well
 
-- The opening callout is appropriately self-deprecating: "It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment. Think of it as a sketch that shows the shape of the solution. A starting point, not a destination."
-- Comments explain clinical "why" throughout (why gradient boosting over logistic regression, why precision matters for care managers, why prior ED visits are the strongest signal).
-- The Gap to Production section reads like an engineer listing what they'd actually need to fix, not a documentation checklist.
-- Parenthetical asides are natural and informative.
-- The tone is consistently "engineer explaining something cool" rather than documentation-voice.
+- The Problem section is outstanding. It nails the engineer-explaining-something-cool voice with real clinical scenarios. The opening about the 2 AM diabetic, the COPD patient, and the asthmatic kid is vivid and builds empathy without being maudlin.
+- The parenthetical asides are well-calibrated: "(ok, this is a gross oversimplification, but stay with me)" energy without actually using that phrase
+- The Technology section is fully vendor-agnostic. No AWS service names appear until "The AWS Implementation" section.
+- The Honest Take delivers genuinely useful hard-won insights, particularly "the model is 20% of the work" and the social determinants paragraph
+- Self-deprecating expertise shows throughout: acknowledging the accuracy ceiling, the "preventable" question that never goes away
+- The recipe maintains momentum through accumulation of short-to-medium sentences
 
-### Issue V1: No Em Dashes Found (PASS)
+### Issue V1: No Em Dashes Found
 
-Zero em dashes in the Python companion. Clean.
+Confirmed: zero em dashes in the recipe. Uses colons, semicolons, periods, commas, and parentheses appropriately throughout.
 
-### Issue V2: Vendor Balance Cannot Be Assessed (NOTE)
+### Issue V2: Vendor Balance Assessment
 
-The Python companion is inherently AWS-specific (boto3, SageMaker, DynamoDB). The 70/30 vendor balance is assessed on the main recipe, which doesn't exist. The Python companion's Config section and model training steps are vendor-agnostic (scikit-learn), which is appropriate for the companion format.
+The recipe is approximately 72% vendor-agnostic (Problem, Technology, General Architecture, Honest Take, Variations) and 28% AWS-specific (Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code walkthrough). This is within the 70/30 target.
 
-### Issue V3: One Instance of Mild Documentation-Voice (LOW)
+### Issue V3: Minor Doc-Voice Creep in Prerequisites Table (LOW)
 
-**Location:** Step 6, docstring
+**Location:** Prerequisites table headers and AWS Implementation section opener
 
-**The text:** "SageMaker's built-in XGBoost algorithm expects CSV with the target column first and no header row. We format accordingly."
+**The problem:** The phrase "Why These Services" as a section header is slightly more formal/documentary than the rest of the voice. The rest of the recipe uses "Here's what I've learned" and "Skip this step and you'll..." energy. The "Why These Services" header reads more like a formal architecture document.
 
-"We format accordingly" is slightly formal/documentation-voice. The rest of the file uses more natural phrasing.
+This is very minor. The content under that header maintains the correct voice. The header itself is specified in the RECIPE-GUIDE.md structure, so it may be intentional.
 
-**Suggested fix:** Rewrite to: "SageMaker's built-in XGBoost algorithm expects CSV with the target column first and no header row. So that's what we give it."
+**Suggested fix:** No change required. The header follows the recipe template. The content beneath it maintains voice.
 
 ---
 
 ## Stage 2: Expert Discussion
 
-**The dominant issue is C1 (missing main recipe).** Without the main recipe, this review is fundamentally incomplete. The Python companion is a supplement, not the primary teaching artifact. The main recipe contains the vendor-agnostic technology explanation, the architecture diagram, the prerequisites table (where IAM, BAA, VPC, and encryption are specified), the pseudocode walkthrough, and the Honest Take. These are the sections where most CRITICAL and HIGH findings typically surface.
+### Conflicts and Overlaps
 
-**Architecture A1 (misleading explanations) is the most impactful technical finding.** The per-patient explanation method produces actively wrong results that would mislead clinical users. This is HIGH rather than CRITICAL because the Python companion explicitly frames itself as "not production-ready" and the comment points to SHAP. But the code still teaches a harmful pattern.
+**Security (S1) and Architecture (A1) overlap:** Both experts flag pipeline failure modes. Security is concerned about permissions scope in failure scenarios (a compromised step with overly broad permissions). Architecture is concerned about silent partial failures producing incomplete scoring. These are complementary concerns that reinforce each other. Both are HIGH severity independently.
 
-**Security findings (S1, S2, S3) are all MEDIUM** because they represent gaps in guidance rather than active vulnerabilities. The Python companion correctly identifies most of these in its Gap to Production section but doesn't implement the fixes.
+**Security (S2) and Networking (N3) overlap:** S2 flags that risk driver data is served without access tiering. N3 flags that the API endpoint type isn't specified (could be public). Together these create a scenario where detailed patient behavioral profiles are served through a potentially public API with no field-level access control. The combination is worse than either alone, but neither individually rises to CRITICAL because the recipe does specify authentication in the architecture (API Gateway + Lambda) and encryption (TLS).
 
-**No conflicts between experts.** All findings are complementary.
+**Resolution:** The two HIGH findings stand independently. Neither rises to CRITICAL because the recipe does address BAA, encryption, VPC isolation, and audit logging. The gaps are about depth (role separation, failure handling) rather than fundamental security omissions.
+
+### Priority Order
+
+1. S1 (IAM least-privilege) and A1 (error handling/DLQ) are the most impactful fixes: they address operational safety and security posture simultaneously.
+2. S2 + N3 (access tiering + private API) are the next priority: they close a potential PHI exposure path.
+3. The remaining MEDIUM and LOW findings are improvements that strengthen the recipe without addressing fundamental gaps.
 
 ---
 
-## Stage 3: Synthesized Feedback
+## Stage 3: Synthesized Findings
 
-### Verdict: **FAIL**
+### Verdict: **PASS**
 
-**Reason:** One CRITICAL finding. The main recipe file does not exist. The expert review cannot be completed without the primary teaching artifact.
-
-The Python companion is well-written and would likely support a PASS verdict for the main recipe once it exists. The code is clean, the comments are excellent, the Gap to Production section is comprehensive, and the clinical context is appropriate throughout. The HIGH finding (A1, misleading per-patient explanations) needs to be fixed but is not blocking given the companion's explicit "not production-ready" framing.
+The recipe is architecturally sound, clinically accurate, well-voiced, and comprehensive. The two HIGH findings address depth issues (least-privilege role separation and pipeline error handling) rather than fundamental security omissions or architectural flaws. The recipe correctly handles BAA, encryption, VPC isolation, CloudTrail auditing, and the critical operational challenge of turning predictions into interventions. The clinical framing is accurate (AUROC ranges, feature importance hierarchy, calibration requirements, fairness concerns). The Honest Take provides genuine value.
 
 ---
 
 ### Prioritized Findings
 
-| # | Severity | Expert | Location | Finding | Fix |
-|---|----------|--------|----------|---------|-----|
-| 1 | CRITICAL | All | Repository | Main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The Python companion references it but it has not been written. No architecture, prerequisites, pseudocode, technology teaching, or Honest Take content exists for this recipe. | Write the main recipe following RECIPE-GUIDE.md structure. The Python companion is ready and waiting for it. |
-| 2 | HIGH | Architecture | Python companion, Step 4, `score_patients()` | Per-patient explanation method (`feature_value * global_importance`) is dominated by feature scale and produces actively wrong attributions. Care managers would see misleading "top factors" on their worklists. | Normalize features before multiplying, or replace with above-median heuristic, or add prominent WARNING that this method produces incorrect results and must not be shown to clinicians. |
-| 3 | MEDIUM | Security | Python companion, Setup section | IAM permissions listed as flat set for single identity. No role separation between training, scoring, and storage contexts. No resource ARN scoping. | Address in main recipe Prerequisites table: split into role-specific entries with resource-scoped ARNs. |
-| 4 | MEDIUM | Security | Python companion, Step 5 | DynamoDB table stores PHI (patient_id + risk predictions) with no mention of customer-managed KMS key. Default AWS-owned encryption doesn't provide key rotation control or granular audit. | Add to Gap to Production: specify CMK for PHI tables. Address in main recipe Prerequisites table. |
-| 5 | MEDIUM | Security | Python companion, Step 5 comments | Two consumers (care management, EHR) access same table with same data including `top_factors`. No access differentiation. Social determinant data ("lives_alone") may be inappropriate for all consumer contexts. | Add guidance on consumer-specific field access. Separate detailed explanations into attribute requiring elevated permissions. |
-| 6 | MEDIUM | Architecture | Python companion, Step 2 | Random train/test split demonstrated despite Gap to Production correctly identifying temporal validation as required. Teaching code shows the wrong pattern. | Strengthen the comment to WARNING level. Add expected performance degradation when switching from random to temporal split. |
-| 7 | MEDIUM | Architecture | Python companion, Step 3 | No calibration assessment despite probability-based tier thresholds (0.70, 0.40). GBTs produce poorly calibrated probabilities. Gap to Production mentions calibration but code doesn't demonstrate it. | Add brief calibration check (calibration_curve from sklearn) to evaluation function. |
-| 8 | LOW | Architecture | Python companion, Step 1 | Synthetic data guarantees artificially high AUC due to circular generation. No real-world performance context provided. Reader may develop unrealistic expectations. | Add note: real-world ED prediction AUC is typically 0.70-0.78. Synthetic performance is not a production benchmark. |
-| 9 | LOW | Networking | Python companion, Steps 5-6 | No mention that VPC endpoints must exist for boto3 calls to succeed in private subnets. Developer in locked-down VPC gets unexplained timeouts. | Add comment near boto3 client creation about VPC endpoint requirements. |
-| 10 | LOW | Voice | Python companion, Step 6 docstring | "We format accordingly" is mildly documentation-voice. | Rewrite to more natural phrasing. |
+| # | Severity | Expert | Location | Finding |
+|---|----------|--------|----------|---------|
+| 1 | HIGH | Security | Prerequisites, IAM Permissions row | IAM permissions presented as flat list without role separation or resource scoping. Split into service-specific roles with minimum-privilege resource ARNs. |
+| 2 | HIGH | Architecture | Architecture diagram / Step Functions | No error handling, DLQ, or output validation between pipeline steps. Silent partial failures could produce incomplete scoring, dropping high-risk patients. Add row count validation and alerting on partial failures. |
+| 3 | MEDIUM | Security | Step 5 pseudocode, DynamoDB schema | SHAP-derived risk drivers (detailed behavioral data) stored without access tiering. Different API consumers need different field visibility. Add IAM-based field-level access or separate endpoints. |
+| 4 | MEDIUM | Security | Step 5 pseudocode, outreach list delivery | Outreach list published to unspecified "care_management_queue" without encryption or access control guidance. Specify SQS SSE-KMS and IAM constraints. |
+| 5 | MEDIUM | Networking | Prerequisites, VPC row | VPC endpoint list incomplete. Missing Glue, STS, and KMS endpoints required for private-subnet operation without internet egress. |
+| 6 | MEDIUM | Architecture | Technology section, Data Lake description | No data versioning or lineage tracking mechanism described despite claiming "full lineage." Add date-partitioned feature store and historical snapshot retention guidance. |
+| 7 | LOW | Security | Step 3 pseudocode, LOAD_MODEL | No model artifact integrity verification. Add checksum validation against model registry before scoring. |
+| 8 | LOW | Architecture | Prerequisites, Cost Estimate | Cost estimate covers compute only. Total operational cost (storage, monitoring, API serving) is likely 2-3x higher. Add qualifier. |
+| 9 | LOW | Networking | Architecture diagram, API Gateway | API Gateway endpoint type not specified. Should be Private for healthcare internal use. PHI should not traverse public internet. |
+| 10 | LOW | Networking | Architecture diagram, Data Sources | No cross-account data access pattern for multi-account health systems. Add brief guidance on cross-account IAM roles or S3 Replication. |
+| 11 | LOW | Voice | Prerequisites table header | Very minor: "Why These Services" header is slightly more formal than the recipe voice, but follows the RECIPE-GUIDE template. No change required. |
 
 ---
 
-## Priority Actions
+### Summary
 
-1. **Write the main recipe (CRITICAL).** This blocks all further progress. The Python companion is ready. The main recipe needs: Problem section (why ED prediction matters, the human cost of avoidable ED visits), Technology section (vendor-agnostic teaching of predictive modeling for ED utilization, feature engineering challenges, the avoidable-vs-unavoidable distinction), General Architecture, AWS implementation, Prerequisites, Pseudocode, Expected Results, Honest Take, Variations, Resources.
-
-2. **Fix A1 (HIGH) in Python companion.** The per-patient explanation method needs either normalization or a prominent warning. This is the only technical finding that could actively mislead clinical users.
-
-3. **Address S1-S3 and A2-A3 (MEDIUM) in main recipe.** Most of these findings belong in the main recipe's Prerequisites table and architecture sections. The Python companion's Gap to Production section already identifies most of these gaps; the main recipe needs to address them structurally.
-
-4. **Re-review after main recipe is written.** This expert review is incomplete. Once the main recipe exists, a full review of architecture, security posture, networking, and voice can be conducted against the complete recipe pair.
-
----
-
-*Review complete. Recipe 7.4 cannot pass in its current state because the main recipe file does not exist. The Python companion is well-crafted and demonstrates strong clinical awareness, appropriate model selection, and comprehensive gap-to-production coverage. Once the main recipe is written, the recipe pair has strong potential to pass with the HIGH finding (A1) addressed. The code review (chapter07.04-code-review.md) also noted the missing main recipe as a consistency-check blocker.*
+Strong recipe. The clinical framing, technology teaching, and operational honesty are all excellent. The two HIGH findings are common patterns in cookbook-style content (IAM oversimplification and missing error handling guidance) and are straightforward to address without restructuring. The MEDIUM findings add defense-in-depth guidance appropriate for a HIPAA-regulated environment. No fundamental architectural, clinical, or security issues.
