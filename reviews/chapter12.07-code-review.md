@@ -2,125 +2,122 @@
 
 **Reviewer:** TechCodeReviewer
 **Files reviewed:**
-- `chapter12.07-vital-sign-trajectory-monitoring.md` (**NOT FOUND**)
-- `chapter12.07-python-example.md` (**NOT FOUND**)
+- `chapter12.07-vital-sign-trajectory-monitoring.md` (pseudocode reference)
+- `chapter12.07-python-example.md` (Python companion)
 
 ---
 
-## Verdict: FAIL
+## Verdict: PASS
 
-The Python companion this task is meant to review does not exist. Neither does the upstream main recipe. The pipeline chain `ch12-r07-draft → ch12-r07-python → ch12-r07-code-review` has not been completed: only spec stubs exist in `specs/`, no output artifacts have been produced. I will not fabricate a review against a file that does not exist. The verdict is FAIL on the ERROR finding below until the upstream tasks land.
+The Python companion is well-structured, pedagogically sound, and faithfully implements all six pseudocode steps from the main recipe. The trajectory math is correct, the multi-parameter correlation logic works as described, and the alert suppression demonstrates the discipline the recipe demands. Two warnings and several notes are documented below, but none rise to the level of blocking publication.
 
 ---
 
 ## Findings
 
-### Issue E1 - ERROR: Python companion file missing
+### Issue W1 - WARNING: Kinesis `Data` parameter should be bytes, not str
 
-**Severity:** ERROR
-**File:** `chapter12.07-python-example.md` (does not exist)
+**Severity:** WARNING
+**File:** `chapter12.07-python-example.md`, Step 1 (`ingest_vital_sign`)
+**Section:** `mock_kinesis.put_record(...)` call
 
-A filesystem-wide search for `chapter12.07*`, `*vital-sign*`, and `*12.7*` returns no source artifacts. Only the two `reviews/chapter12.07-*.md` review files exist, both of which were produced under the same blocked-upstream condition.
+The code passes `Data=json.dumps(normalized)` which produces a Python string. The real boto3 Kinesis `put_record` API requires `Data` to be `bytes` or a file-like object. A learner copying this pattern verbatim into production code would get a `ParamValidationError` from botocore's parameter validation.
 
-The most recent committed chapter 12 artifact is `chapter12.06-python-example.md`. Beyond that, only spec stubs exist for recipes 12.7 through 12.10. The draft for 12.7's main recipe has not been generated either, so the fallback path I used on 12.6 (reconstructing pseudocode from the main recipe when only the Python companion was present) is not available here.
+**How to fix:** Change to `Data=json.dumps(normalized).encode("utf-8")`. The mock's `__init__` would then need to decode in its `put_record` method (or store raw bytes). Since the mock already calls `json.loads(Data)`, the simplest fix is encoding on the write side and documenting that real Kinesis requires bytes.
 
-The task spec `specs/ch12-r07-code-review.md` declares its own output target as `reviews/chapter12.07-code-review.md` and depends on `ch12-r07-python`. The upstream `specs/ch12-r07-python.md` declares output `chapter12.07-python-example.md` and depends on `ch12-r07-draft`. Both upstream outputs are absent.
+---
 
-**How to fix:**
+### Issue W2 - WARNING: Logging contradicts its own PHI guidance
 
-1. Run `ch12-r07-draft` to produce `chapter12.07-vital-sign-trajectory-monitoring.md`. Per the chapter 12 planning doc, recipe 12.7 is Medium-Complex with named hidden challenges of real-time processing, patient-specific baselines, alert fatigue, and clinical-trigger semantics. The draft must include the standard recipe sections (Problem, Technology, General Architecture, AWS Implementation with pseudocode walkthrough, Honest Take, Variations, navigation links).
-2. Run `ch12-r07-python` to produce `chapter12.07-python-example.md`. Whatever streaming or windowed-trajectory pseudocode the main recipe codifies, the Python companion must implement those same steps in the same order.
-3. Re-run this code review task once both artifacts exist.
+**Severity:** WARNING
+**File:** `chapter12.07-python-example.md`, Configuration section and Steps 1/5/6
+**Section:** Logger comment vs. actual log statements
+
+The configuration section explicitly states: "Never log raw vital sign values with patient identifiers. Log structural metadata only: patient_id_hash, parameter, alert_decision, runtime_ms." However, the code then logs raw `patient_id` values in multiple places:
+
+- `logger.info("Ingested %s reading for patient %s", normalized["parameter"], normalized["patient_id"])`
+- `logger.info("Patient %s: %s (%s)", pid, action, ...)`
+- `logger.info("Patient %s: %s fired - %s", pid, action.upper(), ...)`
+
+For a teaching example focused on HIPAA-compliant healthcare pipelines, this contradiction could confuse learners about what the actual expectation is.
+
+**How to fix:** Either (a) hash the patient_id before logging (e.g., `pid_hash = hashlib.sha256(pid.encode()).hexdigest()[:8]`) to match the stated guidance, or (b) soften the comment to say "In production, hash patient identifiers in logs" and add a brief inline note at the first log call explaining the demo uses synthetic IDs so raw logging is acceptable here.
+
+---
+
+### Issue N1 - NOTE: `import random` inside the demo loop body
+
+**Severity:** NOTE
+**File:** `chapter12.07-python-example.md`, `run_demo()` function
+**Section:** Patient A simulation loop
+
+`import random` appears inside the `for i in range(16)` loop. Python caches module imports so this has no runtime cost, but it's unusual placement that may confuse learners about import conventions. Moving it to the top-level imports (alongside `json`, `logging`, etc.) would be cleaner.
+
+---
+
+### Issue N2 - NOTE: MockDynamoDB class is defined but never used by the pipeline
+
+**Severity:** NOTE
+**File:** `chapter12.07-python-example.md`, Mocks section and Step 2
+
+The code defines `MockDynamoDB` with `get_item`/`put_item` methods and instantiates `mock_dynamodb`, but the actual pipeline uses the in-memory `PATIENT_STATES` dict directly. This is not incorrect (the code works), but a learner might be confused about why the DynamoDB mock exists if it's never called. A one-line comment like `# In a production Lambda, you'd replace PATIENT_STATES with DynamoDB calls via mock_dynamodb` would clarify the intent.
+
+---
+
+### Issue N3 - NOTE: Demo could show DynamoDB Decimal discipline
+
+**Severity:** NOTE
+**File:** `chapter12.07-python-example.md`, Step 2 and Mocks section
+
+The code imports `Decimal` at the top but never uses it because patient state lives in a Python dict rather than flowing through DynamoDB. Since the recipe's AWS architecture specifies DynamoDB for patient state, demonstrating the `Decimal(str(value))` pattern (even in a comment or a brief helper function) would reinforce the DynamoDB-specific lesson for learners who will hit the float-to-Decimal issue in production.
+
+---
+
+### Issue N4 - NOTE: `stdev` requires at least 2 data points but `compute_trajectory` gate checks for 3
+
+**Severity:** NOTE
+**File:** `chapter12.07-python-example.md`, Step 3 (`compute_trajectory`)
+
+The function returns `None` if `len(readings) < 3`, and later calls `stdev(values)` which requires `len(values) >= 2`. The gate is sufficient (3 > 2), so this is safe. Just noting the implicit dependency is covered.
 
 ---
 
 ## Pseudocode-to-Python Mapping
 
-Not applicable. Both the main recipe pseudocode and the Python companion are absent.
+| Pseudocode Step | Python Function | Consistent? |
+|-----------------|----------------|-------------|
+| Step 1: `ingest_vital_sign(source_event)` | `ingest_vital_sign(source_event)` | Yes |
+| Step 2: `update_patient_state(vital_event)` | `update_patient_state(vital_event)` | Yes |
+| Step 3: `compute_trajectory(state, parameter)` | `compute_trajectory(state, parameter)` | Yes |
+| Step 4: `check_multi_parameter_patterns(all_trajectories)` | `check_multi_parameter_patterns(all_trajectories)` | Yes |
+| Step 5: `evaluate_alert(patient_state, trajectories, pattern_matches)` | `evaluate_alert(patient_state, all_trajectories, pattern_matches)` | Yes (medication suppression omitted, acknowledged in Gap section) |
+| Step 6: `persist_and_route(patient_state, trajectories, alert_decision)` | `persist_and_route(patient_state, all_trajectories, alert_decision)` | Yes |
+
+The pseudocode's medication-aware suppression (Step 5, check 3) is intentionally omitted from the Python companion. This is documented in the "Gap Between This and Production" section with a clear explanation of why (requires MAR integration, 3-6 month project). Acceptable scope reduction for a teaching example.
 
 ---
 
-## What was checked
+## Checklist Results
 
-- `chapter12.07-vital-sign-trajectory-monitoring.md`: missing (filesystem search confirmed)
-- `chapter12.07-python-example.md`: missing (filesystem search confirmed)
-- `specs/ch12-r07-draft.md`: present, declares output `chapter12.07-vital-sign-trajectory-monitoring.md`
-- `specs/ch12-r07-python.md`: present, declares output `chapter12.07-python-example.md`, depends on `ch12-r07-draft`
-- `specs/ch12-r07-code-review.md`: present, declares output `reviews/chapter12.07-code-review.md`, depends on `ch12-r07-python`
-- `pending_tasks.json`: empty array, no in-flight task
-- `categories/12-time-series.md` 12.7 entry: confirms the recipe is Medium-Complex with real-time processing, patient-specific baselines, alert fatigue, and clinical-trigger semantics as the named complexity drivers
-- All `chapter12.*` files in repo root: only 12.1 through 12.6 are present (paired main recipe + Python companion); 12.7 through 12.10 are not yet drafted
-
----
-
-## Notes for the next iteration
-
-These are the criteria the next iteration's Python companion will be measured against, derived from the chapter 12 planning doc and the failure modes that triggered findings on earlier chapter 12 reviews. They are not findings against the current (non-existent) code.
-
-### Pseudocode-to-Python correspondence
-
-If the main recipe's pseudocode describes a streaming consumer (Kinesis Data Streams, IoT Core, or MSK), the Python companion's mock must preserve the same call signatures (`get_records`, `get_shard_iterator`, `put_record`, etc.) with parameter names matching boto3 even when running against an in-memory stub. Folding a real-time detection path and an analytical-window path into a single function would be a misleading-pattern WARNING if the pseudocode separates them.
-
-### Decimal at the DynamoDB boundary
-
-Vital sign values are inherently float (heart rate 72.5, SpO2 96.4, BP 118.5/76.2, RR 14.3, temperature 37.1). Every value reaching `put_item`, `update_item`, or a `batch_writer` context must pass through a `_to_decimal` helper that:
-
-- Quantizes to a stable scale before `Decimal(...)` (use `Decimal(str(value))` to avoid float-to-Decimal precision artifacts)
-- Handles the Python `bool`-is-`int` subtlety (don't coerce booleans into Decimals)
-- Recurses into dicts and lists if the schema nests measurements
-
-A bare `Decimal(float_value)` or, worse, raw float passed into DynamoDB will trigger an ERROR.
-
-### S3 key construction
-
-Streaming pipelines often build keys from timestamps and patient IDs. A key template like `f"/{date}/{patient_id}/..."` is a common slip and is invalid; S3 keys must not start with a slash. Every constructed key must start with a path component. This has been an ERROR-class pattern in earlier chapter reviews.
-
-### PHI exclusion at logging boundaries
-
-Vital sign streams keyed to identifiable patients are PHI. Structured logs (`logger.info(...)`, `print(...)`, CloudWatch Logs payloads) must carry only run-level metadata: `run_id`, snapshot counts, sample counts, runtime, alert counts. They must not carry `patient_id`, MRN, raw measurement values, or anything else that would render the log line PHI. Hashed or salted patient identifiers in logs are acceptable only if the recipe explicitly establishes the hashing scheme.
-
-### Patient-specific baseline math
-
-If the recipe describes a personalized baseline (rolling-window mean and standard deviation per patient, an EWMA with a defined decay parameter, or a Kalman-filter-style state estimator), the Python implementation's update step must match the pseudocode's update step exactly. The W1 finding on 12.6 was driven by a sub-process double-counting variance that the upstream estimator had already absorbed; the same class of error is easy to make in a per-patient EWMA over vitals.
-
-### Alert-fatigue guardrails
-
-The chapter 12 planning doc names alert fatigue as a hidden challenge for 12.7. A naive `if score > threshold: alert()` pattern teaches a bad habit. The Python companion should demonstrate at least one of:
-
-- Hysteresis: suppress alerts within N minutes of a prior alert for the same patient and same channel
-- Tiered thresholds: e.g., a MEWS-style 3-of-N criterion, or escalation tiers (notify nurse before paging rapid response)
-- Persistence requirements: require the trajectory to violate threshold for K consecutive samples before alerting
-
-A bare threshold compare with no fatigue mitigation will at minimum draw a WARNING.
-
-### Artifact vs. real change
-
-The planning doc explicitly calls out "must distinguish artifact from real changes" as a complexity driver. The Python companion should at least demonstrate a sentinel filter (drop physically impossible values: HR < 20 or > 250, SpO2 < 50 or > 100, etc.) and ideally a brief-deviation filter (require K-of-N samples in the abnormal range) before scoring. A code path that scores raw measurements without artifact rejection misses the recipe's stated point.
-
-### Real-time vs. analytical-window separation
-
-If the pseudocode separates a streaming detection path from a batched trajectory-analysis path (a common pattern for vital signs: streaming MEWS-style alerts plus a 4-hour or 24-hour deterioration trend), the Python file must reflect that separation as two distinct functions, not a single conflated loop.
-
-### Mock-driven end-to-end run
-
-Per established chapter pattern, the Python companion must be runnable end-to-end against a mock without real AWS calls. The mock layer should be obvious to the reader (a `class MockKinesisClient` or `@patch('boto3.client', ...)` setup) and the runtime path should not silently skip the streaming integration in mock mode.
-
-### Pagination, retries, and credentials
-
-Standard checks that apply across chapters:
-
-- Any `list_*` boto3 call must demonstrate pagination handling (paginator or explicit `NextToken` loop), even if the example dataset is small
-- No hardcoded credentials, no `aws_access_key_id=...` literals
-- No silent `except Exception: pass`; comments must explain why a particular exception class is acceptable to swallow
-
-These are baseline expectations and would each draw a WARNING or ERROR depending on context.
+| Check | Result |
+|-------|--------|
+| Code runs without errors (given mocks) | PASS - sequential processing against in-memory stores works end-to-end |
+| Pseudocode steps all implemented | PASS - all 6 steps present in same order |
+| No hardcoded credentials | PASS - no `aws_access_key_id` literals; ARN uses example account |
+| No silent exception swallowing | PASS - no bare `except:` blocks |
+| DynamoDB uses Decimal not float | N/A - DynamoDB mock defined but not used in pipeline path |
+| S3 paths no leading slash | N/A - no S3 usage in this recipe |
+| Pagination handled for list calls | N/A - no `list_*` calls |
+| Comments explain "why" not just "what" | PASS - comments are pedagogically strong throughout |
+| Logical flow builds understanding | PASS - top-to-bottom progression matches the recipe's narrative arc |
+| Alert fatigue mitigation demonstrated | PASS - cooldown, baseline stabilization, artifact detection all present |
+| Artifact rejection demonstrated | PASS - variability threshold + short window check in Step 5 |
+| boto3 API method names correct | PASS - `put_record`, `write_records`, `publish` all correct |
+| boto3 parameter names correct | PASS with W1 caveat (Data type) |
+| Timestream multi-measure format correct | PASS - `MeasureValues` array with `MeasureValueType: "MULTI"` is correct |
 
 ---
 
-## Status
+## Summary
 
-This task is blocked on the upstream pipeline. Expected resolution path:
-
-1. `ch12-r07-draft` runs and produces `chapter12.07-vital-sign-trajectory-monitoring.md`
-2. `ch12-r07-python` runs and produces `chapter12.07-python-example.md`
-3. `ch12-r07-code-review` re-runs against the now-present Python companion and emits a substantive PASS/FAIL with findings against actual code
+Strong Python companion that faithfully translates the recipe's architecture into runnable code. The trajectory math (linear regression slope, EMA baselines, multi-parameter correlation) is correct and clearly explained. The demo generates a convincing sepsis deterioration scenario that shows the pipeline detecting coordinated vital sign changes. The two warnings (Kinesis bytes encoding, PHI logging contradiction) are real but non-blocking for a teaching example; both are easy one-line fixes if the author wants to tighten them up before publication.
