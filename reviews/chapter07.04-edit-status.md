@@ -27,10 +27,10 @@ Fresh verification confirms the Python companion remains editorially clean:
 | Code formatting | Correct language tags, consistent indentation, inline code for service names. |
 | Header hierarchy | H1 title, H2 sections. No skipped levels. |
 | Voice drift | None detected. Engineer-explaining tone consistent with STYLE-GUIDE.md. |
-| Documentation-voice patterns | Zero found ("This recipe demonstrates...", "We are excited..."). |
+| Documentation-voice patterns | Zero found. |
 | RECIPE-GUIDE compliance | Python companion structure correct (callout, setup, config, steps, pipeline runner, gap to production). |
 | Link verification | Footer links to main recipe (not yet written). No fabricated URLs. |
-| Vendor balance | N/A for Python companion (inherently AWS-specific; vendor-agnostic teaching lives in main recipe). |
+| Vendor balance | N/A for Python companion (inherently AWS-specific). |
 
 ---
 
