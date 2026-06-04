@@ -1,6 +1,6 @@
 # Recipe 3.3: Billing Code Anomalies ⭐
 
-**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.001–0.008 per claim screened (mostly compute; baseline lookups dominate)
+**Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.008 per claim screened (mostly compute; baseline lookups dominate)
 
 ---
 
@@ -158,7 +158,7 @@ The ethical posture that works best is: an anomaly flag is a prompt for a conver
 
 At a conceptual level, the pipeline has four stages plus a feedback loop. The architecture looks a lot like the no-show recipe (Recipe 3.2) but the unit of analysis shifts from appointment to provider-period, and the feature store is populated at a different cadence because provider statistics don't change second-to-second.
 
-```
+```text
 ┌────────────── CONTINUOUS PROFILING PIPELINE ───────────────┐
 │                                                            │
 │  [Claims Stream + Adjudicated Claims Store]                │
@@ -370,7 +370,7 @@ flowchart TB
 
 Skip this step, or get it wrong, and you get two classes of problem. First, noise from small providers: a practice with 20 claims per month has high variance in every aggregate statistic, and naive z-scores will flag them constantly. Second, provider fragmentation: a multi-NPI provider whose anomalous behavior is split across their NPIs won't get flagged because no single NPI shows enough volume to be clearly off-norm.
 
-```
+```text
 FUNCTION rollup_provider_period(period_start, period_end):
     // Pull all adjudicated claims for the period.
     claims = Athena.Query("""
@@ -391,18 +391,18 @@ FUNCTION rollup_provider_period(period_start, period_end):
         provider_claims = claims WHERE provider_id == provider_id
 
         // Skip providers with too few claims for stable statistics.
-        IF length(provider_claims) < MIN_CLAIMS_FOR_STATS:   // e.g., 30
+        IF length(provider_claims) < MIN_CLAIMS_FOR_STATS: // e.g., 30
             continue
 
         features = {
-            provider_id:            provider_id,
-            period_start:           period_start,
-            period_end:             period_end,
-            claim_count:            length(provider_claims),
-            unique_patient_count:   length(unique(provider_claims.patient_id)),
-            total_billed:           sum(provider_claims.billed_amount),
-            avg_billed_per_claim:   mean(provider_claims.billed_amount),
-            codes_per_claim_mean:   mean(count_of_procedure_codes(provider_claims)),
+            provider_id: provider_id,
+            period_start: period_start,
+            period_end: period_end,
+            claim_count: length(provider_claims),
+            unique_patient_count: length(unique(provider_claims.patient_id)),
+            total_billed: sum(provider_claims.billed_amount),
+            avg_billed_per_claim: mean(provider_claims.billed_amount),
+            codes_per_claim_mean: mean(count_of_procedure_codes(provider_claims)),
             codes_per_claim_stddev: stddev(count_of_procedure_codes(provider_claims))
         }
 
@@ -459,7 +459,7 @@ FUNCTION rollup_provider_period(period_start, period_end):
 
 **Step 2: Assign peer groups and compute peer distributions.** Peer grouping runs quarterly, not monthly, because providers' specialty and practice setting rarely change between months. For each active provider, look up their specialty (from NPPES), practice setting (from the provider master), and geographic region. Assemble peer groups with enough members to produce stable statistics; fall back to broader groups when the narrow group is too small.
 
-```
+```text
 FUNCTION assign_peer_groups():
     providers = DynamoDB.Scan("provider-master")   // ~20K providers for mid-size payer
 
@@ -476,7 +476,7 @@ FUNCTION assign_peer_groups():
 
         FOR each key in candidate_keys:
             members = providers WHERE attributes_match(provider, key)
-            IF length(members) >= PEER_GROUP_MIN_SIZE:    // e.g., 30
+            IF length(members) >= PEER_GROUP_MIN_SIZE: // e.g., 30
                 provider.peer_group_key    = key
                 provider.peer_group_size   = length(members)
                 provider.peer_group_members = [m.provider_id for m in members]
@@ -497,25 +497,25 @@ FUNCTION assign_peer_groups():
 
         FOR each feature in QUANTITATIVE_FEATURES:
             stats = {
-                mean:     mean(recent_features[feature]),
-                stddev:   stddev(recent_features[feature]),
-                p50:      percentile(recent_features[feature], 50),
-                p90:      percentile(recent_features[feature], 90),
-                p95:      percentile(recent_features[feature], 95),
-                p99:      percentile(recent_features[feature], 99)
+                mean: mean(recent_features[feature]),
+                stddev: stddev(recent_features[feature]),
+                p50: percentile(recent_features[feature], 50),
+                p90: percentile(recent_features[feature], 90),
+                p95: percentile(recent_features[feature], 95),
+                p99: percentile(recent_features[feature], 99)
             }
             DynamoDB.PutItem("peer-group-statistics", {
                 peer_group_key: peer_group_key,
-                feature:        feature,
-                stats:          stats,
-                sample_size:    length(group_members),
-                computed_at:    NOW()
+                feature: feature,
+                stats: stats,
+                sample_size: length(group_members),
+                computed_at: NOW()
             })
 ```
 
 **Step 3: Score anomalies across the three axes.** A SageMaker Processing job reads the provider-period features, pulls the peer group statistics, and computes the anomaly signals. Three families of signals get computed and stored separately: z-scores against peer groups, CUSUM signals against the provider's own history, and multivariate Isolation Forest scores. Keeping them separate makes the case assembly step able to explain which signals fired and why.
 
-```
+```text
 FUNCTION score_anomalies(period_start, period_end):
     current_features = FeatureStore.GetRecords(
         feature_group = "provider-period-features",
@@ -535,15 +535,15 @@ FUNCTION score_anomalies(period_start, period_end):
             )
             IF peer_stats.stddev > 0:
                 z = (record[feature_name] - peer_stats.mean) / peer_stats.stddev
-                IF abs(z) >= Z_SIGNAL_THRESHOLD:    // e.g., 2.5
+                IF abs(z) >= Z_SIGNAL_THRESHOLD: // e.g., 2.5
                     signals.append({
-                        type:           "peer_zscore",
-                        feature:        feature_name,
-                        value:          record[feature_name],
-                        peer_mean:      peer_stats.mean,
-                        peer_stddev:    peer_stats.stddev,
-                        zscore:         z,
-                        severity:       zscore_to_severity(z)
+                        type: "peer_zscore",
+                        feature: feature_name,
+                        value: record[feature_name],
+                        peer_mean: peer_stats.mean,
+                        peer_stddev: peer_stats.stddev,
+                        zscore: z,
+                        severity: zscore_to_severity(z)
                     })
 
         // --- Signal family 2: Self-history CUSUM ---
@@ -557,20 +557,20 @@ FUNCTION score_anomalies(period_start, period_end):
             cusum_result = cusum_detect(series, target = series.mean_pre_change(), k = 0.5, h = 4)
             IF cusum_result.signal_fired AND cusum_result.change_point within current period:
                 signals.append({
-                    type:           "self_cusum",
-                    feature:        feature_name,
-                    change_point:   cusum_result.change_point,
-                    pre_change_mean:  cusum_result.pre_mean,
+                    type: "self_cusum",
+                    feature: feature_name,
+                    change_point: cusum_result.change_point,
+                    pre_change_mean: cusum_result.pre_mean,
                     post_change_mean: cusum_result.post_mean,
-                    shift_magnitude:  cusum_result.post_mean - cusum_result.pre_mean,
-                    severity:         shift_to_severity(cusum_result)
+                    shift_magnitude: cusum_result.post_mean - cusum_result.pre_mean,
+                    severity: shift_to_severity(cusum_result)
                 })
 
         // --- Signal family 3: Multivariate Isolation Forest ---
         // The Isolation Forest model is trained on a population sample once per
         // quarter; here we just score the current provider-period vector.
         if_score = isolation_forest.score(feature_vector(record))
-        IF if_score <= ISOLATION_FOREST_THRESHOLD:   // more negative = more anomalous
+        IF if_score <= ISOLATION_FOREST_THRESHOLD: // more negative = more anomalous
             // Top contributors. SHAP's TreeExplainer doesn't directly apply to
             // Isolation Forest (the model's prediction is path-length-based,
             // not leaf-level), and KernelSHAP is too slow at this volume. Use
@@ -584,10 +584,10 @@ FUNCTION score_anomalies(period_start, period_end):
                 top_k          = 5
             )
             signals.append({
-                type:            "isolation_forest",
-                anomaly_score:   if_score,
+                type: "isolation_forest",
+                anomaly_score: if_score,
                 top_contributors: top_contributors,
-                severity:        if_score_to_severity(if_score)
+                severity: if_score_to_severity(if_score)
             })
 
         IF length(signals) > 0:
@@ -595,11 +595,11 @@ FUNCTION score_anomalies(period_start, period_end):
                 bucket = "anomaly-signals",
                 key    = f"{period_start}/{provider_id}.json",
                 body   = json_encode({
-                    provider_id:  provider_id,
+                    provider_id: provider_id,
                     period_start: period_start,
-                    period_end:   period_end,
-                    peer_group:   peer_key,
-                    signals:      signals
+                    period_end: period_end,
+                    peer_group: peer_key,
+                    signals: signals
                 })
             )
 ```
@@ -608,7 +608,7 @@ FUNCTION score_anomalies(period_start, period_end):
 
 > **Simplification:** The pseudocode below creates a new case every period for any flagged provider, which produces operational noise in production. Production systems maintain a case-lineage view: if a provider is already in an open case and new signals fire, the signals append to the existing case rather than creating a new one. The case closes when the analyst closes it. See "Why This Isn't Production-Ready" for the full discipline.
 
-```
+```text
 FUNCTION assemble_cases(period_start):
     signals_by_provider = S3.ListAndRead(
         bucket = "anomaly-signals",
@@ -653,21 +653,21 @@ FUNCTION assemble_cases(period_start):
         routing = determine_routing(overall_severity, signals)
 
         case = {
-            case_id:           generate_case_id(),
-            provider_id:       provider_id,
-            period_start:      period_start,
-            period_end:        period_end,
-            peer_group:        provider_signals.peer_group,
-            signals:           signals,
-            signal_count:      length(signals),
-            persistence:       persistence,
-            exposure_dollars:  exposure,
-            overall_severity:  overall_severity,
-            routing:           routing,        // "payment_integrity" | "clinical_review" | "watch_list"
-            status:            "new",
-            assigned_analyst:  null,
-            evidence_claims:   evidence_claims,
-            created_at:        NOW()
+            case_id: generate_case_id(),
+            provider_id: provider_id,
+            period_start: period_start,
+            period_end: period_end,
+            peer_group: provider_signals.peer_group,
+            signals: signals,
+            signal_count: length(signals),
+            persistence: persistence,
+            exposure_dollars: exposure,
+            overall_severity: overall_severity,
+            routing: routing,        // "payment_integrity" | "clinical_review" | "watch_list"
+            status: "new",
+            assigned_analyst: null,
+            evidence_claims: evidence_claims,
+            created_at: NOW()
         }
 
         DynamoDB.PutItem("case-registry", case)
@@ -680,8 +680,8 @@ FUNCTION assemble_cases(period_start):
             SNS.Publish(
                 topic = ANALYST_NOTIFICATION_TOPIC,
                 message = {
-                    case_id:       case.case_id,
-                    routing_tier:  routing,
+                    case_id: case.case_id,
+                    routing_tier: routing,
                     severity_band: overall_severity
                 }
             )
@@ -689,7 +689,7 @@ FUNCTION assemble_cases(period_start):
 
 **Step 5: Capture investigation outcomes and close the loop.** When an analyst resolves a case, the outcome flows through EventBridge to a Lambda that joins the outcome to the case record, writes a training label, and updates internal metrics.
 
-```
+```text
 FUNCTION on_investigation_outcome(event):
     // event contains: case_id, disposition, notes, resolved_at, resolved_by,
     // dollars_recovered, referred_to_siu (boolean), provider_educated (boolean).
@@ -734,14 +734,14 @@ FUNCTION on_investigation_outcome(event):
 
     IF label in ["anomaly_confirmed", "anomaly_rejected"]:
         training_row = {
-            case_id:             case.case_id,
-            provider_id:         case.provider_id,
-            period_start:        case.period_start,
+            case_id: case.case_id,
+            provider_id: case.provider_id,
+            period_start: case.period_start,
             features_at_scoring: case.features_snapshot,
-            signals_at_scoring:  case.signals,
-            label:               label,
-            outcome_lag_days:    (event.resolved_at - case.created_at).days,
-            labeled_at:          event.resolved_at
+            signals_at_scoring: case.signals,
+            label: label,
+            outcome_lag_days: (event.resolved_at - case.created_at).days,
+            labeled_at: event.resolved_at
         }
         S3.PutObject(
             bucket = "labels-parquet",
@@ -753,7 +753,7 @@ FUNCTION on_investigation_outcome(event):
     emit_metric("case_closed", 1, dimensions = { disposition: event.disposition })
     emit_metric("dollars_recovered", event.dollars_recovered or 0)
     emit_metric("outcome_by_severity", 1, dimensions = {
-        severity:    case.overall_severity,
+        severity: case.overall_severity,
         disposition: event.disposition
     })
 
@@ -766,7 +766,7 @@ FUNCTION retrain_supervised_quarterly():
         WHERE labeled_at >= current_date - interval '24' month
     """)
 
-    IF length(training_df) < MIN_LABELS_FOR_TRAINING:   // e.g., 500
+    IF length(training_df) < MIN_LABELS_FOR_TRAINING: // e.g., 500
         log("Insufficient labeled data for supervised retraining; skipping.")
         return
 
@@ -780,9 +780,9 @@ FUNCTION retrain_supervised_quarterly():
 
     // Subgroup evaluation: per-specialty and per-peer-group AUC.
     subgroup_metrics = {
-        "specialty":   evaluate_by_subgroup(model, X_val, y_val, "specialty"),
-        "peer_group":  evaluate_by_subgroup(model, X_val, y_val, "peer_group_key"),
-        "region":      evaluate_by_subgroup(model, X_val, y_val, "region")
+        "specialty": evaluate_by_subgroup(model, X_val, y_val, "specialty"),
+        "peer_group": evaluate_by_subgroup(model, X_val, y_val, "peer_group_key"),
+        "region": evaluate_by_subgroup(model, X_val, y_val, "region")
     }
 
     IF val_metrics.auc > incumbent.auc + MIN_IMPROVEMENT \
