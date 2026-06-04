@@ -1,13 +1,5 @@
 # Recipe 9.2: Patient Photo Verification - Python Example
 
-<!-- TODO (TechWriter): Expert review ARCH-1 (CRITICAL). Main recipe file chapter09.02-patient-photo-verification.md does not exist. Write the full recipe per RECIPE-GUIDE.md before this companion can be considered complete. -->
-<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Liveness detection must be part of the core architecture in the main recipe (Capture -> Liveness -> Quality -> Compare -> Audit). The Python companion can note it's omitted for simplicity. -->
-<!-- TODO (TechWriter): Expert review SEC-2 (HIGH). Main recipe Prerequisites table must state BAA required for Rekognition, S3, DynamoDB, Lambda, CloudWatch Logs. -->
-<!-- TODO (TechWriter): Expert review SEC-1 (MEDIUM). Separate enrollment-time IAM permissions (CreateCollection, IndexFaces) from verification-time permissions (CompareFaces, SearchFacesByImage). Show resource-scoped ARN examples. -->
-<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Address biometric data requiring separate access controls from standard PHI, mandatory destruction timelines (BIPA), and dedicated S3 bucket with stricter IAM policies. -->
-<!-- TODO (TechWriter): Expert review SEC-4 (MEDIUM). Add a delete_patient_face function showing consent withdrawal workflow (delete from both S3 and Rekognition collection). -->
-<!-- TODO (TechWriter): Expert review ARCH-3 (MEDIUM). Define fallback workflow in main recipe architecture when biometric verification fails. -->
-
 > **Heads up:** This is a deliberately simple, illustrative implementation of patient photo verification using face comparison. It's meant to show one way you could translate the concepts from Recipe 9.2 into working Python code. It is not production-ready. There's no liveness detection, no anti-spoofing, no multi-angle enrollment. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a hospital check-in kiosk on Monday morning.
 
 ---
@@ -97,7 +89,7 @@ FACE_COLLECTION_ID = "patient-faces"
 
 ## Step 1: Validate the Verification Image
 
-*Before calling Rekognition, check that the captured image is usable. This catches garbage inputs early and saves API costs.*
+*The pseudocode calls this part of `handle_verification_request`. Before calling Rekognition's comparison API, check that the captured image is usable. This catches garbage inputs early and saves API costs.*
 
 ```python
 rekognition_client = boto3.client("rekognition", config=BOTO3_RETRY_CONFIG)
@@ -125,8 +117,8 @@ def validate_verification_image(bucket: str, key: str) -> dict:
     # without comparing to anything. It's our pre-flight check.
     response = rekognition_client.detect_faces(
         Image={"S3Object": {"Bucket": bucket, "Name": key}},
-        # DEFAULT returns Quality metrics (Brightness, Sharpness), BoundingBox, and Confidence.
-        # Use "ALL" if you also need age range, gender, emotions, etc.
+        # DEFAULT returns Quality metrics (Brightness, Sharpness), BoundingBox,
+        # and Confidence. Use "ALL" if you also need age range, gender, emotions.
         Attributes=["DEFAULT"],
     )
 
@@ -165,7 +157,7 @@ def validate_verification_image(bucket: str, key: str) -> dict:
 
 ## Step 2: Compare Faces
 
-*This is the core of the verification. We compare the check-in photo against the patient's enrolled reference photo. Rekognition does the heavy lifting: it extracts face embeddings (128-dimensional vectors representing facial geometry) and computes similarity.*
+*The pseudocode calls this `compare_faces`. This is the core of the verification. We compare the check-in photo against the patient's enrolled reference photo. Rekognition does the heavy lifting: it extracts face embeddings (128-dimensional vectors representing facial geometry) and computes similarity.*
 
 ```python
 def compare_faces(source_bucket: str, source_key: str,
@@ -213,9 +205,9 @@ def compare_faces(source_bucket: str, source_key: str,
         }
     else:
         # No match above threshold. UnmatchedFaces lists faces detected in the
-        # target image that didn't match the source above our SimilarityThreshold.
-        # Since we validated both images contain exactly one face, this means
-        # the target face exists but its similarity to the source is below our
+        # target image that didn't match the source above the threshold. Since
+        # we validated both images contain exactly one face, this means the
+        # target face exists but its similarity to the source is below our
         # threshold.
         #
         # Note: Rekognition doesn't return the actual similarity score when below
@@ -320,7 +312,7 @@ def search_patient_by_face(bucket: str, key: str) -> dict:
 
 ## Step 4: Record the Verification Attempt
 
-*Every verification attempt gets an audit record. This is non-negotiable in healthcare. You need to know who was verified, when, whether it succeeded, and what the confidence was. This feeds compliance reporting and fraud investigation.*
+*The pseudocode calls this `log_verification`. Every verification attempt gets an audit record. This is non-negotiable in healthcare. You need to know who was verified, when, whether it succeeded, and what the confidence was. This feeds compliance reporting and fraud investigation.*
 
 ```python
 def record_verification_attempt(
@@ -360,6 +352,73 @@ def record_verification_attempt(
 
     table.put_item(Item=record)
     return record
+```
+
+---
+
+## Step 5: Handle Consent Withdrawal (Delete Patient Face)
+
+*When a patient revokes biometric consent, you must delete their face data from both S3 and the Rekognition collection. This is a legal requirement under BIPA, CCPA, and most state biometric privacy laws. Embeddings stored in Rekognition collections persist indefinitely until explicitly deleted.*
+
+```python
+def delete_patient_face(patient_id: str, face_id: str, enrollment_key: str) -> dict:
+    """
+    Remove a patient's biometric data when they withdraw consent.
+
+    This deletes the face embedding from the Rekognition collection AND
+    the enrollment photo from S3. Both must happen. A partial deletion
+    (removing the photo but leaving the embedding, or vice versa) violates
+    the consent withdrawal requirement.
+
+    Args:
+        patient_id: The patient withdrawing consent
+        face_id: The Rekognition FaceId from enrollment (stored in your patient index)
+        enrollment_key: The S3 key for their enrollment photo
+
+    Returns:
+        Dict confirming deletion status for each resource.
+    """
+    results = {"patient_id": patient_id}
+
+    # Delete from Rekognition collection first. If this fails, don't delete the
+    # S3 photo (you'd lose the ability to identify which face to remove later).
+    try:
+        rekognition_client.delete_faces(
+            CollectionId=FACE_COLLECTION_ID,
+            FaceIds=[face_id],
+        )
+        results["collection_deleted"] = True
+        logger.info("Deleted face embedding for patient %s from collection", patient_id)
+    except Exception as e:
+        results["collection_deleted"] = False
+        results["collection_error"] = str(e)
+        logger.error("Failed to delete face from collection for %s: %s", patient_id, e)
+        # Don't proceed to S3 deletion if collection deletion failed.
+        return results
+
+    # Delete enrollment photo from S3.
+    try:
+        s3_client.delete_object(Bucket=PHOTO_BUCKET, Key=enrollment_key)
+        results["s3_deleted"] = True
+        logger.info("Deleted enrollment photo for patient %s from S3", patient_id)
+    except Exception as e:
+        results["s3_deleted"] = False
+        results["s3_error"] = str(e)
+        logger.error("Failed to delete S3 photo for %s: %s", patient_id, e)
+
+    # Record the consent withdrawal in the audit log.
+    table = dynamodb.Table(AUDIT_TABLE)
+    table.put_item(Item={
+        "patient_id": patient_id,
+        "verification_timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+        "method": "consent_withdrawal",
+        "match": False,
+        "similarity_score": Decimal("0"),
+        "outcome": "biometric_data_deleted",
+    })
+    results["audit_recorded"] = True
+
+    return results
 ```
 
 ---
@@ -445,25 +504,27 @@ if __name__ == "__main__":
 
 This example works. Point it at two face images in S3 and it will tell you whether they match. But there's a meaningful distance between "works in a script" and "runs at a hospital check-in kiosk handling real patients." Here's where that gap lives:
 
-**Liveness detection.** This code compares two static images. A production system needs to confirm the person is physically present, not holding up a printed photo or a phone screen showing someone else's face. AWS Rekognition Face Liveness (released 2023) handles this with a short video challenge that detects depth, texture, and motion. Without liveness detection, your system is trivially spoofable.
+**Liveness detection.** This code compares two static images. A production system needs to confirm the person is physically present, not holding up a printed photo or a phone screen showing someone else's face. AWS Rekognition Face Liveness (released 2023) handles this with a short video challenge that detects depth, texture, and motion. Without liveness detection, your system is trivially spoofable. The main recipe describes the full architecture as: Capture, Liveness, Quality, Compare, Audit. This example omits liveness for simplicity, but it's not optional in production.
 
 **Anti-spoofing beyond liveness.** Even with liveness detection, sophisticated attacks exist: 3D-printed masks, deepfake video feeds, high-resolution displays. A production system layers multiple signals: device attestation (is this our kiosk hardware?), session binding (is this the same device that started the check-in flow?), and behavioral signals (did the person interact naturally with the kiosk?).
 
 **Enrollment quality control.** This code assumes the enrollment photo is good. In reality, enrollment photos are often terrible: taken years ago, poor lighting, wrong angle, patient wearing sunglasses. A production system validates enrollment photos at capture time using the same quality checks we apply to verification images, and prompts re-enrollment when photos age past the threshold.
 
+**Enrollment photo staleness.** The config defines `ENROLLMENT_PHOTO_MAX_AGE_DAYS = 730` but this example never checks the enrollment photo's age. A production system checks enrollment metadata (S3 object LastModified or a DynamoDB enrollment timestamp) and returns a "re-enrollment required" response when the photo is too old to trust.
+
 **Bias testing and fairness.** Face recognition systems have well-documented accuracy disparities across demographics (skin tone, age, gender). A production deployment must measure false-accept and false-reject rates across demographic groups and ensure the system doesn't systematically disadvantage any patient population. This isn't optional. It's both an ethical requirement and, increasingly, a regulatory one.
 
-**Fallback workflows.** What happens when verification fails? A production system needs graceful degradation: staff-assisted verification, alternative identity methods (ID card scan, knowledge-based questions), and clear escalation paths. The face check is one factor in a multi-factor identity workflow, not the sole gatekeeper.
+**Fallback workflows.** What happens when verification fails? A production system needs graceful degradation: staff-assisted verification, alternative identity methods (ID card scan, knowledge-based questions), or manual override with audit. The face check is one factor in a multi-factor identity workflow, not the sole gatekeeper. The main recipe defines a tiered decision model (VERIFIED, STEP_UP_REQUIRED, MANUAL_REVIEW) that ensures no patient is ever denied care based solely on a face mismatch.
 
-**Consent management.** Biometric data collection requires explicit patient consent in most jurisdictions. Illinois BIPA, Texas CUBI, Washington state law, and GDPR all have specific requirements for biometric data. Your system needs consent capture, storage, and revocation workflows before collecting any face data.
+**Consent management and biometric data retention.** Biometric data collection requires explicit patient consent in most jurisdictions. Illinois BIPA, Texas CUBI, Washington state law, and GDPR all have specific requirements. Your system needs consent capture, storage, and revocation workflows. BIPA in particular requires a publicly available retention and destruction schedule. Biometric PHI requires separate, stricter access controls than standard PHI, with dedicated S3 buckets and tighter IAM policies. The `delete_patient_face` function in Step 5 shows the deletion path, but the consent management workflow around it (capturing consent, tracking it, honoring withdrawals) is its own subsystem.
 
 **Photo storage and retention.** Enrollment photos and verification captures are biometric PHI. They need encryption at rest (KMS CMK), access logging (CloudTrail), retention policies (auto-delete after consent withdrawal or account closure), and geographic restrictions (some regulations require biometric data stay in-jurisdiction).
 
 **Error handling and retries.** Rekognition can throttle under load, return transient errors, or timeout on large images. A production system handles each failure mode specifically: retry throttling with backoff, fail gracefully on service errors, and resize oversized images before submission.
 
-**VPC and network isolation.** Patient photos are PHI. They should never traverse the public internet. Production deployments use VPC endpoints for S3 and Rekognition, keeping all traffic on the AWS backbone. The kiosk itself connects via a private network path.
+**VPC and network isolation.** Patient photos are PHI. They should never traverse the public internet. Production deployments use VPC endpoints for S3 (`com.amazonaws.{region}.s3`) and Rekognition (`com.amazonaws.{region}.rekognition`). For healthcare deployments requiring FIPS 140-2 compliance, use the FIPS endpoint (`com.amazonaws.{region}.rekognition-fips`). The kiosk itself connects via a private network path (Site-to-Site VPN, Direct Connect, or TLS to API Gateway with pre-signed S3 URLs with short expiration for image upload).
 
-**Performance at scale.** The 1:1 comparison path (compare_faces) works when you know who the patient is. For walk-up scenarios or large populations, the collection-based search (search_faces_by_image) scales to millions of enrolled faces. But collection management (adding faces, removing faces on consent withdrawal, handling duplicates) is its own operational challenge.
+**Performance at scale.** The 1:1 comparison path (`compare_faces`) works when you know who the patient is. For walk-up scenarios or large populations, the collection-based search (`search_faces_by_image`) scales to millions of enrolled faces. But collection management (adding faces, removing faces on consent withdrawal, handling duplicates) is its own operational challenge.
 
 **Testing with synthetic data.** Never use real patient photos in development or testing. Generate synthetic face images or use publicly available face datasets (with appropriate licensing). Your test suite should cover: matching pairs, non-matching pairs, poor quality images, multiple faces, no faces, and edge cases like twins or patients with significant appearance changes.
 
