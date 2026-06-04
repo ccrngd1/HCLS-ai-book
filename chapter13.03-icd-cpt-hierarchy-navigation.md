@@ -24,7 +24,7 @@ Knowledge graphs solve this by representing codes as nodes and their relationshi
 
 ICD-10-CM has a tree structure baked into its design. The code itself encodes the hierarchy:
 
-```
+```text
 E11       → Type 2 diabetes mellitus (category)
 E11.6     → Type 2 diabetes with complications (subcategory)
 E11.65    → Type 2 diabetes with hyperglycemia (further specificity)
@@ -79,7 +79,7 @@ The queries you'll actually run against a medical code hierarchy graph fall into
 
 ### General Architecture Pattern
 
-```
+```text
 [Code Source Files] → [Parser/Loader] → [Graph Database] → [Query API] → [Consumers]
      (CMS, AMA)         (ETL)            (Nodes + Edges)    (REST/GraphQL)   (Coding tools,
                                                                                Analytics,
@@ -164,7 +164,7 @@ flowchart TD
 
 **Step 1: Parse ICD-10-CM source files into graph nodes and edges.** CMS distributes ICD-10-CM as a set of flat files: a tabular code list with descriptions, and an "order file" that encodes the hierarchy through indentation levels and parent references. This step reads those files and produces two outputs: a node list (one row per code with its properties) and an edge list (one row per relationship). The hierarchy is encoded in the code structure itself (E11 is parent of E11.6, which is parent of E11.65), but the source files also contain explicit "includes," "excludes1," and "excludes2" annotations that become additional edge types. Skip this step and you have no graph to query. Get the parsing wrong and your hierarchy traversals return incorrect results, which means wrong cohort counts and invalid coding suggestions.
 
-```
+```text
 FUNCTION parse_icd10_to_graph(source_file_path):
     // Read the CMS order file. Each line contains:
     //   - Code (positional, chars 1-7)
@@ -178,13 +178,13 @@ FUNCTION parse_icd10_to_graph(source_file_path):
     FOR each code_entry in raw_codes:
         // Create a node for this code
         node = {
-            id:          code_entry.code,                    // e.g., "E11.65"
-            label:       "ICD10CM",                          // node type label
+            id: code_entry.code,                    // e.g., "E11.65"
+            label: "ICD10CM",                          // node type label
             description: code_entry.long_description,        // human-readable name
-            short_desc:  code_entry.short_description,       // abbreviated name
+            short_desc: code_entry.short_description,       // abbreviated name
             is_billable: code_entry.is_billable,             // true = leaf code, false = category header
-            chapter:     derive_chapter(code_entry.code),    // e.g., "4" for E codes (Endocrine)
-            version:     "FY2026"                            // fiscal year this code is valid in
+            chapter: derive_chapter(code_entry.code),    // e.g., "4" for E codes (Endocrine)
+            version: "FY2026"                            // fiscal year this code is valid in
         }
         append node to nodes
 
@@ -197,7 +197,7 @@ FUNCTION parse_icd10_to_graph(source_file_path):
             edge = {
                 source: code_entry.code,
                 target: parent_code,
-                type:   "IS_CHILD_OF"
+                type: "IS_CHILD_OF"
             }
             append edge to edges
 
@@ -205,10 +205,10 @@ FUNCTION parse_icd10_to_graph(source_file_path):
     annotations = parse_annotation_file(source_file_path + "/annotations")
     FOR each annotation in annotations:
         edge = {
-            source:     annotation.code,
-            target:     annotation.referenced_code,
-            type:       annotation.relationship_type,   // "EXCLUDES1", "EXCLUDES2", "CODE_FIRST", etc.
-            note:       annotation.description          // human-readable explanation
+            source: annotation.code,
+            target: annotation.referenced_code,
+            type: annotation.relationship_type,   // "EXCLUDES1", "EXCLUDES2", "CODE_FIRST", etc.
+            note: annotation.description          // human-readable explanation
         }
         append edge to edges
 
@@ -217,7 +217,7 @@ FUNCTION parse_icd10_to_graph(source_file_path):
 
 **Step 2: Parse CPT codes and cross-walk mappings.** CPT has its own hierarchy (sections, subsections, code ranges) and the critical cross-walk file maps ICD-10 diagnosis codes to CPT procedure codes for medical necessity validation. The cross-walk data comes from CMS for Medicare (the "Medically Unlikely Edits" and "Correct Coding Initiative" files) and from individual payers for commercial plans. This step produces additional nodes (CPT codes) and cross-walk edges connecting the two systems. Without this step, your graph answers hierarchy questions but can't answer the cross-system questions that coding and billing teams actually need.
 
-```
+```text
 FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
     nodes = empty list
     edges = empty list
@@ -226,13 +226,13 @@ FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
     cpt_codes = parse_cpt_file(cpt_source)
     FOR each cpt_entry in cpt_codes:
         node = {
-            id:          "CPT:" + cpt_entry.code,        // prefix to distinguish from ICD
-            label:       "CPT",
+            id: "CPT:" + cpt_entry.code,        // prefix to distinguish from ICD
+            label: "CPT",
             description: cpt_entry.description,
-            section:     cpt_entry.section,              // e.g., "Surgery", "Medicine"
-            subsection:  cpt_entry.subsection,
-            is_addon:    cpt_entry.is_addon_code,        // add-on codes can't be billed alone
-            version:     "2026"
+            section: cpt_entry.section,              // e.g., "Surgery", "Medicine"
+            subsection: cpt_entry.subsection,
+            is_addon: cpt_entry.is_addon_code,        // add-on codes can't be billed alone
+            version: "2026"
         }
         append node to nodes
 
@@ -241,7 +241,7 @@ FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
             edge = {
                 source: "CPT:" + cpt_entry.code,
                 target: "CPT:" + cpt_entry.parent_range,
-                type:   "IS_CHILD_OF"
+                type: "IS_CHILD_OF"
             }
             append edge to edges
 
@@ -249,12 +249,12 @@ FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
     crosswalks = parse_crosswalk_file(crosswalk_source)
     FOR each mapping in crosswalks:
         edge = {
-            source:    mapping.icd_code,                 // ICD-10-CM code
-            target:    "CPT:" + mapping.cpt_code,        // CPT code
-            type:      "CROSS_WALKS_TO",
-            payer:     mapping.payer,                     // "Medicare" or specific payer
+            source: mapping.icd_code,                 // ICD-10-CM code
+            target: "CPT:" + mapping.cpt_code,        // CPT code
+            type: "CROSS_WALKS_TO",
+            payer: mapping.payer,                     // "Medicare" or specific payer
             effective: mapping.effective_date,
-            end_date:  mapping.end_date                   // null if currently active
+            end_date: mapping.end_date                   // null if currently active
         }
         append edge to edges
 
@@ -263,7 +263,7 @@ FUNCTION parse_cpt_and_crosswalks(cpt_source, crosswalk_source):
 
 **Step 3: Bulk load into Neptune.** Neptune's bulk loader expects CSV files in S3 with specific header conventions. Node files need `~id`, `~label`, and property columns. Edge files need `~id`, `~from`, `~to`, `~label`, and property columns. This step transforms the parsed data into that format and triggers the load. Bulk loading is dramatically faster than inserting nodes one at a time via Gremlin or openCypher (minutes vs. hours for 70,000+ nodes). For true upsert behavior (updating existing nodes with new property values on reload), use `mode=AUTO` with `updateSingleCardinalityProperties=TRUE`. Without these parameters, reloading a file with changed descriptions will skip existing nodes rather than updating them.
 
-```
+```text
 FUNCTION load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket):
     // Transform nodes into Neptune CSV format
     node_csv = format_as_neptune_csv(nodes, type="nodes")
@@ -301,7 +301,7 @@ FUNCTION load_graph_to_neptune(nodes, edges, neptune_endpoint, s3_staging_bucket
 
 **Step 4: Query the hierarchy.** This is where the graph pays off. Queries that would be recursive CTEs in SQL become simple traversal expressions in openCypher. The query handler Lambda receives REST requests, translates them into openCypher, executes against Neptune, and returns structured JSON. Common query patterns: get all descendants (for cohort building), get ancestors (for rollup reporting), find cross-walks (for coding validation), check exclusions (for claim editing). Each query type is a different traversal pattern but they all follow the same execute-and-format flow.
 
-```
+```text
 FUNCTION handle_query(request):
     code       = request.path_params.code          // e.g., "E11"
     query_type = request.path_params.query_type    // "children", "ancestors", "crosswalks", "exclusions"
@@ -389,7 +389,7 @@ FUNCTION handle_query(request):
 
 **Step 5: Handle version transitions.** When CMS publishes a new ICD-10-CM version each October, the graph needs to incorporate the changes without destroying history. New codes get new nodes. Retired codes get a `SUPERSEDED_BY` edge pointing to their replacement. Modified codes get updated properties with the new version tag. This step runs as part of the annual ETL and ensures that queries scoped to any historical version still return correct results. Skip this and you lose the ability to analyze claims across fiscal year boundaries, which breaks any longitudinal analytics.
 
-```
+```text
 FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_version, new_version):
     // Identify changes: new codes, retired codes, modified descriptions
     current_codes = query Neptune for all nodes where version = current_version
