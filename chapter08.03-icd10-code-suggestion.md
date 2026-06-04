@@ -1,8 +1,8 @@
 # Recipe 8.3: ICD-10 Code Suggestion
 
-**Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.05-0.15 per note (section-targeted)
+**Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.05-$0.15 per note (section-targeted)
 
-<!-- TODO (TechWriter): Confirm cost estimate. Body text says $0.05-0.15 section-targeted, $0.40-1.00 full text. Original header had $0.01-0.05 which understates. -->
+<!-- TODO (TechWriter): Confirm cost estimate. Body text says $0.05-$0.15 section-targeted, $0.40-$1.00 full text. Original header had $0.01-$0.05 which understates. -->
 
 ---
 
@@ -160,13 +160,13 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, AWS Lambda, Amazon API Gateway, Amazon DynamoDB, Amazon S3, AWS KMS, Amazon CloudWatch |
-| **IAM Permissions** | `comprehend:InferICD10CM`, `comprehend:DetectEntitiesV2`, `dynamodb:PutItem`, `dynamodb:GetItem`, `s3:PutObject`, `s3:GetObject`, `kms:Decrypt`, `kms:GenerateDataKey` |
+| **IAM Permissions** | `comprehendmedical:InferICD10CM`, `comprehendmedical:DetectEntitiesV2`, `dynamodb:PutItem`, `dynamodb:GetItem`, `s3:PutObject`, `s3:GetObject`, `kms:Decrypt`, `kms:GenerateDataKey` |
 | **BAA** | AWS BAA signed. Comprehend Medical, Lambda, DynamoDB, S3, API Gateway, and CloudWatch are all HIPAA-eligible services. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest (default). API Gateway: TLS 1.2 in transit. Lambda environment variables encrypted with KMS. CloudWatch log groups: configure KMS encryption (logs may contain clinical text fragments). |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend Medical, DynamoDB, S3, KMS, and CloudWatch Logs. API Gateway can remain public-facing with authentication, or use a private API endpoint for internal-only access. |
 | **CloudTrail** | Enabled for all Comprehend Medical, S3, and DynamoDB API calls. Clinical notes are PHI; full audit trail is required. |
 | **Sample Data** | MIMIC-III (freely available after credentialing) contains discharge summaries with ICD codes. CMS publishes ICD-10-CM code descriptions and guidelines. Use synthetic notes for development; never use real PHI in non-production environments. |
-| **Cost Estimate** | Comprehend Medical InferICD10CM: $0.01 per 100 characters (UTF-8). A typical progress note of 2,000-5,000 characters costs $0.20-0.50 per InferICD10CM call. DetectEntitiesV2: same pricing. Combined: $0.40-1.00 per note if you call both APIs on the full text. Section-targeted approach (calling only on Assessment/Plan, typically 500-1,500 chars): $0.05-0.15 per note. |
+| **Cost Estimate** | Comprehend Medical InferICD10CM: $0.01 per 100 characters (UTF-8). A typical progress note of 2,000-5,000 characters costs $0.20-$0.50 per InferICD10CM call. DetectEntitiesV2: same pricing. Combined: $0.40-$1.00 per note if you call both APIs on the full text. Section-targeted approach (calling only on Assessment/Plan, typically 500-1,500 chars): $0.05-$0.15 per note. |
 
 ### Ingredients
 
@@ -526,8 +526,8 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 | Top-3 accuracy (correct code in top 3 suggestions) | 93-97% |
 | Negation detection accuracy | 90-95% |
 | Specificity (correct at full code level vs. category) | 70-80% |
-| Cost per note (section-targeted) | $0.05-0.15 |
-| Cost per note (full text) | $0.40-1.00 |
+| Cost per note (section-targeted) | $0.05-$0.15 |
+| Cost per note (full text) | $0.40-$1.00 |
 | Coder time reduction (reported) | 30-50% per encounter |
 | Throughput | Limited by Comprehend Medical TPS (default: 10 TPS for InferICD10CM) |
 
@@ -604,6 +604,7 @@ One more thing: don't overlook the cost model. At $0.01 per 100 characters, proc
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates
 - [ICD10Data.com](https://www.icd10data.com/): ICD-10-CM code lookup and hierarchy browser
 - [MIMIC-III Clinical Database](https://physionet.org/content/mimiciii/): De-identified clinical notes for model development and testing (requires credentialing)
+<!-- TODO (TechWriter): Consider updating MIMIC-III references to MIMIC-IV (current version). Verify URL. -->
 
 ---
 
