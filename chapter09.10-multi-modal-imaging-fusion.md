@@ -1,92 +1,105 @@
 # Recipe 9.10: Multi-Modal Imaging Fusion and Analysis
 
-**Complexity:** Complex · **Phase:** Specialized Clinical · **Estimated Cost:** ~$2.50-$8.00 per fusion study
+**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2.50-8.00 per fusion study
 
 ---
 
 ## The Problem
 
-A radiation oncologist is planning treatment for a patient with a brain tumor. She has an MRI showing the tumor's soft tissue boundaries with exquisite detail. She has a CT scan showing the bony anatomy and providing the electron density data needed for dose calculations. She has a PET scan showing metabolic activity, highlighting which parts of the tumor are most aggressive. Each image tells part of the story. None tells the whole story.
+A radiation oncologist is planning treatment for a brain tumor. She's looking at an MRI that shows the tumor's soft tissue boundaries with exquisite detail. She's looking at a PET scan that shows metabolic activity, revealing which parts of the tumor are most aggressively growing. She's looking at a CT scan that gives her the electron density map she needs for radiation dose calculations. Three modalities. Three separate images. Three different coordinate systems. Three different resolutions. And she needs to mentally fuse them into a single coherent picture to draw the treatment volume.
 
-Right now, she's mentally fusing these images in her head. She pulls up the MRI on one monitor, the CT on another, scrolls through both simultaneously, and tries to hold the spatial relationships in working memory while drawing treatment contours. Sometimes she uses the planning system's rigid registration tool, which aligns the images based on bony landmarks, but it struggles when the patient's head was positioned slightly differently between scans. The soft tissue deformation between the MRI and CT means the tumor boundary on one doesn't perfectly overlay the tumor boundary on the other. She compensates with experience and conservative margins. Those margins mean more healthy brain tissue gets irradiated.
+This is not a hypothetical. This is Tuesday in radiation oncology.
 
-This isn't just radiation oncology. Neurosurgeons fuse MRI with functional imaging (fMRI, DTI) to avoid eloquent cortex during resection. Cardiologists overlay PET perfusion maps on CT angiography to correlate anatomy with function. Orthopedic surgeons combine CT bone detail with MRI soft tissue visualization for complex joint reconstruction planning. Interventional radiologists fuse pre-procedure CT with real-time ultrasound for needle guidance.
+The human brain is remarkably good at mental fusion when the images are presented side-by-side. But "remarkably good" is not "precise enough for millimeter-accurate radiation targeting." When you're delivering 60 Gray of radiation to a volume that sits 3mm from the optic nerve, "I eyeballed the alignment" is not an acceptable answer. The difference between a well-aligned fusion and a poorly-aligned one can be the difference between preserving someone's vision and destroying it.
 
-The common thread: each imaging modality captures different physical properties of tissue, and clinical decisions require integrating information across modalities. When that integration happens in a clinician's head, it's limited by human spatial reasoning, degraded by fatigue during long cases, and impossible to reproduce or audit. When it happens computationally, it can be precise, consistent, and quantifiable.
+Multi-modal imaging fusion isn't limited to radiation oncology, though that's where the stakes are most obvious. Neurosurgeons combine functional MRI (showing active brain regions) with structural MRI (showing anatomy) to plan surgical approaches that avoid eloquent cortex. Cardiologists combine echocardiography with CT angiography. Orthopedic surgeons overlay weight-bearing X-rays with MRI to understand both bone alignment and soft tissue damage. Interventional radiologists fuse pre-procedure CT with real-time fluoroscopy for needle guidance.
 
-The scale of this problem is significant. Radiation therapy alone treats over 1 million patients annually in the US, and nearly every treatment plan involves multi-modal image fusion. Surgical planning for complex cases (brain tumors, cardiac surgery, orthopedic reconstruction) increasingly depends on fused imaging. The question isn't whether to fuse images computationally. It's how to do it well enough that clinicians trust the result.
+In every case, the core problem is the same: different imaging modalities capture different physical properties of the body. No single modality tells the whole story. The clinical question demands combining them. And combining them accurately is a genuine computer science challenge that most clinicians assume "just works" until it doesn't.
+
+Let's talk about why it's hard, and what you can build.
 
 ---
 
-## The Technology: How Multi-Modal Image Fusion Works
+## The Technology: Image Registration and Fusion
 
-### What Is Image Fusion?
+### What Multi-Modal Imaging Actually Means
 
-Image fusion is the process of spatially aligning two or more images acquired from different modalities (or the same modality at different times) and combining their information into a unified representation. The goal is to create a composite view where each modality contributes its unique strengths: CT provides geometric accuracy and density information, MRI provides soft tissue contrast, PET provides functional/metabolic information, ultrasound provides real-time guidance.
+Different medical imaging modalities measure fundamentally different physical properties:
 
-The fundamental challenge is that these images exist in different coordinate systems. The patient was positioned differently for each scan. The field of view, resolution, and slice thickness differ. The physical properties being measured differ (X-ray attenuation for CT, hydrogen proton relaxation for MRI, radiotracer uptake for PET). Fusion means solving the spatial correspondence problem: for any point in one image, where is the corresponding point in the other?
+- **CT (Computed Tomography):** Measures X-ray attenuation. Excellent for bone, calcification, and providing electron density for dose calculations. Fast acquisition. Well-defined geometry.
+- **MRI (Magnetic Resonance Imaging):** Measures hydrogen proton relaxation properties. Extraordinary soft tissue contrast. Multiple sequence types (T1, T2, FLAIR, diffusion-weighted, functional) each highlighting different tissue properties. Slower acquisition, geometric distortion possible.
+- **PET (Positron Emission Tomography):** Measures metabolic activity via radiotracer uptake. Shows where cells are most active. Low spatial resolution (4-6mm typically) but high functional specificity. Usually acquired simultaneously with CT (PET-CT) or MRI (PET-MRI).
+- **SPECT (Single Photon Emission CT):** Similar to PET but different physics. Shows perfusion, receptor binding. Even lower resolution.
+- **Ultrasound:** Real-time, no radiation, highly operator-dependent. Measures acoustic impedance differences. Good for soft tissue and flow (Doppler).
+- **Fluoroscopy/X-ray:** Real-time projection imaging. Used during procedures for guidance.
 
-### Image Registration: The Core Problem
+Each of these lives in its own coordinate space, has its own resolution, its own field of view, and its own geometric characteristics. A PET voxel might be 4mm cubed while the corresponding MRI voxel is 1mm cubed. The patient was in a different position for each scan. They were breathing differently. They may have been scanned days apart, and the anatomy actually changed (tumor growth, weight loss, surgical intervention between scans).
 
-Registration is the mathematical process of finding the spatial transformation that maps points from one image (the "moving" image) to corresponding points in another (the "fixed" or "reference" image). This is the hardest part of fusion, and it's where most systems succeed or fail.
+### The Registration Problem
 
-**Rigid registration** assumes the anatomy doesn't deform between scans. It finds the optimal rotation and translation (6 parameters: 3 rotational, 3 translational) that aligns the two images. This works well for the brain (enclosed in a rigid skull) and reasonably well for bony anatomy. It fails for soft tissue that deforms: the abdomen, the breast, the prostate. Rigid registration is fast (seconds) and deterministic.
+Image registration is the process of finding the spatial transformation that aligns one image to another. It's the mathematical foundation of fusion.
 
-**Deformable registration** (also called non-rigid or elastic registration) allows the transformation to vary spatially. Instead of one global rotation/translation, it computes a deformation field: a vector at every voxel indicating how far and in which direction that point needs to move to align with the reference image. This handles soft tissue deformation, organ motion, and patient positioning differences. It's dramatically more complex: instead of 6 parameters, you're solving for millions (one 3D vector per voxel). The solution space is enormous, and there's no guarantee of a unique correct answer.
+Think of it this way: you have two photographs of the same building taken from different angles. To overlay them, you need to figure out the geometric transformation (rotation, translation, maybe warping) that maps points in one image to corresponding points in the other. Medical image registration is the 3D version of this problem, with some nasty additional complications.
 
-Deformable registration algorithms fall into several families:
+**Rigid registration** assumes the anatomy didn't deform between scans. Six parameters: three translations (x, y, z shifts) and three rotations (roll, pitch, yaw). This works well for the brain (the skull is rigid) and reasonably well for any bony anatomy. It fails badly for the abdomen, where the liver can shift centimeters between scans depending on breathing phase.
 
-- **Intensity-based methods** optimize a similarity metric (mutual information, normalized cross-correlation) between the images by iteratively adjusting the deformation field. They work directly on voxel intensities without requiring segmented structures. Mutual information is particularly important for multi-modal fusion because it doesn't assume the same tissue looks the same in both images (it doesn't; bone is bright on CT and dark on MRI).
+**Affine registration** adds scaling and shearing. Nine to twelve parameters. Useful when the imaging geometry itself introduces distortions (some MRI sequences have geometric distortion that's well-modeled by an affine transform).
 
-- **Feature-based methods** identify corresponding landmarks or surfaces in both images and compute the transformation that aligns them. Faster than intensity-based methods but requires reliable feature detection across modalities.
+**Deformable (non-rigid) registration** allows arbitrary local warping. Each voxel can move independently (within smoothness constraints). This is what you need for soft tissues that change shape between scans. It's also where things get computationally expensive and where registration errors become harder to detect. A deformable registration can "succeed" mathematically (the images look well-aligned) while being physically wrong (it warped anatomy in an anatomically impossible way).
 
-- **Deep learning-based methods** train neural networks to predict deformation fields directly from image pairs. Once trained, inference is fast (sub-second), but training requires large datasets of registered image pairs (a chicken-and-egg problem) or synthetic deformations. These methods have improved dramatically since 2020 and are approaching clinical viability for specific anatomical regions.
+### Similarity Metrics: How Do You Know When Images Are Aligned?
 
-### Why This Is Hard
+Here's the subtle problem. When you're registering two CT scans, you can use straightforward metrics like sum of squared differences or cross-correlation, because the same anatomy produces similar pixel values in both images. But when you're registering a CT to an MRI, bone appears bright in CT and dark in most MRI sequences. The same anatomy looks completely different. You can't just compare pixel values.
 
-**Different physics, different geometry.** CT and MRI don't just look different; they have fundamentally different spatial characteristics. CT has isotropic or near-isotropic resolution (0.5-1mm in all directions). MRI often has anisotropic resolution (1mm in-plane but 3-5mm slice thickness). PET has much coarser resolution (4-5mm). Fusing a 5mm PET voxel with a 0.5mm CT voxel requires interpolation decisions that affect the clinical interpretation.
+**Mutual Information (MI)** is the standard solution. It measures the statistical dependence between two images without assuming any particular relationship between their intensities. The insight is beautiful: when the images are correctly aligned, knowing the value of one voxel in image A tells you something about the value of the corresponding voxel in image B. When they're misaligned, that statistical relationship weakens. You maximize MI to find the best alignment.
 
-**Temporal mismatch.** The scans weren't acquired simultaneously. Between the CT on Monday and the MRI on Thursday, the tumor may have grown, edema may have changed, the patient may have lost weight. The "correct" registration doesn't exist because the anatomy has genuinely changed between acquisitions. The system must handle this gracefully, not pretend it isn't happening.
+MI works across modalities because it doesn't care whether the relationship is "bright in A means bright in B" or "bright in A means dark in B." It just needs a consistent relationship. This made multi-modal registration practical when it was introduced in the 1990s, and it remains the gold standard.
 
-**Organ motion.** The liver moves 1-2cm with respiration. The prostate shifts based on bladder and rectal filling. The heart is constantly in motion. For abdominal and thoracic fusion, respiratory and cardiac gating (acquiring images at specific phases of the breathing/cardiac cycle) helps, but doesn't eliminate the problem.
+**Deep learning-based registration** is the newer approach. Rather than optimizing a similarity metric iteratively for each image pair, you train a neural network that directly predicts the transformation given two input images. This can be dramatically faster (a single forward pass instead of hundreds of optimization iterations), but it requires training data and may generalize poorly to unusual anatomy. The field is actively evolving.
 
-**No ground truth.** Unlike many ML problems, there's no definitive "correct answer" for deformable registration. You can't open the patient and measure where each voxel should map. Validation relies on surrogate metrics: landmark alignment error, contour overlap (Dice coefficient), and inverse consistency (registering A to B and then B to A should give you back A). None of these fully captures clinical correctness.
+### Fusion Visualization
 
-**Computational cost.** Deformable registration of 3D medical volumes is computationally expensive. A single CT-to-MRI registration can take 5-30 minutes on CPU. GPU acceleration brings this to seconds or minutes, but the infrastructure requirements are non-trivial. Deep learning inference is faster but requires model training and validation per anatomical site.
+Once registered, you need to actually display the combined information. Common approaches:
 
-### The State of the Field
+- **Overlay/blend:** One image as base, second overlaid with transparency. Simple but lossy; you can't see both well simultaneously.
+- **Checkerboard:** Alternating tiles from each modality. Good for verifying registration quality at boundaries.
+- **Color fusion:** Map different modalities to different color channels (e.g., PET to red/yellow heat map overlaid on grayscale CT). The standard PET-CT display.
+- **Contour overlay:** Extract contours or segmentations from one modality and project them onto another. Radiation therapy planning lives here.
+- **Synchronized linked views:** Side-by-side display with cursor synchronization. Moving through one image automatically shows the corresponding slice in the other.
 
-Multi-modal fusion has been in clinical use for decades in radiation therapy (CT-MRI fusion for treatment planning) and neurosurgery (MRI-fMRI fusion for surgical planning). What's changed in the last few years:
+### What Makes Multi-Modal Fusion Genuinely Hard
 
-- **Deep learning registration** has matured from research curiosity to near-clinical tool. Networks like VoxelMorph, TransMorph, and their descendants can perform deformable registration in under a second, enabling real-time or near-real-time fusion workflows.
+**Temporal mismatch.** The patient was scanned on different days. The tumor grew. They lost weight. They had surgery between scans. Deformable registration can accommodate some of this, but there's a fundamental question: are you trying to align anatomy that has actually changed? At some point registration becomes biologically meaningless.
 
-- **Attention mechanisms and transformers** have improved registration accuracy for large deformations and multi-modal scenarios where traditional similarity metrics struggle.
+**Resolution mismatch.** PET has 4-6mm resolution. MRI might be 0.5mm. Upsampling the PET to match doesn't create information that wasn't there. Downsampling the MRI throws away information you paid for. The clinical display needs to honestly represent what each modality actually resolves.
 
-- **Uncertainty quantification** is emerging: models that not only produce a deformation field but also estimate confidence at each voxel. This is critical for clinical adoption because it tells the clinician where to trust the fusion and where to be skeptical.
+**Geometric distortion.** MRI near metal implants, at field boundaries, or with certain sequences can have spatial distortions of several millimeters. If you register a distorted MRI to an accurate CT, the "aligned" result may look right globally but be locally inaccurate.
 
-- **Self-supervised and unsupervised training** has reduced the dependency on labeled registration pairs, making it feasible to train site-specific models without massive annotation efforts.
+**Validation.** How do you know the registration worked? For rigid brain registration, you can verify against skull landmarks. For deformable abdominal registration, there's no ground truth. The clinician just has to look at it and decide whether it's reasonable. That's uncomfortable when treatment decisions depend on it.
 
-- **Integration with segmentation** is becoming standard: joint registration-segmentation models that simultaneously align images and delineate structures, each task informing the other.
+**Computational cost.** Deformable registration of high-resolution 3D volumes is computationally intensive. Full 3D deformable registration can take minutes to hours on CPU. GPU acceleration helps enormously but requires appropriate infrastructure.
 
 ### The General Architecture Pattern
 
-At a conceptual level, multi-modal fusion follows this pipeline:
-
+```text
+[Multi-Modal Image Acquisition]
+    ↓
+[DICOM Ingestion and Routing]
+    ↓
+[Preprocessing per Modality]
+    ↓ (resampling, orientation normalization, bias correction)
+[Registration Engine]
+    ↓ (rigid → affine → deformable)
+[Transformation Validation]
+    ↓ (landmark checks, Jacobian analysis, clinical review)
+[Fusion Generation]
+    ↓ (overlay, color mapping, contour projection)
+[Clinical Delivery]
+    ↓ (viewer, treatment planning system, PACS)
+[Storage and Audit]
 ```
-[Ingest Modalities] → [Preprocessing] → [Registration] → [Fusion/Overlay] → [Analysis] → [Clinical Integration]
-```
 
-**Ingest Modalities.** Receive images from multiple sources (PACS, scanners, external facilities) in DICOM format. Handle the metadata: patient identity verification, acquisition parameters, coordinate system information (DICOM headers contain the spatial reference frame for each image).
-
-**Preprocessing.** Standardize the images for registration: resample to common resolution, normalize intensity ranges, apply bias field correction (for MRI), skull-strip (for brain applications), segment key structures that will guide registration. This step is modality-specific and often the most labor-intensive to get right.
-
-**Registration.** Compute the spatial transformation between the moving image and the reference image. Choose rigid vs. deformable based on the anatomy. Validate the registration quality (landmark error, contour overlap, visual inspection). Store the transformation for reproducibility.
-
-**Fusion/Overlay.** Apply the computed transformation to resample the moving image into the reference image's coordinate space. Create composite visualizations: side-by-side, overlay, checkerboard, color-coded fusion. Generate quantitative fusion products (e.g., metabolic activity mapped onto anatomical structures).
-
-**Analysis.** Extract clinical information from the fused representation: contour propagation (transfer segmentations from one modality to another), quantitative measurements in fused space, change detection between time points, feature extraction for treatment planning.
-
-**Clinical Integration.** Deliver results to the clinical workflow: treatment planning systems, surgical navigation platforms, diagnostic workstations. This means DICOM RT Structure Sets, DICOM Registration Objects, and integration with vendor-specific planning system APIs.
+The pipeline is inherently sequential: you can't fuse images that aren't registered, and you can't register images that haven't been preprocessed into compatible formats. But within each stage, there's opportunity for parallelism (preprocessing multiple modalities simultaneously, for instance).
 
 ---
 
@@ -94,571 +107,525 @@ At a conceptual level, multi-modal fusion follows this pipeline:
 
 ### Why These Services
 
-**Amazon SageMaker for registration model training and inference.** Deformable registration models (especially deep learning-based) require GPU training on large datasets of medical image pairs and GPU inference for production use. SageMaker provides managed training jobs with configurable GPU instances, model hosting with auto-scaling endpoints, and integration with the broader AWS ecosystem. For traditional iterative registration algorithms, SageMaker Processing Jobs provide the compute without managing infrastructure.
+**Amazon S3 for DICOM storage.** Medical images are large (a single MRI study can be hundreds of megabytes; a PET-CT study can exceed a gigabyte). S3 provides durable, encrypted storage with lifecycle policies for managing retention. The hierarchical object structure maps naturally to DICOM's Patient > Study > Series > Instance hierarchy.
 
-**Amazon S3 for medical image storage.** DICOM studies are large (a single CT can be 500MB; a multi-sequence MRI can be 2GB+). S3 provides durable, encrypted storage with lifecycle policies for managing the retention of intermediate processing artifacts. The DICOM files, preprocessed volumes, deformation fields, and fused outputs all live here.
+**Amazon SageMaker for registration model hosting.** Deformable registration using deep learning models requires GPU inference. SageMaker endpoints provide auto-scaling GPU instances with health monitoring. For traditional optimization-based registration, SageMaker Processing jobs give you ephemeral GPU compute without maintaining persistent infrastructure.
 
-**AWS Step Functions for pipeline orchestration.** The fusion pipeline has multiple sequential and parallel steps with complex branching logic (rigid registration first, then deformable if needed; different preprocessing per modality; quality checks between steps). Step Functions provides visual workflow orchestration with error handling, retries, and audit trails. Each step can invoke a different compute resource (Lambda for lightweight tasks, SageMaker for GPU-heavy tasks).
+**AWS Step Functions for pipeline orchestration.** The multi-stage pipeline (ingest, preprocess, register, validate, fuse, deliver) has branching logic (different preprocessing per modality), retry requirements, and needs to handle both synchronous clinical workflows and batch research pipelines. Step Functions provides visual workflow management and built-in error handling.
 
-**Amazon DynamoDB for study metadata and registration results.** Track which studies have been fused, registration quality metrics, processing status, and clinical review state. DynamoDB's key-value model fits the access pattern: lookup by study ID, query by patient, filter by processing status.
+**Amazon DynamoDB for registration metadata.** Each fusion job generates metadata: which studies were fused, what transformation parameters were computed, validation metrics, clinical approval status. DynamoDB provides fast key-value lookups for real-time status queries and handles the write patterns of a high-throughput imaging pipeline.
 
-**AWS Lambda for lightweight orchestration tasks.** DICOM header parsing, study matching (identifying which CT goes with which MRI for the same patient), notification dispatch, and quality metric computation are all short-lived, stateless tasks that fit Lambda's execution model.
+**AWS HealthImaging for medical image management.** AWS HealthImaging (formerly Amazon HealthLake Imaging) provides a purpose-built medical imaging store with DICOM support, sub-second image retrieval, and native integration with the AWS ecosystem. It handles the DICOM protocol complexity and provides APIs for pixel-level access.
 
-**Amazon HealthLake (DICOM store) for standards-compliant medical image management.** HealthLake provides a managed DICOMweb interface for storing and retrieving medical images. It handles the complexity of DICOM metadata indexing, patient-level queries, and standards-based interoperability with clinical systems (PACS, treatment planning systems).
-
-**Amazon EC2 (GPU instances) for interactive registration validation.** Clinicians reviewing registration quality need interactive 3D visualization with sub-second response times. A GPU-backed visualization server (using VTK, 3D Slicer, or similar) provides the rendering performance needed for clinical review workflows.
+**Amazon CloudWatch for monitoring and alerting.** Registration failures, quality threshold violations, and processing latency need real-time visibility. CloudWatch metrics and alarms catch problems before clinicians are affected.
 
 ### Architecture Diagram
 
 ```mermaid
-flowchart TD
-    A[PACS / Imaging Sources] -->|DICOM Send| B[HealthLake\nDICOM Store]
-    B -->|DICOMweb WADO-RS| C[Lambda\nStudy Matcher]
-    C -->|Matched Study Pairs| D[Step Functions\nFusion Pipeline]
+flowchart TB
+    A[DICOM Sources\nPACS / Modalities] -->|DICOMweb / S3| B[AWS HealthImaging\nImage Store]
+    B -->|Study Notification| C[Step Functions\nFusion Orchestrator]
     
-    D -->|Step 1| E[SageMaker Processing\nPreprocessing]
-    E -->|Preprocessed Volumes| F[S3\nProcessing Bucket]
+    C -->|Preprocess| D[SageMaker Processing\nBias Correction\nResampling]
+    D -->|Preprocessed Volumes| E[S3\nProcessing Bucket]
     
-    D -->|Step 2| G[SageMaker Endpoint\nRigid Registration]
-    G -->|Transform + Metrics| F
+    E -->|Register| F[SageMaker Endpoint\nRegistration Model\nGPU Inference]
+    F -->|Transform + Metrics| G[DynamoDB\nFusion Metadata]
     
-    D -->|Step 3| H[SageMaker Endpoint\nDeformable Registration]
-    H -->|Deformation Field| F
+    C -->|Validate| H[Lambda\nJacobian Analysis\nLandmark Check]
+    H -->|Pass/Fail| C
     
-    D -->|Step 4| I[SageMaker Processing\nFusion + Analysis]
-    I -->|Fused Outputs| F
+    C -->|Generate Fusion| I[SageMaker Processing\nOverlay Generation\nContour Projection]
+    I -->|Fused Results| B
     
-    F -->|DICOM RT Objects| B
-    D -->|Status + Metrics| J[DynamoDB\nFusion Registry]
+    B -->|Deliver| J[Clinical Viewer\nTreatment Planning]
     
-    J -->|Review Queue| K[EC2 GPU\nClinical Review]
-    K -->|Approved| L[Treatment Planning\nSystem Integration]
-
+    K[CloudWatch] -.->|Monitor| C
+    K -.->|Monitor| F
+    
     style B fill:#f9f,stroke:#333
-    style D fill:#ff9,stroke:#333
-    style H fill:#9f9,stroke:#333
-    style J fill:#9ff,stroke:#333
+    style F fill:#ff9,stroke:#333
+    style G fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon SageMaker, Amazon S3, AWS Step Functions, Amazon DynamoDB, AWS Lambda, Amazon HealthLake, Amazon EC2 (GPU) |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:InvokeEndpoint`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `healthlake:*DICOMImportJob`, `states:StartExecution` |
-| **BAA** | AWS BAA signed (required: medical images are PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; HealthLake: AWS-managed encryption; all API calls over TLS; EBS volumes on EC2/SageMaker encrypted |
-| **VPC** | Production: all compute in VPC with VPC endpoints for S3, DynamoDB, SageMaker, HealthLake. No medical image data traverses the public internet. |
-| **CloudTrail** | Enabled: log all API calls for HIPAA audit trail |
-| **GPU Instances** | SageMaker: ml.g5.xlarge or ml.p3.2xlarge for registration inference; ml.p3.8xlarge for model training. EC2: g5.xlarge for clinical review visualization. |
-| **Sample Data** | Public datasets: TCIA (The Cancer Imaging Archive) provides multi-modal studies. RIRE (Retrospective Image Registration Evaluation) provides registered brain image pairs with ground truth landmarks. Never use real patient images in dev without IRB approval and proper de-identification. |
-| **Cost Estimate** | SageMaker inference (registration): ~$0.50-$2.00 per study pair. Processing (preprocessing + fusion): ~$1.00-$3.00 per study. Storage: ~$0.023/GB/month. HealthLake: ~$0.05 per DICOMweb transaction. Total per fusion study: $2.50-$8.00 depending on complexity. |
+| AWS Services | S3, SageMaker, Step Functions, Lambda, DynamoDB, HealthImaging, CloudWatch, IAM, KMS |
+| IAM Permissions | sagemaker:InvokeEndpoint, sagemaker:CreateProcessingJob, s3:GetObject, s3:PutObject, dynamodb:PutItem, dynamodb:GetItem, states:StartExecution, medical-imaging:* |
+| BAA | Required. All services processing PHI must be covered under your AWS BAA. |
+| Encryption | S3 SSE-KMS for images. DynamoDB encryption at rest. TLS 1.2+ in transit. SageMaker endpoint encryption. |
+| VPC | Production deployment in VPC with private subnets. VPC endpoints for S3, DynamoDB, SageMaker. No public internet access for PHI-handling components. |
+| CloudTrail | Enabled for all API calls. Log access to patient imaging data for HIPAA audit requirements. |
+| Sample Data | Public datasets: BraTS (brain tumor MRI), TCIA (various modalities). Never use real patient data in development. |
+| Cost Estimate | ~$2.50-8.00 per fusion study depending on volume size and registration complexity. GPU inference dominates cost. |
+| GPU Requirements | ml.g4dn.xlarge minimum for inference; ml.p3.2xlarge for training registration models |
 
 ### Ingredients
 
-| AWS Service | Role |
-|------------|------|
-| **Amazon SageMaker** | Trains and hosts registration models; runs preprocessing and fusion as Processing Jobs |
-| **Amazon S3** | Stores DICOM files, preprocessed volumes, deformation fields, fused outputs |
-| **AWS Step Functions** | Orchestrates the multi-step fusion pipeline with error handling and branching |
-| **Amazon DynamoDB** | Tracks study metadata, registration quality metrics, processing status |
-| **AWS Lambda** | Handles DICOM parsing, study matching, notification dispatch |
-| **Amazon HealthLake** | Provides DICOMweb-compliant medical image storage and retrieval |
-| **Amazon EC2 (GPU)** | Powers interactive clinical review and 3D visualization |
-| **AWS KMS** | Manages encryption keys for all data stores |
-| **Amazon CloudWatch** | Monitors pipeline execution, latency, error rates, GPU utilization |
+| AWS Service | Role in This Recipe |
+|-------------|-------------------|
+| AWS HealthImaging | DICOM storage, retrieval, and lifecycle management |
+| Amazon S3 | Intermediate processing storage, model artifacts |
+| Amazon SageMaker | Registration model training, GPU inference endpoints, processing jobs |
+| AWS Step Functions | Multi-stage pipeline orchestration with error handling |
+| AWS Lambda | Lightweight validation, metadata updates, notifications |
+| Amazon DynamoDB | Fusion job metadata, transformation parameters, audit trail |
+| Amazon CloudWatch | Pipeline monitoring, latency tracking, quality alerts |
+| AWS KMS | Encryption key management for PHI at rest |
 
-### Code
+### Code (Pseudocode Walkthrough)
 
-#### Walkthrough
+#### Step 1: Ingest and Identify Study Pairs
 
-**Step 1: Study matching and ingestion.** When new imaging studies arrive in the DICOM store, the system identifies which studies belong to the same patient and clinical context (same treatment episode, same anatomical region) and should be fused together. This matching uses DICOM metadata: Patient ID, Study Date, Body Part Examined, Modality, and clinical order information. Getting this wrong means fusing the wrong studies together, which is a patient safety issue. The matcher also verifies that the required modalities are present (you can't fuse CT with MRI if the MRI hasn't arrived yet) and triggers the pipeline only when a complete set is available.
+When imaging studies arrive, we need to identify which studies should be fused together. This is typically driven by clinical orders (a radiation therapy plan ordered "PET-CT fusion with MRI") or by automated rules (same patient, complementary modalities, acquired within a clinically relevant time window).
 
-```
-FUNCTION match_studies_for_fusion(new_study):
-    // Extract key identifiers from the incoming DICOM study metadata.
-    // These fields tell us who the patient is, what was scanned, and when.
-    patient_id    = new_study.PatientID
-    body_part     = new_study.BodyPartExamined
-    study_date    = new_study.StudyDate
-    modality      = new_study.Modality
+If you skip this: Studies would be processed in isolation, defeating the entire purpose of fusion. Clinicians would manually have to specify which studies to combine, adding friction.
 
-    // Look up existing studies for this patient and body region
-    // within a clinically relevant time window (e.g., 30 days).
-    // A CT from 6 months ago is probably not the right match for today's MRI.
-    candidate_studies = query DICOM store for:
-        PatientID = patient_id
-        BodyPartExamined = body_part
-        StudyDate within 30 days of study_date
-        Modality != modality  // we want complementary modalities, not duplicates
-
-    // Check if we have a fusible pair based on clinical fusion rules.
-    // Different clinical workflows require different modality combinations.
-    fusion_rules = {
-        "radiation_therapy": ["CT", "MRI"],
-        "radiation_therapy_pet": ["CT", "PET"],
-        "neurosurgery": ["MRI", "fMRI"],
-        "cardiac": ["CT", "PET"]
-    }
-
-    FOR each rule_name, required_modalities in fusion_rules:
-        available = [modality] + [s.Modality for s in candidate_studies]
-        IF all required_modalities are present in available:
-            // We have a complete set. Identify the specific studies to fuse.
-            matched_pair = select studies matching required_modalities
-            RETURN {
-                rule: rule_name,
-                reference_study: select CT or primary modality,  // CT is typically the reference
-                moving_study: select secondary modality,
-                patient_id: patient_id
-            }
-
-    // No complete set yet. Record that we're waiting for additional modalities.
-    RETURN null  // pipeline will not trigger until the set is complete
-```
-
-**Step 2: Preprocessing.** Each modality requires specific preprocessing before registration can succeed. MRI needs bias field correction (the intensity inhomogeneity caused by RF coil sensitivity variations). CT needs windowing to the relevant Hounsfield unit range. PET needs SUV normalization. All modalities need resampling to a common resolution grid. Skull stripping (removing non-brain tissue) dramatically improves brain registration accuracy. Skip preprocessing and registration algorithms will be confused by intensity artifacts, resolution mismatches, and irrelevant anatomy.
-
-```
-FUNCTION preprocess_for_registration(study, modality, target_region):
-    // Load the DICOM series into a 3D volume array.
-    // DICOM stores each slice as a separate file; we need the assembled volume.
-    volume = load_dicom_series(study.series_path)
+```pseudocode
+// Triggered when new study arrives in HealthImaging
+FUNCTION identify_fusion_candidates(new_study):
+    patient_id = new_study.patient_id
+    modality = new_study.modality  // CT, MR, PT, etc.
+    acquisition_date = new_study.acquisition_date
     
-    // Extract spatial metadata: voxel spacing, origin, orientation.
-    // This information is critical for maintaining geometric accuracy.
-    spacing = study.PixelSpacing + [study.SliceThickness]
-    origin  = study.ImagePositionPatient
-    direction = study.ImageOrientationPatient
+    // Look for complementary studies within clinical time window
+    candidate_studies = QUERY imaging_store WHERE
+        patient_id = patient_id AND
+        modality IN complementary_modalities(modality) AND
+        acquisition_date WITHIN 30_days OF acquisition_date AND
+        fusion_status != "completed"
+    
+    // Check for active fusion orders in treatment planning system
+    active_orders = QUERY treatment_planning_system WHERE
+        patient_id = patient_id AND
+        order_type = "image_fusion" AND
+        status = "pending"
+    
+    FOR EACH candidate IN candidate_studies:
+        IF matches_clinical_order(new_study, candidate, active_orders):
+            CREATE fusion_job(
+                primary_study: determine_primary(new_study, candidate),
+                secondary_study: determine_secondary(new_study, candidate),
+                fusion_type: determine_fusion_type(new_study, candidate),
+                priority: get_clinical_priority(active_orders)
+            )
+    
+    RETURN fusion_jobs_created
+```
 
-    IF modality == "MRI":
-        // Bias field correction: MRI signal intensity varies spatially due to
-        // RF coil sensitivity. This confuses intensity-based registration.
-        // N4ITK is the standard algorithm for this correction.
-        volume = apply_n4_bias_field_correction(volume)
+#### Step 2: Preprocess Each Modality
+
+Each imaging modality requires different preprocessing before registration can succeed. MRI needs bias field correction (the RF coil creates non-uniform signal intensity). CT needs Hounsfield unit windowing. PET needs SUV normalization. All modalities need orientation standardization and potentially resampling to compatible voxel sizes.
+
+If you skip this: Registration will fail or produce poor results. Bias field artifacts in MRI can confuse similarity metrics. Orientation mismatches will produce obviously wrong alignments. Resolution mismatches will force one modality to dictate the output resolution.
+
+```pseudocode
+FUNCTION preprocess_for_fusion(study, target_orientation, target_spacing):
+    // Load DICOM series as 3D volume
+    volume = load_dicom_series(study.series_uid)
+    
+    // Standardize orientation to common reference frame
+    // (typically RAS: Right-Anterior-Superior)
+    volume = reorient_to_standard(volume, target_orientation="RAS")
+    
+    // Modality-specific preprocessing
+    IF study.modality == "MR":
+        // N4 bias field correction removes RF inhomogeneity
+        volume = n4_bias_correction(volume, iterations=50)
+        // Normalize intensity to [0, 1] range
+        volume = intensity_normalize(volume, method="z_score")
         
-        // Normalize intensity to 0-1 range. MRI intensities are arbitrary
-        // (unlike CT Hounsfield units), so normalization is essential.
-        volume = normalize_intensity(volume, method="percentile", low=1, high=99)
-
-    ELSE IF modality == "CT":
-        // Clip to clinically relevant Hounsfield unit range.
-        // Air is -1000, water is 0, bone is +1000-3000.
-        // For soft tissue registration, we focus on -200 to +400 HU.
-        volume = clip_hounsfield(volume, min=-200, max=400)
-        volume = normalize_to_unit_range(volume)
-
-    ELSE IF modality == "PET":
-        // Convert raw counts to Standardized Uptake Values (SUV).
-        // SUV normalizes for injected dose and patient weight,
-        // making values comparable across patients and time points.
-        volume = convert_to_suv(volume, 
-                                injected_dose=study.RadiopharmaceuticalDose,
-                                patient_weight=study.PatientWeight,
-                                scan_time=study.AcquisitionTime)
-
-    // Region-specific preprocessing
-    IF target_region == "brain":
-        // Skull stripping: remove non-brain tissue.
-        // Registration of brain images works much better without the skull
-        // because the skull dominates rigid registration but isn't clinically relevant.
-        brain_mask = compute_brain_mask(volume, modality)
-        volume = apply_mask(volume, brain_mask)
-
-    // Resample to isotropic resolution for registration.
-    // Anisotropic voxels (common in MRI: 1x1x3mm) cause directional bias
-    // in registration algorithms. Isotropic resampling eliminates this.
-    target_spacing = [1.0, 1.0, 1.0]  // 1mm isotropic
-    volume = resample_to_spacing(volume, current_spacing=spacing, 
-                                  target_spacing=target_spacing,
-                                  interpolation="linear")
-
+    ELSE IF study.modality == "CT":
+        // Clip to clinically relevant HU range
+        volume = clip_hounsfield(volume, min=-1024, max=3071)
+        // Convert to normalized float
+        volume = hounsfield_to_normalized(volume)
+        
+    ELSE IF study.modality == "PT":  // PET
+        // Convert raw counts to SUV (Standardized Uptake Value)
+        volume = calculate_suv(volume, 
+            patient_weight=study.patient_weight,
+            injected_dose=study.injected_dose,
+            acquisition_time=study.acquisition_time)
+    
+    // Resample to isotropic voxels if needed
+    // (registration works better with isotropic data)
+    IF NOT is_isotropic(volume):
+        volume = resample_isotropic(volume, 
+            target_spacing=target_spacing,
+            interpolation="bspline")  // Smooth interpolation for continuous data
+    
+    // Store preprocessed volume
+    output_path = SAVE volume TO processing_bucket
+    
     RETURN {
-        volume: volume,
-        spacing: target_spacing,
-        origin: origin,
-        direction: direction,
-        original_metadata: study.dicom_metadata
+        "path": output_path,
+        "dimensions": volume.shape,
+        "spacing": volume.spacing,
+        "origin": volume.origin,
+        "direction": volume.direction_cosines
     }
 ```
 
-**Step 3: Rigid registration.** The first alignment pass uses rigid registration to correct for gross positioning differences between scans. This finds the optimal rotation and translation that aligns the two volumes. For brain imaging, this is often sufficient on its own (the skull constrains deformation). For body imaging, it provides the starting point for deformable registration. Running deformable registration without a good rigid initialization is like trying to solve a jigsaw puzzle without first getting the border pieces in place: the algorithm may converge to a local minimum that's anatomically nonsensical.
+#### Step 3: Execute Multi-Stage Registration
 
-```
-FUNCTION rigid_registration(fixed_volume, moving_volume):
-    // Initialize the transformation as identity (no rotation, no translation).
-    // The optimizer will iteratively improve from here.
-    initial_transform = identity_transform(dimensions=3)
+Registration proceeds from coarse to fine. Start with rigid registration (fast, robust) to get approximate alignment. Then refine with affine if needed. Finally, apply deformable registration for local precision. Each stage initializes from the previous stage's result.
 
-    // Configure the similarity metric.
-    // Mutual Information is the standard choice for multi-modal registration
-    // because it doesn't assume the same tissue has the same intensity
-    // in both images (bone is bright on CT, dark on MRI).
-    metric = MutualInformation(
-        num_histogram_bins=64,    // resolution of the joint histogram
-        sampling_strategy="random",
-        sampling_percentage=0.25  // use 25% of voxels per iteration (speed vs. accuracy)
-    )
+If you skip this: Without coarse-to-fine, the optimization can get trapped in local minima (finding a wrong alignment that appears locally optimal). The multi-stage approach dramatically improves robustness at modest computational cost.
 
-    // Configure the optimizer.
-    // Regular Step Gradient Descent is robust for rigid registration.
-    optimizer = RegularStepGradientDescent(
-        learning_rate=1.0,
-        min_step=0.001,           // stop when steps get this small
-        max_iterations=500,
-        relaxation_factor=0.5     // reduce step size when metric oscillates
-    )
-
-    // Multi-resolution strategy: start with heavily blurred (downsampled) images
-    // for coarse alignment, then refine at full resolution.
-    // This avoids local minima from fine-scale features.
-    resolution_levels = [8, 4, 2, 1]  // downsampling factors
-    smoothing_sigmas  = [4, 2, 1, 0]  // Gaussian blur at each level
-
-    // Run the registration
-    result = optimize(
+```pseudocode
+FUNCTION register_multi_stage(fixed_volume, moving_volume, config):
+    // Stage 1: Rigid registration
+    // Fast. Finds global position/orientation match.
+    // Uses mutual information for multi-modal compatibility.
+    rigid_transform = rigid_registration(
         fixed=fixed_volume,
         moving=moving_volume,
-        metric=metric,
-        optimizer=optimizer,
-        transform=initial_transform,
-        resolution_levels=resolution_levels,
-        smoothing_sigmas=smoothing_sigmas
+        metric="mutual_information",
+        optimizer="gradient_descent",
+        sampling_percentage=0.1,  // Sample 10% of voxels for speed
+        multi_resolution_levels=3,  // Coarse-to-fine within this stage
+        max_iterations=200
     )
-
-    // Extract quality metrics
-    final_metric_value = result.metric_value
     
-    // Apply the rigid transform to the moving image
-    aligned_volume = resample(moving_volume, transform=result.transform,
-                              reference=fixed_volume, interpolation="linear")
-
-    RETURN {
-        transform: result.transform,
-        aligned_volume: aligned_volume,
-        metric_value: final_metric_value,
-        iterations: result.iterations_completed
-    }
-```
-
-**Step 4: Deformable registration.** For anatomy that deforms between scans (abdomen, pelvis, breast, or brain with significant tumor/edema changes), rigid registration isn't enough. Deformable registration computes a dense displacement field: a 3D vector at every voxel indicating how that point should move to align with the reference. This is where deep learning has made the biggest impact. A trained network can predict the deformation field in seconds, compared to minutes or hours for iterative optimization. The tradeoff: the network is only as good as its training data and may fail silently on anatomy it hasn't seen.
-
-```
-FUNCTION deformable_registration(fixed_volume, moving_volume, method="deep_learning"):
-    IF method == "deep_learning":
-        // Use a pre-trained registration network (e.g., VoxelMorph architecture).
-        // The network takes the fixed and moving volumes as input
-        // and directly predicts the deformation field.
-        
-        // Stack fixed and moving as a 2-channel input
-        input_pair = stack_volumes(fixed_volume, moving_volume, axis="channel")
-        
-        // Run inference on the registration model
-        deformation_field = invoke_model(
-            endpoint="registration-model-endpoint",
-            input=input_pair
-        )
-        // deformation_field shape: [D, H, W, 3] (a 3D displacement vector per voxel)
-        
-        // Also get uncertainty estimate if the model supports it
-        uncertainty_map = invoke_model(
-            endpoint="registration-uncertainty-endpoint",
-            input=input_pair
-        )
-
-    ELSE IF method == "iterative":
-        // Traditional B-spline or demons-based deformable registration.
-        // Slower but doesn't require a trained model.
-        
-        deformation_field = bspline_registration(
+    // Apply rigid transform to get approximate alignment
+    aligned_moving = apply_transform(moving_volume, rigid_transform)
+    rigid_metric_value = compute_mutual_information(fixed_volume, aligned_moving)
+    
+    // Stage 2: Affine registration (if geometric distortion expected)
+    IF config.include_affine:
+        affine_transform = affine_registration(
             fixed=fixed_volume,
-            moving=moving_volume,
-            metric=MutualInformation(bins=64),
-            grid_spacing=[8, 8, 8],       // control point spacing in mm
-            regularization_weight=0.1,     // penalize unrealistic deformations
-            max_iterations=200
+            moving=aligned_moving,
+            metric="mutual_information",
+            initial_transform=identity(),  // Already applied rigid
+            max_iterations=100
         )
-        uncertainty_map = null  // traditional methods don't provide uncertainty
-
-    // Apply the deformation field to warp the moving image
-    warped_volume = warp(moving_volume, deformation_field, interpolation="linear")
-
-    // Compute registration quality metrics
-    dice_scores = compute_dice_overlap(
-        fixed_segmentation=segment_structures(fixed_volume),
-        warped_segmentation=warp(segment_structures(moving_volume), deformation_field)
+        aligned_moving = apply_transform(aligned_moving, affine_transform)
+    
+    // Stage 3: Deformable registration (if soft tissue precision needed)
+    IF config.include_deformable:
+        deformation_field = deformable_registration(
+            fixed=fixed_volume,
+            moving=aligned_moving,
+            method=config.deformable_method,  // "bspline" or "demons" or "deep_learning"
+            regularization_weight=config.regularization,  // Prevents folding
+            grid_spacing=config.bspline_grid_spacing,  // e.g., 10mm control points
+            max_iterations=300
+        )
+        aligned_moving = apply_deformation(aligned_moving, deformation_field)
+    
+    // Compose all transforms into single mapping
+    composite_transform = compose_transforms(
+        rigid_transform,
+        affine_transform IF config.include_affine ELSE identity(),
+        deformation_field IF config.include_deformable ELSE identity()
     )
     
-    // Check for folding (physically impossible deformations where
-    // the Jacobian determinant goes negative, meaning tissue "folds over itself")
-    jacobian = compute_jacobian_determinant(deformation_field)
-    folding_percentage = count(jacobian < 0) / total_voxels * 100
-    
-    // Flag if folding exceeds threshold (indicates registration failure)
-    IF folding_percentage > 1.0:
-        quality_flag = "WARNING: excessive folding detected"
-    ELSE:
-        quality_flag = "PASS"
-
     RETURN {
-        deformation_field: deformation_field,
-        warped_volume: warped_volume,
-        uncertainty_map: uncertainty_map,
-        dice_scores: dice_scores,
-        folding_percentage: folding_percentage,
-        quality_flag: quality_flag
+        "composite_transform": composite_transform,
+        "rigid_metric": rigid_metric_value,
+        "final_metric": compute_mutual_information(fixed_volume, aligned_moving),
+        "aligned_volume": aligned_moving,
+        "deformation_field": deformation_field IF config.include_deformable ELSE None
     }
 ```
 
-**Step 5: Fusion and analysis.** With the images aligned, we can now create clinically useful fusion products. This isn't just overlaying one image on another. It's extracting quantitative information that only exists in the fused representation: metabolic activity within specific anatomical structures, dose-volume relationships across tissue types, change detection between time points. The specific fusion products depend on the clinical use case. For radiation therapy, it's contour propagation and dose mapping. For surgical planning, it's functional anatomy overlay. For oncology follow-up, it's treatment response assessment.
+#### Step 4: Validate Registration Quality
 
-```
-FUNCTION create_fusion_products(fixed_volume, warped_volume, deformation_field, 
-                                 clinical_context):
-    fusion_products = {}
+Registration can fail silently. The optimization converges, the metric looks reasonable, but the alignment is wrong. Validation catches these cases before the result reaches a clinician.
 
-    // Create the basic fused visualization volume.
-    // Alpha blending with configurable weights per modality.
-    fusion_products["blended_volume"] = alpha_blend(
-        volume_a=fixed_volume,       // e.g., CT (anatomical reference)
-        volume_b=warped_volume,      // e.g., registered MRI or PET
-        alpha=0.5                    // equal weighting; clinicians adjust interactively
-    )
+If you skip this: Clinicians may make treatment decisions based on incorrectly fused images. In radiation therapy, this could mean irradiating the wrong volume. The consequences are unacceptable.
 
-    IF clinical_context == "radiation_therapy":
-        // Propagate contours drawn on MRI to the CT coordinate space.
-        // Radiation dose is calculated on CT (needs electron density),
-        // but tumor boundaries are often better visualized on MRI.
-        // The deformation field maps MRI contours onto CT geometry.
+```pseudocode
+FUNCTION validate_registration(fixed, aligned_moving, transform, deformation_field):
+    validation_results = {}
+    
+    // Check 1: Final similarity metric above threshold
+    mi_value = compute_mutual_information(fixed, aligned_moving)
+    validation_results["mutual_information"] = mi_value
+    validation_results["mi_pass"] = mi_value > config.MI_THRESHOLD
+    
+    // Check 2: Jacobian determinant of deformation field
+    // Negative Jacobian = topology violation (folding)
+    // Very small Jacobian = extreme compression (suspicious)
+    IF deformation_field IS NOT None:
+        jacobian_map = compute_jacobian_determinant(deformation_field)
+        min_jacobian = MIN(jacobian_map)
+        negative_fraction = COUNT(jacobian_map < 0) / SIZE(jacobian_map)
         
-        mri_contours = load_structure_set(clinical_context.structure_set_id)
-        propagated_contours = warp_contours(mri_contours, deformation_field)
-        
-        // Generate DICOM RT Structure Set in CT coordinate space
-        fusion_products["rt_structure_set"] = create_dicom_rt_struct(
-            contours=propagated_contours,
-            reference_series=fixed_volume.series_uid
+        validation_results["min_jacobian"] = min_jacobian
+        validation_results["negative_jacobian_fraction"] = negative_fraction
+        validation_results["jacobian_pass"] = (
+            min_jacobian > 0.01 AND  // No extreme compression
+            negative_fraction < 0.001  // Less than 0.1% folding
         )
-
-    ELSE IF clinical_context == "pet_ct_oncology":
-        // Map PET metabolic activity onto CT anatomical structures.
-        // Calculate SUV statistics within each anatomical region.
+    
+    // Check 3: Landmark-based validation (if landmarks available)
+    IF anatomical_landmarks_available(fixed, aligned_moving):
+        fixed_landmarks = detect_landmarks(fixed)
+        moving_landmarks = detect_landmarks(aligned_moving)
         
-        ct_segmentation = segment_structures(fixed_volume)
+        target_registration_error = compute_TRE(
+            fixed_landmarks, moving_landmarks)
         
-        FOR each structure in ct_segmentation:
-            region_mask = ct_segmentation[structure]
-            suv_in_region = warped_volume[region_mask]
-            
-            fusion_products["suv_stats_" + structure] = {
-                mean_suv: mean(suv_in_region),
-                max_suv: max(suv_in_region),
-                volume_above_threshold: count(suv_in_region > 2.5) * voxel_volume,
-                metabolic_tumor_volume: count(suv_in_region > 0.41 * max(suv_in_region)) * voxel_volume
-            }
-
-    ELSE IF clinical_context == "longitudinal_comparison":
-        // Compare the same modality at two time points (e.g., pre/post treatment).
-        // The deformation field accounts for positioning differences.
-        // Subtraction reveals true change vs. positioning artifact.
+        validation_results["mean_TRE_mm"] = MEAN(target_registration_error)
+        validation_results["max_TRE_mm"] = MAX(target_registration_error)
+        validation_results["TRE_pass"] = MEAN(target_registration_error) < config.TRE_THRESHOLD_MM
+    
+    // Check 4: Deformation magnitude reasonableness
+    IF deformation_field IS NOT None:
+        max_displacement = MAX(magnitude(deformation_field))
+        mean_displacement = MEAN(magnitude(deformation_field))
         
-        difference_map = fixed_volume - warped_volume
-        
-        // Threshold to identify regions of significant change
-        significant_change = abs(difference_map) > change_threshold
-        fusion_products["change_map"] = difference_map
-        fusion_products["change_regions"] = significant_change
-
-    // Store all fusion products
-    FOR each product_name, product_data in fusion_products:
-        store_as_dicom(product_data, 
-                       patient_id=clinical_context.patient_id,
-                       series_description="FUSION_" + product_name)
-
-    RETURN fusion_products
+        validation_results["max_displacement_mm"] = max_displacement
+        validation_results["mean_displacement_mm"] = mean_displacement
+        validation_results["displacement_pass"] = max_displacement < config.MAX_DISPLACEMENT_MM
+    
+    // Overall pass/fail
+    all_checks = [v for k, v in validation_results IF k.endswith("_pass")]
+    validation_results["overall_pass"] = ALL(all_checks)
+    validation_results["requires_clinical_review"] = NOT ALL(all_checks)
+    
+    RETURN validation_results
 ```
 
-**Step 6: Quality assurance and clinical review.** No automated registration should go directly to clinical use without quality review. This step presents the fusion results to a clinician (physicist, dosimetrist, or physician) for approval. The review interface shows the fused images with interactive tools: checkerboard overlay, sliding window comparison, contour overlay, and quantitative metrics. The clinician can accept, reject (triggering re-registration with different parameters), or manually adjust the registration. This human-in-the-loop step is non-negotiable for clinical applications.
+#### Step 5: Generate Fused Visualization
 
+With validated registration, generate the fused output products that clinicians will actually use. This varies by clinical context: radiation oncology wants contour overlays; diagnostic radiology wants color fusion; surgical planning wants 3D renderings.
+
+If you skip this: Clinicians get raw aligned volumes without visual integration. They can still view them side-by-side with cursor synchronization, but they lose the intuitive combined display that makes multi-modal information immediately actionable.
+
+```pseudocode
+FUNCTION generate_fusion_outputs(fixed, aligned_moving, clinical_context):
+    outputs = []
+    
+    // Color overlay (standard PET-CT style)
+    IF "color_overlay" IN clinical_context.requested_outputs:
+        overlay = create_color_overlay(
+            base=fixed,  // Typically CT or structural MRI (grayscale)
+            overlay=aligned_moving,  // Typically PET or functional (color map)
+            colormap="hot",  // Yellow-red for metabolic activity
+            alpha=0.4,  // 40% overlay opacity
+            threshold=clinical_context.overlay_threshold  // Hide low-activity voxels
+        )
+        outputs.APPEND({"type": "color_overlay", "data": overlay})
+    
+    // Contour projection (radiation therapy planning)
+    IF "contour_projection" IN clinical_context.requested_outputs:
+        // Segment structures on the modality where they're best seen
+        tumor_contour = segment_on_modality(
+            volume=aligned_moving,  // e.g., tumor best seen on MRI
+            structure="GTV",  // Gross Tumor Volume
+            method="deep_learning_segmentation"
+        )
+        
+        // Project contours onto planning CT
+        projected = project_contours(
+            contours=tumor_contour,
+            target_volume=fixed,  // Planning CT
+            transform=inverse_transform(composite_transform)
+        )
+        outputs.APPEND({"type": "contour_overlay", "data": projected})
+    
+    // Generate DICOM RT Structure Set (for treatment planning systems)
+    IF "rt_structure" IN clinical_context.requested_outputs:
+        rt_struct = create_dicom_rt_structure(
+            contours=tumor_contour,
+            reference_series=fixed.series_uid,
+            structure_name="GTV_PET_MRI_Fusion",
+            color=[255, 0, 0]  // Red
+        )
+        outputs.APPEND({"type": "rt_structure", "data": rt_struct})
+    
+    // Checkerboard for QA
+    checkerboard = create_checkerboard(fixed, aligned_moving, tile_size=20)
+    outputs.APPEND({"type": "qa_checkerboard", "data": checkerboard})
+    
+    RETURN outputs
 ```
-FUNCTION quality_assurance_review(fusion_result, clinical_context):
-    // Compute automated quality metrics
-    qa_metrics = {
-        rigid_metric: fusion_result.rigid_registration.metric_value,
-        deformable_dice: fusion_result.deformable_registration.dice_scores,
-        folding_pct: fusion_result.deformable_registration.folding_percentage,
-        max_displacement: max_magnitude(fusion_result.deformation_field),
-        mean_displacement: mean_magnitude(fusion_result.deformation_field)
+
+#### Step 6: Deliver and Audit
+
+Push results to clinical systems and maintain a complete audit trail. In radiation therapy, this means sending the fused dataset and structure sets to the treatment planning system. In diagnostic radiology, it means making the fused display available in the PACS viewer.
+
+```pseudocode
+FUNCTION deliver_fusion_results(fusion_job, outputs, validation):
+    // Store all outputs to HealthImaging / PACS
+    FOR EACH output IN outputs:
+        IF output.type == "rt_structure":
+            SEND output.data TO treatment_planning_system VIA DICOM
+        ELSE:
+            STORE output.data IN health_imaging_store
+            LINK output TO original_studies  // Maintain provenance
+    
+    // Record complete audit trail
+    audit_record = {
+        "job_id": fusion_job.id,
+        "timestamp": NOW(),
+        "patient_id": fusion_job.patient_id,
+        "primary_study": fusion_job.primary_study.uid,
+        "secondary_study": fusion_job.secondary_study.uid,
+        "registration_method": fusion_job.config.method,
+        "validation_metrics": validation,
+        "transform_parameters": fusion_job.transform,  // Full reproducibility
+        "clinical_approval": "pending",
+        "output_locations": [o.storage_path FOR o IN outputs]
     }
-
-    // Apply automated pass/fail criteria
-    auto_flags = []
-    IF qa_metrics.folding_pct > 0.5:
-        auto_flags.append("Jacobian folding exceeds 0.5%")
-    IF qa_metrics.max_displacement > 50:  // mm
-        auto_flags.append("Maximum displacement exceeds 50mm (likely failure)")
-    IF any(qa_metrics.deformable_dice.values() < 0.7):
-        auto_flags.append("Structure overlap below 0.7 for one or more structures")
-
-    // Create review task for clinical staff
-    review_task = {
-        study_pair: fusion_result.study_ids,
-        patient_id: clinical_context.patient_id,
-        qa_metrics: qa_metrics,
-        auto_flags: auto_flags,
-        priority: "HIGH" if len(auto_flags) > 0 else "NORMAL",
-        visualization_url: generate_review_url(fusion_result),
-        status: "PENDING_REVIEW"
-    }
-
-    // Store in review queue
-    write_to_database(table="fusion-reviews", item=review_task)
-
-    // If automated QA passes with no flags, mark as ready for clinical use
-    // but still require human sign-off (regulatory requirement for treatment planning)
-    IF len(auto_flags) == 0:
-        review_task.suggested_action = "APPROVE"
+    
+    STORE audit_record IN dynamodb TABLE fusion_audit
+    
+    // Notify clinical team
+    IF validation.overall_pass:
+        NOTIFY clinician "Fusion complete and validated. Ready for review."
     ELSE:
-        review_task.suggested_action = "MANUAL_REVIEW_REQUIRED"
-
-    RETURN review_task
+        NOTIFY clinician "Fusion complete but validation flags raised. Manual review required."
+        NOTIFY physicist "Registration QA needed for job " + fusion_job.id
+    
+    RETURN audit_record
 ```
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-**Sample output for a CT-MRI brain fusion (radiation therapy planning):**
+Sample fusion job output:
 
 ```json
 {
-  "fusion_id": "FUSION-2026-03-15-00847",
-  "patient_id": "PT-928471",
-  "study_pair": {
-    "reference": {"modality": "CT", "study_date": "2026-03-12", "series_uid": "1.2.840..."},
-    "moving": {"modality": "MRI", "study_date": "2026-03-14", "series_uid": "1.2.840..."}
+  "job_id": "fusion-2026-0604-brain-001",
+  "patient_id": "P-REDACTED",
+  "fusion_type": "PET-CT_to_MRI",
+  "primary_modality": "MRI_T1_post_contrast",
+  "secondary_modality": "FDG_PET_CT",
+  "registration": {
+    "method": "rigid_then_bspline",
+    "stages_completed": ["rigid", "bspline_deformable"],
+    "final_mutual_information": 1.47,
+    "mean_TRE_mm": 1.2,
+    "max_TRE_mm": 2.8,
+    "max_displacement_mm": 4.1,
+    "min_jacobian": 0.62,
+    "processing_time_seconds": 34.7
   },
-  "rigid_registration": {
-    "rotation_degrees": [1.2, -0.8, 0.3],
-    "translation_mm": [2.1, -1.5, 3.4],
-    "mutual_information": 0.847
+  "validation": {
+    "overall_pass": true,
+    "mi_pass": true,
+    "jacobian_pass": true,
+    "TRE_pass": true,
+    "displacement_pass": true
   },
-  "deformable_registration": {
-    "method": "deep_learning",
-    "model_version": "voxelmorph-brain-v3.2",
-    "mean_displacement_mm": 1.8,
-    "max_displacement_mm": 12.4,
-    "folding_percentage": 0.02,
-    "dice_scores": {
-      "brain_stem": 0.94,
-      "tumor_gtv": 0.88,
-      "left_hippocampus": 0.91,
-      "right_optic_nerve": 0.86
-    }
-  },
-  "fusion_products": {
-    "rt_structure_set": "RS.1.2.840...",
-    "blended_volume": "stored at s3://fusion-outputs/PT-928471/blended.nii.gz"
-  },
-  "qa_status": "APPROVED",
-  "reviewed_by": "physicist_jsmith",
-  "review_timestamp": "2026-03-15T09:42:18Z"
+  "outputs": [
+    {"type": "color_overlay", "format": "DICOM", "series_uid": "1.2.826..."},
+    {"type": "contour_overlay", "format": "DICOM_RT", "series_uid": "1.2.826..."},
+    {"type": "qa_checkerboard", "format": "PNG", "path": "s3://..."}
+  ],
+  "clinical_approval_status": "pending_review"
 }
 ```
 
 **Performance benchmarks:**
 
-| Metric | Typical Value |
-|--------|---------------|
-| Rigid registration latency | 5-15 seconds |
-| Deformable registration (DL inference) | 2-8 seconds |
-| Deformable registration (iterative) | 5-30 minutes |
-| End-to-end pipeline (DL path) | 2-5 minutes |
-| Target Registration Error (brain) | 1-2mm |
-| Target Registration Error (abdomen) | 3-5mm |
-| Dice overlap (brain structures) | 0.85-0.95 |
-| Dice overlap (abdominal organs) | 0.75-0.90 |
-| Cost per fusion study | $2.50-$8.00 |
-| Jacobian folding (acceptable) | < 0.5% of voxels |
+| Metric | Rigid Only | Rigid + Deformable | Deep Learning |
+|--------|-----------|-------------------|---------------|
+| Processing time | 5-15 seconds | 30-120 seconds | 2-8 seconds |
+| Mean TRE (brain) | 2-4 mm | 1-2 mm | 1.5-3 mm |
+| Mean TRE (abdomen) | 8-15 mm | 3-6 mm | 4-8 mm |
+| GPU memory | N/A (CPU ok) | 4-8 GB | 8-16 GB |
+| Cost per study | ~$0.50 | ~$2.50-5.00 | ~$1.00-2.00 |
 
-**Where it struggles:** Large deformations between time points (significant tumor growth or surgical resection between scans). Abdominal imaging with inconsistent respiratory phase. Low-resolution PET fused with high-resolution CT (the PET partial volume effect limits what you can meaningfully extract). Patients with metallic implants causing CT artifacts that confuse registration. Any scenario where the anatomy has genuinely changed between scans in ways that make "correct registration" undefined.
+**Where it struggles:**
+
+- Large anatomical changes between scans (post-surgical, significant weight change)
+- Organs with independent motion (bowel, bladder filling differences)
+- Very low-resolution source modalities (SPECT) aligned to high-resolution targets
+- Regions with no structural correspondence (air-filled cavities that changed shape)
+- Patient motion during acquisition creating intra-scan inconsistencies
 
 ---
 
 ## The Honest Take
 
-Let's start with the regulatory reality. If the fusion results inform treatment decisions (radiation therapy planning, surgical navigation), the software is a medical device. FDA 510(k) clearance or De Novo classification is required. The registration algorithm, quality metrics, and clinical workflow all fall under regulatory scrutiny. This recipe shows the technical pattern; regulatory compliance requires a quality management system, design controls, and clinical validation studies that typically involve 50-100 cases with expert-defined ground truth landmarks.
+Multi-modal image fusion is one of those problems where the 80% case works brilliantly and the 20% edge cases will consume most of your engineering time. Brain registration is nearly a solved problem for clinical purposes (the skull constrains things beautifully). Abdominal registration is still an active research area, and anyone who tells you they've solved it generically is oversimplifying.
 
-A registration model trained on brain images will not work for abdominal registration. Each anatomical site requires its own training data, validation dataset, and performance benchmarks. You cannot deploy a single "universal" registration model. Integration with treatment planning systems (Eclipse, RayStation, Pinnacle) means dealing with proprietary APIs and specific DICOM conformance requirements. That integration work is vendor-specific and often requires collaboration with the TPS vendor.
+The hardest part isn't the registration algorithm. It's building the validation pipeline that catches bad registrations before they reach clinicians. A registration can "converge" mathematically and still be wrong in ways that matter clinically. The Jacobian check catches topology violations, but it won't catch a registration that's smooth and plausible but just... off by 5mm in the wrong direction.
 
-Multi-modal fusion is one of those problems where the technology has been "almost there" for 20 years. The difference now is that deep learning registration has finally made it fast enough for routine clinical workflows. When I say "fast enough," I mean the registration itself takes seconds instead of minutes. The full pipeline (ingest, preprocess, register, fuse, QA) still takes minutes, and the clinical review still requires a human.
+I'd also be honest about the clinical adoption challenge. Many radiologists and radiation oncologists already have fusion tools in their existing PACS or treatment planning systems. What they typically lack is automation, batch processing, and quality monitoring at scale. If your value proposition is "we do fusion," you're competing with well-established tools. If your value proposition is "we do fusion automatically when the studies arrive, validate the results, flag problems, and present everything ready for clinical sign-off," that's different. That's a workflow improvement, not a technology replacement.
 
-The part that surprised me most: rigid registration is sufficient for brain imaging about 80% of the time. The skull constrains deformation so effectively that the expensive deformable step often adds minimal improvement. For brain cases, the real value of deformable registration shows up in the 20% of cases with significant mass effect, post-surgical changes, or edema that shifts midline structures. Build your pipeline to try rigid first and only invoke deformable when quality metrics indicate it's needed.
+The deep learning registration models are exciting but immature for clinical deployment. They're fast, but their failure modes are poorly characterized. When a traditional iterative registration fails, it usually fails obviously (the metric doesn't converge). When a deep learning registration fails, it can fail subtly (it produces a plausible-looking result that's wrong in ways you wouldn't notice without ground truth). For treatment planning applications where millimeters matter, I'd still use traditional methods with deep learning as a fast initialization or screening tool.
 
-The uncertainty quantification piece is where the field is heading, and it's genuinely important. A registration that reports "I aligned these images with 1.5mm accuracy" is useful. A registration that reports "I'm confident to 1mm in the frontal lobe but uncertain to 5mm near the skull base" is transformative for clinical decision-making. If you're building this today, invest in models that provide voxel-wise uncertainty estimates.
-
-The biggest operational headache isn't the registration algorithm. It's the DICOM plumbing. Getting images reliably from PACS to your processing pipeline, handling the dozens of DICOM metadata fields that affect spatial interpretation, dealing with inconsistent series descriptions across scanners and sites, and pushing results back in a format the clinical systems accept. Budget twice as much engineering time for DICOM integration as you think you'll need.
+One more thing: the regulatory landscape here is evolving. If your fusion results directly influence treatment planning (radiation fields, surgical margins), you may be building a medical device under FDA regulation. If you're just providing a visualization aid, the regulatory burden is lighter. Know which category you're in before you build.
 
 ---
 
 ## Variations and Extensions
 
-**Real-time intraoperative fusion.** Combine pre-operative MRI with intraoperative ultrasound for surgical navigation. The challenge shifts from batch processing to real-time: registration must complete in under a second as the surgeon moves the ultrasound probe. Deep learning registration models are well-suited here, but the deformation model must account for brain shift (the brain deforms when the skull is opened and CSF drains). This is an active research area with commercial systems emerging.
-<!-- TODO (TechWriter): Verify commercial intraoperative fusion system names if adding examples -->
+### 1. Real-Time Intraoperative Fusion
 
-**Longitudinal treatment response assessment.** Register the same patient's imaging at multiple time points (baseline, mid-treatment, post-treatment) to quantify tumor response. The deformation field itself becomes clinically meaningful: regions of high deformation may indicate tumor shrinkage or growth. Combine with PET SUV changes for multi-parametric response assessment. This requires careful handling of the "what changed because of treatment" vs. "what changed because of positioning" distinction.
+Combine pre-operative MRI/CT with intraoperative imaging (ultrasound, fluoroscopy, or intraoperative CT) for surgical navigation. This adds real-time constraints: registration must complete in seconds, and the patient's anatomy is actively deforming due to surgical manipulation (brain shift during craniotomy, for example). Requires surface-based or feature-based fast registration rather than full volumetric approaches.
 
-**AI-assisted contour propagation.** Use the registration framework to propagate expert-drawn contours from atlas cases to new patients. An expert draws structures on 50 representative cases. For a new patient, register the most similar atlas case and warp the contours. The clinician reviews and edits rather than drawing from scratch. This can reduce contouring time from 2 hours to 20 minutes for complex head-and-neck cases.
+### 2. Longitudinal Fusion for Treatment Response Assessment
+
+Register the same modality across time points (pre-treatment, mid-treatment, post-treatment) to quantify change. The challenge shifts from multi-modal alignment to handling actual anatomical change (tumor shrinkage, edema resolution) while maintaining spatial correspondence for the surrounding normal tissue. Useful for RECIST measurements, radiation therapy adaptive replanning, and clinical trial response assessment.
+
+### 3. AI-Augmented Fusion with Automatic Segmentation
+
+Layer automatic segmentation on top of fusion: register PET-CT to MRI, then automatically segment the tumor on each modality, then combine the segmentation results into a consensus volume. This approaches the "auto-contouring" problem in radiation therapy, where the fusion-plus-segmentation pipeline could reduce clinical contouring time significantly. Regulatory pathway is more complex (now you're producing clinical contours, not just aligned images).
 
 ---
 
 ## Related Recipes
 
-- **Recipe 9.5 (Chest X-Ray Triage):** Simpler single-modality analysis; contrast with the multi-modal complexity here
-- **Recipe 9.7 (Radiology AI Triage, Multi-Modality):** Handles multiple modalities for triage but doesn't fuse them spatially
-- **Recipe 9.8 (Pathology Slide Analysis):** Another gigapixel-scale imaging problem with registration challenges (slide-to-slide alignment)
-- **Recipe 12.10 (Physiological Waveform Analysis):** Time-series fusion concepts that parallel spatial fusion
-- **Recipe 14.3 (Treatment Plan Optimization):** Consumes the fused imaging products from this recipe for radiation dose optimization
+- **Recipe 9.5 (Chest X-Ray Triage):** Simpler single-modality analysis. Understanding the single-modality pipeline helps before adding multi-modal complexity.
+- **Recipe 9.7 (Radiology AI Triage, Multi-Modality):** Handles multiple modalities at the routing/triage level, while this recipe fuses them at the pixel level.
+- **Recipe 9.8 (Pathology Slide Analysis):** Shares the challenge of processing extremely large images (gigapixel pathology vs. high-resolution 3D volumes).
+- **Recipe 12.8 (Disease Progression Trajectory Modeling):** Longitudinal fusion connects naturally to trajectory modeling when tracking treatment response over time.
 
 ---
 
 ## Additional Resources
 
-**AWS Documentation:**
-- [Amazon SageMaker Inference Endpoints](https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html)
-- [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html)
-- [AWS HealthLake Imaging](https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-healthlake-imaging.html)
-- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html)
-- [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
-- [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
+### AWS Documentation
 
-**Public Datasets and Benchmarks:**
-- [The Cancer Imaging Archive (TCIA)](https://www.cancerimagingarchive.net/): Multi-modal imaging datasets for research, including CT-MRI pairs
-- [RIRE (Retrospective Image Registration Evaluation)](https://www.insight-journal.org/rire/): Brain registration benchmark with expert-defined landmarks
-- [Learn2Reg Challenge](https://learn2reg.grand-challenge.org/): Annual medical image registration benchmark with multiple anatomical sites
+- AWS HealthImaging Developer Guide: https://docs.aws.amazon.com/healthimaging/
+- Amazon SageMaker Processing Jobs: https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html
+- Amazon SageMaker Real-time Inference: https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html
+- AWS Step Functions Developer Guide: https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html
+- AWS HIPAA Eligible Services: https://aws.amazon.com/compliance/hipaa-eligible-services-reference/
 
-**AWS Solutions and Blogs:**
-- [AWS for Health: Medical Imaging](https://aws.amazon.com/health/solutions/medical-imaging/): Overview of AWS medical imaging capabilities and customer stories
-- [Building Medical Imaging AI on AWS](https://aws.amazon.com/blogs/machine-learning/building-medical-imaging-ai-pipelines-with-amazon-sagemaker/): Architecture patterns for medical imaging ML pipelines on SageMaker
+### Frameworks and Tools
 
-<!-- TODO (TechWriter): Verify all URLs above are current and accessible. The SageMaker blog URL in particular may be fabricated. -->
+- SimpleITK Registration Documentation: https://simpleitk.readthedocs.io/en/master/registrationOverview.html
+- ANTs (Advanced Normalization Tools): http://stnava.github.io/ANTs/
+- 3D Slicer Registration Modules: https://www.slicer.org/wiki/Documentation/Nightly/Modules/BRAINSFit
+- MONAI (Medical Open Network for AI): https://monai.io/
+- TODO: Verify current VoxelMorph repository URL for deep learning registration
+
+### Clinical Context
+
+- AAPM Task Group 132: Image Registration in Radiation Therapy (guidance on clinical registration quality standards)
+- ACR Practice Parameter for Image Registration: https://www.acr.org/Clinical-Resources/Practice-Parameters-and-Technical-Standards
+- DICOM Supplement 219: Spatial Registration Storage SOP Classes
 
 ---
 
 ## Estimated Implementation Time
 
-| Tier | Timeline | What You Get |
-|------|----------|--------------|
-| **Basic** | 8-12 weeks | Rigid registration pipeline for brain CT-MRI fusion with manual QA review |
-| **Production-ready** | 6-9 months | Deformable registration with DL models, automated QA, PACS integration, clinical review workflow |
-| **With variations** | 12-18 months | Multi-site deployment, real-time intraoperative fusion, longitudinal tracking, regulatory clearance |
+| Phase | Duration | Notes |
+|-------|----------|-------|
+| Basic (rigid registration, single modality pair) | 4-6 weeks | DICOM pipeline, rigid registration, basic overlay |
+| Production-ready (multi-stage, validation, clinical delivery) | 12-16 weeks | Deformable registration, QA pipeline, PACS integration, clinical validation |
+| With variations (real-time, longitudinal, auto-segmentation) | 20-30 weeks | GPU infrastructure, deep learning models, FDA regulatory considerations |
 
 ---
 
 ## Tags
 
-`computer-vision` · `medical-imaging` · `image-registration` · `multi-modal` · `fusion` · `radiation-therapy` · `surgical-planning` · `deformable-registration` · `deep-learning` · `sagemaker` · `healthlake` · `step-functions` · `dicom` · `complex` · `hipaa` · `fda`
+`computer-vision` `medical-imaging` `image-registration` `multi-modal` `fusion` `radiation-therapy` `treatment-planning` `dicom` `sagemaker` `healthimaging` `gpu-compute` `complex`
 
 ---
 
-*← [Recipe 9.9: Surgical Video Analysis](chapter09.09-surgical-video-analysis) · [Chapter 9 Index](chapter09-index) · [Next: Chapter 10 →](chapter10-preface)*
+**Navigation:**
+← [9.9: Surgical Video Analysis](chapter09.09-surgical-video-analysis) | [Chapter 9 Index](chapter09-index) | [Chapter 10: Speech / Voice AI →](chapter10-preface)
