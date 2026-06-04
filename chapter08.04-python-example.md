@@ -143,7 +143,7 @@ def detect_sections(note_text: str) -> list[dict]:
             current_section = {
                 "header": header_text,
                 "category": category,
-                "start": note_text.index(line),
+                "start": note_text.index(line),  # TODO (TechWriter): Code review Finding 1 (WARNING). str.index() returns first occurrence; duplicate headers get wrong offset. Use running offset counter instead.
                 "text": "",
             }
         else:

@@ -1,6 +1,6 @@
 # Recipe 8.4: Medication Extraction and Normalization
 
-**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.002-0.01 per note
+**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.20-0.50 per note
 
 ---
 
@@ -129,18 +129,22 @@ flowchart LR
     style F fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS dead letter queue to the architecture diagram and "Why These Services" section. Failed Lambda extractions (throttling, malformed notes, 20K char limit exceeded) should route to a DLQ for retry/investigation rather than being silently dropped. -->
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions (for batch) |
-| **IAM Permissions** | `comprehend medical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query` |
+| **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:BatchWriteItem`, `dynamodb:Query`. Standard Lambda execution role permissions for CloudWatch Logs assumed (use `AWSLambdaBasicExecutionRole` managed policy or grant `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` explicitly). |
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda CloudWatch log groups: KMS encryption (logs may contain extracted medication data); all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Comprehend Medical, DynamoDB, and CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB (gateway endpoints), and CloudWatch Logs (interface endpoint). Comprehend Medical does not have a VPC endpoint; use a NAT Gateway for outbound access. Clinical text is encrypted via TLS in transit regardless of network path. |
 | **CloudTrail** | Enabled: log all Comprehend Medical and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic clinical notes with medication mentions. MIMIC-III (with DUA) provides realistic note structures. Never use real patient notes in dev without proper IRB/DUA. |
-| **Cost Estimate** | Comprehend Medical DetectEntities: ~$0.01 per 100 characters (minimum 3 units per request). InferRxNorm: ~$0.01 per 100 characters. A typical 2000-character note: ~$0.40 for detection + $0.02-0.10 for RxNorm inference per medication. Batch pricing available for high volume. |
+| **Cost Estimate** | Comprehend Medical DetectEntities: ~$0.01 per 100 characters (minimum 3 units per request). InferRxNorm: ~$0.01 per 100 characters. A typical 2000-character note: ~$0.20 for detection + $0.03-0.10 for RxNorm inference (depending on medication count). Total per note: ~$0.23-0.50 depending on note length and number of medications. Batch pricing available for high volume. |
+
+<!-- TODO (TechWriter): Expert review N2 (LOW). Add a note on Comprehend Medical regional availability (us-east-1, us-east-2, us-west-2, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1 as of 2024). Data residency requirements may constrain region selection. -->
 
 ### Ingredients
 
@@ -360,6 +364,8 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
     RETURN structured_meds
 ```
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a note about idempotency/deduplication. If the same note is reprocessed (S3 at-least-once delivery, pipeline reruns), the extraction_ts sort key creates duplicates. Recommend conditional writes using note_id + medication_text + begin_offset, or using note_id as sort key to overwrite previous extractions. -->
+
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -448,7 +454,7 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 | RxNorm normalization accuracy | 0.80-0.92 (exact RxCUI match) |
 | Attribute extraction accuracy | 0.85-0.93 (dose, route, frequency) |
 | Assertion classification accuracy | 0.88-0.94 |
-| Cost per note (2000 chars, 3 meds) | ~$0.50-0.70 |
+| Cost per note (2000 chars, 3 meds) | ~$0.23-0.50 |
 | Throughput | ~30-50 notes/second (Lambda concurrency) |
 
 **Where it struggles:**
