@@ -1,5 +1,3 @@
-<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. Write it following RECIPE-GUIDE.md structure before this recipe pair can pass. The Python companion is ready and references it. -->
-
 # Recipe 7.4: ED Visit Prediction (Python Example)
 
 > **Heads up:** This is a deliberately simplified, illustrative implementation of an ED visit prediction pipeline. It generates synthetic patient data, trains a gradient boosted tree model, and scores patients for 30-day ED visit risk. It is not production-ready. The feature engineering is minimal, the synthetic data is unrealistically clean, and the model evaluation skips half the things you'd need for a real deployment (fairness audits, calibration curves, clinical validation). Think of it as a sketch that shows the shape of the solution. A starting point, not a destination.
@@ -200,6 +198,7 @@ def generate_synthetic_patients(n_patients: int = 2000, seed: int = 42) -> pd.Da
 ```python
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
     roc_auc_score,
     precision_recall_curve,
@@ -299,10 +298,23 @@ def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
     # More sensitive to performance on the minority class (ED visitors).
     avg_precision = average_precision_score(y_test, y_prob)
 
-    # TODO (TechWriter): Expert review A3 (MEDIUM). Add a brief calibration
-    # check here (sklearn.calibration.calibration_curve) since the risk tiers
-    # are probability-based and GBTs produce poorly calibrated probabilities
-    # out of the box. Show predicted vs. actual event rates in 5 bins.
+    # Calibration check: do predicted probabilities match actual event rates?
+    # GBTs are notoriously poorly calibrated out of the box. A model might
+    # output "0.70" but only 50% of those patients actually visit the ED.
+    # Since our risk tiers are probability-based (HIGH >= 0.70), miscalibration
+    # means the tiers don't mean what care managers think they mean.
+    #
+    # We bin predictions into 5 groups and compare predicted vs. actual rates.
+    # In production, you'd apply Platt scaling or isotonic regression to fix
+    # miscalibration before serving scores.
+    fraction_of_positives, mean_predicted_value = calibration_curve(
+        y_test, y_prob, n_bins=5, strategy="uniform"
+    )
+    calibration_error = abs(fraction_of_positives - mean_predicted_value).mean()
+    logger.info("Mean calibration error (5 bins): %.4f", calibration_error)
+    logger.info("Calibration bins (predicted -> actual):")
+    for pred, actual in zip(mean_predicted_value, fraction_of_positives):
+        logger.info("  %.2f -> %.2f", pred, actual)
 
     # Apply our operational thresholds to see tier distribution
     high_risk_count = (y_prob >= HIGH_RISK_THRESHOLD).sum()
@@ -330,6 +342,7 @@ def evaluate_model(model, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
         "auc_roc": round(auc_roc, 4),
         "average_precision": round(avg_precision, 4),
         "precision_at_high_risk": round(precision_at_high, 4),
+        "mean_calibration_error": round(calibration_error, 4),
         "high_risk_count": int(high_risk_count),
         "medium_risk_count": int(medium_risk_count),
         "low_risk_count": int(low_risk_count),
@@ -577,6 +590,7 @@ def run_ed_prediction_pipeline():
     print(f"  AUC-ROC: {metrics['auc_roc']}")
     print(f"  Average Precision: {metrics['average_precision']}")
     print(f"  Precision at high-risk: {metrics['precision_at_high_risk']}")
+    print(f"  Calibration error: {metrics['mean_calibration_error']}")
     print(f"  Risk tiers: {metrics['high_risk_count']} high / "
           f"{metrics['medium_risk_count']} medium / {metrics['low_risk_count']} low")
     print(f"  Top features: {list(metrics['top_features'].keys())}")
