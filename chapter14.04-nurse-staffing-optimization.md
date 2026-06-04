@@ -1,6 +1,6 @@
 # Recipe 14.4: Nurse Staffing Optimization
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$100–200/month (solver compute)
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$100-200/month (solver compute)
 
 ---
 
@@ -96,7 +96,7 @@ Generic workforce scheduling is a solved problem in many industries (airlines, r
 
 The conceptual pipeline for nurse staffing optimization:
 
-```
+```text
 [Data Collection] → [Demand Forecasting] → [Constraint Formulation] → [Solver Execution] → [Schedule Publication] → [Real-Time Adjustment]
 ```
 
@@ -194,7 +194,7 @@ flowchart TD
 
 **Step 1: Assemble the optimization problem.** Before the solver can run, you need to gather all inputs and translate them into a structured problem definition. This means pulling the staff roster (who's available, what are their certifications, what's their FTE commitment), the demand forecast (how many nurses per unit per shift), and the constraint set (labor rules, preferences, fairness targets). The output is a JSON problem definition that the solver can consume. Skip this step or get the data wrong, and the solver will produce schedules that violate rules you forgot to encode, which is worse than no optimization at all because people trust the output.
 
-```
+```pseudocode
 FUNCTION assemble_scheduling_problem(schedule_period):
     // Pull staff data: who is available for this scheduling period?
     // Each staff member has: name, certifications, FTE (0.5, 0.75, 1.0),
@@ -233,15 +233,15 @@ FUNCTION assemble_scheduling_problem(schedule_period):
     
     // Assemble into a single problem definition
     problem = {
-        period:      schedule_period,
-        staff:       staff_roster,
-        demand:      demand_forecast,
+        period: schedule_period,
+        staff: staff_roster,
+        demand: demand_forecast,
         hard_constraints: constraints.hard,
         soft_constraints: constraints.soft,
         preferences: preferences,
         objective_weights: {
-            cost:       0.3,    // minimize overtime and agency usage
-            fairness:   0.4,    // distribute undesirable shifts equitably
+            cost: 0.3,    // minimize overtime and agency usage
+            fairness: 0.4,    // distribute undesirable shifts equitably
             preference: 0.3     // satisfy individual preferences
         }
     }
@@ -251,7 +251,7 @@ FUNCTION assemble_scheduling_problem(schedule_period):
 
 **Step 2: Formulate as a mathematical program.** This is where the problem definition becomes math. Each nurse-shift-day combination becomes a binary decision variable. Each rule becomes a constraint equation. The objective function combines cost, fairness, and preference satisfaction into a single number the solver will minimize. This formulation step is the intellectual core of the system. Get it wrong and the solver will find "optimal" solutions that are operationally useless. The formulation must be validated against known-good historical schedules before going live.
 
-```
+```pseudocode
 FUNCTION formulate_optimization_model(problem):
     // Create the model container. This holds all variables, constraints,
     // and the objective function.
@@ -328,13 +328,13 @@ FUNCTION formulate_optimization_model(problem):
 
 If the solver returns "infeasible" (no valid schedule exists given the constraints), that's actually valuable information: it means you're understaffed for the demand, and you need to relax a constraint or add staff. Modern solvers support Irreducible Infeasible Subsystem (IIS) analysis that identifies the minimal set of conflicting constraints. For example: "Nurse RN-4821 has approved PTO on June 14, but she is the only charge-certified nurse available for the night shift that day." This tells the manager exactly which constraint to relax: approve overtime for another charge nurse, or negotiate the PTO.
 
-```
+```pseudocode
 FUNCTION solve_and_extract(model, time_limit_seconds):
     // Configure solver parameters
     solver_config = {
-        time_limit:    time_limit_seconds,  // batch: 300s, real-time: 10s
+        time_limit: time_limit_seconds,  // batch: 300s, real-time: 10s
         optimality_gap: 0.02,               // stop if within 2% of optimal
-        threads:       4                     // parallel search
+        threads: 4                     // parallel search
     }
     
     // Run the solver
@@ -357,23 +357,23 @@ FUNCTION solve_and_extract(model, time_limit_seconds):
                 FOR each day d:
                     IF x[n][s][d].value == 1:
                         append to schedule: {
-                            nurse_id:       n.id,
-                            nurse_name:     n.name,
-                            shift:          s,
-                            day:            d,
-                            unit:           assigned_unit(n, s, d),
-                            is_overtime:    is_overtime_shift(n, s, d),
+                            nurse_id: n.id,
+                            nurse_name: n.name,
+                            shift: s,
+                            day: d,
+                            unit: assigned_unit(n, s, d),
+                            is_overtime: is_overtime_shift(n, s, d),
                             certifications: n.certifications
                         }
         
         // Compute quality metrics
         metrics = {
-            optimality_gap:       result.gap,          // how close to proven optimal
+            optimality_gap: result.gap,          // how close to proven optimal
             total_overtime_hours: compute_overtime(schedule),
-            fairness_score:       compute_fairness(schedule),  // 0-1, higher is fairer
-            preference_score:     compute_pref_satisfaction(schedule),
-            unfilled_shifts:      count_unfilled(schedule, demand),
-            solve_time_seconds:   result.solve_time
+            fairness_score: compute_fairness(schedule),  // 0-1, higher is fairer
+            preference_score: compute_pref_satisfaction(schedule),
+            unfilled_shifts: count_unfilled(schedule, demand),
+            solve_time_seconds: result.solve_time
         }
         
         RETURN { status: "solved", schedule: schedule, metrics: metrics }
@@ -383,7 +383,7 @@ FUNCTION solve_and_extract(model, time_limit_seconds):
 
 Concurrency matters here. If two call-offs arrive simultaneously (not uncommon on a holiday morning), both requests read the same schedule state and may identify the same top candidate. Use a DynamoDB conditional write or transaction to verify the candidate is still unscheduled before assigning coverage. Without this, you risk double-booking a nurse to two units.
 
-```
+```pseudocode
 FUNCTION handle_calloff(calloff_event):
     // A nurse has called off. We need coverage.
     // calloff_event contains: nurse_id, shift, day, unit, reason
@@ -393,9 +393,9 @@ FUNCTION handle_calloff(calloff_event):
     
     // Identify the gap
     gap = {
-        shift:  calloff_event.shift,
-        day:    calloff_event.day,
-        unit:   calloff_event.unit,
+        shift: calloff_event.shift,
+        day: calloff_event.day,
+        unit: calloff_event.unit,
         required_certs: get_required_certifications(calloff_event.unit)
     }
     
@@ -430,38 +430,38 @@ FUNCTION handle_calloff(calloff_event):
     
     // Return ranked recommendations
     RETURN {
-        gap:          gap,
-        candidates:   candidates[0:10],  // top 10 options
-        auto_assign:  candidates[0] if auto-assigned else null,
-        notify_list:  candidates[0:5]    // nurses to contact for voluntary pickup
+        gap: gap,
+        candidates: candidates[0:10],  // top 10 options
+        auto_assign: candidates[0] if auto-assigned else null,
+        notify_list: candidates[0:5]    // nurses to contact for voluntary pickup
     }
 ```
 
 **Step 5: Publish and notify.** The generated schedule (or coverage recommendation) needs to reach the right people. For batch schedules, publish to the scheduling system and notify all affected staff. For real-time coverage, send targeted notifications to the ranked candidate list. Track responses (accepted, declined, no response) to improve future scoring. Every schedule change gets an audit record, whether automated or manual.
 
-```
+```pseudocode
 FUNCTION publish_schedule(schedule, schedule_type):
     // Write the schedule to the database
     FOR each assignment in schedule:
         write to schedule database:
-            partition_key:  assignment.day
-            sort_key:       assignment.shift + "#" + assignment.nurse_id
-            nurse_id:       assignment.nurse_id
-            unit:           assignment.unit
-            shift_start:    shift_start_time(assignment.shift)
-            shift_end:      shift_end_time(assignment.shift)
-            is_overtime:    assignment.is_overtime
-            published_at:   current UTC timestamp
-            schedule_type:  schedule_type  // "batch" or "realtime_adjustment"
-            version:        increment version for optimistic locking
+            partition_key: assignment.day
+            sort_key: assignment.shift + "#" + assignment.nurse_id
+            nurse_id: assignment.nurse_id
+            unit: assignment.unit
+            shift_start: shift_start_time(assignment.shift)
+            shift_end: shift_end_time(assignment.shift)
+            is_overtime: assignment.is_overtime
+            published_at: current UTC timestamp
+            schedule_type: schedule_type  // "batch" or "realtime_adjustment"
+            version: increment version for optimistic locking
     
     // Notify affected staff
     IF schedule_type == "batch":
         // Notify all nurses of their upcoming schedule
         FOR each nurse in affected_nurses(schedule):
             send notification via SNS:
-                channel:  nurse.preferred_notification_channel
-                message:  format_schedule_summary(schedule, nurse)
+                channel: nurse.preferred_notification_channel
+                message: format_schedule_summary(schedule, nurse)
     
     ELSE IF schedule_type == "coverage_request":
         // Notify ranked candidates for voluntary pickup
@@ -471,22 +471,22 @@ FUNCTION publish_schedule(schedule, schedule_type):
         // For richer context, use push notifications via encrypted mobile app.
         FOR each candidate in schedule.notify_list:
             send notification via SNS:
-                channel:  candidate.nurse.preferred_notification_channel
-                message:  format_coverage_request_sanitized(schedule.gap, candidate)
+                channel: candidate.nurse.preferred_notification_channel
+                message: format_coverage_request_sanitized(schedule.gap, candidate)
                 // Include only: shift time, unit name, overtime yes/no, response deadline
     
     // Emit event for downstream systems (dashboards, audit, analytics)
     publish event to EventBridge:
-        source:      "scheduling-service"
+        source: "scheduling-service"
         detail_type: "SchedulePublished"
-        detail:      { schedule_id, schedule_type, period, metrics }
+        detail: { schedule_id, schedule_type, period, metrics }
     
     // Audit trail (covers both automated and manual changes)
     write audit record:
-        action:     "schedule_published"
-        timestamp:  current UTC timestamp
-        schedule:   schedule summary (not full detail, for log size)
-        metrics:    schedule.metrics
+        action: "schedule_published"
+        timestamp: current UTC timestamp
+        schedule: schedule summary (not full detail, for log size)
+        metrics: schedule.metrics
         modified_by: "system" or manager_id for manual overrides
 ```
 

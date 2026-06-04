@@ -1,7 +1,7 @@
 # Edit Status: Recipe 14.4 - Nurse Staffing Optimization
 
 **Editor:** TechEditor
-**Date:** 2026-06-01
+**Date:** 2026-06-04
 **Status:** COMPLETE - Publication-ready
 
 ---
@@ -11,13 +11,22 @@
 | Check | Status | Notes |
 |-------|--------|-------|
 | Grammar and mechanics | ✓ PASS | No errors found |
-| Code formatting | ✓ PASS | All fenced blocks have language tags (mermaid, json); inline code for service names |
+| Code formatting | ✓ PASS | All fenced blocks have language tags (text, mermaid, pseudocode, json); inline code for service names |
 | Link verification | ✓ PASS | All URLs are well-formed AWS docs, Google developers, or highs.dev |
 | Header hierarchy | ✓ PASS | H1 title, H2 major sections, H3 subsections, H4 walkthrough; no skipped levels |
 | Readability | ✓ PASS | Short paragraphs, active voice, no run-on sentences |
-| Voice drift check | ✓ PASS | No documentation-voice, no feature-list formatting, no announcements, zero em dashes, no LinkedIn tone |
+| Voice drift check | ✓ PASS | No documentation-voice, no feature-list formatting, no announcements, zero em dashes, zero en dashes, no LinkedIn tone |
+| Code block language tags | ✓ PASS | All 8 opening fences have language tags (text, mermaid, pseudocode x5, json) |
 | RECIPE-GUIDE compliance | ✓ PASS | All required sections present in correct order |
 | Vendor balance | ✓ PASS | ~70% vendor-agnostic (Problem, Technology, General Architecture) / ~30% AWS-specific (Implementation) |
+
+---
+
+## Changes Made This Pass
+
+1. **En dash replaced** (line 3): `$100–200/month` changed to `$100-200/month`
+2. **Language tag added** (line 99): Bare ``` for pipeline diagram changed to ```text
+3. **Language tags added** (lines 197, 254, 331, 386, 442): Five bare ``` pseudocode blocks changed to ```pseudocode
 
 ---
 
@@ -53,10 +62,10 @@
 
 ## Remaining TODOs in Recipe
 
-1. `<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add URLs for Burke et al. "The State of the Art of Nurse Rostering" survey paper and INFORMS Healthcare conference proceedings, or remove this subsection if links cannot be verified. -->` (line 601)
+1. `<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add URLs for Burke et al. "The State of the Art of Nurse Rostering" survey paper and INFORMS Healthcare conference proceedings, or remove this subsection if links cannot be verified. -->` (Additional Resources section)
 
 ---
 
 ## Summary
 
-Recipe 14.4 is publication-ready. All HIGH and MEDIUM expert review findings have been incorporated into the current draft. The voice is consistent throughout, the structure follows RECIPE-GUIDE exactly, and the vendor balance is well-maintained. The single remaining TODO (V2, LOW) defers academic link verification to the TechWriter. No changes were required to the recipe file.
+Recipe 14.4 is publication-ready. All HIGH and MEDIUM expert review findings were already incorporated in the prior editing pass. This final pass fixed one en dash (line 3) and added language tags to six bare code fences. Zero em dashes, zero en dashes, zero bare code fences remain. Voice is consistent throughout. The single remaining TODO (V2, LOW) defers academic link verification to the TechWriter.
