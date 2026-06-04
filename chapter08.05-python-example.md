@@ -35,6 +35,7 @@ from decimal import Decimal
 
 import boto3
 from botocore.config import Config
+from boto3.dynamodb.conditions import Key, Attr
 
 # Structured logging. In production, use JSON-formatted output for
 # CloudWatch Logs Insights queries. Never log PHI field values.
@@ -324,6 +325,9 @@ def _section_to_assertion(section_category: str) -> str:
 
 def _has_resolution_markers(text: str) -> bool:
     """Check if the problem text contains language suggesting resolution."""
+    # Simple substring matching. Production systems use more sophisticated
+    # context-aware resolution detection (e.g., checking whether the marker
+    # modifies the condition or describes its current status).
     text_lower = text.lower()
     return any(marker in text_lower for marker in RESOLUTION_MARKERS)
 ```
@@ -493,6 +497,10 @@ def reconcile_problems(
                 "rationale": "Mentioned with resolution markers in recent note"
             })
 
+    # Note: The main recipe's pseudocode also includes specificity upgrade detection
+    # (checking SNOMED hierarchy relationships with is_child_of). That requires a
+    # SNOMED ontology service or lookup table, which is beyond the scope of this example.
+
     logger.info(
         "Reconciliation: %d recommendations for patient %s",
         len(recommendations), patient_id
@@ -511,8 +519,8 @@ def _get_current_problem_list(patient_id: str) -> list[dict]:
     table = dynamodb.Table(PROBLEMS_TABLE)
 
     response = table.query(
-        KeyConditionExpression=boto3.dynamodb.conditions.Key("patient_id").eq(patient_id),
-        FilterExpression=boto3.dynamodb.conditions.Attr("status").eq("ACTIVE")
+        KeyConditionExpression=Key("patient_id").eq(patient_id),
+        FilterExpression=Attr("status").eq("ACTIVE")
     )
 
     return response.get("Items", [])
@@ -722,7 +730,7 @@ This example works. Point it at a real Comprehend Medical endpoint with a clinic
 
 **IAM least-privilege.** The IAM role for this Lambda should have exactly: `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferICD10CM`, `comprehendmedical:InferSNOMEDCT` (all resources), `s3:GetObject` and `s3:PutObject` scoped to specific bucket prefixes, `dynamodb:PutItem` and `dynamodb:Query` scoped to specific tables. Not `comprehendmedical:*`. Not `s3:*`.
 
-**VPC and VPC endpoints.** Clinical notes contain PHI. In production, this Lambda runs in a VPC with private subnets and VPC endpoints for Comprehend Medical, S3, DynamoDB, and CloudWatch Logs. Traffic stays on the AWS backbone. No public internet traversal, even though everything is TLS-encrypted in transit.
+**VPC and VPC endpoints.** Clinical notes contain PHI. In production, this Lambda runs in a VPC with private subnets and VPC endpoints for S3, DynamoDB, and CloudWatch Logs. Comprehend Medical does not have a VPC endpoint, so traffic to its public endpoint routes through a NAT Gateway (encrypted via TLS in transit). Evaluate whether your compliance posture permits this, or run Lambda outside VPC with resource-based policies on S3 and DynamoDB.
 
 **KMS customer-managed keys.** This example uses `ServerSideEncryption="aws:kms"` but doesn't specify a key ID, which means it uses the AWS-managed key. Production uses a CMK you control, with key rotation enabled, and CloudTrail logging every key usage event.
 

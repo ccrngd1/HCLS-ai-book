@@ -1,6 +1,6 @@
 # Recipe 8.5: Problem List Extraction
 
-**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.002-0.01 per note
+**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.30-0.80 per note
 
 ---
 
@@ -133,6 +133,8 @@ The normalization challenge mirrors what we saw with RxNorm in Recipe 8.4: the s
 
 ### Architecture Diagram
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS DLQ for Lambda invocation failures and a CloudWatch alarm on DLQ depth. Show in diagram and mention in "Why These Services." -->
+
 ```mermaid
 flowchart LR
     A[Clinical Note Source\nHL7/EHR/ADT] -->|Store| B[S3 Bucket\nnotes-inbox/]
@@ -158,13 +160,13 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions (for batch) |
-| **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferICD10CM`, `comprehendmedical:InferSNOMEDCT`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `dynamodb:UpdateItem` |
+| **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferICD10CM`, `comprehendmedical:InferSNOMEDCT`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `dynamodb:UpdateItem` (used by downstream clinician review workflow to accept/reject recommendations) |
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda CloudWatch log groups: KMS encryption (logs may contain extracted clinical data); all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Comprehend Medical, DynamoDB, and CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs. Comprehend Medical does not have a VPC endpoint; route through NAT Gateway (traffic is TLS-encrypted in transit). Evaluate whether your compliance posture permits NAT Gateway egress for PHI, or run Lambda outside VPC with resource-based policies on S3 and DynamoDB. |
 | **CloudTrail** | Enabled: log all Comprehend Medical and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic clinical notes with problem mentions across sections. MIMIC-III (with DUA) provides realistic note structures. n2c2 datasets offer annotated clinical text for validation. Never use real patient notes in dev without proper IRB/DUA. |
-| **Cost Estimate** | Comprehend Medical DetectEntitiesV2: ~$0.01 per 100 characters (minimum 3 units). InferICD10CM: ~$0.01 per 100 characters. InferSNOMEDCT: ~$0.01 per 100 characters. A typical 3000-character note: ~$0.60 for detection + $0.05-0.20 for normalization calls per extracted problem. |
+| **Cost Estimate** | Comprehend Medical DetectEntitiesV2: ~$0.01 per 100-character unit (1 unit = 100 chars, minimum 3 units). InferICD10CM and InferSNOMEDCT: same per-unit pricing, called on shorter extracted spans. A typical 3000-character note: ~$0.30 for detection + $0.02-0.10 for normalization (depending on number of extracted problems). Total: ~$0.30-0.80 per note depending on length and problem count. |
 
 ### Ingredients
 
@@ -229,6 +231,8 @@ FUNCTION detect_sections(note_text):
 ```
 
 **Step 2: Extract clinical problems.** Send each relevant section to the NER service for entity extraction. We're specifically looking for entities of category MEDICAL_CONDITION, which covers diagnoses, symptoms, signs, and disease mentions. The service returns each entity with its text span, confidence score, and traits (like NEGATION or SIGN vs. DIAGNOSIS). We filter to MEDICAL_CONDITION entities and carry forward the section context from Step 1 so we know where each problem was found. Skip this step and you have no raw material for the rest of the pipeline.
+
+<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add note that Comprehend Medical DetectEntitiesV2 has a 20,000-character limit per request. Sections exceeding this need chunking at sentence boundaries with offset correction. Discharge summaries and operative notes can exceed this. -->
 
 ```pseudocode
 FUNCTION extract_problems(sections):
@@ -342,6 +346,8 @@ FUNCTION normalize_problems(classified_problems):
 
 **Step 5: Reconcile against existing problem list.** This is where extraction becomes actionable. We compare the extracted active problems against the patient's current problem list in the database. The output is a reconciliation report: new problems to consider adding, existing problems that might be resolved, and existing problems that could use specificity updates. This is always a recommendation, never an automatic update, because problem list maintenance is a clinical act that requires physician review. Skip this step and you have a nice extraction pipeline that produces results nobody acts on.
 
+<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Reconciliation uses only top-1 SNOMED code for matching. Should check all top-3 candidates or use SNOMED hierarchy-aware deduplication to avoid false ADD_CANDIDATE recommendations for problems already on the list under a different code. -->
+
 ```pseudocode
 FUNCTION reconcile_problems(patient_id, extracted_problems, note_id):
     // Fetch the patient's current problem list from the database.
@@ -398,6 +404,8 @@ FUNCTION reconcile_problems(patient_id, extracted_problems, note_id):
 ```
 
 **Step 6: Store results and generate reconciliation report.** Write the full extraction results to S3 for audit and reprocessing. Write reconciliation recommendations to DynamoDB where clinician review workflows can surface them. Every recommendation includes its source note, confidence score, and rationale so reviewers have enough context to accept or reject it without re-reading the entire note.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about idempotent reprocessing: recommendation_id should be deterministic (note_id + snomed_code + type) with a conditional write to prevent duplicates on reprocessing. -->
 
 ```pseudocode
 FUNCTION store_results(patient_id, extracted_problems, recommendations, note_id):
