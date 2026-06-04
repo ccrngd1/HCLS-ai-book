@@ -1,6 +1,6 @@
 # Recipe 14.9: Chemotherapy Scheduling
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$1,500–6,000/month depending on infusion center size and scheduling volume
+**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$1,500-6,000/month depending on infusion center size and scheduling volume
 
 ---
 
@@ -129,7 +129,7 @@ The mathematical formulation: divide the day into time periods (e.g., 15-minute 
 
 The vendor-agnostic architecture for a chemotherapy scheduling optimization system has these logical components:
 
-```
+```text
 [Treatment Orders] → [Scheduling Engine] → [Optimized Schedule] → [Execution Layer]
        ↑                      ↑                                          ↓
 [Patient Preferences]   [Resource Model]                         [Real-Time Adjustments]
@@ -242,7 +242,7 @@ Every scheduling cycle starts with knowing who needs treatment. Treatment orders
 
 If you skip this step, you're scheduling from stale data. Patients who've been added, cancelled, or had their regimen changed won't be reflected in the schedule.
 
-```
+```pseudocode
 FUNCTION ingest_treatment_orders(date_range):
     // Pull pending orders from the EHR integration layer
     orders = query_ehr_orders(
@@ -286,7 +286,7 @@ Protocol-defined durations are starting points, but actual durations vary by pat
 
 Without this step, you're scheduling based on protocol maximums (wasting capacity) or protocol averages (causing overruns).
 
-```
+```pseudocode
 FUNCTION predict_durations(scheduling_requests):
     // Build feature vectors for duration prediction
     FOR EACH request IN scheduling_requests:
@@ -323,7 +323,7 @@ The optimizer needs to know what's available. This step assembles the current st
 
 Skip this and you'll schedule patients into chairs that are broken, assign nurses who aren't working that day, or exceed pharmacy capacity.
 
-```
+```pseudocode
 FUNCTION build_resource_model(target_date):
     // Chairs: which are available, what are their attributes
     chairs = query_facility_system(
@@ -370,7 +370,7 @@ FUNCTION build_resource_model(target_date):
 
 This is the core. Given the demand (scheduling requests with predicted durations) and supply (resource model), find the best feasible schedule.
 
-```
+```pseudocode
 FUNCTION optimize_schedule(requests, resource_model, config):
     // Initialize the constraint programming model
     model = create_cp_model()
@@ -462,7 +462,7 @@ FUNCTION optimize_schedule(requests, resource_model, config):
 
 The optimizer's output needs validation before it goes live. Clinical rules that are hard to encode as mathematical constraints get checked here.
 
-```
+```pseudocode
 FUNCTION validate_and_publish(schedule, target_date):
     // Clinical validation rules
     violations = []
@@ -518,7 +518,7 @@ The day-of reality never matches the plan perfectly. This function handles disru
 
 Schedule modification events should be authenticated and authorized. Define roles: front-desk staff can trigger arrival/delay/cancellation events; clinical staff can trigger duration extensions and treatment holds; system administrators can trigger resource unavailability. All modification events must include the authenticated user ID, and the real-time adjuster should validate authorization before executing changes.
 
-```
+```pseudocode
 FUNCTION handle_disruption(disruption_event, current_schedule):
     // Classify the disruption
     SWITCH disruption_event.type:
