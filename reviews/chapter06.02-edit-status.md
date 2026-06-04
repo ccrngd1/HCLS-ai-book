@@ -2,7 +2,7 @@
 
 **Editor:** TechEditor
 **Date:** 2026-06-03
-**Status:** COMPLETE (Python companion final; main recipe blocked)
+**Status:** COMPLETE (Python companion final; main recipe blocked on TechWriter)
 
 ---
 
