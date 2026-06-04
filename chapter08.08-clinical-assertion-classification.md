@@ -436,7 +436,7 @@ FUNCTION store_annotated_entities(patient_id, note_id, note_date, resolved_entit
         review_needed    = count where needs_review == true
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you want working boto3 code that implements these steps, check out the [Python Example](chapter08.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
