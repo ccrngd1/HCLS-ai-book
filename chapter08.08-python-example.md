@@ -348,7 +348,7 @@ def apply_assertion_rules(ctx: dict) -> dict | None:
     if section and section in SECTION_ASSERTION_MAP:
         return {
             "assertion": SECTION_ASSERTION_MAP[section],
-            "confidence": 0.93,
+            "confidence": 0.95 if "family" in section else 0.90,
             "method": "rule_based",
             "rule": f"section_header:{section}",
         }
@@ -521,8 +521,11 @@ def classify_assertions(entity_contexts: list[dict]) -> list[dict]:
         rule_result = apply_assertion_rules(ctx)
 
         if rule_result and rule_result["confidence"] >= CONFIDENCE_THRESHOLD:
+            # Propagate section_header into the entity dict so conflict
+            # resolution (Step 4) can use it for priority scoring.
+            entity_with_section = {**ctx["entity"], "section_header": ctx["section_header"]}
             results.append({
-                "entity": ctx["entity"],
+                "entity": entity_with_section,
                 "assertion": rule_result["assertion"],
                 "confidence": rule_result["confidence"],
                 "method": rule_result["method"],
@@ -534,8 +537,9 @@ def classify_assertions(entity_contexts: list[dict]) -> list[dict]:
         # Pass 2: ML model for ambiguous cases.
         try:
             model_result = classify_with_model(ctx)
+            entity_with_section = {**ctx["entity"], "section_header": ctx["section_header"]}
             results.append({
-                "entity": ctx["entity"],
+                "entity": entity_with_section,
                 "assertion": model_result["assertion"],
                 "confidence": model_result["confidence"],
                 "method": model_result["method"],
@@ -546,8 +550,9 @@ def classify_assertions(entity_contexts: list[dict]) -> list[dict]:
             # with low confidence (will be flagged for review).
             logger.warning("Model invocation failed for entity '%s': %s",
                            ctx["entity"]["text"], str(e))
+            entity_with_section = {**ctx["entity"], "section_header": ctx["section_header"]}
             results.append({
-                "entity": ctx["entity"],
+                "entity": entity_with_section,
                 "assertion": "present",
                 "confidence": 0.50,
                 "method": "fallback",
@@ -593,6 +598,9 @@ def resolve_assertion_conflicts(classified_entities: list[dict]) -> list[dict]:
         Conflict-resolved entries include all_mentions for audit.
     """
     # Group entities by normalized text (lowercase, stripped).
+    # Production systems use concept normalization (CUI mapping via UMLS)
+    # rather than raw text matching. Raw text conflates distinct entities
+    # that happen to share surface forms.
     groups = {}
     for item in classified_entities:
         key = item["entity"]["text"].lower().strip()
@@ -863,7 +871,9 @@ def lambda_handler(event: dict, context) -> dict:
 
     # If note_text not inline, fetch from S3.
     if not note_text and "s3_bucket" in record:
-        s3 = boto3.client("s3")
+        # S3 client created here rather than module scope because this path
+        # is only used when notes arrive via S3 reference rather than inline.
+        s3 = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
         obj = s3.get_object(
             Bucket=record["s3_bucket"],
             Key=record["s3_key"],
