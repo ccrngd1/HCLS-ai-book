@@ -160,10 +160,10 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, AWS Lambda, Amazon API Gateway, Amazon DynamoDB, Amazon S3, AWS KMS, Amazon CloudWatch |
-| **IAM Permissions** | `comprehendmedical:InferICD10CM`, `comprehendmedical:DetectEntitiesV2`, `dynamodb:PutItem`, `dynamodb:GetItem`, `s3:PutObject`, `s3:GetObject`, `kms:Decrypt`, `kms:GenerateDataKey` |
+| **IAM Permissions** | `comprehendmedical:InferICD10CM`, `comprehendmedical:DetectEntitiesV2`, `dynamodb:PutItem`, `dynamodb:GetItem`, `s3:PutObject`, `s3:GetObject`, `kms:Decrypt`, `kms:GenerateDataKey`. Scope all permissions to specific resource ARNs: S3 actions restricted to the clinical-notes and audit-records bucket prefixes, DynamoDB actions restricted to the `icd10-suggestions` and coding-rules table ARNs. Add `aws:RequestedRegion` condition to prevent cross-region access. |
 | **BAA** | AWS BAA signed. Comprehend Medical, Lambda, DynamoDB, S3, API Gateway, and CloudWatch are all HIPAA-eligible services. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest (default). API Gateway: TLS 1.2 in transit. Lambda environment variables encrypted with KMS. CloudWatch log groups: configure KMS encryption (logs may contain clinical text fragments). |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend Medical, DynamoDB, S3, KMS, and CloudWatch Logs. API Gateway can remain public-facing with authentication, or use a private API endpoint for internal-only access. |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend Medical, DynamoDB, S3, KMS, and CloudWatch Logs. Enable Private DNS on all VPC endpoints. For EHR systems connected via Direct Connect or VPN, use a Private REST API in API Gateway with an interface VPC endpoint (`execute-api`) so clinical notes never traverse the public internet. For external EHR systems, use mutual TLS (mTLS) on the API Gateway custom domain. |
 | **CloudTrail** | Enabled for all Comprehend Medical, S3, and DynamoDB API calls. Clinical notes are PHI; full audit trail is required. |
 | **Sample Data** | MIMIC-III (freely available after credentialing) contains discharge summaries with ICD codes. CMS publishes ICD-10-CM code descriptions and guidelines. Use synthetic notes for development; never use real PHI in non-production environments. |
 | **Cost Estimate** | Comprehend Medical InferICD10CM: $0.01 per 100 characters (UTF-8). A typical progress note of 2,000-5,000 characters costs $0.20-$0.50 per InferICD10CM call. DetectEntitiesV2: same pricing. Combined: $0.40-$1.00 per note if you call both APIs on the full text. Section-targeted approach (calling only on Assessment/Plan, typically 500-1,500 chars): $0.05-$0.15 per note. |
@@ -184,6 +184,8 @@ flowchart LR
 ### Code
 
 #### Walkthrough
+
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add input validation guidance before preprocessing: verify UTF-8 encoding, enforce minimum length (e.g., 50 chars), reject binary/null bytes, validate encounter_id format. Mention API Gateway rate limiting and authentication to prevent cost-based DoS. -->
 
 **Step 1: Receive and preprocess the clinical note.** Notes arrive from the EHR via API call (synchronous workflow for real-time suggestions in the coding UI) or via a batch file drop (async workflow for overnight processing). The preprocessing step segments the note into clinically relevant sections and identifies the highest-value text for code suggestion. The Assessment and Plan section contains the most explicitly codable content. The Problem List is often a bulleted list of active diagnoses. Sending the entire 5,000-word note to Comprehend Medical works, but it's expensive and introduces noise from review-of-systems negations and template boilerplate.
 
@@ -244,6 +246,8 @@ FUNCTION preprocess_note(raw_note_text):
 
     RETURN coding_text
 ```
+
+<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add error handling guidance: wrap InferICD10CM call in retry with exponential backoff (2 retries, 1s/2s delays). On persistent failure, return a valid response with suggestion_count: 0 and status: 'service_unavailable' rather than HTTP 500. For batch processing via S3 events, add an SQS DLQ for failed invocations. -->
 
 **Step 2: Call InferICD10CM for code candidates.** This is the core inference step. We send the preprocessed clinical text to Comprehend Medical's ICD-10 inference API and receive back a structured response containing entities (spans of text that map to diagnostic concepts) and their associated ICD-10-CM code candidates ranked by confidence.
 
@@ -407,6 +411,8 @@ FUNCTION group_by_category_prefix(ranked_list):
     RETURN sort groups by max confidence of their suggestions descending
 ```
 
+<!-- TODO (TechWriter): Expert review S3 (LOW). Add requester_id to the stored suggestion record and response payload. For HIPAA minimum necessary compliance, capture who triggered the suggestion request (coder identity from EHR session context in API request headers). -->
+
 **Step 5: Store suggestions and return to coder.** The final step persists the suggestion record for audit and feedback tracking, then returns the ranked suggestion list to the coding interface. The response format is designed for easy integration with coding UIs: grouped by diagnostic category, with evidence text highlighting so the coder can see exactly which text triggered each suggestion.
 
 ```pseudocode
@@ -521,7 +527,7 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (API call) | 1-3 seconds per note |
+| End-to-end latency (API call) | 1-3 seconds per note (steady-state). Cold starts add 1-3 seconds in VPC; use Provisioned Concurrency for real-time coding assistance. |
 | Top-1 accuracy (common diagnoses) | 85-92% |
 | Top-3 accuracy (correct code in top 3 suggestions) | 93-97% |
 | Negation detection accuracy | 90-95% |
@@ -529,7 +535,7 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 | Cost per note (section-targeted) | $0.05-$0.15 |
 | Cost per note (full text) | $0.40-$1.00 |
 | Coder time reduction (reported) | 30-50% per encounter |
-| Throughput | Limited by Comprehend Medical TPS (default: 10 TPS for InferICD10CM) |
+| Throughput | Default ~10 TPS (InferICD10CM service limit). Request a limit increase for production volumes; sustained 50-100 TPS achievable with approval. |
 
 **Where it struggles:**
 
