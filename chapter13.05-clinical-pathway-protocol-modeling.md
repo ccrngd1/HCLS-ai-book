@@ -78,7 +78,7 @@ This is where knowledge graphs shine over simpler representations. The pathway g
 
 ### The General Architecture Pattern
 
-```
+```text
 [Pathway Authoring] → [Graph Store] ← [Patient State Engine]
                                      ↓
                           [Traversal / Reasoning Engine]
@@ -178,43 +178,43 @@ flowchart TD
 
 **Step 1: Model the pathway as a graph.** Before any code runs, you need to represent a clinical pathway as a graph structure that Neptune can store and traverse. Each pathway becomes a collection of nodes (clinical steps) connected by edges (transitions). The key design decision is how much clinical logic lives in the graph versus in the traversal code. Put conditions on edges as structured properties; put step metadata on nodes. This separation means the graph is queryable without external logic for simple traversals, but complex condition evaluation (pulling live patient data) happens in the Lambda layer. Skip this step or model it poorly, and every downstream query becomes a nightmare of application-side filtering.
 
-```
+```pseudocode
 // Define the pathway graph schema.
 // Each node represents a clinical step or decision point.
 // Each edge represents a valid transition with conditions.
 
 STRUCTURE PathwayNode:
-    id:               unique identifier (e.g., "pneumonia-v3-step-004")
-    pathway_id:       which pathway this belongs to
-    pathway_version:  version number (pathways evolve over time)
-    node_type:        one of [assessment, order, decision_point, milestone, discharge_criterion]
-    name:             human-readable step name (e.g., "Calculate CURB-65 Score")
-    description:      clinical description of what this step involves
+    id: unique identifier (e.g., "pneumonia-v3-step-004")
+    pathway_id: which pathway this belongs to
+    pathway_version: version number (pathways evolve over time)
+    node_type: one of [assessment, order, decision_point, milestone, discharge_criterion]
+    name: human-readable step name (e.g., "Calculate CURB-65 Score")
+    description: clinical description of what this step involves
     responsible_role: who performs this (physician, nurse, pharmacist, respiratory_therapy)
     expected_duration_hours: how long this step typically takes (null if instantaneous)
     required_documentation: what must be documented to mark this step complete
-    parallel_group:   identifier for steps that can execute simultaneously (null if sequential)
+    parallel_group: identifier for steps that can execute simultaneously (null if sequential)
 
 STRUCTURE PathwayEdge:
-    from_node:        source node ID
-    to_node:          target node ID
-    edge_type:        one of [sequential, conditional, time_gated, parallel_start, parallel_join]
-    conditions:       list of Condition objects that must ALL be true for this transition
-    priority:         for conditional edges from same node, evaluation order (lower = first)
-    max_time_hours:   if set, this transition becomes "overdue" after this many hours
+    from_node: source node ID
+    to_node: target node ID
+    edge_type: one of [sequential, conditional, time_gated, parallel_start, parallel_join]
+    conditions: list of Condition objects that must ALL be true for this transition
+    priority: for conditional edges from same node, evaluation order (lower = first)
+    max_time_hours: if set, this transition becomes "overdue" after this many hours
 
 STRUCTURE Condition:
-    condition_type:   one of [lab_value, vital_sign, elapsed_time, assessment_complete,
+    condition_type: one of [lab_value, vital_sign, elapsed_time, assessment_complete,
                               order_placed, allergy_check, diagnosis_present]
-    parameter:        what to check (e.g., LOINC code for lab, vital sign name)
-    operator:         one of [gt, gte, lt, lte, eq, neq, exists, not_exists]
-    value:            threshold or expected value
+    parameter: what to check (e.g., LOINC code for lab, vital sign name)
+    operator: one of [gt, gte, lt, lte, eq, neq, exists, not_exists]
+    value: threshold or expected value
     time_window_hours: how recent the data must be (null = any time)
 ```
 
 **Step 2: Load pathway into Neptune.** Once you have the pathway modeled as structured data, load it into Neptune as a property graph. Each PathwayNode becomes a vertex with properties. Each PathwayEdge becomes an edge with properties. Conditions are stored as JSON properties on edges (for simple conditions) or as separate vertices linked to edges (for complex, reusable conditions). The loading process should validate graph integrity: every edge references existing nodes, every decision point has at least two outgoing conditional edges, and every pathway has exactly one start node and at least one terminal node.
 
-```
+```pseudocode
 FUNCTION load_pathway_to_neptune(pathway_definition):
     // Validate the pathway graph structure before loading.
     // Catch structural errors here rather than discovering them at query time.
@@ -231,13 +231,13 @@ FUNCTION load_pathway_to_neptune(pathway_definition):
             label     = node.node_type
             id        = node.id
             properties = {
-                pathway_id:       node.pathway_id,
-                pathway_version:  node.pathway_version,
-                name:             node.name,
-                description:      node.description,
+                pathway_id: node.pathway_id,
+                pathway_version: node.pathway_version,
+                name: node.name,
+                description: node.description,
                 responsible_role: node.responsible_role,
                 expected_duration_hours: node.expected_duration_hours,
-                parallel_group:   node.parallel_group
+                parallel_group: node.parallel_group
             }
 
     // Create edges for each transition.
@@ -245,20 +245,20 @@ FUNCTION load_pathway_to_neptune(pathway_definition):
         ADD EDGE to Neptune from edge.from_node to edge.to_node with:
             label      = edge.edge_type
             properties = {
-                conditions:     serialize(edge.conditions) as JSON,
-                priority:       edge.priority,
+                conditions: serialize(edge.conditions) as JSON,
+                priority: edge.priority,
                 max_time_hours: edge.max_time_hours
             }
 
     // Store the full pathway definition in S3 for versioning and audit.
     WRITE pathway_definition to S3 at:
         bucket: "clinical-pathways"
-        key:    "{pathway_id}/v{pathway_version}/definition.json"
+        key: "{pathway_id}/v{pathway_version}/definition.json"
 ```
 
 **Step 3: Map patient to pathway position.** When a patient is enrolled on a pathway (either manually by a clinician or automatically based on admission diagnosis), the system needs to track their current position. This means determining which node(s) they currently occupy. A patient can be at multiple nodes simultaneously if the pathway has parallel branches. The state record in DynamoDB captures: which nodes are active, when each was entered, and which nodes have been completed.
 
-```
+```pseudocode
 FUNCTION initialize_patient_on_pathway(patient_id, pathway_id, pathway_version):
     // Find the start node for this pathway version.
     start_node = QUERY Neptune:
@@ -272,13 +272,13 @@ FUNCTION initialize_patient_on_pathway(patient_id, pathway_id, pathway_version):
         partition_key = patient_id
         sort_key      = pathway_id
         attributes    = {
-            pathway_version:   pathway_version,
-            enrolled_at:       current UTC timestamp,
-            active_nodes:      [start_node.id],          // currently at the start
-            node_entry_times:  {start_node.id: current UTC timestamp},
-            completed_nodes:   [],                        // nothing completed yet
-            completed_edges:   [],                        // no transitions taken yet
-            status:            "active"                   // active, completed, or withdrawn
+            pathway_version: pathway_version,
+            enrolled_at: current UTC timestamp,
+            active_nodes: [start_node.id],          // currently at the start
+            node_entry_times: {start_node.id: current UTC timestamp},
+            completed_nodes: [],                        // nothing completed yet
+            completed_edges: [],                        // no transitions taken yet
+            status: "active"                   // active, completed, or withdrawn
         }
 
 FUNCTION advance_patient_state(patient_id, pathway_id, completed_node_id, next_node_id):
@@ -294,7 +294,7 @@ FUNCTION advance_patient_state(patient_id, pathway_id, completed_node_id, next_n
 
 **Step 4: Evaluate transitions on clinical events.** This is the core reasoning step. When a clinical event occurs (lab result posted, order completed, assessment documented), the system checks whether any transitions from the patient's current active nodes are now satisfiable. This requires pulling the patient's current clinical data and evaluating each outgoing edge's conditions. If conditions are met, the transition fires and the patient advances. Note: multiple pathway versions coexist in Neptune simultaneously. Every traversal query must include the patient's enrolled version as a filter to avoid returning nodes from the wrong version.
 
-```
+```pseudocode
 FUNCTION on_clinical_event(event):
     // A clinical event arrived: lab result, order status change, vital sign, etc.
     patient_id = event.patient_id
@@ -370,7 +370,7 @@ FUNCTION evaluate_conditions(conditions, patient_id, node_entry_time):
 
 **Step 5: Detect overdue transitions and variances.** Not all pathway deviations are triggered by events. Some are the absence of events: a step that should have happened by now but hasn't. A scheduled Lambda runs periodically (every 15-30 minutes) to check for overdue transitions and off-pathway actions. This is where compliance monitoring lives. Use a DynamoDB GSI on `status` (with `oldest_node_entry_time` as sort key) to query only active states efficiently, rather than scanning the entire table.
 
-```
+```pseudocode
 FUNCTION check_overdue_transitions():
     // Query all active patient pathway states using the status GSI.
     // This avoids a full table scan, which won't scale beyond ~500 patients.
@@ -397,11 +397,11 @@ FUNCTION check_overdue_transitions():
                 IF elapsed > edge.max_time_hours:
                     // This transition is overdue. The patient should have moved past this step.
                     generate_alert(
-                        type:        "overdue_pathway_step",
-                        patient_id:  state.patient_id,
-                        pathway_id:  state.pathway_id,
-                        node_id:     active_node_id,
-                        node_name:   get_node_name(active_node_id),
+                        type: "overdue_pathway_step",
+                        patient_id: state.patient_id,
+                        pathway_id: state.pathway_id,
+                        node_id: active_node_id,
+                        node_name: get_node_name(active_node_id),
                         hours_overdue: elapsed - edge.max_time_hours,
                         expected_action: get_node_name(edge.to_node)
                     )
@@ -420,17 +420,17 @@ FUNCTION detect_off_pathway_action(patient_id, action_taken):
         IF matching_nodes is empty:
             // Action is not part of this pathway at all. Log as variance.
             log_variance(
-                type:       "off_pathway_action",
+                type: "off_pathway_action",
                 patient_id: patient_id,
                 pathway_id: state.pathway_id,
-                action:     action_taken,
-                timestamp:  current timestamp
+                action: action_taken,
+                timestamp: current timestamp
             )
 ```
 
 **Step 6: Query for CDS recommendations.** When a clinician opens a patient's chart or an order entry screen, the system queries for current pathway recommendations. This is the real-time traversal that powers point-of-care decision support. It returns: what the patient should do next, what's overdue, and what branches are available based on current data.
 
-```
+```pseudocode
 FUNCTION get_pathway_recommendations(patient_id, pathway_id):
     // Called at point of care. Must return in < 500ms for CDS integration.
 
@@ -457,11 +457,11 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
             target_node = GET vertex from Neptune by id = edge.to_node
 
             available_transitions.append({
-                target_node:    target_node.name,
-                target_type:    target_node.node_type,
+                target_node: target_node.name,
+                target_type: target_node.node_type,
                 conditions_met: conditions_met,
-                conditions:     describe_conditions_human_readable(edge.conditions),
-                edge_type:      edge.edge_type
+                conditions: describe_conditions_human_readable(edge.conditions),
+                edge_type: edge.edge_type
             })
 
         // Check if current node is overdue.
@@ -470,22 +470,22 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
                          for edge in outgoing_edges)
 
         recommendations.append({
-            current_step:           node.name,
-            current_step_type:      node.node_type,
-            responsible_role:       node.responsible_role,
-            time_in_step_hours:     elapsed,
-            is_overdue:             is_overdue,
-            available_transitions:  available_transitions
+            current_step: node.name,
+            current_step_type: node.node_type,
+            responsible_role: node.responsible_role,
+            time_in_step_hours: elapsed,
+            is_overdue: is_overdue,
+            available_transitions: available_transitions
         })
 
     RETURN {
-        patient_id:      patient_id,
-        pathway_id:      pathway_id,
+        patient_id: patient_id,
+        pathway_id: pathway_id,
         pathway_version: state.pathway_version,
-        status:          state.status,
+        status: state.status,
         recommendations: recommendations,
         completed_steps: length(state.completed_nodes),
-        total_steps:     count_pathway_nodes(pathway_id, state.pathway_version)
+        total_steps: count_pathway_nodes(pathway_id, state.pathway_version)
     }
 ```
 
