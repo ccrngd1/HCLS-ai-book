@@ -2,92 +2,94 @@
 
 ## Summary
 
-The Python companion is well-structured, pedagogically sound, and demonstrates a clear progression from image validation through face comparison to audit logging. The boto3 API calls use correct method names, parameter names, and response structure parsing. DynamoDB correctly uses `Decimal` for numeric values. S3 keys have no leading slashes. The code would run successfully given the stated prerequisites. One warning-level issue around the `compare_faces` response handling and a few notes for improvement, but nothing that would prevent the code from working.
+The Python companion is well-structured, pedagogically sound, and demonstrates a clear progression from image validation through face comparison to audit logging and consent withdrawal. The boto3 API calls use correct method names, parameter names, and response structure parsing. DynamoDB correctly uses `Decimal` for numeric values. S3 keys have no leading slashes. The code would run successfully given the stated prerequisites.
+
+However, there is one significant inconsistency between the pseudocode in the main recipe and the Python implementation: the threshold strategy and decision logic differ materially. The pseudocode teaches a three-tier decision model (VERIFIED / STEP_UP_REQUIRED / MANUAL_REVIEW) using a raw similarity score, while the Python companion uses a binary pass/fail with a high threshold passed directly to the API. This undermines the pedagogical value of the main recipe's decision architecture.
 
 ---
 
 ## Issues
 
-### Issue 1: `compare_faces` UnmatchedFaces Misinterpretation
+### Issue 1: Pseudocode Uses Three-Tier Decision Logic; Python Uses Binary Match
 
 - **File:** `chapter09.02-python-example.md`
-- **Location:** `compare_faces` function, handling of `UnmatchedFaces`
+- **Location:** `compare_faces` function and `verify_patient` orchestrator
+- **Severity:** WARNING (pseudocode-to-Python inconsistency)
+- **Description:** The main recipe's pseudocode explicitly sets `similarity_threshold = 0` in the API call to retrieve the raw similarity score, then applies a three-tier decision function (`apply_decision_logic`) that returns VERIFIED (>=95), STEP_UP_REQUIRED (>=80), or MANUAL_REVIEW (<80). The Python companion instead passes `SimilarityThreshold=95.0` directly to `compare_faces`, which means Rekognition only returns matches above 95%. Scores between 80-95 (the "step-up" tier) are never surfaced. The `verify_patient` function returns a simple `verified: True/False` with no intermediate tier. A reader who implements the pseudocode design gets a fundamentally different system than what the Python code demonstrates.
+- **Suggested fix:** Either (a) pass `SimilarityThreshold=0.0` (or a low value like `1.0`) in the Python `compare_faces` call and add a `apply_decision_logic` function that implements the three tiers, or (b) add a clear comment in the Python companion explaining that it implements a simplified binary version and pointing readers to the main recipe for the full tiered approach.
+
+### Issue 2: `compare_faces` Doesn't Return Below-Threshold Similarity Scores
+
+- **File:** `chapter09.02-python-example.md`
+- **Location:** `compare_faces` function, no-match branch
 - **Severity:** WARNING (misleading to learners)
-- **Description:** The comment states "UnmatchedFaces tells us Rekognition DID find a face in the target, it just didn't match." This is incorrect. `UnmatchedFaces` in the `compare_faces` response refers to faces detected in the *target* image that did not match the source face above the threshold. It does not indicate that the source face was found but didn't match. The distinction matters: if the target image has multiple faces, `UnmatchedFaces` lists the non-matching ones. Since the code validates single-face images beforehand, `UnmatchedFaces` will contain the single target face when there's no match. The comment's conclusion is roughly correct for this specific flow (single-face images), but the explanation of the API semantics is misleading and could confuse readers who look at the actual API docs.
-- **Suggested fix:** Replace the comment with:
-  ```python
-  # No match above threshold. UnmatchedFaces lists faces detected in the
-  # target image that didn't match the source. Since we validated both
-  # images contain exactly one face, this means the target face exists
-  # but its similarity to the source is below our threshold.
-  ```
+- **Description:** When `SimilarityThreshold=95.0` is passed and the actual similarity is, say, 87%, Rekognition returns the face in `UnmatchedFaces` but does NOT include the similarity score for that face. The Python code returns `"similarity": 0.0` with a comment explaining this is a sentinel. However, this means the audit record in `record_verification_attempt` logs `similarity_score: 0` for what might actually be an 87% match. A reader building on this pattern would have no visibility into near-miss cases. The pseudocode avoids this entirely by requesting the raw score. This compounds Issue 1: not only is the tiered logic missing, but the data needed to implement it is also discarded.
+- **Suggested fix:** Use `SimilarityThreshold=0.0` (or a very low value) to always receive the actual similarity score. The comment already correctly identifies the problem but the code doesn't solve it.
 
----
-
-### Issue 2: `compare_faces` Returns Similarity Even on No Match
+### Issue 3: `verify_patient` Doesn't Validate Enrollment Photo Exists
 
 - **File:** `chapter09.02-python-example.md`
-- **Location:** `compare_faces` function, no-match return value
-- **Severity:** NOTE (improvement opportunity)
-- **Description:** When `FaceMatches` is empty, the function returns `"similarity": 0.0`. In reality, Rekognition still computed a similarity score for the face pair; it just fell below the `SimilarityThreshold` parameter. The actual score isn't returned in the response when below threshold (by design of the API). Returning `0.0` could mislead readers into thinking the faces had zero similarity, when in fact the score could be anywhere from 0 to just below 95. A comment explaining this would help learners understand the API behavior.
-- **Suggested fix:** Add a comment:
+- **Location:** `verify_patient` function
+- **Severity:** NOTE (minor gap)
+- **Description:** The pseudocode's `handle_verification_request` checks whether a reference photo exists for the patient (returning "NOT_ENROLLED" if absent). The Python `verify_patient` function assumes the enrollment photo exists and passes the key directly to `compare_faces`. If the S3 object doesn't exist, `compare_faces` would raise an `InvalidParameterException` from Rekognition with a confusing error message rather than a clear "not enrolled" response. For a teaching example, a brief existence check or at minimum a comment noting this assumption would help learners.
+- **Suggested fix:** Add a comment above the `compare_faces` call:
   ```python
-  # Note: Rekognition doesn't return the actual similarity score when below
-  # the threshold. We use 0.0 as a sentinel. The real score could be
-  # anywhere from 0 to just below SIMILARITY_THRESHOLD.
-  "similarity": 0.0,
+  # Note: This assumes the enrollment photo exists at the given key.
+  # In production, check S3 object existence first or handle the
+  # InvalidParameterException from Rekognition if the image isn't found.
   ```
 
----
-
-### Issue 3: `detect_faces` Attributes Parameter
+### Issue 4: Enrollment Photo Staleness Not Checked
 
 - **File:** `chapter09.02-python-example.md`
-- **Location:** `validate_verification_image` function, `detect_faces` call
-- **Severity:** NOTE (minor accuracy)
-- **Description:** The `Attributes` parameter is set to `["QUALITY", "DEFAULT"]`. The valid values for this parameter are `"DEFAULT"` and `"ALL"`. `"QUALITY"` is not a valid attribute value. However, this won't cause an error because Rekognition ignores unrecognized values in this list and `"DEFAULT"` is present, which returns the quality metrics needed (Brightness, Sharpness are included in the default response under `Quality`). The code works correctly, but a reader copying this pattern might be confused when they check the API docs.
-- **Suggested fix:** Change to:
-  ```python
-  Attributes=["DEFAULT"],
-  ```
-  And add a comment: `# DEFAULT includes Quality metrics (Brightness, Sharpness), BoundingBox, Confidence`
+- **Location:** Config section and `verify_patient` function
+- **Severity:** NOTE (defined but unused)
+- **Description:** The config defines `ENROLLMENT_PHOTO_MAX_AGE_DAYS = 730` but it's never used anywhere in the code. The "Gap to Production" section calls this out explicitly, so it's clearly intentional omission. However, defining a constant that's never referenced is slightly confusing in a teaching context. A reader might wonder where the check happens.
+- **Suggested fix:** Add a comment next to the constant: `# Not checked in this example. See "Gap to Production" section.`
 
 ---
 
 ## Pseudocode vs. Python Consistency
 
-The main recipe file (`chapter09.02-patient-photo-verification.md`) does not exist yet, so pseudocode cross-referencing cannot be performed. The Python companion is internally consistent: the "Putting It All Together" section correctly calls the functions defined in Steps 1-4 in the expected order, and the data flows correctly between them.
+| Pseudocode Step | Python Implementation | Consistent? |
+|---|---|---|
+| `handle_verification_request` (validate patient_id, photo size, lookup reference) | `validate_verification_image` (quality/face detection only) | Partial. Python validates image quality (not in pseudocode) but doesn't validate patient existence or reference photo lookup. |
+| `compare_faces` with `similarity_threshold = 0` | `compare_faces` with `SimilarityThreshold=95.0` | **No.** Different threshold strategy changes the data available downstream. |
+| `apply_decision_logic` (three tiers) | Not implemented. Binary match/no-match. | **No.** Missing entirely. |
+| `log_verification` | `record_verification_attempt` | Yes. Equivalent functionality. |
+| `enroll_patient_photo` | `enroll_patient_face` (collection-based) | Partial. Python uses Rekognition Collections (IndexFaces) while pseudocode uses S3 storage only. Both are valid approaches, and the Python companion explains this as a scalable alternative. |
 
-The logical pipeline is:
-1. Validate image quality (Step 1)
-2. Compare faces (Step 2) or search collection (Step 3, alternative)
-3. Record audit trail (Step 4)
+The collection-based approach (Step 3) and consent withdrawal (Step 5) in the Python companion are additions not in the pseudocode. Both are well-justified and clearly labeled as extensions, which is fine pedagogically.
 
-This is a sensible and complete flow for the stated use case.
+The threshold/decision-logic discrepancy (Issues 1-2) is the main concern. A reader who follows the pseudocode understands a sophisticated tiered identity system. A reader who only looks at the Python code sees a simpler binary pass/fail. Since the tiered model is presented as the core design principle in the main recipe ("face comparison is an identity signal, not a gate"), the Python companion should demonstrate it.
 
 ---
 
 ## AWS SDK Accuracy
 
-- `rekognition.detect_faces()`: Correct method name, correct parameters (`Image`, `Attributes`), correct response parsing (`FaceDetails`, `Confidence`, `Quality.Brightness`, `Quality.Sharpness`).
-- `rekognition.compare_faces()`: Correct method name, correct parameters (`SourceImage`, `TargetImage`, `SimilarityThreshold`, `QualityFilter`), correct response parsing (`FaceMatches`, `UnmatchedFaces`, `Similarity`).
-- `rekognition.index_faces()`: Correct method name, correct parameters (`CollectionId`, `Image`, `ExternalImageId`, `MaxFaces`, `QualityFilter`, `DetectionAttributes`), correct response parsing (`FaceRecords`, `Face.FaceId`, `Face.Confidence`).
-- `rekognition.search_faces_by_image()`: Correct method name, correct parameters (`CollectionId`, `Image`, `FaceMatchThreshold`, `MaxFaces`), correct response parsing (`FaceMatches`, `Face.ExternalImageId`, `Similarity`, `Face.FaceId`).
-- `dynamodb.Table().put_item()`: Correct usage with `Decimal` for numeric values.
-- S3 references: All use `{"S3Object": {"Bucket": ..., "Name": ...}}` format correctly. No leading slashes in keys.
+- `rekognition.detect_faces()`: Correct method name. Parameters `Image` (S3Object format) and `Attributes=["DEFAULT"]` are valid. Response parsing of `FaceDetails`, `Confidence`, `Quality.Brightness`, `Quality.Sharpness` is correct.
+- `rekognition.compare_faces()`: Correct method name. Parameters `SourceImage`, `TargetImage` (S3Object format), `SimilarityThreshold` (float), `QualityFilter="AUTO"` are all valid. Response parsing of `FaceMatches[0]["Similarity"]` and `UnmatchedFaces` is correct.
+- `rekognition.index_faces()`: Correct method name. Parameters `CollectionId`, `Image`, `ExternalImageId`, `MaxFaces=1`, `QualityFilter="AUTO"`, `DetectionAttributes=["DEFAULT"]` are all valid. Response parsing of `FaceRecords[0]["Face"]["FaceId"]` and `["Face"]["Confidence"]` is correct.
+- `rekognition.search_faces_by_image()`: Correct method name. Parameters `CollectionId`, `Image`, `FaceMatchThreshold` (float), `MaxFaces=3` are valid. Response parsing of `FaceMatches[0]["Face"]["ExternalImageId"]`, `["Similarity"]`, `["Face"]["FaceId"]` is correct.
+- `rekognition.delete_faces()`: Correct method name. Parameters `CollectionId`, `FaceIds=[face_id]` are valid.
+- `s3_client.delete_object()`: Correct method name. Parameters `Bucket`, `Key` are valid.
+- `dynamodb.Table().put_item()`: Correct usage via resource layer.
+
+All S3 keys use no leading slashes (e.g., `verifications/2026/05/31/kiosk-03/capture-001.jpg`, `enrollments/MRN-00482931/primary.jpg`).
 
 ---
 
 ## DynamoDB and Data Type Checks
 
-- `Decimal(str(round(result.get("similarity", 0.0), 2)))`: Correctly converts float to Decimal via string intermediate. This avoids the `TypeError: Float types are not supported` that boto3's DynamoDB resource layer raises on raw floats.
-- All other fields in the audit record are strings or booleans, which DynamoDB handles natively.
+- `Decimal(str(round(result.get("similarity", 0.0), 2)))`: Correctly converts float to Decimal via string intermediate. This avoids `TypeError: Float types are not supported`.
+- `Decimal("0")` in `delete_patient_face`: Correct usage of string-to-Decimal for a literal zero.
+- All other DynamoDB item fields are strings or booleans, which are natively supported.
 
 ---
 
 ## Comment Quality
 
-Comments are excellent throughout. They explain the "why" (not just the "what"), provide healthcare context (consent, PHI, audit requirements), and anticipate reader questions (why exactly one face? why 95% threshold?). The threshold explanation in the config section is particularly well done for a learning audience.
+Comments are excellent. They explain healthcare-specific reasoning (why exactly one face, why audit everything, why consent withdrawal must be atomic), anticipate learner questions (what happens if collection deletion fails?), and provide operational context (Monday morning burst load). The threshold explanation in the config section is particularly well-calibrated for mixed-audience learning.
 
 ---
 
@@ -95,9 +97,9 @@ Comments are excellent throughout. They explain the "why" (not just the "what"),
 
 **PASS**
 
-No ERROR findings. One WARNING (misleading comment about `UnmatchedFaces` semantics) and two NOTEs (cosmetic improvements). The code is correct, would run successfully, teaches good patterns (Decimal usage, structured logging without PHI, quality validation before expensive API calls), and the "Gap to Production" section is thorough and honest.
+Two WARNING findings (threshold strategy mismatch with pseudocode, and the resulting loss of below-threshold similarity scores) and two NOTE findings. Neither WARNING represents code that won't run. The code is correct, uses proper boto3 patterns, handles DynamoDB Decimal properly, and avoids leading slashes in S3 keys. The warnings identify a pedagogical gap where the Python companion teaches a simpler model than the main recipe describes, but readers are adequately served by the "Gap to Production" section which calls out the tiered decision logic as a production requirement.
 
 **Recommended improvements (not blocking):**
-1. Fix the `UnmatchedFaces` comment to accurately describe the API semantics.
-2. Add a note about the 0.0 similarity sentinel value.
-3. Remove `"QUALITY"` from the `Attributes` list (not a valid value, though harmless).
+1. Change `SimilarityThreshold` to `0.0` and implement the three-tier decision logic from the pseudocode, or add an explicit comment explaining why the Python example uses a simplified binary approach.
+2. Add a note about the unused `ENROLLMENT_PHOTO_MAX_AGE_DAYS` constant.
+3. Add a comment about assuming enrollment photo existence in `verify_patient`.
