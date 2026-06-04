@@ -394,7 +394,7 @@
   * [Python Example](chapter15.08-python-example)
 * [15.9 — Radiation Therapy Adaptive Planning](chapter15.09-radiation-therapy-adaptive-planning)
   * [Python Example](chapter15.09-python-example)
-* [15.10 — Hospital Resource Allocation Under Uncertainty](chapter15.10-hospital-resource-allocation-under-uncertainty)
+* [15.10 — Hospital Resource Allocation Under Uncertainty](chapter15.10-hospital-resource-allocation-uncertainty)
   * [Python Example](chapter15.10-python-example)
 
 ---
