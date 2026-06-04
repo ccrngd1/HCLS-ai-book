@@ -1,6 +1,6 @@
 # Recipe 9.6: Diabetic Retinopathy Screening
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.50–$2.00 per screening
+**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.50-$2.00 per screening
 
 ---
 
@@ -64,7 +64,7 @@ This is a classic image classification problem, and deep learning has gotten rem
 
 ### The General Architecture Pattern
 
-```
+```text
 [Image Capture] → [Quality Assessment] → [Classification Model] → [Clinical Decision] → [Integration]
 ```
 
@@ -149,7 +149,7 @@ flowchart TD
 
 **Step 1: Image quality assessment.** Before the classification model ever sees an image, we need to confirm it's actually gradable. A blurry, poorly-centered, or underexposed fundus image will produce unreliable predictions. This step runs a lightweight quality check: field of view coverage, focus sharpness, illumination uniformity, and artifact detection. If the image fails, the system immediately notifies the capture site to retake. This prevents the most common source of false negatives in screening programs: making a "no retinopathy" call on an image where you simply couldn't see the retinopathy because the image was garbage. In practice, 5-15% of images from non-mydriatic cameras in primary care settings fail quality assessment.
 
-```
+```pseudocode
 FUNCTION assess_image_quality(bucket, image_key):
     // Download the fundus image from storage for quality analysis.
     image = download from S3 bucket at image_key
@@ -182,7 +182,7 @@ FUNCTION assess_image_quality(bucket, image_key):
 
 **Step 2: Model inference.** The core classification step. The fundus image is sent to the deep learning model, which outputs a severity grade and confidence scores. Most production systems output probabilities for each ICDR level rather than a single hard classification. This allows downstream logic to apply different thresholds for different clinical contexts (a screening program in a resource-limited setting might accept a lower confidence threshold for "no referral" than a well-resourced urban clinic). The model also outputs a DME probability separately, because macular edema requires referral regardless of retinopathy severity.
 
-```
+```pseudocode
 FUNCTION classify_retinal_image(bucket, image_key):
     // Load and preprocess the image to match model training specifications.
     // Typical preprocessing: resize to model input dimensions (e.g., 512x512 or 1024x1024),
@@ -216,7 +216,7 @@ FUNCTION classify_retinal_image(bucket, image_key):
 
 **Step 3: Clinical decision logic.** This is where model output becomes a clinical action. The mapping from probabilities to decisions is not trivial. You need to handle: (a) the primary DR severity grade, (b) DME detection, (c) confidence thresholds below which the system should defer to human review rather than making an autonomous call, and (d) the specific referral urgency (routine vs. urgent). The thresholds here are configurable and should be validated against your specific patient population and clinical workflow. A screening program's operating point is a tradeoff between sensitivity (catching all disease) and specificity (not overwhelming ophthalmology with false referrals).
 
-```
+```pseudocode
 // Thresholds calibrated during clinical validation. These are examples;
 // your validated thresholds will differ based on your population and clinical context.
 REFERABLE_THRESHOLD = 0.80      // probability of moderate+ DR to trigger referral
@@ -277,23 +277,23 @@ FUNCTION apply_clinical_decision(predictions):
 
 **Step 4: Store results and trigger actions.** Every screening event gets a complete audit record: the image reference, model version, raw predictions, clinical decision, and timestamp. This is non-negotiable for regulatory compliance (FDA post-market surveillance requires traceability from image to decision). If the decision is a referral, the system triggers a notification to the ordering provider and (optionally) initiates an ophthalmology scheduling workflow. If the decision requires human review, it enters a reading queue for a qualified grader.
 
-```
+```pseudocode
 FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decision):
     // Build the complete screening record for audit and clinical use.
     screening_record = {
-        screening_id:       generate_unique_id(),
-        patient_id:         patient_id,
-        image_key:          image_key,
-        screening_date:     current UTC timestamp (ISO 8601),
-        quality_score:      quality_result.quality_score,
-        severity_grade:     decision.severity_grade,
-        referable_prob:     decision.referable_probability,
-        dme_probability:    decision.dme_probability,
-        clinical_decision:  decision.decision,
-        urgency:            decision.urgency,
-        model_version:      decision.model_version,
-        raw_predictions:    predictions,    // full probability vector for audit
-        status:             "COMPLETE"
+        screening_id: generate_unique_id(),
+        patient_id: patient_id,
+        image_key: image_key,
+        screening_date: current UTC timestamp (ISO 8601),
+        quality_score: quality_result.quality_score,
+        severity_grade: decision.severity_grade,
+        referable_prob: decision.referable_probability,
+        dme_probability: decision.dme_probability,
+        clinical_decision: decision.decision,
+        urgency: decision.urgency,
+        model_version: decision.model_version,
+        raw_predictions: predictions,    // full probability vector for audit
+        status: "COMPLETE"
     }
 
     // Write to DynamoDB. This is the system of record for screening results.
