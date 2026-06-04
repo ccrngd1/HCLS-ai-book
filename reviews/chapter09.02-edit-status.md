@@ -1,23 +1,24 @@
 # Edit Status: Recipe 9.2 - Patient Photo Verification
 
 **Editor:** TechEditor
-**Date:** 2026-06-03
+**Date:** 2026-06-04
 **Status:** COMPLETE (Python companion) / BLOCKED (main recipe missing)
 
 ---
 
 ## Summary
 
-The Python companion (`chapter09.02-python-example.md`) is editorially complete and ready for publication. The main recipe file (`chapter09.02-patient-photo-verification.md`) does not exist and must be written by the TechWriter before the full recipe can ship.
+The Python companion (`chapter09.02-python-example.md`) is editorially complete and ready for publication. No changes were needed in this edit pass. The main recipe file (`chapter09.02-patient-photo-verification.md`) does not exist and must be written by the TechWriter before the full recipe can ship.
 
 ## Changes Applied (This Pass)
 
-No changes required. The file was already in publishable condition from the prior edit pass. This final review confirms:
+None. The file was already in publishable condition. This final review confirms:
 
 - All code review findings (Issues 1-3) previously incorporated
 - All expert review HIGH/CRITICAL findings deferred via properly formatted TODO markers
 - SEC-2 BAA note present in Setup section
 - IAM permissions correctly separated (verification-time vs. enrollment-time)
+- Resource-scoped ARN guidance included
 - Zero em dashes (U+2014) or en dashes (U+2013)
 - All 7 fenced code blocks have language tags (1x bash, 6x python)
 - No documentation-voice, no LinkedIn tone, no announcement statements
