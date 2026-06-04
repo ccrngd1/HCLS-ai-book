@@ -170,7 +170,7 @@ The good news: this is a problem the field has been working on hard for five yea
 
 The overall flow looks like this:
 
-```
+```text
 [Clinician Question]
     → [Clarify and Classify Question]
     → [Query Expansion and Rewriting]
@@ -342,13 +342,13 @@ flowchart TB
 
 **Step 1: Receive and classify the question.** A clinician submits a question through the API. The first task is to figure out what kind of question it is and whether it has enough specificity to drive retrieval. Vague questions get a clarification round; crisp questions proceed directly to expansion. Classification uses a small, cheap model because the cost of calling it on every question adds up.
 
-```
+```text
 FUNCTION receive_question(request):
-    // request.question:        free-text clinical question
+    // request.question: free-text clinical question
     // request.requesting_user: user identity from Cognito
     // request.patient_context: optional structured patient info (age, conditions, meds)
     //                          If present, this is PHI. Treat accordingly.
-    // request.specialty:       requesting specialty, informs evidence source priorities
+    // request.specialty: requesting specialty, informs evidence source priorities
 
     query_id = generate UUID
 
@@ -409,7 +409,7 @@ FUNCTION receive_question(request):
 
 **Step 2: Expand the query and extract entities.** Good retrieval starts with good queries. Rewrite the question into multiple variants that span likely terminology. In parallel, pull medical entities out of the question and map them to standard ontologies; those entities become metadata filters for retrieval.
 
-```
+```text
 FUNCTION expand_query_and_extract_entities(question, patient_context):
 
     // Before sending patient_context to downstream services, strip fields
@@ -473,10 +473,10 @@ FUNCTION expand_query_and_extract_entities(question, patient_context):
 
     entities = {
         medications: extract_drugs(cm_response, rxnorm_response),
-        conditions:  extract_conditions(cm_response, icd_response),
-        procedures:  extract_procedures(cm_response),
-        anatomy:     extract_anatomy(cm_response),
-        population:  infer_population(patient_context_minimal)  // adult, pediatric, geriatric, pregnancy, etc.
+        conditions: extract_conditions(cm_response, icd_response),
+        procedures: extract_procedures(cm_response),
+        anatomy: extract_anatomy(cm_response),
+        population: infer_population(patient_context_minimal)  // adult, pediatric, geriatric, pregnancy, etc.
     }
 
     RETURN {
@@ -489,7 +489,7 @@ FUNCTION expand_query_and_extract_entities(question, patient_context):
 
 **Step 3: Multi-source retrieval with hybrid search.** Query the corpus across multiple modalities in parallel: dense-vector similarity for each expanded query, keyword search for entity-driven terms, hard metadata filters for date range and population match, and a source-tier ranking boost. Merge and deduplicate results.
 
-```
+```text
 FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, question_category):
 
     // Embed the canonical query and each expanded query with the same model used at indexing time
@@ -513,7 +513,7 @@ FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, que
     // indications, or topics where no systematic review exists yet.
     metadata_filters = {
         publication_date: within_useful_window_for(question_category),
-        population_tags:  entities.population     // hard filter; pediatric-only
+        population_tags: entities.population     // hard filter; pediatric-only
                                                   // studies are rarely valid
                                                   // for adult questions
     }
@@ -565,7 +565,7 @@ FUNCTION multi_source_retrieval(expanded_queries, canonical_query, entities, que
 
 **Step 4: Re-rank with a cross-encoder.** The initial retrieval is optimized for recall (cast a wide net); re-ranking is optimized for precision (select the best from that net). Re-rankers are slower and more expensive per pair, but they're dramatically more accurate at the top of the ranking, which is what matters for generation.
 
-```
+```text
 FUNCTION rerank_candidates(canonical_query, candidates, top_k=20):
 
     // Option A: Use a managed re-ranker in OpenSearch or Bedrock if available.
@@ -584,7 +584,7 @@ FUNCTION rerank_candidates(canonical_query, candidates, top_k=20):
     rerank_pairs = empty list
     FOR each candidate in candidates:
         append {
-            query:   canonical_query,
+            query: canonical_query,
             passage: candidate.chunk_text
         } to rerank_pairs
 
@@ -604,7 +604,7 @@ FUNCTION rerank_candidates(canonical_query, candidates, top_k=20):
 
 **Step 5: Tag evidence tiers.** For each selected chunk, annotate the source's evidence tier using publication-type metadata. This will flow into the generation prompt and the final rendering.
 
-```
+```text
 FUNCTION tag_evidence_tiers(top_chunks):
 
     FOR each chunk in top_chunks:
@@ -640,7 +640,7 @@ FUNCTION tag_evidence_tiers(top_chunks):
 
 **Step 6: Fetch full-text context for the top chunks.** Individual chunks can lose critical surrounding context. Before generation, pull the paragraphs adjacent to each top chunk so the model sees caveats, population details, and qualifiers that live near the core finding.
 
-```
+```text
 FUNCTION fetch_full_context(top_chunks):
 
     FOR each chunk in top_chunks:
@@ -662,7 +662,7 @@ FUNCTION fetch_full_context(top_chunks):
 
 **Step 7: Grounded generation with citation discipline.** Now the synthesis step. Construct a prompt that includes the question, the retrieved chunks with identifiers, evidence tiers, and full context. The prompt instructs the model to cite every claim by chunk identifier, to describe rather than recommend, to surface uncertainty, and to explicitly state when the retrieved evidence does not answer the question.
 
-```
+```text
 FUNCTION generate_synthesis(question, patient_context_minimal, top_chunks, question_category):
 
     // Format chunks for the prompt with identifiers the model will cite
@@ -759,7 +759,7 @@ FUNCTION generate_synthesis(question, patient_context_minimal, top_chunks, quest
 
 **Step 8: Validate citations and claims.** Belt-and-suspenders on top of Guardrails. For every citation, verify the chunk is in the retrieved set. For every claim, verify it matches the cited chunk's content (semantic similarity above a threshold; exact match for numerical values). Flag unverified claims. Retry with stricter prompts up to a configured cap, then route to review if validation keeps failing.
 
-```
+```text
 FUNCTION validate_answer(answer_text, claims, chunks_used, retry_count):
 
     unverified = empty list
@@ -848,7 +848,7 @@ FUNCTION validate_answer(answer_text, claims, chunks_used, retry_count):
 
 **Step 9: Render with citations and evidence grades.** Replace chunk identifiers in the answer with formatted citations. Build the bibliography from the chunks actually cited. Attach source links so the clinician can click through to the original paper. Render the evidence grade prominently so it frames how the reader weights the answer.
 
-```
+```text
 FUNCTION render_answer(answer_text, claims, chunks_used, evidence_strength):
 
     // Build a map: chunk_id -> formatted citation
@@ -884,12 +884,12 @@ FUNCTION render_answer(answer_text, claims, chunks_used, evidence_strength):
         answer_text     = replace_all(answer_text, original_marker, new_marker)
 
     rendered = {
-        question:          original_question,
+        question: original_question,
         evidence_strength: evidence_strength,
-        answer_markdown:   answer_text,
-        bibliography:      bibliography_sorted,
+        answer_markdown: answer_text,
+        bibliography: bibliography_sorted,
         corpus_date_coverage: get_corpus_date_range(),
-        disclaimer:        "This synthesis is based on retrieved literature and is not a "
+        disclaimer: "This synthesis is based on retrieved literature and is not a "
                          + "substitute for clinical judgment. Verify specific claims against "
                          + "the cited sources before making clinical decisions."
     }
@@ -899,21 +899,21 @@ FUNCTION render_answer(answer_text, claims, chunks_used, evidence_strength):
 
 **Step 10: Archive, log, and emit feedback hooks.** Persist the full trace so the answer can be re-rendered, audited, and linked to clinician feedback. Emit metrics for monitoring. Register the answer in a feedback-capture mechanism so the clinician can signal whether the answer was helpful.
 
-```
+```text
 FUNCTION archive_and_log(query_id, rendered, chunks_used, generation_trace):
 
     // Archive the full trace to S3
     write to S3: "answers/{query_id}/rendered.json" = rendered
     write to S3: "answers/{query_id}/trace.json" = {
-        question:           generation_trace.question,
-        expanded_queries:   generation_trace.expanded_queries,
-        entities:           generation_trace.entities,
-        retrieved_chunks:   [c.chunk_id for c in chunks_used],
-        top_chunks_full:    chunks_used,
-        generation_prompt:  generation_trace.prompt_hash,
-        generation_model:   generation_trace.model_id,
-        validation_result:  generation_trace.validation_result,
-        generated_at:       generation_trace.generated_at
+        question: generation_trace.question,
+        expanded_queries: generation_trace.expanded_queries,
+        entities: generation_trace.entities,
+        retrieved_chunks: [c.chunk_id for c in chunks_used],
+        top_chunks_full: chunks_used,
+        generation_prompt: generation_trace.prompt_hash,
+        generation_model: generation_trace.model_id,
+        validation_result: generation_trace.validation_result,
+        generated_at: generation_trace.generated_at
     }
 
     // Update DynamoDB with final status and pointers
