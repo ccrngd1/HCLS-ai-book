@@ -1,6 +1,6 @@
 # Recipe 3.1: Duplicate Claim Detection ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.002–0.01 per claim screened (mostly compute; rule layer is nearly free)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.002-0.01 per claim screened (mostly compute; rule layer is nearly free)
 
 ---
 
@@ -118,7 +118,7 @@ Most payers end up running batch for prevention and retrospective for recovery, 
 
 At a conceptual level, the pipeline has three stages plus a feedback loop. The key architectural insight is that none of the stages are particularly complex on their own. The design work is in making them compose cleanly and in making the feedback loop fast enough that the system gets smarter over time.
 
-```
+```text
 ┌────────────────── DETECTION PIPELINE ──────────────────┐
 │                                                        │
 │  [Incoming Claim Stream]                               │
@@ -191,7 +191,7 @@ At a conceptual level, the pipeline has three stages plus a feedback loop. The k
 
 **Amazon SageMaker for the learned scoring model.** The rule-based scorer runs inline in Lambda. Once you graduate to a logistic regression or gradient-boosted model, SageMaker is where it lives: SageMaker Training for retraining jobs on the labeled dataset, SageMaker real-time inference endpoints for the detection path. SageMaker Feature Store is useful for consistent feature computation across training and inference (same feature engineering code at training time and at inference time, which is otherwise a subtle source of bugs). If your scale stays small enough that a SageMaker endpoint is overkill, you can package the model as a Lambda layer and run inference in-process.
 
-**Amazon OpenSearch Service (or OpenSearch Serverless) for fuzzy field matching (situational).** Edit-distance and phonetic matching on patient names, claim numbers, and provider names benefit from a search engine that's built for them. OpenSearch supports edit-distance queries, phonetic tokenizers, and k-nearest-neighbor vector search in a single index. The walkthrough below does Levenshtein and Jaccard inline in Lambda because the rule-based starting point doesn't need a search engine; promote OpenSearch into the per-field similarity step when (a) you add a patient-name or provider-name field with high fuzzy-match volume, or (b) the inline implementations stop scaling. For a mid-size payer that adopts it, OpenSearch is cheaper and simpler to manage than running a separate similarity microservice; for very high volumes the economics can shift, so evaluate carefully.
+**Amazon OpenSearch Service (or OpenSearch Serverless) for fuzzy field matching (situational).** Edit-distance and phonetic matching on patient names, claim numbers, and provider names benefit from a search engine that's built for them. OpenSearch supports edit-distance queries, phonetic tokenizers, and k-nearest-neighbor vector search in a single index. The walkthrough below does Levenshtein and Jaccard inline in Lambda because the rule-based starting point doesn't need a search engine; OpenSearch becomes valuable when you add patient-name or provider-name fields that require phonetic matching at volume, or when the inline implementations stop scaling past a few hundred candidates per block. See Variations and Extensions for the promotion path.
 
 **Amazon SQS for the human review queue.** Claims that land in the middle threshold band become SQS messages carrying the claim ID, the top-N candidate matches, the similarity scores, and a link to each candidate's details in DynamoDB. The examiner workstation (whatever it happens to be: a custom web app, an integration into the existing claims adjudication UI) reads from SQS. SQS's visibility timeout gives a natural "claim-in-progress" semantic: an examiner pulls a claim, it becomes invisible for 30 minutes, if they don't resolve it in time it becomes visible again to someone else.
 
@@ -209,18 +209,21 @@ flowchart TB
     C -->|Blocking hash + metadata| E[AWS Lambda\ndetector]
 
     E -->|Lookup by blocking hash| F[(Amazon DynamoDB\nclaim-history)]
-    E -->|Fuzzy field queries\noptional: name matching| G[(Amazon OpenSearch\nclaim-search)]
     E -->|Score candidate pairs\nrule-based inline\nor learned model| H[SageMaker Endpoint\nscoring-model\nreplaces inline scorer\nonce labels accumulate]
 
-    E -->|High score → auto-suspend| I[Adjudication System\nduplicate denial]
-    E -->|Mid score → review| J[Amazon SQS\nreview-queue]
-    E -->|Low score → auto-accept| K[Adjudication System\nprocess claim]
+    E -->|High score: auto-suspend| I[Adjudication System\nduplicate denial]
+    E -->|Mid score: review| J[Amazon SQS\nreview-queue]
+    E -->|Low score: auto-accept| K[Adjudication System\nprocess claim]
+
+    B -->|Parse failure| PDLQ[SQS\nparser-dlq]
+    E -->|Detection failure| DDLQ[SQS\ndetector-dlq]
 
     J --> L[Examiner Workstation]
     L -->|Verdict + reasoning| M[Amazon EventBridge\nclaim-events bus]
     M -->|Label event| N[AWS Lambda\nlabel-writer]
     N -->|Append| O[(DynamoDB\nclaim-labels)]
     N -->|Append| P[S3 Bucket\nlabels-parquet/]
+    N -.->|Write failure| LDLQ[SQS\nlabel-writer-dlq]
 
     Q[EventBridge Scheduler\nweekly] -->|Trigger| R[SageMaker Training Job]
     R -->|Read labels| P
@@ -233,26 +236,28 @@ flowchart TB
     style B fill:#f9f,stroke:#333
     style D fill:#f9f,stroke:#333
     style F fill:#9ff,stroke:#333
-    style G fill:#9ff,stroke:#333
     style O fill:#9ff,stroke:#333
     style H fill:#ff9,stroke:#333
     style J fill:#adf,stroke:#333
+    style PDLQ fill:#faa,stroke:#333
+    style DDLQ fill:#faa,stroke:#333
+    style LDLQ fill:#faa,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | Amazon S3, Amazon DynamoDB, AWS Lambda, Amazon OpenSearch Service (situational; see "Why These Services" below), Amazon SageMaker (Training + real-time endpoint + optional Feature Store), Amazon SQS, Amazon EventBridge + EventBridge Scheduler, AWS Glue, Amazon Athena, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Least-privilege per Lambda. Parser: `s3:GetObject` on raw bucket, `s3:PutObject` on normalized bucket. Detector: `dynamodb:Query` on `claim-history` GSI, `es:ESHttpGet/Post` on the search index, `sagemaker:InvokeEndpoint` on the scoring endpoint ARN, `sqs:SendMessage` on review queue ARN. Label writer: `dynamodb:PutItem` on `claim-labels`, `s3:PutObject` on labels bucket. Training job role: `s3:GetObject` on features + labels buckets, `sagemaker:CreateModel/UpdateEndpoint`. Never `*`. |
+| **AWS Services** | Amazon S3, Amazon DynamoDB, AWS Lambda, Amazon SageMaker (Training + real-time endpoint + optional Feature Store), Amazon SQS, Amazon EventBridge + EventBridge Scheduler, AWS Glue, Amazon Athena, AWS KMS, Amazon CloudWatch, AWS CloudTrail. Amazon OpenSearch Service is situational (see Variations and Extensions). |
+| **IAM Permissions** | Least-privilege per Lambda. Parser: `s3:GetObject` on raw bucket, `s3:PutObject` on normalized bucket. Detector: `dynamodb:Query` on `claim-history` GSI, `dynamodb:PutItem` on `claim-decisions`, `sagemaker:InvokeEndpoint` on the scoring endpoint ARN, `sqs:SendMessage` on review queue ARN. Label writer: `dynamodb:PutItem` on `claim-labels`, `s3:PutObject` on labels bucket. Training job role: `s3:GetObject` on features + labels buckets, `sagemaker:CreateModel/UpdateEndpoint`. Never `*`. |
 | **BAA** | AWS BAA signed. All services named above are HIPAA-eligible under the BAA. Clearinghouse / trading partner connections are out of scope for the AWS BAA; each external partner needs its own agreement. |
-| **Encryption** | S3: SSE-KMS with customer-managed keys on the raw-837, normalized-claims, and labels buckets. DynamoDB: encryption at rest with customer-managed KMS keys. OpenSearch: encryption at rest, node-to-node encryption, HTTPS enforced. SageMaker: KMS encryption on training volumes, endpoint volumes, and model artifacts. SQS: SSE with KMS. CloudWatch log groups encrypted with KMS (the 837 parser logs structural metadata that can still be PHI-adjacent). TLS in transit everywhere. |
-| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (`runtime.sagemaker`), SQS (`sqs`), EventBridge (`events` for verdict-event publication and `scheduler` for the retraining cadence; both are interface endpoints), CloudWatch Logs (`logs`), CloudWatch monitoring (`monitoring`, used by `PutMetricData`), and KMS (`kms`). OpenSearch in a VPC with access via the interface endpoints. SageMaker endpoints deployed in a VPC. VPC Flow Logs enabled. |
+| **Encryption** | S3: SSE-KMS with customer-managed keys on the raw-837, normalized-claims, and labels buckets. DynamoDB: encryption at rest with customer-managed KMS keys. SageMaker: KMS encryption on training volumes, endpoint volumes, and model artifacts. SQS: SSE with KMS (review-queue and all DLQs). CloudWatch log groups encrypted with KMS (the 837 parser logs structural metadata that can still be PHI-adjacent). TLS in transit everywhere. |
+| **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (`runtime.sagemaker`), SQS (`sqs`), EventBridge (`events` for verdict-event publication and `scheduler` for the retraining cadence; both are interface endpoints), CloudWatch Logs (`logs`), CloudWatch monitoring (`monitoring`, used by `PutMetricData`), and KMS (`kms`). SageMaker endpoints deployed in a VPC. VPC Flow Logs enabled. |
 | **CloudTrail** | Enabled in the account with data events captured for the claim-history, claim-labels, and review-queue tables/buckets. A CloudTrail query on "who read this claim and when" is what your HIPAA audit needs. |
 | **837 Format Compliance** | The 837 parser handles at minimum the 837P (professional) and 837I (institutional) transaction sets. 837D (dental) follows a similar pattern but with different line-item structures. X12 version 5010 is the current standard; earlier versions may still appear from legacy trading partners. Use a maintained EDI parsing library; do not hand-roll 837 parsing. <!-- TODO: verify current 837 version baseline for CMS and major commercial payers; note if/when 7030 becomes common. --> |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) can generate synthetic 837 transactions. CMS publishes [sample 837 transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets) for reference. Never use real PHI in development. |
 | **Retention** | CMS claims processing: 10 years minimum for Medicare claims records. Some state regulators require longer. Configure S3 Object Lock in COMPLIANCE mode on the raw-837 bucket in production (GOVERNANCE mode in dev so you can clean up). |
-| **Cost Estimate** | Per 100,000 claims screened: Lambda (parser + detector invocations): ~$3. DynamoDB (blocking queries + writes, on-demand capacity): ~$20. OpenSearch (domain running 24×7): ~$75–200/month fixed cost, amortized. SageMaker real-time inference endpoint (small instance, always-on): ~$50–150/month fixed. S3 storage for claim archive: ~$0.02 per GB-month, small in absolute terms. Blended cost across a 1M-claims-per-month payer: in the low hundreds to low thousands of dollars per month depending on the learned-model complexity. Compared to the recovered value from catching duplicates (1–3% of claim spend is a common range quoted for payer duplicate recovery), the ROI is strongly positive. <!-- TODO: verify recent published range for payer duplicate-claim recovery rates; typical citations in the 1-3% range but worth confirming against a current industry report. --> |
+| **Cost Estimate** | Per 100,000 claims screened: Lambda (parser + detector + DLQ consumer invocations): ~$3. DynamoDB (blocking queries + writes + claim-decisions idempotency table, on-demand capacity): ~$25. SageMaker real-time inference endpoint (small instance, always-on): ~$50-150/month fixed. S3 storage for claim archive: ~$0.02 per GB-month, small in absolute terms. SQS (review-queue + three DLQs): negligible at this scale. Blended cost across a 1M-claims-per-month payer: in the low hundreds to low thousands of dollars per month depending on the learned-model complexity. If the OpenSearch variation is adopted (see Variations and Extensions), add ~$75-200/month for a small domain. Compared to the recovered value from catching duplicates (1-3% of claim spend is a common range quoted for payer duplicate recovery), the ROI is strongly positive. <!-- TODO: verify recent published range for payer duplicate-claim recovery rates; typical citations in the 1-3% range but worth confirming against a current industry report. --> |
 
 ### Ingredients
 
@@ -262,15 +267,18 @@ flowchart TB
 | **Amazon S3 (normalized-claims)** | Parsed, canonicalized claim records in Parquet for Glue/Athena access |
 | **Amazon S3 (labels-parquet)** | Appended examiner labels for SageMaker training |
 | **Amazon DynamoDB (claim-history)** | Hot store for blocking-key lookups during detection |
+| **Amazon DynamoDB (claim-decisions)** | Idempotency ledger keyed on (incoming_claim_id, matched_claim_id, model_version); prevents duplicate routing actions on redelivered Lambda invocations |
 | **Amazon DynamoDB (claim-labels)** | Labeled pairs from examiner decisions; feeds feedback loop |
-| **Amazon OpenSearch Service** (situational) | Fuzzy field matching: edit distance, phonetic codes, vector search on claim-embedded fields. Promote into the per-field similarity step when the inline Lambda implementations stop scaling or when name fields are added |
 | **AWS Lambda (837-parser)** | Parses inbound 837 transactions; writes normalized records; computes blocking hashes |
 | **AWS Lambda (detector)** | Orchestrates blocking, scoring, and routing decisions |
 | **AWS Lambda (label-writer)** | Consumes examiner-verdict events; writes labels to the training store |
+| **Amazon SQS (review-queue)** | Buffer between detection output and examiner workstation |
+| **Amazon SQS (parser-dlq)** | Dead-letter queue for 837-parser async failures; captures malformed-EDI events that Lambda retries could not resolve |
+| **Amazon SQS (detector-dlq)** | Dead-letter queue for detector Lambda failures |
+| **Amazon SQS (label-writer-dlq)** | Dead-letter queue for label-writer Lambda failures |
 | **Amazon SageMaker Endpoint (scoring-model)** | Hosts the learned similarity scorer; called per candidate pair during detection |
 | **Amazon SageMaker Training Jobs** | Weekly retrains on the accumulated labeled dataset; produces new model versions |
 | **Amazon SageMaker Feature Store** (optional) | Consistent feature computation at training and inference time |
-| **Amazon SQS (review-queue)** | Buffer between detection output and examiner workstation |
 | **Amazon EventBridge** | Bus for examiner verdict events; scheduler for retraining cadence |
 | **AWS Glue / Amazon Athena** | Bulk query path over normalized claims and labels (training, reporting, monitoring) |
 | **AWS KMS** | Customer-managed keys for all data stores and log groups |
@@ -290,7 +298,7 @@ flowchart TB
 
 Skip this step and you get two classes of bug. First, rule failures from dirty field formats: one source sends dates as `20260315`, another as `2026-03-15`, and your downstream exact-match check treats them as distinct. Second, blocking misses: if you don't canonicalize, two claims that should fall in the same block end up in different blocks and never get compared.
 
-```
+```pseudocode
 FUNCTION parse_and_normalize(raw_837_key):
     // Fetch the raw EDI transaction from S3.
     raw_bytes = S3.GetObject("raw-837", raw_837_key)
@@ -301,23 +309,23 @@ FUNCTION parse_and_normalize(raw_837_key):
     FOR each claim in transaction.claims:
         // Canonicalize identifiers and dates to remove formatting variation.
         normalized = {
-            claim_id:           upper(trim(claim.claim_id)),
-            patient_id:         left_pad_zeroes(claim.patient_id, 10),
-            subscriber_id:      left_pad_zeroes(claim.subscriber_id, 10),
-            billing_npi:        strip_nondigits(claim.billing_npi),
-            rendering_npi:      strip_nondigits(claim.rendering_npi),
-            date_of_service:    to_iso8601(claim.date_of_service),
-            place_of_service:   zero_pad(claim.place_of_service, 2),
-            cpt_code:           upper(trim(claim.cpt_code)),
-            modifiers:          sorted list of claim.modifiers (for hash stability;
+            claim_id: upper(trim(claim.claim_id)),
+            patient_id: left_pad_zeroes(claim.patient_id, 10),
+            subscriber_id: left_pad_zeroes(claim.subscriber_id, 10),
+            billing_npi: strip_nondigits(claim.billing_npi),
+            rendering_npi: strip_nondigits(claim.rendering_npi),
+            date_of_service: to_iso8601(claim.date_of_service),
+            place_of_service: zero_pad(claim.place_of_service, 2),
+            cpt_code: upper(trim(claim.cpt_code)),
+            modifiers: sorted list of claim.modifiers (for hash stability;
                                   treated as a set for duplicate-detection scoring.
                                   Adjudication preserves the original sequence
                                   because some modifier orderings carry payment
                                   meaning, e.g., pricing-before-informational and
                                   certain anesthesia or bilateral combinations),
-            diagnosis_codes:    sorted list of claim.diagnosis_codes,
-            billed_amount:      decimal(claim.billed_amount),
-            submission_source:  claim.submission_source
+            diagnosis_codes: sorted list of claim.diagnosis_codes,
+            billed_amount: decimal(claim.billed_amount),
+            submission_source: claim.submission_source
         }
 
         // Exact-duplicate hash: the fields that define "same claim" for the strict sense.
@@ -354,8 +362,14 @@ FUNCTION parse_and_normalize(raw_837_key):
         normalized_claims.append(normalized)
 
     // Write normalized claims to the hot store and to the archive.
+    // Idempotency guard: S3 ObjectCreated events are at-least-once delivery.
+    // A redelivered event would re-run this parser and re-insert claims.
+    // Use a conditional write so re-processing the same 837 is a no-op.
     FOR each claim in normalized_claims:
-        DynamoDB.PutItem("claim-history", claim)   // partition key: blocking_hash; sort: claim_id
+        DynamoDB.PutItem("claim-history", claim,
+            ConditionExpression = "attribute_not_exists(claim_id)")
+        // If the condition fails, the claim already exists from a prior
+        // invocation. Swallow the ConditionalCheckFailedException and continue.
     S3.PutObject(
         bucket = "normalized-claims",
         key    = date_partitioned_key(transaction.received_at) + "/" + transaction.id + ".parquet",
@@ -367,7 +381,7 @@ FUNCTION parse_and_normalize(raw_837_key):
 
 **Step 2: Blocking lookup and exact-duplicate check.** The detector Lambda runs after the parser writes the normalized claim. First, it does the free check: is there an existing claim with the same `content_hash`? If yes, we have an exact duplicate and we can skip the rest of the pipeline. If no, we use the `blocking_hash` to pull the candidate set from DynamoDB.
 
-```
+```pseudocode
 FUNCTION find_candidates(incoming_claim):
     // Exact duplicate check: a DynamoDB GSI on content_hash returns zero or more matches.
     exact_matches = DynamoDB.Query(
@@ -381,8 +395,8 @@ FUNCTION find_candidates(incoming_claim):
 
     IF exact_matches is not empty:
         RETURN {
-            match_type:  "exact",
-            candidates:  exact_matches
+            match_type: "exact",
+            candidates: exact_matches
         }
 
     // Blocking lookup: pull the candidate set for fuzzy comparison.
@@ -409,19 +423,19 @@ FUNCTION find_candidates(incoming_claim):
 
 **Step 3: Per-field fuzzy similarity and total score.** For each (incoming, candidate) pair, compute the per-field similarities and combine them into a total score. The rule-based scorer here is the starting point. When you have enough labels, you'll swap it for a learned model; the calling interface stays the same.
 
-```
+```pseudocode
 // Weights used by the rule-based scorer. Total should sum to 1.0.
 // These are reasonable starting values; tune them against your own label distribution.
 FIELD_WEIGHTS = {
-    patient_id:        0.15,
-    billing_npi:       0.10,
-    rendering_npi:     0.10,
-    date_of_service:   0.15,
-    cpt_code:          0.20,
-    modifiers:         0.10,
-    billed_amount:     0.10,
-    diagnosis_codes:   0.05,
-    place_of_service:  0.05
+    patient_id: 0.15,
+    billing_npi: 0.10,
+    rendering_npi: 0.10,
+    date_of_service: 0.15,
+    cpt_code: 0.20,
+    modifiers: 0.10,
+    billed_amount: 0.10,
+    diagnosis_codes: 0.05,
+    place_of_service: 0.05
 }
 
 FUNCTION field_similarity(field_name, a, b):
@@ -429,7 +443,7 @@ FUNCTION field_similarity(field_name, a, b):
         CASE "patient_id", "billing_npi", "rendering_npi":
             // System-generated IDs: tight edit-distance with a high threshold.
             dist = levenshtein(a, b)
-            IF dist == 0:          RETURN 1.0
+            IF dist == 0: RETURN 1.0
             IF dist == 1 AND len(a) >= 8: RETURN 0.85   // one-character typo: suggestive
             RETURN 0.0
 
@@ -490,14 +504,14 @@ FUNCTION score_pair(incoming, candidate):
         total                 += weight * sim
 
     RETURN {
-        score:      total,                    // in [0.0, 1.0]
+        score: total,                    // in [0.0, 1.0]
         components: components                // for explainability in the review queue
     }
 ```
 
 **Step 4: Routing decision.** Apply thresholds. Execute the routing action. The thresholds are configurable and should be tuned against your actual label distribution; the starting values below are placeholders, not recommendations. The two thresholds create three bands: auto-suspend (almost certainly duplicate), review (uncertain), and auto-accept (almost certainly not duplicate).
 
-```
+```pseudocode
 // Placeholder thresholds. Tune against your own ROC curve and review-queue capacity.
 HIGH_THRESHOLD = 0.90    // above this: treat as duplicate, auto-suspend
 LOW_THRESHOLD  = 0.55    // below this: pass through to adjudication
@@ -514,34 +528,74 @@ FUNCTION route_claim(incoming, scored_pairs):
 
     IF top_match.score >= HIGH_THRESHOLD:
         // Auto-suspend as duplicate. Write a reason record so the denial can be explained.
-        write_suspension_record({
-            incoming_claim_id:   incoming.claim_id,
-            matched_claim_id:    top_match.candidate.claim_id,
-            score:               top_match.score,
-            components:          top_match.components,
-            decided_at:          now(),
-            model_version:       CURRENT_MODEL_VERSION,
-            action:              "auto_suspend"
-        })
-        emit_metric("auto_suspended", 1)
+        // Idempotency guard: derive a deterministic decision key from the claim pair and
+        // model version. A redelivered Lambda invocation that re-scores the same pair
+        // produces the same key; the conditional write is a no-op on the second attempt.
+        decision_key = sha256(
+            incoming.claim_id + "|" +
+            top_match.candidate.claim_id + "|" +
+            CURRENT_MODEL_VERSION
+        )
+        wrote = DynamoDB.PutItem("claim-decisions", {
+            decision_key: decision_key,
+            incoming_claim_id: incoming.claim_id,
+            matched_claim_id: top_match.candidate.claim_id,
+            score: top_match.score,
+            components: top_match.components,
+            decided_at: now(),
+            model_version: CURRENT_MODEL_VERSION,
+            action: "auto_suspend"
+        }, ConditionExpression = "attribute_not_exists(decision_key)")
+
+        // If the conditional write succeeded, this is the first time we've seen
+        // this decision. Proceed with the suspension. If it failed, a prior
+        // invocation already recorded the decision; skip the duplicate action.
+        IF wrote:
+            write_suspension_record({
+                incoming_claim_id: incoming.claim_id,
+                matched_claim_id: top_match.candidate.claim_id,
+                score: top_match.score,
+                components: top_match.components,
+                decided_at: now(),
+                model_version: CURRENT_MODEL_VERSION,
+                action: "auto_suspend"
+            })
+            emit_metric("auto_suspended", 1)
         RETURN { action: "auto_suspend",
                  matched_claim_id: top_match.candidate.claim_id,
                  score: top_match.score }
 
     ELSE IF top_match.score >= LOW_THRESHOLD:
         // Mid band: send to human review with top-N candidates attached.
-        top_n = first 5 of scored_pairs
-        SQS.SendMessage(
-            queue = "review-queue",
-            body  = {
-                incoming_claim_id: incoming.claim_id,
-                candidates:        top_n,
-                blocking_hash:     incoming.blocking_hash,
-                model_version:     CURRENT_MODEL_VERSION,
-                enqueued_at:       now()
-            }
+        // Same idempotency pattern: conditional write before enqueue.
+        decision_key = sha256(
+            incoming.claim_id + "|" +
+            top_match.candidate.claim_id + "|" +
+            CURRENT_MODEL_VERSION
         )
-        emit_metric("routed_to_review", 1)
+        wrote = DynamoDB.PutItem("claim-decisions", {
+            decision_key: decision_key,
+            incoming_claim_id: incoming.claim_id,
+            matched_claim_id: top_match.candidate.claim_id,
+            score: top_match.score,
+            decided_at: now(),
+            model_version: CURRENT_MODEL_VERSION,
+            action: "review"
+        }, ConditionExpression = "attribute_not_exists(decision_key)")
+
+        IF wrote:
+            top_n = first 5 of scored_pairs
+            SQS.SendMessage(
+                queue = "review-queue",
+                body  = {
+                    incoming_claim_id: incoming.claim_id,
+                    candidates: top_n,
+                    blocking_hash: incoming.blocking_hash,
+                    model_version: CURRENT_MODEL_VERSION,
+                    enqueued_at: now()
+                }
+            )
+            emit_metric("routed_to_review", 1)
         RETURN { action: "review", top_score: top_match.score }
 
     ELSE:
@@ -552,23 +606,35 @@ FUNCTION route_claim(incoming, scored_pairs):
 
 **Step 5: Close the feedback loop.** An examiner resolves a review-queue item and the workstation publishes an event to EventBridge. A Lambda consumer writes the label to the label store. Every label carries: the pair IDs, the examiner's verdict, a structured reasoning code, the scorer version that produced the original score, and timing information. The retraining job reads from the label store on a weekly schedule.
 
-```
+```pseudocode
 FUNCTION on_examiner_verdict(event):
     // event.verdict is one of: "duplicate", "adjustment", "unique", "unclear"
     // event.reasoning_code is a structured code from a controlled vocabulary.
 
+    // PHI minimization: examiners working with a patient record open in
+    // another tab routinely reference identifiers and clinical context in
+    // free-text reasoning. Scrub before writing to the long-lived label store.
+    // The controlled-vocabulary reasoning_code carries the operational signal;
+    // the scrubbed text is supplementary context only.
+    scrubbed_reasoning = scrub_phi(event.reasoning_text)
+    // scrub_phi strips: MRN-shaped strings (\d{6,10}), NPI-shaped strings
+    // (10-digit starting with 1), names following common honorifics (Dr., Mr.,
+    // Ms.), DOB patterns (MM/DD/YYYY, YYYY-MM-DD), phone numbers, SSN patterns.
+    // For production, route through Amazon Comprehend Medical DetectPHI and
+    // redact any entity with a confidence score above 0.80.
+
     label = {
-        incoming_claim_id:   event.incoming_claim_id,
-        matched_claim_id:    event.matched_claim_id,
-        examiner_id:         event.examiner_id,
-        verdict:             event.verdict,
-        reasoning_code:      event.reasoning_code,
-        reasoning_text:      event.reasoning_text,        // free text; treat as PHI-adjacent
-        scorer_version:      event.scorer_version,
-        score_at_decision:   event.score_at_decision,
+        incoming_claim_id: event.incoming_claim_id,
+        matched_claim_id: event.matched_claim_id,
+        examiner_id: event.examiner_id,
+        verdict: event.verdict,
+        reasoning_code: event.reasoning_code,
+        reasoning_text: scrubbed_reasoning,
+        scorer_version: event.scorer_version,
+        score_at_decision: event.score_at_decision,
         components_at_decision: event.components_at_decision,
-        enqueued_at:         event.enqueued_at,
-        resolved_at:         now(),
+        enqueued_at: event.enqueued_at,
+        resolved_at: now(),
         review_duration_sec: (now() - event.enqueued_at).total_seconds()
     }
 
@@ -634,14 +700,14 @@ FUNCTION retrain_weekly():
   "matched_claim_id": "CLM-2026-0487204",
   "score": 0.94,
   "components": {
-    "patient_id":       1.00,
-    "billing_npi":      1.00,
-    "rendering_npi":    1.00,
-    "date_of_service":  1.00,
-    "cpt_code":         1.00,
-    "modifiers":        1.00,
-    "billed_amount":    0.80,
-    "diagnosis_codes":  1.00,
+    "patient_id": 1.00,
+    "billing_npi": 1.00,
+    "rendering_npi": 1.00,
+    "date_of_service": 1.00,
+    "cpt_code": 1.00,
+    "modifiers": 1.00,
+    "billed_amount": 0.80,
+    "diagnosis_codes": 1.00,
     "place_of_service": 1.00
   },
   "decided_at": "2026-05-12T09:47:03Z",
@@ -660,14 +726,14 @@ FUNCTION retrain_weekly():
       "claim_id": "CLM-2026-0488043",
       "score": 0.72,
       "components": {
-        "patient_id":       1.00,
-        "billing_npi":      1.00,
-        "rendering_npi":    0.00,
-        "date_of_service":  0.90,
-        "cpt_code":         0.70,
-        "modifiers":        0.50,
-        "billed_amount":    0.40,
-        "diagnosis_codes":  1.00,
+        "patient_id": 1.00,
+        "billing_npi": 1.00,
+        "rendering_npi": 0.00,
+        "date_of_service": 0.90,
+        "cpt_code": 0.70,
+        "modifiers": 0.50,
+        "billed_amount": 0.40,
+        "diagnosis_codes": 1.00,
         "place_of_service": 0.00
       }
     }
@@ -684,11 +750,11 @@ That second example is the kind of case an examiner needs to see. Same patient, 
 
 | Metric | Rule-based (starting point) | Learned model (after ~6 months of labels) |
 |--------|-----------------------------|--------------------------------------------|
-| Precision at high-threshold band | 92–96% | 96–98% |
-| Recall on true duplicates | 70–80% | 85–92% |
-| Auto-suspend rate (% of all claims) | 0.5–1.5% | 0.8–2.0% |
-| Review-queue size (% of all claims) | 3–7% | 2–5% |
-| End-to-end detection latency (per claim) | 50–200 ms | 100–400 ms (adds inference call) |
+| Precision at high-threshold band | 92-96% | 96-98% |
+| Recall on true duplicates | 70-80% | 85-92% |
+| Auto-suspend rate (% of all claims) | 0.5-1.5% | 0.8-2.0% |
+| Review-queue size (% of all claims) | 3-7% | 2-5% |
+| End-to-end detection latency (per claim) | 50-200 ms | 100-400 ms (adds inference call) |
 
 <!-- TODO: these benchmark ranges are directional and not tied to a specific published case study. Replace with measured numbers once deployed, or cite specific payer case studies if published. -->
 
@@ -707,7 +773,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **837 parsing is a real engineering problem, not a one-liner.** The 837 standard is complex, the version landscape is fragmented, and every clearinghouse has quirks. Use a maintained EDI library. Budget time for parsing-rule tuning against your specific trading partners. Your parser will hit edge cases in the first week of production that never appeared in testing.
 
-**Blocking strategy needs measurement.** The blocking scheme in the walkthrough (patient + month) is a starting point. Measure three things once you're in production: candidate-set size distribution (you want p99 < 100), recall on known duplicates (what fraction of true duplicates land in the same block as their partner?), and block-skew (any single block with thousands of candidates will blow up the detector latency). Adjust the blocking function based on these measurements; consider multi-blocking (query with several different blocking keys and union the candidate sets) if single-block recall is poor.
+**Dead-letter queues prevent silent event loss.** Every asynchronous Lambda in this pipeline (parser, detector, label-writer) must have an `OnFailure` destination configured, pointing at a dedicated SQS dead-letter queue. Lambda's default async retry behavior is two retries over six hours, then drop. Without a DLQ, a malformed 837 that the parser cannot handle simply vanishes from operational state: the raw file stays in S3, but the fact that it failed to parse is captured only in CloudWatch Logs, which nobody checks until an examiner asks "where's that claim?" The architecture diagram above shows `parser-dlq`, `detector-dlq`, and `label-writer-dlq` for this reason. Set up CloudWatch alarms on DLQ depth (any non-zero count is worth investigating) and build a small operational runbook for replaying DLQ messages once the underlying issue is fixed.
+
+**Blocking strategy needs measurement.** The blocking scheme in the walkthrough (patient + month) is a starting point. Measure three things once you're in production: candidate-set size distribution (you want p99 < 100), recall on known duplicates (what fraction of true duplicates land in the same block as their partner?), and block-skew (any single block with thousands of candidates will blow up the detector latency). Adjust the blocking function based on these measurements; consider multi-blocking (query with several different blocking keys and union the candidate sets) if single-block recall is poor. The blocking scheme in the walkthrough (patient + month) is a starting point. Measure three things once you're in production: candidate-set size distribution (you want p99 < 100), recall on known duplicates (what fraction of true duplicates land in the same block as their partner?), and block-skew (any single block with thousands of candidates will blow up the detector latency). Adjust the blocking function based on these measurements; consider multi-blocking (query with several different blocking keys and union the candidate sets) if single-block recall is poor.
 
 **Threshold tuning is ongoing, not one-time.** The HIGH and LOW thresholds are decisions about precision-recall tradeoffs and review-queue capacity. Tune them initially against a labeled validation set to target a specific precision. Re-tune monthly: label distributions drift, claim mix changes, and examiner capacity varies. Make the thresholds config-driven, not hard-coded, so they can be updated without a code deploy.
 
@@ -725,11 +793,17 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 <!-- TODO (TechWriter): consider adding a note about the SIU hand-off. When the detector identifies a pattern consistent with coordinated fraud (many duplicates from a single provider, unusual submission patterns), the handoff to the Special Investigations Unit is a separate workflow from prospective denial. This isn't in the core recipe scope but is a natural extension. -->
 
-<!-- TODO (TechWriter): expert review (A2) flagged trigger idempotency as a missing concern. S3 ObjectCreated and asynchronous Lambda invocations are at-least-once delivery; a redelivered event re-runs the parser, which re-triggers the detector, which writes a duplicate suspension record and a duplicate SQS review-queue item. Suggested fix per the expert review: conditional DynamoDB writes (`attribute_not_exists(claim_id)`) on the parser's `claim-history` PutItem, and a conditional write on a `claim-decisions` table keyed on `(incoming_claim_id, matched_claim_id, model_version)` before the SQS send in Step 4. This pattern is now flagged across seven consecutive recipes (2.4-2.10 and 3.1) and is a chapter-wide appendix candidate. -->
+<!-- closed: A1: Blocking hash uses patient_id + month only; NPI prefix removed. Inline comment in Step 1 explains NPIs are NPPES-sequential with no org hierarchy, and forward-references Recipe 5.1 for the tax_id-based provider-hierarchy lookup. Per-field NPI similarity handled in Step 3 scorer. -->
 
-<!-- TODO (TechWriter): expert review (A5) flagged missing DLQ / OnFailure destination for the parser, detector, and label-writer Lambdas. With Lambda's default async retry behavior (two retries over six hours, then drop), malformed-837 events silently disappear from operational state and require log-trawling to recover. Suggested fix: add a `parser-dlq` SQS queue to the Architecture Diagram with the parser Lambda's `OnFailure` destination configured, and the same pattern for the detector and label-writer Lambdas. -->
+<!-- closed: A2: Idempotency guards added to Step 1 (conditional DynamoDB write with attribute_not_exists) and Step 4 (deterministic decision_key with conditional write to claim-decisions table before SQS send or suspension write). -->
 
-<!-- TODO (TechWriter): expert review (S1) flagged PHI minimization on the examiner free-text `reasoning_text` field in Step 5. Examiners working with the patient record open in another tab routinely reference identifiers and clinical context in their notes; the field flows verbatim through DynamoDB to S3 (Parquet) to SageMaker training jobs. Suggested mitigation: add a regex-or-Comprehend-Medical-based scrub before write (MRN-shaped strings, NPI-shaped strings, names following common honorifics, DOB patterns, phone numbers); rely on the controlled-vocabulary `reasoning_code` for operational signal. Same minimum-necessary-inside-the-BAA pattern that has appeared as a recurring finding across Recipes 2.7-2.10 with a different surface (human-input free text rather than serialized prompt context). -->
+<!-- closed: A3: OpenSearch removed from architecture diagram and core Ingredients; demoted to Variations and Extensions with a dedicated paragraph explaining the promotion path when name-field matching at scale is needed. Why-These-Services retains a brief mention noting the situational value. -->
+
+<!-- closed: A4: Already resolved by editor. Diagram node H shows "replaces inline scorer once labels accumulate"; Step 3 score_pair includes a commented-out SageMaker invoke_endpoint call showing the exact swap pattern. No remaining gap. -->
+
+<!-- closed: A5: DLQ pattern added to architecture diagram (parser-dlq, detector-dlq, label-writer-dlq), Ingredients table, and "Why This Isn't Production-Ready" section with operational guidance. -->
+
+<!-- closed: S1: PHI scrub added to Step 5 on_examiner_verdict before label write. Regex-based pattern stripping with Comprehend Medical recommended for production. reasoning_code carries operational signal; scrubbed text is supplementary only. -->
 
 <!-- TODO (TechWriter): code review (Finding 5) flagged a small drift between Step 4 pseudocode and the Python companion's `route_claim`. The Python adds a `match_type` parameter and an exact-match fast-path (auto-suspend when `find_candidates` returned `match_type == "exact"`, regardless of score-threshold logic) that this pseudocode does not describe. The Python's branch is defense-in-depth (an exact `content_hash` collision lands at score 1.0 and would auto-suspend anyway) but the pseudocode-to-Python parity should be restored either by adding an explicit exact-match fast-path at the top of `route_claim` here, or by leaving a one-line note in the Python companion explaining the intentional deviation. -->
 
@@ -739,7 +813,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 The blocking layer is the secret sauce, not the scorer. Teams new to this problem tend to obsess over the scoring model: which algorithm? XGBoost or LightGBM? Can we use embeddings? Most of the practical win comes from getting blocking right. A sloppy blocker that misses 20% of true duplicate pairs puts a 20% ceiling on your recall that no scorer can recover. A careful blocker with multi-key lookup pushes that ceiling above 95%, at which point the scorer's job is easy. Budget accordingly.
 
-The rule-based scorer is much harder to beat than you expect. A thoughtfully weighted rule-based scorer with field-specific similarity functions typically hits 90%+ precision at a reasonable recall on the first day of production. The learned model you build six months later will outperform it on recall at the margin, but the absolute improvement is often 5–10 percentage points, not an order of magnitude. This is not a flaw; it means the rules are doing a lot of the work, and the learned model is catching the subtler cases. Don't skip the rules phase to rush to a learned model. You won't have labels yet anyway.
+The rule-based scorer is much harder to beat than you expect. A thoughtfully weighted rule-based scorer with field-specific similarity functions typically hits 90%+ precision at a reasonable recall on the first day of production. The learned model you build six months later will outperform it on recall at the margin, but the absolute improvement is often 5-10 percentage points, not an order of magnitude. This is not a flaw; it means the rules are doing a lot of the work, and the learned model is catching the subtler cases. Don't skip the rules phase to rush to a learned model. You won't have labels yet anyway.
 
 The feedback loop is the thing that makes the system durably good. A duplicate detector without a feedback loop decays: new billing codes appear, new provider organizations emerge, new fraud patterns develop, and the detector keeps running the rules it was given at deploy time. A detector with a working feedback loop gets smarter over time. The engineering work on the loop (label capture, label storage, retraining pipeline, monitoring) is straightforward but non-trivial and needs to be budgeted from day one, not bolted on in year two.
 
@@ -752,6 +826,8 @@ And the trap worth flagging: don't confuse "detected a duplicate" with "recovere
 ---
 
 ## Variations and Extensions
+
+**OpenSearch for phonetic and fuzzy name matching at scale.** The walkthrough above does Levenshtein and Jaccard inline in Lambda, which works well for structured identifiers (NPIs, claim numbers, patient IDs) where candidate sets are small. When you add patient-name or provider-name fields to the scorer, inline string comparison stops scaling: names have more variation, phonetic matching (Double Metaphone, Soundex) is expensive per-pair, and candidate sets can grow. At that point, promote Amazon OpenSearch Service into the pipeline as a dedicated fuzzy-match layer between blocking (Step 2) and scoring (Step 3). Index claims on phonetic tokens and leverage OpenSearch's native edit-distance queries and k-NN vector search. OpenSearch Serverless can keep the operational burden low for mid-size payers. The core decision: OpenSearch adds a fixed cost (~$75-200/month for a small domain) but makes name-based matching dramatically more effective and faster than brute-force pairwise comparison.
 
 **Real-time at the 837 ingestion edge.** Swap the S3-event trigger for an API endpoint or a Kinesis stream sitting between the clearinghouse connection and the adjudication queue. Detection happens in the same submission-to-adjudication window rather than after the claim lands in the queue. Benefits: faster feedback to providers (duplicate denial within minutes rather than hours). Costs: tighter integration with the upstream pipeline, and the detector's latency budget shrinks significantly.
 
@@ -815,9 +891,9 @@ And the trap worth flagging: don't confuse "detected a duplicate" with "recovere
 
 | Tier | Scope | Time |
 |------|-------|------|
-| Basic | Exact-duplicate hash check, deterministic blocking, rule-based scorer, SQS review queue, manual examiner workflow | 4–6 weeks |
-| Production-ready | Add learned scorer on SageMaker, automated retraining pipeline, model monitoring, threshold tuning, fairness dashboard, 837 edge cases, provider hierarchy resolution | 4–6 months |
-| With variations | Real-time detection at ingestion edge, embedding-based similarity on attachments, graph detection of coordinated duplicates, cross-payer privacy-preserving linkage, LLM-assisted review triage | 6–12 months beyond production-ready |
+| Basic | Exact-duplicate hash check, deterministic blocking, rule-based scorer, SQS review queue, manual examiner workflow | 4-6 weeks |
+| Production-ready | Add learned scorer on SageMaker, automated retraining pipeline, model monitoring, threshold tuning, fairness dashboard, 837 edge cases, provider hierarchy resolution | 4-6 months |
+| With variations | Real-time detection at ingestion edge, embedding-based similarity on attachments, graph detection of coordinated duplicates, cross-payer privacy-preserving linkage, LLM-assisted review triage | 6-12 months beyond production-ready |
 
 ---
 
