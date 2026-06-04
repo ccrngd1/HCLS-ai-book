@@ -1,0 +1,696 @@
+# parallel_worker header: concurrency_limit=2 batch_id=batch-1780538115982-000008-ab4fcde1e890ab32 iteration=1240 task_id=ch08-r01-python persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;141m> [0mI'll start by reading the reference files to understand the style, structure, and existing examples.[0m[0m
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/STYLE-GUIDE.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/RECIPE-GUIDE.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/categories/08-nlp-traditional.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3731 bytes[0m from /tmp/ralph-worktrees/iter-1240/STYLE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m9026 bytes[0m from /tmp/ralph-worktrees/iter-1240/RECIPE-GUIDE.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m4418 bytes[0m from /tmp/ralph-worktrees/iter-1240/categories/08-nlp-traditional.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me look at an existing Python companion file from Chapter 1 to understand the expected format and quality:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter01.01-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m23662 bytes[0m from /tmp/ralph-worktrees/iter-1240/chapter01.01-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the main recipe for 8.1 to understand what the Python companion should map to:[0m[0m
+Searching for files: [38;5;141mchapter08*[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m2 files[0m under current directory
+[38;5;244m - Completed in 0.349s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-chief-complaint-classification.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m32871 bytes[0m from /tmp/ralph-worktrees/iter-1240/chapter08.01-chief-complaint-classification.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow let me check the [38;5;10m_Sidebar.md[0m file to understand its current structure:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/_Sidebar.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m21933 bytes[0m from /tmp/ralph-worktrees/iter-1240/_Sidebar.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mI have all the context I need. The sidebar already has the entry for [38;5;10mchapter08.01-python-example[0m. Now I'll write the Python companion file that maps to the main recipe's pseudocode steps.[0m[0m
+I'll create the following file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m[38;5;244m (using tool: write)[0m
+
+[49m[38;5;10m+      1[0m:[38;5;10m[49m # Recipe 8.1: Python Implementation Example
+[0m[49m[38;5;10m+      2[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      3[0m:[38;5;10m[49m > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 8.1. It shows one way you could translate those concepts into working Python using boto3. It is not production-ready. There's no error handling, no retry logic, no input validation, no tests. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to an ED triage desk on Monday morning. A starting point, not a destination.
+[0m[49m[38;5;10m+      4[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      5[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+      6[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      7[0m:[38;5;10m[49m ## Setup
+[0m[49m[38;5;10m+      8[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+      9[0m:[38;5;10m[49m You'll need the AWS SDK for Python:
+[0m[49m[38;5;10m+     10[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     11[0m:[38;5;10m[49m ```bash
+[0m[49m[38;5;10m+     12[0m:[38;5;10m[49m pip install boto3
+[0m[49m[38;5;10m+     13[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     14[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     15[0m:[38;5;10m[49m Your environment needs credentials configured (via environment variables, an instance profile, or `~/.aws/credentials`). The IAM role or user needs:
+[0m[49m[38;5;10m+     16[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     17[0m:[38;5;10m[49m - `comprehend:ClassifyDocument` (for the custom classifier endpoint)
+[0m[49m[38;5;10m+     18[0m:[38;5;10m[49m - `comprehend-medical:DetectEntitiesV2` (for entity enrichment)
+[0m[49m[38;5;10m+     19[0m:[38;5;10m[49m - `dynamodb:GetItem`, `dynamodb:PutItem` (abbreviation map and results table)
+[0m[49m[38;5;10m+     20[0m:[38;5;10m[49m - `sqs:SendMessage` (review queue)
+[0m[49m[38;5;10m+     21[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     22[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     23[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     24[0m:[38;5;10m[49m ## Config and Constants
+[0m[49m[38;5;10m+     25[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     26[0m:[38;5;10m[49m Before we get to the steps, here are the configuration values and lookup tables the pipeline uses. These live at the top of your module so they're easy to find and tune. The abbreviation map is the piece that will grow the most over time as you encounter institution-specific shorthand.
+[0m[49m[38;5;10m+     27[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     28[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+     29[0m:[38;5;10m[49m # ABBREVIATION_MAP: maps lowercase abbreviations to their expanded clinical terms.
+[0m[49m[38;5;10m+     30[0m:[38;5;10m[49m #
+[0m[49m[38;5;10m+     31[0m:[38;5;10m[49m # This is the single most institution-specific piece of the pipeline.
+[0m[49m[38;5;10m+     32[0m:[38;5;10m[49m # Every ED, urgent care, and nurse hotline has its own shorthand.
+[0m[49m[38;5;10m+     33[0m:[38;5;10m[49m # Treat this as a living dictionary. When the preprocessing step encounters
+[0m[49m[38;5;10m+     34[0m:[38;5;10m[49m # an unknown token that later gets manually classified, add it here.
+[0m[49m[38;5;10m+     35[0m:[38;5;10m[49m #
+[0m[49m[38;5;10m+     36[0m:[38;5;10m[49m # Start with the common ones and grow from there.
+[0m[49m[38;5;10m+     37[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     38[0m:[38;5;10m[49m ABBREVIATION_MAP = {
+[0m[49m[38;5;10m+     39[0m:[38;5;10m[49m     "cp": "chest pain",
+[0m[49m[38;5;10m+     40[0m:[38;5;10m[49m     "sob": "shortness of breath",
+[0m[49m[38;5;10m+     41[0m:[38;5;10m[49m     "ha": "headache",
+[0m[49m[38;5;10m+     42[0m:[38;5;10m[49m     "n/v": "nausea and vomiting",
+[0m[49m[38;5;10m+     43[0m:[38;5;10m[49m     "n/v/d": "nausea vomiting and diarrhea",
+[0m[49m[38;5;10m+     44[0m:[38;5;10m[49m     "abd": "abdominal",
+[0m[49m[38;5;10m+     45[0m:[38;5;10m[49m     "htn": "hypertension",
+[0m[49m[38;5;10m+     46[0m:[38;5;10m[49m     "loc": "loss of consciousness",
+[0m[49m[38;5;10m+     47[0m:[38;5;10m[49m     "uti": "urinary tract infection",
+[0m[49m[38;5;10m+     48[0m:[38;5;10m[49m     "uri": "upper respiratory infection",
+[0m[49m[38;5;10m+     49[0m:[38;5;10m[49m     "lbp": "low back pain",
+[0m[49m[38;5;10m+     50[0m:[38;5;10m[49m     "r/o": "rule out",
+[0m[49m[38;5;10m+     51[0m:[38;5;10m[49m     "s/p": "status post",
+[0m[49m[38;5;10m+     52[0m:[38;5;10m[49m     "fx": "fracture",
+[0m[49m[38;5;10m+     53[0m:[38;5;10m[49m     "lac": "laceration",
+[0m[49m[38;5;10m+     54[0m:[38;5;10m[49m     "mva": "motor vehicle accident",
+[0m[49m[38;5;10m+     55[0m:[38;5;10m[49m     "doi": "date of injury",
+[0m[49m[38;5;10m+     56[0m:[38;5;10m[49m     "ams": "altered mental status",
+[0m[49m[38;5;10m+     57[0m:[38;5;10m[49m     "etoh": "alcohol",
+[0m[49m[38;5;10m+     58[0m:[38;5;10m[49m     "oi": "orthopedic injury",
+[0m[49m[38;5;10m+     59[0m:[38;5;10m[49m     "fb": "foreign body",
+[0m[49m[38;5;10m+     60[0m:[38;5;10m[49m     "si": "suicidal ideation",
+[0m[49m[38;5;10m+     61[0m:[38;5;10m[49m     "chi": "closed head injury",
+[0m[49m[38;5;10m+     62[0m:[38;5;10m[49m     "dka": "diabetic ketoacidosis",
+[0m[49m[38;5;10m+     63[0m:[38;5;10m[49m     "dvt": "deep vein thrombosis",
+[0m[49m[38;5;10m+     64[0m:[38;5;10m[49m     "pe": "pulmonary embolism",
+[0m[49m[38;5;10m+     65[0m:[38;5;10m[49m     "mi": "myocardial infarction",
+[0m[49m[38;5;10m+     66[0m:[38;5;10m[49m     "cva": "cerebrovascular accident",
+[0m[49m[38;5;10m+     67[0m:[38;5;10m[49m     "tia": "transient ischemic attack",
+[0m[49m[38;5;10m+     68[0m:[38;5;10m[49m     "rti": "respiratory tract infection",
+[0m[49m[38;5;10m+     69[0m:[38;5;10m[49m     "lle": "left lower extremity",
+[0m[49m[38;5;10m+     70[0m:[38;5;10m[49m     "rle": "right lower extremity",
+[0m[49m[38;5;10m+     71[0m:[38;5;10m[49m     "lue": "left upper extremity",
+[0m[49m[38;5;10m+     72[0m:[38;5;10m[49m     "rue": "right upper extremity",
+[0m[49m[38;5;10m+     73[0m:[38;5;10m[49m }
+[0m[49m[38;5;10m+     74[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     75[0m:[38;5;10m[49m # Confidence threshold: predictions below this go to human review.
+[0m[49m[38;5;10m+     76[0m:[38;5;10m[49m # Start conservative (85%) and lower as you gain confidence in the model.
+[0m[49m[38;5;10m+     77[0m:[38;5;10m[49m CONFIDENCE_THRESHOLD = 0.85
+[0m[49m[38;5;10m+     78[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     79[0m:[38;5;10m[49m # Ambiguity gap: if the top two predictions are closer than this,
+[0m[49m[38;5;10m+     80[0m:[38;5;10m[49m # the model is basically guessing between them. Flag for review.
+[0m[49m[38;5;10m+     81[0m:[38;5;10m[49m AMBIGUITY_GAP = 0.15
+[0m[49m[38;5;10m+     82[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     83[0m:[38;5;10m[49m # ARN of your deployed Comprehend custom classifier endpoint.
+[0m[49m[38;5;10m+     84[0m:[38;5;10m[49m # You get this after training and deploying a custom model in Comprehend.
+[0m[49m[38;5;10m+     85[0m:[38;5;10m[49m CLASSIFIER_ENDPOINT_ARN = "arn:aws:comprehend:us-east-1:123456789012:document-classifier-endpoint/chief-complaint-v1"
+[0m[49m[38;5;10m+     86[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     87[0m:[38;5;10m[49m # DynamoDB table names.
+[0m[49m[38;5;10m+     88[0m:[38;5;10m[49m RESULTS_TABLE = "complaint-classifications"
+[0m[49m[38;5;10m+     89[0m:[38;5;10m[49m ABBREVIATION_TABLE = "abbreviation-map"  # optional: use DynamoDB instead of hardcoded dict
+[0m[49m[38;5;10m+     90[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     91[0m:[38;5;10m[49m # SQS queue URL for low-confidence review routing.
+[0m[49m[38;5;10m+     92[0m:[38;5;10m[49m REVIEW_QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/complaint-review-queue"
+[0m[49m[38;5;10m+     93[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+     94[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     95[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+     96[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     97[0m:[38;5;10m[49m ## Step 1: Preprocess the Chief Complaint
+[0m[49m[38;5;10m+     98[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+     99[0m:[38;5;10m[49m *The pseudocode calls this `preprocess_complaint(raw_text, abbreviation_map)`. It lowercases the input, strips non-clinical punctuation, and expands known abbreviations into their full clinical terms.*
+[0m[49m[38;5;10m+    100[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    101[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    102[0m:[38;5;10m[49m import re
+[0m[49m[38;5;10m+    103[0m:[38;5;10m[49m import logging
+[0m[49m[38;5;10m+    104[0m:[38;5;10m[49m import boto3
+[0m[49m[38;5;10m+    105[0m:[38;5;10m[49m from botocore.config import Config
+[0m[49m[38;5;10m+    106[0m:[38;5;10m[49m from decimal import Decimal
+[0m[49m[38;5;10m+    107[0m:[38;5;10m[49m import datetime
+[0m[49m[38;5;10m+    108[0m:[38;5;10m[49m from datetime import timezone
+[0m[49m[38;5;10m+    109[0m:[38;5;10m[49m import uuid
+[0m[49m[38;5;10m+    110[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    111[0m:[38;5;10m[49m # Structured logging. In production, use JSON-formatted output for
+[0m[49m[38;5;10m+    112[0m:[38;5;10m[49m # CloudWatch Logs Insights. Never log the actual complaint text in
+[0m[49m[38;5;10m+    113[0m:[38;5;10m[49m # production (it's PHI).
+[0m[49m[38;5;10m+    114[0m:[38;5;10m[49m logger = logging.getLogger(__name__)
+[0m[49m[38;5;10m+    115[0m:[38;5;10m[49m logger.setLevel(logging.INFO)
+[0m[49m[38;5;10m+    116[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    117[0m:[38;5;10m[49m # Retry config for all AWS clients. Adaptive mode handles throttling
+[0m[49m[38;5;10m+    118[0m:[38;5;10m[49m # with exponential backoff and jitter.
+[0m[49m[38;5;10m+    119[0m:[38;5;10m[49m BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
+[0m[49m[38;5;10m+    120[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    121[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    122[0m:[38;5;10m[49m def preprocess_complaint(raw_text: str) -> str:
+[0m[49m[38;5;10m+    123[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    124[0m:[38;5;10m[49m     Clean and normalize a raw chief complaint for classification.
+[0m[49m[38;5;10m+    125[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    126[0m:[38;5;10m[49m     This handles the messiest part of the problem: chief complaints arrive
+[0m[49m[38;5;10m+    127[0m:[38;5;10m[49m     in every imaginable format. "CP x 2 days", "CHEST PAIN", "cp w/ sob",
+[0m[49m[38;5;10m+    128[0m:[38;5;10m[49m     "Chest pain, worse with exertion." all need to become something the
+[0m[49m[38;5;10m+    129[0m:[38;5;10m[49m     classifier can work with consistently.
+[0m[49m[38;5;10m+    130[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    131[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    132[0m:[38;5;10m[49m         raw_text: The chief complaint exactly as entered by the clerk,
+[0m[49m[38;5;10m+    133[0m:[38;5;10m[49m                   nurse, patient, or kiosk.
+[0m[49m[38;5;10m+    134[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    135[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    136[0m:[38;5;10m[49m         Cleaned, expanded text ready for classification.
+[0m[49m[38;5;10m+    137[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    138[0m:[38;5;10m[49m     # Lowercase everything. Chief complaints come in ALL CAPS, Title Case,
+[0m[49m[38;5;10m+    139[0m:[38;5;10m[49m     # and random mixtures. The classifier shouldn't need to learn that
+[0m[49m[38;5;10m+    140[0m:[38;5;10m[49m     # "CHEST PAIN" and "chest pain" are the same thing.
+[0m[49m[38;5;10m+    141[0m:[38;5;10m[49m     text = raw_text.lower().strip()
+[0m[49m[38;5;10m+    142[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    143[0m:[38;5;10m[49m     # Remove characters that add no clinical meaning.
+[0m[49m[38;5;10m+    144[0m:[38;5;10m[49m     # Keep: letters, numbers, spaces, and forward slashes (for "n/v", "n/v/d").
+[0m[49m[38;5;10m+    145[0m:[38;5;10m[49m     # Drop: periods, commas, parentheses, quotes, etc.
+[0m[49m[38;5;10m+    146[0m:[38;5;10m[49m     # The regex keeps [a-z0-9\s/] and removes everything else.
+[0m[49m[38;5;10m+    147[0m:[38;5;10m[49m     text = re.sub(r"[^a-z0-9\s/]", "", text)
+[0m[49m[38;5;10m+    148[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    149[0m:[38;5;10m[49m     # Collapse multiple spaces into one (from removed punctuation).
+[0m[49m[38;5;10m+    150[0m:[38;5;10m[49m     text = re.sub(r"\s+", " ", text).strip()
+[0m[49m[38;5;10m+    151[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    152[0m:[38;5;10m[49m     # Expand abbreviations using the lookup map.
+[0m[49m[38;5;10m+    153[0m:[38;5;10m[49m     # Split into tokens, check each against the map, replace if found.
+[0m[49m[38;5;10m+    154[0m:[38;5;10m[49m     tokens = text.split()
+[0m[49m[38;5;10m+    155[0m:[38;5;10m[49m     expanded = []
+[0m[49m[38;5;10m+    156[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    157[0m:[38;5;10m[49m     for token in tokens:
+[0m[49m[38;5;10m+    158[0m:[38;5;10m[49m         if token in ABBREVIATION_MAP:
+[0m[49m[38;5;10m+    159[0m:[38;5;10m[49m             # Replace abbreviation with its full clinical term.
+[0m[49m[38;5;10m+    160[0m:[38;5;10m[49m             # "cp" becomes "chest pain" (two words injected, which is fine).
+[0m[49m[38;5;10m+    161[0m:[38;5;10m[49m             expanded.append(ABBREVIATION_MAP[token])
+[0m[49m[38;5;10m+    162[0m:[38;5;10m[49m         else:
+[0m[49m[38;5;10m+    163[0m:[38;5;10m[49m             expanded.append(token)
+[0m[49m[38;5;10m+    164[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    165[0m:[38;5;10m[49m     return " ".join(expanded)
+[0m[49m[38;5;10m+    166[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    167[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    168[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    169[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    170[0m:[38;5;10m[49m ## Step 2: Enrich with Medical Entity Detection
+[0m[49m[38;5;10m+    171[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    172[0m:[38;5;10m[49m *The pseudocode calls this `enrich_with_entities(preprocessed_text)`. It uses Amazon Comprehend Medical to detect clinical entities in the text, confirming whether terms are symptoms, conditions, or body parts. This step is optional but helps with ambiguous short inputs.*
+[0m[49m[38;5;10m+    173[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    174[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    175[0m:[38;5;10m[49m # Comprehend Medical client for entity detection.
+[0m[49m[38;5;10m+    176[0m:[38;5;10m[49m comprehend_medical_client = boto3.client(
+[0m[49m[38;5;10m+    177[0m:[38;5;10m[49m     "comprehendmedical", config=BOTO3_RETRY_CONFIG
+[0m[49m[38;5;10m+    178[0m:[38;5;10m[49m )
+[0m[49m[38;5;10m+    179[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    180[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    181[0m:[38;5;10m[49m def enrich_with_entities(preprocessed_text: str) -> list:
+[0m[49m[38;5;10m+    182[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    183[0m:[38;5;10m[49m     Use Comprehend Medical to detect clinical entities in the complaint.
+[0m[49m[38;5;10m+    184[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    185[0m:[38;5;10m[49m     This is optional enrichment. For clear, well-expanded complaints like
+[0m[49m[38;5;10m+    186[0m:[38;5;10m[49m     "chest pain worse with exertion," the classifier will do fine without it.
+[0m[49m[38;5;10m+    187[0m:[38;5;10m[49m     For ambiguous inputs like "pain" or "sick," entity detection provides
+[0m[49m[38;5;10m+    188[0m:[38;5;10m[49m     additional signal by confirming what type of clinical concept the text contains.
+[0m[49m[38;5;10m+    189[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    190[0m:[38;5;10m[49m     In a production system, you'd call this selectively (only for short or
+[0m[49m[38;5;10m+    191[0m:[38;5;10m[49m     low-confidence inputs) to save cost. Comprehend Medical charges per
+[0m[49m[38;5;10m+    192[0m:[38;5;10m[49m     character, so running it on every complaint adds up.
+[0m[49m[38;5;10m+    193[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    194[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    195[0m:[38;5;10m[49m         preprocessed_text: Cleaned complaint text from Step 1.
+[0m[49m[38;5;10m+    196[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    197[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    198[0m:[38;5;10m[49m         List of detected entities with their types and confidence scores.
+[0m[49m[38;5;10m+    199[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    200[0m:[38;5;10m[49m     # Call the DetectEntitiesV2 API. The "V2" version is the current one;
+[0m[49m[38;5;10m+    201[0m:[38;5;10m[49m     # the original DetectEntities is deprecated.
+[0m[49m[38;5;10m+    202[0m:[38;5;10m[49m     response = comprehend_medical_client.detect_entities_v2(
+[0m[49m[38;5;10m+    203[0m:[38;5;10m[49m         Text=preprocessed_text
+[0m[49m[38;5;10m+    204[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+    205[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    206[0m:[38;5;10m[49m     # Extract the entities Comprehend Medical found.
+[0m[49m[38;5;10m+    207[0m:[38;5;10m[49m     # Each entity has: Text, Category, Type, Score, Traits, Attributes.
+[0m[49m[38;5;10m+    208[0m:[38;5;10m[49m     # We care about Category (MEDICAL_CONDITION, ANATOMY, etc.) and Score.
+[0m[49m[38;5;10m+    209[0m:[38;5;10m[49m     entities = []
+[0m[49m[38;5;10m+    210[0m:[38;5;10m[49m     for entity in response.get("Entities", []):
+[0m[49m[38;5;10m+    211[0m:[38;5;10m[49m         entities.append({
+[0m[49m[38;5;10m+    212[0m:[38;5;10m[49m             "text": entity["Text"],
+[0m[49m[38;5;10m+    213[0m:[38;5;10m[49m             "category": entity["Category"],
+[0m[49m[38;5;10m+    214[0m:[38;5;10m[49m             "type": entity["Type"],
+[0m[49m[38;5;10m+    215[0m:[38;5;10m[49m             "score": entity["Score"],
+[0m[49m[38;5;10m+    216[0m:[38;5;10m[49m             # Traits tell us about negation, uncertainty, etc.
+[0m[49m[38;5;10m+    217[0m:[38;5;10m[49m             # "chest pain" with a NEGATION trait means "denies chest pain."
+[0m[49m[38;5;10m+    218[0m:[38;5;10m[49m             "traits": [t["Name"] for t in entity.get("Traits", [])],
+[0m[49m[38;5;10m+    219[0m:[38;5;10m[49m         })
+[0m[49m[38;5;10m+    220[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    221[0m:[38;5;10m[49m     return entities
+[0m[49m[38;5;10m+    222[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    223[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    224[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    225[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    226[0m:[38;5;10m[49m ## Step 3: Classify the Complaint
+[0m[49m[38;5;10m+    227[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    228[0m:[38;5;10m[49m *The pseudocode calls this `classify_complaint(preprocessed_text, endpoint_arn)`. This is the core step: send the cleaned text to the Comprehend custom classifier endpoint and get back a ranked list of categories with confidence scores.*
+[0m[49m[38;5;10m+    229[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    230[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    231[0m:[38;5;10m[49m # Comprehend client for custom classification.
+[0m[49m[38;5;10m+    232[0m:[38;5;10m[49m comprehend_client = boto3.client("comprehend", config=BOTO3_RETRY_CONFIG)
+[0m[49m[38;5;10m+    233[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    234[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    235[0m:[38;5;10m[49m def classify_complaint(preprocessed_text: str) -> dict:
+[0m[49m[38;5;10m+    236[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    237[0m:[38;5;10m[49m     Classify the preprocessed complaint into a clinical category.
+[0m[49m[38;5;10m+    238[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    239[0m:[38;5;10m[49m     The custom classifier endpoint was trained on your institution's historical
+[0m[49m[38;5;10m+    240[0m:[38;5;10m[49m     chief complaints paired with the categories they were ultimately routed to.
+[0m[49m[38;5;10m+    241[0m:[38;5;10m[49m     It returns a ranked list of categories sorted by confidence.
+[0m[49m[38;5;10m+    242[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    243[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    244[0m:[38;5;10m[49m         preprocessed_text: Cleaned, expanded complaint text from Step 1.
+[0m[49m[38;5;10m+    245[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    246[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    247[0m:[38;5;10m[49m         Dictionary with the top prediction, runner-up, and full ranked list.
+[0m[49m[38;5;10m+    248[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    249[0m:[38;5;10m[49m     # Call the ClassifyDocument API against our custom endpoint.
+[0m[49m[38;5;10m+    250[0m:[38;5;10m[49m     # The endpoint hosts the model trained on our labeled data.
+[0m[49m[38;5;10m+    251[0m:[38;5;10m[49m     response = comprehend_client.classify_document(
+[0m[49m[38;5;10m+    252[0m:[38;5;10m[49m         Text=preprocessed_text,
+[0m[49m[38;5;10m+    253[0m:[38;5;10m[49m         EndpointArn=CLASSIFIER_ENDPOINT_ARN,
+[0m[49m[38;5;10m+    254[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+    255[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    256[0m:[38;5;10m[49m     # The response contains a "Classes" list sorted by confidence (highest first).
+[0m[49m[38;5;10m+    257[0m:[38;5;10m[49m     # Each class has a "Name" (the category label) and "Score" (0.0 to 1.0).
+[0m[49m[38;5;10m+    258[0m:[38;5;10m[49m     classes = response.get("Classes", [])
+[0m[49m[38;5;10m+    259[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    260[0m:[38;5;10m[49m     if len(classes) < 2:
+[0m[49m[38;5;10m+    261[0m:[38;5;10m[49m         # Edge case: if somehow fewer than 2 classes returned.
+[0m[49m[38;5;10m+    262[0m:[38;5;10m[49m         # In practice this shouldn't happen with a properly trained model.
+[0m[49m[38;5;10m+    263[0m:[38;5;10m[49m         top = classes[0] if classes else {"Name": "UNKNOWN", "Score": 0.0}
+[0m[49m[38;5;10m+    264[0m:[38;5;10m[49m         runner_up = {"Name": "UNKNOWN", "Score": 0.0}
+[0m[49m[38;5;10m+    265[0m:[38;5;10m[49m     else:
+[0m[49m[38;5;10m+    266[0m:[38;5;10m[49m         top = classes[0]
+[0m[49m[38;5;10m+    267[0m:[38;5;10m[49m         runner_up = classes[1]
+[0m[49m[38;5;10m+    268[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    269[0m:[38;5;10m[49m     return {
+[0m[49m[38;5;10m+    270[0m:[38;5;10m[49m         "category": top["Name"],
+[0m[49m[38;5;10m+    271[0m:[38;5;10m[49m         "confidence": top["Score"],
+[0m[49m[38;5;10m+    272[0m:[38;5;10m[49m         "runner_up": {
+[0m[49m[38;5;10m+    273[0m:[38;5;10m[49m             "category": runner_up["Name"],
+[0m[49m[38;5;10m+    274[0m:[38;5;10m[49m             "confidence": runner_up["Score"],
+[0m[49m[38;5;10m+    275[0m:[38;5;10m[49m         },
+[0m[49m[38;5;10m+    276[0m:[38;5;10m[49m         "all_predictions": [
+[0m[49m[38;5;10m+    277[0m:[38;5;10m[49m             {"category": c["Name"], "confidence": c["Score"]}
+[0m[49m[38;5;10m+    278[0m:[38;5;10m[49m             for c in classes
+[0m[49m[38;5;10m+    279[0m:[38;5;10m[49m         ],
+[0m[49m[38;5;10m+    280[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    281[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    282[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    283[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    284[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    285[0m:[38;5;10m[49m ## Step 4: Apply Confidence Gating
+[0m[49m[38;5;10m+    286[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    287[0m:[38;5;10m[49m *The pseudocode calls this `apply_confidence_gate(prediction)`. It checks whether the prediction is confident enough for automated routing, or whether a human should review it.*
+[0m[49m[38;5;10m+    288[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    289[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    290[0m:[38;5;10m[49m def apply_confidence_gate(prediction: dict) -> dict:
+[0m[49m[38;5;10m+    291[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    292[0m:[38;5;10m[49m     Decide whether this prediction is trustworthy enough to route automatically.
+[0m[49m[38;5;10m+    293[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    294[0m:[38;5;10m[49m     Two checks:
+[0m[49m[38;5;10m+    295[0m:[38;5;10m[49m     1. Is the top prediction above the confidence threshold?
+[0m[49m[38;5;10m+    296[0m:[38;5;10m[49m     2. Is there enough gap between the top two predictions?
+[0m[49m[38;5;10m+    297[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    298[0m:[38;5;10m[49m     If either check fails, the complaint goes to human review rather than
+[0m[49m[38;5;10m+    299[0m:[38;5;10m[49m     being routed automatically. In healthcare, a wrong routing decision has
+[0m[49m[38;5;10m+    300[0m:[38;5;10m[49m     real consequences (a cardiac chest pain patient sent to a non-urgent track),
+[0m[49m[38;5;10m+    301[0m:[38;5;10m[49m     so we err on the side of human review for borderline cases.
+[0m[49m[38;5;10m+    302[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    303[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    304[0m:[38;5;10m[49m         prediction: Output from classify_complaint() with category, confidence,
+[0m[49m[38;5;10m+    305[0m:[38;5;10m[49m                     and runner_up fields.
+[0m[49m[38;5;10m+    306[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    307[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    308[0m:[38;5;10m[49m         Dictionary with action ("ROUTE" or "REVIEW") and supporting metadata.
+[0m[49m[38;5;10m+    309[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    310[0m:[38;5;10m[49m     # Check 1: Is the top prediction confident enough on its own?
+[0m[49m[38;5;10m+    311[0m:[38;5;10m[49m     if prediction["confidence"] < CONFIDENCE_THRESHOLD:
+[0m[49m[38;5;10m+    312[0m:[38;5;10m[49m         return {
+[0m[49m[38;5;10m+    313[0m:[38;5;10m[49m             "action": "REVIEW",
+[0m[49m[38;5;10m+    314[0m:[38;5;10m[49m             "reason": "low_confidence",
+[0m[49m[38;5;10m+    315[0m:[38;5;10m[49m             "category": prediction["category"],
+[0m[49m[38;5;10m+    316[0m:[38;5;10m[49m             "confidence": prediction["confidence"],
+[0m[49m[38;5;10m+    317[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    318[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    319[0m:[38;5;10m[49m     # Check 2: Is the gap between top and runner-up large enough?
+[0m[49m[38;5;10m+    320[0m:[38;5;10m[49m     # A 87% prediction with an 84% runner-up means the model is basically
+[0m[49m[38;5;10m+    321[0m:[38;5;10m[49m     # flipping a coin between two categories. That's not safe to automate.
+[0m[49m[38;5;10m+    322[0m:[38;5;10m[49m     gap = prediction["confidence"] - prediction["runner_up"]["confidence"]
+[0m[49m[38;5;10m+    323[0m:[38;5;10m[49m     if gap < AMBIGUITY_GAP:
+[0m[49m[38;5;10m+    324[0m:[38;5;10m[49m         return {
+[0m[49m[38;5;10m+    325[0m:[38;5;10m[49m             "action": "REVIEW",
+[0m[49m[38;5;10m+    326[0m:[38;5;10m[49m             "reason": "ambiguous_top_two",
+[0m[49m[38;5;10m+    327[0m:[38;5;10m[49m             "category": prediction["category"],
+[0m[49m[38;5;10m+    328[0m:[38;5;10m[49m             "confidence": prediction["confidence"],
+[0m[49m[38;5;10m+    329[0m:[38;5;10m[49m             "runner_up_category": prediction["runner_up"]["category"],
+[0m[49m[38;5;10m+    330[0m:[38;5;10m[49m             "runner_up_confidence": prediction["runner_up"]["confidence"],
+[0m[49m[38;5;10m+    331[0m:[38;5;10m[49m         }
+[0m[49m[38;5;10m+    332[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    333[0m:[38;5;10m[49m     # Both checks passed. Safe to route automatically.
+[0m[49m[38;5;10m+    334[0m:[38;5;10m[49m     return {
+[0m[49m[38;5;10m+    335[0m:[38;5;10m[49m         "action": "ROUTE",
+[0m[49m[38;5;10m+    336[0m:[38;5;10m[49m         "reason": None,
+[0m[49m[38;5;10m+    337[0m:[38;5;10m[49m         "category": prediction["category"],
+[0m[49m[38;5;10m+    338[0m:[38;5;10m[49m         "confidence": prediction["confidence"],
+[0m[49m[38;5;10m+    339[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    340[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    341[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    342[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    343[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    344[0m:[38;5;10m[49m ## Step 5: Store Results and Route
+[0m[49m[38;5;10m+    345[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    346[0m:[38;5;10m[49m *The pseudocode calls this `store_and_route(original_text, preprocessed_text, prediction, gate_result)`. It writes the classification record to DynamoDB and routes to either the downstream system or the human review queue.*
+[0m[49m[38;5;10m+    347[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    348[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    349[0m:[38;5;10m[49m # DynamoDB resource for storing classification results.
+[0m[49m[38;5;10m+    350[0m:[38;5;10m[49m dynamodb = boto3.resource("dynamodb")
+[0m[49m[38;5;10m+    351[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    352[0m:[38;5;10m[49m # SQS client for the review queue.
+[0m[49m[38;5;10m+    353[0m:[38;5;10m[49m sqs_client = boto3.client("sqs", config=BOTO3_RETRY_CONFIG)
+[0m[49m[38;5;10m+    354[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    355[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    356[0m:[38;5;10m[49m def store_and_route(
+[0m[49m[38;5;10m+    357[0m:[38;5;10m[49m     original_text: str,
+[0m[49m[38;5;10m+    358[0m:[38;5;10m[49m     preprocessed_text: str,
+[0m[49m[38;5;10m+    359[0m:[38;5;10m[49m     prediction: dict,
+[0m[49m[38;5;10m+    360[0m:[38;5;10m[49m     gate_result: dict,
+[0m[49m[38;5;10m+    361[0m:[38;5;10m[49m ) -> dict:
+[0m[49m[38;5;10m+    362[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    363[0m:[38;5;10m[49m     Persist the classification result and route it appropriately.
+[0m[49m[38;5;10m+    364[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    365[0m:[38;5;10m[49m     Every classification gets stored in DynamoDB regardless of routing decision.
+[0m[49m[38;5;10m+    366[0m:[38;5;10m[49m     This creates:
+[0m[49m[38;5;10m+    367[0m:[38;5;10m[49m     - The HIPAA audit trail (who classified what, when, with what confidence)
+[0m[49m[38;5;10m+    368[0m:[38;5;10m[49m     - Retraining data (especially the human-corrected low-confidence ones)
+[0m[49m[38;5;10m+    369[0m:[38;5;10m[49m     - Analytics data (complaint volume by category over time)
+[0m[49m[38;5;10m+    370[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    371[0m:[38;5;10m[49m     High-confidence predictions go directly to downstream consumers.
+[0m[49m[38;5;10m+    372[0m:[38;5;10m[49m     Low-confidence predictions go to SQS for human review.
+[0m[49m[38;5;10m+    373[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    374[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    375[0m:[38;5;10m[49m         original_text:    What the user actually typed.
+[0m[49m[38;5;10m+    376[0m:[38;5;10m[49m         preprocessed_text: After abbreviation expansion and cleaning.
+[0m[49m[38;5;10m+    377[0m:[38;5;10m[49m         prediction:       Full classifier output from Step 3.
+[0m[49m[38;5;10m+    378[0m:[38;5;10m[49m         gate_result:      Routing decision from Step 4.
+[0m[49m[38;5;10m+    379[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    380[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    381[0m:[38;5;10m[49m         The complete classification record as stored.
+[0m[49m[38;5;10m+    382[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    383[0m:[38;5;10m[49m     table = dynamodb.Table(RESULTS_TABLE)
+[0m[49m[38;5;10m+    384[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    385[0m:[38;5;10m[49m     # Generate a unique ID for this classification event.
+[0m[49m[38;5;10m+    386[0m:[38;5;10m[49m     complaint_id = f"cc-{datetime.date.today().isoformat()}-{uuid.uuid4().hex[:8]}"
+[0m[49m[38;5;10m+    387[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    388[0m:[38;5;10m[49m     # Build the record. DynamoDB requires Decimal for numeric values,
+[0m[49m[38;5;10m+    389[0m:[38;5;10m[49m     # not Python floats. Wrap all scores in Decimal via str() to avoid
+[0m[49m[38;5;10m+    390[0m:[38;5;10m[49m     # floating-point precision artifacts.
+[0m[49m[38;5;10m+    391[0m:[38;5;10m[49m     record = {
+[0m[49m[38;5;10m+    392[0m:[38;5;10m[49m         "complaint_id": complaint_id,
+[0m[49m[38;5;10m+    393[0m:[38;5;10m[49m         "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
+[0m[49m[38;5;10m+    394[0m:[38;5;10m[49m         "original_text": original_text,
+[0m[49m[38;5;10m+    395[0m:[38;5;10m[49m         "preprocessed": preprocessed_text,
+[0m[49m[38;5;10m+    396[0m:[38;5;10m[49m         "predicted_category": prediction["category"],
+[0m[49m[38;5;10m+    397[0m:[38;5;10m[49m         "confidence": Decimal(str(round(prediction["confidence"], 4))),
+[0m[49m[38;5;10m+    398[0m:[38;5;10m[49m         "runner_up_category": prediction["runner_up"]["category"],
+[0m[49m[38;5;10m+    399[0m:[38;5;10m[49m         "runner_up_confidence": Decimal(
+[0m[49m[38;5;10m+    400[0m:[38;5;10m[49m             str(round(prediction["runner_up"]["confidence"], 4))
+[0m[49m[38;5;10m+    401[0m:[38;5;10m[49m         ),
+[0m[49m[38;5;10m+    402[0m:[38;5;10m[49m         "gate_action": gate_result["action"],
+[0m[49m[38;5;10m+    403[0m:[38;5;10m[49m         "gate_reason": gate_result.get("reason", "none"),
+[0m[49m[38;5;10m+    404[0m:[38;5;10m[49m         # final_category is populated later by human reviewers (if applicable).
+[0m[49m[38;5;10m+    405[0m:[38;5;10m[49m         "final_category": None,
+[0m[49m[38;5;10m+    406[0m:[38;5;10m[49m     }
+[0m[49m[38;5;10m+    407[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    408[0m:[38;5;10m[49m     # Write to DynamoDB.
+[0m[49m[38;5;10m+    409[0m:[38;5;10m[49m     table.put_item(Item=record)
+[0m[49m[38;5;10m+    410[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    411[0m:[38;5;10m[49m     # Route based on the gate decision.
+[0m[49m[38;5;10m+    412[0m:[38;5;10m[49m     if gate_result["action"] == "REVIEW":
+[0m[49m[38;5;10m+    413[0m:[38;5;10m[49m         # Low confidence or ambiguous. Send to the review queue.
+[0m[49m[38;5;10m+    414[0m:[38;5;10m[49m         sqs_client.send_message(
+[0m[49m[38;5;10m+    415[0m:[38;5;10m[49m             QueueUrl=REVIEW_QUEUE_URL,
+[0m[49m[38;5;10m+    416[0m:[38;5;10m[49m             MessageBody=str({
+[0m[49m[38;5;10m+    417[0m:[38;5;10m[49m                 "complaint_id": complaint_id,
+[0m[49m[38;5;10m+    418[0m:[38;5;10m[49m                 "original_text": original_text,
+[0m[49m[38;5;10m+    419[0m:[38;5;10m[49m                 "top_category": prediction["category"],
+[0m[49m[38;5;10m+    420[0m:[38;5;10m[49m                 "confidence": prediction["confidence"],
+[0m[49m[38;5;10m+    421[0m:[38;5;10m[49m                 "runner_up": prediction["runner_up"]["category"],
+[0m[49m[38;5;10m+    422[0m:[38;5;10m[49m                 "reason": gate_result["reason"],
+[0m[49m[38;5;10m+    423[0m:[38;5;10m[49m             }),
+[0m[49m[38;5;10m+    424[0m:[38;5;10m[49m             # Group by category so reviewers can batch similar complaints.
+[0m[49m[38;5;10m+    425[0m:[38;5;10m[49m             MessageGroupId=prediction["category"].replace(" ", "-").lower()
+[0m[49m[38;5;10m+    426[0m:[38;5;10m[49m             if REVIEW_QUEUE_URL.endswith(".fifo")
+[0m[49m[38;5;10m+    427[0m:[38;5;10m[49m             else None,
+[0m[49m[38;5;10m+    428[0m:[38;5;10m[49m         )
+[0m[49m[38;5;10m+    429[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    430[0m:[38;5;10m[49m     return record
+[0m[49m[38;5;10m+    431[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    432[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    433[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    434[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    435[0m:[38;5;10m[49m ## Putting It All Together
+[0m[49m[38;5;10m+    436[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    437[0m:[38;5;10m[49m Here's the full pipeline assembled into a single function. In a Lambda deployment, your handler would extract the complaint text from the incoming event and call this.
+[0m[49m[38;5;10m+    438[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    439[0m:[38;5;10m[49m ```python
+[0m[49m[38;5;10m+    440[0m:[38;5;10m[49m def classify_chief_complaint(raw_text: str, enrich: bool = False) -> dict:
+[0m[49m[38;5;10m+    441[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    442[0m:[38;5;10m[49m     Run the full chief complaint classification pipeline.
+[0m[49m[38;5;10m+    443[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    444[0m:[38;5;10m[49m     Args:
+[0m[49m[38;5;10m+    445[0m:[38;5;10m[49m         raw_text: The chief complaint as entered by the user/clerk/kiosk.
+[0m[49m[38;5;10m+    446[0m:[38;5;10m[49m         enrich:   Whether to call Comprehend Medical for entity enrichment.
+[0m[49m[38;5;10m+    447[0m:[38;5;10m[49m                   Set to True for short or ambiguous inputs; False for clear ones.
+[0m[49m[38;5;10m+    448[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    449[0m:[38;5;10m[49m     Returns:
+[0m[49m[38;5;10m+    450[0m:[38;5;10m[49m         The stored classification record with routing decision.
+[0m[49m[38;5;10m+    451[0m:[38;5;10m[49m     """
+[0m[49m[38;5;10m+    452[0m:[38;5;10m[49m     # Step 1: Clean and expand abbreviations.
+[0m[49m[38;5;10m+    453[0m:[38;5;10m[49m     logger.info("Step 1: Preprocessing complaint")
+[0m[49m[38;5;10m+    454[0m:[38;5;10m[49m     preprocessed = preprocess_complaint(raw_text)
+[0m[49m[38;5;10m+    455[0m:[38;5;10m[49m     logger.info("  Original: [PHI redacted, %d chars]", len(raw_text))
+[0m[49m[38;5;10m+    456[0m:[38;5;10m[49m     logger.info("  Preprocessed: [PHI redacted, %d chars]", len(preprocessed))
+[0m[49m[38;5;10m+    457[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    458[0m:[38;5;10m[49m     # Step 2 (optional): Enrich with medical entity detection.
+[0m[49m[38;5;10m+    459[0m:[38;5;10m[49m     if enrich:
+[0m[49m[38;5;10m+    460[0m:[38;5;10m[49m         logger.info("Step 2: Enriching with Comprehend Medical entities")
+[0m[49m[38;5;10m+    461[0m:[38;5;10m[49m         entities = enrich_with_entities(preprocessed)
+[0m[49m[38;5;10m+    462[0m:[38;5;10m[49m         logger.info("  Detected %d entities", len(entities))
+[0m[49m[38;5;10m+    463[0m:[38;5;10m[49m         # In a more sophisticated version, you'd append entity types
+[0m[49m[38;5;10m+    464[0m:[38;5;10m[49m         # to the classifier input. For this example, we log them for
+[0m[49m[38;5;10m+    465[0m:[38;5;10m[49m         # analytics but classify on the preprocessed text alone.
+[0m[49m[38;5;10m+    466[0m:[38;5;10m[49m     else:
+[0m[49m[38;5;10m+    467[0m:[38;5;10m[49m         logger.info("Step 2: Skipping entity enrichment (enrich=False)")
+[0m[49m[38;5;10m+    468[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    469[0m:[38;5;10m[49m     # Step 3: Classify using the Comprehend custom endpoint.
+[0m[49m[38;5;10m+    470[0m:[38;5;10m[49m     logger.info("Step 3: Classifying complaint")
+[0m[49m[38;5;10m+    471[0m:[38;5;10m[49m     prediction = classify_complaint(preprocessed)
+[0m[49m[38;5;10m+    472[0m:[38;5;10m[49m     logger.info(
+[0m[49m[38;5;10m+    473[0m:[38;5;10m[49m         "  Top: %s (%.1f%%), Runner-up: %s (%.1f%%)",
+[0m[49m[38;5;10m+    474[0m:[38;5;10m[49m         prediction["category"],
+[0m[49m[38;5;10m+    475[0m:[38;5;10m[49m         prediction["confidence"] * 100,
+[0m[49m[38;5;10m+    476[0m:[38;5;10m[49m         prediction["runner_up"]["category"],
+[0m[49m[38;5;10m+    477[0m:[38;5;10m[49m         prediction["runner_up"]["confidence"] * 100,
+[0m[49m[38;5;10m+    478[0m:[38;5;10m[49m     )
+[0m[49m[38;5;10m+    479[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    480[0m:[38;5;10m[49m     # Step 4: Apply confidence gating.
+[0m[49m[38;5;10m+    481[0m:[38;5;10m[49m     logger.info("Step 4: Applying confidence gate")
+[0m[49m[38;5;10m+    482[0m:[38;5;10m[49m     gate_result = apply_confidence_gate(prediction)
+[0m[49m[38;5;10m+    483[0m:[38;5;10m[49m     logger.info("  Decision: %s (reason: %s)", gate_result["action"], gate_result.get("reason"))
+[0m[49m[38;5;10m+    484[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    485[0m:[38;5;10m[49m     # Step 5: Store and route.
+[0m[49m[38;5;10m+    486[0m:[38;5;10m[49m     logger.info("Step 5: Storing result and routing")
+[0m[49m[38;5;10m+    487[0m:[38;5;10m[49m     record = store_and_route(raw_text, preprocessed, prediction, gate_result)
+[0m[49m[38;5;10m+    488[0m:[38;5;10m[49m     logger.info("  Stored as %s, action=%s", record["complaint_id"], gate_result["action"])
+[0m[49m[38;5;10m+    489[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    490[0m:[38;5;10m[49m     return record
+[0m[49m[38;5;10m+    491[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    492[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    493[0m:[38;5;10m[49m # --- Example usage with synthetic data ---
+[0m[49m[38;5;10m+    494[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    495[0m:[38;5;10m[49m if __name__ == "__main__":
+[0m[49m[38;5;10m+    496[0m:[38;5;10m[49m     import json
+[0m[49m[38;5;10m+    497[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    498[0m:[38;5;10m[49m     # Synthetic chief complaints for testing.
+[0m[49m[38;5;10m+    499[0m:[38;5;10m[49m     # These are made-up examples, not real patient data.
+[0m[49m[38;5;10m+    500[0m:[38;5;10m[49m     test_complaints = [
+[0m[49m[38;5;10m+    501[0m:[38;5;10m[49m         "CP x 2 days, worse w/ exertion",
+[0m[49m[38;5;10m+    502[0m:[38;5;10m[49m         "sob and cough x 1 week",
+[0m[49m[38;5;10m+    503[0m:[38;5;10m[49m         "HA since yesterday, no fever",
+[0m[49m[38;5;10m+    504[0m:[38;5;10m[49m         "abd pain n/v",
+[0m[49m[38;5;10m+    505[0m:[38;5;10m[49m         "lac to left hand from knife",
+[0m[49m[38;5;10m+    506[0m:[38;5;10m[49m         "mva, neck pain",
+[0m[49m[38;5;10m+    507[0m:[38;5;10m[49m         "feeling dizzy and lightheaded",
+[0m[49m[38;5;10m+    508[0m:[38;5;10m[49m         "uti symptoms burning with urination",
+[0m[49m[38;5;10m+    509[0m:[38;5;10m[49m         "twisted ankle playing basketball",
+[0m[49m[38;5;10m+    510[0m:[38;5;10m[49m         "chest tightness and sweating",
+[0m[49m[38;5;10m+    511[0m:[38;5;10m[49m     ]
+[0m[49m[38;5;10m+    512[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    513[0m:[38;5;10m[49m     print("=" * 70)
+[0m[49m[38;5;10m+    514[0m:[38;5;10m[49m     print("Chief Complaint Classification Pipeline")
+[0m[49m[38;5;10m+    515[0m:[38;5;10m[49m     print("=" * 70)
+[0m[49m[38;5;10m+    516[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    517[0m:[38;5;10m[49m     for complaint in test_complaints:
+[0m[49m[38;5;10m+    518[0m:[38;5;10m[49m         print(f"\nInput: {complaint}")
+[0m[49m[38;5;10m+    519[0m:[38;5;10m[49m         result = classify_chief_complaint(complaint, enrich=False)
+[0m[49m[38;5;10m+    520[0m:[38;5;10m[49m         print(f"  Category: {result['predicted_category']}")
+[0m[49m[38;5;10m+    521[0m:[38;5;10m[49m         print(f"  Confidence: {result['confidence']}")
+[0m[49m[38;5;10m+    522[0m:[38;5;10m[49m         print(f"  Action: {result['gate_action']}")
+[0m[49m[38;5;10m+    523[0m:[38;5;10m[49m         print(f"  ID: {result['complaint_id']}")
+[0m[49m[38;5;10m+    524[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    525[0m:[38;5;10m[49m     print("\n" + "=" * 70)
+[0m[49m[38;5;10m+    526[0m:[38;5;10m[49m     print("Done. Check DynamoDB and SQS for stored results.")
+[0m[49m[38;5;10m+    527[0m:[38;5;10m[49m ```
+[0m[49m[38;5;10m+    528[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    529[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    530[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    531[0m:[38;5;10m[49m ## The Gap Between This and Production
+[0m[49m[38;5;10m+    532[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    533[0m:[38;5;10m[49m This example demonstrates the shape of the solution. Run it against a deployed Comprehend endpoint with a trained model and it will classify chief complaints into categories. But here's the distance between this and something you'd put in front of real triage workflows:
+[0m[49m[38;5;10m+    534[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    535[0m:[38;5;10m[49m **Error handling.** If Comprehend returns an error (throttling, endpoint not found, model not ready), this code crashes. A production system catches specific exceptions (`ThrottlingException`, `ResourceNotFoundException`, `InternalServerException`), handles each appropriately (retry, alert, degrade gracefully), and never loses a complaint silently. A failed classification should default to human routing, not to an unhandled exception.
+[0m[49m[38;5;10m+    536[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    537[0m:[38;5;10m[49m **Retries and backoff.** The `BOTO3_RETRY_CONFIG` handles some retries at the SDK level, but Comprehend endpoints under load can return transient errors that need application-level retry logic. For a classification that sits in the patient registration workflow, you need to either succeed or fail fast (under 2 seconds). A retry with 1-second backoff that fails after 3 attempts should route to human review with an "automated classification unavailable" flag.
+[0m[49m[38;5;10m+    538[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    539[0m:[38;5;10m[49m **Input validation.** This code sends whatever text it receives to Comprehend. A production system validates: Is the text non-empty? Is it under Comprehend's character limit (5,000 for ClassifyDocument)? Does it contain enough signal to classify (rejecting single-character inputs)? Is it in the expected language? Garbage in produces garbage out, and a classifier will happily return a 60% confidence prediction for "asdfghjkl" rather than telling you it's nonsense.
+[0m[49m[38;5;10m+    540[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    541[0m:[38;5;10m[49m **Structured logging.** The `logger.info()` calls here are illustrative. A production system uses structured JSON logging (AWS Lambda Powertools is excellent for this) with consistent fields: `complaint_id`, `latency_ms`, `confidence`, `action`, `error_type`. This is what your on-call engineer queries at 3am when the review queue is backing up.
+[0m[49m[38;5;10m+    542[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    543[0m:[38;5;10m[49m **PHI safety.** This example logs the original complaint text in the `__main__` block. In production, never log complaint text to CloudWatch. Chief complaints are PHI. Log the complaint ID, character count, predicted category, and confidence. If you need the text for debugging, look it up in DynamoDB (which is encrypted and access-controlled).
+[0m[49m[38;5;10m+    544[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    545[0m:[38;5;10m[49m **IAM least-privilege.** The Lambda running this pipeline needs exactly: `comprehend:ClassifyDocument` scoped to the specific endpoint ARN, `comprehend-medical:DetectEntitiesV2`, `dynamodb:PutItem` scoped to the results table, `sqs:SendMessage` scoped to the review queue URL, and `logs:CreateLogGroup/PutLogEvents` for CloudWatch. Not `comprehend:*`. Not `dynamodb:*`. Scope everything.
+[0m[49m[38;5;10m+    546[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    547[0m:[38;5;10m[49m **VPC configuration.** Chief complaints are PHI. In production, this Lambda runs in a VPC with private subnets. VPC endpoints for Comprehend, Comprehend Medical, DynamoDB, SQS, and CloudWatch keep all traffic on the AWS backbone. No PHI traverses the public internet.
+[0m[49m[38;5;10m+    548[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    549[0m:[38;5;10m[49m **KMS encryption.** This example uses default encryption. Production uses customer-managed KMS keys for the DynamoDB table and SQS queue, with key rotation enabled and CloudTrail logging every key usage event. The S3 bucket holding training data also uses a CMK.
+[0m[49m[38;5;10m+    550[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    551[0m:[38;5;10m[49m **DynamoDB Decimal handling.** This example already wraps confidence scores in `Decimal(str(...))` (Step 5), which is required because DynamoDB's boto3 resource layer rejects Python floats. Any numeric field you add later must follow the same pattern. The `boto3` DynamoDB resource will raise `TypeError: Float types are not supported` on raw floats.
+[0m[49m[38;5;10m+    552[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    553[0m:[38;5;10m[49m **The abbreviation map lifecycle.** The hardcoded `ABBREVIATION_MAP` works for development. In production, store it in DynamoDB (or Parameter Store) so you can update it without redeploying the Lambda. Build a simple admin interface that surfaces unknown tokens from preprocessing (tokens not in the map and not in a standard medical dictionary). When a reviewer manually classifies a complaint, check whether it contained unknown abbreviations and prompt for additions.
+[0m[49m[38;5;10m+    554[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    555[0m:[38;5;10m[49m **Model retraining.** Every human correction to a low-confidence prediction is a labeled training example. Build automation that periodically exports corrected records from DynamoDB, formats them as Comprehend training data (CSV with text and label columns), and triggers a new training job. Quarterly retraining at minimum; monthly is better. Track model accuracy on a held-out test set after each retraining to confirm the new model is better than the old one before swapping endpoints.
+[0m[49m[38;5;10m+    556[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    557[0m:[38;5;10m[49m **Testing.** This example has no tests. A production pipeline has: unit tests for `preprocess_complaint` (with known abbreviations and edge cases), unit tests for `apply_confidence_gate` (boundary conditions around thresholds), integration tests against a deployed Comprehend endpoint with known test complaints, and a regression test suite of complaints that previously caused errors. Never use real patient complaints in test fixtures; generate synthetic ones that cover the same patterns.
+[0m[49m[38;5;10m+    558[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    559[0m:[38;5;10m[49m **Multi-complaint handling.** This example classifies to a single category. Real complaints often contain multiple concerns ("chest pain and shortness of breath"). A production system either uses multi-label classification (Comprehend supports this mode) or splits multi-complaint entries before classification. Recipe 8.1 discusses this in the Variations section.
+[0m[49m[38;5;10m+    560[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    561[0m:[38;5;10m[49m ---
+[0m[49m[38;5;10m+    562[0m:[38;5;10m[49m 
+[0m[49m[38;5;10m+    563[0m:[38;5;10m[49m *Part of the Healthcare AI/ML Cookbook. See [Recipe 8.1](chapter08.01-chief-complaint-classification) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+[0m[K
+Creating: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mThe file is created. The sidebar already has the entry for this file. Let me verify the file was written correctly and check for any em dashes or en dashes:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m for pattern: [38;5;141m\u2014|\u2013[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '\u2014|\u2013' in /tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md
+[38;5;244m - Completed in 0.4s[0m
+
+[38;5;141m> [0mNo em dashes or en dashes found. Let me also verify the file structure looks right by checking the top and bottom:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m, from line [38;5;141m1[0m to [38;5;141m5[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m, from line [38;5;141m561[0m to end of file
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m552 bytes[0m from /tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m200 bytes[0m from /tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe file is complete. Let me verify the code blocks all have language tags:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m for pattern: [38;5;141m^```$[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '^```$' in /tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mAll fenced code blocks have language tags (no bare [38;5;10m[0m[38;5;10m markers). The file is complete and follows all constraints.
+
+Here's what I delivered:
+
+**File created:** [0mchapter08.01-python-example.md[38;5;10m
+
+**Structure matches the RECIPE-GUIDE.md Python companion template:**
+1. Opening caveat (not production-ready)
+2. Setup (pip install, IAM permissions)
+3. Config and constants (abbreviation map, thresholds, ARNs, table names)
+4. Step-by-step functions mapping 1:1 to the main recipe's pseudocode:
+   - Step 1: Preprocess (lowercase, strip, expand abbreviations)
+   - Step 2: Enrich with Comprehend Medical entities (optional)
+   - Step 3: Classify using Comprehend custom endpoint
+   - Step 4: Apply confidence gating (threshold + ambiguity gap)
+   - Step 5: Store to DynamoDB and route (SQS for review, downstream for auto-route)
+5. Full pipeline function with synthetic test data
+6. Comprehensive "gap to production" section covering error handling, retries, input validation, logging, PHI safety, IAM, VPC, KMS, Decimal handling, abbreviation map lifecycle, retraining, testing, and multi-complaint handling
+
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 8.37 • Time: 2m 53s
+
+[0m[1G[0m[0m[?25hThe sidebar already had the entry ([0m[Python Example](chapter08.01-python-example)[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading directory: [38;5;141m/tmp/ralph-worktrees/iter-1240[0m[38;5;244m (using tool: read, max depth: 2, max entries: 1000, excluding: defaults)[0m
+[38;5;10m ✓ [0mSuccessfully read directory [38;5;141m/tmp/ralph-worktrees/iter-1240[0m [38;5;244m(showing 1000 of 2837 entries, offset: 0)[0m
+[38;5;244m - Completed in 0.480s[0m
+
+[38;5;141m> [0mNow let me read the actual artifact file that was produced for this task:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m25698 bytes[0m from /tmp/ralph-worktrees/iter-1240/chapter08.01-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have the full content of the artifact. Let me evaluate it against the pass criteria:[0m[0m
+[0m[0m
+1. [1mCorrect boto3 API calls[22m: The code uses [38;5;10mcomprehend_medical_client.detect_entities_v2()[0m, [38;5;10mcomprehend_client.classify_document()[0m, [38;5;10mtable.put_item()[0m, and [38;5;10msqs_client.send_message()[0m — all valid boto3 API calls with correct parameter names.[0m[0m
+[0m[0m
+2. [1mProper error handling comments[22m: While the code itself is deliberately minimal (as stated in the intro), there are extensive comments about error handling throughout, and a dedicated section at the end ("The Gap Between This and Production") that thoroughly covers error handling strategies. The [38;5;10mBOTO3_RETRY_CONFIG[0m with adaptive mode is also implemented.[0m[0m
+[0m[0m
+3. [1mDemonstrates the recipe pattern end-to-end[22m: The code implements all 5 steps of the pipeline: preprocess → enrich → classify → confidence gate → store/route, plus a top-level orchestrator function and synthetic test data.[0m[0m
+[0m[0m
+4. [1mNo placeholder or stub implementations[22m: Every function has a complete implementation body — [38;5;10mpreprocess_complaint[0m does actual regex processing and abbreviation expansion, [38;5;10menrich_with_entities[0m makes a real API call and processes results, [38;5;10mclassify_complaint[0m makes the real API call and structures results, [38;5;10mapply_confidence_gate[0m implements full decision logic, and [38;5;10mstore_and_route[0m builds records and writes to DynamoDB/SQS. There are no [38;5;10mpass[0m stubs or [38;5;10mTODO[0m markers.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 2.68 • Time: 23s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Code uses correct boto3 API calls (classify_document, detect_entities_v2, put_item, send_message) with proper parameter names. Error handling is addressed both through BOTO3_RETRY_CONFIG with adaptive retry mode and extensive production-gap commentary covering exception handling, retries, and graceful degradation. The recipe pattern is demonstrated end-to-end across 5 clearly-defined steps plus an orchestrator. All functions have complete implementations with real logic—no stubs or placeholders. Synthetic test data is included with 10 representative chief complaints."}
