@@ -25,6 +25,31 @@ Editorial pass v1 (TechEditor, 2026-05-15):
 - TechCodeReviewer's recipe-specific finding (Python companion `total_dose_mg_equiv`
   feature unit-mixing) does not surface in the main recipe pseudocode and is left for
   TechWriter to address in the Python companion file.
+
+Follow-up pass (TechWriter, 2026-06-04):
+- A1: Added idempotency guard to Step 7 pseudocode (on_pharmacist_response and
+  on_adverse_event_report). Deterministic event-key derivation with conditional
+  DynamoDB write to processed-feedback-events table before OpenSearch update,
+  label write, and metric emission. Added table to Ingredients and IAM rows.
+- A2: Verified DLQ section in "Why This Isn't Production-Ready" covers all
+  required elements (per-Lambda DLQ, alarm threshold 1 for real-time path,
+  replay discipline with time-bound escalation). Already complete from editor.
+- A3: Verified oncology-protocol architectural spec in patient-context-cache
+  subsection, Step 2, and Step 3 pseudocode. Source-of-truth (EHR care-plan
+  feeds), granularity (protocol-regimen-level), audit trail (suppression-decision
+  logging). Already complete from editor.
+- A4: Verified cross-reactivity calibration in Step 3 pseudocode and Interaction
+  Anomalies prose. Per-pair severity, ASHP/Joint Commission de-labeling
+  acknowledgment. Already complete from editor.
+- S1: Verified Step 5 SNS payload publishes only event_id, severity, routing_tier.
+  High-stigma drug-class exclusion noted in comments. Already complete from editor.
+- S2: Verified Subgroup data access Prerequisites row covers demographic store
+  access, CloudTrail data events, QuickSight aggregated table pattern, and
+  provider-demographic HR governance note. Already complete from editor.
+- S5: Verified per-consumer IAM scope in Prerequisites IAM row (read-only cache
+  for anomaly Lambda, write-only for cache-refresher, consume-only for alert
+  delivery, write-only labels for feedback-capture, separate diversion-pipeline
+  IAM boundary). Already complete from editor.
 -->
 
 # Recipe 3.4: Medication Dispensing Anomalies ⭐
@@ -166,7 +191,7 @@ Treat alert fatigue as a primary design constraint. It's not a UX concern. It's 
 
 At a conceptual level, a medication dispensing anomaly pipeline has to serve two very different latency regimes simultaneously. Some detection has to fire in near real time at order verification or dispense cabinet pull (because interrupting the wrong dose before it's drawn into a syringe is the whole point). Other detection runs on accumulated history for pattern and trend work. The architecture is a hybrid of streaming and batch, with a shared feature and reference-data layer underneath.
 
-```
+```text
 ┌──────────────── DISPENSING ANOMALY PIPELINE ───────────────────┐
 │                                                                │
 │  [Order System / EHR] ─── HL7/FHIR ───┐                        │
@@ -342,7 +367,7 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Kinesis Data Streams, AWS Lambda, Amazon DynamoDB, Amazon SageMaker (Processing, Training, Feature Store), Amazon Neptune, Amazon OpenSearch Service, Amazon S3, Amazon MQ or MSK, API Gateway, AWS Step Functions, Amazon EventBridge, Amazon SNS, Amazon Pinpoint, Amazon Comprehend Medical, Amazon Bedrock (optional), Amazon QuickSight, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Least-privilege per role. Real-time anomaly Lambda role: `dynamodb:GetItem` on patient-context-cache only (no write), `sagemaker-featurestore-runtime:GetRecord` on baseline feature groups, `s3:GetObject` on clinical-rules bucket, `events:PutEvents` to the anomaly-events bus, `kinesis:GetRecords`. Cache-refresher Lambda role: `dynamodb:PutItem` and `dynamodb:UpdateItem` on patient-context-cache only, `kinesis:GetRecords` on the EHR event stream. Event normalizer Lambda role: `kinesis:GetRecords`, `dynamodb:PutItem`. Alert-delivery Lambda role: consumes events from the bus (no `events:PutEvents`), `sns:Publish` on the interrupt-alert topic only. Feedback-capture Lambda role: `events:PutEvents` on a dedicated feedback-events bus only, `dynamodb:PutItem` on a label-write-only table, `s3:PutObject` on the labels-parquet bucket only. Batch pipelines: scoped to their specific input and output prefixes in S3. Diversion-pipeline roles are scoped separately and stricter (separate KMS keys, separate Neptune cluster access, separate IAM boundary). No `*` actions in production. Per-resource ARNs everywhere; no wildcard resource scopes. |
+| **IAM Permissions** | Least-privilege per role. Real-time anomaly Lambda role: `dynamodb:GetItem` on patient-context-cache only (no write), `sagemaker-featurestore-runtime:GetRecord` on baseline feature groups, `s3:GetObject` on clinical-rules bucket, `events:PutEvents` to the anomaly-events bus, `kinesis:GetRecords`. Cache-refresher Lambda role: `dynamodb:PutItem` and `dynamodb:UpdateItem` on patient-context-cache only, `kinesis:GetRecords` on the EHR event stream. Event normalizer Lambda role: `kinesis:GetRecords`, `dynamodb:PutItem`. Alert-delivery Lambda role: consumes events from the bus (no `events:PutEvents`), `sns:Publish` on the interrupt-alert topic only. Feedback-capture Lambda role: `dynamodb:PutItem` on processed-feedback-events table (conditional write for idempotency), `events:PutEvents` on a dedicated feedback-events bus only, `dynamodb:PutItem` on a label-write-only table, `s3:PutObject` on the labels-parquet bucket only. Batch pipelines: scoped to their specific input and output prefixes in S3. Diversion-pipeline roles are scoped separately and stricter (separate KMS keys, separate Neptune cluster access, separate IAM boundary). No `*` actions in production. Per-resource ARNs everywhere; no wildcard resource scopes. |
 | **BAA** | AWS BAA signed. Every service listed is HIPAA-eligible under the BAA when configured properly. See the [AWS HIPAA Eligible Services Reference](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/). |
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Kinesis: server-side encryption with CMK. Neptune: encryption at rest with CMK. OpenSearch: encryption at rest and in-transit. SageMaker: KMS on volumes, model artifacts, and Feature Store. TLS 1.2 or higher in transit everywhere. |
 | **VPC** | Production: Lambdas, SageMaker jobs, and Neptune in a VPC with the following endpoints. Gateway: `s3`, `dynamodb`. Interface: `kinesis`, `sagemaker.api` (control-plane Processing and Training), `sagemaker.featurestore-runtime` (online baseline retrieval), `sagemaker.runtime` (if a real-time endpoint variant is used), `states` (Step Functions), `events` (EventBridge bus), `scheduler` (EventBridge Scheduler), `logs` (CloudWatch Logs), `monitoring` (CloudWatch `PutMetricData`), `kms`, `sns`, `bedrock-runtime`, `comprehendmedical`, plus OpenSearch via VPC. Neptune only accessible via VPC; no public endpoints. Pinpoint API is reached through its regional endpoint; if the calling Lambda is in a private subnet, route Pinpoint traffic via a NAT gateway or a Pinpoint VPC endpoint where available. VPC Flow Logs enabled on the VPC carrying Lambda, SageMaker, and Neptune traffic; logs delivered to a dedicated S3 bucket with KMS encryption and retention aligned to the deepest applicable requirement (HIPAA 6-year baseline; DEA 2-year minimum for controlled-substance-related records; state pharmacy boards 5-10 years where applicable). For the diversion-investigation Neptune cluster specifically, Flow Logs become evidentiary records and follow the organization's evidence-handling retention policy (typically 7+ years). |
@@ -368,6 +393,7 @@ flowchart TB
 | **AWS Lambda (real-time-anomaly-service)** | Rule screening, z-score lookup, severity tiering, event routing |
 | **AWS Lambda (feedback-capture)** | Override reasons, confirmed-event linkage, labels persistence |
 | **Amazon DynamoDB (patient-context-cache)** | Low-latency patient attribute reads at dispense time |
+| **Amazon DynamoDB (processed-feedback-events)** | Idempotency guard for at-least-once event delivery on feedback capture |
 | **Amazon SageMaker Feature Store** | Drug-class baseline statistics with point-in-time correctness |
 | **Amazon SageMaker Processing** | Trajectory CUSUM, Isolation Forest, graph analytics |
 | **Amazon SageMaker Training** | Supervised classifier retraining when labels accumulate |
@@ -400,7 +426,7 @@ flowchart TB
 
 **Step 1: Normalize the dispense event.** The incoming event has a lot of variation in how drugs and doses are identified. The first job is to produce a canonical representation that the rest of the pipeline can reason about. Skip or rush this step, and the detectors see "Tylenol 500mg" and "acetaminophen 500 mg PO" as different drugs, and your patient-level trajectory features are nonsense.
 
-```
+```text
 FUNCTION normalize_dispense_event(raw_event):
     // Source systems provide drug identifiers in multiple vocabularies.
     // Map everything to RxNorm concept IDs; keep original identifier for audit.
@@ -435,26 +461,26 @@ FUNCTION normalize_dispense_event(raw_event):
     )
 
     canonical_event = {
-        event_id:            generate_event_id(),
-        source_event_id:     raw_event.source_event_id,
-        source:              raw_event.source,     // "cpoe" | "adc" | "retail" | "pdmp"
-        event_type:          raw_event.event_type, // "order" | "verify" | "dispense" | "administer"
-        event_timestamp:     raw_event.timestamp,
-        patient_id:          patient_id,
-        drug_rxnorm:         drug_id,
-        drug_display_name:   drug_reference.get_display_name(drug_id),
-        dose_value:          dose_canonical.value,
-        dose_unit:           dose_canonical.unit,
-        dose_per_kg:         null,   // computed after weight lookup
-        route:               normalize_route(raw_event.route),
-        frequency:           frequency,
-        ordered_by:          raw_event.ordering_provider,
-        dispensed_by:        raw_event.dispensing_user,
-        station_id:          raw_event.dispensing_station,
-        raw_identifier:      {        // keep original for audit
-            ndc:          raw_event.get("ndc"),
+        event_id: generate_event_id(),
+        source_event_id: raw_event.source_event_id,
+        source: raw_event.source,     // "cpoe" | "adc" | "retail" | "pdmp"
+        event_type: raw_event.event_type, // "order" | "verify" | "dispense" | "administer"
+        event_timestamp: raw_event.timestamp,
+        patient_id: patient_id,
+        drug_rxnorm: drug_id,
+        drug_display_name: drug_reference.get_display_name(drug_id),
+        dose_value: dose_canonical.value,
+        dose_unit: dose_canonical.unit,
+        dose_per_kg: null,   // computed after weight lookup
+        route: normalize_route(raw_event.route),
+        frequency: frequency,
+        ordered_by: raw_event.ordering_provider,
+        dispensed_by: raw_event.dispensing_user,
+        station_id: raw_event.dispensing_station,
+        raw_identifier: {        // keep original for audit
+            ndc: raw_event.get("ndc"),
             formulary_id: raw_event.get("formulary_id"),
-            name:         raw_event.get("drug_name")
+            name: raw_event.get("drug_name")
         }
     }
     return canonical_event
@@ -462,7 +488,7 @@ FUNCTION normalize_dispense_event(raw_event):
 
 **Step 2: Join patient context and compute derived features.** Before scoring, the event needs patient-specific context (weight, labs, active meds, diagnoses). The patient-context cache is the source; staleness matters and is tracked per field.
 
-```
+```text
 FUNCTION enrich_with_patient_context(canonical_event):
     context = DynamoDB.GetItem("patient-context-cache", { patient_id: canonical_event.patient_id })
 
@@ -521,7 +547,7 @@ FUNCTION enrich_with_patient_context(canonical_event):
 
 **Step 3: Apply the rule-based screen.** For each enriched event, run the clinical rules. These are the hard-stop checks: weight-based dose limits, renal dose adjustments, severe drug-drug interactions, direct allergy contraindications. Every rule fire produces a structured flag with the rule ID, the trigger values, and the severity.
 
-```
+```text
 FUNCTION rule_screen(enriched_event):
     flags = []
     rule_set = clinical_rules.get_active_rules_for_drug(enriched_event.drug_rxnorm)
@@ -540,7 +566,7 @@ FUNCTION rule_screen(enriched_event):
             suppressed_rule_types = suppressed_rule_types UNION protocol.suppressed_rule_types
             emit_metric("rule_suppressed_by_protocol", 1, dimensions = {
                 protocol_id: protocol_id,
-                drug:        enriched_event.drug_rxnorm
+                drug: enriched_event.drug_rxnorm
             })
 
     FOR each rule in rule_set:
@@ -554,37 +580,37 @@ FUNCTION rule_screen(enriched_event):
                    AND enriched_event.dose_per_kg > rule.threshold \
                    AND enriched_event.patient_age_years in rule.age_applicable:
                     flags.append({
-                        rule_id:    rule.id,
-                        rule_type:  "max_dose_per_kg",
-                        severity:   rule.severity,    // "interrupt" | "synchronous" | "background"
-                        actual:     enriched_event.dose_per_kg,
-                        threshold:  rule.threshold,
-                        message:    f"Dose {enriched_event.dose_per_kg:.2f} mg/kg exceeds maximum {rule.threshold} mg/kg for patient age {enriched_event.patient_age_years}",
-                        reference:  rule.reference_source
+                        rule_id: rule.id,
+                        rule_type: "max_dose_per_kg",
+                        severity: rule.severity,    // "interrupt" | "synchronous" | "background"
+                        actual: enriched_event.dose_per_kg,
+                        threshold: rule.threshold,
+                        message: f"Dose {enriched_event.dose_per_kg:.2f} mg/kg exceeds maximum {rule.threshold} mg/kg for patient age {enriched_event.patient_age_years}",
+                        reference: rule.reference_source
                     })
 
             "renal_dose_adjustment_required":
                 IF enriched_event.ckd_stage >= rule.ckd_stage_trigger \
                    AND enriched_event.dose_value > rule.max_dose_at_stage[enriched_event.ckd_stage]:
                     flags.append({
-                        rule_id:    rule.id,
-                        rule_type:  "renal_dose_adjustment",
-                        severity:   rule.severity,
-                        actual:     enriched_event.dose_value,
-                        threshold:  rule.max_dose_at_stage[enriched_event.ckd_stage],
-                        message:    f"Dose requires renal adjustment; patient eGFR {enriched_event.egfr} puts them in CKD stage {enriched_event.ckd_stage}",
-                        reference:  rule.reference_source
+                        rule_id: rule.id,
+                        rule_type: "renal_dose_adjustment",
+                        severity: rule.severity,
+                        actual: enriched_event.dose_value,
+                        threshold: rule.max_dose_at_stage[enriched_event.ckd_stage],
+                        message: f"Dose requires renal adjustment; patient eGFR {enriched_event.egfr} puts them in CKD stage {enriched_event.ckd_stage}",
+                        reference: rule.reference_source
                     })
 
             "drug_drug_interaction":
                 IF rule.interacting_drug_rxnorm in enriched_event.active_medications:
                     flags.append({
-                        rule_id:    rule.id,
-                        rule_type:  "drug_drug_interaction",
-                        severity:   rule.severity,
+                        rule_id: rule.id,
+                        rule_type: "drug_drug_interaction",
+                        severity: rule.severity,
                         paired_drug: rule.interacting_drug_rxnorm,
-                        message:    rule.message,
-                        reference:  rule.reference_source
+                        message: rule.message,
+                        reference: rule.reference_source
                     })
 
             "allergy_contraindication":
@@ -593,13 +619,13 @@ FUNCTION rule_screen(enriched_event):
                         // Direct allergen match (e.g., penicillin-allergic patient
                         // receiving penicillin). Interrupt severity is appropriate.
                         flags.append({
-                            rule_id:    rule.id,
-                            rule_type:  "allergy_contraindication_direct",
-                            severity:   "interrupt",
-                            allergen:   allergen.normalized_id,
-                            reaction:   allergen.reaction,
-                            message:    f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is the same agent",
-                            reference:  rule.reference_source
+                            rule_id: rule.id,
+                            rule_type: "allergy_contraindication_direct",
+                            severity: "interrupt",
+                            allergen: allergen.normalized_id,
+                            reaction: allergen.reaction,
+                            message: f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is the same agent",
+                            reference: rule.reference_source
                         })
                     ELSE IF allergen.normalized_id in rule.cross_reactive_allergens:
                         // Cross-reactivity (e.g., penicillin-allergic patient
@@ -613,13 +639,13 @@ FUNCTION rule_screen(enriched_event):
                         // Commission guidance on penicillin-allergy de-labeling
                         // and beta-lactam stewardship.
                         flags.append({
-                            rule_id:    rule.id,
-                            rule_type:  "allergy_cross_reactive",
-                            severity:   rule.cross_reactive_severity[allergen.reaction_type] OR "synchronous",
-                            allergen:   allergen.normalized_id,
-                            reaction:   allergen.reaction,
-                            message:    f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is potentially cross-reactive (per-pair severity calibration applies)",
-                            reference:  rule.reference_source
+                            rule_id: rule.id,
+                            rule_type: "allergy_cross_reactive",
+                            severity: rule.cross_reactive_severity[allergen.reaction_type] OR "synchronous",
+                            allergen: allergen.normalized_id,
+                            reaction: allergen.reaction,
+                            message: f"Patient has documented allergy to {allergen.display_name}; {enriched_event.drug_display_name} is potentially cross-reactive (per-pair severity calibration applies)",
+                            reference: rule.reference_source
                         })
 
             // Additional rule types: min_dose, max_daily_dose, duplicate_therapy,
@@ -630,14 +656,14 @@ FUNCTION rule_screen(enriched_event):
 
 **Step 4: Compute population-level z-scores.** For drugs with enough dispensing volume to build a stable distribution, compare the current event against the baseline for patients with similar characteristics. The baselines live in the Feature Store, refreshed periodically by the batch pipeline.
 
-```
+```text
 FUNCTION population_zscore_check(enriched_event):
     // Identify the patient profile bucket for baseline lookup.
     profile_bucket = build_profile_bucket(
-        age_band:    age_to_band(enriched_event.patient_age_years),   // "neonate" | "infant" | "child" | "adult" | "elderly"
-        acuity:      enriched_event.patient_acuity,
-        ckd_stage:   enriched_event.ckd_stage,
-        indication:  enriched_event.indication if available else "unspecified"
+        age_band: age_to_band(enriched_event.patient_age_years),   // "neonate" | "infant" | "child" | "adult" | "elderly"
+        acuity: enriched_event.patient_acuity,
+        ckd_stage: enriched_event.ckd_stage,
+        indication: enriched_event.indication if available else "unspecified"
     )
 
     flags = []
@@ -655,15 +681,15 @@ FUNCTION population_zscore_check(enriched_event):
     // Dose z-score.
     IF baseline.dose_median is not null AND baseline.dose_mad > 0:
         robust_z = (enriched_event.dose_value - baseline.dose_median) / (1.4826 * baseline.dose_mad)
-        IF abs(robust_z) >= POP_DOSE_Z_THRESHOLD:       // e.g., 3.0
+        IF abs(robust_z) >= POP_DOSE_Z_THRESHOLD: // e.g., 3.0
             flags.append({
-                type:       "population_dose_zscore",
-                feature:    "dose_value",
-                actual:     enriched_event.dose_value,
+                type: "population_dose_zscore",
+                feature: "dose_value",
+                actual: enriched_event.dose_value,
                 baseline_median: baseline.dose_median,
-                robust_z:   robust_z,
-                profile:    profile_bucket,
-                severity:   zscore_to_severity(robust_z)
+                robust_z: robust_z,
+                profile: profile_bucket,
+                severity: zscore_to_severity(robust_z)
             })
 
     // Dose-per-kg z-score (for weight-based drugs).
@@ -673,13 +699,13 @@ FUNCTION population_zscore_check(enriched_event):
         robust_z_kg = (enriched_event.dose_per_kg - baseline.dose_per_kg_median) / (1.4826 * baseline.dose_per_kg_mad)
         IF abs(robust_z_kg) >= POP_DOSE_PER_KG_Z_THRESHOLD:
             flags.append({
-                type:       "population_dose_per_kg_zscore",
-                feature:    "dose_per_kg",
-                actual:     enriched_event.dose_per_kg,
+                type: "population_dose_per_kg_zscore",
+                feature: "dose_per_kg",
+                actual: enriched_event.dose_per_kg,
                 baseline_median: baseline.dose_per_kg_median,
-                robust_z:   robust_z_kg,
-                profile:    profile_bucket,
-                severity:   zscore_to_severity(robust_z_kg)
+                robust_z: robust_z_kg,
+                profile: profile_bucket,
+                severity: zscore_to_severity(robust_z_kg)
             })
 
     return flags
@@ -687,7 +713,7 @@ FUNCTION population_zscore_check(enriched_event):
 
 **Step 5: Route the flags based on severity.** The rule and z-score outputs are combined into a single event and routed. Interrupt-severity flags fan out synchronously to the pharmacist's workstation. Lower-severity flags go to review queues and trend analytics.
 
-```
+```text
 FUNCTION route_flags(enriched_event, rule_flags, zscore_flags):
     all_flags = rule_flags + zscore_flags
 
@@ -700,17 +726,17 @@ FUNCTION route_flags(enriched_event, rule_flags, zscore_flags):
     overall_severity = max(flag.severity for flag in all_flags)
 
     anomaly_event = {
-        event_id:          enriched_event.event_id,
-        patient_id:        enriched_event.patient_id,
-        drug_rxnorm:       enriched_event.drug_rxnorm,
+        event_id: enriched_event.event_id,
+        patient_id: enriched_event.patient_id,
+        drug_rxnorm: enriched_event.drug_rxnorm,
         drug_display_name: enriched_event.drug_display_name,
-        event_timestamp:   enriched_event.event_timestamp,
-        source:            enriched_event.source,
-        flags:             all_flags,
-        flag_count:        length(all_flags),
-        severity:          overall_severity,
-        context_snapshot:  summary_of(enriched_event),    // weight, labs, active meds
-        detected_at:       NOW()
+        event_timestamp: enriched_event.event_timestamp,
+        source: enriched_event.source,
+        flags: all_flags,
+        flag_count: length(all_flags),
+        severity: overall_severity,
+        context_snapshot: summary_of(enriched_event),    // weight, labs, active meds
+        detected_at: NOW()
     }
 
     EventBridge.PutEvent(
@@ -736,21 +762,21 @@ FUNCTION route_flags(enriched_event, rule_flags, zscore_flags):
         SNS.Publish(
             topic   = INTERRUPT_ALERT_TOPIC,
             message = {
-                event_id:     anomaly_event.event_id,
-                severity:     "interrupt",
+                event_id: anomaly_event.event_id,
+                severity: "interrupt",
                 routing_tier: anomaly_event.severity,
-                fetch_by_id:  True
+                fetch_by_id: True
             },
             attributes = {
                 "patient_location": enriched_event.patient_location,
-                "severity":         "interrupt"
+                "severity": "interrupt"
             }
         )
 ```
 
 **Step 6: Run the batch pattern pipeline.** On a schedule (hourly for ICU-level trajectory detection, daily for broader pattern work), a Step Functions workflow runs the SageMaker Processing jobs for CUSUM trajectory detection and Isolation Forest multivariate scoring. Per-patient-day feature vectors get built from recent dispenses and scored against the Isolation Forest trained on historical data.
 
-```
+```text
 FUNCTION batch_trajectory_scoring(as_of_timestamp):
     // For continuous and frequent-dose drugs (insulin, vasopressors, PRN pain meds),
     // build per-patient trajectories over the rolling window.
@@ -758,7 +784,7 @@ FUNCTION batch_trajectory_scoring(as_of_timestamp):
     active_patients = get_active_patients(as_of = as_of_timestamp)
 
     FOR each patient in active_patients:
-        FOR each drug in CONTINUOUS_MONITORING_DRUGS:   // e.g., insulin, morphine, heparin
+        FOR each drug in CONTINUOUS_MONITORING_DRUGS: // e.g., insulin, morphine, heparin
             dispense_series = get_dispense_series(
                 patient_id   = patient.id,
                 drug_rxnorm  = drug,
@@ -779,15 +805,15 @@ FUNCTION batch_trajectory_scoring(as_of_timestamp):
 
             IF cusum.signal_fired AND cusum.change_point_within(window_start, as_of_timestamp):
                 flag = {
-                    type:              "trajectory_cusum",
-                    patient_id:        patient.id,
-                    drug_rxnorm:       drug,
-                    change_point:      cusum.change_point,
-                    pre_change_mean:   cusum.pre_mean,
-                    post_change_mean:  cusum.post_mean,
-                    shift_magnitude:   cusum.post_mean - cusum.pre_mean,
-                    severity:          trajectory_severity(drug, cusum),
-                    message:           build_trajectory_message(drug, cusum)
+                    type: "trajectory_cusum",
+                    patient_id: patient.id,
+                    drug_rxnorm: drug,
+                    change_point: cusum.change_point,
+                    pre_change_mean: cusum.pre_mean,
+                    post_change_mean: cusum.post_mean,
+                    shift_magnitude: cusum.post_mean - cusum.pre_mean,
+                    severity: trajectory_severity(drug, cusum),
+                    message: build_trajectory_message(drug, cusum)
                 }
                 EventBridge.PutEvent(
                     bus     = "medication-anomaly-events",
@@ -802,12 +828,12 @@ FUNCTION batch_trajectory_scoring(as_of_timestamp):
 
         IF if_score <= ISOLATION_FOREST_THRESHOLD:
             flag = {
-                type:            "patient_day_isolation_forest",
-                patient_id:      patient.id,
-                as_of:           as_of_timestamp,
-                anomaly_score:   if_score,
+                type: "patient_day_isolation_forest",
+                patient_id: patient.id,
+                as_of: as_of_timestamp,
+                anomaly_score: if_score,
                 top_contributors: shap_explain(isolation_forest, patient_day_vector, top_k = 5),
-                severity:        "synchronous"   // typically not interrupt-severity from batch path
+                severity: "synchronous"   // typically not interrupt-severity from batch path
             }
             EventBridge.PutEvent(
                 bus     = "medication-anomaly-events",
@@ -819,10 +845,27 @@ FUNCTION batch_trajectory_scoring(as_of_timestamp):
 
 **Step 7: Capture feedback and close the loop.** Every alert generates a response (the pharmacist acknowledges, overrides, acts on, or escalates it). Every confirmed adverse drug event from incident reporting links back to the dispense records. This feedback is the training signal for rule tuning and retraining.
 
-```
+```text
 FUNCTION on_pharmacist_response(response_event):
     // response_event: { anomaly_event_id, response, response_reason, responded_at,
     //                   responding_user, action_taken }
+
+    // Idempotency guard: EventBridge delivers at-least-once, and Lambda async
+    // retries on failure. A redelivered event that runs the OpenSearch update,
+    // label write, and metric emission twice would double-count override metrics
+    // (which drive rule-retirement decisions) and bias the training distribution.
+    // Derive a deterministic event key and conditional-write it to a dedup table
+    // before any side effects run.
+    idempotency_key = hash(response_event.anomaly_event_id + ":" + response_event.response)
+    already_processed = DynamoDB.PutItem(
+        table          = "processed-feedback-events",
+        item           = { pk: idempotency_key, processed_at: NOW(), ttl: NOW() + 7 days },
+        condition      = "attribute_not_exists(pk)"   // fails if key already exists
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        // Duplicate delivery; safe to drop.
+        return
+
     anomaly = OpenSearch.Get("medication-anomalies", response_event.anomaly_event_id)
 
     // Update the anomaly record with the response.
@@ -837,7 +880,7 @@ FUNCTION on_pharmacist_response(response_event):
     // Feed into override-rate metrics for rule tuning.
     FOR each flag in anomaly.flags:
         emit_metric("flag_response", 1, dimensions = {
-            rule_id:  flag.rule_id or flag.type,
+            rule_id: flag.rule_id or flag.type,
             response: response_event.response,
             severity: flag.severity
         })
@@ -846,11 +889,11 @@ FUNCTION on_pharmacist_response(response_event):
     IF response_event.response in ["modified_order", "cancelled_order"]:
         label_row = {
             anomaly_event_id: anomaly.event_id,
-            flags:            anomaly.flags,
+            flags: anomaly.flags,
             context_snapshot: anomaly.context_snapshot,
-            label:            "action_taken",
-            label_source:     "pharmacist_response",
-            labeled_at:       response_event.responded_at
+            label: "action_taken",
+            label_source: "pharmacist_response",
+            labeled_at: response_event.responded_at
         }
         S3.PutObject(
             bucket = "medication-anomaly-labels",
@@ -860,6 +903,19 @@ FUNCTION on_pharmacist_response(response_event):
 
 FUNCTION on_adverse_event_report(ade_event):
     // A confirmed adverse drug event from incident reporting.
+    // Idempotency guard: same pattern as on_pharmacist_response. A redelivered
+    // ADE event would corrupt the missed-adverse-event signal (the most important
+    // feedback signal in the pipeline) and bias the supervised classifier's
+    // training distribution.
+    idempotency_key = hash(ade_event.id + ":ade_linkage")
+    already_processed = DynamoDB.PutItem(
+        table          = "processed-feedback-events",
+        item           = { pk: idempotency_key, processed_at: NOW(), ttl: NOW() + 7 days },
+        condition      = "attribute_not_exists(pk)"
+    )
+    IF already_processed == CONDITION_CHECK_FAILED:
+        return   // Duplicate delivery; safe to drop.
+
     // Find dispense records for this patient within the event window.
     related_dispenses = search_dispense_events(
         patient_id = ade_event.patient_id,
@@ -869,14 +925,14 @@ FUNCTION on_adverse_event_report(ade_event):
     FOR each dispense in related_dispenses:
         label_row = {
             dispense_event_id: dispense.event_id,
-            drug_rxnorm:       dispense.drug_rxnorm,
-            context_snapshot:  dispense.context_snapshot,
-            ade_category:      ade_event.category,
-            ade_severity:      ade_event.severity,
-            had_alert:         dispense.had_anomaly_flag,
-            label:             "adverse_event_confirmed",
-            label_source:      "incident_report",
-            labeled_at:        ade_event.reported_at
+            drug_rxnorm: dispense.drug_rxnorm,
+            context_snapshot: dispense.context_snapshot,
+            ade_category: ade_event.category,
+            ade_severity: ade_event.severity,
+            had_alert: dispense.had_anomaly_flag,
+            label: "adverse_event_confirmed",
+            label_source: "incident_report",
+            labeled_at: ade_event.reported_at
         }
         S3.PutObject(
             bucket = "medication-anomaly-labels",
@@ -888,7 +944,7 @@ FUNCTION on_adverse_event_report(ade_event):
         // that's a false negative. Emit a metric and escalate for review.
         IF not dispense.had_anomaly_flag:
             emit_metric("missed_adverse_event", 1, dimensions = {
-                drug:     dispense.drug_rxnorm,
+                drug: dispense.drug_rxnorm,
                 ade_category: ade_event.category
             })
             EventBridge.PutEvent(
