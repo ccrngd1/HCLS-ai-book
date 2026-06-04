@@ -641,6 +641,8 @@ This example works: run it and you'll get interpretable utilization segments wit
 
 ---
 
-<!-- TODO (TechWriter): Expert review ARCH-CRITICAL (CRITICAL). Main recipe file chapter06.02-utilization-pattern-segmentation.md does not exist. Write it following RECIPE-GUIDE.md structure. The Python companion is ready. Address these findings in the main recipe: SEC-1 (CMK guidance in Prerequisites), SEC-2 (opaque identifiers and IAM scoping), SEC-3 (full VPC architecture), ARCH-1 (k-selection methodology in Technology section), ARCH-2 (segment stability as first-class design concern), NET-1 (Gateway endpoint specification in Prerequisites), VOICE-1 (ensure 70/30 vendor balance). Also address equity/bias in Technology section and The Honest Take per expert panel guidance. -->
+<!-- TODO (TechWriter): Code review Issue 1 (WARNING). Python uses StandardScaler while main recipe prescribes log1p + robust scaling. Add a comment in prepare_features() explaining the simplification: "The main recipe recommends log1p + robust scaling for production. We use StandardScaler with clipping here for simplicity; both approaches produce reasonable clusters on this synthetic data." -->
+<!-- TODO (TechWriter): Code review Issue 2 (NOTE). Add comment in config or cluster_members(): "In production, evaluate k=4 through k=10 and select based on silhouette + minimum cluster size (see main recipe Step 4). We fix k=5 here because the synthetic data was designed with 5 archetypes." -->
+<!-- TODO (TechWriter): Code review Issue 3 (NOTE). Add sentence to Step 2 prose: "With only 8 features, we skip the PCA step described in the main recipe. PCA becomes important when you have 20+ engineered features." -->
 
 *Part of the Healthcare AI/ML Cookbook. See [Recipe 6.2: Utilization Pattern Segmentation](chapter06.02-utilization-pattern-segmentation) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*

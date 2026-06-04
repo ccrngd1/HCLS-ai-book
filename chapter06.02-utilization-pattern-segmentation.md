@@ -213,16 +213,21 @@ flowchart TD
     style J fill:#9ff,stroke:#333
 ```
 
+**Failure handling:** Each SageMaker Pipeline step should include a FailStep with SNS notification. Members that fail feature engineering (null encounter dates, impossible values) go to a quarantine partition in S3 for manual review rather than being silently dropped. Set CloudWatch alarms on step failures and on output record counts (fewer assignments than expected members triggers investigation).
+
+**A note on Batch Transform:** For K-Means specifically, scoring is just computing distances to k centroids, which is trivially fast. An alternative is to include scoring within the same Processing Job that computes features, reducing pipeline stages. Batch Transform becomes more valuable when you graduate to GMMs, ensemble methods, or when you need to score new members independently of the monthly full-population run.
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon Athena, Amazon DynamoDB, Amazon QuickSight |
-| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `athena:StartQueryExecution` |
+| **IAM Permissions** | `sagemaker:CreateProcessingJob`, `sagemaker:CreateTrainingJob`, `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `athena:StartQueryExecution`. Production: decompose into per-stage IAM roles scoped to specific S3 prefix ARNs. Each SageMaker job gets its own execution role; the DynamoDB writer role should only have PutItem on the `member-segments` table. Never grant a single role all of these permissions. |
 | **BAA** | AWS BAA signed (required: utilization data is PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted volumes and output; all data in transit over TLS |
-| **VPC** | Production: SageMaker jobs in VPC with no internet access; VPC endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs |
+| **Encryption** | S3: SSE-KMS with customer-managed key (CMK) for rotation control; DynamoDB: encryption at rest (default); SageMaker: KMS-encrypted volumes and output, inter-container traffic encryption enabled for multi-instance jobs; all data in transit over TLS |
+| **VPC** | Production: SageMaker jobs in VPC with no internet access. Gateway endpoints (free, route-table based) for S3 and DynamoDB. Interface endpoints for SageMaker API, SageMaker Runtime, and CloudWatch Logs (~$15-20/month). No NAT Gateway needed, saving ~$32/month per AZ while eliminating internet egress paths for PHI. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for HIPAA audit trail |
+| **Data Retention** | S3 Lifecycle rules: transition historical runs to Glacier after 90 days, delete after your organization's retention period (typically 6-7 years per state law). DynamoDB: overwrite items each run or use TTL attributes. SageMaker processing volumes are ephemeral. |
 | **Sample Data** | CMS Synthetic Public Use Files (SynPUF) provide realistic claims data for development. Never use real member data in dev/test environments. |
 | **Cost Estimate** | SageMaker Processing (ml.m5.xlarge, 2 hrs/month): ~$0.50/run. Training (ml.m5.xlarge, 30 min): ~$0.13/run. S3 storage: ~$2/month for feature data. DynamoDB: ~$5/month for on-demand reads. Total pipeline: ~$10-20/month for 500K-member population. |
 
@@ -470,6 +475,10 @@ FUNCTION assign_name_heuristic(profile):
 ```
 
 **Step 6: Store segment assignments for operational use.** The final step pushes segment assignments to systems where they can drive action. DynamoDB provides real-time lookup for care management platforms ("what segment is this member in?"). The S3-based assignment file feeds Athena for analytical queries and QuickSight for dashboards. This isn't just storage; it's the bridge between analytics and operations. Without this step, you have an interesting analysis that sits in a notebook and never changes a single patient interaction.
+
+Downstream systems should access segment assignments through an API layer (API Gateway + Lambda) rather than direct DynamoDB reads where possible. This enables request-level logging, rate limiting, and per-consumer IAM enforcement. For internal services within the same VPC, direct table reads with appropriately scoped IAM policies are acceptable.
+
+For atomic cutover during batch writes, consider writing to a versioned partition key (include run_date) and having consumers filter on the latest version. For most population health use cases, the brief inconsistency window during writes is acceptable because downstream systems tolerate minutes-old data.
 
 ```pseudocode
 FUNCTION store_assignments(features, labels, profiles):
