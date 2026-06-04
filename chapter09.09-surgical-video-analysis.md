@@ -1,6 +1,6 @@
 # Recipe 9.9: Surgical Video Analysis
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2.50–$8.00 per procedure (processing only)
+**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2.50-$8.00 per procedure (processing only)
 
 ---
 
@@ -88,7 +88,7 @@ For this recipe, we'll focus on a post-hoc analysis pipeline: processing recorde
 
 The pipeline for surgical video analysis follows this conceptual flow:
 
-```
+```text
 [Ingest Video] → [Preprocess / Sample Frames] → [Feature Extraction] → [Temporal Modeling] → [Multi-Task Prediction] → [Post-Processing] → [Structured Index] → [Query / Visualization]
 ```
 
@@ -191,7 +191,7 @@ flowchart TD
 
 **Step 1: Video ingestion and metadata registration.** When a surgical video arrives from the OR recording system, the pipeline registers it with metadata (procedure type, date, surgeon identifier, duration) and triggers processing. The video lands in an encrypted S3 bucket, and an S3 event notification kicks off the Step Functions state machine. This separation between storage and processing is important: if the analysis pipeline is down or backed up, videos still land safely and get processed when capacity is available. Skip this step (process inline during upload) and you risk losing video data if the processing pipeline fails.
 
-```
+```pseudocode
 FUNCTION ingest_video(video_file, metadata):
     // Generate a unique identifier for this procedure.
     // This ID links the raw video, extracted frames, and analysis results.
@@ -228,13 +228,13 @@ FUNCTION ingest_video(video_file, metadata):
 
 **Step 2: Frame extraction and preprocessing.** Raw surgical video at 30 fps contains far more temporal redundancy than the analysis models need. Phase transitions happen over seconds, not frames. This step extracts frames at a configurable sample rate (typically 1 fps for phase recognition, up to 5 fps for instrument detection), resizes them to the model's expected input resolution, and filters out non-informative frames (black frames from camera disconnection, completely obscured frames from lens fogging). The output is a sequence of clean, consistently-sized frames ready for feature extraction. Skip this step and you'll burn 30x more GPU compute on redundant frames with no accuracy improvement.
 
-```
+```pseudocode
 FUNCTION extract_frames(procedure_id, video_key, sample_rate_fps):
     // Use a managed transcoding service to extract frames.
     // This avoids running FFmpeg on EC2 and handles format inconsistencies
     // across different OR recording systems.
     create MediaConvert job:
-        input:  S3 object at video_key
+        input: S3 object at video_key
         output: S3 bucket "surgical-frames/{procedure_id}/"
         settings:
             frame_rate: sample_rate_fps        // typically 1-5 fps
@@ -269,7 +269,7 @@ FUNCTION extract_frames(procedure_id, video_key, sample_rate_fps):
 
 **Step 3: Feature extraction.** Each valid frame passes through a convolutional neural network (the "backbone") that compresses the visual information into a compact feature vector. Think of this as translating each frame from "millions of pixel values" into "a few thousand numbers that capture what's visually important." The backbone is typically a ResNet-50 or similar architecture pretrained on ImageNet (general image recognition) and then fine-tuned on surgical video data. Fine-tuning is critical: a model trained only on natural images doesn't understand that "pink tissue with a metal instrument" is the normal state of affairs in surgery. This step is the most GPU-intensive per-frame operation, but it only needs to run once per frame. The extracted features are cached for use by multiple downstream models.
 
-```
+```pseudocode
 FUNCTION extract_features(procedure_id, frame_manifest):
     // Load the fine-tuned feature extraction model.
     // This is a CNN backbone (e.g., ResNet-50) trained on surgical video.
@@ -301,7 +301,7 @@ FUNCTION extract_features(procedure_id, frame_manifest):
 
 **Step 4: Temporal modeling and multi-task prediction.** This is where the system reasons across time. The sequence of frame features (from Step 3) passes through a temporal model that considers the full context of the procedure to make predictions at each time point. A transformer-based architecture attends to all frames simultaneously, learning patterns like "this visual pattern following that visual pattern usually means we're transitioning from dissection to clipping." The model outputs predictions for multiple tasks: surgical phase, instrument presence, and (if trained for it) anatomy visibility. Joint prediction helps because the tasks constrain each other. You wouldn't expect to see a clip applier during the initial port placement phase. Skip this step and use only frame-level predictions, and you'll get noisy, temporally inconsistent results that flicker between phases every few frames.
 
-```
+```pseudocode
 FUNCTION temporal_prediction(procedure_id, features):
     // Load the temporal model (transformer or TCN).
     // This model was trained on annotated surgical video sequences.
@@ -314,9 +314,9 @@ FUNCTION temporal_prediction(procedure_id, features):
     predictions = temporal_model.forward(features)
 
     // predictions contains:
-    //   phase_logits:      [num_frames, num_phases]       - probability of each phase per frame
+    //   phase_logits: [num_frames, num_phases]       - probability of each phase per frame
     //   instrument_logits: [num_frames, num_instruments]  - probability of each instrument per frame
-    //   event_logits:      [num_frames, num_event_types]  - probability of each event type per frame
+    //   event_logits: [num_frames, num_event_types]  - probability of each event type per frame
 
     // Convert logits to probabilities and class predictions.
     phase_predictions = argmax(softmax(predictions.phase_logits), axis=1)
@@ -338,7 +338,7 @@ FUNCTION temporal_prediction(procedure_id, features):
 
 **Step 5: Temporal post-processing.** Raw per-frame predictions from the temporal model are still noisy at phase boundaries. A phase might flicker for a few frames, or a brief instrument occlusion might cause a false "instrument absent" prediction. Post-processing applies domain knowledge to clean up the predictions: minimum phase duration constraints (a surgical phase can't last 2 seconds), transition smoothing (median filtering over a window), and impossible transition elimination (you can't go from "extraction" back to "initial dissection"). This step dramatically improves the usability of the output. Without it, the phase timeline would have dozens of spurious micro-transitions that make no surgical sense.
 
-```
+```pseudocode
 FUNCTION post_process(raw_predictions, sample_rate_fps):
     // --- Phase smoothing ---
     // Apply median filter to remove single-frame phase flickers.
@@ -365,21 +365,21 @@ FUNCTION post_process(raw_predictions, sample_rate_fps):
     phase_timeline = empty list
     FOR each contiguous phase segment:
         append to phase_timeline: {
-            phase_name:  segment.phase_label,
-            start_time:  segment.start_frame / sample_rate_fps,  // seconds
-            end_time:    segment.end_frame / sample_rate_fps,
-            duration:    (segment.end_frame - segment.start_frame) / sample_rate_fps,
-            confidence:  mean confidence of frames in segment
+            phase_name: segment.phase_label,
+            start_time: segment.start_frame / sample_rate_fps,  // seconds
+            end_time: segment.end_frame / sample_rate_fps,
+            duration: (segment.end_frame - segment.start_frame) / sample_rate_fps,
+            confidence: mean confidence of frames in segment
         }
 
     // --- Build event list ---
     events = empty list
     FOR each detected event:
         append to events: {
-            event_type:  event.label,
-            timestamp:   event.frame / sample_rate_fps,
-            confidence:  event.confidence,
-            context:     surrounding phase at that timestamp
+            event_type: event.label,
+            timestamp: event.frame / sample_rate_fps,
+            confidence: event.confidence,
+            context: surrounding phase at that timestamp
         }
 
     RETURN {
@@ -396,7 +396,7 @@ FUNCTION post_process(raw_predictions, sample_rate_fps):
 
 <!-- TODO (TechWriter): Expert review S7 (MEDIUM). Define OpenSearch index mappings for procedure-phases and procedure-events indices: keyword fields for phase_name, event_type, procedure_type, surgeon_id; numeric fields for timestamps and durations; date field for procedure_date. Note that the temporal query pattern (event within a phase time range) works because events carry phase_context. -->
 
-```
+```pseudocode
 FUNCTION store_results(procedure_id, analysis_results):
     // Write the full procedure analysis to DynamoDB.
     // This supports fast lookup by procedure_id.
