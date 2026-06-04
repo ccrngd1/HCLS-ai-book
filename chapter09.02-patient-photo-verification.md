@@ -68,6 +68,8 @@ The pipeline is simpler than you might expect:
 
 **Decision logic.** This is where healthcare nuance matters. You don't reject a patient based solely on a face mismatch. You use the score as one input into a multi-factor identity confidence system. High match (>95%): proceed automatically. Medium match (80-95%): additional verification (ask for date of birth, last four of SSN). Low match (<80%): route to staff for manual verification. No match or no face detected: fall back to traditional identification.
 
+Production deployments insert a liveness check between capture and comparison to prevent presentation attacks (printed photos, screen displays). This is essential for any deployment where the camera is unsupervised.
+
 The key design principle: face comparison is an identity signal, not a gate. Never deny care based on a failed face match.
 
 ---
@@ -82,7 +84,7 @@ The key design principle: face comparison is an identity signal, not a gate. Nev
 
 **Amazon DynamoDB for verification records.** Each verification attempt produces an audit record: who was being verified, when, what the confidence score was, what decision was made. DynamoDB's write-once, fast-lookup pattern fits perfectly. The audit trail is essential for both compliance and dispute resolution.
 
-**AWS Lambda for orchestration.** The verification workflow is a short-lived, stateless sequence: receive a verification request, fetch the reference image from S3, call Rekognition's CompareFaces, evaluate the score against thresholds, write the audit record, return the result. Classic Lambda workload.
+**AWS Lambda for orchestration.** The verification workflow is a short-lived, stateless sequence: receive a verification request, fetch the reference image from S3, call Rekognition's CompareFaces, evaluate the score against thresholds, write the audit record, return the result. Classic Lambda workload. If the DynamoDB audit write fails, the Lambda should still return the verification result to the caller (never block patient access to care) and publish the failed audit record to an SQS dead letter queue for retry. In production, separate enrollment and verification into distinct Lambda functions with independent IAM roles (principle of least privilege).
 
 **Amazon API Gateway for the endpoint.** Point-of-care systems (kiosks, mobile apps, telehealth platforms) need a synchronous REST endpoint to call for real-time verification.
 
@@ -92,6 +94,7 @@ The key design principle: face comparison is an identity signal, not a gate. Nev
 flowchart LR
     A[📱 Kiosk / App / Telehealth] -->|Verify Request\nwith live photo| B[API Gateway]
     B --> C[Lambda\nverification-handler]
+    C -.->|Liveness check\n-recommended-| L[Rekognition\nFace Liveness]
     C -->|Fetch reference photo| D[S3 Bucket\npatient-photos/]
     C -->|CompareFaces| E[Amazon Rekognition]
     E -->|Similarity Score| C
@@ -102,6 +105,7 @@ flowchart LR
     style D fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style F fill:#9ff,stroke:#333
+    style L fill:#ffe,stroke:#999,stroke-dasharray: 5 5
 ```
 
 ### Prerequisites
@@ -109,13 +113,14 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Rekognition, Amazon S3, AWS Lambda, Amazon DynamoDB, Amazon API Gateway |
-| **IAM Permissions** | `rekognition:CompareFaces`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem` |
+| **IAM Permissions** | `rekognition:CompareFaces`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem` (scope all permissions to specific resource ARNs; separate enrollment write permissions from verification read permissions into distinct Lambda execution roles) |
 | **BAA** | AWS BAA signed (required: patient photos are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest enabled; Lambda CloudWatch log groups: KMS encryption (logs may contain patient identifiers); all API calls over TLS |
 | **DynamoDB PITR** | Enable Point-in-Time Recovery for the verification log table |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Rekognition, DynamoDB, and CloudWatch Logs |
 | **CloudTrail** | Enabled: log all Rekognition and S3 API calls for HIPAA audit trail |
 | **Consent** | Patient consent for biometric data collection must be obtained and recorded before enrollment. Check state-specific biometric privacy laws (BIPA, CCPA, etc.) |
+| **Data Retention** | Configure S3 lifecycle rules aligned with your biometric data retention policy (BIPA requires destruction within 3 years of last interaction). Include a mechanism to delete photos and DynamoDB records on consent withdrawal. |
 | **Sample Data** | Synthetic face images only. Never use real patient photos in dev/test. Consider using datasets like LFW (Labeled Faces in the Wild) for threshold tuning. |
 | **Cost Estimate** | Rekognition CompareFaces: $0.001 per comparison. At typical clinic volume (200 verifications/day), that's $0.20/day. Lambda and DynamoDB costs negligible. |
 
@@ -303,7 +308,7 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 0.8-2 seconds |
+| End-to-end latency | 0.8-2 seconds (warm Lambda; first invocation after idle adds 1-3 seconds; use provisioned concurrency for patient-facing workflows) |
 | True match rate (same person, good conditions) | 97-99% |
 | False match rate (different person accepted) | 0.1-1% (threshold-dependent) |
 | Cost per verification | ~$0.001 (Rekognition) + negligible Lambda/DynamoDB |
@@ -326,9 +331,9 @@ FUNCTION enroll_patient_photo(patient_id, photo_bytes):
 
 **Consent management.** You need infrastructure to capture, store, and honor biometric consent preferences. Patients must be able to opt out at any time, and opting out must trigger immediate deletion of their stored photos and embeddings. This is a legal requirement in many states, not a nice-to-have.
 
-**Liveness detection.** The simple CompareFaces API doesn't verify that the live photo is actually live. Someone could hold up a printed photo or display a photo on their phone screen. Production systems need liveness detection (blink check, head turn, depth analysis) to prevent presentation attacks. Rekognition offers a separate Face Liveness API for this.
+**Liveness detection.** This is the single most important security upgrade for production. The simple CompareFaces API doesn't verify that the live photo is actually live. Someone could hold up a printed photo or display a photo on their phone screen. Production systems need liveness detection (blink check, head turn, depth analysis) to prevent presentation attacks. Rekognition offers a separate Face Liveness API for this. Without liveness, the system provides no meaningful defense against even trivial spoofing.
 
-**Rate limiting and abuse prevention.** Without rate limits, someone could attempt repeated verifications against random patient IDs to find exploitable matches. Implement per-source, per-patient rate limits and alert on anomalous verification patterns.
+**Rate limiting and abuse prevention.** Without rate limits, someone could attempt repeated verifications against random patient IDs to find exploitable matches. Implement per-source, per-patient rate limits and alert on anomalous verification patterns. API Gateway supports per-client throttling, and you can implement per-patient rate limits using DynamoDB atomic counters.
 
 ---
 
