@@ -535,6 +535,9 @@ One more thing: the 75% utilization target that every hospital uses as a benchma
 - [Google OR-Tools](https://developers.google.com/optimization) (open-source optimization suite with CP-SAT and MIP interfaces)
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
+**AWS Sample Repos:**
+<!-- TODO (TechWriter): Find and verify relevant aws-samples repos for optimization/scheduling patterns (RECIPE-GUIDE requires 3-5 sample repos per recipe) -->
+
 **Operations Research in Healthcare:**
 <!-- TODO (TechWriter): Verify and add link for INFORMS Healthcare journal or relevant OR in healthcare publication -->
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Operations/Scheduling for reference architectures)
