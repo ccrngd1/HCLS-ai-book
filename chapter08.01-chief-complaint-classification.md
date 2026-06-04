@@ -1,6 +1,6 @@
 # Recipe 8.1: Chief Complaint Classification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001 per classification
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$360-720/month (endpoint hosting) + ~$0.001 per request
 
 ---
 
@@ -58,6 +58,8 @@ Chief complaint classification is a well-studied problem. The literature goes ba
 - Transfer learning lets you start with a model that already knows "SOB" is medical, then fine-tune on your institution's specific patterns
 - Active learning workflows let you strategically label the examples where your classifier is least confident, rather than labeling randomly
 - Ensemble approaches (run multiple classifiers, take the majority vote or highest confidence) improve robustness without much added complexity
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). The 50,000 examples claim earlier in this section and the 1,000-per-category minimum in Prerequisites are inconsistent for a 150-category system. Reconcile: either note that 50K examples across fewer high-frequency categories achieves 85-92% on those categories while long-tail categories underperform, or adjust the total corpus guidance to 100K-200K for full category coverage. -->
 
 The practical state of the art for a well-trained, institution-specific model is 88-95% top-1 accuracy, with top-3 accuracy (correct category is in the top three predictions) often exceeding 97%. That's good enough for automated routing with a confidence threshold: high-confidence predictions route automatically, low-confidence ones go to a human.
 
@@ -126,10 +128,10 @@ flowchart LR
 | **IAM Permissions** | `comprehend:ClassifyDocument`, `comprehend:DetectEntities` (medical), `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `sqs:SendMessage` |
 | **BAA** | AWS BAA signed (chief complaints are PHI; they describe why a patient is seeking care) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SQS: SSE-KMS; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend, S3, DynamoDB, SQS, and CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for Comprehend, Comprehend Medical (separate endpoint: `com.amazonaws.{region}.comprehendmedical`), S3, DynamoDB, SQS, and CloudWatch Logs |
 | **CloudTrail** | Enabled: log all Comprehend and DynamoDB API calls for HIPAA audit trail |
 | **Training Data** | Minimum 1,000 labeled examples per category (ideally 5,000+). Historical chief complaints with routing decisions from your institution's EHR. De-identify before use in development. |
-| **Cost Estimate** | Comprehend Custom Classification: $0.0005 per request (real-time endpoint). Comprehend Medical: $0.01 per 100 characters. Lambda and DynamoDB negligible at this scale. Endpoint hosting: ~$0.50/hour per inference unit. |
+| **Cost Estimate** | Comprehend Custom Classification: $0.0005 per request (real-time endpoint). Comprehend Medical: $0.01 per 100 characters. Lambda and DynamoDB negligible at this scale. Endpoint hosting: ~$0.50/hour per inference unit (minimum 1 unit, ~$360/month always-on). This hosting fee dominates cost at moderate volumes. Consider scheduling endpoint scale-down during off-peak hours or using async/batch inference for non-real-time use cases. |
 
 ### Ingredients
 
@@ -141,6 +143,9 @@ flowchart LR
 | **AWS Lambda** | Orchestrates preprocessing, classification, and routing logic |
 | **Amazon DynamoDB** | Abbreviation expansion table and classification result storage |
 | **Amazon SQS** | Dead letter queue for low-confidence classifications needing human review |
+
+<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Add SQS queue access control guidance: queue policy restricting sqs:ReceiveMessage to the review application's IAM role only, message retention period set to match review SLA (e.g., 24 hours not the default 4 days), and a dead-letter queue for messages exceeding max receive count. PHI in an unscoped queue is a compliance gap. -->
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify resource-scoped IAM statements: dynamodb:GetItem on abbreviation-map table ARN only, dynamodb:GetItem+PutItem on classification-results table ARN only. Separate sensitivity levels (config vs. PHI). -->
 | **Amazon API Gateway** | RESTful endpoint for synchronous classification requests |
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Metrics on classification latency, confidence distribution, and error rates |
@@ -362,7 +367,7 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 200-500 ms (including API Gateway, Lambda cold start) |
+| End-to-end latency | 150-400 ms (warm invocation); 800-1500 ms (cold start). Mitigate cold starts with provisioned concurrency if sub-500ms latency is consistently required. |
 | Top-1 accuracy | 88-95% (depends on training data quality and category count) |
 | Top-3 accuracy | 96-99% |
 | Auto-route rate | 75-85% of complaints (with 85% confidence threshold) |
@@ -371,7 +376,7 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 
 **Where it struggles:**
 
-- Multi-complaint entries ("chest pain and shortness of breath") may classify to only one category
+- Multi-complaint entries ("chest pain and shortness of breath") may classify to only one category. When a secondary complaint is missed, it may not trigger the appropriate clinical protocol; for EDs where multi-complaint entries exceed 15% of volume, prioritize the multi-label variation before going to production.
 - Very short inputs ("pain") with insufficient context for confident classification
 - Novel abbreviations not in the expansion table
 - Rare categories with few training examples (class imbalance)
@@ -396,6 +401,8 @@ Retraining cadence matters too. Quarterly retraining picks up vocabulary drift (
 
 ## Variations and Extensions
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a "Retraining Pipeline" variation showing: SQS review queue corrections written back to training S3 bucket, scheduled (weekly/monthly) Step Functions workflow triggering Comprehend training, A/B accuracy comparison of new model vs. current, and endpoint update strategy. This is the recipe's key differentiator (feedback loop) but currently has no architectural detail for closing it. -->
+
 **Multi-label classification.** Instead of assigning a single category, allow multiple labels for multi-complaint entries. "Chest pain and shortness of breath" gets both "Chest Pain, Cardiac" and "Respiratory, Dyspnea." This requires changing from multi-class to multi-label classification (Comprehend supports both modes). The routing logic downstream needs to handle multiple categories per encounter.
 
 **Acuity prediction stacking.** After classifying the complaint category, run a second model that predicts acuity level (ESI 1-5) based on the complaint text combined with the predicted category. This creates a two-stage pipeline: first classify what it is, then predict how urgent it is. The category prediction becomes a feature for the acuity model, which improves acuity accuracy compared to predicting directly from raw text alone.
@@ -418,7 +425,7 @@ Retraining cadence matters too. Quarterly retraining picks up vocabulary drift (
 **AWS Documentation:**
 - [Amazon Comprehend Custom Classification](https://docs.aws.amazon.com/comprehend/latest/dg/how-document-classification.html)
 - [Amazon Comprehend Real-Time Endpoints](https://docs.aws.amazon.com/comprehend/latest/dg/manage-endpoints.html)
-- [Amazon Comprehend Medical DetectEntitiesV2](https://docs.aws.amazon.com/comprehend-medical/latest/dev/textract-output.html)
+- [Amazon Comprehend Medical DetectEntitiesV2](https://docs.aws.amazon.com/comprehend-medical/latest/api/API_DetectEntitiesV2.html)
 - [Amazon Comprehend Pricing](https://aws.amazon.com/comprehend/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
