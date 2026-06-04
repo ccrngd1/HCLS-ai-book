@@ -295,20 +295,20 @@ FUNCTION infer_icd10_codes(coding_text):
                 tier = "medium"
 
             candidates.append({
-                code:        concept.Code,
+                code: concept.Code,
                 description: concept.Description,
-                confidence:  round(concept.Score, 3),
-                tier:        tier
+                confidence: round(concept.Score, 3),
+                tier: tier
             })
 
         IF candidates is not empty:
             suggestions.append({
-                evidence_text:      entity.Text,
-                begin_offset:       entity.BeginOffset,
-                end_offset:         entity.EndOffset,
+                evidence_text: entity.Text,
+                begin_offset: entity.BeginOffset,
+                end_offset: entity.EndOffset,
                 is_sign_or_symptom: is_sign_or_symptom,
-                is_diagnosis:       is_diagnosis,
-                candidates:         candidates
+                is_diagnosis: is_diagnosis,
+                candidates: candidates
             })
 
     RETURN suggestions
@@ -324,8 +324,8 @@ FUNCTION enrich_with_entity_context(coding_text):
 
     context_entities = {
         medications: empty list,
-        conditions:  empty list,
-        anatomy:     empty list,
+        conditions: empty list,
+        anatomy: empty list,
         time_expressions: empty list
     }
 
@@ -337,11 +337,11 @@ FUNCTION enrich_with_entity_context(coding_text):
                 traits.append(trait.Name)
 
         record = {
-            text:       entity.Text,
-            category:   entity.Category,
-            type:       entity.Type,
+            text: entity.Text,
+            category: entity.Category,
+            type: entity.Type,
             confidence: round(entity.Score, 3),
-            traits:     traits
+            traits: traits
         }
 
         // Categorize for coder display.
@@ -370,10 +370,10 @@ FUNCTION deduplicate_and_rank(suggestions):
 
             IF code not in code_map OR candidate.confidence > code_map[code].confidence:
                 code_map[code] = {
-                    code:           candidate.code,
-                    description:    candidate.description,
-                    confidence:     candidate.confidence,
-                    tier:           candidate.tier,
+                    code: candidate.code,
+                    description: candidate.description,
+                    confidence: candidate.confidence,
+                    tier: candidate.tier,
                     evidence_texts: []   // collect all text spans that triggered this code
                 }
 
@@ -399,7 +399,7 @@ FUNCTION group_by_category_prefix(ranked_list):
         IF prefix not in groups:
             groups[prefix] = {
                 category_code: prefix,
-                suggestions:   empty list
+                suggestions: empty list
             }
         groups[prefix].suggestions.append(item)
 
@@ -413,13 +413,13 @@ FUNCTION group_by_category_prefix(ranked_list):
 FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_entities):
     // Build the suggestion record for storage and response.
     suggestion_record = {
-        encounter_id:      encounter_id,
-        note_id:           note_id,
-        suggested_at:      current UTC timestamp (ISO 8601),
+        encounter_id: encounter_id,
+        note_id: note_id,
+        suggested_at: current UTC timestamp (ISO 8601),
         suggestion_groups: grouped_suggestions,
-        context:           context_entities,
-        status:            "pending_review",   // will be updated when coder acts
-        coder_decisions:   empty list          // populated by feedback step
+        context: context_entities,
+        status: "pending_review",   // will be updated when coder acts
+        coder_decisions: empty list          // populated by feedback step
     }
 
     // Store in DynamoDB for audit and feedback tracking.
@@ -429,12 +429,12 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 
     // Build the API response for the coding UI.
     response = {
-        encounter_id:  encounter_id,
-        suggestions:   grouped_suggestions,
-        context:       context_entities,
+        encounter_id: encounter_id,
+        suggestions: grouped_suggestions,
+        context: context_entities,
         metadata: {
             processed_text_length: length of coding_text,
-            total_suggestions:     count of all codes across groups,
+            total_suggestions: count of all codes across groups,
             high_confidence_count: count where tier == "high"
         }
     }
