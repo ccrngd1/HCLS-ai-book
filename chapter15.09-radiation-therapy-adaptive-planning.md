@@ -306,8 +306,10 @@ FUNCTION get_recommendation(state, policy_model):
     confidence = action_probs[recommended_action]
 
     // Safety check: verify the recommended action doesn't violate hard constraints.
-    // Even if the policy recommends "continue," check that continuing won't
-    // push any OAR past its tolerance dose given remaining fractions.
+    // This is the HARD constraint layer. Even if the policy recommends "continue,"
+    // check that continuing won't push any OAR past its tolerance dose given
+    // remaining fractions. Training-time penalties make unsafe recommendations
+    // rare; this check makes them impossible to execute.
     safety_check = verify_constraints(state, recommended_action)
 
     IF safety_check.violated:
