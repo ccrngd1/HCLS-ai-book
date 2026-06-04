@@ -90,7 +90,7 @@ Most ML models are not naturally well-calibrated. They rank patients correctly (
 
 **Intervention Routing.** Route high-risk patients to the appropriate intervention: care management outreach, pharmacy consultation, social work referral, or automated patient engagement (text reminders, portal messages). The routing logic is often rule-based on top of the risk score, incorporating what the model identified as the primary risk driver for each patient.
 
-This is not a real-time system. The prediction window is 30-90 days. Running weekly batch scoring is appropriate for the tempo of the interventions you're trying to trigger.
+This is not a real-time system. The prediction window is 30-90 days. Running weekly batch scoring is appropriate for the tempo of the interventions you're trying to trigger. Note that weekly scoring creates a blind spot for rapid-onset risk; the Variations section describes event-triggered rescoring for critical transitions like hospital discharge or medication discontinuation.
 
 ---
 
@@ -100,15 +100,15 @@ This is not a real-time system. The prediction window is 30-90 days. Running wee
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the managed ML infrastructure for the entire model lifecycle: training gradient-boosted models at scale, running hyperparameter tuning jobs, hosting the trained model for batch inference, and managing model versions. For a batch-scoring workload like this, SageMaker Batch Transform is the right deployment pattern (score all patients at once, no need for a real-time endpoint sitting idle between scoring cycles).
 
-**AWS Glue for data aggregation and feature engineering.** The ETL pipeline that consolidates claims, pharmacy, lab, and encounter data into patient-level features is a classic Glue workload: scheduled, Spark-based, handling joins across large datasets. Glue also maintains the Data Catalog, which makes the feature store discoverable and auditable.
+**AWS Glue for data aggregation and feature engineering.** The ETL pipeline that consolidates claims, pharmacy, lab, and encounter data into patient-level features is a classic Glue workload: scheduled, Spark-based, handling joins across large datasets. Glue also maintains the Data Catalog, which makes the feature store discoverable and auditable. If source data resides in separate AWS accounts (common in large health systems), use cross-account IAM roles with external IDs for the Glue job to assume, or replicate source data into the analytics account using S3 Replication with KMS re-encryption.
 
-**Amazon S3 for data lake storage.** Raw source data, engineered features, model artifacts, and scoring results all live in S3. The data lake architecture gives you full lineage: you can always trace a risk score back to the specific features that produced it, and those features back to the specific claims and encounters that generated them.
+**Amazon S3 for data lake storage.** Raw source data, engineered features, model artifacts, and scoring results all live in S3. The data lake architecture gives you full lineage: you can always trace a risk score back to the specific features that produced it, and those features back to the specific claims and encounters that generated them. Partition the feature store by scoring date (e.g., `s3://bucket/features/scoring_date=2026-06-01/`). Retain historical feature snapshots for at least 12 months to support audit queries, model retraining on historical features, and incident investigation. Each DynamoDB record includes `model_version`; pair this with the date-partitioned feature store for full score lineage.
 
 **Amazon Athena for ad-hoc analysis and monitoring.** Clinicians and analysts need to query risk scores, drill into feature drivers, and validate model outputs. Athena's serverless SQL interface against the S3 data lake makes this accessible without provisioning infrastructure.
 
 **Amazon DynamoDB for operational risk scores.** Once batch scoring completes, the active risk scores (current tier, primary risk drivers, recommended interventions) land in DynamoDB for low-latency lookup by the care management workflow tools. When a care manager opens a patient's record, the risk score needs to appear in milliseconds, not minutes.
 
-**AWS Step Functions for pipeline orchestration.** The weekly scoring pipeline (aggregate data, engineer features, run batch transform, calibrate scores, write to DynamoDB, generate outreach lists) has dependencies between steps and needs error handling at each stage. Step Functions provides the workflow orchestration with built-in retry logic and failure notifications.
+**AWS Step Functions for pipeline orchestration.** The weekly scoring pipeline (aggregate data, engineer features, run batch transform, calibrate scores, write to DynamoDB, generate outreach lists) has dependencies between steps and needs error handling at each stage. Step Functions provides the workflow orchestration with built-in retry logic and failure notifications. Each step should validate output completeness before proceeding: the Glue job verifies output row counts match input patient counts, the Batch Transform step checks for scoring failures and routes failed patients to a dead-letter queue for manual review, and the DynamoDB write step retries unprocessed items. The pipeline should fail loudly (SNS alert to on-call) if any step produces fewer than 95% of expected outputs. In healthcare, silent partial failures are dangerous: a pipeline that scores 90% of patients and silently drops 10% is worse than one that fails loudly and delays the entire list.
 
 **Amazon CloudWatch for monitoring and alerting.** Model drift detection (are the prediction distributions shifting?), pipeline health (did this week's scoring job complete successfully?), and operational SLAs (did the outreach list reach the care management system by Monday morning?).
 
@@ -163,14 +163,14 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, AWS Glue, Amazon S3, Amazon DynamoDB, AWS Step Functions, Amazon Athena, AWS Lambda, Amazon API Gateway, Amazon CloudWatch |
-| **IAM Permissions** | `sagemaker:CreateTransformJob`, `sagemaker:CreateTrainingJob`, `glue:StartJobRun`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution`, `athena:StartQueryExecution` |
+| **IAM Permissions** | Distributed across service-specific roles. Glue execution role: S3 read on source/feature buckets, Glue Data Catalog access. SageMaker execution role: S3 read on feature store, S3 write on model artifacts and scoring output, KMS encrypt/decrypt. Step Functions role: invoke Glue, SageMaker Batch Transform, Lambda. Post-processing Lambda: DynamoDB PutItem on risk scores table, S3 read on scoring output. API Lambda: DynamoDB GetItem only on risk scores table. Each role scoped to minimum required actions and specific resource ARNs. |
 | **BAA** | AWS BAA signed (required: patient claims and clinical data are PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); SageMaker: KMS for training volumes, model artifacts, and batch transform output; Glue: security configuration with KMS; all traffic over TLS |
 | **DynamoDB PITR** | Enable Point-in-Time Recovery for risk score tables; supports audit and incident response |
-| **VPC** | Production: SageMaker and Glue in private subnets with VPC endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs. No internet egress for PHI-processing components. Enable VPC Flow Logs. |
+| **VPC** | Production: SageMaker and Glue in private subnets with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker API, SageMaker Runtime, Glue, STS, KMS, and CloudWatch Logs (interface endpoints). No internet egress for PHI-processing components. Enable VPC Flow Logs. Deploy API Gateway as a Private endpoint accessible only within the VPC; care management systems in peered VPCs access the score lookup API through an interface VPC endpoint for API Gateway. |
 | **CloudTrail** | Enabled: log all SageMaker, Glue, S3, and DynamoDB API calls for HIPAA audit trail |
 | **Sample Data** | CMS Synthetic Medicare Claims (SynPUF) dataset for development. Never use real patient data in non-production environments. |
-| **Cost Estimate** | Glue ETL: ~$5-20/run depending on data volume. SageMaker Batch Transform: ~$2-10/run for 100K patients. DynamoDB: pennies at this write volume. Total weekly pipeline: $10-40 for a 100K member population. |
+| **Cost Estimate** | Glue ETL: ~$5-20/run depending on data volume. SageMaker Batch Transform: ~$2-10/run for 100K patients. DynamoDB: pennies at this write volume. Compute cost per scoring cycle: $10-40 for a 100K member population. Total operational cost including S3 storage (24-month lookback across 5 sources), DynamoDB provisioned capacity for API serving, CloudWatch monitoring, and Step Functions orchestration is typically $100-300/month at this scale. |
 
 ### Ingredients
 
@@ -298,7 +298,7 @@ FUNCTION engineer_features(patient_features, scoring_date):
     RETURN enhanced
 ```
 
-**Step 3: Model scoring.** The trained model receives the engineered feature set and produces a raw probability estimate for each patient. In production, this is a batch operation: all active patients are scored in a single pass. The model itself is a gradient-boosted tree (XGBoost) trained on historical data where the label was "had an ED visit within 60 days of the feature extraction date." The output is a probability between 0 and 1. These raw probabilities need calibration before they're operationally useful (next step). Skip calibration and you'll have a model that ranks patients correctly but whose absolute probability estimates are systematically too high or too low.
+**Step 3: Model scoring.** The trained model receives the engineered feature set and produces a raw probability estimate for each patient. In production, this is a batch operation: all active patients are scored in a single pass. The model itself is a gradient-boosted tree (XGBoost) trained on historical data where the label was "had an ED visit within 60 days of the feature extraction date." The output is a probability between 0 and 1. These raw probabilities need calibration before they're operationally useful (next step). In production, validate the model artifact checksum against the model registry before scoring. SageMaker Model Registry provides versioning and approval workflows that prevent unapproved models from entering the scoring pipeline. Skip calibration and you'll have a model that ranks patients correctly but whose absolute probability estimates are systematically too high or too low.
 
 ```pseudocode
 FUNCTION score_patients(feature_table, model_artifact):
@@ -364,7 +364,7 @@ FUNCTION calibrate_and_stratify(scored_patients, calibration_model, capacity_con
     RETURN sorted_patients
 ```
 
-**Step 5: Store results and generate outreach lists.** The final step writes calibrated scores to the operational database for real-time lookup and generates the prioritized outreach list that care managers will work from Monday morning. Each record includes not just the score but the top risk drivers (so the care manager knows what to address) and the recommended intervention type. The outreach list is the product of this entire pipeline. If it doesn't reach the right people in a format they can act on, everything upstream was wasted effort.
+**Step 5: Store results and generate outreach lists.** The final step writes calibrated scores to the operational database for real-time lookup and generates the prioritized outreach list that care managers will work from Monday morning. Each record includes not just the score but the top risk drivers (so the care manager knows what to address) and the recommended intervention type. The outreach list is the product of this entire pipeline. If it doesn't reach the right people in a format they can act on, everything upstream was wasted effort. The delivery mechanism (SQS, SNS, or direct API integration) must use encryption at rest (SSE-KMS for SQS) and enforce IAM policies restricting which principals can receive messages. The outreach list contains PHI and must be treated with the same security posture as the source data. Scope API Gateway access with IAM authorization or Cognito user pools: care managers need the complete risk driver explanation, while patient-facing systems should see only the risk tier and recommended action.
 
 ```pseudocode
 FUNCTION store_and_route(stratified_patients, scoring_date):
