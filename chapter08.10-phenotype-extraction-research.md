@@ -1,6 +1,6 @@
 # Recipe 8.10: Phenotype Extraction for Research
 
-**Complexity:** Complex · **Phase:** Research Infrastructure · **Estimated Cost:** ~$0.08 per patient record set
+**Complexity:** Complex · **Phase:** Research Infrastructure · **Estimated Cost:** ~$8-15 per patient record set (full NLP processing)
 
 ---
 
@@ -55,6 +55,8 @@ Building a phenotype extraction system requires stacking several NLP capabilitie
 **Cross-document aggregation.** A phenotype is rarely determinable from a single note. You might need evidence from across the patient's longitudinal record: a diagnosis confirmed in one note, a medication trial documented in another, a lab value from a third encounter. The aggregation logic (how to combine evidence across documents) is where the phenotype algorithm lives, and it's where most of the domain expertise is encoded.
 
 ### Why Phenotyping Is Hard (Beyond the NLP)
+
+<!-- TODO (TechWriter): Expert review VOC-1 (MEDIUM). This subsection partially overlaps with the Problem section (inter-rater reliability, ambiguity). Consider consolidating overlapping points and targeting ~20% reduction. Move unique points (portability, prevalence, reproducibility) into a shorter list. -->
 
 The NLP components above are table stakes. The real difficulty lives in the layers surrounding them:
 
@@ -116,6 +118,8 @@ At a conceptual level, phenotype extraction follows this pipeline:
 
 **Amazon DynamoDB for evidence accumulation.** As per-document extraction results come in, they accumulate in DynamoDB keyed by patient ID and criterion. DynamoDB's fast writes and flexible schema handle the heterogeneous evidence payloads (medication attributes vs. lab values vs. diagnosis assertions all look different). The aggregation step queries by patient to pull all evidence for classification.
 
+<!-- TODO (TechWriter): Expert review SEC-2 (MEDIUM). Add data retention/TTL policy guidance for DynamoDB evidence store. Research data governance requires defined retention schedules; intermediate NLP artifacts should have shorter retention than final classifications. -->
+
 **Amazon SageMaker for custom model hosting (optional).** If your phenotype requires extraction capabilities beyond what Comprehend Medical provides natively (e.g., a custom classifier for "treatment resistance" assertions, or a domain-specific entity type not in Comprehend Medical's ontology), SageMaker hosts the custom model behind an endpoint that Lambda calls as part of the pipeline.
 
 ### Architecture Diagram
@@ -152,15 +156,15 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Step Functions, AWS Lambda, Amazon DynamoDB, Amazon SageMaker (optional), Amazon QuickSight (optional) |
-| **IAM Permissions** | `comprehend:DetectEntitiesV2`, `comprehend:InferICD10CM`, `comprehend:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `states:StartExecution`, `sagemaker:InvokeEndpoint` |
+| **IAM Permissions** | `comprehend:DetectEntitiesV2`, `comprehend:InferICD10CM`, `comprehend:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `states:StartExecution`, `sagemaker:InvokeEndpoint` (optional, only if custom models are used; scope to specific endpoint ARNs) |
 | **BAA** | AWS BAA signed. Even for de-identified data, BAA is required if any re-identification risk exists. |
 | **Encryption** | S3: SSE-KMS with research-specific key; DynamoDB: encryption at rest; all API calls over TLS; Lambda environment variables encrypted |
-| **VPC** | Lambda in VPC with VPC endpoints for S3, DynamoDB, Comprehend Medical, and SageMaker. Private subnets only. No internet egress for PHI processing. |
-| **CloudTrail** | Full API logging. Research reproducibility requires knowing exactly what was processed, when, and with what configuration. |
+| **VPC** | Lambda in VPC with VPC endpoints for S3, DynamoDB, Comprehend Medical, and SageMaker. Private subnets only. No internet egress for PHI processing. Note: S3 and DynamoDB use Gateway endpoints (free). Comprehend Medical and SageMaker require Interface endpoints (~$7.50/month per AZ each). |
+| **CloudTrail** | Full API logging. Research reproducibility requires knowing exactly what was processed, when, and with what configuration. For full audit trails, enable CloudTrail data events on the S3 bucket and DynamoDB table (additional cost: ~$0.10 per 100,000 events). Alternatively, use application-level audit logging in CloudWatch Logs at lower cost. |
 | **IRB Approval** | Institutional Review Board approval or waiver for use of clinical data in research. This is not an AWS requirement, it's an institutional and federal requirement. |
 | **Data Governance** | De-identification or consent framework per institutional policy. Limited data sets under data use agreements if sharing across institutions. |
-| **Sample Data** | Synthetic clinical notes from tools like Synthea. MIMIC-III/MIMIC-IV discharge summaries (requires PhysioNet credentialed access). Never use real patient data in development. |
-| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters (entity detection). A typical 2000-character note = $0.20. Per patient with 40 notes = ~$8.00. At scale discounts and selective processing bring this down significantly. |
+| **Sample Data** | Synthetic clinical notes from tools like Synthea. MIMIC-III/MIMIC-IV discharge summaries (requires PhysioNet credentialed access and institutional DUA; store only in accounts where DUA terms can be enforced). Never use real patient data in development. |
+| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters per API. A typical 3,000-character note through DetectEntitiesV2 + InferRxNorm + InferICD10CM = ~$0.90. Per patient with 40 notes = ~$12-15 at full processing. With selective processing (pre-filter via structured data, run RxNorm/ICD10 only on relevant notes): ~$4-8 per patient. Pre-filtering is not optional at scale. |
 
 ### Ingredients
 
@@ -191,6 +195,7 @@ flowchart TD
       "criterion_id": "C1_MDD_DIAGNOSIS",
       "description": "Major Depressive Disorder diagnosis",
       "type": "structured_or_text",
+      "min_confidence": 0.85,
       "structured_query": {
         "icd10_codes": ["F32.0", "F32.1", "F32.2", "F32.9", "F33.0", "F33.1", "F33.2", "F33.9"],
         "min_occurrences": 2,
@@ -208,6 +213,7 @@ flowchart TD
       "criterion_id": "C2_TREATMENT_FAILURE",
       "description": "Failed at least 2 adequate antidepressant trials",
       "type": "text_required",
+      "min_confidence": 0.75,
       "text_criteria": {
         "target_entities": ["MEDICATION"],
         "medication_categories": ["SSRI", "SNRI", "TCA", "MAOI", "atypical_antidepressant"],
@@ -224,6 +230,7 @@ flowchart TD
       "criterion_id": "C3_INFLAMMATORY_MARKERS",
       "description": "Elevated inflammatory biomarkers",
       "type": "structured_preferred",
+      "min_confidence": 0.80,
       "structured_query": {
         "lab_tests": ["CRP", "hs-CRP", "IL-6", "ESR"],
         "threshold": {"CRP": ">3.0 mg/L", "hs-CRP": ">3.0 mg/L", "IL-6": ">7 pg/mL", "ESR": ">20 mm/hr"},
@@ -243,6 +250,8 @@ flowchart TD
 ```
 
 **Step 2: Process each clinical note through entity extraction.** For every note in the patient's record, send it through Comprehend Medical to pull out medical entities with their assertions, attributes, and normalized codes. The key insight here is that you're not processing the note generically: you're processing it with your phenotype criteria in mind. Not every entity in the note matters. A phenotype for depression doesn't care about the patient's knee replacement (usually). But you extract everything at the document level because filtering happens in the next step, and you don't want to re-process notes if you add criteria later. Think of this as building an evidence index for the patient's record.
+
+<!-- TODO (TechWriter): Expert review ARC-4 (MEDIUM). Add chunking logic for notes exceeding Comprehend Medical's 20,000-character limit. Split at sentence boundaries before 18,000 chars, process chunks independently, merge and deduplicate results. -->
 
 ```pseudocode
 FUNCTION process_note(patient_id, note_id, note_text, note_metadata):
@@ -335,7 +344,11 @@ FUNCTION evaluate_against_criteria(extraction_result, phenotype_definition):
                         criterion.text_criteria.required_attributes
                     )
                 
-                IF attribute_match AND matched_entity.confidence >= 0.80:
+                IF attribute_match AND matched_entity.confidence >= criterion.min_confidence:
+                    // min_confidence is defined per criterion in the phenotype definition.
+                    // Start with 0.70 during development to maximize recall, then tighten
+                    // based on PPV during validation. Medication names (typically high confidence
+                    // from CM) can use 0.85+. Complex multi-word conditions may need 0.70-0.75.
                     evidence_item = {
                         criterion_id: criterion.criterion_id,
                         patient_id: extraction_result.patient_id,
@@ -381,6 +394,8 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 ```
 
 **Step 4: Aggregate evidence across all notes for each patient.** A single note rarely provides enough evidence to classify a patient. This step pulls together all the evidence accumulated across the patient's entire note corpus and organizes it by criterion. For criterion C2 (treatment failures), it counts distinct medications with failure assertions. For criterion C1 (MDD diagnosis), it counts the number of positive mentions across different encounters. The aggregation logic is criterion-specific because different criteria have different evidence thresholds.
+
+<!-- TODO (TechWriter): Expert review ARC-5 (MEDIUM). Add temporal conflict resolution when positive and negative evidence exist for same criterion. Most recent note takes priority for current-status phenotypes; any-positive suffices for ever-had phenotypes. Document which interpretation the phenotype uses. -->
 
 ```pseudocode
 FUNCTION aggregate_patient_evidence(patient_id, phenotype_definition):
@@ -438,17 +453,18 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
     
     all_met = TRUE
     any_excluded = FALSE
-    partial_evidence = FALSE
+    any_partial_evidence = FALSE
+    has_zero_evidence_criterion = FALSE
     
     FOR each criterion_id, result in criterion_results:
         IF result.met == FALSE AND result.evidence_count == 0:
             // No evidence at all for this criterion
             all_met = FALSE
-            partial_evidence = FALSE  // Can't even call it partial
+            has_zero_evidence_criterion = TRUE
         ELSE IF result.met == FALSE AND result.evidence_count > 0:
             // Some evidence exists but doesn't meet threshold
             all_met = FALSE
-            partial_evidence = TRUE
+            any_partial_evidence = TRUE
         ELSE IF result.met == TRUE:
             // Criterion satisfied
             CONTINUE
@@ -466,7 +482,7 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
         classification = "DEFINITE"
     ELSE IF all_met AND minimum_confidence(criterion_results) < 0.85:
         classification = "PROBABLE"
-    ELSE IF partial_evidence:
+    ELSE IF any_partial_evidence:
         classification = "PROBABLE"
     ELSE:
         classification = "INSUFFICIENT_DATA"
@@ -540,7 +556,7 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
 | Per-patient total time (40 notes) | 80-160 seconds (parallelized: 10-20 seconds) |
 | Positive predictive value (PPV) | 85-95% (phenotype-dependent) |
 | Sensitivity (recall) | 70-85% (trade-off with PPV) |
-| Throughput | ~200 patients/hour (conservative Step Functions throttling) |
+| Throughput | 1,000-3,000 patients/hour at default Comprehend Medical quotas (100 TPS); 5,000-10,000 with quota increases. Bottleneck is CM API throughput, not Step Functions. |
 | Cost per patient (40 notes) | $4-10 depending on note length and model usage |
 | Inter-run reproducibility | 99.9%+ (deterministic pipeline with versioned models) |
 
@@ -607,7 +623,7 @@ The cost model also catches people off guard. Comprehend Medical charges per cha
 - [PheKB: Phenotype KnowledgeBase](https://phekb.org/): Published, validated phenotype algorithms from the eMERGE Network
 - [OHDSI ATLAS](https://atlas.ohdsi.org/): Phenotype definition tool from the Observational Health Data Sciences and Informatics consortium
 - [eMERGE Network](https://emerge-network.org/): Multi-site genomics consortium with extensive phenotyping validation work
-- TODO: Verify availability of MIMIC-IV clinical notes for phenotyping benchmarks at PhysioNet
+- [MIMIC-IV-Note](https://physionet.org/content/mimic-iv-note/): Discharge summaries and radiology reports suitable for phenotyping benchmarks (requires PhysioNet credentialed access and institutional DUA)
 
 ---
 
