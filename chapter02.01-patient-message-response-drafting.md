@@ -1,6 +1,6 @@
 # Recipe 2.1: Patient Message Response Drafting ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01–0.03 per message
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.01-0.03 per message
 
 ---
 
@@ -86,7 +86,7 @@ The models themselves have gotten better at following instructions, staying with
 
 At a conceptual level, the pipeline looks like this:
 
-```
+```text
 [Patient Message] → [Classify Intent] → [Gather Context] → [Generate Draft] → [Safety Check] → [Provider Review Queue]
 ```
 
@@ -189,14 +189,14 @@ flowchart LR
 
 Handle ambiguity explicitly. Messages that match multiple intents ("I'm running out of my lisinopril and also I've been having headaches") or match no intents are the cases that cause the most draft rework. Track which intents matched and their keyword-match counts during classification. When multiple intents match with similar counts, either pick a primary and record a warning, or route the message to manual triage. When nothing matches, still generate a draft but attach a `context_confidence: low` flag on the stored record so the provider review UI can surface "generated from minimal context, review carefully."
 
-```
+```text
 INTENT_PATTERNS = {
-    "refill":      ["refill", "medication", "prescription", "renew", "ran out", "running low"],
+    "refill": ["refill", "medication", "prescription", "renew", "ran out", "running low"],
     "appointment": ["appointment", "schedule", "reschedule", "cancel", "when is my"],
     "test_result": ["results", "lab", "blood work", "test", "came back"],
-    "symptom":     ["pain", "rash", "fever", "feeling", "symptoms", "hurts"],
-    "billing":     ["bill", "charge", "insurance", "copay", "payment"],
-    "general":     []  // fallback category
+    "symptom": ["pain", "rash", "fever", "feeling", "symptoms", "hurts"],
+    "billing": ["bill", "charge", "insurance", "copay", "payment"],
+    "general": []  // fallback category
 }
 
 FUNCTION classify_message(message_text):
@@ -217,7 +217,7 @@ FUNCTION classify_message(message_text):
 
 A note on latency: EHR API response times vary enormously. A well-optimized FHIR server might respond in 200ms, but some endpoints under load take 1-3 seconds per call. If your FHIR server is slow, parallelize the queries or maintain a pre-fetched patient context cache (refreshed on clinical events) to keep end-to-end latency under 5 seconds. Any cache you add is a PHI store: encrypt at rest with KMS, enforce TLS in transit, deploy in the VPC, and set a TTL consistent with your PHI retention and staleness policies.
 
-```
+```text
 FUNCTION gather_context(patient_id, intent):
     context = {}
     
@@ -253,7 +253,7 @@ FUNCTION gather_context(patient_id, intent):
 
 **Step 3: Assemble the prompt.** This is where the magic happens (and where most implementations get it wrong). The prompt has three parts: a system prompt that defines behavior constraints, the patient context assembled in Step 2, and the actual patient message. The system prompt is the most important piece. It tells the model what it can and cannot do. Without explicit constraints, the model will try to be maximally helpful, which in a medical context means offering diagnoses, suggesting treatments, and generally doing things that only a licensed provider should do. The system prompt is your primary safety mechanism (Guardrails is your secondary one).
 
-```
+```text
 FUNCTION build_prompt(message_text, intent, context, provider_preferences):
     // Load the base system prompt template from S3
     // This template defines the model's role, constraints, and tone
@@ -293,7 +293,7 @@ FUNCTION build_prompt(message_text, intent, context, provider_preferences):
 
 **Step 4: Generate the draft response.** Call the foundation model with the assembled prompt. Key parameters: use a low temperature (0.3-0.5) for consistency and predictability. Higher temperatures produce more creative and varied output, which is the opposite of what you want for healthcare communications. You want the same type of question to produce a similar style of response every time. Set a maximum token limit to prevent runaway generation. For routine messages, 200-300 tokens is plenty.
 
-```
+```text
 FUNCTION generate_draft(system_prompt, user_prompt):
     // Call the foundation model via the managed LLM service
     response = call LLM service with:
@@ -322,7 +322,7 @@ Two things that aren't in the pseudocode below but matter in production. First, 
 
 Second, the approval-rate metric you'll come to rely on in The Honest Take depends on capturing what the provider does next with each draft. Either extend this record with provider-action fields (`reviewed_ts`, `provider_action` one of `approved`/`edited`/`rejected`, `final_sent_text` for edited drafts, and a lightweight edit diff summary for prompt-drift tracking) or model the review events as an append-only log in a companion table keyed by `message_id`. The append-only log is friendlier to audit requirements because updates to the primary record tend to overwrite history. Without this capture layer, your north-star metric can't actually be computed. Also log guardrail interventions as safety events: a `DraftBlocked` CloudWatch metric dimensioned by guardrail policy, paralleling the `DraftGenerated` metric in the pseudocode below. The guardrail reason string may itself contain PHI (it often echoes the patient message), so treat it with the same handling as other PHI log fields.
 
-```
+```text
 FUNCTION store_draft(message_id, patient_id, provider_id, original_message, 
                      intent, context_used, draft_result):
     // Write the complete draft record to the database
@@ -446,7 +446,7 @@ One more thing: resist the temptation to expand scope. "If it works for refill r
 **AWS Solutions and Blogs:**
 - [Generative AI on AWS](https://aws.amazon.com/generative-ai/): Overview of AWS generative AI services and healthcare use cases
 
-<!-- TODO(TechWriter): Consider adding a verified AWS ML Blog post on Bedrock Guardrails configuration patterns. The prior entry linking "Build a Robust Text-Based Toxicity Detector with Amazon Bedrock Guardrails" was removed during editing because the URL slug pointed to a SageMaker post, not a Bedrock Guardrails post, and the link text and URL disagreed. Do not ship with fabricated or mismatched URLs. -->
+<!-- closed: V2: No verified Bedrock Guardrails blog URL found. The existing AWS documentation links (Bedrock Guardrails User Guide) adequately cover the topic. Removed rather than shipping a fabricated or mismatched URL. -->
 
 ---
 
