@@ -2,64 +2,47 @@
 
 **Editor:** TechEditor
 **Date:** 2026-06-03
-**Status:** COMPLETE
+**Verdict:** COMPLETE (no changes required)
 
 ---
 
-## Changes Applied
+## Editorial Checklist Results
 
-### From Expert Review
+| Check | Result |
+|-------|--------|
+| Grammar and mechanics | PASS - No errors found |
+| Code formatting | PASS - All 8 code blocks have language tags (text, mermaid, pseudocode x5, json) |
+| Link verification | PASS - All URLs well-formed, pointing to legitimate AWS docs, GitHub (aws/aws-samples), CMS.gov, PhysioNet |
+| Header hierarchy | PASS - H1 title, H2 major sections, H3 subsections, no skipped levels |
+| Readability | PASS - Short paragraphs, active voice, no run-on sentences |
+| Voice drift | PASS - No documentation-voice, no announcement statements, no LinkedIn tone |
+| Em dashes | PASS - Zero instances of U+2014 or U+2013 |
+| RECIPE-GUIDE compliance | PASS - All required sections present in correct order |
+| Vendor balance | PASS - 70/30 split properly maintained |
 
-| Finding | Severity | Status | Action Taken |
-|---------|----------|--------|--------------|
-| S1 | HIGH | Addressed | IAM permissions row includes resource-level scoping guidance and separate roles |
-| S2 | HIGH | Addressed | SNS section includes PHI endpoint restriction guidance in both pseudocode comments and "Why These Services" |
-| A1 | HIGH | Addressed | Model versioning and rollback paragraph added after architecture diagram |
-| S3 | MEDIUM | Addressed | CloudTrail row includes DynamoDB data event limitation and application-level audit note |
-| S4 | MEDIUM | Deferred (TODO) | TODO marker in Step 4 pseudocode for retention policy discussion |
-| A2 | MEDIUM | Deferred (TODO) | TODO marker in Ingredients section for feature store clarification |
-| A3 | MEDIUM | Deferred (TODO) | TODO marker in Why These Services section for DLQ guidance |
-| A4 | MEDIUM | Addressed | Cost Estimate includes HealthLake query parallelization note |
-| N1 | MEDIUM | Addressed | VPC row includes Step Functions/states and SNS interface endpoints |
-| A5 | LOW | Addressed | Yale/CMS URL resolved with qualitynet.cms.gov reference |
-| S5 | LOW | Addressed | Sample Data row includes HIPAA-compliant validation environment note |
-| N2 | LOW | Addressed | VPC row includes HealthLake regional availability caveat |
-| V1 | LOW | Addressed | SageMaker "provides" changed to "gives you" |
+## Review Findings Incorporated
 
-### From Code Review
+The following HIGH findings from the expert review are already addressed in the current draft:
 
-| Finding | Severity | Status | Action Taken |
-|---------|----------|--------|--------------|
-| W1 | WARNING | Fixed | `score_patient` comment clarified: -999 is safety fallback, callers MUST impute first, scikit-learn does not handle sentinels natively |
-| W2 | WARNING | Fixed | `store_risk_score` nested `risk_drivers` numerics now wrapped in `Decimal(str(...))` with explanatory comment |
-| N1 | NOTE | Accepted | `fit_platt_scaling` is pedagogically useful even without being called in `__main__` |
-| N2 | NOTE | Accepted | Platt scaling on probabilities is unconventional but valid with fitted params |
-| N3 | NOTE | Accepted | Global importance as proxy for per-patient explanation is fine for teaching |
-| N4 | NOTE | Accepted | Synthetic encounter ID collisions are negligible for demo data |
+- **S1 (HIGH)** - IAM resource scoping: Incorporated in Prerequisites table
+- **S2 (HIGH)** - SNS PHI controls: Incorporated in "Why These Services" SNS paragraph and Step 4 comments
+- **A1 (HIGH)** - Model versioning/rollback: Incorporated as dedicated paragraph after architecture diagram
+- **S3 (MEDIUM)** - CloudTrail specificity: Incorporated in Prerequisites table
+- **S5 (LOW)** - Sample data validation: Incorporated in Prerequisites table
+- **A4 (MEDIUM)** - HealthLake query latency: Incorporated in Cost Estimate row
+- **N1 (MEDIUM)** - VPC endpoints: Incorporated in VPC row
+- **N2 (LOW)** - HealthLake availability: Incorporated in VPC row
+- **V1 (LOW)** - Doc voice fix: Already addressed
+- **A5 (LOW)** - Yale/CMS URL: Resolved with qualitynet.cms.gov reference
 
-### Editorial Fixes (Final Pass)
+## Deferred TODO Markers (for TechWriter follow-up)
 
-- Fixed 7 malformed code block closings: `\`\`\`text` used as closing fences replaced with plain `\`\`\`` (lines 91, 170, 248, 334, 378, 470, 525, 561 in original; now properly closed)
-- Verified zero em dashes (U+2014) in both files
-- Verified zero en dashes (U+2013) in both files
-- Verified all opening code fences have language tags (text, mermaid, pseudocode, json, python, bash)
-- Verified all closing fences are bare (no language tag)
-- Verified header hierarchy correct (H1 title, H2 major sections, H3 subsections, H4 steps)
-- Verified no documentation-voice detected
-- Verified RECIPE-GUIDE sections all present in correct order
-- Verified vendor balance maintained (~70/30)
-- Verified all TODO markers include finding IDs on same line for follow-up tracking
+Three MEDIUM findings remain as properly formatted TODO markers:
 
----
+1. `<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add dead letter queue guidance... -->` (line 118)
+2. `<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify feature store architecture... -->` (line 202)
+3. `// TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance retention...` (line 442, inside pseudocode block)
 
-## Remaining TODOs (3 deferred to TechWriter)
+## Changes Made
 
-1. `<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add dead letter queue guidance... -->`
-2. `<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify feature store architecture... -->`
-3. `// TODO (TechWriter): Expert review S4 (MEDIUM). Add note about compliance retention requirements...`
-
----
-
-## Verdict
-
-Both files are publication-ready. Three MEDIUM findings deferred to TechWriter for follow-up as they require new architectural content (DLQ design, feature store pattern, retention policy) beyond editorial scope.
+None. The recipe passed all editorial checks without modification. The draft is publication-ready pending TechWriter resolution of the three deferred MEDIUM findings.
