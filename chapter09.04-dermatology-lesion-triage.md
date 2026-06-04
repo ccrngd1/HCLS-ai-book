@@ -1,6 +1,6 @@
 # Recipe 9.4: Dermatology Lesion Triage
 
-**Complexity:** Medium · **Phase:** Pilot · **Estimated Cost:** ~$0.08–$0.15 per image
+**Complexity:** Medium · **Phase:** Pilot · **Estimated Cost:** ~$0.08-$0.15 per image
 
 ---
 
@@ -76,7 +76,7 @@ For production systems, generate and store the saliency map alongside the origin
 
 ### The General Architecture Pattern
 
-```
+```text
 [Image Capture] → [Metadata Strip] → [Quality Check] → [Preprocessing] → [Classification Model] → [Confidence Scoring] → [Triage Routing] → [Dermatologist Review Queue]
 ```
 
@@ -181,7 +181,7 @@ flowchart TD
 
 **Step 1: Image upload and metadata stripping.** Patient-submitted smartphone photos contain EXIF metadata including GPS coordinates that reveal home addresses, device serial numbers, and photographer names. Before storing the image or running any analysis, strip all non-essential metadata. Retain only the timestamp and image dimensions. This is a privacy requirement, not an optimization. Skip this step and you're storing patient home addresses alongside their medical photographs.
 
-```
+```pseudocode
 FUNCTION strip_and_store(image_bytes, patient_id):
     // Validate file type by checking magic bytes, not just the extension.
     // Enforce maximum file size at the API Gateway level (e.g., 10 MB).
@@ -204,7 +204,7 @@ FUNCTION strip_and_store(image_bytes, patient_id):
 
 **Step 2: Image quality validation.** Before spending compute on inference, verify the submitted image is actually usable. A blurry photo, an image that's too dark, or one where no lesion is visible will produce garbage predictions. This step catches those early and returns actionable feedback to the submitter. The quality check is lightweight (basic image statistics, not a full ML model) and runs in milliseconds. Skip this step and you'll waste inference costs on unusable images while returning meaningless confidence scores that erode clinician trust.
 
-```
+```pseudocode
 FUNCTION validate_image_quality(image_bytes):
     // Load the image and compute basic quality metrics.
     // These are fast statistical checks, not ML inference.
@@ -235,7 +235,7 @@ FUNCTION validate_image_quality(image_bytes):
 
 **Step 3: Image preprocessing.** The classification model expects a specific input format: fixed dimensions, normalized pixel values, and ideally a clean view of the lesion without excessive background. This step transforms the raw photograph into what the model needs. Different models have different input requirements, so the preprocessing must match the model's training pipeline exactly. If you resize differently than the training data was resized, or normalize to a different range, accuracy degrades silently.
 
-```
+```pseudocode
 FUNCTION preprocess_image(image_bytes, target_size=224):
     // Decode and resize to the model's expected input dimensions.
     // Most classification models expect square inputs (224x224 or 299x299).
@@ -263,7 +263,7 @@ FUNCTION preprocess_image(image_bytes, target_size=224):
 
 **Step 4: Model inference.** Send the preprocessed image to the classification model and get back a probability distribution across triage categories. The model outputs raw logits or softmax probabilities for each class. This is the core ML step, and it's also the most expensive computationally. The endpoint should respond in under 2 seconds for a good user experience. If latency is a concern at scale, consider batching or asynchronous inference for non-urgent submissions.
 
-```
+```pseudocode
 FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
     // Call the SageMaker real-time inference endpoint.
     // The endpoint hosts the trained model and handles GPU allocation.
@@ -281,7 +281,7 @@ FUNCTION classify_lesion(preprocessed_payload, endpoint_name):
 
 **Step 5: Triage decision logic.** Raw model probabilities need to be translated into actionable triage decisions. This is where clinical judgment meets engineering. The thresholds determine the sensitivity/specificity tradeoff: lower the "urgent" threshold and you catch more true positives but flood the queue with false alarms. Raise it and you miss cases. These thresholds should be set in collaboration with dermatologists and validated on a held-out dataset with known outcomes. They're configuration, not code, and they will need adjustment over time as you gather real-world performance data.
 
-```
+```pseudocode
 // Triage thresholds. These are clinical decisions, not engineering decisions.
 // Set in collaboration with dermatology leadership. Review quarterly.
 URGENT_THRESHOLD     = 0.70  // above this: immediate dermatology review
@@ -297,31 +297,31 @@ FUNCTION determine_triage(predictions):
     // If both urgent and suspicious are high, urgent wins.
     IF urgent_score >= URGENT_THRESHOLD:
         RETURN {
-            category:    "URGENT",
-            action:      "Immediate dermatology review recommended",
-            confidence:  urgent_score,
-            all_scores:  predictions
+            category: "URGENT",
+            action: "Immediate dermatology review recommended",
+            confidence: urgent_score,
+            all_scores: predictions
         }
 
     IF suspicious_score >= SUSPICIOUS_THRESHOLD:
         RETURN {
-            category:    "SUSPICIOUS",
-            action:      "Expedited dermatology appointment recommended (within 2 weeks)",
-            confidence:  suspicious_score,
-            all_scores:  predictions
+            category: "SUSPICIOUS",
+            action: "Expedited dermatology appointment recommended (within 2 weeks)",
+            confidence: suspicious_score,
+            all_scores: predictions
         }
 
     RETURN {
-        category:    "ROUTINE",
-        action:      "Standard monitoring. Follow up if changes observed.",
-        confidence:  benign_score,
-        all_scores:  predictions
+        category: "ROUTINE",
+        action: "Standard monitoring. Follow up if changes observed.",
+        confidence: benign_score,
+        all_scores: predictions
     }
 ```
 
 **Step 6: Store results and notify.** Every triage case gets a permanent record: the image reference, model output, triage decision, and timestamps. This serves three purposes: (1) the dermatologist review queue needs to pull cases by priority, (2) the audit trail must show what the AI recommended and when, and (3) outcome tracking (what did the dermatologist actually find?) enables model performance monitoring over time. For urgent cases, an immediate notification ensures the dermatology team is alerted without waiting for someone to check the queue.
 
-```
+```pseudocode
 FUNCTION store_and_notify(case_id, patient_id, image_key, triage_result):
     // Write the complete triage record to the database.
     write to DynamoDB table "triage-cases":
@@ -353,7 +353,7 @@ FUNCTION store_and_notify(case_id, patient_id, image_key, triage_result):
 
 **Error handling: what happens when inference fails.** If the SageMaker endpoint times out or returns an error (GPU cold starts, transient failures, endpoint scaling), the case must not be lost. Write the case to DynamoDB with status `PENDING_INFERENCE` and route the message to the SQS dead letter queue for retry. A scheduled Lambda processes the DLQ and retries inference. If retries are exhausted, route the case to the dermatology queue with a `MANUAL_REVIEW` flag so a human triages it manually.
 
-```
+```pseudocode
 FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
     // Write a record so the case is tracked even though inference failed.
     write to DynamoDB table "triage-cases":
