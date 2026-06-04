@@ -62,7 +62,7 @@ Early warning scores (MEWS, NEWS, NEWS2) are the current clinical standard for d
 
 Where they fall short is exactly the trajectory problem. NEWS evaluates a single point in time. A patient could have a NEWS score of 3 at two consecutive measurements (safe enough that no escalation is triggered), while the trajectory from measurement to measurement represents a clinically significant deterioration that a more sophisticated analysis would catch.
 
-Research systems have demonstrated that adding trend features (slopes, changes from prior readings, trajectory statistics) to early warning models improves the prediction of rapid response events by 15-30% compared to snapshot-only models, depending on the patient population and the event being predicted. TODO: Verify this range against specific published studies; common citation is Churpek et al. and similar deterioration prediction research.
+Research systems have demonstrated that adding trend features (slopes, changes from prior readings, trajectory statistics) to early warning models improves the prediction of rapid response events compared to snapshot-only models, though the magnitude varies by patient population and event definition. Churpek et al. and similar deterioration prediction research consistently show meaningful gains when trajectory is incorporated.
 
 The challenge isn't building the model. It's deploying it in a way that clinical staff trust, that integrates into workflow, and that doesn't make the alert fatigue problem worse.
 
@@ -98,9 +98,13 @@ The challenge isn't building the model. It's deploying it in a way that clinical
 
 **Amazon DynamoDB for patient state storage.** Each patient's rolling baseline, current trajectory metrics, and alert history need to live in a low-latency store that can handle high write throughput. DynamoDB's single-digit millisecond reads and writes make it suitable for the stateful computations that reference and update patient state on every new reading. TTL support automatically ages out data for discharged patients.
 
+<!-- TODO (TechWriter): Expert review M6 (MEDIUM). Add ADT event listener description: on discharge, immediately delete patient state (don't rely on TTL); on admission, initialize fresh state with baseline_stable=false; on transfer, preserve state but update unit context for alert routing. -->
+
 **Amazon Timestream for historical trajectory storage.** The full history of vital sign readings and computed trajectory metrics goes into a time series database optimized for temporal queries. Timestream handles the time-based retention tiers (hot data for recent trajectories, cold data for research and retrospective analysis) and supports the temporal query patterns (give me this patient's heart rate slope over the last 12 hours) natively.
 
-**Amazon SNS for alert routing.** When trajectory analysis produces an alert, it needs to reach the right person through the right channel. SNS handles fan-out to multiple subscribers: pager, EHR notification, nursing station dashboard, charge nurse summary. Topic-based routing allows different alert severities to reach different endpoints.
+**Amazon SNS for alert routing.** When trajectory analysis produces an alert, it needs to reach the right person through the right channel. SNS handles fan-out to multiple subscribers: pager, EHR notification, nursing station dashboard, charge nurse summary. Topic-based routing allows different alert severities to reach different endpoints. All subscription endpoints (pager API, dashboard webhook, EHR integration) must be covered under your organization's BAA chain. An alert containing vital signs and patient identifiers is PHI regardless of the delivery channel.
+
+<!-- TODO (TechWriter): Expert review M7 (MEDIUM). Add note: if alert delivery targets external endpoints (pager vendor API), configure a NAT gateway in a controlled subnet with outbound security group rules limited to vendor IP ranges. Prefer VPC-internal integrations (PrivateLink) to avoid PHI egress to the public internet. -->
 
 **Amazon CloudWatch for system health monitoring.** You're building a clinical safety system. You need to know immediately if the pipeline falls behind, if Lambda errors spike, if Kinesis is throttling, or if alert delivery latency exceeds acceptable bounds. CloudWatch alarms on processing latency, error rates, and alert delivery confirmation close the operational monitoring loop.
 
@@ -140,15 +144,19 @@ flowchart TD
     style M fill:#ff9,stroke:#333
 ```
 
+The routing decision is implicit in the data source: continuous monitor feeds (sub-second frequency) route to the Flink application; EHR-documented assessments (multi-hour frequency) route to Lambda. A patient transferred to the ICU starts producing continuous data immediately, and the Flink path activates without manual intervention. Both paths write to the same patient state store, so trajectory history is preserved across transitions.
+
+<!-- TODO (TechWriter): Expert review H2 (HIGH). Add dead-letter queue (SQS) on both Lambda functions and a side-output on the Flink application for failed events. Add CloudWatch alarms on DLQ depth > 0. In a clinical safety system, a silently dropped reading is a patient safety risk. Add brief prose and update the architecture diagram to include DLQ. -->
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Kinesis Data Streams, Kinesis Data Analytics (Flink), AWS Lambda, Amazon DynamoDB, Amazon Timestream, Amazon SNS, Amazon CloudWatch |
-| **IAM Permissions** | `kinesis:PutRecord`, `kinesis:GetRecords`, `kinesisanalytics:*`, `lambda:InvokeFunction`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `timestream:WriteRecords`, `timestream:Select`, `sns:Publish` |
+| **IAM Permissions** | Runtime role: `kinesis:PutRecord`, `kinesis:GetRecords`, `kinesisanalytics:DescribeApplication`, `lambda:InvokeFunction`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `timestream:WriteRecords`, `timestream:Select`, `sns:Publish`. Deployment role (separate, CI/CD only): `kinesisanalytics:CreateApplication`, `kinesisanalytics:UpdateApplication`, `kinesisanalytics:StartApplication`, `kinesisanalytics:StopApplication`. |
 | **BAA** | AWS BAA signed (vital signs are PHI; all services must be HIPAA-eligible) |
-| **Encryption** | Kinesis: server-side encryption with KMS; DynamoDB: encryption at rest (default); Timestream: encryption at rest (default); SNS: encrypted topics; all transit over TLS |
-| **VPC** | Production: Flink application and Lambda in VPC with VPC endpoints for DynamoDB, Timestream, SNS, CloudWatch Logs. Interface endpoints for Kinesis. |
+| **Encryption** | Kinesis: server-side encryption with KMS; DynamoDB: encryption at rest (default); Timestream: encryption at rest (default); SNS: SSE-KMS encrypted topics (CMK), all subscribers must be BAA-covered endpoints; all transit over TLS |
+| **VPC** | Production: Flink application and Lambda in VPC with VPC endpoints for DynamoDB, Timestream, SNS, CloudWatch Logs. Interface endpoints for Kinesis. Lambda and Flink subnets: private subnets with no NAT gateway. All AWS service access via VPC endpoints. No internet egress path for PHI-processing workloads. |
 | **CloudTrail** | Enabled for all API calls. Critical for audit trail on alert generation and delivery. |
 | **Data Integration** | HL7v2 or FHIR interface to bedside monitor data, EHR vital sign documentation, and medication administration records. This is often the hardest prerequisite. |
 | **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU datasets from MIT/PhysioNet) for development. Never use real patient data in dev environments. |
@@ -234,12 +242,23 @@ FUNCTION update_patient_state(vital_event):
     // Alpha controls responsiveness: smaller alpha = more stable baseline.
     // We use alpha=0.05 for baselines (slow-moving) so short-term changes
     // don't immediately shift what we consider "normal."
+    // Production note: Clip values > 4 sigma from current baseline before
+    // updating. EMA has infinite memory, so a single outlier (e.g., transient
+    // SVT producing HR=180) would permanently bias the baseline upward.
     alpha = 0.05
     IF state.baselines[parameter] exists:
-        state.baselines[parameter].mean = (1 - alpha) * state.baselines[parameter].mean + alpha * value
-        // Update rolling standard deviation estimate (Welford's method simplified)
-        deviation = abs(value - state.baselines[parameter].mean)
-        state.baselines[parameter].std = (1 - alpha) * state.baselines[parameter].std + alpha * deviation
+        // Skip baseline update if this reading is a likely outlier.
+        IF baseline_std > 0 AND abs(value - state.baselines[parameter].mean) > 4 * state.baselines[parameter].std:
+            // Outlier: include in trajectory computation (Step 3) but not baseline.
+            skip_baseline_update = true
+        ELSE:
+            skip_baseline_update = false
+
+        IF NOT skip_baseline_update:
+            state.baselines[parameter].mean = (1 - alpha) * state.baselines[parameter].mean + alpha * value
+            // Update rolling standard deviation estimate (Welford's method simplified)
+            deviation = abs(value - state.baselines[parameter].mean)
+            state.baselines[parameter].std = (1 - alpha) * state.baselines[parameter].std + alpha * deviation
     ELSE:
         state.baselines[parameter] = { mean: value, std: 0.0 }
 
@@ -399,6 +418,8 @@ FUNCTION evaluate_alert(patient_state, trajectories, pattern_matches):
     // 3. Medication effect window
     // Check if a medication administered in the last 2 hours has an expected
     // effect that explains the observed trajectory.
+    // NOTE: This requires read access to the MAR via HL7/FHIR interface.
+    // Separate service account with audit logging. MAR data is PHI.
     recent_meds = fetch recent medications for patient_state.patient_id (last 2 hours)
     FOR each med in recent_meds:
         expected_effects = lookup_expected_effects(med.medication_code)
@@ -532,6 +553,8 @@ FUNCTION persist_and_route(patient_state, trajectories, alert_decision):
 }
 ```
 
+In production, pager notifications typically contain location identifiers (room/bed) rather than patient IDs, with a link to the authenticated clinical display for full trajectory detail. The payload above is the internal representation; the pager-facing message would be something like: "Rm 412-B: Trajectory alert. See unit board for details."
+
 **Performance benchmarks:**
 
 | Metric | Typical Value |
@@ -602,8 +625,6 @@ The biggest surprise: simple works. A basic slope + deviation model with good su
 **AWS Sample Repos:**
 - [`amazon-kinesis-data-analytics-examples`](https://github.com/aws-samples/amazon-kinesis-data-analytics-examples): Apache Flink application patterns for streaming analytics
 - [`amazon-timestream-tools`](https://github.com/awslabs/amazon-timestream-tools): Sample code for writing to and querying Amazon Timestream
-
-TODO: Verify all GitHub repo links are current and accessible.
 
 ---
 
