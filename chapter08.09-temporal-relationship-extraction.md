@@ -144,7 +144,7 @@ The temporal relationship extraction pipeline at a conceptual level:
 
 **Amazon Comprehend Medical for entity and event detection.** Comprehend Medical's clinical NER identifies medical conditions, medications, procedures, and test results with their associated attributes (including negation and temporality markers). It provides a strong foundation for event identification. While it doesn't perform full temporal relation classification, its entity output with temporal attributes (PAST_HISTORY, OCCURRENCE) gives you a head start on event temporal anchoring.
 
-**Amazon Comprehend (custom classification) for relation classification.** Train a custom classifier on temporal relation labeled data. Comprehend's custom classification accepts text inputs (context windows around entity pairs) and predicts relation labels. For the relation classification step, you format each candidate pair with its surrounding context as a classification input.
+**Amazon Comprehend (custom classification) for relation classification.** Train a custom classifier on temporal relation labeled data. Comprehend's custom classification accepts text inputs (context windows around entity pairs) and predicts relation labels. For the relation classification step, you format each candidate pair with its surrounding context as a classification input. (Note: the Python companion uses a SageMaker endpoint for this step because temporal relation classification requires sequence pair input with entity markers, which maps more naturally to a custom-hosted model. Both approaches are valid; choose based on your model architecture needs.)
 
 **AWS Lambda for orchestration.** The pipeline is a stateless sequence: receive text, extract entities, generate pairs, classify relations, build graph. Lambda handles this cleanly, with Step Functions for longer documents that need coordination across multiple classification calls.
 
@@ -174,6 +174,8 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling paths to architecture: SQS DLQ for failed notes, Step Functions retry config (MaxAttempts=3, exponential backoff for Comprehend throttling), CloudWatch alarm on DLQ depth > 10. Show error paths in diagram. -->
+
 ### Prerequisites
 
 | Requirement | Details |
@@ -182,10 +184,14 @@ flowchart TD
 | **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehend:ClassifyDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:Query`, `states:StartExecution` |
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Neptune: encryption at rest; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Comprehend Medical, DynamoDB, CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, Comprehend Medical, Comprehend, DynamoDB, Step Functions, CloudWatch Logs |
 | **CloudTrail** | Enabled: log all Comprehend Medical API calls for HIPAA audit |
 | **Training Data** | Temporal relation annotated clinical corpus (minimum 500-1000 annotated documents). See THYME corpus licensing for research use. Production systems need institution-specific annotations. |
+
+<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add training corpus access control guidance: separate S3 bucket from inference pipeline, bucket policy restricts access to ML training roles only, S3 access logging enabled, versioning enabled for annotation provenance. -->
 | **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. Custom Classification: ~$0.0005 per request. At ~50 candidate pairs per note: ~$0.03 per note total. |
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add data retention/lifecycle policy row to Prerequisites: DynamoDB TTL configured per institutional records retention policy (typically 7-10 years adult, longer for minors). Neptune graph data lifecycle managed via scheduled deletion jobs. S3 lifecycle policy for processed clinical notes. -->
 
 ### Ingredients
 
@@ -308,6 +314,8 @@ FUNCTION generate_candidate_pairs(events, temporal_expressions, sentences):
     RETURN candidates
 ```
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a fifth heuristic for section-anchored pairs: events in different sections that share a temporal expression or are both anchored to the same clinical episode (same admission, same procedure). This captures cross-section relationships like HPI events linked to Hospital Course events in discharge summaries. -->
+
 **Step 4: Classify temporal relationships.** For each candidate pair, extract a context window and classify the temporal relationship. The context window includes: the text of both entities, the sentence(s) containing them, the section header, and any temporal signal words between them. The classifier predicts one of: BEFORE, AFTER, OVERLAP, CONTAINS, or NONE. Confidence scores determine which relations are included in the final graph (low-confidence relations are excluded or marked as uncertain).
 
 ```pseudocode
@@ -341,6 +349,10 @@ FUNCTION classify_relations(candidate_pairs, full_text, sections):
                 relation: prediction.label,   // e.g., "BEFORE" means entity_a before entity_b
                 confidence: prediction.confidence,
                 evidence: context_window       // for audit trail
+                // TODO (TechWriter): Expert review S2 (MEDIUM). Note that evidence context
+                // should be stored in a separate audit table with restricted access.
+                // Downstream timeline APIs should return only structured fields (event_text,
+                // event_type, timestamp, confidence), not raw clinical narrative.
             }
 
     RETURN classified_relations
@@ -578,13 +590,13 @@ My honest recommendation: if your use case is building a visual timeline for cli
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **Research and Standards:**
-- TODO: Verify current URL for THYME corpus access (Mayo Clinic / University of Colorado collaboration)
-- TODO: Verify current URL for i2b2 2012 Temporal Relations shared task dataset access
+- THYME (Temporal Histories of Your Medical Events) corpus: available through the Mayo Clinic / University of Colorado collaboration. Contact the THYME project team for access licensing.
+- i2b2 2012 Temporal Relations shared task dataset: access through n2c2 (successor to i2b2 challenges) at the Harvard DBMI n2c2 data portal.
 - TimeML specification: defines the temporal annotation standard that clinical temporal systems extend
 
 **Clinical NLP Resources:**
-- TODO: Verify current URL for HeidelTime temporal expression recognition tool
-- TODO: Verify current URL for Apache cTAKES temporal module documentation
+- HeidelTime: open-source temporal expression recognition tool, available on GitHub under the HeidelTime project. Supports clinical domain extensions.
+- Apache cTAKES: temporal module documentation available at the Apache cTAKES project site. Includes temporal relation extraction components built on the THYME annotations.
 
 ---
 
