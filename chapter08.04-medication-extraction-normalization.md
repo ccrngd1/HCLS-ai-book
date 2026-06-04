@@ -1,6 +1,6 @@
 # Recipe 8.4: Medication Extraction and Normalization
 
-**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.20-0.50 per note
+**Complexity:** Medium · **Phase:** Integration · **Estimated Cost:** ~$0.20-0.50 per note (varies by note length and medication count)
 
 ---
 
@@ -137,6 +137,7 @@ flowchart LR
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, Amazon S3, AWS Lambda, Amazon DynamoDB, AWS Step Functions (for batch) |
 | **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:BatchWriteItem`, `dynamodb:Query`. Standard Lambda execution role permissions for CloudWatch Logs assumed (use `AWSLambdaBasicExecutionRole` managed policy or grant `logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` explicitly). |
+
 | **BAA** | AWS BAA signed (required: clinical notes contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); Lambda CloudWatch log groups: KMS encryption (logs may contain extracted medication data); all API calls over TLS |
 | **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB (gateway endpoints), and CloudWatch Logs (interface endpoint). Comprehend Medical does not have a VPC endpoint; use a NAT Gateway for outbound access. Clinical text is encrypted via TLS in transit regardless of network path. |
@@ -520,7 +521,7 @@ One more honest admission: Comprehend Medical's DetectEntitiesV2 API has a 20,00
 - [RxNorm API Documentation](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxNormAPIs.html): REST APIs for RxNorm concept lookup and relationship traversal
 - [i2b2 2009 Medication Extraction Challenge](https://www.i2b2.org/NLP/Medication/): The foundational shared task that established benchmarks for clinical medication NER
 
-<!-- TODO: Verify all GitHub repo URLs exist and are current -->
+<!-- TODO (TechWriter): Verify all GitHub repo URLs exist and are current. -->
 
 ---
 
