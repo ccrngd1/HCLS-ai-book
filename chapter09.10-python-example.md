@@ -1177,4 +1177,4 @@ The recipe in 9.10 discusses the clinical context, architecture patterns, and ho
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 9.10](chapter09.10-multi-modal-imaging-fusion.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 9.10](chapter09.10-multi-modal-imaging-fusion-analysis.md) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*

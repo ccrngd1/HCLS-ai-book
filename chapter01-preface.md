@@ -111,7 +111,7 @@ With that foundation in place, let's start building. Recipe 1.1 is the simplest 
 
 ---
 
-*→ [Recipe 1.1 — Insurance Card Scanning](recipe-1.1-insurance-card-scanning.md)*
+*→ [Recipe 1.1 — Insurance Card Scanning](chapter01.01-insurance-card-scanning.md)*
 
 ## Further Reading
 
