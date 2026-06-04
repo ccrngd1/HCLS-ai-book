@@ -44,7 +44,7 @@ The feedback loop is fast. You change a template, run it for two weeks, and meas
 
 ### The Formulation
 
-Let me walk through how you'd actually set this up mathematically. Don't worry if the notation feels dense; the concepts are straightforward.
+Let me walk through how you'd actually set this up mathematically. The notation may feel dense, but the concepts are straightforward.
 
 **Decision variables:**
 - `d[t]` = slot duration for visit type `t` (in minutes)
