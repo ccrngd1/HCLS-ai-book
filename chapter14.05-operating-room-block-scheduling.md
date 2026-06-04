@@ -115,7 +115,7 @@ The real-time path: when a block is released (surgeon didn't fill it by deadline
 
 **Amazon DynamoDB for operational state.** Current block assignments, release status, and real-time availability need fast point lookups. DynamoDB serves this operational layer with single-digit millisecond reads.
 
-**Amazon SageMaker for demand forecasting.** Predicting future case volumes per service requires time-series forecasting. SageMaker hosts the trained forecasting models that feed utilization predictions into the optimizer. (The forecasting model itself is built with techniques from Chapter 12.)
+**Amazon SageMaker for demand forecasting.** Predicting future case volumes per service requires time-series forecasting. SageMaker hosts the trained forecasting models that feed utilization predictions into the optimizer. (The forecasting model itself is built with techniques from Chapter 12.) For quarterly-only forecasting, consider SageMaker Serverless Inference or batch transform jobs instead of a persistent endpoint, which reduces cost to ~$10-30/month.
 
 **Amazon EventBridge for scheduling triggers.** The quarterly optimization run, daily block release checks, and utilization monitoring all happen on schedules or in response to events. EventBridge orchestrates the timing.
 
@@ -159,10 +159,10 @@ flowchart TB
 | **IAM Permissions** | `batch:SubmitJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:GetItem`, `dynamodb:Query`, `sagemaker:InvokeEndpoint`, `events:PutRule` |
 | **BAA** | AWS BAA signed (schedule data may reference surgeon names and service lines; if linked to patient data for utilization analysis, PHI applies) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; all API calls over TLS |
-| **VPC** | Production: Lambda and Batch in VPC with endpoints for S3, DynamoDB |
+| **VPC** | Production: Lambda and Batch in private subnets. VPC endpoints required: S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), EventBridge (interface), CloudWatch Logs (interface), ECR API + DKR (interface, for Batch image pull), KMS (interface), STS (interface). Budget ~$50-70/month for interface endpoints in a 3-AZ deployment. If using a commercial solver with license validation, add a restricted NAT route for the license server CIDR only. |
 | **CloudTrail** | Enabled: audit all schedule modifications for compliance and dispute resolution |
 | **Sample Data** | Synthetic surgical case logs. OR benchmarking collaboratives publish anonymized utilization data. Never use real surgeon names in dev environments. |
-| **Cost Estimate** | Batch solver: ~$2-5 per run (30 min on c5.4xlarge quarterly). Lambda: negligible. DynamoDB: ~$25/month. SageMaker endpoint: ~$100-400/month depending on forecast complexity. Total: $200-800/month. |
+| **Cost Estimate** | Batch solver: ~$2-5 per run (30 min on c5.4xlarge quarterly). Lambda: negligible. DynamoDB: ~$25/month. SageMaker endpoint: ~$100-400/month (persistent) or ~$10-30/month (serverless/batch transform for quarterly-only). VPC endpoints: ~$50-70/month. Total: $200-800/month. |
 
 ### Ingredients
 
@@ -182,6 +182,8 @@ flowchart TB
 ### Code (Pseudocode Walkthrough)
 
 **Step 1: Extract historical demand data.** Before the optimizer can propose a schedule, it needs to understand what each service actually does with its OR time. This step pulls surgical case history (typically 12-24 months) and computes per-service metrics: average weekly case volume, case duration distributions, cancellation rates, and utilization of currently allocated blocks. These metrics become the demand forecast inputs and the baseline against which the new schedule will be measured. Skip this step and the optimizer is flying blind, producing allocations based on nothing.
+
+Note: for the demand forecast, you need per-service aggregate metrics (weekly volume, duration distributions, cancellation rates), not individual case records. If your data lake stores case-level records, aggregate at query time and don't persist patient-level data in the optimization pipeline's S3 bucket. If case-level data is needed for duration distribution analysis, apply de-identification (remove patient identifiers, generalize dates to week-level) before storing in the optimization pipeline.
 
 ```pseudocode
 FUNCTION extract_demand_data(start_date, end_date):
@@ -296,12 +298,17 @@ FUNCTION build_optimization_model(service_profiles, room_config, policy_weights)
 
 **Step 3: Run the solver.** The model file goes to a compute environment with a MIP solver installed. For hospital-scale problems (15-30 services, 10-25 rooms, 10-14 blocks per room), commercial solvers like Gurobi typically find a near-optimal solution in 2-15 minutes. Open-source alternatives (HiGHS, CBC) may take 10-60 minutes for the same problem. The solver returns the optimal assignment matrix plus metadata about solution quality (optimality gap, solve time). If the gap is larger than acceptable (say, > 5%), you either need to give the solver more time or tighten your formulation.
 
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add granular solver outcome handling: distinguish infeasible model (relax constraints), suboptimal-but-acceptable solution (gap 5-15%, flag for review but proceed), no feasible solution found (alert ops, don't auto-replace current schedule), and solver crash. Current pseudocode only raises a generic error on failure. -->
+
 ```pseudocode
 FUNCTION run_solver(model_file_path, time_limit_seconds):
     // Submit the solver job to AWS Batch.
     // The compute environment has the solver binary installed (e.g., HiGHS or Gurobi).
+    // Store the solver image in Amazon ECR with image scanning enabled.
+    // Pin to a digest (not :latest) for reproducibility and security.
+    // Scope the Batch job's IAM role narrowly: read from model input prefix, write to solution output prefix.
     job = submit AWS Batch job:
-        container_image: "solver-image:latest"   // contains solver + Python bindings
+        container_image: "123456789.dkr.ecr.us-east-1.amazonaws.com/solver@sha256:abc123..."
         command: ["solve", model_file_path, "--time-limit", time_limit_seconds]
         compute: c5.4xlarge (16 vCPU, 32 GB RAM)
         timeout: time_limit_seconds + 300        // buffer for startup/teardown
@@ -385,6 +392,8 @@ FUNCTION evaluate_schedule(proposed_schedule, current_schedule, service_profiles
 
 **Step 5: Handle block release decisions.** This is the real-time component. When a block release deadline passes (typically 72 hours before the block) and the assigned service hasn't filled the time, the block becomes available. This step scores candidate services for the released block and assigns it to the best match. It's a much simpler optimization than the quarterly schedule generation: one block, multiple candidates, score and assign. Speed matters here because released blocks need to be visible to other services immediately.
 
+Important: use DynamoDB conditional writes (ConditionExpression ensuring the block is still in "released" state) to prevent double-assignment when multiple blocks release simultaneously. Consider serializing release decisions via Step Functions or a single-concurrency Lambda if concurrent releases are common.
+
 ```pseudocode
 FUNCTION handle_block_release(room, block, releasing_service):
     // Fetch current demand signals: which services have cases waiting for OR time?
@@ -406,13 +415,22 @@ FUNCTION handle_block_release(room, block, releasing_service):
     sort candidates by score descending
     winner = candidates[0]
 
-    // Update the operational database
+    // Update the operational database with conditional write to prevent race conditions
+    // Also store the full candidate list and scores for audit purposes.
+    // Service chiefs will ask "Why did orthopedics get that block and not us?"
+    // You need to answer that question with data for every single release decision.
     update DynamoDB:
         key = {room: room, block: block}
+        condition = block_status == "released"   // prevents double-assignment
         set assigned_service = winner.service
         set assignment_type = "released"
         set released_from = releasing_service
         set assigned_at = current timestamp
+        set decision_audit = {
+            candidates: candidates,              // full list with scores
+            scoring_version: "v2.1",             // scoring function version
+            decided_at: current timestamp
+        }
 
     // Notify the winning service's scheduling coordinator
     send notification to winner.service coordinator:
@@ -420,6 +438,8 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
     RETURN winner
 ```
+
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Add schedule approval access control model: API Gateway endpoint for approval actions authenticated via Cognito/IAM with role-based access (surgical governance committee only). DynamoDB should store schedule state transitions (proposed, under_review, approved, active) with approver identity and timestamp. CloudTrail captures approval events. The approval path should be a first-class architectural element given the politically sensitive nature of schedule changes. -->
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and an open-source solver, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -493,12 +513,13 @@ The block release engine is the quick win. It's non-controversial (nobody loses 
 
 One more thing: the 75% utilization target that every hospital uses as a benchmark is somewhat arbitrary. The "right" utilization depends on your case mix, turnover times, and tolerance for overtime. A 90% utilized OR with frequent overtime cases is not better than a 75% utilized OR that finishes on time every day. Include a utilization ceiling in your constraints, not just a floor.
 
-**What's still missing for production:**
+**Things I'd build next if I had another quarter:**
 
 - **Surgeon preference modeling.** The pseudocode treats services as monolithic units. In reality, individual surgeons within a service have specific day preferences (Dr. Smith operates Tuesday/Thursday; Dr. Jones does Monday/Wednesday/Friday). A production system needs surgeon-level preference data and may need to decompose the problem into service-level block allocation followed by surgeon-level assignment within blocks.
 - **Seasonality handling.** Surgical volumes aren't constant. Orthopedics spikes in winter (ski injuries) and summer (elective joint replacements when people can recover before fall). A production forecasting model needs seasonal decomposition, not just rolling averages.
 - **Change management workflow.** An optimization output that shows a service losing blocks requires a structured approval workflow: notification to the affected department chair, appeal period, executive sign-off. The technical system needs to integrate with your institutional governance process.
-- **Integration with the scheduling system.** The block template must flow into whatever surgical scheduling application your institution uses (Epic OpTime, Cerner SurgiNet, etc.). That integration is institution-specific and often the hardest part of the project.
+- **Integration with the scheduling system.** The block template must flow into whatever surgical scheduling application your institution uses (Epic OpTime, Cerner SurgiNet, etc.). That integration is institution-specific and often the hardest part of the project. For on-premises EHRs, deploy a private API Gateway endpoint accessible via Direct Connect or Site-to-Site VPN. For cloud-hosted EHRs, consider VPC peering with a PrivateLink endpoint.
+- **Utilization drift monitoring.** Deploy a CloudWatch dashboard comparing predicted vs. actual utilization weekly. Alert if any service's actual utilization falls more than 15 percentage points below prediction for two consecutive weeks. This early-warning system lets you investigate and consider mid-quarter adjustments rather than waiting for the next quarterly review.
 
 ---
 
@@ -536,10 +557,10 @@ One more thing: the 75% utilization target that every hospital uses as a benchma
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
 **AWS Sample Repos:**
-<!-- TODO (TechWriter): Find and verify relevant aws-samples repos for optimization/scheduling patterns (RECIPE-GUIDE requires 3-5 sample repos per recipe) -->
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Find and verify relevant aws-samples repos for optimization/scheduling patterns. RECIPE-GUIDE requires 3-5 sample repos per recipe; currently zero verified. Check amazon-sagemaker-examples for forecasting patterns, OR-Tools or optimization examples in AWS contexts, Batch job submission patterns. -->
 
 **Operations Research in Healthcare:**
-<!-- TODO (TechWriter): Verify and add link for INFORMS Healthcare journal or relevant OR in healthcare publication -->
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link for INFORMS Healthcare journal or "Operations Research for Health Care" publication. -->
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Operations/Scheduling for reference architectures)
 
 ---
