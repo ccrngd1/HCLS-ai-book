@@ -106,17 +106,18 @@ Each stage has failure modes that must be detected and handled: missing slices i
 
 ### Why These Services
 
-**Amazon S3 for DICOM storage and processing pipeline.** Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3's event notification triggers the processing pipeline when a complete study arrives. The lifecycle policies handle archival of processed studies to cheaper storage tiers.
+**Amazon S3 for DICOM storage and processing pipeline.** Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3 event notifications trigger the processing pipeline when a complete study arrives. Lifecycle policies handle archival of processed studies to cheaper storage tiers.
 
 **Amazon SageMaker for ML model hosting and batch inference.** The registration and fusion models (deep learning-based deformable registration, multi-modal segmentation networks) need GPU compute. SageMaker provides managed GPU instances for both training and inference. For batch processing (nightly fusion runs on new studies), SageMaker Processing Jobs or Batch Transform handle the compute without persistent infrastructure. For near-real-time clinical use, SageMaker endpoints with GPU-backed instances provide consistent latency.
 
-**AWS Step Functions for pipeline orchestration.** The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, fusion approach depends on which modalities are available, quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously).
+**AWS Step Functions for pipeline orchestration.** The fusion pipeline is a multi-step workflow with conditional logic: registration might succeed or fail, the fusion approach depends on which modalities are available, and quality checks gate progression. Step Functions models this as a state machine with error handling, retries, and parallel execution branches (e.g., preprocessing multiple modalities simultaneously).
 
 **AWS Lambda for lightweight coordination tasks.** DICOM parsing, metadata extraction, study completeness checks, notification dispatch, and result packaging are short-lived tasks that fit Lambda's execution model. Lambda handles the glue between pipeline stages while SageMaker handles the heavy compute.
 
 **Amazon DynamoDB for study tracking and metadata.** Track pipeline state: which studies are in progress, which completed, which failed. Store registration quality metrics, fusion parameters used, and audit records. Point lookups by study ID support the clinical workflow where a radiologist checks whether fusion results are ready.
 
-**Amazon HealthLake or S3 + custom indexing for DICOM management.** TODO: Verify whether HealthLake Imaging (announced re:Invent 2022) supports the DICOM-RT and multi-modal query patterns needed here, or whether a custom DICOM indexing layer on S3 is the better approach for this use case.
+<!-- TODO (TechWriter): Verify whether HealthLake Imaging (announced re:Invent 2022) supports the DICOM-RT and multi-modal query patterns needed here, or whether a custom DICOM indexing layer on S3 is the better approach for this use case. -->
+**Amazon HealthLake or S3 + custom indexing for DICOM management.** For DICOM study management, evaluate HealthLake Imaging for native DICOM storage and retrieval, or build a custom indexing layer on S3 if your query patterns (DICOM-RT cross-references, multi-modal series linking) exceed what HealthLake supports natively.
 
 ### Architecture Diagram
 
@@ -458,6 +459,7 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 
 ---
 
+<!-- TODO (TechWriter): RECIPE-GUIDE does not specify a "Why This Isn't Production-Ready" section. Consider merging this content into "The Honest Take" below, or folding regulatory/validation points into a subsection there. The content is strong but the extra H2 breaks the expected section order. -->
 ## Why This Isn't Production-Ready
 
 **FDA regulatory pathway.** If this system's outputs influence clinical decisions (treatment planning contours, diagnostic segmentation), it likely requires FDA clearance as a Class II medical device. The 510(k) pathway requires demonstrated substantial equivalence to a predicate device, plus clinical validation studies. This recipe covers the technical architecture, not the regulatory journey, which adds 12-24 months and significant cost.
@@ -522,8 +524,10 @@ One last thing that surprised me: DICOM-RT Structure Set generation is harder th
 - [DICOM Standard](https://www.dicomstandard.org/): Official DICOM specification for medical imaging interoperability
 
 **AWS Solutions and Blogs:**
-- [Medical Image Analysis on AWS](https://aws.amazon.com/solutions/implementations/medical-image-analysis-on-aws/): TODO: Verify this solution still exists and is relevant
-- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/): TODO: Search for specific blog posts on medical imaging pipelines with SageMaker
+- [Medical Image Analysis on AWS](https://aws.amazon.com/solutions/implementations/medical-image-analysis-on-aws/): Reference architecture for medical imaging workloads on AWS
+<!-- TODO (TechWriter): Verify this AWS Solutions URL still exists and is relevant to multi-modal fusion -->
+- [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/): Blog posts covering SageMaker-based medical imaging pipelines
+<!-- TODO (TechWriter): Search for specific blog posts on medical imaging pipelines with SageMaker and replace with verified URLs -->
 
 ---
 
