@@ -89,7 +89,7 @@ For chemotherapy dose optimization, the Markov Decision Process (MDP) looks like
 **Reward function (what defines "good"):**
 This is the hardest design decision. A common formulation:
 
-```
+```text
 reward = α * tumor_response_signal - β * toxicity_penalty - γ * treatment_discontinuation_penalty
 ```
 
@@ -120,7 +120,7 @@ The practical implication: offline RL policies tend to be conservative. They imp
 
 ### General Architecture Pattern
 
-```
+```text
 [Historical EHR Data] → [State/Action/Reward Extraction] → [Trajectory Construction]
     → [Offline RL Training] → [Policy Evaluation] → [Clinical Validation]
         → [Decision Support Interface] → [Clinician Review] → [Outcome Tracking]
@@ -214,7 +214,7 @@ flowchart TD
 
 **Step 1: Extract treatment trajectories from EHR data.** The foundation of offline RL is historical data. You need complete treatment courses: every lab value, every dose administered, every imaging result, every toxicity event, assembled into a temporal sequence per patient. This is the hardest engineering step, not because the algorithms are complex, but because clinical data is messy. Labs arrive at irregular intervals. Imaging happens every 2-3 cycles, not every cycle. Toxicity is documented in free text that needs NLP extraction (see Chapter 8). Doses are sometimes modified mid-infusion. You need to align all of this into per-cycle state snapshots that the RL algorithm can consume. Skip this step or do it poorly, and your model learns from garbage.
 
-```
+```pseudocode
 FUNCTION extract_trajectories(patient_ids, regimen):
     // For each patient who received this chemotherapy regimen,
     // construct a complete treatment trajectory: the sequence of
@@ -237,26 +237,26 @@ FUNCTION extract_trajectories(patient_ids, regimen):
         FOR each cycle in cycles:
             // Build the state vector: what did the clinician know at decision time?
             state = {
-                anc:              most_recent_lab(labs, "ANC", cycle.start_date),
-                platelets:        most_recent_lab(labs, "PLT", cycle.start_date),
-                hemoglobin:       most_recent_lab(labs, "HGB", cycle.start_date),
-                creatinine:       most_recent_lab(labs, "CREAT", cycle.start_date),
-                bilirubin:        most_recent_lab(labs, "BILI", cycle.start_date),
-                tumor_size:       most_recent_imaging(imaging, cycle.start_date),
-                max_toxicity:     worst_toxicity_grade(toxicity, previous_cycle, cycle),
-                cycle_number:     cycle.number,
-                cumulative_dose:  sum of doses up to this cycle,
-                days_since_last:  days between this cycle and previous,
-                age:              patient.age,
-                bsa:              patient.body_surface_area,
-                performance:      patient.ecog_status
+                anc: most_recent_lab(labs, "ANC", cycle.start_date),
+                platelets: most_recent_lab(labs, "PLT", cycle.start_date),
+                hemoglobin: most_recent_lab(labs, "HGB", cycle.start_date),
+                creatinine: most_recent_lab(labs, "CREAT", cycle.start_date),
+                bilirubin: most_recent_lab(labs, "BILI", cycle.start_date),
+                tumor_size: most_recent_imaging(imaging, cycle.start_date),
+                max_toxicity: worst_toxicity_grade(toxicity, previous_cycle, cycle),
+                cycle_number: cycle.number,
+                cumulative_dose: sum of doses up to this cycle,
+                days_since_last: days between this cycle and previous,
+                age: patient.age,
+                bsa: patient.body_surface_area,
+                performance: patient.ecog_status
             }
             
             // The action: what dose was actually given?
             action = {
-                dose_fraction:    cycle.actual_dose / cycle.planned_dose,
-                delay_days:       cycle.actual_start - cycle.planned_start,
-                gcsf_given:       was G-CSF administered this cycle?
+                dose_fraction: cycle.actual_dose / cycle.planned_dose,
+                delay_days: cycle.actual_start - cycle.planned_start,
+                gcsf_given: was G-CSF administered this cycle?
             }
             
             // The reward: how did things go?
@@ -272,7 +272,7 @@ FUNCTION extract_trajectories(patient_ids, regimen):
 
 **Step 2: Define the reward function.** This is where clinical judgment meets mathematical formulation. The reward function encodes what "good" means, and in chemotherapy dosing, "good" is a tradeoff between killing the tumor and not killing the patient. There's no single correct answer here. The weights reflect clinical values, and different institutions or oncologists might weight them differently. The key is making the tradeoff explicit and tunable, not hidden inside a black box. Get this wrong and your policy optimizes for the wrong thing. A reward that only penalizes toxicity will learn to never give chemotherapy. A reward that only rewards tumor shrinkage will learn to overdose patients.
 
-```
+```pseudocode
 FUNCTION compute_reward(state, action, next_state, final_outcome):
     // Reward function for chemotherapy dose optimization.
     // Balances three objectives: tumor control, toxicity avoidance, treatment completion.
@@ -326,7 +326,7 @@ DOSE_INTENSITY_WEIGHT     = 1.0    // small bonus for maintaining therapeutic do
 
 **Step 3: Train the offline RL policy.** With trajectories constructed and rewards defined, you train a policy using conservative offline RL. The "conservative" part is critical: standard RL algorithms can be overconfident about actions they've never seen in the data. Conservative Q-Learning (CQL) addresses this by adding a penalty term that pushes down the estimated value of out-of-distribution actions. The result is a policy that stays close to historical clinical practice while improving where the data supports improvement. This is appropriate for healthcare: you want incremental, evidence-supported improvements, not radical departures from established practice.
 
-```
+```pseudocode
 FUNCTION train_offline_rl_policy(trajectories, config):
     // Train a Conservative Q-Learning (CQL) policy from historical trajectories.
     // CQL is chosen because it's conservative by design: it won't recommend actions
@@ -385,7 +385,7 @@ FUNCTION train_offline_rl_policy(trajectories, config):
 
 **Step 4: Evaluate the learned policy.** You cannot deploy a policy without rigorous evaluation. Off-policy evaluation (OPE) estimates how well the learned policy would perform using only historical data. This is inherently uncertain (you're estimating counterfactuals), but it's the best you can do before a prospective trial. Multiple OPE methods should agree before you trust the result. If importance sampling says the policy is great but the model-based estimator says it's dangerous, you have a problem. Disagreement between estimators is a signal to investigate, not to pick the optimistic one.
 
-```
+```pseudocode
 FUNCTION evaluate_policy(learned_policy, test_trajectories, behavior_policy):
     // Off-policy evaluation: estimate the value of the learned policy
     // using data generated by the behavior policy (historical clinical decisions).
@@ -421,18 +421,18 @@ FUNCTION evaluate_policy(learned_policy, test_trajectories, behavior_policy):
     behavior_value = mean(sum of rewards in each test trajectory)
     
     RETURN {
-        learned_policy_value_IS:  is_value,
+        learned_policy_value_IS: is_value,
         learned_policy_value_FQE: fqe_value,
-        behavior_policy_value:    behavior_value,
-        improvement_IS:           (is_value - behavior_value) / abs(behavior_value),
-        improvement_FQE:          (fqe_value - behavior_value) / abs(behavior_value),
-        agreement:                sign(is_value - behavior_value) == sign(fqe_value - behavior_value)
+        behavior_policy_value: behavior_value,
+        improvement_IS: (is_value - behavior_value) / abs(behavior_value),
+        improvement_FQE: (fqe_value - behavior_value) / abs(behavior_value),
+        agreement: sign(is_value - behavior_value) == sign(fqe_value - behavior_value)
     }
 ```
 
 **Step 5: Safety constraint enforcement.** No matter what the policy recommends, certain actions must be blocked. If the patient's ANC is below 1000, you don't give myelosuppressive chemotherapy. Period. These are hard constraints, not soft preferences. The safety layer sits between the policy output and the recommendation, vetoing any action that violates clinical safety rules. This is non-negotiable. The RL policy optimizes expected outcomes; the safety layer prevents catastrophic ones.
 
-```
+```pseudocode
 FUNCTION apply_safety_constraints(recommended_action, current_state, safety_rules):
     // Hard safety constraints that override the RL policy.
     // These represent absolute clinical contraindications.
@@ -470,7 +470,7 @@ FUNCTION apply_safety_constraints(recommended_action, current_state, safety_rule
         recommended_action.dose_fraction = 0
     
     // Rule 6: Performance status too poor for treatment.
-    IF current_state.performance >= 3:  // ECOG 3+ = limited self-care
+    IF current_state.performance >= 3: // ECOG 3+ = limited self-care
         violations.append("ECOG >= 3: hold treatment, reassess goals of care")
         recommended_action.dose_fraction = 0
     
@@ -479,7 +479,7 @@ FUNCTION apply_safety_constraints(recommended_action, current_state, safety_rule
 
 **Step 6: Generate clinician-facing recommendation.** The final output is not "give 75% dose." It's a structured recommendation with reasoning, confidence, safety check results, and comparison to protocol-based dosing. The oncologist needs to understand why the system is recommending what it's recommending, and they need enough context to agree or disagree intelligently. This is decision support, not autonomous dosing. The clinician always makes the final call.
 
-```
+```pseudocode
 FUNCTION generate_recommendation(patient_state, policy, safety_rules):
     // Generate a complete, explainable dosing recommendation for clinician review.
     
@@ -506,21 +506,21 @@ FUNCTION generate_recommendation(patient_state, policy, safety_rules):
     key_drivers = policy.explain_recommendation(patient_state, safe_action)
     
     recommendation = {
-        recommended_dose_fraction:  safe_action.dose_fraction,
-        recommended_delay_days:     safe_action.delay_days,
-        recommended_gcsf:           safe_action.gcsf_given,
-        confidence_score:           confidence,
-        safety_violations:          violations,
-        safety_constrained:         length(violations) > 0,
-        protocol_recommendation:    protocol_action,
-        differs_from_protocol:      safe_action != protocol_action,
-        key_drivers:                key_drivers,
+        recommended_dose_fraction: safe_action.dose_fraction,
+        recommended_delay_days: safe_action.delay_days,
+        recommended_gcsf: safe_action.gcsf_given,
+        confidence_score: confidence,
+        safety_violations: violations,
+        safety_constrained: length(violations) > 0,
+        protocol_recommendation: protocol_action,
+        differs_from_protocol: safe_action != protocol_action,
+        key_drivers: key_drivers,
         patient_state_summary: {
-            anc:           patient_state.anc,
-            platelets:     patient_state.platelets,
-            tumor_trend:   patient_state.tumor_size_trend,
-            max_toxicity:  patient_state.max_toxicity,
-            cycle:         patient_state.cycle_number
+            anc: patient_state.anc,
+            platelets: patient_state.platelets,
+            tumor_trend: patient_state.tumor_size_trend,
+            max_toxicity: patient_state.max_toxicity,
+            cycle: patient_state.cycle_number
         }
     }
     
