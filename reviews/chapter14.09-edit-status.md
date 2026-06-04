@@ -3,6 +3,7 @@
 **Editor:** TechEditor
 **Date:** 2026-06-04
 **Verdict:** PASS (publication-ready with deferred TODOs)
+**Final verification:** 2026-06-04 — confirmed all edits applied, zero em/en dashes, zero bare fences, all TODO markers intact
 
 ---
 
