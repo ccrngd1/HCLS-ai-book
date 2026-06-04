@@ -656,14 +656,14 @@ Rather than reacting to current state, use forecasting models (see Chapter 12 re
 
 ### Research and Background
 
-- TODO: Verify and link specific papers on offline RL for resource allocation
-- TODO: Verify and link hospital simulation modeling references (discrete-event simulation in healthcare)
-- TODO: Verify and link Constrained MDP references (CPO, Lagrangian methods)
+<!-- TODO (TechWriter): Verify and link specific papers on offline RL for resource allocation -->
+<!-- TODO (TechWriter): Verify and link hospital simulation modeling references (discrete-event simulation in healthcare) -->
+<!-- TODO (TechWriter): Verify and link Constrained MDP references (CPO, Lagrangian methods) -->
 
 ### Healthcare Operations Context
 
-- TODO: Verify AHA or similar source for ED boarding cost statistics
-- TODO: Verify AHRQ resources on hospital capacity management
+<!-- TODO (TechWriter): Verify AHA or similar source for ED boarding cost statistics -->
+<!-- TODO (TechWriter): Verify AHRQ resources on hospital capacity management -->
 
 ---
 
