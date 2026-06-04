@@ -1,6 +1,6 @@
 # Recipe 15.9: Radiation Therapy Adaptive Planning
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000–$8,000/month (training infrastructure)
+**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-$8,000/month (training infrastructure)
 
 ---
 
@@ -63,7 +63,7 @@ This is where radiation therapy gets genuinely hard to formulate. The reward nee
 
 A typical reward function combines these:
 
-```
+```text
 reward = α × TCP_improvement - β × NTCP_increase - γ × replan_cost
 ```
 
@@ -74,7 +74,7 @@ This is the physics and biology. Tumor response to radiation follows stochastic 
 
 ### Why This Is Hard (The Honest Version)
 
-**Safety constraints are non-negotiable.** You cannot explore freely. A policy that occasionally delivers 80 Gy to the spinal cord (the tolerance is around 50 Gy) is not acceptable, even if it achieves great tumor control on average. RL must operate within hard constraints, not just optimize expected reward. This requires constrained RL formulations (constrained MDPs, safe RL) that guarantee constraint satisfaction, not just penalize violations.
+**Safety constraints are non-negotiable.** You cannot explore freely. A policy that occasionally delivers 80 Gy to the spinal cord (the tolerance is around 50 Gy) is not acceptable, even if it achieves great tumor control on average. RL must operate within hard constraints, not just optimize expected reward. In practice, this requires a two-layer safety architecture. First, during training, penalty-based reward shaping encourages the policy to avoid unsafe actions (making violations rare). Second, at inference time, a hard constraint verification layer blocks any recommendation that would risk exceeding OAR tolerances (making violations impossible to execute). Training-time penalties alone are insufficient: a neural network is a function approximator that can output any action probability, especially in out-of-distribution states. The inference-time safety check is what provides the actual guarantee. Both layers are required. Neither alone is sufficient.
 
 **Offline learning is mandatory.** You cannot run online RL on patients. You cannot randomize treatment decisions to explore the action space. All learning must happen from historical treatment data (retrospective plans, outcomes, imaging) or from simulation. Offline RL has well-known challenges: distribution shift (the learned policy encounters states that weren't in the training data), overestimation bias (the Q-function is optimistic about actions that were rarely taken), and evaluation difficulty (you can't easily test a new policy without deploying it).
 
@@ -113,6 +113,8 @@ A radiation therapy simulator models:
 
 The simulator generates synthetic treatment episodes that augment the real data. The RL agent trains on a mix of real and simulated episodes. The risk: if the simulator is wrong (and it will be, in some ways), the learned policy may not transfer to real patients. This is the sim-to-real gap, and it's a major research challenge.
 
+**Calibrating the simulator.** You calibrate by fitting simulator parameters (tumor radiosensitivity, repopulation rate, deformation model coefficients) to match observed trajectories in your historical dataset. Validation means comparing simulated treatment trajectories against real ones using distributional metrics (Wasserstein distance on tumor volume curves, KL divergence on dose accumulation distributions). If simulated and real trajectories are statistically distinguishable, your simulator needs work. Periodically re-validate against new real data; if distributional metrics exceed a threshold, trigger recalibration before retraining the policy. The most dangerous failure mode: if the simulator systematically underestimates tumor response variability, the policy will be overconfident about "continue" actions and under-recommend replanning.
+
 ### Where the Field Is Now
 
 Radiation therapy adaptive planning with RL is firmly in the research stage. Several academic groups have published proof-of-concept results:
@@ -130,11 +132,11 @@ No RL-based adaptive planning system is in routine clinical use as of 2026. The 
 
 ## General Architecture Pattern
 
-At a conceptual level, the system has two phases: training (offline) and inference (clinical use).
+The system splits cleanly into two phases: training (offline, periodic) and inference (daily, at the treatment machine).
 
 ### Training Phase
 
-```
+```text
 [Historical Data] → [Feature Engineering] → [Simulator Calibration] → [Offline RL Training] → [Policy Validation] → [Trained Policy]
 ```
 
@@ -150,7 +152,7 @@ At a conceptual level, the system has two phases: training (offline) and inferen
 
 ### Inference Phase (Clinical Decision Support)
 
-```
+```text
 [Daily Imaging] → [State Extraction] → [Policy Query] → [Recommendation + Explanation] → [Clinician Decision] → [Action Execution]
 ```
 
@@ -178,11 +180,11 @@ At a conceptual level, the system has two phases: training (offline) and inferen
 
 **AWS Step Functions for pipeline orchestration.** The training pipeline (data extraction, feature engineering, simulator calibration, RL training, validation) is a multi-step workflow with dependencies. Step Functions coordinates these steps, handles retries, and provides visibility into pipeline state.
 
-**Amazon DynamoDB for state tracking.** During inference, the system needs fast lookups of patient treatment history and current state. DynamoDB provides single-digit millisecond reads for the state vector associated with each active patient.
+**Amazon DynamoDB for state tracking.** During inference, the system needs fast lookups of patient treatment history and current state. DynamoDB provides single-digit millisecond reads for the state vector associated with each active patient. Set a TTL attribute to archive completed treatment courses to S3 (for the training pipeline) and delete from DynamoDB after a retention period (90 days post-treatment completion) to limit PHI surface area in the hot store.
 
-**AWS Lambda for inference.** The policy query at inference time is lightweight: pass a state vector through a neural network, get back an action recommendation. Lambda handles this with low latency and no idle cost between fractions.
+**AWS Lambda for inference.** The policy query at inference time is lightweight: pass a state vector through a neural network, get back an action recommendation. Lambda handles this with low latency and no idle cost between fractions. Note: with ~100 active patients each getting one recommendation per day, most invocations will be cold starts (1-3 seconds). This is clinically acceptable since recommendations are generated before the patient is on the treatment table, not during active beam delivery. For sub-second latency, use provisioned concurrency (1 instance, ~$15-20/month).
 
-**Amazon CloudWatch for monitoring and alerting.** Track model performance metrics, recommendation acceptance rates, and safety constraint violations. Alert on drift (recommendations diverging from historical patterns) or anomalies (unexpected state values).
+**Amazon CloudWatch for monitoring and alerting.** Track model performance metrics, recommendation acceptance rates, and safety constraint violations. Concrete drift detection: monitor the distribution of input state features (flag if KL divergence from training distribution exceeds threshold), track rolling clinician acceptance rate (alert if it drops below 50% over a 2-week window), and compare predicted vs. actual tumor volume trajectories for patients who followed recommendations (flag systematic prediction errors).
 
 ### Architecture Diagram
 
@@ -220,13 +222,13 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Step Functions, Amazon DynamoDB, AWS Lambda, Amazon CloudWatch, AWS KMS |
-| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `lambda:InvokeFunction`, `states:StartExecution` |
+| **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateProcessingJob`, `s3:GetObject`, `s3:PutObject`, `dynamodb:GetItem`, `dynamodb:PutItem`, `lambda:InvokeFunction`, `states:StartExecution`, `states:DescribeExecution`, `kms:Decrypt`, `kms:GenerateDataKey` (scoped to specific CMK ARN), `cloudwatch:PutMetricData`, `logs:CreateLogGroup`, `logs:PutLogEvents`. Scope all permissions to specific resource ARNs. |
 | **BAA** | AWS BAA signed (treatment records and imaging features contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Lambda environment variables: KMS; all transit: TLS 1.2+ |
-| **VPC** | Production: all compute in VPC with VPC endpoints for S3, DynamoDB, SageMaker, CloudWatch Logs. No public internet access for training or inference workloads. |
+| **VPC** | Production: all compute in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker API and Runtime (interface), Step Functions (interface), CloudWatch Logs (interface), CloudWatch Monitoring (interface), KMS (interface). No public internet access for training or inference workloads. Interface endpoints cost ~$7-8/month each in a 3-AZ deployment (~$50-60/month total). |
 | **CloudTrail** | Enabled: log all API calls for HIPAA audit trail. Critical for tracking model versions used in clinical recommendations. |
 | **Data Requirements** | Minimum 200-500 historical patients with complete treatment records (daily imaging features, delivered dose, replanning events, 6-month outcomes). More is better. |
-| **Clinical Integration** | API access to treatment planning system (TPS) for state extraction and plan parameters. HL7 FHIR or proprietary TPS API. |
+| **Clinical Integration** | API access to treatment planning system (TPS) for state extraction and plan parameters. HL7 FHIR or proprietary TPS API. TPS integration requires network connectivity between the AWS VPC and the hospital network: options include AWS Direct Connect (lowest latency, highest reliability), Site-to-Site VPN (lower cost, acceptable for once-daily queries), or an API gateway intermediary with mutual TLS if the TPS exposes a public endpoint. |
 | **Cost Estimate** | Training: $500-2,000 per training run (ml.p3.2xlarge, 24-72 hours). Inference: ~$0.01 per recommendation (Lambda). Storage: $50-200/month (features + models). |
 
 ### Ingredients
@@ -247,7 +249,7 @@ flowchart TB
 
 **Step 1: State extraction from daily imaging.** Before each treatment fraction, the patient undergoes positioning imaging (typically cone-beam CT). This step extracts the features that define the current treatment state: tumor volume relative to baseline, cumulative dose to target and organs at risk, fraction number, and imaging-derived metrics. The state vector is what the RL agent uses to make its recommendation. If this step produces garbage features, the policy makes garbage recommendations. Garbage in, garbage out applies with particular force when the output is a clinical recommendation.
 
-```
+```pseudocode
 FUNCTION extract_state(patient_id, fraction_number):
     // Retrieve the latest imaging features for this patient.
     // These come from the treatment planning system or an imaging pipeline
@@ -265,16 +267,16 @@ FUNCTION extract_state(patient_id, fraction_number):
 
     // Assemble the state vector. Order matters: must match training feature order.
     state = {
-        fraction_number:            fraction_number,
-        fractions_remaining:        fractions_remaining,
-        tumor_volume_ratio:         tumor_volume_ratio,
-        tumor_volume_change_rate:   compute_volume_trend(patient_id, window=5),
-        cumulative_ptv_dose_gy:     cumulative_dose.ptv_mean,
-        cumulative_oar_doses:       cumulative_dose.oar_dict,   // e.g., {"spinal_cord": 12.3, "parotid_L": 18.7}
-        plan_conformity_index:      imaging_features.conformity_index,
-        patient_weight_change_kg:   imaging_features.weight_change,
-        fractions_since_replan:     fractions_since_last_replan,
-        current_plan_id:            get_current_plan_id(patient_id)
+        fraction_number: fraction_number,
+        fractions_remaining: fractions_remaining,
+        tumor_volume_ratio: tumor_volume_ratio,
+        tumor_volume_change_rate: compute_volume_trend(patient_id, window=5),
+        cumulative_ptv_dose_gy: cumulative_dose.ptv_mean,
+        cumulative_oar_doses: cumulative_dose.oar_dict,   // e.g., {"spinal_cord": 12.3, "parotid_L": 18.7}
+        plan_conformity_index: imaging_features.conformity_index,
+        patient_weight_change_kg: imaging_features.weight_change,
+        fractions_since_replan: fractions_since_last_replan,
+        current_plan_id: get_current_plan_id(patient_id)
     }
 
     // Store state for audit trail and future training data.
@@ -285,7 +287,7 @@ FUNCTION extract_state(patient_id, fraction_number):
 
 **Step 2: Policy inference (action recommendation).** This is where the trained RL agent earns its keep. Given the current state, the policy network outputs a recommended action and associated confidence. The action space is discrete: continue current plan, make minor intensity adjustments, or trigger a full replan. The confidence score reflects how certain the policy is about its recommendation, which helps clinicians calibrate their trust. A low-confidence recommendation should prompt more careful human review.
 
-```
+```pseudocode
 FUNCTION get_recommendation(state, policy_model):
     // Load the trained policy model (neural network).
     // In production, this is cached in Lambda memory across invocations.
@@ -315,16 +317,16 @@ FUNCTION get_recommendation(state, policy_model):
         log_safety_override(state, original_action, recommended_action)
 
     RETURN {
-        action:      recommended_action,    // "continue" | "adjust" | "replan"
-        confidence:  confidence,            // 0.0 to 1.0
-        reasoning:   generate_explanation(state, recommended_action, action_probs),
+        action: recommended_action,    // "continue" | "adjust" | "replan"
+        confidence: confidence,            // 0.0 to 1.0
+        reasoning: generate_explanation(state, recommended_action, action_probs),
         safety_flag: safety_check.violated
     }
 ```
 
 **Step 3: Explanation generation.** A recommendation without explanation is useless in clinical practice. No radiation oncologist will accept "replan now" from a black box. This step generates a human-readable explanation of why the policy made its recommendation. It highlights the state features that most influenced the decision (using feature attribution methods like SHAP or attention weights) and compares the current patient's trajectory to historical patients where similar decisions led to good outcomes.
 
-```
+```pseudocode
 FUNCTION generate_explanation(state, action, action_probs):
     // Compute feature importance for this specific recommendation.
     // Which state features most influenced the policy toward this action?
@@ -340,13 +342,13 @@ FUNCTION generate_explanation(state, action, action_probs):
     expected_outcomes = estimate_outcomes(state, all_actions)
 
     explanation = {
-        primary_factors:    top_factors,
+        primary_factors: top_factors,
         // e.g., ["tumor_volume_ratio decreased 22% (faster than expected)",
         //        "parotid_L dose approaching 26 Gy tolerance",
         //        "15 fractions since last replan"]
-        similar_cases:      summarize_cases(similar_cases),
-        expected_benefit:   expected_outcomes[action] - expected_outcomes["continue"],
-        alternative_risks:  describe_risks_of_alternatives(expected_outcomes)
+        similar_cases: summarize_cases(similar_cases),
+        expected_benefit: expected_outcomes[action] - expected_outcomes["continue"],
+        alternative_risks: describe_risks_of_alternatives(expected_outcomes)
     }
 
     RETURN explanation
@@ -354,18 +356,18 @@ FUNCTION generate_explanation(state, action, action_probs):
 
 **Step 4: Clinician decision capture and feedback loop.** The clinician reviews the recommendation and either accepts or overrides it. Both outcomes are valuable data. Acceptances validate the policy. Overrides (especially with clinician-provided reasoning) identify where the policy disagrees with expert judgment and provide signal for future training. This feedback loop is how the system improves over time without online experimentation on patients.
 
-```
+```pseudocode
 FUNCTION capture_decision(patient_id, fraction, recommendation, clinician_decision):
     // Record the full decision context for audit and future training.
     decision_record = {
-        patient_id:         patient_id,
-        fraction:           fraction,
-        timestamp:          current_utc_timestamp(),
-        recommendation:     recommendation,         // what the policy suggested
-        clinician_action:   clinician_decision.action,  // what the clinician chose
-        accepted:           (recommendation.action == clinician_decision.action),
-        override_reason:    clinician_decision.reason,  // free text if overridden
-        clinician_id:       clinician_decision.physician_id
+        patient_id: patient_id,
+        fraction: fraction,
+        timestamp: current_utc_timestamp(),
+        recommendation: recommendation,         // what the policy suggested
+        clinician_action: clinician_decision.action,  // what the clinician chose
+        accepted: (recommendation.action == clinician_decision.action),
+        override_reason: clinician_decision.reason,  // free text if overridden
+        clinician_id: clinician_decision.physician_id
     }
 
     // Store in DynamoDB for fast access and in S3 for training pipeline.
@@ -381,7 +383,7 @@ FUNCTION capture_decision(patient_id, fraction, recommendation, clinician_decisi
 
 **Step 5: Offline RL training pipeline.** This runs periodically (monthly or quarterly) as new outcome data becomes available. It retrains the policy using the accumulated dataset of treatment episodes, including the clinician decisions captured in Step 4. The key challenge: you're training on a mix of policy-recommended actions and clinician overrides, which creates an off-policy learning problem. Conservative offline RL algorithms handle this by being pessimistic about actions that differ from the behavior policy (what was actually done).
 
-```
+```pseudocode
 FUNCTION train_policy(training_config):
     // Load historical treatment episodes from the data lake.
     // Each episode is one patient's full treatment course: states, actions, rewards.
@@ -404,9 +406,10 @@ FUNCTION train_policy(training_config):
         episodes=all_episodes,
         state_dim=training_config.state_dim,
         action_dim=training_config.action_dim,
-        constraint_penalties=training_config.safety_constraints,
-        // Safety constraints are encoded as penalty terms:
-        // if an action would push any OAR past tolerance, apply large negative reward.
+        safety_shaping_penalties=training_config.safety_constraints,
+        // Safety shaping penalties encourage the policy to avoid unsafe actions
+        // during training, but do NOT guarantee constraint satisfaction.
+        // The inference-time safety check (Step 2) provides the hard guarantee.
         cql_alpha=training_config.conservatism,  // higher = more conservative
         epochs=training_config.epochs,
         learning_rate=training_config.lr
@@ -423,6 +426,10 @@ FUNCTION train_policy(training_config):
     IF validation_metrics.constraint_violations == 0
        AND validation_metrics.expected_tcp >= training_config.tcp_threshold:
         register_model(policy, version=training_config.version, metrics=validation_metrics)
+        // Model versioning: S3 object versioning stores all artifacts.
+        // A "current model" pointer (DynamoDB item or S3 tag) tells the inference
+        // Lambda which version to load. Rollback = update the pointer.
+        // Every recommendation output includes the model version ID for traceability.
     ELSE:
         alert_team("Policy validation failed", validation_metrics)
 
@@ -459,9 +466,11 @@ FUNCTION train_policy(training_config):
 
 **Performance benchmarks (from retrospective validation):**
 
+These estimates come from simulator-based policy evaluation: rolling out the learned policy in the calibrated simulator and comparing outcomes against the fixed-schedule replanning baseline. This is the standard offline evaluation approach when you have a simulator, but it inherits all simulator fidelity limitations. Alternative offline policy evaluation methods (importance-weighted estimators, direct fitted Q-evaluation) have different failure modes but weren't used here due to high variance over 35-fraction horizons. Real-world validation of these numbers requires prospective clinical trials.
+
 | Metric | Value |
 |--------|-------|
-| Recommendation latency | < 500 ms |
+| Recommendation latency | 1-3 seconds typical (cold start); < 500 ms warm |
 | Policy agreement with expert replanning decisions | 72-78% |
 | Estimated TCP improvement over fixed-schedule replanning | 2-5% (simulation) |
 | Estimated NTCP reduction (parotid sparing) | 8-15% (simulation) |
@@ -481,7 +490,7 @@ FUNCTION train_policy(training_config):
 
 Let's be direct about the gap between this architecture and clinical deployment:
 
-**Regulatory pathway is unclear.** An RL agent that recommends treatment modifications is a clinical decision support tool at minimum, possibly a medical device depending on how autonomous it becomes. FDA clearance (likely 510(k) or De Novo) requires clinical evidence that the system improves outcomes or is at least non-inferior to standard practice. That evidence doesn't exist yet at scale.
+**Regulatory pathway is unclear.** An RL agent that recommends treatment modifications is a clinical decision support tool at minimum, possibly a medical device depending on how autonomous it becomes. The regulatory pathway depends on how the system is positioned. If it meets the four criteria for non-device Clinical Decision Support under the 21st Century Cures Act (Section 3060): displays information, intended for clinician use, clinician can independently review the basis for the recommendation, and not intended to replace clinical judgment, it may be exempt from FDA device regulation entirely. If it doesn't qualify for the CDS exemption (for example, if it becomes more autonomous), De Novo classification is more likely than 510(k) given the absence of a predicate device. The FDA's Predetermined Change Control Plan framework is relevant for the periodic retraining aspect. Consult regulatory counsel early; the classification decision shapes the entire development and validation strategy.
 
 **Simulator fidelity.** The entire training approach depends on the simulator being a reasonable approximation of reality. Tumor response dynamics are patient-specific and stochastic. The linear-quadratic model is a simplification. Anatomical deformation models are approximate. Every simplification in the simulator is a potential source of policy error in the real world.
 
@@ -504,6 +513,8 @@ The acceptance rate problem is real. In pilot studies, clinicians override RL re
 The thing that surprised me most: the reward function design takes longer than the RL algorithm implementation. Getting radiation oncologists to agree on the relative importance of TCP vs. NTCP vs. replanning cost, and to express those preferences as numerical weights, is a months-long conversation. And different oncologists have legitimately different preferences. A single reward function may not capture the diversity of reasonable clinical practice.
 
 Start with the simplest version: binary "replan yes/no" recommendations for a single tumor site (head and neck is the most studied). Get the data pipeline working. Get the clinician interface right. Get the feedback loop running. The RL algorithm is the easy part. Everything around it is hard.
+
+One more thing: patient informed consent for AI-assisted treatment planning is an evolving area. Some institutions require explicit disclosure that an AI system contributes to treatment recommendations, while others consider it part of standard clinical decision support that doesn't require separate consent. Check your institution's IRB and legal requirements early.
 
 ---
 
@@ -537,13 +548,13 @@ Start with the simplest version: binary "replan yes/no" recommendations for a si
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Research References:**
-- TODO: Verify and add specific paper citations for offline RL in radiation therapy (e.g., work from Tseng et al. on RL for adaptive radiotherapy)
-- TODO: Verify citation for Conservative Q-Learning (Kumar et al., NeurIPS 2020)
-- TODO: Verify citation for Batch-Constrained Q-Learning (Fujimoto et al., ICML 2019)
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add specific paper citations for offline RL in radiation therapy (e.g., Tseng et al. on RL for adaptive radiotherapy). -->
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify citation: Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS 2020. -->
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify citation: Fujimoto et al., "Off-Policy Deep Reinforcement Learning without Exploration," ICML 2019. -->
 
 **Clinical Context:**
-- TODO: Verify link to AAPM Task Group reports on adaptive radiation therapy
-- TODO: Verify link to ASTRO guidelines on image-guided radiation therapy
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link to AAPM Task Group reports on adaptive radiation therapy. -->
+<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link to ASTRO guidelines on image-guided radiation therapy. -->
 
 ---
 

@@ -529,6 +529,11 @@ def generate_explanation(
     """
     Generate a human-readable explanation of the recommendation.
 
+    The main recipe's pseudocode uses SHAP values for feature attribution.
+    Here we use a simpler perturbation approach (no extra dependency).
+    For production, SHAP gives more accurate attributions when features
+    are correlated (e.g., dose_progress and fraction_progress).
+
     Uses perturbation-based feature importance: for each state feature,
     slightly change it and measure how much the Q-value changes. Features
     that cause large Q-value changes are the ones driving the decision.
@@ -556,6 +561,8 @@ def generate_explanation(
         baseline_q = policy(state_tensor).squeeze(0)[action_index].item()
 
     # Perturb each feature and measure Q-value change.
+    # Limitation: one-directional perturbation (+0.1 only). For production,
+    # perturb both directions and average the absolute Q-value changes, or use SHAP.
     importances = []
     for i, name in enumerate(feature_names):
         perturbed = state.copy()
@@ -588,6 +595,10 @@ def generate_explanation(
         "primary_factors": top_factors,
         "expected_benefit_over_continue": round(expected_benefit, 3),
         "top_feature_importances": importances[:5],
+        # The main recipe also retrieves similar historical patients for case-based
+        # evidence. Omitted here because it requires a vector similarity search
+        # over the training dataset (e.g., using FAISS or DynamoDB + cosine similarity).
+        # In production, this is essential for clinician trust.
     }
 
 
@@ -652,6 +663,8 @@ def generate_recommendation(
     confidence = policy.get_action_confidence(patient_state, safe_action_index)
 
     # If safety overrode the policy, set confidence to 0 (signals override to clinician).
+    # Note: 0.0 here means "safety override in effect," NOT "system has no idea."
+    # Dashboard consumers should check safety_overridden=True first.
     if safe_action != recommended_action:
         confidence = 0.0
 
@@ -708,6 +721,9 @@ def store_recommendation(recommendation: Dict) -> None:
         "safety_violations": recommendation["safety_violations"],
         "policy_original_action": recommendation["policy_original_action"],
         "clinician_decision": "PENDING",  # Updated when clinician responds
+        # In production, also store explanation for audit trail:
+        # "explanation": recommendation["explanation"],
+        # Omitted here to keep the DynamoDB item simple for demonstration.
     }
 
     table.put_item(Item=item)
@@ -736,7 +752,8 @@ def simulate_tumor_dynamics(
     tumors shrink with dose, with patient-specific response rates,
     plus some stochastic variation.
     """
-    # Linear-quadratic inspired shrinkage (very simplified).
+    # Very simplified shrinkage (NOT a linear-quadratic model).
+    # Real LQ model uses alpha/beta ratios and accounts for repopulation.
     kill_fraction = response_rate * (dose_delivered / TOTAL_PRESCRIBED_DOSE_GY)
     new_ratio = current_volume_ratio * (1.0 - kill_fraction * 0.02)
     # Add noise (biology is stochastic).
