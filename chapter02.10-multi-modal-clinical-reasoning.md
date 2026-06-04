@@ -178,7 +178,7 @@ The overall flow looks like this:
     → [Tiering and Uncertainty Rendering]
     → [Render with Evidence Links to Each Modality Source]
     → [Log Full Provenance for Audit and Regulatory Evidence]
-```text
+```
 **Trigger.** An ED presentation, a new admission, a clinician-requested reasoning run, a planned oncology treatment-selection conversation, a multidisciplinary tumor board preparation. Scoped triggers work better than any-time-anywhere triggers for multi-modal reasoning. Start narrow.
 
 **Fetch patient context.** Pull the FHIR bundle (as in Recipe 2.9) and also pull pointers to the imaging studies, ECG recordings, pathology reports, and other modality-specific items in their native systems. At this stage the system knows what exists; it hasn't interpreted any of it yet.
@@ -311,7 +311,7 @@ flowchart TB
     style INV fill:#ffb,stroke:#333
     style ARCH fill:#f9f,stroke:#333
     style HRQ fill:#f99,stroke:#333
-```text
+```
 ### Prerequisites
 
 | Requirement | Details |
@@ -401,7 +401,7 @@ FUNCTION start_reasoning_run(trigger):
         }
 
     RETURN { run_id: run_id }
-```text
+```
 **Step 2: Parallel modality ingestion.** Each modality's ingestion runs as an independent Lambda invocation. The inventory of what was successfully ingested and what failed flows into the next stage.
 
 ```pseudocode
@@ -464,7 +464,7 @@ FUNCTION ingest_imaging(run_id, patient_id, scenario):
         } to imaging_records
 
     RETURN imaging_records
-```text
+```
 ```pseudocode
 FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
@@ -514,7 +514,7 @@ FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
         } to ecg_records
 
     RETURN ecg_records
-```text
+```
 ```pseudocode
 FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
@@ -579,7 +579,7 @@ FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
     RETURN { lab_trends: lab_trends, vitals_summary: vitals_summary,
              source_id: f"labs_vitals:{patient_id}" }
-```text
+```
 ```pseudocode
 FUNCTION ingest_notes(run_id, patient_id, scenario):
 
@@ -615,7 +615,7 @@ FUNCTION ingest_notes(run_id, patient_id, scenario):
         } to notes
 
     RETURN notes
-```text
+```
 ```pseudocode
 FUNCTION ingest_structured_context(run_id, patient_id):
 
@@ -630,7 +630,7 @@ FUNCTION ingest_structured_context(run_id, patient_id):
     // derived (eGFR, BMI, Child-Pugh as applicable)
 
     RETURN structured
-```text
+```
 **Step 3: Normalize, annotate, and build the modality inventory.** Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.
 
 <!-- TODO (TechWriter, from expert review A2): each ingestion function currently
@@ -704,7 +704,7 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
     // Source IDs are stable within a run and used in the reasoning output
 
     RETURN { patient_state: patient_state, modality_inventory: modality_inventory }
-```text
+```
 **Step 4: Scope gate.** Given the scenario and the modality inventory, decide whether the reasoning run should proceed. If a recent run covered the same scenario without material changes, suppress. If critical modalities are missing for the scenario, either scope down or defer with an explanatory output.
 
 <!-- TODO (TechWriter, from expert review A4): the "scoped_to" rewrite for
@@ -776,7 +776,7 @@ FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
     decision.scoped_to = scenario
     decision.reason = "all_required_modalities_present"
     RETURN decision
-```text
+```
 **Step 5: Deterministic safety checks.** Same pattern as Recipe 2.9. Drug interactions, allergies, contraindications, renal and hepatic dose flags. The outputs are hard inputs to the reasoning prompt.
 
 ```pseudocode
@@ -787,7 +787,7 @@ FUNCTION run_safety_checks(structured_context, proposed_medications_if_any):
                                                         proposed_medications_if_any)
 
     RETURN safety_findings
-```text
+```
 **Step 6: Retrieval.** Pull the relevant guidelines, institutional protocols, and (optionally) case analogs. Retrieval is scoped by the scenario, the patient's characteristics, and the modality inventory.
 
 ```pseudocode
@@ -834,7 +834,7 @@ FUNCTION retrieve_supporting_content(scenario, patient_state, modality_inventory
         protocols: protocol_results,
         case_analogs: case_analog_results
     }
-```text
+```
 **Step 7: The reasoning layer.** Build the prompt with the modality inventory, patient state, retrieved content, and safety findings. The prompt enforces multi-hypothesis reasoning, evidence-for-and-against per hypothesis, explicit handling of missing modalities, verbatim preservation, cross-modality consistency, and citation discipline.
 
 ```pseudocode
@@ -1029,7 +1029,7 @@ FUNCTION invoke_reasoning_layer(scenario, patient_state, modality_inventory,
     RETURN { status: "GENERATED",
              reasoning: reasoning_json,
              id_to_source: id_to_source }
-```text
+```
 **Step 8: Post-generation validation.** Belt-and-suspenders on Guardrails. Every citation resolves; every number appears verbatim in a source; every graded term appears verbatim; every safety finding is represented; no claim contradicts another modality; no recommendation falls outside scope.
 
 ```pseudocode
@@ -1124,7 +1124,7 @@ FUNCTION validate_reasoning(reasoning, id_to_source, safety_findings,
                  augmentation: augmentation }
 
     RETURN { status: "ROUTED_TO_HUMAN_REVIEW", unverified: unverified }
-```text
+```
 **Orchestration gate between Step 8 and Step 9.** Validation status is the last safety gate before the clinician UI. The orchestrator must distinguish `VALIDATED` from `ROUTED_TO_HUMAN_REVIEW`. Only `VALIDATED` proceeds to Step 9 and becomes a delivered reasoning output. `ROUTED_TO_HUMAN_REVIEW` is a terminal state: the trace is archived for audit, the run is recorded as pending clinical review, and the reasoning does not render to the clinician.
 
 ```pseudocode
@@ -1151,7 +1151,7 @@ FUNCTION orchestrate_post_validation(validation_result, run_id, trace):
         // Do NOT call tier_render_archive. Do NOT return rendered reasoning
         // to the clinician UI.
         RETURN { next_step: "terminal_review_queue" }
-```text
+```
 **Step 9: Tier, render, and archive.** Score against prior runs for suppression. Render with deep links to every modality source. Archive the full provenance.
 
 ```pseudocode
@@ -1237,7 +1237,7 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
         - OverallUncertaintyDistribution
 
     RETURN { status: "DELIVERED", rendered: rendered }
-```text
+```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 
@@ -1409,7 +1409,7 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
   "validation_status": "VALIDATED",
   "processing_time_ms": 18200
 }
-```text
+```
 **Performance benchmarks:**
 
 | Metric | Typical Value |

@@ -2016,7 +2016,7 @@ def _format_safety_findings_for_prompt(safety_findings: dict,
     if not lines:
         return "(no deterministic safety findings for this scenario)"
     return "\n".join(lines)
-````
+```
 
 ---
 

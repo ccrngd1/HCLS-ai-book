@@ -134,7 +134,7 @@ At a high level, the pipeline looks like this:
     → [Attach Provenance Links]
     → [Deliver to Requesting Clinician]
     → [Log for Audit]
-```text
+```
 Let's walk through the conceptual stages.
 
 **Summary request.** Someone (or something) asks for a summary. The request specifies who's asking (specialty, role), why (handoff, consult review, pre-admission review, discharge summary drafting), the scope (this admission, last N months, all time), and the desired format (narrative, problem-oriented, SBAR, specialty-focused). These parameters drive downstream decisions. A generic "summarize this patient" is almost always the wrong request; specificity improves output quality dramatically.
@@ -228,7 +228,7 @@ flowchart TB
     style K fill:#f99,stroke:#333
     style O fill:#f99,stroke:#333
     style R fill:#f9f,stroke:#333
-```text
+```
 ### Prerequisites
 
 | Requirement | Details |
@@ -305,7 +305,7 @@ FUNCTION receive_summary_request(request):
         input         = { summary_id: summary_id }
 
     RETURN { summary_id: summary_id, status: "STARTED" }
-```text
+```
 **Step 2: Retrieve source documents.** Pull the notes and structured data that fall inside the request's scope. Scope matters: a handoff summary should look at the current encounter; a pre-visit summary for a new specialty consult may want to look at the entire relevant history. Structured data (allergies, active problems, current medications) is pulled even when scope is narrow, because those categories belong in every summary regardless of the time window. Critically, retrieval must filter out notes from restricted data categories (42 CFR Part 2 substance-use-treatment records, HIV-related content, adolescent confidential notes, genetic test results) unless the requesting user has a specific disclosure consent on file. Access control is enforced at the retrieval layer, not bolted on downstream.
 
 ```pseudocode
@@ -379,7 +379,7 @@ FUNCTION retrieve_source_documents(patient_id, scope, encounter_id, requesting_u
         current_meds: current_meds,
         code_status: code_status
     }
-```text
+```
 **Step 3: Chunk and preprocess notes.** Turn the flat list of notes into processable chunks. A single note is often a reasonable chunk; very long notes (an H&P or a multi-page consult) may need sub-chunking. Preprocessing removes boilerplate (EHR-generated headers and footers, standard signatures, macro text) and normalizes dates. This step also tags notes with their service, author, and encounter_id so the extraction can attribute content correctly and enforce encounter boundaries (preventing the "fact blending across visits" failure mode described earlier).
 
 ```pseudocode
@@ -414,7 +414,7 @@ FUNCTION chunk_and_preprocess(notes):
             append { text: text, metadata: chunk_metadata } to chunks
 
     RETURN chunks
-```text
+```
 **Step 4: Extract structured facts per chunk (parallel).** Each chunk goes through an extraction step that produces a structured object: what this chunk contains in categorized, attributed form. Parallel execution (via Step Functions Map state) keeps total latency manageable for long charts. Comprehend Medical runs alongside the LLM extraction for the categories where negation-aware NLP adds the most value: medications, conditions, allergies.
 
 ```pseudocode
@@ -495,7 +495,7 @@ FUNCTION extract_chunk_facts(chunk):
     write to S3: "extractions/{summary_id}/{chunk_id}.json" = structured_chunk
 
     RETURN structured_chunk
-```text
+```
 **Step 5: Aggregate and deduplicate.** Combine the per-chunk structured objects into a single patient-level structured object. Deduplicate facts that appear across multiple notes, but keep the mention count and the date range over which the fact appeared (a fact mentioned in 12 of 15 progress notes is more likely to still be true than a fact mentioned once). Reconcile conflicts where possible, flag them where not.
 
 ```pseudocode
@@ -614,7 +614,7 @@ FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
     write to S3: "aggregations/{summary_id}/aggregated.json" = aggregated
 
     RETURN aggregated
-```text
+```
 **Step 6: Apply the must-include checklist.** Before generation, verify that the aggregated object covers every required category for this summary type. If allergies are empty but the retrieved structured data had allergies, something went wrong in aggregation. If active problems is empty but the patient has an active chart, something went wrong in aggregation. Missing categories either get backfilled from structured data or get flagged as gaps that the generated prose must acknowledge.
 
 ```pseudocode
@@ -650,7 +650,7 @@ FUNCTION apply_must_include_checklist(aggregated, use_case, retrieved_structured
         RETURN { status: "AGGREGATION_GAP", gaps: gaps }
 
     RETURN { status: "READY_FOR_GENERATION", aggregated: aggregated }
-```text
+```
 **Step 7: Generate the summary prose.** Now the writing step. The aggregated structured object is the input; the prompt takes the specialty, use case, and format parameters; the output is a section-wise prose summary with explicit section headers. The generation uses Bedrock Guardrails' contextual grounding check with the aggregated object as the reference context, which rejects responses that score below a configured grounding threshold.
 
 ```pseudocode
@@ -751,7 +751,7 @@ FUNCTION generate_summary_prose(aggregated, request_params):
         RETURN { status: "GROUNDING_REJECTED", response: response }
 
     RETURN { status: "GENERATED", summary_text: summary_text, provenance: provenance }
-```text
+```
 **Retry strategy on validation or grounding failure:**
 
 The pipeline retries generation up to three times with escalating strategies:
@@ -808,7 +808,7 @@ FUNCTION validate_and_attach_provenance(summary_text, provenance, aggregated):
         verified_at    = current UTC timestamp
 
     RETURN { status: "VALIDATED", provenance_map: provenance_map }
-```text
+```
 **Step 9: Render and deliver.** The content is clinician-facing markdown. Rendering differs by destination. An EHR sidebar wants compact markdown. A handoff tool may want structured sections with collapsible detail. A PDF for printed handoff wants a different layout. The archive in S3 always keeps both the raw markdown and the structured provenance so the summary can be re-rendered later in any format.
 
 ```pseudocode
@@ -837,7 +837,7 @@ FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_pa
         dimensions   = { specialty, use_case, render_type }
 
     RETURN { status: "DELIVERED", rendered: rendered }
-```text
+```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -879,7 +879,7 @@ FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_pa
   "chunks_processed": 47,
   "processing_time_ms": 28000
 }
-```text
+```
 **Performance benchmarks:**
 
 | Metric | Typical Value |

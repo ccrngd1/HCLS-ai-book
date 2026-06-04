@@ -1184,7 +1184,7 @@ OUTPUT STRUCTURE (markdown):
 (one-paragraph justification of the rating)
 
 AT THE END, append a JSON code block with tracked claims:
-```json
+```
 {{
   "evidence_strength": "Strong|Moderate|Weak|Insufficient",
   "factual_claims": [
@@ -1319,7 +1319,7 @@ def _strip_trailing_json_block(text: str) -> str:
         r"```json\s*.*?\s*```\s*$", "", text.strip(), flags=re.DOTALL,
     )
     return cleaned.strip()
-````
+```
 
 ---
 

@@ -103,7 +103,7 @@ These approaches are more powerful but require more data, more compute, and more
 
 ```text
 [Feature Store] → [Similarity Engine] → [Outcome Aggregation] → [Care Plan Recommendations]
-```text
+```
 **Feature Store.** A curated, versioned repository of patient features. Not raw EHR data. Engineered features: computed comorbidity scores, normalized lab values, medication categories, utilization summaries. Updated on a schedule (daily or weekly) as new clinical data arrives. The feature store is the foundation; garbage features produce garbage similarity.
 
 **Similarity Engine.** Takes a query patient's feature vector, computes distance to the historical cohort, and returns the k most similar patients. For scale, this uses an approximate nearest neighbor index rather than brute-force search. The index is rebuilt periodically as the feature store updates.
@@ -151,7 +151,7 @@ flowchart TD
     style C fill:#f9f,stroke:#333
     style E fill:#ff9,stroke:#333
     style H fill:#9ff,stroke:#333
-```text
+```
 ### Prerequisites
 
 | Requirement | Details |
@@ -234,7 +234,7 @@ FUNCTION engineer_patient_features(patient_id, raw_clinical_data):
     )
 
     RETURN features  // fixed-length vector ready for similarity computation
-```text
+```
 **Step 2: Build the similarity index.** With feature vectors for the entire historical cohort, build an index that enables fast nearest-neighbor lookup. For cohorts under 100,000 patients, brute-force kNN is feasible. For larger populations, approximate nearest neighbor (ANN) indices provide sub-second query times at the cost of occasionally missing a true nearest neighbor. The index is rebuilt whenever the feature store updates. Skip this step and every query requires scanning the entire cohort, which is too slow for interactive care planning workflows.
 
 A note on minimum cohort size: aim for at least 500-1,000 patients in a condition-specific index to provide meaningful diversity of neighbors. Below that threshold, consider broader condition groupings or display a warning that the comparison pool is limited.
@@ -268,7 +268,7 @@ FUNCTION build_similarity_index(feature_store_path, index_config):
     save_id_mapping(patient_features.patient_ids, index_config.mapping_path)
 
     RETURN index
-```text
+```
 **Step 3: Query for similar patients.** When a care manager requests similarity for a specific patient, look up that patient's current feature vector, query the index for the k nearest neighbors, and return the matched patient IDs with their distance scores. The distance score is important: it tells you how confident you should be in the similarity. A nearest neighbor at distance 0.1 is much more informative than one at distance 2.5. If all neighbors are far away, the system should say "no strong matches found" rather than returning poor matches with false confidence.
 
 ```pseudocode
@@ -307,7 +307,7 @@ FUNCTION find_similar_patients(query_patient_id, k=20, max_distance=None):
         }
 
     RETURN results
-```text
+```
 **Step 4: Aggregate outcomes for similar patients.** Finding similar patients is only half the job. The value comes from examining what happened to them. This step retrieves outcome data for the matched cohort and aggregates it into actionable summaries: what interventions were used, what percentage achieved target goals, what adverse events occurred, and what the typical timeline looked like. The aggregation must be honest about sample size. If only 3 similar patients exist, the confidence in any conclusion is low, and the system should communicate that clearly.
 
 ```pseudocode
@@ -352,7 +352,7 @@ FUNCTION aggregate_outcomes(similar_patients, outcome_config):
     }
 
     RETURN summary
-```text
+```
 **Step 5: Store and present results.** Cache the similarity results (they don't change until the feature store updates) and format them for the care planning interface. The presentation layer is critical: raw statistics are not useful to a care manager in a 15-minute appointment. The output should be a concise narrative with supporting data, not a data dump. Note that the default presentation returns only aggregated outcome statistics; individual similar patient IDs are not exposed to the UI unless the organization's data governance policy permits drill-down with appropriate authorization controls.
 
 The DynamoDB cache stores derived PHI (patient IDs and outcome summaries) and should be treated as a PHI data store subject to your organization's retention and amendment policies. DynamoDB TTL deletion is eventually consistent (items may persist up to 48 hours past expiration), so do not rely on TTL alone as a hard deletion guarantee for compliance purposes. If source patient data is corrected or a patient exercises amendment rights, implement an explicit cache invalidation mechanism rather than waiting for TTL expiry.
@@ -389,7 +389,7 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
     }
 
     RETURN presentation
-```text
+```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -422,7 +422,7 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
     {"patient_id": "PAT-2025-03318", "similarity": 0.89, "distance": 0.124}
   ]
 }
-```text
+```
 **Performance benchmarks:**
 
 | Metric | Typical Value |

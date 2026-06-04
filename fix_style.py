@@ -22,9 +22,22 @@ def fix_file(path: Path) -> None:
     # Fix double-space artifacts from em dash replacement
     text = re.sub(r":  +", ": ", text)
 
-    # Fix bare code blocks (``` with no language tag)
-    # Match ``` at start of line followed by newline (no tag)
-    text = re.sub(r"^```\s*$", "```text", text, flags=re.MULTILINE)
+    # Tag bare *opening* code fences only. A bare ``` is ambiguous on its
+    # own, so we track open/close state line by line: the first bare ```
+    # opens a block (tag it `text`), the matching ``` closes it (leave
+    # bare). This never touches closing fences, which must stay bare, and
+    # never re-tags fences that already carry a language.
+    lines = text.split("\n")
+    in_block = False
+    for i, line in enumerate(lines):
+        if re.match(r"^```", line.rstrip()):
+            if not in_block:
+                in_block = True
+                if line.rstrip() == "```":  # bare opening fence
+                    lines[i] = "```text"
+            else:
+                in_block = False  # closing fence: leave exactly as-is
+    text = "\n".join(lines)
 
     if text != original:
         path.write_text(text, encoding="utf-8")

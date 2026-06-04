@@ -88,7 +88,7 @@ The readmission risk pipeline has five logical stages:
 
 ```text
 [Discharge Event Detection] → [Feature Assembly] → [Model Scoring] → [Risk Stratification] → [Intervention Routing]
-```text
+```
 **Discharge Event Detection.** The pipeline triggers when a patient is discharged from an inpatient stay. This requires integration with the hospital's ADT (Admit-Discharge-Transfer) system, typically via HL7 or FHIR event feeds. The trigger must distinguish inpatient discharges from observation stays, ED visits, and outpatient procedures. Timing matters: you want the score available within hours of discharge, not days.
 
 **Feature Assembly.** Pull the relevant data for the discharged patient from available source systems: EHR (diagnoses, procedures, labs, medications, vitals), claims history (prior utilization), ADT history (prior admissions, ED visits), and any available social/demographic data. Assemble these into the feature vector the model expects. This step often involves real-time queries against multiple systems, which makes it the most architecturally complex piece.
@@ -167,7 +167,7 @@ flowchart TD
     style F fill:#f9f,stroke:#333
     style K fill:#ff9,stroke:#333
     style N fill:#9ff,stroke:#333
-```text
+```
 **Model versioning and rollback.** Before promoting a retrained model to the production endpoint, run shadow scoring for one to two weeks: score each discharge with both the current and candidate models, compare predictions, and validate that the candidate's calibration and discrimination meet minimum thresholds (AUC >= current model AUC - 0.02, calibration slope between 0.85 and 1.15). SageMaker Model Registry tracks model versions and approval status. Use SageMaker endpoint production variants for canary deployments. Always maintain the ability to roll back to the previous model version within minutes. A bad model deployment here has direct patient impact: under-prediction means high-risk patients miss interventions; over-prediction causes alert fatigue that erodes clinical trust.
 
 ### Prerequisites
@@ -245,7 +245,7 @@ FUNCTION handle_discharge_event(event):
         primary_diagnosis: event.primary_diagnosis,
         discharge_disposition: discharge_disposition
     }
-```text
+```
 #### Step 2: Feature Assembly from Clinical Data
 
 **What this does:** Queries multiple data sources to assemble the complete feature vector for the discharged patient. Combines real-time clinical data from the current encounter with historical utilization patterns.
@@ -331,7 +331,7 @@ FUNCTION assemble_features(discharge_info):
     // Combine all feature groups into single vector
     RETURN merge(current_features, history_features,
                  comorbidity_features, demographic_features)
-```text
+```
 #### Step 3: Model Scoring
 
 **What this does:** Passes the assembled feature vector to the trained XGBoost model and returns a readmission probability between 0 and 1.
@@ -375,7 +375,7 @@ FUNCTION score_patient(feature_vector):
         model_version: response.model_version,
         scored_at: NOW()
     }
-```text
+```
 #### Step 4: Risk Stratification and Intervention Routing
 
 **What this does:** Converts the raw probability into an actionable risk tier and determines which intervention pathway the patient should receive based on their risk level and contributing factors.
@@ -467,7 +467,7 @@ FUNCTION stratify_and_route(score_result, feature_vector, discharge_info):
         )
 
     RETURN risk_assessment
-```text
+```
 #### Step 5: Outcome Tracking and Model Monitoring
 
 **What this does:** Monitors actual 30-day readmission outcomes against predictions, detects model drift, and triggers retraining when performance degrades.
@@ -522,7 +522,7 @@ FUNCTION track_outcomes_and_monitor():
             "Consider retraining.")
 
     RETURN metrics
-```text
+```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ---
@@ -558,7 +558,7 @@ FUNCTION track_outcomes_and_monitor():
     "historical_rate_for_decile": 0.38
   }
 }
-```text
+```
 ### Performance Benchmarks
 
 | Metric | Expected Value | Notes |

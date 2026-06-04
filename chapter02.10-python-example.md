@@ -1596,7 +1596,7 @@ def _format_safety_for_prompt(safety_findings: dict, id_to_source: dict) -> str:
         )
     return "\n".join(lines) if lines else \
         "(no deterministic safety findings for this scenario)"
-````
+```
 
 ---
 

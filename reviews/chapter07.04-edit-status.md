@@ -1,85 +1,82 @@
-# Edit Status: Recipe 7.4 - ED Visit Prediction (Python Companion)
+# Edit Status: Recipe 7.4 - ED Visit Prediction
 
 **Editor:** TechEditor
 **Date:** 2026-06-03
-**File:** `chapter07.04-python-example.md`
+**Files:**
+- `chapter07.04-ed-visit-prediction.md` (main recipe: DOES NOT EXIST)
+- `chapter07.04-python-example.md` (Python companion: previously edited, PASS)
 
 ---
 
-## Verdict: PASS (Python companion only)
+## Verdict: BLOCKED
 
-The Python companion is editorially clean and ready for publication. All review findings have been addressed or correctly deferred with properly formatted TODO markers. No edits required.
+The main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The TechEditor cannot perform a final edit on a file that has not been drafted. The Python companion was previously edited and passed with no changes required.
 
 ---
 
-## Editorial Checklist Results
+## Python Companion: PASS (no changes this pass)
+
+Independent verification confirms the Python companion remains editorially clean:
 
 | Check | Result |
 |-------|--------|
-| Grammar and mechanics | PASS. Clean throughout. |
-| Code formatting | PASS. All fenced blocks have correct language tags (`python` or `bash`). Inline code used correctly for service names and API calls. |
-| Link verification | PASS. No external URLs. One relative link to main recipe (target file doesn't exist yet, covered by C1 TODO). |
-| Header hierarchy | PASS. H1 for title, H2 for major sections. No skipped levels. |
-| Readability | PASS. Short paragraphs, active voice, no run-on sentences. |
-| Voice drift | PASS. No documentation-voice, no feature-list formatting, no announcement statements, no LinkedIn-influencer tone. Engineer-explaining tone throughout. |
-| Code block language tags | PASS. All 9 opening fences have correct tags (1 bash, 8 python). |
-| RECIPE-GUIDE compliance | PARTIAL. Python companion structure correct (opening callout, setup, config, steps, pipeline runner, gap to production). Main recipe missing (C1). |
-| Vendor balance | N/A for Python companion (inherently AWS-specific). |
+| Em dash (U+2014) | Zero found. PASS. |
+| En dash (U+2013) | Zero found. PASS. |
+| Bare ``` without language tag | Zero found. All 9 opening fences tagged (1 bash, 8 python). PASS. |
+| Grammar and mechanics | Clean throughout. |
+| Code formatting | Correct language tags, consistent indentation, inline code for service names. |
+| Header hierarchy | H1 title, H2 sections. No skipped levels. |
+| Voice drift | None detected. Engineer-explaining tone consistent with STYLE-GUIDE.md. |
+| RECIPE-GUIDE compliance | Python companion structure correct. |
 
 ---
 
-## Final Mandatory Checks
+## Main Recipe: CANNOT EDIT (file missing)
 
-| Search | Result |
-|--------|--------|
-| Em dash character (U+2014) | Zero found. PASS. |
-| En dash character (U+2013) | Zero found. PASS. |
-| Bare ``` without language tag (opening fences only) | Zero found. All 9 opening fences have tags. PASS. |
+The main recipe has not been written. Both the code review (Issue 3) and expert review (C1, CRITICAL) flagged this as a blocking issue. The Python companion's opening TODO marker correctly identifies this:
 
----
-
-## Review Findings Disposition
-
-| Finding | Severity | Status | Notes |
-|---------|----------|--------|-------|
-| C1 (main recipe missing) | CRITICAL | DEFERRED | TODO marker at line 1. TechWriter must write `chapter07.04-ed-visit-prediction.md`. |
-| A1 (misleading explanations) | HIGH | RESOLVED | Code normalizes features before multiplying. WARNING comment added in Step 4. |
-| S1 (IAM not resource-scoped) | MEDIUM | RESOLVED | Gap to Production covers role separation with specific role breakdown. |
-| S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Gap to Production covers CMK guidance for PHI tables. |
-| S3 (consumer access differentiation) | MEDIUM | RESOLVED | Gap to Production covers field-level access by consumer identity. |
-| A2 (temporal validation) | MEDIUM | RESOLVED | Strong WARNING comment in train function (Step 2). Gap to Production reinforces. |
-| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker at line 302 inside code block. TechWriter to add calibration_curve snippet. |
-| A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production section includes real-world AUC context (0.70-0.78). |
-| N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment added near boto3 client creation in Step 5. |
-| V3 (documentation-voice) | LOW | RESOLVED | Uses "So that's what we give it." phrasing in Step 6. |
-| Code Issue 2 (datetime.utcnow) | WARNING | RESOLVED | Code uses `datetime.now(timezone.utc)` throughout (Steps 4 and 5). |
+```
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. Write it following RECIPE-GUIDE.md structure before this recipe pair can pass. The Python companion is ready and references it. -->
+```
 
 ---
 
-## Remaining TODOs in File
+## Remaining TODOs in Python Companion
 
-1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). ... -->` (line 1)
-2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line 302, inside code block)
+1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). ... -->` (line 1) - Write main recipe
+2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line ~302, inside code block) - Add calibration check
 
 Both correctly formatted for the follow-up task generator.
 
 ---
 
-## Changes This Pass
+## Review Findings Disposition (cumulative)
 
-No edits applied. Independent editorial verification confirmed:
-- Zero em dashes or en dashes
-- All 9 code fences have language tags (1 bash, 8 python)
-- Both TODO markers correctly formatted with finding IDs (C1, A3) on same line
-- Voice consistent with STYLE-GUIDE.md throughout
-- Structure follows RECIPE-GUIDE.md for Python companions
-- All resolved findings verified in place
-- `datetime.now(timezone.utc)` used correctly (no deprecated `utcnow()`)
-- Normalization applied before feature importance multiplication (A1 fix verified)
-- Gap to Production comprehensive: covers S1, S2, S3, A2, A4, N1
+| Finding | Severity | Status | Notes |
+|---------|----------|--------|-------|
+| C1 (main recipe missing) | CRITICAL | DEFERRED | Blocks final edit. TechWriter must write `chapter07.04-ed-visit-prediction.md`. |
+| A1 (misleading explanations) | HIGH | RESOLVED | Normalization applied in Step 4. WARNING comment present. |
+| S1 (IAM not resource-scoped) | MEDIUM | RESOLVED | Gap to Production covers role separation. |
+| S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Gap to Production covers CMK guidance. |
+| S3 (consumer access differentiation) | MEDIUM | RESOLVED | Gap to Production covers field-level access. |
+| A2 (temporal validation) | MEDIUM | RESOLVED | WARNING comment in Step 2. |
+| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker in Step 3. TechWriter to add. |
+| A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production includes real-world AUC context. |
+| N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment in Step 5. |
+| V3 (documentation-voice) | LOW | RESOLVED | Natural phrasing in Step 6. |
+| Code Issue 2 (datetime.utcnow) | WARNING | RESOLVED | Uses `datetime.now(timezone.utc)` throughout. |
+
+---
+
+## Next Steps
+
+1. **TechWriter** writes `chapter07.04-ed-visit-prediction.md` (addresses C1)
+2. **TechWriter** adds calibration snippet to Python companion Step 3 (addresses A3)
+3. **TechCodeReviewer** and **TechExpertReviewer** review the main recipe
+4. **TechEditor** performs final edit on the complete recipe pair
 
 ---
 
 ## Summary
 
-The Python companion for Recipe 7.4 is in final publishable form. Two deferred TODOs remain (C1: write main recipe, A3: add calibration snippet), both correctly assigned to the TechWriter. No further editorial intervention needed on this file until the main recipe is drafted.
+Recipe 7.4 cannot be finalized because the main recipe file does not exist. The Python companion is in publishable form with two deferred TODOs (C1, A3) correctly assigned to the TechWriter. No editorial changes were applied this pass because there is nothing to edit. This task should be re-queued after the TechWriter drafts the main recipe.

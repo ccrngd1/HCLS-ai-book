@@ -178,7 +178,7 @@ The overall flow looks like this:
     → [Clinician Edit and Sign]
     → [Write to EHR]
     → [Retain Transcript and Audio per Retention Policy]
-```text
+```
 Let me walk through each stage conceptually.
 
 **Consent capture and session start.** Before any audio is captured, the patient is informed and consents. The system records this explicitly: patient identifier, consent timestamp, consent form version, and (if applicable) the clinician who obtained consent. The session has a unique identifier carried through every downstream artifact. If consent isn't captured, no audio is captured.
@@ -288,7 +288,7 @@ flowchart TB
     style B6 fill:#f99,stroke:#333
     style C3 fill:#9f9,stroke:#333
     style A7 fill:#f9f,stroke:#333
-```text
+```
 ### Prerequisites
 
 | Requirement | Details |
@@ -385,7 +385,7 @@ FUNCTION start_encounter_session(request):
     RETURN { session_id: session_id,
              upload_target: upload_target,
              status: "READY_FOR_AUDIO" }
-```text
+```
 **Step 2: Finalize the audio upload and trigger the HealthScribe job.** Once the clinician ends the session, the audio is uploaded (or the stream is closed) and a HealthScribe job is started. HealthScribe does the heavy lifting: ASR with medical vocabulary, diarization with clinician-patient roles, clinical entity extraction, and a structured note draft organized by section.
 
 ```pseudocode
@@ -449,7 +449,7 @@ FUNCTION finalize_audio_and_start_healthscribe(session_id, audio_s3_key):
 
     RETURN { status: "HEALTHSCRIBE_STARTED",
              healthscribe_job_name: job_name }
-```text
+```
 **Step 3: Poll or subscribe for HealthScribe completion and fetch outputs.** HealthScribe runs asynchronously. The job completes in roughly real-time to a small multiple of the audio duration (a 15-minute encounter completes in a few minutes). The Step Functions workflow either polls with a wait state or subscribes to an EventBridge event when the job completes.
 
 ```pseudocode
@@ -490,7 +490,7 @@ FUNCTION fetch_healthscribe_output(session_id, job_name):
     RETURN { status: "COMPLETE",
              transcript: transcript_json,
              healthscribe_note: clinical_note_json }
-```text
+```
 **Step 4: Extract entities from the transcript for must-include validation.** Before generating the final institutional-template note, extract clinical entities from the transcript using Comprehend Medical. These entities become the "must-include" checklist for the note: if the patient mentioned a medication or symptom, the note needs to cover it.
 
 ```pseudocode
@@ -545,7 +545,7 @@ FUNCTION extract_transcript_entities(transcript_json):
     }
 
     RETURN must_include
-```text
+```
 **Step 5: Render the note in the institutional template using Bedrock.** HealthScribe's default note structure may not match your institution's template. The Bedrock step takes the HealthScribe structured output and the transcript and produces the institutional-format note. The prompt is strict: produce the note only from transcript content and HealthScribe-identified entities; do not add content that isn't supported by the transcript.
 
 ```pseudocode
@@ -656,7 +656,7 @@ FUNCTION render_institutional_note(session, healthscribe_note, transcript_json,
     RETURN { status: "NOTE_RENDERED",
              note_sections: note_json.sections,
              claims: note_json.claims }
-```text
+```
 **Step 6: Validate the note against the transcript and must-include entities.** After generation, run a validation pass. For each claim in the generated note, verify it traces to a transcript segment or EHR source. For each item in the must-include checklist, verify it appears in the appropriate note section. Numerical values are verified verbatim.
 
 ```pseudocode
@@ -748,7 +748,7 @@ FUNCTION validate_note(note_sections, claims, transcript_json, must_include, ret
     RETURN { status: "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW",
              unverified_claims: unverified,
              missing_must_include: missing_must_include }
-```text
+```
 **Step 7: Present the draft to the clinician for review and signing.** The draft note is stored, and the clinician's UI is notified that a note is ready. The UI renders the note with per-sentence traceability: each sentence links back to the transcript segment(s) that generated it. Low-confidence ASR segments and items that failed validation are flagged. The clinician edits, then signs.
 
 ```pseudocode
@@ -823,7 +823,7 @@ FUNCTION capture_clinician_signoff(session_id, edited_note, clinician_attestatio
         Output    = { signed_note_key: signed_key }
 
     RETURN { status: "SIGNED", signed_note_key: signed_key }
-```text
+```
 **Step 8: Write the signed note back to the EHR.** The signed note is written to the EHR. If the institution uses a FHIR-based integration, the note becomes a DocumentReference resource. If it uses a vendor-specific API (Epic, Oracle Health), the integration uses the vendor's documentation submission endpoint. Errors in this step trigger operational alerts and retry; a signed note that never reaches the EHR is a critical failure.
 
 ```pseudocode
@@ -902,7 +902,7 @@ FUNCTION write_to_ehr(session_id, signed_note):
         update DynamoDB: status              = "EHR_WRITE_FAILED",
                         ehr_write_error     = response.error_message
         RETURN { status: "FAILED", reason: response.error_message }
-```text
+```
 **Step 9: Apply retention policies to audio, transcripts, and traces.** Audio and transcripts contain PHI. Retention policies are institution-specific, but a common pattern: audio retained for 7-30 days for operational debugging then deleted; transcripts retained for longer (per legal-hold requirements, often matching medical record retention for the signed note); signed notes retained per medical record retention rules (typically 7-30 years depending on jurisdiction and patient age).
 
 ```pseudocode
@@ -932,7 +932,7 @@ FUNCTION apply_retention(session_id):
     //              if required by compliance posture. Do not delete until retention expires.
 
     update DynamoDB: retention_applied_at = current UTC timestamp
-```text
+```
 **Step 10: Emit metrics and feed the quality loop.** Metrics drive the quality program. Edit distance between draft and signed tells you where the pipeline is getting better or worse. Time-to-sign tells you whether clinicians are finding the drafts usable. Validation pass rate tells you whether the generation step is behaving. Clinician-reported issues close the loop back to retrieval and prompt iteration.
 
 ```pseudocode
@@ -961,7 +961,7 @@ FUNCTION emit_quality_metrics(session):
     //  "template wrong"). Those flow to a DynamoDB feedback table and a
     // weekly review pipeline.
     RETURN
-```text
+```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ---
@@ -1017,7 +1017,7 @@ FUNCTION emit_quality_metrics(session):
   },
   "disclaimer": "This draft was generated by an ambient documentation system. The clinician has reviewed, edited as needed, and signed the note. The signed note is the clinician's documentation of record."
 }
-```text
+```
 **Performance benchmarks:**
 
 | Metric | Typical Value |
