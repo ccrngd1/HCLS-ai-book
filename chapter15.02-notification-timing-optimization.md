@@ -129,7 +129,7 @@ Even though notification timing is low-stakes compared to clinical RL, there are
 
 The system has four logical components that work together:
 
-```
+```text
 [Message Queue] → [Timing Decision Engine] → [Scheduled Delivery] → [Outcome Tracker]
        ↑                    ↑                                              |
        |                    |                                              |
@@ -229,7 +229,7 @@ flowchart TD
 
 **Step 1: Ingest message request.** When an upstream system generates a notification (refill reminder, appointment reminder, educational content), it lands in the message queue with metadata describing the patient, message type, urgency, and deadline. Urgent messages skip the timing optimizer entirely and go straight to delivery. Everything else waits for the timing engine to decide when to send. This decoupling means upstream systems never need to know about the optimization layer. They just produce messages; the timing engine handles the rest.
 
-```
+```pseudocode
 FUNCTION handle_message_request(message):
     // Check urgency first. Clinical alerts and time-critical notifications
     // bypass timing optimization entirely.
@@ -256,7 +256,7 @@ FUNCTION handle_message_request(message):
 
 **Step 2: Fetch patient context.** The timing engine needs to know about this specific patient: their historical engagement patterns, preferences, recent message history, and demographic features. This context forms the "state" that the bandit model uses to select the optimal time. The feature vector is pre-computed and stored in a fast lookup store, updated incrementally as new engagement data arrives. Without rich context, the model falls back to population-level timing, which is barely better than the static baseline.
 
-```
+```pseudocode
 FUNCTION get_patient_context(patient_id):
     // Retrieve the pre-computed feature vector for this patient.
     // This includes engagement history, preferences, and derived signals.
@@ -287,7 +287,7 @@ FUNCTION get_patient_context(patient_id):
 
 **Step 3: Select optimal send time.** This is the core decision. The bandit model takes the patient context and message features, evaluates each candidate time slot, and returns the slot with the highest expected engagement (plus an exploration bonus for uncertain slots). The model balances what it knows works for this patient with occasional exploration of new time slots. Safety constraints are applied after the model's recommendation: quiet hours are enforced, frequency caps are checked, and the selected time must fall before any message deadline.
 
-```
+```pseudocode
 FUNCTION select_send_time(patient_context, message):
     // Build the feature vector combining patient context and message attributes.
     features = combine:
@@ -329,7 +329,7 @@ FUNCTION select_send_time(patient_context, message):
 
 **Step 4: Schedule delivery.** Once the optimal time is selected, create a one-time scheduled event that will fire at exactly that time and trigger the message delivery. The schedule includes all the information needed to send the message without re-querying the timing engine. If the scheduled time is "now" (the model thinks the current moment is optimal), deliver immediately rather than creating a schedule with zero delay.
 
-```
+```pseudocode
 FUNCTION schedule_delivery(message, selected_slot):
     // If the selected time is within the next 5 minutes, just send now.
     // No point creating a schedule for something that fires immediately.
@@ -357,7 +357,7 @@ FUNCTION schedule_delivery(message, selected_slot):
 
 **Step 5: Track engagement and compute reward.** After delivery, the system monitors for engagement signals: opens, clicks, and most importantly, completed actions (prescription refilled, appointment scheduled, content read to completion). These signals arrive asynchronously, sometimes hours after delivery. The reward calculator maps engagement outcomes to numeric rewards and feeds them back to the bandit model. This closes the learning loop. Without this step, the model never improves.
 
-```
+```pseudocode
 FUNCTION process_engagement_event(event):
     // Validate the event before processing. Verify the message_id exists in the
     // decision log and the event timestamp is within the expected reward window
@@ -396,7 +396,7 @@ FUNCTION process_engagement_event(event):
 
 **Step 6: Handle non-engagement (timeout).** If 48 hours pass with no engagement signal, the message is considered ignored. This is the most common outcome (especially early on) and provides a neutral reward signal. The timeout handler ensures the model learns from silence, not just from positive signals. Without it, the model would only learn from engaged patients and develop a biased view of timing effectiveness.
 
-```
+```pseudocode
 FUNCTION handle_engagement_timeout(message_id):
     // 48 hours have passed with no engagement signal.
     // This message was ignored. Record a neutral reward.

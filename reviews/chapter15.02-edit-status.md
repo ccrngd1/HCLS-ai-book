@@ -1,16 +1,16 @@
 # Edit Status: Recipe 15.2 - Notification Timing Optimization
 
 **Editor:** TechEditor
-**Date:** 2026-06-01
+**Date:** 2026-06-04
 **Verdict:** PASS (publication-ready with deferred TODOs)
 
 ---
 
 ## Editorial Actions Taken
 
-### Fixes Applied
+### Fixes Applied (This Pass)
 
-1. **En-dash replaced with hyphen** in cost estimate header (`$100–300` -> `$100-300`) for style consistency with the no-special-dashes rule.
+1. **Code block language tags:** Added `text` tag to the ASCII architecture diagram code fence (line 132). Added `pseudocode` tag to all six pseudocode walkthrough code fences (Steps 1-6). Zero bare code fences remain.
 
 ### Findings Already Addressed in Draft
 
@@ -23,8 +23,8 @@ The following review findings were already incorporated into the recipe before t
 - **ARCH-4 (MEDIUM):** Multi-message coordination elevated to General Architecture section with per-patient scheduling lock mitigation.
 - **NET-1 (HIGH):** VPC endpoint list expanded to include EventBridge Scheduler, Pinpoint, KMS, CloudWatch Logs with cost note.
 - **NET-2 (MEDIUM):** Lambda egress control guidance added (restrict outbound to VPC endpoints only).
-- **NET-3 (LOW):** Pinpoint-to-Kinesis service-side integration note added.
-- **VOICE-2 (LOW):** Sample Data row already uses conversational tone.
+- **NET-3 (LOW):** Pinpoint-to-Kinesis service-side integration note added with KMS key policy guidance.
+- **VOICE-2 (LOW):** Sample Data row uses conversational tone.
 - **VOICE-3 (LOW):** Related Recipes references are forward-references to planned recipes; acceptable for a cookbook written in parallel.
 - **Regulatory note:** FDA/CDS guidance paragraph added to Safety Constraints section.
 
@@ -46,11 +46,12 @@ One general verification TODO remains:
 | Check | Status |
 |-------|--------|
 | Grammar and mechanics | ✅ Clean |
-| Code formatting (language tags, inline code) | ✅ All fenced blocks tagged, service names in inline code |
+| Code formatting (language tags, inline code) | ✅ All fenced blocks tagged (`text`, `mermaid`, `pseudocode`, `json`), service names in inline code |
 | Link verification | ✅ All URLs are well-formed AWS docs/GitHub links |
 | Header hierarchy (H1 title, H2 major, H3 sub) | ✅ Correct, no skipped levels |
 | Readability (short paragraphs, active voice) | ✅ Strong throughout |
-| Voice drift check | ✅ No doc-voice, no em dashes, no feature-list formatting, no announcement statements |
+| Voice drift check | ✅ No doc-voice, no em dashes (0 found), no en dashes (0 found), no feature-list formatting, no announcement statements |
+| Code block language tags | ✅ All 9 opening fences have tags (verified via grep) |
 | RECIPE-GUIDE compliance | ✅ All required sections present in correct order |
 | Vendor balance (~70/30) | ✅ Technology section fully vendor-agnostic; AWS only in implementation half |
 
@@ -68,4 +69,4 @@ These are Python companion issues and do not affect the main recipe's publicatio
 
 ## Summary
 
-Recipe 15.2 is publication-ready. The voice is excellent throughout, the RL formulation is technically sound, the architecture is well-explained, and the 70/30 vendor balance is maintained. Three HIGH findings are properly deferred to the TechWriter for substantive content additions (OPE methodology, PHI profiling guidance, EventBridge failure handling). All other findings have been addressed inline.
+Recipe 15.2 is publication-ready. The voice is excellent throughout, the RL formulation is technically sound, the architecture is well-explained, and the 70/30 vendor balance is maintained. Three HIGH findings are properly deferred to the TechWriter for substantive content additions (OPE methodology, PHI profiling guidance, EventBridge failure handling). All other findings have been addressed inline. This pass added language tags to 7 previously untagged code fences (1 text diagram, 6 pseudocode blocks).
