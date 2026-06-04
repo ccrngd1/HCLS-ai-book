@@ -48,6 +48,7 @@ A few things worth knowing upfront:
 Everything that's configuration rather than logic lives here. Model IDs, retrieval sizing, suppression windows, validation thresholds, and resource names are the knobs you'll change most often between environments.
 
 ```python
+import hashlib
 import json
 import logging
 import re
@@ -241,6 +242,37 @@ def _now_iso() -> str:
     return datetime.datetime.now(timezone.utc).isoformat()
 
 
+def _build_event_key(trigger: dict) -> str:
+    """
+    Build a deterministic event key from the trigger so that duplicate
+    EventBridge deliveries produce the same synthesis_id and get rejected
+    by the DynamoDB conditional write.
+
+    Key construction per trigger type:
+      admission:          "{patient_id}:{encounter_id}:admission_synthesis"
+      medication_order:   "{patient_id}:{order_id}:med_order_review"
+      lab_result:         "{patient_id}:{observation_id}:lab_triggered"
+      clinician_request:  "{patient_id}:{request_uuid}:clinician_request"
+    """
+    patient_id = trigger.get("patient_id", "unknown")
+    trigger_type = trigger.get("trigger_type", "clinician_request")
+    payload = trigger.get("payload") or {}
+
+    if trigger_type == "admission":
+        encounter_id = trigger.get("encounter_id", "no_enc")
+        return f"{patient_id}:{encounter_id}:admission_synthesis"
+    elif trigger_type == "medication_order":
+        order_id = payload.get("order_id", trigger.get("encounter_id", "no_order"))
+        return f"{patient_id}:{order_id}:med_order_review"
+    elif trigger_type == "lab_result":
+        obs_id = payload.get("observation_id", "no_obs")
+        return f"{patient_id}:{obs_id}:lab_triggered"
+    else:
+        # clinician_request: the UI must supply a unique request_uuid
+        request_uuid = payload.get("request_uuid", str(uuid.uuid4()))
+        return f"{patient_id}:{request_uuid}:clinician_request"
+
+
 def _get_opensearch_client() -> OpenSearch:
     """
     Build an IAM-authenticated OpenSearch client.
@@ -418,23 +450,40 @@ def trigger_synthesis(trigger: dict) -> dict:
     Returns:
         Dict with synthesis_id, status, and the fetched FHIR bundle.
     """
-    synthesis_id = str(uuid.uuid4())
+    # Derive synthesis_id deterministically from an event key so that
+    # EventBridge at-least-once redelivery does not produce duplicate
+    # synthesis runs. The DynamoDB conditional write below is the
+    # idempotency gate; a duplicate trigger fails the condition and
+    # short-circuits before any downstream work runs.
+    event_key = _build_event_key(trigger)
+    synthesis_id = hashlib.sha256(event_key.encode()).hexdigest()[:32]
     now_iso = _now_iso()
 
     # Persist the synthesis record early. If any later step fails, we have
     # a record of what was triggered and for whom. The synthesis record
     # carries PHI (patient_id), so the table should use KMS CMK encryption.
+    # The ConditionExpression rejects duplicate deliveries.
     syntheses_table = dynamodb.Table(SYNTHESES_TABLE)
-    syntheses_table.put_item(Item=_to_decimal_safe({
-        "synthesis_id":  synthesis_id,
-        "trigger_type":  trigger.get("trigger_type"),
-        "patient_id":    trigger.get("patient_id"),
-        "encounter_id":  trigger.get("encounter_id", ""),
-        "clinician_id":  trigger.get("clinician_id"),
-        "status":        "FETCHING_CONTEXT",
-        "initiated_at":  now_iso,
-        "trigger_payload": trigger.get("payload", {}),
-    }))
+    try:
+        syntheses_table.put_item(
+            Item=_to_decimal_safe({
+                "synthesis_id":  synthesis_id,
+                "trigger_type":  trigger.get("trigger_type"),
+                "patient_id":    trigger.get("patient_id"),
+                "encounter_id":  trigger.get("encounter_id", ""),
+                "clinician_id":  trigger.get("clinician_id"),
+                "status":        "FETCHING_CONTEXT",
+                "initiated_at":  now_iso,
+                "trigger_payload": trigger.get("payload", {}),
+            }),
+            ConditionExpression="attribute_not_exists(synthesis_id)",
+        )
+    except ClientError as exc:
+        if exc.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            logger.info("Duplicate trigger suppressed: %s", synthesis_id)
+            return {"status": "DUPLICATE_SUPPRESSED",
+                    "synthesis_id": synthesis_id}
+        raise
 
     # Determine which FHIR resources to pull. A broad synthesis (admission,
     # general decision support) pulls broadly; a scoped synthesis (drug
@@ -2662,6 +2711,8 @@ def run_cds_synthesis(trigger: dict,
     print("Step 1: Triggering synthesis and fetching patient context...")
     s1 = trigger_synthesis(trigger)
     synthesis_id = s1["synthesis_id"]
+    if s1["status"] == "DUPLICATE_SUPPRESSED":
+        return {"status": "DUPLICATE_SUPPRESSED", "synthesis_id": synthesis_id}
     if s1["status"] != "CONTEXT_FETCHED":
         return {"status": "FAILED", "stage": "step_1", "synthesis_id": synthesis_id,
                 "detail": s1}
@@ -2784,6 +2835,46 @@ def run_cds_synthesis(trigger: dict,
         )
         return {"status": "GENERATION_FAILED",
                 "synthesis_id": synthesis_id}
+
+    # --- Orchestration gate (Step 9.5 in the recipe pseudocode) ---
+    # If validation exhausted retries, route to human review.
+    # This synthesis does NOT proceed to tiering, rendering, or delivery.
+    # The clinician UI never sees it. A clinical reviewer triages offline.
+    if validation_result and validation_result["status"] == "REVIEW_REQUIRED":
+        syntheses_table = dynamodb.Table(SYNTHESES_TABLE)
+        syntheses_table.update_item(
+            Key={"synthesis_id": synthesis_id},
+            UpdateExpression="SET #s = :s, review_reason = :r",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":s": "ROUTED_TO_REVIEW",
+                ":r": json.dumps(validation_result.get("unverified", [])),
+            },
+        )
+        # Archive the trace for audit under a distinct S3 prefix
+        review_trace_key = f"review-queue/{synthesis_id}/trace.json"
+        s3_client.put_object(
+            Bucket=SYNTHESIS_ARCHIVE_BUCKET,
+            Key=review_trace_key,
+            Body=json.dumps({
+                "synthesis_id":        synthesis_id,
+                "trigger":             trigger,
+                "validation_result":   validation_result,
+                "raw_generation":      generation_result.get("synthesis"),
+                "routed_at":           _now_iso(),
+            }, default=str).encode(),
+            ServerSideEncryption="aws:kms",
+            SSEKMSKeyId=SYNTHESIS_ARCHIVE_CMK_ARN,
+        )
+        elapsed_ms = int((time.time() - start) * 1000)
+        logger.warning(
+            "Synthesis %s routed to human review (%d unverified findings)",
+            synthesis_id, len(validation_result.get("unverified", [])),
+        )
+        return {"status": "ROUTED_TO_REVIEW",
+                "synthesis_id": synthesis_id,
+                "unverified": validation_result.get("unverified", []),
+                "processing_time_ms": elapsed_ms}
 
     if generation_result["status"] == "NO_EVIDENCE":
         # Skip tiering; render the no-evidence placeholder directly.

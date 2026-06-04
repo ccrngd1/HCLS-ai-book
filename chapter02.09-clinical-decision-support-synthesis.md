@@ -215,7 +215,7 @@ The good news is that the architectural patterns are known. The bad news is that
 
 The overall flow looks like this:
 
-```
+```text
 [Trigger: Clinical Scenario or Clinician Query]
     → [Fetch Patient Context from EHR (FHIR)]
     → [Normalize and Structure Patient Facts]
@@ -412,7 +412,7 @@ flowchart TB
 
 **Step 1: Trigger and fetch patient context.** A clinical event arrives through EventBridge, or a clinician submits a request through the UI. The first job is to pull the patient's current state as a FHIR bundle. The bundle is the basis for everything downstream.
 
-```
+```text
 FUNCTION trigger_synthesis(trigger):
     // trigger.type: "admission", "medication_order", "lab_result", "clinician_request", etc.
     // trigger.patient_id: FHIR Patient ID
@@ -425,10 +425,10 @@ FUNCTION trigger_synthesis(trigger):
     // synthesis runs. The DynamoDB conditional write below is the idempotency
     // gate; a duplicate trigger fails the condition and short-circuits.
     event_key = build_event_key(trigger)
-        // For admission:           f"{patient_id}:{encounter_id}:admission_synthesis"
-        // For medication_order:    f"{patient_id}:{order_id}:med_order_review"
-        // For lab_result:          f"{patient_id}:{lab_observation_id}:lab_triggered"
-        // For clinician_request:   include a request UUID provided by the UI
+        // For admission: f"{patient_id}:{encounter_id}:admission_synthesis"
+        // For medication_order: f"{patient_id}:{order_id}:med_order_review"
+        // For lab_result: f"{patient_id}:{lab_observation_id}:lab_triggered"
+        // For clinician_request: include a request UUID provided by the UI
     synthesis_id = deterministic_hash(event_key)
 
     // Create the synthesis record early for traceability. The conditional
@@ -480,16 +480,16 @@ FUNCTION trigger_synthesis(trigger):
 
 **Step 2: Normalize and structure patient facts.** Turn the FHIR bundle into a compact structured object with standardized terminology bindings. Compute derived values (eGFR, Child-Pugh, BMI) that many guidelines key on. Normalization is deterministic; do it in Lambda with a clear schema.
 
-```
+```text
 FUNCTION normalize_patient_context(patient_bundle):
 
     patient_resource = find_resource(patient_bundle, type="Patient")
 
     demographics = {
-        age:              calculate_age(patient_resource.birthDate),
-        sex_assigned:     patient_resource.gender,
-        weight_kg:        most_recent_observation(patient_bundle, loinc="29463-7"),
-        height_cm:        most_recent_observation(patient_bundle, loinc="8302-2"),
+        age: calculate_age(patient_resource.birthDate),
+        sex_assigned: patient_resource.gender,
+        weight_kg: most_recent_observation(patient_bundle, loinc="29463-7"),
+        height_cm: most_recent_observation(patient_bundle, loinc="8302-2"),
         pregnancy_status: pregnancy_status_if_applicable(patient_bundle)
     }
 
@@ -499,10 +499,10 @@ FUNCTION normalize_patient_context(patient_bundle):
         IF cond.clinicalStatus includes "active":
             append {
                 snomed_code: extract_snomed(cond.code),
-                icd10_code:  extract_icd10(cond.code),
-                display:     cond.code.text,
-                onset:       cond.onsetDateTime,
-                severity:    cond.severity
+                icd10_code: extract_icd10(cond.code),
+                display: cond.code.text,
+                onset: cond.onsetDateTime,
+                severity: cond.severity
             } to active_conditions
 
     // Current medications, coded to RxNorm
@@ -510,37 +510,37 @@ FUNCTION normalize_patient_context(patient_bundle):
     FOR each med_req in find_resources(patient_bundle, type="MedicationRequest"):
         IF med_req.status == "active":
             append {
-                rxnorm_code:       extract_rxnorm(med_req.medication),
-                display:           med_req.medication.text,
-                dose_text:         med_req.dosageInstruction[0].text,
-                dose_quantity:     med_req.dosageInstruction[0].doseAndRate[0].doseQuantity,
-                frequency:         parse_frequency(med_req.dosageInstruction[0].timing),
-                route:             med_req.dosageInstruction[0].route,
-                prescribed_on:     med_req.authoredOn
+                rxnorm_code: extract_rxnorm(med_req.medication),
+                display: med_req.medication.text,
+                dose_text: med_req.dosageInstruction[0].text,
+                dose_quantity: med_req.dosageInstruction[0].doseAndRate[0].doseQuantity,
+                frequency: parse_frequency(med_req.dosageInstruction[0].timing),
+                route: med_req.dosageInstruction[0].route,
+                prescribed_on: med_req.authoredOn
             } to current_medications
 
     // Allergies
     allergies = empty list
     FOR each allergy in find_resources(patient_bundle, type="AllergyIntolerance"):
         append {
-            substance_rxnorm:  extract_rxnorm(allergy.code),
-            display:           allergy.code.text,
+            substance_rxnorm: extract_rxnorm(allergy.code),
+            display: allergy.code.text,
             reaction_severity: allergy.reaction[0].severity if present,
-            reaction_type:     allergy.reaction[0].manifestation if present
+            reaction_type: allergy.reaction[0].manifestation if present
         } to allergies
 
     // Recent labs: creatinine, liver function, sodium, potassium, hemoglobin,
     // platelets, INR, etc.
     relevant_loincs = {
-        creatinine:        "2160-0",
-        ast:               "1920-8",
-        alt:               "1742-6",
-        total_bilirubin:   "1975-2",
-        sodium:            "2951-2",
-        potassium:         "2823-3",
-        hemoglobin:        "718-7",
-        platelets:         "777-3",
-        inr:               "6301-6",
+        creatinine: "2160-0",
+        ast: "1920-8",
+        alt: "1742-6",
+        total_bilirubin: "1975-2",
+        sodium: "2951-2",
+        potassium: "2823-3",
+        hemoglobin: "718-7",
+        platelets: "777-3",
+        inr: "6301-6",
         troponin_high_sens:"67151-1"
     }
     recent_labs = dict
@@ -550,21 +550,21 @@ FUNCTION normalize_patient_context(patient_bundle):
 
     // Derived values
     derived = {
-        egfr_ckd_epi:      calculate_egfr_ckd_epi_2021(demographics, recent_labs.creatinine),
-        bmi:               calculate_bmi(demographics.weight_kg, demographics.height_cm),
-        child_pugh:        calculate_child_pugh(recent_labs) if hepatic_labs_complete,
-        corrected_qt:      calculate_qtc(recent_observations_for_ecg)
+        egfr_ckd_epi: calculate_egfr_ckd_epi_2021(demographics, recent_labs.creatinine),
+        bmi: calculate_bmi(demographics.weight_kg, demographics.height_cm),
+        child_pugh: calculate_child_pugh(recent_labs) if hepatic_labs_complete,
+        corrected_qt: calculate_qtc(recent_observations_for_ecg)
                            if recent_ecg_present else null,
-        pack_years:        calculate_pack_years(social_history) if smoking_history_present
+        pack_years: calculate_pack_years(social_history) if smoking_history_present
     }
 
     structured_context = {
-        demographics:        demographics,
-        active_conditions:   active_conditions,
+        demographics: demographics,
+        active_conditions: active_conditions,
         current_medications: current_medications,
-        allergies:           allergies,
-        recent_labs:         recent_labs,
-        derived:             derived
+        allergies: allergies,
+        recent_labs: recent_labs,
+        derived: derived
     }
 
     RETURN structured_context
@@ -574,14 +574,14 @@ FUNCTION normalize_patient_context(patient_bundle):
 
 **Step 3: Scope determination.** Not every trigger should produce a synthesis. A refill of chronic metformin probably doesn't. A new admission with sepsis does. The scope gate is cheap; skipping unnecessary syntheses is the biggest lever against alert fatigue.
 
-```
+```text
 FUNCTION determine_scope(trigger, structured_context, recent_synthesis_history):
 
     // Cheap rule-based gating first; LLM-based gating for edge cases
     scope_decision = {
         synthesize: false,
-        reason:     "",
-        scenarios:  empty list   // specific clinical scenarios to address
+        reason: "",
+        scenarios: empty list   // specific clinical scenarios to address
     }
 
     // Check for recent identical synthesis on this patient in this encounter
@@ -625,16 +625,16 @@ FUNCTION determine_scope(trigger, structured_context, recent_synthesis_history):
 
 **Step 4: Deterministic safety checks.** Before the LLM runs, perform the checks that don't need an LLM: drug interactions, allergy screens, renal and hepatic dosing flags, contraindications. These are structured-data operations against drug databases, and their outputs become hard inputs to the generation step.
 
-```
+```text
 FUNCTION run_deterministic_safety_checks(structured_context, proposed_medications):
     // proposed_medications: drugs being proposed in this clinical scenario
     //                       (may be empty for a general synthesis; populated for
     //                       medication-order triggers)
 
     safety_findings = {
-        interactions:      empty list,
+        interactions: empty list,
         allergy_conflicts: empty list,
-        renal_dose_flags:  empty list,
+        renal_dose_flags: empty list,
         hepatic_dose_flags: empty list,
         contraindications: empty list,
         duplicate_therapy: empty list
@@ -716,7 +716,7 @@ FUNCTION run_deterministic_safety_checks(structured_context, proposed_medication
 
 **Step 5: Scenario classification and retrieval planning.** Classify the scenario so retrieval can be focused. For each scenario, build a retrieval plan: which sources to query, which entities to use as keys, which filters to apply.
 
-```
+```text
 FUNCTION classify_and_plan(structured_context, scope_decision, safety_findings):
 
     // Use a small LLM for flexible classification, constrained to an enum
@@ -757,10 +757,10 @@ FUNCTION classify_and_plan(structured_context, scope_decision, safety_findings):
             drug_db_lookups: derive_drug_db_lookups(scenario.key_entities, structured_context),
             protocol_searches: derive_institutional_protocol_searches(scenario),
             metadata_filters: {
-                clinical_domain:  scenario.clinical_domain,
-                population_tags:  derive_population_tags(structured_context),
-                recency_window:   recency_for_domain(scenario.clinical_domain),
-                source_tiers:     preferred_source_tiers(scenario.scenario_type)
+                clinical_domain: scenario.clinical_domain,
+                population_tags: derive_population_tags(structured_context),
+                recency_window: recency_for_domain(scenario.clinical_domain),
+                source_tiers: preferred_source_tiers(scenario.scenario_type)
             }
         }
         append plan to retrieval_plans
@@ -770,7 +770,7 @@ FUNCTION classify_and_plan(structured_context, scope_decision, safety_findings):
 
 **Step 6: Multi-source retrieval.** Parallel retrieval against the different source stores. Structured queries against drug databases, hybrid retrieval against guidelines and protocols, formulary lookup if available.
 
-```
+```text
 FUNCTION multi_source_retrieval(retrieval_plans):
 
     results_per_scenario = dict
@@ -779,9 +779,9 @@ FUNCTION multi_source_retrieval(retrieval_plans):
         scenario_id = plan.scenario.id
         results_per_scenario[scenario_id] = {
             guideline_chunks: empty list,
-            protocol_chunks:  empty list,
-            drug_db_records:  empty list,
-            formulary:        empty list
+            protocol_chunks: empty list,
+            drug_db_records: empty list,
+            formulary: empty list
         }
 
         // Guideline retrieval: hybrid search against OpenSearch
@@ -845,7 +845,7 @@ FUNCTION multi_source_retrieval(retrieval_plans):
 
 **Step 7: Rank and filter retrieved items.** Rank retrieved guideline and protocol chunks by a combination of source authority, recency, and patient-specificity. Structured drug-DB records don't need ranking (they are deterministic lookups); they flow directly into the generation context.
 
-```
+```text
 FUNCTION rank_and_filter(results_per_scenario, structured_context):
 
     FOR each scenario_id, results in results_per_scenario:
@@ -880,7 +880,7 @@ FUNCTION rank_and_filter(results_per_scenario, structured_context):
 
 **Step 8: Grounded synthesis.** Build the generation prompt with patient context, retrieved sources, and the deterministic safety findings. The prompt enforces citation discipline, reasoning visibility, and framing as options rather than directives.
 
-```
+```text
 FUNCTION generate_synthesis(structured_context, retrieval_results, safety_findings,
                              scope_decision):
 
@@ -1027,7 +1027,7 @@ FUNCTION generate_synthesis(structured_context, retrieval_results, safety_findin
 
 **Step 9: Post-generation validation.** Belt-and-suspenders on Guardrails. For every recommendation, verify citations point to retrieved sources. For every dose, verify the value appears verbatim in a retrieved structured record. Verify that every safety finding appears in the synthesis. Verify that no recommendation contradicts a contraindication from the retrieval.
 
-```
+```text
 FUNCTION validate_synthesis(synthesis, id_to_source, safety_findings,
                              structured_context, retry_count):
 
@@ -1122,7 +1122,7 @@ FUNCTION validate_synthesis(synthesis, id_to_source, safety_findings,
 
 **Step 9.5: Orchestration gate between validation and delivery.** This is not a separate Lambda; it is the branch the orchestrator (Step Functions) takes after Step 9 returns. The distinction is non-negotiable: only `VALIDATED` (and `NO_EVIDENCE`, where the system explicitly declined to synthesize) proceed to tier/suppress/render and `status = DELIVERED`. `VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW` is a terminal state that writes the trace for audit and routes to a human-review queue without surfacing anything to the clinician UI.
 
-```
+```text
 // Orchestrator branch on validation result
 IF validation_result.status == "VALIDATED":
     proceed to Step 10 (tier_suppress_render) and Step 11 (archive_and_log
@@ -1156,7 +1156,7 @@ ELSE IF validation_result.status == "VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW":
 
 **Step 10: Tier, suppress, and render.** Score the synthesis against the patient's prior engagement history for alert-fatigue suppression. If nothing material is new, suppress or downgrade. Otherwise, render with reasoning foregrounded, sources one click away, uncertainty explicit.
 
-```
+```text
 FUNCTION tier_suppress_render(synthesis, structured_context, patient_id, encounter_id,
                                id_to_source):
 
@@ -1169,11 +1169,11 @@ FUNCTION tier_suppress_render(synthesis, structured_context, patient_id, encount
     FOR each rec in synthesis.recommendations:
         rec.delivery_tier = determine_delivery_tier(rec, prior)
         // Possible tiers:
-        // - "new_critical":     critical and not previously surfaced
-        // - "new_important":    important and not previously surfaced
-        // - "changed":          previously surfaced but material change
-        // - "acknowledged":     previously acknowledged; suppress unless changed
-        // - "rejected":         previously rejected; suppress with logging
+        // - "new_critical": critical and not previously surfaced
+        // - "new_important": important and not previously surfaced
+        // - "changed": previously surfaced but material change
+        // - "acknowledged": previously acknowledged; suppress unless changed
+        // - "rejected": previously rejected; suppress with logging
 
     // If all recommendations are in suppressed tiers, flag the synthesis as minor-update-only
     active_recommendations = [r for r in synthesis.recommendations
@@ -1211,19 +1211,19 @@ FUNCTION tier_suppress_render(synthesis, structured_context, patient_id, encount
         append rendered_rec to rendered_recommendations
 
     rendered = {
-        synthesis_id:          synthesis.synthesis_id,
-        patient_id:            patient_id,
-        encounter_id:          encounter_id,
-        overall_assessment:    synthesis.overall_assessment,
-        recommendations:       rendered_recommendations,
-        safety_findings:       synthesis.safety_findings_included,
-        competing:             synthesis.competing_recommendations,
-        to_ask_or_check:       synthesis.what_to_ask_or_check,
+        synthesis_id: synthesis.synthesis_id,
+        patient_id: patient_id,
+        encounter_id: encounter_id,
+        overall_assessment: synthesis.overall_assessment,
+        recommendations: rendered_recommendations,
+        safety_findings: synthesis.safety_findings_included,
+        competing: synthesis.competing_recommendations,
+        to_ask_or_check: synthesis.what_to_ask_or_check,
         insufficient_evidence: synthesis.insufficient_evidence_items,
-        overall_uncertainty:   synthesis.overall_uncertainty,
+        overall_uncertainty: synthesis.overall_uncertainty,
         uncertainty_rationale: synthesis.uncertainty_rationale,
-        bibliography:          bibliography,
-        disclaimer:            "This is a decision support synthesis. Review the sources "
+        bibliography: bibliography,
+        disclaimer: "This is a decision support synthesis. Review the sources "
                              + "before acting. The clinician is the decision-maker."
     }
 
@@ -1232,27 +1232,27 @@ FUNCTION tier_suppress_render(synthesis, structured_context, patient_id, encount
 
 **Step 11: Archive and emit engagement hooks.** Persist the full provenance for audit, regulatory evidence, and feedback. Emit metrics. Register engagement-capture endpoints for the clinician UI.
 
-```
+```text
 FUNCTION archive_and_log(synthesis_id, rendered, trace, clinician_id, patient_id):
 
     // Persist the full trace to S3 with KMS encryption
     write to S3: f"syntheses/{synthesis_id}/rendered.json" = rendered
     write to S3: f"syntheses/{synthesis_id}/trace.json" = {
-        trigger:              trace.trigger,
+        trigger: trace.trigger,
         patient_context_hash: hash(trace.structured_context),
         // Do not store the raw patient context in a long-retention bucket if policy
         // requires; store a secure reference with TTL instead
-        retrieval_plans:      trace.retrieval_plans,
+        retrieval_plans: trace.retrieval_plans,
         retrieved_source_ids: trace.retrieved_source_ids,
-        safety_findings:      trace.safety_findings,
-        prompt_version:       trace.prompt_version,
-        model_id:             trace.model_id,
-        raw_model_output:     trace.raw_model_output,
-        validation_result:    trace.validation_result,
-        tiering_decision:     trace.tiering_decision,
-        generated_at:         trace.generated_at,
-        clinician_id:         clinician_id,
-        patient_id:           patient_id
+        safety_findings: trace.safety_findings,
+        prompt_version: trace.prompt_version,
+        model_id: trace.model_id,
+        raw_model_output: trace.raw_model_output,
+        validation_result: trace.validation_result,
+        tiering_decision: trace.tiering_decision,
+        generated_at: trace.generated_at,
+        clinician_id: clinician_id,
+        patient_id: patient_id
     }
 
     // Update the DynamoDB record
