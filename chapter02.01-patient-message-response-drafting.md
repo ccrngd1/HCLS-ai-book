@@ -424,7 +424,7 @@ One more thing: resist the temptation to expand scope. "If it works for refill r
 
 - **Recipe 2.2 (Medical Terminology Simplification):** Uses similar LLM patterns but for transforming clinical text to patient-friendly language
 - **Recipe 2.5 (After-Visit Summary Generation):** Another patient-facing generation use case with similar safety constraints
-- **Recipe 11.1 (Patient FAQ Chatbot):** Conversational AI for patient self-service, reducing message volume upstream <!-- TODO: Verify recipe number against final chapter 11 index -->
+- **Recipe 11.1 (Patient FAQ Chatbot):** Conversational AI for patient self-service, reducing message volume upstream
 - **Recipe 2.4 (Prior Authorization Letter Generation):** More complex generation requiring multi-source synthesis, shows how the pattern scales
 
 ---
