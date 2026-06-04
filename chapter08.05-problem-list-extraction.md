@@ -14,7 +14,7 @@ This is not a rare scenario. Studies consistently show that EHR problem lists ar
 
 The downstream impact is real. Clinical decision support fires (or doesn't fire) based on the problem list. Quality measures get reported against it. Risk adjustment coding depends on it. Care coordination tools use it to identify patients who need outreach. When the problem list is wrong, all of those downstream systems produce wrong results, silently.
 
-The information exists. It's in progress notes, discharge summaries, consult notes, procedure notes. Clinicians document diagnoses in narrative text all the time. The gap is extracting those mentions, determining which represent active problems versus historical or resolved ones, and reconciling them against the existing problem list. That extraction and classification problem is what we're solving here.
+The information exists. It's in progress notes, discharge summaries, consult notes, procedure notes. Clinicians document diagnoses in narrative text all the time. The gap is extracting those mentions, determining which represent active problems versus historical or resolved ones, and reconciling them against the existing problem list. So that's the gap we're filling.
 
 ---
 
@@ -167,6 +167,7 @@ flowchart LR
 | **CloudTrail** | Enabled: log all Comprehend Medical and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic clinical notes with problem mentions across sections. MIMIC-III (with DUA) provides realistic note structures. n2c2 datasets offer annotated clinical text for validation. Never use real patient notes in dev without proper IRB/DUA. |
 | **Cost Estimate** | Comprehend Medical DetectEntitiesV2: ~$0.01 per 100-character unit (1 unit = 100 chars, minimum 3 units). InferICD10CM and InferSNOMEDCT: same per-unit pricing, called on shorter extracted spans. A typical 3000-character note: ~$0.30 for detection + $0.02-0.10 for normalization (depending on number of extracted problems). Total: ~$0.30-0.80 per note depending on length and problem count. |
+| **Regional Availability** | Amazon Comprehend Medical is available in select regions (us-east-1, us-east-2, us-west-2, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1 as of 2024). Verify availability in your target region before designing your deployment, especially for data residency requirements. |
 
 ### Ingredients
 
@@ -527,7 +528,7 @@ The reconciliation logic is where the real engineering challenge hides. SNOMED c
 
 What surprised me most: the section detection step (which seems like simple string matching) has an outsized impact on overall accuracy. Notes without clear section headers, or with non-standard formatting, degrade assertion classification significantly. The NER engine extracts the condition fine; it's the "does this patient actually have it" determination that suffers when section context is missing.
 
-One more thing. Problem list extraction is inherently a clinician-in-the-loop workflow. You're generating recommendations, not making changes. The moment you auto-add conditions to a problem list without physician review, you've crossed from decision support into autonomous clinical documentation, and that's a different regulatory and liability landscape entirely. Keep the human in the loop. Frame your pipeline as "here are problems you might want to add" not "I've updated the problem list for you."
+One more thing. Problem list extraction is inherently a clinician-in-the-loop workflow. You're generating recommendations, not making changes. The moment you auto-add conditions to a problem list without physician review, you've crossed from decision support into autonomous clinical documentation. That's a different regulatory and liability landscape entirely. Keep the human in the loop. Frame your pipeline as "here are problems you might want to add" not "I've updated the problem list for you."
 
 ---
 
