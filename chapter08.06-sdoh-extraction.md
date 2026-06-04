@@ -132,6 +132,8 @@ flowchart TD
     style F fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add SQS Dead Letter Queue to architecture diagram and mention CloudWatch alarm on DLQ depth for failed note processing. -->
+
 ### Prerequisites
 
 | Requirement | Details |
@@ -140,7 +142,7 @@ flowchart TD
 | **IAM Permissions** | `comprehendmedical:DetectEntitiesV2`, `comprehend:ClassifyDocument`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:GetItem`, `sqs:ReceiveMessage`, `sqs:DeleteMessage` |
 | **BAA** | AWS BAA signed (clinical notes contain PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest (default); SQS: SSE-KMS; Lambda environment variables: KMS encrypted; all API calls over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, Comprehend, and CloudWatch Logs |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, and CloudWatch Logs. Comprehend Medical and Comprehend (custom) require NAT Gateway (no VPC endpoints available). Note text is encrypted in transit via TLS 1.2+. Organizations with strict no-internet-egress requirements should evaluate whether Lambda outside VPC (with resource policies) meets their compliance posture. |
 | **CloudTrail** | Enabled: log all Comprehend Medical, Comprehend, and S3 API calls for HIPAA audit trail |
 | **DynamoDB PITR** | Enable Point-in-Time Recovery for the SDOH profiles table |
 | **Training Data** | Annotated clinical notes with SDOH labels. Minimum 1,000 labeled sentences across categories for custom classifier training. Use de-identified data (MIMIC, i2b2/n2c2 SDOH shared task datasets) for initial model development. Never use real PHI in training without IRB and data governance approval. |
@@ -238,7 +240,7 @@ FUNCTION segment_note(note_text):
     RETURN segmented
 ```
 
-**Step 3: Entity extraction with Comprehend Medical.** Pass the note (or priority sections) through Amazon Comprehend Medical's DetectEntitiesV2 API. This provides medical entity extraction with negation detection and attribute linkage. While Comprehend Medical doesn't have a dedicated "SDOH" entity category, it extracts relevant context: mentions of medical conditions (which may co-occur with social factors), negation cues (which help with assertion classification), and protected health information attributes. The real value here is the foundational NLP: sentence boundaries, negation scope, and entity span detection that you'd otherwise build manually. The SDOH-specific classification happens in the next step.
+**Step 3: Entity extraction with Comprehend Medical.** Pass the note (or priority sections) through Amazon Comprehend Medical's DetectEntitiesV2 API. This provides medical entity extraction with negation detection and attribute linkage. While Comprehend Medical doesn't have a dedicated "SDOH" entity category, it extracts relevant context: mentions of medical conditions (which may co-occur with social factors), negation cues (which help with assertion classification), and protected health information attributes. The real value here is the foundational NLP: sentence boundaries, negation scope, and entity span detection that you'd otherwise build manually. The SDOH-specific classification happens in the next step. Note: DetectEntitiesV2 accepts up to 20,000 characters per request. If a section exceeds this limit (common in lengthy social work assessments), split it at sentence boundaries with overlap to ensure no SDOH mention spans a chunk boundary.
 
 ```pseudocode
 FUNCTION extract_medical_context(note_text):
@@ -416,6 +418,9 @@ FUNCTION normalize_to_codes(sdoh_findings, code_map):
 ```
 
 **Step 6: Store patient-level SDOH profile.** Write the normalized findings to the patient's SDOH profile in DynamoDB. The profile is a living document: new extractions add to it, resolved needs get updated, and the history is preserved for longitudinal analysis. Each finding includes provenance (which note, which sentence, which date) so care managers can trace back to the source. The profile supports queries like "show me all patients with active food insecurity in my panel" and "what SDOH needs were identified for this patient in the last 6 months?" Skip this step and extractions are ephemeral, useful for one-time reporting but not for ongoing care coordination.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Note that population-level queries ("all patients with active food insecurity") require a GSI on domain#assertion as partition key. Add 1-2 sentences here or in Prerequisites. -->
+<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Add note about restricting sdoh-profiles table access to care management roles; mention option to store only metadata (domain, assertion, codes) without source_text, linking to note_id for authorized reviewers. -->
 
 ```pseudocode
 FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
