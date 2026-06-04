@@ -949,4 +949,4 @@ This example demonstrates the shape of a DR screening pipeline. Here's what you'
 
 ## Navigation
 
-[← 9.5: Chest X-Ray Triage (Python)](chapter09.05-python-example) | [Chapter 9 Index](chapter09-index) | [9.7: Radiology AI Triage (Python) →](chapter09.07-python-example)
+[← 9.5: Chest X-Ray Triage (Python)](chapter09.05-python-example) | [Chapter 9 Index](chapter09-preface) | [9.7: Radiology AI Triage (Python) →](chapter09.07-python-example)

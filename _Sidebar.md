@@ -198,7 +198,7 @@
   * [Python Example](chapter08.01-python-example)
 * [8.2 — Patient Sentiment Analysis](chapter08.02-patient-sentiment-analysis)
   * [Python Example](chapter08.02-python-example)
-* [8.3 — ICD-10 Code Suggestion](chapter08.03-icd10-code-suggestion)
+* [8.3 — ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion)
   * [Python Example](chapter08.03-python-example)
 * [8.4 — Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization)
   * [Python Example](chapter08.04-python-example)
@@ -238,7 +238,7 @@
   * [Python Example](chapter09.08-python-example)
 * [9.9 — Surgical Video Analysis](chapter09.09-surgical-video-analysis)
   * [Python Example](chapter09.09-python-example)
-* [9.10 — Multi-Modal Imaging Fusion](chapter09.10-multi-modal-imaging-fusion)
+* [9.10 — Multi-Modal Imaging Fusion](chapter09.10-multi-modal-imaging-fusion-analysis)
   * [Python Example](chapter09.10-python-example)
 
 ---
@@ -358,7 +358,7 @@
   * [Python Example](chapter14.03-python-example)
 * [14.4 — Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization)
   * [Python Example](chapter14.04-python-example)
-* [14.5 — Operating Room Block Scheduling](chapter14.05-or-block-scheduling)
+* [14.5 — Operating Room Block Scheduling](chapter14.05-operating-room-block-scheduling)
   * [Python Example](chapter14.05-python-example)
 * [14.6 — Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment)
   * [Python Example](chapter14.06-python-example)

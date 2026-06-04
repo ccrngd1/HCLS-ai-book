@@ -855,7 +855,7 @@ FUNCTION store_prior_auth_record(record):
             document_key = record.document_key
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.04-prior-auth-python-v2). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
@@ -1088,4 +1088,4 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [← Recipe 1.3: Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) · [Next: Recipe 1.5 - Claims Attachment Processing →](chapter01.05-claims-attachment-processing)*
+*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.3: Lab Requisition Form Extraction](chapter01.03-lab-requisition-extraction) · [Next: Recipe 1.5 - Claims Attachment Processing →](chapter01.05-claims-attachment-processing)*

@@ -2275,4 +2275,4 @@ The intake bot is the right fourth recipe in this chapter, after the FAQ bot, th
 
 ---
 
-*← [Recipe 11.3: Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot) · [Chapter 11 Index](chapter11-index) · [Recipe 11.5: Insurance Benefits Navigator](chapter11.05-insurance-benefits-navigator) →*
+*← [Recipe 11.3: Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.5: Insurance Benefits Navigator](chapter11.05-insurance-benefits-navigator) →*

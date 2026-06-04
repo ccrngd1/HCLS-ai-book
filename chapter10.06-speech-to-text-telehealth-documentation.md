@@ -1776,4 +1776,4 @@ Telehealth speech-to-text is the recipe in this chapter where the operational im
 
 ---
 
-*← [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) · [Chapter 10 Index](chapter10-index) · [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) →*
+*← [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) →*

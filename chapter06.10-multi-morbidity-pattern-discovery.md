@@ -594,4 +594,4 @@ Once patterns are discovered and validated, build a real-time scoring system tha
 
 ---
 
-| [← 6.9: Social Determinant Phenotyping](chapter06.09-social-determinant-phenotyping) | [Chapter 6 Index](chapter06-index) | [Chapter 7 →](chapter07-preface) |
+| [← 6.9: Social Determinant Phenotyping](chapter06.09-social-determinant-phenotyping) | [Chapter 6 Index](chapter06-preface) | [Chapter 7 →](chapter07-preface) |

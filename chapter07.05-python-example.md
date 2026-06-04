@@ -922,4 +922,4 @@ This example demonstrates the scoring logic, but a real deployment needs substan
 
 ---
 
-[← Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) | [Chapter 7 Index](chapter07-index) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)
+[← Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)

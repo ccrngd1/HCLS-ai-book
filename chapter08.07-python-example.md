@@ -741,4 +741,4 @@ This example demonstrates the core concepts. Here's the distance between this co
 
 ---
 
-*[Recipe 8.7: Adverse Event Detection in Clinical Text](chapter08.07-adverse-event-detection-clinical-text) | [Chapter 8 Index](chapter08-index)*
+*[Recipe 8.7: Adverse Event Detection in Clinical Text](chapter08.07-adverse-event-detection-clinical-text) | [Chapter 8 Index](chapter08-preface)*

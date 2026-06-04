@@ -893,7 +893,7 @@ FUNCTION store_attachment_record(record):
             attachment_key = record.attachment_key
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-claims-attachment-python-v2). It walks through each step with inline comments and notes on what you'd need to change for a real deployment. 
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment. 
 
 ### Expected Results
 
@@ -1150,4 +1150,4 @@ The path from this recipe to production runs through measurement, feedback loops
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [← Recipe 1.4: Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) · [Next: Recipe 1.6 - Handwritten Clinical Note Digitization →](chapter01.06-handwritten-clinical-note-digitization)*
+*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.4: Prior Authorization Document Processing](chapter01.04-prior-auth-document-processing) · [Next: Recipe 1.6 - Handwritten Clinical Note Digitization →](chapter01.06-handwritten-clinical-note-digitization)*

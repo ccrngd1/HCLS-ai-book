@@ -1252,4 +1252,4 @@ This example demonstrates the patterns. Here is what stands between this code an
 
 ---
 
-*← [Recipe 1.6 Main](chapter01.06-handwritten-notes-v3) · [Chapter 1 Index](chapter01-index)*
+*← [Recipe 1.6 Main](chapter01.06-handwritten-clinical-note-digitization) · [Chapter 1 Index](chapter01-preface)*

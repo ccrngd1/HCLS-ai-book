@@ -1399,4 +1399,4 @@ The last thing, because it matters here even more than in the other recipes in t
 
 ---
 
-*← [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) · [Chapter 10 Index](chapter10-index) · [Recipe 10.4: Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation) →*
+*← [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.4: Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation) →*

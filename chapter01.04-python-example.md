@@ -1388,4 +1388,4 @@ This example demonstrates the patterns, but there's meaningful distance between 
 
 ---
 
-*← [Recipe 1.4: Prior Auth Document Processing](chapter01.04-prior-auth-v2) · [Python Example](chapter01.04-prior-auth-python-v2)*
+*← [Recipe 1.4: Prior Auth Document Processing](chapter01.04-prior-auth-document-processing) · [Python Example](chapter01.04-python-example)*

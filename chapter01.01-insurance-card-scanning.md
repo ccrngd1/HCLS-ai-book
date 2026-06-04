@@ -413,4 +413,4 @@ The part that surprised me: front-of-card processing gets you maybe 70% of what 
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [Next: Recipe 1.2 - Patient Intake Form Digitization →](chapter01.02-patient-intake-digitization)*
+*← [Chapter 1 Index](chapter01-preface) · [Next: Recipe 1.2 - Patient Intake Form Digitization →](chapter01.02-patient-intake-digitization)*

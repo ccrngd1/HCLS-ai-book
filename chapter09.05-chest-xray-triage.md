@@ -485,4 +485,4 @@ That said, here's what will surprise you:
 
 ---
 
-*← [Recipe 9.4: Dermatology Lesion Triage](chapter09.04-dermatology-lesion-triage) · [Chapter 9 Index](chapter09-index) · [Next: Recipe 9.6: Diabetic Retinopathy Screening →](chapter09.06-diabetic-retinopathy-screening)*
+*← [Recipe 9.4: Dermatology Lesion Triage](chapter09.04-dermatology-lesion-triage) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.6: Diabetic Retinopathy Screening →](chapter09.06-diabetic-retinopathy-screening)*

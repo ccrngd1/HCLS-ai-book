@@ -531,4 +531,4 @@ One more thing: the financial ROI on CDI is easy to measure (compare DRG weights
 
 ---
 
-*← [Recipe 2.2: Medical Terminology Simplification](chapter02.02-medical-terminology-simplification) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.4 - Prior Authorization Letter Generation →](chapter02.04-prior-auth-letter-generation)*
+*← [Recipe 2.2: Medical Terminology Simplification](chapter02.02-medical-terminology-simplification) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.4 - Prior Authorization Letter Generation →](chapter02.04-prior-auth-letter-generation)*

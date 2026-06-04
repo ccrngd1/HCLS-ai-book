@@ -1174,5 +1174,5 @@ This example demonstrates the mechanics of RL-based chronic disease treatment pe
 
 ---
 
-| [← Recipe 15.6: Python Example](chapter15.06-python-example) | [Chapter 15 Index](chapter15-index) | [Recipe 15.8: Chemotherapy Dose Optimization →](chapter15.08-chemotherapy-dose-optimization) |
+| [← Recipe 15.6: Python Example](chapter15.06-python-example) | [Chapter 15 Index](chapter15-preface) | [Recipe 15.8: Chemotherapy Dose Optimization →](chapter15.08-chemotherapy-dose-optimization) |
 |:---|:---:|---:|

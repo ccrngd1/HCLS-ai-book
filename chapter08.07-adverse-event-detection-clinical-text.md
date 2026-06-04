@@ -640,4 +640,4 @@ One thing that surprised me: the highest-value outputs weren't the individual hi
 
 ---
 
-| [← 8.6: SDOH Extraction](chapter08.06-sdoh-extraction) | [Chapter 8 Index](chapter08-index) | [8.8: Clinical Assertion Classification →](chapter08.08-clinical-assertion-classification) |
+| [← 8.6: SDOH Extraction](chapter08.06-sdoh-extraction) | [Chapter 8 Index](chapter08-preface) | [8.8: Clinical Assertion Classification →](chapter08.08-clinical-assertion-classification) |

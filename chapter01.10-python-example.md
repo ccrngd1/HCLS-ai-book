@@ -1668,4 +1668,4 @@ Run a regression test on a sample of charts after any model update before contin
 
 ---
 
-*[← Recipe 1.9 Python Example](chapter01.09-medical-records-python-v1) · [↑ Recipe 1.10 Main](chapter01.10-chart-migration-v1) · [Chapter 1 Index →](chapter01-index)*
+*[← Recipe 1.9 Python Example](chapter01.09-python-example) · [↑ Recipe 1.10 Main](chapter01.10-historical-chart-migration) · [Chapter 1 Index →](chapter01-preface)*

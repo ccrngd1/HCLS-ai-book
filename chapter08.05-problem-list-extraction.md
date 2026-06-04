@@ -587,4 +587,4 @@ One more thing. Problem list extraction is inherently a clinician-in-the-loop wo
 
 ---
 
-*← [Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization) · [Chapter 8 Index](chapter08-index) · [Next: Recipe 8.6: SDOH Extraction →](chapter08.06-sdoh-extraction)*
+*← [Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.6: SDOH Extraction →](chapter08.06-sdoh-extraction)*

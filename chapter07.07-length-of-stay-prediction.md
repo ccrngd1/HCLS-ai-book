@@ -592,5 +592,5 @@ Retraining cadence matters more than you'd think. Hospital operations change sea
 
 ---
 
-| [← 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification) | [Chapter 7 Index](chapter07-index) | [7.8: Disease Progression Modeling →](chapter07.08-disease-progression-modeling) |
+| [← 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification) | [Chapter 7 Index](chapter07-preface) | [7.8: Disease Progression Modeling →](chapter07.08-disease-progression-modeling) |
 |:---|:---:|---:|

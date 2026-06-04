@@ -1128,4 +1128,4 @@ The last thing, because it's specific to healthcare: the IVR is, for many patien
 
 ---
 
-*← [Chapter 10 Preface](chapter10-preface) · [Chapter 10 Index](chapter10-index) · [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) →*
+*← [Chapter 10 Preface](chapter10-preface) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.2: Voicemail Transcription and Classification](chapter10.02-voicemail-transcription-classification) →*

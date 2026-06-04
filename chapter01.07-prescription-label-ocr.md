@@ -597,4 +597,4 @@ The thing I didn't anticipate building the first version of this: days supply is
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · ← [Recipe 1.6: Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) · [Recipe 1.8: EOB Processing →](chapter01.08-eob-processing)*
+*← [Chapter 1 Index](chapter01-preface) · ← [Recipe 1.6: Handwritten Clinical Note Digitization](chapter01.06-handwritten-clinical-note-digitization) · [Recipe 1.8: EOB Processing →](chapter01.08-eob-processing)*

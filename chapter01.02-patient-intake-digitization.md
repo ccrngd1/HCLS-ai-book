@@ -585,4 +585,4 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [← Recipe 1.1: Insurance Card Scanning](chapter01.01-insurance-card-scanning) · [Next: Recipe 1.3 - Lab Requisition Form Extraction →](chapter01.03-lab-requisition-extraction)*
+*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.1: Insurance Card Scanning](chapter01.01-insurance-card-scanning) · [Next: Recipe 1.3 - Lab Requisition Form Extraction →](chapter01.03-lab-requisition-extraction)*

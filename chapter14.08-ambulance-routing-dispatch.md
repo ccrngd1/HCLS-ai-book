@@ -608,4 +608,4 @@ Once a unit is dispatched and en route, continue monitoring the route for traffi
 
 ---
 
-| [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-index) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |
+| [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-preface) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |

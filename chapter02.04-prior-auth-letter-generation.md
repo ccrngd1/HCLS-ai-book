@@ -826,4 +826,4 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 
 ---
 
-*← [Recipe 2.3: Clinical Documentation Improvement](chapter02.03-clinical-documentation-improvement) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.5 - After-Visit Summary Generation →](chapter02.05-after-visit-summary-generation)*
+*← [Recipe 2.3: Clinical Documentation Improvement](chapter02.03-clinical-documentation-improvement) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.5 - After-Visit Summary Generation →](chapter02.05-after-visit-summary-generation)*

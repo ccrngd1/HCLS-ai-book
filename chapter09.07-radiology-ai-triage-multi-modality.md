@@ -500,5 +500,5 @@ The thing that surprised me most: radiologists actually like these systems when 
 
 ---
 
-| [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-index) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
+| [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-preface) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
 |:---|:---:|---:|

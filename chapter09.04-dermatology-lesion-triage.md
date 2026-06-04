@@ -495,5 +495,5 @@ Here's what will surprise you when you actually build this:
 
 ---
 
-| [← 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-index) | [9.5: Chest X-Ray Triage →](chapter09.05-chest-xray-triage) |
+| [← 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-preface) | [9.5: Chest X-Ray Triage →](chapter09.05-chest-xray-triage) |
 |:---|:---:|---:|

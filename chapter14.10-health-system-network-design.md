@@ -649,4 +649,4 @@ One more thing: don't try to solve the whole problem at once on your first itera
 
 ---
 
-*← [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling) · [Chapter 14 Index](chapter14-index) · [Next: Chapter 15 →](chapter15-preface)*
+*← [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling) · [Chapter 14 Index](chapter14-preface) · [Next: Chapter 15 →](chapter15-preface)*

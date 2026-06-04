@@ -596,5 +596,5 @@ One more thing: tier assignments are not destiny. They're a snapshot. A patient 
 
 ---
 
-| [← 6.3: Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering) | [Chapter 6 Index](chapter06-index) | [6.5: Provider Practice Pattern Analysis →](chapter06.05-provider-practice-pattern-analysis) |
+| [← 6.3: Payer Mix Financial Risk Clustering](chapter06.03-payer-mix-financial-risk-clustering) | [Chapter 6 Index](chapter06-preface) | [6.5: Provider Practice Pattern Analysis →](chapter06.05-provider-practice-pattern-analysis) |
 |:---|:---:|---:|

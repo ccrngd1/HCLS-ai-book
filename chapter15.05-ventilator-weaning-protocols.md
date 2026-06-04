@@ -511,4 +511,4 @@ What I'd do differently if starting over: I'd spend 80% of my time on data quali
 
 ---
 
-| [← 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) | [Chapter 15 Index](chapter15-index) | [15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu) |
+| [← 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) | [Chapter 15 Index](chapter15-preface) | [15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu) |

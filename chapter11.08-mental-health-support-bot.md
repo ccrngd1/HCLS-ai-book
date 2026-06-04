@@ -2281,4 +2281,4 @@ The last thing: mental-health support bots are a category where the operational,
 
 ---
 
-*← [Recipe 11.7: Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach) · [Chapter 11 Index](chapter11-index) · [Recipe 11.9: Care Coordination Assistant](chapter11.09-care-coordination-assistant) →*
+*← [Recipe 11.7: Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.9: Care Coordination Assistant](chapter11.09-care-coordination-assistant) →*

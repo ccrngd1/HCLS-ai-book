@@ -603,4 +603,4 @@ The thing I'd do differently: start with the intervention capacity constraint an
 
 ---
 
-*← [Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) · [Chapter 7 Index](chapter07-index) · [Next: Recipe 7.7 →](chapter07.07-length-of-stay-prediction)*
+*← [Recipe 7.5: 30-Day Readmission Risk](chapter07.05-30-day-readmission-risk) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.7 →](chapter07.07-length-of-stay-prediction)*

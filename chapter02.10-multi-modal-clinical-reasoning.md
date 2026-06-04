@@ -1630,4 +1630,4 @@ One more thing, a personal note. The patients who benefit from this the most are
 
 ---
 
-*← [Recipe 2.9: Clinical Decision Support Synthesis](chapter02.09-clinical-decision-support-synthesis) · [Chapter 2 Index](chapter02-index)*
+*← [Recipe 2.9: Clinical Decision Support Synthesis](chapter02.09-clinical-decision-support-synthesis) · [Chapter 2 Index](chapter02-preface)*

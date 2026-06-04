@@ -643,4 +643,4 @@ The cost model also catches people off guard. Comprehend Medical charges per cha
 
 ---
 
-*← [Recipe 8.9: Temporal Relationship Extraction](chapter08.09-temporal-relationship-extraction) · [Chapter 8 Index](chapter08-index) · [Next: Chapter 9 - Computer Vision →](chapter09-index)*
+*← [Recipe 8.9: Temporal Relationship Extraction](chapter08.09-temporal-relationship-extraction) · [Chapter 8 Index](chapter08-preface) · [Next: Chapter 9 - Computer Vision →](chapter09-preface)*

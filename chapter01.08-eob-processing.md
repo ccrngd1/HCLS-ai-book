@@ -960,4 +960,4 @@ This is a simple string scan on the header label keys (not values). It runs befo
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [← Recipe 1.7: Prescription Label OCR](chapter01.07-prescription-label-ocr) · [Next: Recipe 1.9: Medical Records Request Extraction →](chapter01.09-medical-records-request-extraction)*
+*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.7: Prescription Label OCR](chapter01.07-prescription-label-ocr) · [Next: Recipe 1.9: Medical Records Request Extraction →](chapter01.09-medical-records-request-extraction)*

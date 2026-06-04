@@ -1765,4 +1765,4 @@ Last point, because it is specific to the use case: TEFCA is the substrate for p
 
 ---
 
-*← [Recipe 5.8: Privacy-Preserving Record Linkage](chapter05.08-privacy-preserving-record-linkage) · Chapter 5 · [Next: Recipe 5.10 - Deceased Patient Resolution and Record Reconciliation →](chapter05.10-deceased-patient-resolution)*
+*← [Recipe 5.8: Privacy-Preserving Record Linkage](chapter05.08-privacy-preserving-record-linkage) · Chapter 5 · [Next: Recipe 5.10 - Deceased Patient Resolution and Record Reconciliation →](chapter05.10-deceased-patient-resolution-reconciliation)*

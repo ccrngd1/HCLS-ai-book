@@ -1747,4 +1747,4 @@ Real-time medical interpretation, done responsibly, can extend language access t
 
 ---
 
-*← [Recipe 10.9: Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring) · [Chapter 10 Index](chapter10-index) · [Chapter 11 Preface →](chapter11-preface)*
+*← [Recipe 10.9: Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring) · [Chapter 10 Index](chapter10-preface) · [Chapter 11 Preface →](chapter11-preface)*

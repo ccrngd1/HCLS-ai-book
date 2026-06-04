@@ -694,4 +694,4 @@ The comparison to curated databases is unfair but inevitable. Stakeholders will 
 
 ---
 
-*← [Recipe 13.8: Medical Concept Normalization and Mapping](chapter13.08-medical-concept-normalization-mapping) · [Chapter 13 Index](chapter13-index) · [Recipe 13.10: Federated Clinical Knowledge Network →](chapter13.10-federated-clinical-knowledge-network)*
+*← [Recipe 13.8: Medical Concept Normalization and Mapping](chapter13.08-medical-concept-normalization-mapping) · [Chapter 13 Index](chapter13-preface) · [Recipe 13.10: Federated Clinical Knowledge Network →](chapter13.10-federated-clinical-knowledge-network)*

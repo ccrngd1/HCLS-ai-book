@@ -1617,4 +1617,4 @@ Final thought. Clinical decision support synthesis is one of the genuinely high-
 
 ---
 
-*← [Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.10 - Multi-Modal Clinical Reasoning →](chapter02.10-multi-modal-clinical-reasoning)*
+*← [Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.10 - Multi-Modal Clinical Reasoning →](chapter02.10-multi-modal-clinical-reasoning)*

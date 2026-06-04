@@ -1041,4 +1041,4 @@ This example demonstrates the optimization logic, but a production deployment ne
 
 ---
 
-[← Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling) | [Chapter 14 Index](chapter14-index) | [Recipe 14.10: Health System Network Design →](chapter14.10-health-system-network-design)
+[← Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling) | [Chapter 14 Index](chapter14-preface) | [Recipe 14.10: Health System Network Design →](chapter14.10-health-system-network-design)

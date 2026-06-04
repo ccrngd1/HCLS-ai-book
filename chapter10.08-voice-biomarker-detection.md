@@ -1599,4 +1599,4 @@ Voice biomarker detection, done well for the right indications, is one of the mo
 
 ---
 
-*← [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) · [Chapter 10 Index](chapter10-index) · [Recipe 10.9: Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring) →*
+*← [Recipe 10.7: Ambient Clinical Documentation](chapter10.07-ambient-clinical-documentation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.9: Speech Therapy Assessment and Monitoring](chapter10.09-speech-therapy-assessment-monitoring) →*

@@ -620,4 +620,4 @@ Start with quality benchmarking (risk-adjusted mortality rates for your ICU) bef
 
 ---
 
-*← [Recipe 7.8: Disease Progression Modeling](chapter07.08-disease-progression-modeling) · [Chapter 7 Index](chapter07-index) · [Next: Recipe 7.10 - Optimal Intervention Timing Prediction →](chapter07.10-optimal-intervention-timing-prediction)*
+*← [Recipe 7.8: Disease Progression Modeling](chapter07.08-disease-progression-modeling) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.10 - Optimal Intervention Timing Prediction →](chapter07.10-optimal-intervention-timing-prediction)*

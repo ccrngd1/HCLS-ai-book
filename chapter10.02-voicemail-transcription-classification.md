@@ -1567,4 +1567,4 @@ The last thing, because it's specific to healthcare and to this recipe in partic
 
 ---
 
-*← [Recipe 10.1: IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement) · [Chapter 10 Index](chapter10-index) · [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) →*
+*← [Recipe 10.1: IVR Call Routing Enhancement](chapter10.01-ivr-call-routing-enhancement) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) →*

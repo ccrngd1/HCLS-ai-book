@@ -521,4 +521,4 @@ Combine area measurements with tissue classification to suggest wound stage (for
 
 ---
 
-[← Recipe 9.2: Patient Photo Verification](chapter09.02-patient-photo-verification) | [Chapter 9 Index](chapter09-index) | [Recipe 9.4: Dermatology Lesion Triage →](chapter09.04-dermatology-lesion-triage)
+[← Recipe 9.2: Patient Photo Verification](chapter09.02-patient-photo-verification) | [Chapter 9 Index](chapter09-preface) | [Recipe 9.4: Dermatology Lesion Triage →](chapter09.04-dermatology-lesion-triage)

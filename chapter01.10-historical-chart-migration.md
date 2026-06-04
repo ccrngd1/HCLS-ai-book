@@ -1307,7 +1307,7 @@ FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
     )
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the [Python Example](chapter01.10-chart-migration-python-v1). It walks through the Bedrock batch inference API, prompt caching configuration, vision calls, FHIR bundle assembly, and all the production gotchas (DynamoDB Decimals, Lambda timeouts, PHI-safe logging) with inline comments.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the [Python Example](chapter01.10-python-example). It walks through the Bedrock batch inference API, prompt caching configuration, vision calls, FHIR bundle assembly, and all the production gotchas (DynamoDB Decimals, Lambda timeouts, PHI-safe logging) with inline comments.
 
 ---
 
@@ -1530,5 +1530,5 @@ One last thing about cost. The blended cost estimate of $1.11 per chart in the s
 
 ---
 
-*← [Recipe 1.9: Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) · [↑ Chapter 1 Index](chapter01-index) · [→ Chapter 2 Preface](chapter02-preface)*
+*← [Recipe 1.9: Medical Records Request Extraction](chapter01.09-medical-records-request-extraction) · [↑ Chapter 1 Index](chapter01-preface) · [→ Chapter 2 Preface](chapter02-preface)*
  

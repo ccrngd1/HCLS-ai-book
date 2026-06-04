@@ -2023,4 +2023,4 @@ The last thing: the benefits navigator is the recipe most likely to be deployed 
 
 ---
 
-*← [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) · [Chapter 11 Index](chapter11-index) · [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) →*
+*← [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) →*

@@ -1816,4 +1816,4 @@ The scheduling bot is the right second recipe in this chapter, after the FAQ bot
 
 ---
 
-*← [Recipe 11.1: FAQ Chatbot](chapter11.01-faq-chatbot) · [Chapter 11 Index](chapter11-index) · [Recipe 11.3: Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot) →*
+*← [Recipe 11.1: FAQ Chatbot](chapter11.01-faq-chatbot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.3: Prescription Refill Request Bot](chapter11.03-prescription-refill-request-bot) →*

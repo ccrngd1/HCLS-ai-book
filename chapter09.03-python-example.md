@@ -764,4 +764,4 @@ This example demonstrates the measurement pipeline's shape. Here's what you'd ne
 
 ---
 
-[← Recipe 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-index) | [Recipe 9.4: Dermatology Lesion Triage →](chapter09.04-dermatology-lesion-triage)
+[← Recipe 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-preface) | [Recipe 9.4: Dermatology Lesion Triage →](chapter09.04-dermatology-lesion-triage)

@@ -407,4 +407,4 @@ Add a hard constraint that patients can only be assigned to providers who are in
 
 ---
 
-[← Recipe 14.1: Appointment Slot Optimization](chapter14.01-appointment-slot-optimization) · [Chapter 14 Index](chapter14-index) · [Recipe 14.3: Nurse Scheduling →](chapter14.03-nurse-scheduling)
+[← Recipe 14.1: Appointment Slot Optimization](chapter14.01-appointment-slot-optimization) · [Chapter 14 Index](chapter14-preface) · [Recipe 14.3: Inventory Reorder Optimization →](chapter14.03-inventory-reorder-optimization)

@@ -614,4 +614,4 @@ Start with the basic model. Get the data pipeline right. Prove value on a subset
 
 ---
 
-*← [Recipe 14.2: Patient-Provider Assignment](chapter14.02-patient-provider-assignment) · [Chapter 14 Index](chapter14-index) · [Next: Recipe 14.4 - Nurse Staffing Optimization →](chapter14.04-nurse-staffing-optimization)*
+*← [Recipe 14.2: Patient-Provider Assignment](chapter14.02-patient-provider-assignment) · [Chapter 14 Index](chapter14-preface) · [Next: Recipe 14.4 - Nurse Staffing Optimization →](chapter14.04-nurse-staffing-optimization)*

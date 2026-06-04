@@ -628,4 +628,4 @@ One more thing: licensing. UMLS requires a free license from NLM. SNOMED CT is f
 
 ---
 
-*← [Recipe 13.7: Disease-Gene-Drug Relationship Graph](chapter13.07-disease-gene-drug-relationship-graph) · [Chapter 13 Index](chapter13-index) · [Next: Recipe 13.9 - Literature-Derived Knowledge Graph →](chapter13.09-literature-derived-knowledge-graph)*
+*← [Recipe 13.7: Disease-Gene-Drug Relationship Graph](chapter13.07-disease-gene-drug-relationship-graph) · [Chapter 13 Index](chapter13-preface) · [Next: Recipe 13.9 - Literature-Derived Knowledge Graph →](chapter13.09-literature-derived-knowledge-graph)*

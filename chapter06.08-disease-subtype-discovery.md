@@ -620,4 +620,4 @@ One more thing: publication bias in this space is severe. The papers that get pu
 
 ---
 
-*← [Recipe 6.7: Clinical Trial Patient Matching](chapter06.07-clinical-trial-patient-matching) · [Chapter 6 Index](chapter06-index) · [Next: Recipe 6.9: Social Determinant Phenotyping →](chapter06.09-social-determinant-phenotyping)*
+*← [Recipe 6.7: Clinical Trial Patient Matching](chapter06.07-clinical-trial-patient-matching) · [Chapter 6 Index](chapter06-preface) · [Next: Recipe 6.9: Social Determinant Phenotyping →](chapter06.09-social-determinant-phenotyping)*

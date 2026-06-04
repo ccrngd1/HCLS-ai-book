@@ -727,7 +727,7 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
     RETURN record
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.09-medical-records-python-v3). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter01.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ---
 
@@ -952,4 +952,4 @@ One operational lesson worth sharing: build the review queue carefully before yo
 
 ---
 
-*← [Chapter 1 Index](chapter01-index) · [← Recipe 1.8: EOB Processing](chapter01.08-eob-processing) · [Next: Recipe 1.10: Historical Chart Migration →](chapter01.10-historical-chart-migration)*
+*← [Chapter 1 Index](chapter01-preface) · [← Recipe 1.8: EOB Processing](chapter01.08-eob-processing) · [Next: Recipe 1.10: Historical Chart Migration →](chapter01.10-historical-chart-migration)*

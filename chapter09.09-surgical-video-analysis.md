@@ -622,4 +622,4 @@ Second, model versioning. When you deploy a new model version, decide whether to
 
 ---
 
-*← [Recipe 9.8: Pathology Slide Analysis](chapter09.08-pathology-slide-analysis) · [Chapter 9 Index](chapter09-index) · [Next: Recipe 9.10: Multi-Modal Imaging Fusion →](chapter09.10-multi-modal-imaging-fusion)*
+*← [Recipe 9.8: Pathology Slide Analysis](chapter09.08-pathology-slide-analysis) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.10: Multi-Modal Imaging Fusion →](chapter09.10-multi-modal-imaging-fusion-analysis)*

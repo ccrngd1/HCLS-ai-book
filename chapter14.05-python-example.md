@@ -755,4 +755,4 @@ This example demonstrates a working optimization pipeline. PuLP formulates the m
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 14.5](chapter14.05-or-block-scheduling) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 14.5](chapter14.05-operating-room-block-scheduling) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*

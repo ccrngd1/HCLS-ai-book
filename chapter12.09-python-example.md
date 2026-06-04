@@ -1951,7 +1951,7 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 ## Related Resources
 
 - [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting): The main recipe with the full architectural walkthrough this Python companion implements.
-- [Recipe 3.10 (Outbreak Detection)](chapter03.10-outbreak-detection): The detection counterpart to forecasting; production systems run both and integrate them through shared surveillance ingestion.
+- [Recipe 3.10 (Outbreak Detection)](chapter03.10-epidemic-outbreak-detection): The detection counterpart to forecasting; production systems run both and integrate them through shared surveillance ingestion.
 - [Recipe 12.5 (Hospital Census Forecasting)](chapter12.05-hospital-census-forecasting): Hospital-level forecasting that consumes regional epidemic forecasts as a primary input feature for surge planning.
 - [PyMC](https://www.pymc.io/) and [Stan](https://mc-stan.org/) and [NumPyro](https://num.pyro.ai/): Bayesian probabilistic-programming libraries suitable for compartmental and state-space epidemic models. Drop-in replacements for the demo's helper classes.
 - [statsmodels SARIMAX](https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.sarimax.SARIMAX.html): Frequentist seasonal ARIMA implementation; the standard production replacement for the demo's `StatisticalARIMABaseline`.

@@ -854,7 +854,7 @@ FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
             with SSE-KMS encryption
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the [Python Example](chapter01.06-handwritten-notes-python). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code demonstrating these patterns using boto3, check out the [Python Example](chapter01.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
  
 
 ---
@@ -1038,4 +1038,4 @@ Let me be direct about what changed and what didn't.
 
 ---
 
-*← [Recipe 1.5 - Claims Attachment Processing](chapter01.05-claims-attachment-processing) · [↑ Chapter 1 Index](chapter01-index) · [Recipe 1.7 - Prescription Label OCR →](chapter01.07-prescription-label-ocr)*
+*← [Recipe 1.5 - Claims Attachment Processing](chapter01.05-claims-attachment-processing) · [↑ Chapter 1 Index](chapter01-preface) · [Recipe 1.7 - Prescription Label OCR →](chapter01.07-prescription-label-ocr)*

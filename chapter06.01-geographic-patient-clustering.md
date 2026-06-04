@@ -502,5 +502,5 @@ One more thing: don't forget that clusters change. Run this quarterly, not once.
 
 ---
 
-| [← Chapter 6 Index](chapter06-index) | [Chapter 6 Index](chapter06-index) | [Recipe 6.2 →](chapter06.02-utilization-pattern-segmentation) |
+| [← Chapter 6 Index](chapter06-preface) | [Chapter 6 Index](chapter06-preface) | [Recipe 6.2 →](chapter06.02-utilization-pattern-segmentation) |
 |:---|:---:|---:|

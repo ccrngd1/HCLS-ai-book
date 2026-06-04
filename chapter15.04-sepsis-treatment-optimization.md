@@ -626,4 +626,4 @@ If you're building this: start with the data pipeline and evaluation infrastruct
 
 ---
 
-*← [Recipe 15.3: Clinical Trial Adaptive Randomization](chapter15.03-clinical-trial-adaptive-randomization) · [Chapter 15 Index](chapter15-index) · [Next: Recipe 15.5 - Ventilator Weaning Protocols →](chapter15.05-ventilator-weaning-protocols)*
+*← [Recipe 15.3: Clinical Trial Adaptive Randomization](chapter15.03-clinical-trial-adaptive-randomization) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.5 - Ventilator Weaning Protocols →](chapter15.05-ventilator-weaning-protocols)*

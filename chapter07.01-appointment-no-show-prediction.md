@@ -486,4 +486,4 @@ Retraining frequency matters more than you'd think. Patient populations shift. N
 
 ---
 
-| [← Chapter 7 Index](chapter07-index) | [Chapter 7 Index](chapter07-index) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |
+| [← Chapter 7 Index](chapter07-preface) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |

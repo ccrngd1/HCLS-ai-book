@@ -2335,4 +2335,4 @@ The last thing: the chronic disease coach is the recipe in this chapter where th
 
 ---
 
-*← [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) · [Chapter 11 Index](chapter11-index) · [Recipe 11.8: Mental Health Support Bot](chapter11.08-mental-health-support-bot) →*
+*← [Recipe 11.6: Symptom Checker / Triage Bot](chapter11.06-symptom-checker-triage-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.8: Mental Health Support Bot](chapter11.08-mental-health-support-bot) →*

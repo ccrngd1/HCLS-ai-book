@@ -527,4 +527,4 @@ The ethical dimension is real. Churn models can inadvertently encode discriminat
 
 ---
 
-*← [Recipe 7.2: Propensity to Pay Scoring](chapter07.02-propensity-to-pay-scoring) · [Chapter 7 Index](chapter07-index) · [Next: Recipe 7.4: ED Visit Prediction →](chapter07.04-ed-visit-prediction)*
+*← [Recipe 7.2: Propensity to Pay Scoring](chapter07.02-propensity-to-pay-scoring) · [Chapter 7 Index](chapter07-preface) · [Next: Recipe 7.4: ED Visit Prediction →](chapter07.04-ed-visit-prediction)*

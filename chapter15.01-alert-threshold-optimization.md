@@ -532,4 +532,4 @@ One more thing: the contextual bandit approach (mentioned in the Technology sect
 
 ---
 
-*← [Chapter 15 Index](chapter15-index) · [Next: Recipe 15.2 - Notification Timing Optimization →](chapter15.02-notification-timing-optimization)*
+*← [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.2 - Notification Timing Optimization →](chapter15.02-notification-timing-optimization)*

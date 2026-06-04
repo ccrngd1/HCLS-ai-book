@@ -698,4 +698,4 @@ This example demonstrates the optimization math. Here's what you'd need to add f
 
 ---
 
-| [← 14.6: Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment) | [Chapter 14 Index](chapter14-index) | [14.7: OR Case Sequencing →](chapter14.07-or-case-sequencing) |
+| [← 14.6: Patient Flow / Bed Assignment](chapter14.06-patient-flow-bed-assignment) | [Chapter 14 Index](chapter14-preface) | [14.7: OR Case Sequencing →](chapter14.07-or-case-sequencing) |

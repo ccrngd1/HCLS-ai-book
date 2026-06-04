@@ -653,4 +653,4 @@ Build a separate optimization profile for surge conditions (pandemic, mass casua
 
 ---
 
-| [← 14.5: Operating Room Block Scheduling](chapter14.05-or-block-scheduling) | [Chapter 14 Index](chapter14-index) | [14.7: OR Case Sequencing →](chapter14.07-or-case-sequencing) |
+| [← 14.5: Operating Room Block Scheduling](chapter14.05-operating-room-block-scheduling) | [Chapter 14 Index](chapter14-preface) | [14.7: OR Case Sequencing →](chapter14.07-or-case-sequencing) |

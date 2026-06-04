@@ -549,4 +549,4 @@ Also: the exploration rate matters less than you think. With thousands of patien
 
 ---
 
-*← [Recipe 15.1: Alert Threshold Optimization](chapter15.01-alert-threshold-optimization) · [Chapter 15 Index](chapter15-index) · [Next: Recipe 15.3: Clinical Trial Adaptive Randomization →](chapter15.03-clinical-trial-adaptive-randomization)*
+*← [Recipe 15.1: Alert Threshold Optimization](chapter15.01-alert-threshold-optimization) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.3: Clinical Trial Adaptive Randomization →](chapter15.03-clinical-trial-adaptive-randomization)*

@@ -1129,4 +1129,4 @@ The code above demonstrates the mechanics of offline RL for sepsis treatment. He
 
 ---
 
-*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Chapter 15 Index](chapter15-index) · [Next: Recipe 15.5 →](chapter15.05-ventilator-weaning-protocols)*
+*← [Recipe 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) · [Chapter 15 Index](chapter15-preface) · [Next: Recipe 15.5 →](chapter15.05-ventilator-weaning-protocols)*

@@ -2170,4 +2170,4 @@ The refill bot is the right third recipe in this chapter, after the FAQ bot and 
 
 ---
 
-*← [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) · [Chapter 11 Index](chapter11-index) · [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) →*
+*← [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.4: Pre-Visit Intake Bot](chapter11.04-pre-visit-intake-bot) →*

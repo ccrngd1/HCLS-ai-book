@@ -1723,4 +1723,4 @@ The last thing, because it is the easiest one to get wrong: medical dictation pr
 
 ---
 
-*← [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) · [Chapter 10 Index](chapter10-index) · [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) →*
+*← [Recipe 10.3: Voice-to-Text for EHR Navigation](chapter10.03-voice-to-text-ehr-navigation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.5: Patient-Facing Voice Assistant](chapter10.05-patient-facing-voice-assistant) →*

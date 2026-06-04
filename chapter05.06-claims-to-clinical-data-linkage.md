@@ -1653,4 +1653,4 @@ Last point, because it is specific to the regulatory context: information-blocki
 
 ---
 
-*← [Recipe 5.5: Cross-Facility Patient Matching (HIE)](chapter05.05-cross-facility-patient-matching) · Chapter 5 · [Next: Recipe 5.7 - Longitudinal Patient Matching Across Name Changes →](chapter05.07-longitudinal-patient-matching)*
+*← [Recipe 5.5: Cross-Facility Patient Matching (HIE)](chapter05.05-cross-facility-patient-matching) · Chapter 5 · [Next: Recipe 5.7 - Longitudinal Patient Matching Across Name Changes →](chapter05.07-longitudinal-patient-matching-name-changes)*

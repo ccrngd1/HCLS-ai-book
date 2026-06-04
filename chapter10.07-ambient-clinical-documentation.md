@@ -1864,4 +1864,4 @@ Ambient clinical documentation, done well, gives clinicians their evenings back.
 
 ---
 
-*← [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) · [Chapter 10 Index](chapter10-index) · [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) →*
+*← [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) →*

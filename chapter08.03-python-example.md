@@ -644,4 +644,4 @@ This example works: point it at a clinical note and it returns ranked ICD-10 sug
 
 ---
 
-*Part of the Healthcare AI/ML Cookbook. See [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd10-code-suggestion) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*
+*Part of the Healthcare AI/ML Cookbook. See [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion) for the full architectural walkthrough, pseudocode, and honest take on where this gets hard.*

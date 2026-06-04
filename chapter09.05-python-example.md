@@ -628,4 +628,4 @@ This example demonstrates the pipeline shape. Here's what you'd need to add befo
 
 ---
 
-*← [Recipe 9.5: Chest X-Ray Triage](chapter09.05-chest-xray-triage) · [Chapter 9 Index](chapter09-index) · [Next: Recipe 9.6: Diabetic Retinopathy Screening →](chapter09.06-diabetic-retinopathy-screening)*
+*← [Recipe 9.5: Chest X-Ray Triage](chapter09.05-chest-xray-triage) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.6: Diabetic Retinopathy Screening →](chapter09.06-diabetic-retinopathy-screening)*

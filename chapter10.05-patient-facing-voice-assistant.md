@@ -1731,4 +1731,4 @@ The patient-facing voice assistant is the recipe in this chapter where the opera
 
 ---
 
-*← [Recipe 10.4: Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation) · [Chapter 10 Index](chapter10-index) · [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) →*
+*← [Recipe 10.4: Medical Transcription (Dictation)](chapter10.04-medical-transcription-dictation) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.6: Speech-to-Text for Telehealth Documentation](chapter10.06-speech-to-text-telehealth-documentation) →*

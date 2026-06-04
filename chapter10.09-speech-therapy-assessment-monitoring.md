@@ -1988,4 +1988,4 @@ Speech-therapy assessment and monitoring, done well, is one of the more rewardin
 
 ---
 
-*← [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) · [Chapter 10 Index](chapter10-index) · [Recipe 10.10: Multilingual Real-Time Medical Interpretation](chapter10.10-multilingual-real-time-medical-interpretation) →*
+*← [Recipe 10.8: Voice Biomarker Detection](chapter10.08-voice-biomarker-detection) · [Chapter 10 Index](chapter10-preface) · [Recipe 10.10: Multilingual Real-Time Medical Interpretation](chapter10.10-multilingual-realtime-medical-interpretation) →*

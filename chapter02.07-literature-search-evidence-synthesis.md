@@ -1200,4 +1200,4 @@ Final thought: this is one of the highest-leverage applications of medical AI I'
 
 ---
 
-*← [Recipe 2.6: Clinical Note Summarization](chapter02.06-clinical-note-summarization) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.8 - Ambient Clinical Documentation →](chapter02.08-ambient-clinical-documentation)*
+*← [Recipe 2.6: Clinical Note Summarization](chapter02.06-clinical-note-summarization) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.8 - Ambient Clinical Documentation →](chapter02.08-ambient-clinical-documentation)*

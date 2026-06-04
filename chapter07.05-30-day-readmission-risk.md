@@ -665,4 +665,4 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 
 ---
 
-[← Recipe 7.4: ED Visit Prediction](chapter07.04-ed-visit-prediction) | [Chapter 7 Index](chapter07-index) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)
+[← Recipe 7.4: ED Visit Prediction](chapter07.04-ed-visit-prediction) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)

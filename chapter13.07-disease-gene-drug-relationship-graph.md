@@ -758,4 +758,4 @@ Extend the graph with clinical trial nodes connected to their molecular eligibil
 
 ---
 
-**Navigation:** [← 13.6: Care Gap Reasoning Engine](chapter13.06-care-gap-reasoning-engine) | [Chapter 13 Index](chapter13-index) | [13.8: Medical Concept Normalization →](chapter13.08-medical-concept-normalization-mapping)
+**Navigation:** [← 13.6: Care Gap Reasoning Engine](chapter13.06-care-gap-reasoning-engine) | [Chapter 13 Index](chapter13-preface) | [13.8: Medical Concept Normalization →](chapter13.08-medical-concept-normalization-mapping)

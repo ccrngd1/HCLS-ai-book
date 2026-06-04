@@ -1285,4 +1285,4 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 
 ---
 
-*← [Recipe 2.4: Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.6 - Clinical Note Summarization →](chapter02.06-clinical-note-summarization)*
+*← [Recipe 2.4: Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.6 - Clinical Note Summarization →](chapter02.06-clinical-note-summarization)*

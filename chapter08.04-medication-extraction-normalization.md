@@ -541,4 +541,4 @@ One more honest admission: Comprehend Medical's DetectEntitiesV2 API has a 20,00
 
 ---
 
-*← [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd10-code-suggestion) · [Chapter 8 Index](chapter08-index) · [Next: Recipe 8.5: Problem List Extraction →](chapter08.05-problem-list-extraction)*
+*← [Recipe 8.3: ICD-10 Code Suggestion](chapter08.03-icd-10-code-suggestion) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.5: Problem List Extraction →](chapter08.05-problem-list-extraction)*

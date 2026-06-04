@@ -666,4 +666,4 @@ One more thing: deploy in shadow mode first. Generate recommendations without su
 
 ---
 
-*← [Recipe 7.9: Mortality Risk Scoring (ICU)](chapter07.09-mortality-risk-scoring-icu) · [Chapter 7 Index](chapter07-index) · [Next: Chapter 8 →](chapter08-index)*
+*← [Recipe 7.9: Mortality Risk Scoring (ICU)](chapter07.09-mortality-risk-scoring-icu) · [Chapter 7 Index](chapter07-preface) · [Next: Chapter 8 →](chapter08-preface)*

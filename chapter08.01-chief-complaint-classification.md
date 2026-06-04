@@ -455,4 +455,4 @@ Retraining cadence matters too. Quarterly retraining picks up vocabulary drift (
 
 ---
 
-*← [Chapter 8 Index](chapter08-index) · [Next: Recipe 8.2 - Patient Sentiment Analysis →](chapter08.02-patient-sentiment-analysis)*
+*← [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.2 - Patient Sentiment Analysis →](chapter08.02-patient-sentiment-analysis)*

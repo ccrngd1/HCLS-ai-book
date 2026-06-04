@@ -1561,4 +1561,4 @@ The FAQ chatbot is the right place to start in this chapter because it is the re
 
 ---
 
-*← [Chapter 11 Preface](chapter11-preface) · [Chapter 11 Index](chapter11-index) · [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) →*
+*← [Chapter 11 Preface](chapter11-preface) · [Chapter 11 Index](chapter11-preface) · [Recipe 11.2: Appointment Scheduling Bot](chapter11.02-appointment-scheduling-bot) →*

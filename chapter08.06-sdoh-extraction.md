@@ -594,4 +594,4 @@ One thing that surprised me: the highest-value output isn't the individual extra
 
 ---
 
-*← [Recipe 8.5: Problem List Extraction](chapter08.05-problem-list-extraction) · [Chapter 8 Index](chapter08-index) · [Next: Recipe 8.7: Adverse Event Detection in Clinical Text →](chapter08.07-adverse-event-detection-clinical-text)*
+*← [Recipe 8.5: Problem List Extraction](chapter08.05-problem-list-extraction) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.7: Adverse Event Detection in Clinical Text →](chapter08.07-adverse-event-detection-clinical-text)*

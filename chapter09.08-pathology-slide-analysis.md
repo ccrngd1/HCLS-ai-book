@@ -516,4 +516,4 @@ The part that works better than expected: pathologist acceptance. Unlike radiolo
 
 ---
 
-*← [Recipe 9.7: Radiology AI Triage (Multi-Modality)](chapter09.07-radiology-ai-triage-multi-modality) · [Chapter 9 Index](chapter09-index) · [Next: Recipe 9.9 - Surgical Video Analysis →](chapter09.09-surgical-video-analysis)*
+*← [Recipe 9.7: Radiology AI Triage (Multi-Modality)](chapter09.07-radiology-ai-triage-multi-modality) · [Chapter 9 Index](chapter09-preface) · [Next: Recipe 9.9 - Surgical Video Analysis →](chapter09.09-surgical-video-analysis)*

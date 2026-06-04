@@ -602,4 +602,4 @@ One more thing: Comprehend Medical's built-in negation detection is better than 
 
 ---
 
-*← [Recipe 8.7: Adverse Event Detection in Clinical Text](chapter08.07-adverse-event-detection-clinical-text) · [Chapter 8 Index](chapter08-index) · [Next: Recipe 8.9 - Temporal Relationship Extraction →](chapter08.09-temporal-relationship-extraction)*
+*← [Recipe 8.7: Adverse Event Detection in Clinical Text](chapter08.07-adverse-event-detection-clinical-text) · [Chapter 8 Index](chapter08-preface) · [Next: Recipe 8.9 - Temporal Relationship Extraction →](chapter08.09-temporal-relationship-extraction)*

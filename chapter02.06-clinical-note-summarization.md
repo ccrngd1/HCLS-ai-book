@@ -1036,4 +1036,4 @@ Finally: the bar for "useful" here is lower than teams often assume. Clinicians 
 
 ---
 
-*← [Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation) · [Chapter 2 Index](chapter02-index) · [Next: Recipe 2.7 - Literature Search and Evidence Synthesis →](chapter02.07-literature-search-evidence-synthesis)*
+*← [Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation) · [Chapter 2 Index](chapter02-preface) · [Next: Recipe 2.7 - Literature Search and Evidence Synthesis →](chapter02.07-literature-search-evidence-synthesis)*
