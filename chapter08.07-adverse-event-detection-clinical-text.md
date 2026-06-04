@@ -1,6 +1,6 @@
 # Recipe 8.7: Adverse Event Detection in Clinical Text
 
-**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.03-0.10 per note
+**Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.40-1.00 per note
 
 ---
 
@@ -98,11 +98,7 @@ The "is this event caused by this intervention?" question is the hardest piece. 
 
 ### The State of the Art
 
-Adverse event detection in clinical text sits at the intersection of several mature NLP capabilities (NER, assertion, temporal reasoning) but remains challenging as an end-to-end task. Key benchmarks:
-
-- The n2c2 (formerly i2b2) shared tasks have included medication extraction and adverse event detection components. Top systems achieve F1 scores in the 80-90% range for medication extraction and 60-75% for adverse event relation extraction.
-- The TAC ADR (Text Analysis Conference Adverse Drug Reaction) track evaluated systems on FDA drug labels and social media. Clinical text presents different challenges than either source.
-- Production systems at large health systems typically achieve 70-85% precision on adverse event detection, with recall being much harder to measure (because the ground truth of "all actual adverse events" is unknowable from documentation alone).
+How well does this stuff actually work? Best research systems hit 80-90% F1 on finding medications and 60-75% on connecting them to adverse events. The n2c2 shared tasks and the TAC ADR track are the main benchmarks here. In production at real health systems, you're looking at 70-85% precision. Translation: you'll catch most of the obvious stuff, miss a good chunk of the implicit stuff, and your safety team will still need to review what you flag.
 
 The honest take: extraction of individual entities (drugs, symptoms) is a largely solved problem. The hard part is the relational reasoning, temporal logic, and severity classification that turn entity lists into actionable adverse event signals.
 
@@ -138,7 +134,7 @@ Data flow considerations:
 
 **AWS Lambda for orchestration.** Each note flows through a multi-stage pipeline: extract entities, classify assertions, detect relations, score severity. Lambda handles this orchestration with step-by-step processing. For batch workloads (processing a day's worth of notes), Lambda integrates with SQS for reliable, scalable note-by-note processing.
 
-**Amazon SQS for reliable note queuing.** Clinical notes arrive continuously as they're signed in the EHR. SQS provides a durable queue that decouples note ingestion from processing, handles retries on transient failures, and lets you scale processing independently of arrival rate.
+**Amazon SQS for reliable note queuing.** Clinical notes arrive continuously as they're signed in the EHR. SQS provides a durable queue that decouples note ingestion from processing, handles retries on transient failures, and lets you scale processing independently of arrival rate. Configure a dead letter queue (`notes-processing-dlq`) with `maxReceiveCount=3` so that poison messages (malformed notes, persistent failures) move to the DLQ after three attempts instead of cycling indefinitely. Set a CloudWatch alarm on DLQ depth > 0. The DLQ must have the same SSE-KMS encryption as the primary queue since messages reference PHI.
 
 **Amazon DynamoDB for adverse event storage.** Detected adverse events need fast lookup by patient, by medication, and by time window. DynamoDB's flexible key structure supports these access patterns, and its TTL feature can manage retention policies for different severity levels.
 
@@ -154,6 +150,8 @@ Data flow considerations:
 flowchart TD
     A[EHR Integration\nHL7/FHIR Feed] -->|New signed notes| B[SQS Queue\nnotes-to-process]
     B --> C[Lambda\nnote-processor]
+    B -->|maxReceiveCount=3| B2[SQS DLQ\nnotes-processing-dlq]
+    B2 -->|Alarm on depth > 0| H2[CloudWatch Alarm]
     C -->|Raw note text| D[S3\nnotes-archive/]
     C -->|Extract entities| E[Amazon Comprehend Medical]
     E -->|Entities + assertions| C
@@ -174,13 +172,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Comprehend Medical, AWS Lambda, Amazon SQS, Amazon DynamoDB, Amazon S3, Amazon Neptune, Amazon CloudWatch, Amazon SNS |
-| **IAM Permissions** | `comprehend-medical:DetectEntitiesV2`, `comprehend-medical:InferRxNorm`, `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `s3:PutObject`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:Query`, `neptune-db:*` (scoped to cluster), `sns:Publish` |
+| **IAM Permissions** | `comprehend-medical:DetectEntitiesV2`, `comprehend-medical:InferRxNorm`, `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `s3:PutObject`, `s3:GetObject`, `dynamodb:PutItem`, `dynamodb:Query`, `neptune-db:ReadDataViaQuery` (dashboard/read-only consumers), `neptune-db:ReadDataViaQuery` + `neptune-db:WriteDataViaQuery` (signal-aggregator Lambda), `sns:Publish` |
 | **BAA** | AWS BAA signed (clinical notes are PHI) |
 | **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; SQS: SSE-KMS; Neptune: encryption at rest; all transit over TLS |
-| **VPC** | Production: Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, and CloudWatch Logs. Neptune requires VPC deployment. |
+| **VPC** | Production: Lambda in VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SQS (interface), Comprehend Medical (interface), CloudWatch Logs (interface), SNS (interface), and KMS (interface). Neptune requires VPC deployment with IAM database authentication enabled and security group inbound TCP 8182 restricted to signal-aggregator Lambda SG and safety dashboard service SG only. Enable Neptune audit logs to CloudWatch Logs for PHI access tracking. |
 | **CloudTrail** | Enabled for all API calls; audit trail for PHI access |
 | **Sample Data** | Synthetic clinical notes with planted adverse event mentions. MIMIC-III discharge summaries (de-identified) for development. Never use real patient notes in non-production environments. |
-| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters (a typical note is 2000-5000 chars = $0.20-0.50 per note at full entity detection). Batch pricing significantly lower. Lambda, SQS, DynamoDB negligible at moderate volumes. Neptune: instance-based pricing starting ~$0.35/hr for smallest instance. |
+| **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. A typical note (3000 chars) costs ~$0.30 for DetectEntitiesV2 plus ~$0.30 for InferRxNorm = ~$0.60 per note through both APIs. InferRxNorm only runs on notes with detected medications, so blended average is $0.40-1.00 per note depending on note length and medication density. At 10,000 notes/day: $4,000-$10,000/day in Comprehend Medical costs alone. Batch pricing significantly lower. Lambda, SQS, DynamoDB negligible at moderate volumes. Neptune: instance-based pricing starting ~$0.35/hr for smallest instance. |
 
 ### Ingredients
 
@@ -190,8 +188,8 @@ flowchart TD
 | **AWS Lambda** | Orchestrates multi-stage NLP pipeline; runs relation extraction and severity classification logic |
 | **Amazon SQS** | Queues incoming notes for reliable, scalable processing |
 | **Amazon DynamoDB** | Stores individual adverse event detections with patient, drug, and time indexes |
-| **Amazon S3** | Archives raw notes and processing artifacts for audit |
-| **Amazon Neptune** | Stores and queries drug-event-patient graph for signal aggregation |
+| **Amazon S3** | Archives raw notes and processing artifacts for audit. Enable versioning for tamper-proof audit trail. Consider Object Lock in compliance mode for regulated environments. |
+| **Amazon Neptune** | Stores and queries drug-event-patient graph for signal aggregation. Access restricted via IAM DB auth and security groups. Enable audit logs for PHI access tracking. |
 | **Amazon CloudWatch** | Monitors pipeline health; triggers alerts for high-severity events |
 | **Amazon SNS** | Delivers real-time notifications for critical adverse events |
 | **AWS KMS** | Manages encryption keys across all data stores |
@@ -206,6 +204,7 @@ flowchart TD
 FUNCTION receive_note(queue_message):
     // Parse the incoming message to extract note metadata and text content.
     // The message format depends on your EHR integration: HL7, FHIR, or custom.
+    // TODO (TechWriter): Expert review A5 (MEDIUM). Add idempotency check: query archive for note_id, skip if unchanged, reprocess with prior record deletion if amended.
     note_id      = queue_message.note_identifier      // unique ID from the EHR
     patient_id   = queue_message.patient_identifier   // who the note belongs to
     note_text    = queue_message.document_text        // the full clinical note content
@@ -402,11 +401,11 @@ FUNCTION classify_severity(detected_event, note_text):
             IF indicator found in context_window (case-insensitive):
                 RETURN grade, indicator   // return both the grade and what matched
 
-    // Default: if no severity indicators found, assume Grade 2 (moderate).
-    // Rationale: if the clinician documented it at all, it likely required some attention.
-    // Grade 1 events are often not documented. Absence of severity language
-    // suggests a moderate event rather than a trivial one.
-    RETURN "grade_2_moderate", "default_no_indicators"
+    // Default: if no severity indicators found, assume Grade 1 (mild).
+    // Rationale: absence of severity language suggests a routine mention.
+    // Events with actual clinical impact will have documentation context
+    // ("dose reduced," "admitted," "discontinued") that indicator matching catches.
+    RETURN "grade_1_mild", "default_no_indicators"
 ```
 
 **Step 6: Store and alert.** Write the detected adverse event to the database with all metadata (patient, medication, event, severity, evidence, source note). For high-severity events (Grade 3+), fire a real-time alert to the safety team via SNS. For all events, the record becomes available for batch aggregation and signal detection. The storage schema supports multiple access patterns: lookup by patient (for clinical review), by medication (for drug-level surveillance), and by time window (for trend detection).
@@ -432,13 +431,22 @@ FUNCTION store_and_alert(note_id, patient_id, note_date, detected_event, severit
 
     // Write to DynamoDB. Partition key: patient_id. Sort key: detection_timestamp.
     // GSI on rxnorm_code + note_date for medication-level queries.
+    // TODO (TechWriter): Expert review S4 (MEDIUM). Add DynamoDB TTL configuration: Grade 1-2 events retain 2 years, Grade 3-4 retain 7 years. Document per institutional compliance requirements.
     WRITE ae_record to DynamoDB table "adverse-events"
 
     // High-severity alert: Grade 3 or above triggers immediate notification.
+    // IMPORTANT: Never include patient_id or note_id in SNS messages.
+    // Subscriber endpoints may not all be within your HIPAA-covered boundary.
     IF severity in ["grade_3_severe", "grade_4_life_threatening"]:
         PUBLISH to SNS topic "ae-critical-alerts":
             subject: "High-severity adverse event detected"
-            message: ae_record (formatted for human readability)
+            message: {
+                ae_id: ae_record.ae_id,
+                severity: severity,
+                medication: detected_event.medication,
+                event_description: detected_event.event,
+                dashboard_link: "https://{safety-dashboard}/ae/" + ae_record.ae_id
+            }
 
     // Log metrics for monitoring pipeline health.
     EMIT CloudWatch metric: "AE_Detected" with dimensions [severity, medication_class]
@@ -471,6 +479,7 @@ FUNCTION aggregate_signals(time_window_days):
     FOR each pair_key, counts in pair_counts:
         unique_patients = size of counts.patients
         expected_rate   = lookup_expected_rate(pair_key.rxnorm_code, pair_key.event)
+        // TODO (TechWriter): Expert review A4 (MEDIUM). Expand on expected-rate data sources: FAERS public data, institutional 6-month rolling baseline, or drug label incidence rates. Store in DynamoDB lookup table, update monthly.
 
         IF unique_patients >= 3 AND (unique_patients / expected_rate) > 2.0:
             // Signal: this drug-event pair is occurring at >2x the expected rate
@@ -581,6 +590,8 @@ One thing that surprised me: the highest-value outputs weren't the individual hi
 **Vaccine adverse event detection.** The same architecture applies to vaccine safety surveillance (VAERS-equivalent at the institutional level). Vaccines have different temporal patterns than chronic medications (most reactions occur within 7-14 days of administration), and the knowledge base of expected vs. unexpected reactions is well-defined by the CDC. Narrower scope makes this a good pilot use case for the broader adverse event detection system.
 
 **Integration with patient-reported outcomes.** Extend the input beyond clinician-authored notes to include patient-reported data: patient portal messages, symptom questionnaires, and nurse triage call notes. Patient-reported symptoms often appear earlier and with more detail than what makes it into the formal clinical note. This catches the signal closer to onset.
+
+<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add cross-note reasoning variation: per-patient medication timeline in DynamoDB updated from pharmacy feeds, query medications started in last 30 days when processing new notes to catch implicit AEs without explicit drug mention in current note. -->
 
 ---
 
