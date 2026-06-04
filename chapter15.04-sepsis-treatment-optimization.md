@@ -596,7 +596,7 @@ If you're building this: start with the data pipeline and evaluation infrastruct
 
 **Research References:**
 - Komorowski, M., Celi, L.A., Badawi, O., Gordon, A.C., & Faisal, A.A. (2018). The Artificial Intelligence Clinician learns optimal treatment strategies for sepsis in intensive care. Nature Medicine, 24(11), 1716-1720.
-- [MIMIC-IV Clinical Database](https://physionet.org/content/mimiciv/): Freely available critical care dataset (requires credentialed access) commonly used for sepsis RL research
+- [MIMIC-IV Clinical Database](https://physionet.org/content/mimiciv/): Freely available critical care dataset (requires credentialed access) commonly used for sepsis RL research.
 - Raghu, A., Komorowski, M., et al. (2017). Deep Reinforcement Learning for Sepsis Treatment. NeurIPS Workshop on ML for Health.
 - Levine, S., Kumar, A., Tucker, G., & Fu, J. (2020). Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems.
 
