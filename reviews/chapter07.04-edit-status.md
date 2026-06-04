@@ -4,19 +4,19 @@
 **Date:** 2026-06-03
 **Files:**
 - `chapter07.04-ed-visit-prediction.md` (main recipe: DOES NOT EXIST)
-- `chapter07.04-python-example.md` (Python companion: previously edited, PASS)
+- `chapter07.04-python-example.md` (Python companion: verified clean, PASS)
 
 ---
 
 ## Verdict: BLOCKED
 
-The main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The TechEditor cannot perform a final edit on a file that has not been drafted. The Python companion was previously edited and passed with no changes required.
+The main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The TechEditor cannot perform a final edit on a file that has not been drafted. The Python companion was previously edited and verified clean again this pass.
 
 ---
 
-## Python Companion: PASS (no changes this pass)
+## Python Companion: PASS (no changes required)
 
-Independent verification confirms the Python companion remains editorially clean:
+Fresh verification confirms the Python companion remains editorially clean:
 
 | Check | Result |
 |-------|--------|
@@ -28,29 +28,26 @@ Independent verification confirms the Python companion remains editorially clean
 | Header hierarchy | H1 title, H2 sections. No skipped levels. |
 | Voice drift | None detected. Engineer-explaining tone consistent with STYLE-GUIDE.md. |
 | RECIPE-GUIDE compliance | Python companion structure correct. |
+| Link verification | Footer links to main recipe (not yet written). No fabricated URLs. |
 
 ---
 
 ## Main Recipe: CANNOT EDIT (file missing)
 
-The main recipe has not been written. Both the code review (Issue 3) and expert review (C1, CRITICAL) flagged this as a blocking issue. The Python companion's opening TODO marker correctly identifies this:
-
-```
-<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. Write it following RECIPE-GUIDE.md structure before this recipe pair can pass. The Python companion is ready and references it. -->
-```
+The main recipe has not been written. Both the code review (Issue 3) and expert review (C1, CRITICAL) flagged this as a blocking issue.
 
 ---
 
 ## Remaining TODOs in Python Companion
 
-1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). ... -->` (line 1) - Write main recipe
-2. `# TODO (TechWriter): Expert review A3 (MEDIUM). ...` (line ~302, inside code block) - Add calibration check
+1. `<!-- TODO (TechWriter): Expert review C1 (CRITICAL). The main recipe file chapter07.04-ed-visit-prediction.md does not exist. Write it following RECIPE-GUIDE.md structure before this recipe pair can pass. The Python companion is ready and references it. -->` (line 1)
+2. `// TODO (TechWriter): Expert review A3 (MEDIUM). Add a brief calibration check here...` (inside Step 3 code block)
 
 Both correctly formatted for the follow-up task generator.
 
 ---
 
-## Review Findings Disposition (cumulative)
+## Review Findings Disposition
 
 | Finding | Severity | Status | Notes |
 |---------|----------|--------|-------|
@@ -64,7 +61,9 @@ Both correctly formatted for the follow-up task generator.
 | A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production includes real-world AUC context. |
 | N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment in Step 5. |
 | V3 (documentation-voice) | LOW | RESOLVED | Natural phrasing in Step 6. |
+| Code Issue 1 (misleading explanations) | WARNING | RESOLVED | Same as A1. |
 | Code Issue 2 (datetime.utcnow) | WARNING | RESOLVED | Uses `datetime.now(timezone.utc)` throughout. |
+| Code Issue 3 (pseudocode consistency) | NOTE | DEFERRED | Cannot verify until main recipe exists. |
 
 ---
 
@@ -79,4 +78,4 @@ Both correctly formatted for the follow-up task generator.
 
 ## Summary
 
-Recipe 7.4 cannot be finalized because the main recipe file does not exist. The Python companion is in publishable form with two deferred TODOs (C1, A3) correctly assigned to the TechWriter. No editorial changes were applied this pass because there is nothing to edit. This task should be re-queued after the TechWriter drafts the main recipe.
+Recipe 7.4 cannot be finalized because the main recipe file does not exist. The Python companion is in publishable form with two deferred TODOs (C1, A3) correctly assigned to the TechWriter. No editorial changes were applied this pass because there is nothing new to edit. This task should be re-queued after the TechWriter drafts the main recipe.
