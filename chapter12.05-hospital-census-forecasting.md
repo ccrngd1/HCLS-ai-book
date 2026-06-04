@@ -731,4 +731,4 @@ If I were starting a new hospital census project today, I would do three things 
 
 ---
 
-*← [Previous: Recipe 12.4 - Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →](chapter12.06-revenue-cycle-cash-flow-forecasting)*
+*← [Previous: Recipe 12.4 - Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →](chapter12.06-revenue-cycle-cash-flow-forecasting)*

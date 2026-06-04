@@ -573,4 +573,4 @@ The part that's genuinely hard to communicate to operations: the prediction inte
 
 ---
 
-*← [Previous: Recipe 12.2 - Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.4 - Lab Result Trend Analysis →](chapter12.04-lab-result-trend-analysis)*
+*← [Previous: Recipe 12.2 - Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.4 - Lab Result Trend Analysis →](chapter12.04-lab-result-trend-analysis)*

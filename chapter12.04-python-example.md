@@ -1934,4 +1934,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.4: Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.5 - Hospital Census Forecasting →](chapter12.05-hospital-census-forecasting)*
+*← [Recipe 12.4: Lab Result Trend Analysis](chapter12.04-lab-result-trend-analysis) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.5 - Hospital Census Forecasting →](chapter12.05-hospital-census-forecasting)*

@@ -1353,4 +1353,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.2: Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.3 - ED Arrival Forecasting →](chapter12.03-ed-arrival-forecasting)*
+*← [Recipe 12.2: Supply Inventory Forecasting](chapter12.02-supply-inventory-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.3 - ED Arrival Forecasting →](chapter12.03-ed-arrival-forecasting)*

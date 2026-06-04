@@ -1612,4 +1612,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.5: Hospital Census Forecasting](chapter12.05-hospital-census-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →](chapter12.06-revenue-cycle-cash-flow-forecasting)*
+*← [Recipe 12.5: Hospital Census Forecasting](chapter12.05-hospital-census-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.6 - Revenue Cycle Cash Flow Forecasting →](chapter12.06-revenue-cycle-cash-flow-forecasting)*

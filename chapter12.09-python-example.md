@@ -1973,4 +1973,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting) · [Chapter 12 Index](chapter12-index)*
+*← [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting) · [Chapter 12 Index](chapter12-preface)*

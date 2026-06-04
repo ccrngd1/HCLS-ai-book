@@ -235,4 +235,4 @@ The Python companion `chapter12.06-python-example.md` has been code-reviewed (ve
 
 ---
 
-*← [Previous: Recipe 12.5 - Hospital Census Forecasting](chapter12.05-hospital-census-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.7 - Vital Sign Trajectory Monitoring →](chapter12.07-vital-sign-trajectory-monitoring)*
+*← [Previous: Recipe 12.5 - Hospital Census Forecasting](chapter12.05-hospital-census-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.7 - Vital Sign Trajectory Monitoring →](chapter12.07-vital-sign-trajectory-monitoring)*

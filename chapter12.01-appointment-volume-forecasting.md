@@ -435,4 +435,4 @@ The part that's genuinely hard: explaining to a CFO why the forecast missed badl
 
 ---
 
-*← [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.2 - Supply Inventory Forecasting →](chapter12.02-supply-inventory-forecasting)*
+*← [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.2 - Supply Inventory Forecasting →](chapter12.02-supply-inventory-forecasting)*

@@ -2051,4 +2051,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.8: Disease Progression Trajectory Modeling](chapter12.08-disease-progression-trajectory-modeling) · [Chapter 12 Index](chapter12-index)*
+*← [Recipe 12.8: Disease Progression Trajectory Modeling](chapter12.08-disease-progression-trajectory-modeling) · [Chapter 12 Index](chapter12-preface)*

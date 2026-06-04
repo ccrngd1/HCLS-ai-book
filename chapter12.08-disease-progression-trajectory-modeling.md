@@ -756,4 +756,4 @@ Finally: the explanation matters even more than in lab trend analysis, because t
 
 ---
 
-*← [Previous: Recipe 12.7 - Vital Sign Trajectory Monitoring](chapter12.07-vital-sign-trajectory-monitoring) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.9 - Epidemic Forecasting →](chapter12.09-epidemic-forecasting)*
+*← [Previous: Recipe 12.7 - Vital Sign Trajectory Monitoring](chapter12.07-vital-sign-trajectory-monitoring) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.9 - Epidemic Forecasting →](chapter12.09-epidemic-forecasting)*

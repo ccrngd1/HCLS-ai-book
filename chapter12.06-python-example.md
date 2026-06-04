@@ -1610,4 +1610,4 @@ The demo is intentionally a sketch. Here is the distance between this code and s
 
 ---
 
-*← [Recipe 12.6: Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.7 - Vital Sign Trajectory Monitoring →](chapter12.07-vital-sign-trajectory-monitoring)*
+*← [Recipe 12.6: Revenue Cycle Cash Flow Forecasting](chapter12.06-revenue-cycle-cash-flow-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.7 - Vital Sign Trajectory Monitoring →](chapter12.07-vital-sign-trajectory-monitoring)*

@@ -540,4 +540,4 @@ The part that's genuinely hard to communicate to operations: the prediction inte
 
 ---
 
-*← [Recipe 12.1: Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.3 - ED Arrival Forecasting →](chapter12.03-ed-arrival-forecasting)*
+*← [Recipe 12.1: Appointment Volume Forecasting](chapter12.01-appointment-volume-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.3 - ED Arrival Forecasting →](chapter12.03-ed-arrival-forecasting)*

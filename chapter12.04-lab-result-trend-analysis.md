@@ -608,4 +608,4 @@ Finally: the explanation matters as much as the detection. Clinicians are patter
 
 ---
 
-*← [Previous: Recipe 12.3 - ED Arrival Forecasting](chapter12.03-ed-arrival-forecasting) · [Chapter 12 Index](chapter12-index) · [Next: Recipe 12.5 - Hospital Census Forecasting →](chapter12.05-hospital-census-forecasting)*
+*← [Previous: Recipe 12.3 - ED Arrival Forecasting](chapter12.03-ed-arrival-forecasting) · [Chapter 12 Index](chapter12-preface) · [Next: Recipe 12.5 - Hospital Census Forecasting →](chapter12.05-hospital-census-forecasting)*

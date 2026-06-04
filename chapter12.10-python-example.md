@@ -1185,4 +1185,4 @@ The distance between this demo and something you would deploy in a real ICU is s
 
 ## Navigation
 
-← [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting) | [Chapter 12 Index](chapter12-index) | [Chapter 13: Knowledge Graphs](chapter13-preface) →
+← [Recipe 12.9: Epidemic Forecasting](chapter12.09-epidemic-forecasting) | [Chapter 12 Index](chapter12-preface) | [Chapter 13: Knowledge Graphs](chapter13-preface) →
