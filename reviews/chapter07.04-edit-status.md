@@ -10,7 +10,7 @@
 
 ## Verdict: BLOCKED
 
-The main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The TechEditor cannot perform a final edit on a file that has not been drafted. The Python companion was previously edited and verified clean again this pass.
+The main recipe file `chapter07.04-ed-visit-prediction.md` does not exist. The TechEditor cannot perform a final edit on a file that has not been drafted. The Python companion was verified clean again this pass.
 
 ---
 
@@ -27,8 +27,10 @@ Fresh verification confirms the Python companion remains editorially clean:
 | Code formatting | Correct language tags, consistent indentation, inline code for service names. |
 | Header hierarchy | H1 title, H2 sections. No skipped levels. |
 | Voice drift | None detected. Engineer-explaining tone consistent with STYLE-GUIDE.md. |
-| RECIPE-GUIDE compliance | Python companion structure correct. |
+| Documentation-voice patterns | Zero found ("This recipe demonstrates...", "We are excited..."). |
+| RECIPE-GUIDE compliance | Python companion structure correct (callout, setup, config, steps, pipeline runner, gap to production). |
 | Link verification | Footer links to main recipe (not yet written). No fabricated URLs. |
+| Vendor balance | N/A for Python companion (inherently AWS-specific; vendor-agnostic teaching lives in main recipe). |
 
 ---
 
@@ -53,15 +55,15 @@ Both correctly formatted for the follow-up task generator.
 |---------|----------|--------|-------|
 | C1 (main recipe missing) | CRITICAL | DEFERRED | Blocks final edit. TechWriter must write `chapter07.04-ed-visit-prediction.md`. |
 | A1 (misleading explanations) | HIGH | RESOLVED | Normalization applied in Step 4. WARNING comment present. |
-| S1 (IAM not resource-scoped) | MEDIUM | RESOLVED | Gap to Production covers role separation. |
-| S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Gap to Production covers CMK guidance. |
-| S3 (consumer access differentiation) | MEDIUM | RESOLVED | Gap to Production covers field-level access. |
-| A2 (temporal validation) | MEDIUM | RESOLVED | WARNING comment in Step 2. |
-| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker in Step 3. TechWriter to add. |
-| A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production includes real-world AUC context. |
-| N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment in Step 5. |
-| V3 (documentation-voice) | LOW | RESOLVED | Natural phrasing in Step 6. |
-| Code Issue 1 (misleading explanations) | WARNING | RESOLVED | Same as A1. |
+| S1 (IAM not resource-scoped) | MEDIUM | RESOLVED | Gap to Production covers role separation with specific guidance. |
+| S2 (DynamoDB encryption) | MEDIUM | RESOLVED | Gap to Production covers CMK guidance explicitly. |
+| S3 (consumer access differentiation) | MEDIUM | RESOLVED | Gap to Production covers field-level access separation. |
+| A2 (temporal validation) | MEDIUM | RESOLVED | WARNING comment in Step 2 with expected performance degradation. |
+| A3 (calibration check) | MEDIUM | DEFERRED | TODO marker in Step 3 code block. TechWriter to add calibration_curve snippet. |
+| A4 (synthetic data benchmark) | LOW | RESOLVED | Gap to Production includes real-world AUC context (0.70-0.78). |
+| N1 (VPC endpoint guidance) | LOW | RESOLVED | Comment in Step 5 before boto3 client creation. |
+| V3 (documentation-voice) | LOW | RESOLVED | Step 6 uses natural phrasing ("So that's what we give it"). |
+| Code Issue 1 (misleading explanations) | WARNING | RESOLVED | Same as A1. Normalization + WARNING applied. |
 | Code Issue 2 (datetime.utcnow) | WARNING | RESOLVED | Uses `datetime.now(timezone.utc)` throughout. |
 | Code Issue 3 (pseudocode consistency) | NOTE | DEFERRED | Cannot verify until main recipe exists. |
 
