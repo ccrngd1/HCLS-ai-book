@@ -1,112 +1,99 @@
 # Recipe 14.5: Operating Room Block Scheduling
 
-**Complexity:** Medium-High · **Phase:** Production · **Estimated Cost:** ~$200-800/month (solver compute + data infrastructure)
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$50-200/month (solver compute)
 
 ---
 
 ## The Problem
 
-Here's a scenario that plays out every Monday morning in every hospital with more than four operating rooms: the orthopedic surgery chief is furious because she only has two block days this quarter, general surgery has three blocks they routinely underuse, and the neurosurgeon who joined six months ago can't get any block time at all because the allocation was set two years ago and nobody wants to revisit it.
+Here's a scenario that plays out every single Monday morning at almost every hospital in the country: Orthopedics has 16 hours of block time this week and only filled 12 of them. Cardiac surgery needs an extra room for an urgent but not emergent case and can't get one. General surgery has a backlog of elective cases growing by the day. Meanwhile, two ORs sit empty on Wednesday afternoon because the surgeon who holds those blocks is on vacation and nobody released the time back into the pool.
 
-Operating rooms are the single most expensive resource in a hospital. A typical OR costs $30-80 per minute to operate when you factor in staffing, equipment, overhead, and opportunity cost. A hospital with 20 ORs is burning through millions per week in OR operating costs. And yet, the average OR utilization rate across US hospitals hovers around 60-70%. That means roughly a third of available surgical capacity sits idle on any given day.
+Operating rooms are the most expensive real estate in a hospital. A single OR costs $30-80 per minute to run (staffing, equipment, facility costs), and most health systems have somewhere between 10 and 50 of them. The annual operating budget for a surgical suite can easily run $50-100 million. Utilization rates at most hospitals hover around 60-70%, which means tens of millions in wasted capacity every year. Not because demand doesn't exist, but because the allocation system is broken.
 
-The root cause is almost always the block scheduling system. Block scheduling is how hospitals allocate OR time: surgical services (orthopedics, cardiac, general surgery, etc.) are assigned recurring "blocks" of time, typically in half-day or full-day increments. Dr. Smith gets Room 3 every Tuesday morning. The cardiac team owns Room 7 all day Wednesday and Thursday. These allocations are supposed to reflect demand, but in practice they calcify. They become political territory. Surgeons treat their blocks like property rights, even when they're only filling 40% of the available time.
+The traditional approach to OR scheduling is "block scheduling," where surgical services (orthopedics, cardiology, general surgery, neurosurgery, etc.) are granted fixed blocks of OR time on specific days and rooms. Dr. Smith gets Room 3 every Tuesday from 7am to 3pm. Orthopedics gets Rooms 5 and 6 all day Monday through Thursday. These blocks are typically allocated annually or semi-annually based on historical volume, political negotiation, and institutional inertia.
 
-The result is a paradox: the hospital simultaneously has "no OR availability" (because all blocks are allocated) and terrible utilization (because allocated blocks go partially or fully unused). Surgeons without blocks can't schedule cases. Surgeons with blocks don't release unused time until it's too late for anyone else to use it. The perioperative director is stuck mediating between department chairs who each believe they deserve more time.
+The problem is obvious: demand is not static. Seasonal variation, surgeon vacations, changes in referral patterns, new surgeons joining, others retiring. The block allocation from January doesn't reflect reality in June. But releasing and reallocating blocks is politically painful. Surgeons view their block time as an earned entitlement. Department chairs fight for every hour. The OR committee meetings where these decisions get made are among the most contentious in any hospital.
 
-This is fundamentally an optimization problem. You have a scarce resource (OR time), competing demands (surgical services with different case volumes, durations, and urgency profiles), and a set of constraints (staffing, equipment, surgeon preferences, regulatory requirements). The goal is to allocate blocks in a way that maximizes utilization while maintaining fairness and access. And the reason it's hard is that the constraints are messy, the objectives conflict, and the politics are real.
+What if you could formulate this as what it actually is: a constrained optimization problem? You have scarce resources (OR rooms and time slots), competing demand (surgical services), hard constraints (equipment availability, staffing, patient safety), soft constraints (surgeon preferences, historical allocations), and a measurable objective (maximize utilization while maintaining access and fairness). This is textbook operations research.
 
 ---
 
-## The Technology: Optimization for Resource Allocation
+## The Technology: Constrained Optimization for Resource Allocation
 
-### What Is Mathematical Optimization?
+### What Is Constrained Optimization?
 
-Mathematical optimization (sometimes called "mathematical programming," which is confusing because it has nothing to do with writing code) is the discipline of finding the best solution from a set of feasible solutions. You define:
+At its core, constrained optimization is about finding the best possible allocation of limited resources subject to rules that cannot (or should not) be violated. You have:
 
-1. **Decision variables:** The things you're choosing. In our case: which service gets which block in which room on which day.
-2. **An objective function:** What you're trying to maximize or minimize. Utilization, fairness, surgeon satisfaction, revenue, or some weighted combination.
-3. **Constraints:** The rules that limit your choices. You can't schedule two services in the same room at the same time. You can't exceed staffing capacity. Certain rooms have specialized equipment that only certain cases can use.
+- **Decision variables**: the things you control. In our case, which service gets which room on which day for how many hours.
+- **An objective function**: what you're trying to maximize or minimize. Typically a weighted combination of utilization, access equity, and preference satisfaction.
+- **Hard constraints**: rules that absolutely cannot be broken. A room can only be assigned to one service at a time. Certain procedures require specific equipment that only exists in certain rooms. Minimum staffing ratios must be met.
+- **Soft constraints**: preferences you'd like to satisfy but can trade off. Dr. Martinez prefers morning blocks. Orthopedics historically has had Tuesday/Thursday in Room 7. The neurosurgery team prefers adjacent rooms for complex cases.
 
-The solver (the software that actually finds the optimal solution) explores the space of possible allocations and returns the one that best satisfies your objective while respecting all constraints.
+The mathematical framework most commonly used here is **Mixed-Integer Programming (MIP)**. "Mixed-integer" means some of your decision variables are continuous (how many hours to allocate) and some are binary (does orthopedics get Room 3 on Tuesday: yes or no). The "programming" is mathematical programming, not software programming. It refers to the mathematical formulation of the problem as a linear (or sometimes quadratic) objective function subject to linear constraints.
 
-### Types of Optimization Models
+### Why MIP and Not Something Simpler?
 
-For OR block scheduling, you're typically working with one of these formulations:
+You might think: can't I just write a greedy algorithm? Sort requests by priority, assign them one by one, first-come-first-served?
 
-**Integer Programming (IP) / Mixed-Integer Programming (MIP).** Decision variables are integers (often binary: 1 if service X gets block Y, 0 otherwise). This is the most natural formulation for block scheduling because assignments are discrete. You either give orthopedics Tuesday morning in Room 3, or you don't. There's no "half a block." MIP solvers (CPLEX, Gurobi, SCIP, OR-Tools) are mature and can handle problems with thousands of variables and constraints.
+You can. Hospitals do this today (often manually). The problem is that greedy approaches produce locally optimal but globally suboptimal solutions. Giving orthopedics their first-choice block might block cardiac surgery from a feasible schedule entirely, when a slight adjustment to orthopedics would have accommodated both. MIP solvers explore the entire solution space and find allocations that are provably optimal (or within a known gap of optimal). The difference between a greedy heuristic and an optimal solution can easily be 10-20% utilization improvement across the suite.
 
-**Constraint Programming (CP).** Rather than optimizing a single objective, CP focuses on finding feasible solutions that satisfy all constraints. It's particularly good when the constraint structure is complex (lots of "if-then" rules, sequencing dependencies, irregular patterns). For block scheduling, CP shines when you have many hard constraints and the feasibility question itself is the challenge.
+### Solver Technology
 
-**Multi-Objective Optimization.** In practice, you never have a single objective. You want high utilization AND fairness AND surgeon satisfaction AND revenue maximization. These objectives conflict. Multi-objective approaches (Pareto frontiers, weighted sums, lexicographic ordering) let you explore the tradeoff space and present decision-makers with options rather than a single "optimal" answer.
+MIP problems are solved by specialized algorithms implemented in software called "solvers." The solver takes your formulated problem (variables, objective, constraints) and uses techniques like branch-and-bound, cutting planes, and presolve reductions to find the optimal solution (or a solution within a specified tolerance of optimal).
 
-### The Constraint Landscape
+The solver landscape:
 
-Here's where OR block scheduling gets genuinely interesting (and genuinely hard). The constraints fall into several categories:
+- **Commercial solvers** (Gurobi, CPLEX, Xpress): Extremely fast. Handle problems with hundreds of thousands of variables. Licensed per-core or per-server. Gurobi and CPLEX are the market leaders and handle hospital-scale problems in seconds to minutes.
+- **Open-source solvers** (SCIP, CBC, HiGHS, OR-Tools): Free. Slower on large problems but perfectly adequate for many real-world instances. Google's OR-Tools provides a nice Python interface and includes the CBC solver. HiGHS is a newer entrant that's surprisingly competitive with commercial solvers for certain problem structures.
+- **Cloud-based solver services**: Some cloud providers offer optimization as a managed service, eliminating the need to provision and manage solver infrastructure.
 
-**Hard constraints (violations are infeasible):**
-- No double-booking: one service per room per time slot
-- Equipment constraints: cardiac cases need rooms with bypass capability
-- Staffing minimums: certain case types require specialized nursing teams
-- Regulatory: trauma rooms must remain available 24/7
-- Surgeon credentialing: only credentialed surgeons can operate in certain rooms
+For OR block scheduling, problem sizes are typically moderate: 10-50 rooms, 15-30 services, 5-7 days per week, maybe 4-6 time slots per day. That's a few thousand decision variables and a few thousand constraints. Both commercial and open-source solvers handle this comfortably. The choice often comes down to whether you need the faster solve times of commercial solvers for real-time reoptimization scenarios, or whether batch overnight solves with an open-source solver are sufficient.
 
-**Soft constraints (violations are penalized but allowed):**
-- Utilization targets: each service should use at least 70% of allocated time
-- Fairness: allocation should roughly reflect case volume and demand
-- Continuity: surgeons prefer consistent schedules (same day, same room)
-- Adjacency: related services benefit from adjacent blocks (shared equipment setup)
-- Release rules: unused blocks should be released with enough lead time for others to use
+### The Formulation Challenge
 
-**Dynamic constraints (change over time):**
-- Seasonal demand patterns (joint replacements spike in winter)
-- Surgeon sabbaticals, retirements, new hires
-- Equipment maintenance schedules
-- Construction or renovation taking rooms offline
+The hard part of OR scheduling optimization is not running the solver. It's formulating the problem correctly. Here's what makes it tricky:
 
-The art of building a good OR scheduling model is deciding which constraints are truly hard, which are soft (and how to weight them), and how to handle the dynamic ones through periodic re-optimization.
+**Multi-objective tensions.** You want to maximize utilization AND ensure equitable access AND honor historical allocations AND satisfy preferences. These objectives conflict. Maximizing utilization might mean giving all the time to the highest-volume service and starving smaller ones. You need to weight these objectives or use a hierarchical approach (first satisfy access minimums, then maximize utilization within those bounds).
 
-### Solver Selection
+**Political constraints masquerading as technical ones.** "Dr. Johnson always gets Room 2 on Tuesdays" isn't a physical constraint. It's a political one. But if you don't model it (at least as a soft constraint with some weight), your mathematically optimal solution will be rejected by the people who have to live with it. The gap between "optimal" and "implementable" is where most OR scheduling projects die.
 
-Choosing a solver matters more than most people realize. The landscape:
+**Temporal coupling.** Block allocations interact across time. If you give a service extra blocks this week to clear a backlog, that might create a fairness issue next week. The planning horizon matters: optimizing one week at a time might produce oscillation, while optimizing a full quarter at once is computationally harder.
 
-**Commercial solvers (Gurobi, CPLEX, Xpress):** These are the gold standard for MIP problems. They use sophisticated branch-and-bound algorithms with cutting planes, presolve techniques, and heuristics that open-source alternatives can't match for large instances. Gurobi and CPLEX can solve problems with tens of thousands of binary variables in seconds. The downside: licensing costs ($10K-50K+ per year for enterprise use).
-
-**Open-source solvers (SCIP, HiGHS, GLPK, OR-Tools):** Good enough for many practical instances. OR-Tools from Google is particularly accessible and includes both MIP and CP solvers. SCIP is the strongest open-source MIP solver. HiGHS is newer but improving rapidly. For a hospital with 20 ORs and 15 services, open-source solvers will likely find good solutions within acceptable time limits.
-
-**Metaheuristics (simulated annealing, genetic algorithms, tabu search):** When the problem is too large or too nonlinear for exact solvers, metaheuristics provide good (not provably optimal) solutions. They're useful for very large health systems with 50+ ORs across multiple campuses, or when the objective function includes complex nonlinear components that MIP can't handle cleanly.
-
-For most single-hospital implementations, a MIP formulation solved with either a commercial solver (if budget allows) or OR-Tools/HiGHS (if it doesn't) is the right starting point.
+**Stochastic demand.** You don't know exactly how many cases each service will bring next month. You can estimate from historical data, but there's uncertainty. Robust optimization (optimizing for the worst-case within an uncertainty set) or stochastic programming (optimizing over multiple demand scenarios) adds complexity but produces more resilient schedules.
 
 ### Batch vs. Real-Time Optimization
 
-Block scheduling is fundamentally a batch problem. You're setting the allocation for a quarter or a year, not making real-time decisions. The optimization runs periodically (quarterly is typical), takes historical utilization data as input, and produces a new block allocation as output.
+Two distinct operational modes exist:
 
-However, there's a real-time component that matters: **block release and open-time management.** Once blocks are allocated, the day-to-day question becomes: "Service X hasn't filled their Tuesday block for next week. Should we release it to the open pool? When? To whom?" This is a shorter-horizon optimization that runs daily or even hourly, and it needs to balance the block owner's right to use their time against the hospital's interest in filling empty slots.
+**Batch reoptimization** (weekly or monthly): Rerun the full block allocation model periodically using updated demand forecasts, historical utilization data, and any constraint changes. This produces the "master schedule" for the upcoming period. Most hospitals start here because it's simpler to implement and easier to gain stakeholder buy-in. The output goes to the OR committee for review.
 
-The two-tier approach works well:
-1. **Strategic (quarterly):** Full re-optimization of block allocations based on trailing utilization, demand forecasts, and staffing plans.
-2. **Tactical (daily/weekly):** Release management and open-time allocation using simpler heuristics or lightweight optimization.
+**Real-time reoptimization** (intra-day): When a case cancels, a surgeon releases time, or an urgent add-on appears, rerun a simplified model to find the best reallocation of newly available time. This requires faster solve times (seconds, not minutes) and tight integration with the hospital's scheduling system. It's harder to implement but captures more value from released blocks.
+
+Most production systems start with batch and add real-time capabilities once the batch model is trusted and integrated.
 
 ---
 
 ## General Architecture Pattern
 
-The end-to-end system has four major components:
+The pipeline at a conceptual level:
 
 ```text
-[Data Collection] → [Model Building] → [Optimization Engine] → [Decision Support UI]
+[Data Collection] → [Demand Forecasting] → [Problem Formulation] → [Solve] → [Human Review] → [Publish Schedule] → [Monitor & Feedback]
 ```
 
-**Data Collection:** Pull historical case data (case types, durations, surgeon, room, date), current block allocations, utilization metrics, staffing schedules, equipment inventories, and surgeon preferences. This data lives in your EHR, scheduling system, and perioperative information system. You need a reliable ETL pipeline that refreshes regularly.
+**Data Collection.** Pull historical OR utilization data: actual case start/end times, block allocations, cancellation rates, room capabilities, equipment constraints, surgeon preference surveys, contractual requirements. This data lives in the hospital's EHR and perioperative scheduling system.
 
-**Model Building:** Transform the raw data into optimization model inputs. This means calculating demand by service, estimating case duration distributions, identifying constraint parameters (room capabilities, staffing limits), and defining the objective function weights. This is where domain expertise matters most. The model builder encodes the hospital's priorities into mathematics.
+**Demand Forecasting.** Estimate expected case volume per service for the upcoming period. Use historical case volume, referral trends, seasonal patterns, and known changes (new surgeon onboarding, service line expansion). The forecast feeds the optimization model as a demand parameter.
 
-**Optimization Engine:** The solver itself. Takes the model (variables, objective, constraints) and returns an optimal or near-optimal solution. For batch scheduling, this runs on-demand when the perioperative team wants to generate a new allocation. For release management, it runs on a schedule (nightly or more frequently).
+**Problem Formulation.** Translate the hospital's scheduling rules, preferences, and objectives into a mathematical model. This is the intellectual heavy lifting. Define decision variables (block assignments), objective function (weighted combination of utilization, fairness, preference satisfaction), and constraints (room capabilities, staffing, minimum access guarantees).
 
-**Decision Support UI:** The optimization output is a recommendation, not an edict. Surgeons and administrators need to see the proposed allocation, understand why it changed from the current state, compare scenarios ("what if we give neurosurgery an extra block?"), and ultimately approve or modify the result. The UI should show utilization projections, fairness metrics, and the impact of manual overrides.
+**Solve.** Feed the formulated model to a solver. For batch mode, solve to optimality or within a specified gap (e.g., within 1% of optimal). For real-time mode, set a time limit and accept the best solution found within that window.
 
-This is not a fully automated system. Block scheduling involves political negotiation, and the optimization provides the analytical foundation for that negotiation. The best implementations position the tool as "here's what the data says is optimal" and let humans make the final call.
+**Human Review.** Present the proposed allocation to OR leadership. Highlight changes from the current allocation, explain tradeoffs, and allow manual overrides. No optimization system survives contact with a surgical department without a human review step.
+
+**Publish Schedule.** Push the approved allocation to the perioperative scheduling system. Block assignments become available for individual case booking.
+
+**Monitor and Feedback.** Track actual utilization against allocated blocks. Identify services consistently under-utilizing or over-requesting. Feed this data back into the next optimization cycle.
 
 ---
 
@@ -114,446 +101,425 @@ This is not a fully automated system. Block scheduling involves political negoti
 
 ### Why These Services
 
-**Amazon SageMaker for model development and solver execution.** SageMaker provides the compute environment for running optimization solvers. You can package OR-Tools, PuLP, or even commercial solvers (with appropriate licensing) into SageMaker Processing jobs or custom containers. The advantage over running on a bare EC2 instance: managed infrastructure, spot instance support for cost optimization on long-running solves, and integration with the broader ML pipeline for demand forecasting components.
+**AWS Lambda for orchestration and data preparation.** The data collection, transformation, and model formulation steps are event-driven workflows that don't need persistent servers. Lambda handles the ETL from the scheduling system, constructs the optimization model parameters, and triggers the solve.
 
-**AWS Lambda for orchestration and lightweight optimization.** The daily release management logic (simpler heuristics, smaller problem instances) runs well on Lambda. The quarterly strategic optimization is too compute-intensive for Lambda's 15-minute timeout, but the coordination logic (triggering the SageMaker job, collecting results, notifying stakeholders) fits perfectly.
+**Amazon S3 for model artifacts and results.** Problem formulations (MPS/LP files), solver logs, and solution files need durable, versioned storage. S3 provides this with full audit trail via versioning and CloudTrail.
 
-**Amazon DynamoDB for operational data.** Block allocations, utilization metrics, release rules, and surgeon preferences are read-heavy, low-latency data. DynamoDB's single-digit-millisecond reads make it ideal for the decision support UI and for the daily release management queries.
+**Amazon ECS (Fargate) for solver execution.** MIP solvers are compute-intensive and may run for minutes. Lambda's 15-minute timeout and memory limits make it unsuitable for the solve step. A Fargate task with the solver installed (open-source CBC/HiGHS, or commercial Gurobi with a cloud license) provides the right compute profile: spin up, solve, write results, shut down. No persistent infrastructure.
 
-**Amazon S3 for historical data and model artifacts.** Case history exports, model parameter files, solver output files, and scenario comparisons all land in S3. This gives you a complete audit trail of every optimization run and its inputs.
+**Amazon DynamoDB for scheduling state.** Current block allocations, constraint parameters, and optimization run history need a fast, queryable store. DynamoDB handles the read/write patterns (frequent lookups by room/day/service, batch writes of new allocations).
 
-**Amazon QuickSight for utilization dashboards.** Perioperative leaders need to see utilization trends, block performance by service, and the projected impact of proposed changes. QuickSight connects directly to the data in DynamoDB and S3 and provides the visualization layer without building custom dashboards.
+**Amazon EventBridge for scheduling triggers.** Batch reoptimization runs on a schedule (weekly). Real-time reoptimization triggers on events (case cancellation, block release). EventBridge handles both patterns cleanly.
 
-**AWS Step Functions for pipeline orchestration.** The quarterly optimization workflow has multiple steps: data extraction, preprocessing, model building, solver execution, result validation, and notification. Step Functions coordinates this sequence with error handling, retries, and human approval gates.
+**Amazon SageMaker for demand forecasting.** The demand forecast that feeds the optimization model is a time-series prediction problem. SageMaker's built-in algorithms (DeepAR, Prophet via BYO container) handle multi-service volume forecasting without building custom infrastructure.
 
-**Amazon EventBridge for scheduling.** Triggers the daily release management runs and the periodic data refresh jobs on a cron schedule.
+**Amazon QuickSight for stakeholder dashboards.** OR leadership needs to see utilization trends, proposed vs. actual allocations, and fairness metrics. QuickSight connects directly to the data in S3 and DynamoDB.
 
 ### Architecture Diagram
 
 ```mermaid
-flowchart TD
-    subgraph Data Sources
-        EHR[EHR / Scheduling System]
-        PERI[Perioperative System]
-        STAFF[Staffing System]
-    end
-
+flowchart TB
     subgraph Data Layer
-        S3RAW[S3: Raw Data Lake]
-        DDB[DynamoDB: Operational Store]
+        A[EHR / Perioperative System] -->|HL7/FHIR| B[Lambda: Data Ingestion]
+        B --> C[S3: Historical Data]
     end
 
-    subgraph Optimization Pipeline
-        SF[Step Functions: Orchestration]
-        SM[SageMaker: Solver Execution]
-        EB[EventBridge: Scheduler]
-        LAMBDA[Lambda: Release Management]
+    subgraph Forecasting
+        C --> D[SageMaker: Demand Forecast]
+        D --> E[S3: Forecast Results]
     end
 
-    subgraph Presentation
-        QS[QuickSight: Dashboards]
-        API[API Gateway + Lambda: Decision Support API]
-        UI[Web UI: Scenario Comparison]
+    subgraph Optimization
+        E --> F[Lambda: Model Formulation]
+        G[DynamoDB: Constraints & Preferences] --> F
+        F --> H[S3: Problem File - MPS/LP]
+        H --> I[ECS Fargate: MIP Solver]
+        I --> J[S3: Solution File]
     end
 
-    EHR --> S3RAW
-    PERI --> S3RAW
-    STAFF --> S3RAW
-    S3RAW --> SF
-    SF --> SM
-    SM --> DDB
-    SM --> S3RAW
-    EB --> LAMBDA
-    DDB --> LAMBDA
-    LAMBDA --> DDB
-    DDB --> API
-    DDB --> QS
-    API --> UI
+    subgraph Delivery
+        J --> K[Lambda: Solution Parser]
+        K --> L[DynamoDB: Proposed Schedule]
+        L --> M[QuickSight: Review Dashboard]
+        M -->|Approved| N[Publish to Scheduling System]
+    end
+
+    subgraph Triggers
+        O[EventBridge: Weekly Schedule] --> F
+        P[EventBridge: Real-time Events] --> F
+    end
+
+    style I fill:#ff9,stroke:#333
+    style D fill:#9f9,stroke:#333
+    style L fill:#9ff,stroke:#333
 ```
 
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
-| AWS Services | SageMaker, Lambda, DynamoDB, S3, Step Functions, EventBridge, QuickSight, API Gateway |
-| IAM Permissions | sagemaker:CreateProcessingJob, lambda:InvokeFunction, dynamodb:PutItem/GetItem/Query, s3:GetObject/PutObject, states:StartExecution |
-| BAA | Required. Block schedules contain surgeon names and may reference patient case types. |
-| Encryption | S3 SSE-KMS, DynamoDB encryption at rest, TLS in transit |
-| VPC | Recommended for SageMaker jobs accessing on-premises EHR data |
-| CloudTrail | Audit logging for all optimization runs and allocation changes |
-| Sample Data | Synthetic OR case data with realistic duration distributions. Never use real patient data in dev. |
-| Cost Estimate | ~$200-400/month for daily release management (Lambda + DynamoDB). ~$400-800/month including quarterly SageMaker optimization runs. |
+| **AWS Services** | Lambda, S3, ECS (Fargate), DynamoDB, EventBridge, SageMaker, QuickSight |
+| **IAM Permissions** | `lambda:InvokeFunction`, `s3:GetObject`, `s3:PutObject`, `ecs:RunTask`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Query`, `sagemaker:InvokeEndpoint`, `events:PutRule` |
+| **BAA** | Required if scheduling data includes patient identifiers (it typically does: surgeon names, case types by patient) |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; ECS: encrypt task storage; all transit over TLS |
+| **VPC** | Production: Fargate tasks and Lambda in VPC with VPC endpoints for S3, DynamoDB, and CloudWatch Logs |
+| **CloudTrail** | Enabled: log all optimization runs and schedule modifications for audit trail |
+| **Solver License** | If using Gurobi/CPLEX: cloud license (token server or machine ID based). If using open-source (HiGHS, CBC): no license needed. |
+| **Sample Data** | Synthetic OR utilization data. Use realistic distributions: 60-85% utilization, 5-15% cancellation rate, 10-50 rooms. Never use actual patient/surgeon identifiers in dev. |
+| **Cost Estimate** | SageMaker inference: ~$5-20/month for weekly forecasts. Fargate solver tasks: ~$0.50-5 per solve (depends on problem size and duration). Lambda, DynamoDB, S3: negligible. Total: $50-200/month for weekly batch optimization. |
 
 ### Ingredients
 
-| AWS Service | Role in This Recipe |
-|-------------|-------------------|
-| Amazon SageMaker | Runs optimization solver for strategic block allocation |
-| AWS Lambda | Daily release management, API handlers, lightweight orchestration |
-| Amazon DynamoDB | Stores current allocations, utilization metrics, solver results |
-| Amazon S3 | Historical case data, model artifacts, solver input/output files |
-| AWS Step Functions | Orchestrates multi-step quarterly optimization pipeline |
-| Amazon EventBridge | Schedules daily release management and data refresh |
-| Amazon QuickSight | Utilization dashboards and scenario comparison visualizations |
-| API Gateway | REST API for decision support UI |
+| AWS Service | Role |
+|------------|------|
+| **AWS Lambda** | Orchestrates data pipeline, constructs model parameters, parses solutions |
+| **Amazon S3** | Stores historical data, problem files, solution files, solver logs |
+| **Amazon ECS (Fargate)** | Runs the MIP solver in a container with appropriate compute resources |
+| **Amazon DynamoDB** | Stores current allocations, constraints, preferences, and proposed schedules |
+| **Amazon EventBridge** | Triggers weekly batch optimization and real-time reoptimization on events |
+| **Amazon SageMaker** | Produces demand forecasts per surgical service for upcoming planning period |
+| **Amazon QuickSight** | Dashboards for OR leadership to review proposals and track utilization |
+| **AWS KMS** | Manages encryption keys for all data stores |
+| **Amazon CloudWatch** | Logs, metrics, alarms for solver performance and pipeline health |
 
-### Code: Pseudocode Walkthrough
+### Code
 
-#### Step 1: Extract and Prepare Historical Data
+#### Walkthrough
 
-We need case-level data to understand demand patterns. Each historical case tells us: which service performed it, how long it took, which room it used, and when it happened.
-
-If you skip this step, your optimization model has no grounding in reality. It would allocate blocks based on guesses rather than actual demand patterns.
+**Step 1: Data collection and preparation.** The first step pulls historical OR utilization data from the hospital's scheduling system. You need actual case durations (not scheduled durations, actual wheel-in to wheel-out), cancellation records, current block allocations, room capabilities (which rooms have what equipment), and any contractual or policy constraints. The data typically arrives via HL7 or FHIR interfaces, or direct database extracts from the perioperative information system. This step normalizes everything into a consistent format the optimization model can consume. Skip this step and you're optimizing against fantasy data.
 
 ```pseudocode
-FUNCTION extract_case_history(start_date, end_date):
-    // Pull completed surgical cases from the perioperative system
-    raw_cases = query_perioperative_system(
-        date_range = [start_date, end_date],
-        fields = ["case_id", "service", "surgeon", "room", "scheduled_start",
-                  "actual_start", "actual_end", "case_type", "urgency"]
-    )
+FUNCTION collect_or_data(planning_horizon_weeks):
+    // Pull raw utilization data from the scheduling system.
+    // We need ACTUAL times, not scheduled times. The gap between them is the whole problem.
+    raw_cases = query scheduling system for:
+        - All completed cases in the past 52 weeks
+        - Fields: service, surgeon, room, date, scheduled_start, actual_start,
+                  actual_end, case_type, equipment_used, cancellation_flag
 
-    // Calculate actual duration for each case (wheels-in to wheels-out)
-    FOR each case IN raw_cases:
-        case.duration_minutes = (case.actual_end - case.actual_start).to_minutes()
-        case.turnover_minutes = calculate_turnover(case, next_case_in_room)
+    // Aggregate into utilization metrics per service per room per day-of-week.
+    // This tells us: historically, how well did each service use their allocated time?
+    utilization_by_service = FOR each service:
+        total_allocated_minutes = sum of all block time allocated to this service
+        total_used_minutes = sum of (actual_end - actual_start) for all cases
+        utilization_rate = total_used_minutes / total_allocated_minutes
+        cancellation_rate = count(cancelled) / count(all_scheduled)
+        average_case_duration = mean(actual_end - actual_start) by case_type
 
-    // Aggregate by service to get demand profiles
-    service_demand = GROUP raw_cases BY service:
-        avg_cases_per_week = COUNT(cases) / weeks_in_range
-        avg_duration = MEAN(cases.duration_minutes)
-        duration_std = STDDEV(cases.duration_minutes)
-        peak_day_distribution = COUNT BY day_of_week
+    // Pull current block allocation (the baseline we're improving on).
+    current_blocks = query scheduling system for:
+        - All active block assignments
+        - Fields: service, room, day_of_week, start_time, end_time, surgeon (if assigned)
 
-    RETURN service_demand, raw_cases
+    // Pull room constraints (which rooms support which types of cases).
+    room_capabilities = FOR each room:
+        - Equipment present (robot, microscope, C-arm, etc.)
+        - Room size category (standard, large, cardiac)
+        - Adjacency relationships (which rooms share prep areas)
+
+    // Pull policy constraints (minimum access guarantees, maximum allocations).
+    policy_constraints = load from configuration:
+        - Minimum weekly hours per service (contractual or policy)
+        - Maximum percentage any one service can hold
+        - Release-time rules (how far in advance unused blocks must be released)
+
+    RETURN {
+        utilization_by_service,
+        current_blocks,
+        room_capabilities,
+        policy_constraints,
+        raw_case_data: raw_cases  // needed for demand forecasting
+    }
 ```
 
-#### Step 2: Define the Optimization Model
-
-This is where we translate the scheduling problem into mathematics. Decision variables represent the choices, constraints represent the rules, and the objective represents what "good" means.
-
-If you skip this step (or get it wrong), the solver either produces infeasible solutions or optimizes for the wrong thing. Getting the model right is 80% of the work.
+**Step 2: Demand forecasting.** Before you can optimize block allocations, you need to know how much each service actually needs. Historical volume alone isn't enough because demand changes: new surgeons join, referral patterns shift, service lines expand or contract. A time-series forecast per service gives you expected weekly case volume and total minutes for the upcoming planning period. The forecast includes uncertainty bounds so the optimization can be robust to demand variability. Skip this step and you're allocating based on last year's demand, which may not reflect next quarter's reality.
 
 ```pseudocode
-FUNCTION build_block_model(service_demand, rooms, time_slots, constraints):
-    // Decision variables: binary assignment of service to room-slot
-    // x[s][r][t] = 1 if service s is assigned room r in time slot t
-    variables = CREATE_BINARY_VARIABLES(
-        dimensions = [services, rooms, time_slots]
-    )
+FUNCTION forecast_demand(raw_case_data, forecast_horizon_weeks):
+    // Group historical cases by service and week.
+    // We're building a time series: cases per week per service.
+    weekly_volume = GROUP raw_case_data BY (service, iso_week)
+        COMPUTE: case_count, total_minutes, avg_case_duration
 
-    // Objective: maximize weighted utilization + fairness
-    objective = MAXIMIZE(
-        weight_utilization * SUM(expected_utilization(s, r, t) * x[s][r][t])
-        + weight_fairness * fairness_score(allocation)
-        - weight_fragmentation * fragmentation_penalty(allocation)
-    )
-
-    // Hard constraint: no double-booking
-    FOR each room r, each time_slot t:
-        ADD_CONSTRAINT: SUM(x[s][r][t] for all services s) <= 1
-
-    // Hard constraint: room capability
-    FOR each service s, each room r:
-        IF room r lacks equipment required by service s:
-            FOR each time_slot t:
-                ADD_CONSTRAINT: x[s][r][t] = 0
-
-    // Hard constraint: minimum staffing
-    FOR each time_slot t:
-        total_rooms_active = SUM(x[s][r][t] for all s, r)
-        ADD_CONSTRAINT: total_rooms_active <= available_staff[t] / staff_per_room
-
-    // Soft constraint: utilization floor (penalize underuse)
-    FOR each service s:
-        allocated_minutes = SUM(x[s][r][t] * slot_duration for all r, t)
-        expected_used = service_demand[s].avg_cases_per_week * service_demand[s].avg_duration
-        utilization_ratio = expected_used / allocated_minutes
-        ADD_SOFT_CONSTRAINT: utilization_ratio >= 0.70, penalty = underuse_penalty
-
-    // Soft constraint: continuity (prefer same day/room as current)
-    FOR each service s:
-        continuity_bonus = SUM(
-            x[s][r][t] * current_allocation_match(s, r, t)
-        )
-        ADD_TO_OBJECTIVE: weight_continuity * continuity_bonus
-
-    RETURN model(variables, objective, constraints)
-```
-
-#### Step 3: Solve the Model
-
-Hand the mathematical model to a solver and let it find the best allocation. This is where compute power matters. A well-formulated model for a 20-OR hospital typically solves in seconds to minutes. Larger instances or tighter optimality gaps may take longer.
-
-If you skip this step, well, you don't have a solution. But more subtly: if you don't set appropriate time limits and optimality gaps, the solver might run for hours chasing a marginal improvement.
-
-```pseudocode
-FUNCTION solve_block_allocation(model, config):
-    // Configure solver parameters
-    solver = INITIALIZE_SOLVER(
-        type = "MIP",                    // Mixed-Integer Programming
-        engine = "OR-Tools" or "Gurobi", // Depends on licensing
-        time_limit_seconds = 300,        // 5 minutes max
-        optimality_gap = 0.02,           // Accept solutions within 2% of optimal
-        threads = 4                      // Parallel branch-and-bound
-    )
-
-    // Solve
-    result = solver.solve(model)
-
-    IF result.status == "OPTIMAL" or result.status == "FEASIBLE":
-        allocation = EXTRACT_SOLUTION(result, model.variables)
-        metrics = CALCULATE_METRICS(allocation):
-            overall_utilization = total_expected_used / total_allocated
-            fairness_index = gini_coefficient(service_utilizations)
-            changes_from_current = count_differences(allocation, current_allocation)
-        RETURN allocation, metrics, result.objective_value
-
-    ELSE IF result.status == "INFEASIBLE":
-        // Constraints are too tight. Identify which ones conflict.
-        infeasible_subset = solver.compute_IIS(model)  // Irreducible Infeasible Set
-        RETURN error("Model infeasible", conflicting_constraints = infeasible_subset)
-
-    ELSE:
-        RETURN error("Solver failed", status = result.status)
-```
-
-#### Step 4: Daily Release Management
-
-Between quarterly re-optimizations, you need a lighter-weight process that manages unused blocks. This runs daily and decides which upcoming blocks should be released to the open pool.
-
-If you skip this step, allocated-but-unused blocks sit empty while other surgeons can't find time. This is the single biggest driver of the utilization gap.
-
-```pseudocode
-FUNCTION daily_release_check(lookahead_days = 14):
-    // Get all blocks in the lookahead window
-    upcoming_blocks = QUERY blocks WHERE date BETWEEN today AND today + lookahead_days
-
-    FOR each block IN upcoming_blocks:
-        // Check if the block owner has scheduled cases
-        scheduled_cases = QUERY cases WHERE block_id = block.id AND status = "scheduled"
-        fill_rate = scheduled_cases.total_duration / block.duration
-
-        // Apply release rules based on time horizon
-        days_until_block = (block.date - today).days
-
-        IF days_until_block <= 3 AND fill_rate < 0.25:
-            // Very close and mostly empty: auto-release
-            RELEASE_BLOCK(block, reason = "auto_release_underutilized")
-            NOTIFY(block.owner, "Your block on {date} was released due to low fill rate")
-
-        ELSE IF days_until_block <= 7 AND fill_rate < 0.50:
-            // One week out and half empty: notify owner, request confirmation
-            SEND_RELEASE_REQUEST(block.owner, block, deadline = today + 1)
-
-        ELSE IF days_until_block <= 14 AND fill_rate == 0:
-            // Two weeks out and completely empty: flag for review
-            FLAG_FOR_REVIEW(block, reason = "no_cases_scheduled")
-
-    // Allocate released blocks to waitlist
-    released_blocks = QUERY blocks WHERE status = "released" AND date > today
-    waitlist = QUERY requests WHERE status = "pending" ORDER BY priority, request_date
-
-    FOR each released_block IN released_blocks:
-        eligible_requests = FILTER waitlist WHERE
-            service.can_use_room(released_block.room) AND
-            surgeon.available(released_block.date)
-        IF eligible_requests IS NOT EMPTY:
-            ASSIGN(released_block, eligible_requests[0])
-```
-
-#### Step 5: Store Results and Generate Reports
-
-The optimization output needs to be persisted, versioned, and made available to the decision support UI. Each run produces a proposed allocation that stakeholders review before it takes effect.
-
-```pseudocode
-FUNCTION store_optimization_results(allocation, metrics, run_id):
-    // Store the full allocation as a versioned artifact
-    WRITE_TO_S3(
-        bucket = "or-optimization-results",
-        key = "runs/{run_id}/allocation.json",
-        data = allocation
-    )
-
-    // Store operational data for the UI
-    FOR each block IN allocation:
-        WRITE_TO_DYNAMODB(
-            table = "block_allocations",
-            item = {
-                "pk": "PROPOSED#{run_id}",
-                "sk": "ROOM#{block.room}#SLOT#{block.time_slot}",
-                "service": block.service,
-                "expected_utilization": block.projected_utilization,
-                "change_from_current": block.delta_description
-            }
-        )
-
-    // Store summary metrics
-    WRITE_TO_DYNAMODB(
-        table = "optimization_runs",
-        item = {
-            "pk": "RUN#{run_id}",
-            "timestamp": NOW(),
-            "overall_utilization": metrics.overall_utilization,
-            "fairness_index": metrics.fairness_index,
-            "total_changes": metrics.changes_from_current,
-            "solver_status": metrics.solver_status,
-            "solve_time_seconds": metrics.solve_time
+    // For each service, generate a demand forecast.
+    // Using a time-series model that captures seasonality, trend, and noise.
+    forecasts = FOR each service:
+        history = weekly_volume filtered to this service
+        model = fit time-series model (e.g., Prophet, DeepAR, or ARIMA) to history
+        prediction = model.predict(next forecast_horizon_weeks weeks)
+        // prediction includes: expected_cases, expected_minutes,
+        //                      lower_bound (10th percentile), upper_bound (90th percentile)
+        RETURN {
+            service: service,
+            expected_weekly_minutes: prediction.expected_minutes,
+            upper_bound_minutes: prediction.upper_bound,  // for robust scheduling
+            expected_weekly_cases: prediction.expected_cases
         }
-    )
 
-    RETURN run_id
+    RETURN forecasts
 ```
 
-> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and OR-Tools, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+**Step 3: Problem formulation.** This is the intellectual core of the recipe. We translate the scheduling problem into a mathematical optimization model. The decision variables represent block assignments. The objective balances utilization, access equity, and preference satisfaction. The constraints enforce physical reality (a room can only be assigned once per time slot), policy rules (minimum access guarantees), and operational requirements (equipment compatibility). Getting this formulation right is the difference between a system that produces useful schedules and one that produces technically feasible but politically dead-on-arrival results.
 
----
+```pseudocode
+FUNCTION formulate_model(data, forecasts, preferences):
+    // SETS (the dimensions of our problem)
+    services    = set of all surgical services (e.g., orthopedics, cardiac, general, neuro...)
+    rooms       = set of all OR rooms
+    days        = set of days in the planning period (e.g., Monday through Friday)
+    time_slots  = set of time slots per day (e.g., AM block: 7am-12pm, PM block: 12pm-5pm)
+
+    // DECISION VARIABLES
+    // x[s, r, d, t] = 1 if service s is assigned room r on day d in time slot t, else 0
+    // These are binary (yes/no) variables. The solver decides which ones to set to 1.
+    x = binary variable for each (service, room, day, time_slot) combination
+
+    // OBJECTIVE FUNCTION
+    // Maximize a weighted combination of goals:
+    //   (1) Utilization: prefer assignments where expected demand matches allocated time
+    //   (2) Preference satisfaction: honor surgeon/service preferences where possible
+    //   (3) Continuity: prefer allocations similar to current schedule (reduce disruption)
+    //   (4) Fairness: penalize large deviations from equitable access
+    objective = MAXIMIZE:
+        w1 * SUM(utilization_score[s,r,d,t] * x[s,r,d,t])    // reward high-utilization assignments
+      + w2 * SUM(preference_score[s,r,d,t] * x[s,r,d,t])     // reward preferred assignments
+      + w3 * SUM(continuity_score[s,r,d,t] * x[s,r,d,t])     // reward similarity to current schedule
+      - w4 * SUM(fairness_penalty[s])                          // penalize unfair allocations
+
+    // HARD CONSTRAINTS (cannot be violated)
+
+    // (C1) Each room-day-slot can only be assigned to one service.
+    // A room physically cannot be used by two services simultaneously.
+    FOR each (room, day, time_slot):
+        SUM over all services: x[s, room, day, time_slot] <= 1
+
+    // (C2) Room-equipment compatibility.
+    // Cardiac surgery can only be assigned to rooms with cardiac equipment.
+    FOR each (service, room) where room lacks required equipment for service:
+        FOR each (day, time_slot):
+            x[service, room, day, time_slot] = 0
+
+    // (C3) Minimum access guarantee.
+    // Each service is guaranteed at least their contractual minimum hours per week.
+    FOR each service:
+        SUM of (slot_duration * x[service, r, d, t]) for all r, d, t >= minimum_hours[service]
+
+    // (C4) Maximum allocation cap.
+    // No single service can hold more than X% of total available time.
+    FOR each service:
+        SUM of (slot_duration * x[service, r, d, t]) for all r, d, t <= max_cap[service]
+
+    // SOFT CONSTRAINTS (modeled as penalty terms in the objective)
+
+    // (S1) Fairness: each service's allocation should be proportional to demand.
+    // Define fairness_penalty[s] = |allocated_hours[s] / total_hours - demand[s] / total_demand|
+    FOR each service:
+        allocated_hours[s] = SUM(slot_duration * x[s, r, d, t]) for all r, d, t
+        target_share[s] = forecasts[s].expected_weekly_minutes / total_expected_minutes
+        fairness_penalty[s] = absolute deviation of allocated_hours[s] from target_share[s] * total_available
+
+    // (S2) Block contiguity: prefer assigning a service to consecutive slots in the same room.
+    // Surgeons hate split blocks (AM in Room 3, PM in Room 7). Model as a bonus for contiguous assignments.
+    // (Implementation: add a bonus term for pairs of adjacent slots assigned to the same service in the same room)
+
+    RETURN optimization_model
+```
+
+**Step 4: Solve.** Feed the formulated model to a MIP solver. For batch weekly optimization, you typically allow the solver to run until it finds a solution within 1% of optimal (the "optimality gap"). For real-time reoptimization (when a block is released mid-week), set a strict time limit and accept the best solution found. The solver handles the hard work of exploring millions of possible allocations and finding the best one that satisfies all constraints. This is where the magic happens: the solver considers interactions between all assignments simultaneously, something no human scheduler can do at this scale.
+
+```pseudocode
+FUNCTION solve_model(model, mode):
+    // Configure solver parameters based on the operational mode.
+    IF mode == "batch":
+        // Weekly planning: we can wait for a near-optimal solution.
+        solver_config = {
+            time_limit: 300 seconds,       // 5 minutes max (usually finishes in 30-60 seconds)
+            optimality_gap: 0.01,          // stop when within 1% of proven optimal
+            threads: 4,                     // use multiple cores for parallel branch-and-bound
+            log_file: "s3://bucket/solver-logs/{run_id}.log"
+        }
+    ELSE IF mode == "realtime":
+        // Intra-day reallocation: speed matters more than optimality.
+        solver_config = {
+            time_limit: 30 seconds,        // must respond quickly
+            optimality_gap: 0.05,          // accept within 5% of optimal
+            threads: 4,
+            warm_start: current_solution   // start from current allocation, not from scratch
+        }
+
+    // Invoke the solver.
+    result = solver.optimize(model, solver_config)
+
+    // Check solution status.
+    IF result.status == "OPTIMAL" OR result.status == "FEASIBLE":
+        solution = extract variable values from result
+        objective_value = result.objective_value
+        gap = result.optimality_gap  // how far from proven optimal (0% = exact optimal)
+        RETURN { solution, objective_value, gap, status: "success" }
+    ELSE IF result.status == "INFEASIBLE":
+        // No allocation exists that satisfies all hard constraints.
+        // This usually means minimum access guarantees exceed available capacity.
+        // Return diagnostics: which constraints are conflicting.
+        conflicting = solver.compute_infeasibility_analysis()
+        RETURN { status: "infeasible", conflicts: conflicting }
+    ELSE:
+        // Solver hit time limit without finding any feasible solution.
+        RETURN { status: "no_solution_found" }
+```
+
+**Step 5: Solution parsing and presentation.** The solver produces a raw solution: a set of variable values. This step translates that into a human-readable schedule, computes comparison metrics against the current allocation, and prepares the proposal for OR leadership review. The presentation layer is critical because no schedule change will be implemented without stakeholder buy-in. Show them what changes, why it's better, and what the tradeoffs are.
+
+```pseudocode
+FUNCTION parse_and_present(solution, current_blocks, forecasts):
+    // Convert solver output into a readable block schedule.
+    proposed_schedule = FOR each (service, room, day, slot) where solution.x[s,r,d,t] == 1:
+        RECORD: { service, room, day, time_slot, start_time, end_time }
+
+    // Compute comparison metrics.
+    comparison = {
+        current_utilization: calculate from current_blocks and historical data,
+        proposed_utilization: calculate from proposed_schedule and forecasts,
+        blocks_changed: count of assignments that differ between current and proposed,
+        services_gaining_time: list of services with more hours in proposed,
+        services_losing_time: list of services with fewer hours in proposed,
+        fairness_index: Gini coefficient of allocation proportionality
+    }
+
+    // Generate per-service impact summary.
+    // This is what department chairs care about: "what happens to MY time?"
+    service_impact = FOR each service:
+        current_hours = sum of hours in current_blocks for this service
+        proposed_hours = sum of hours in proposed_schedule for this service
+        change = proposed_hours - current_hours
+        utilization_forecast = forecasts[service].expected_weekly_minutes / (proposed_hours * 60)
+        RETURN { service, current_hours, proposed_hours, change, projected_utilization }
+
+    // Store for review.
+    write proposed_schedule to database with status "pending_review"
+    write comparison metrics and service_impact to dashboard data store
+
+    RETURN { proposed_schedule, comparison, service_impact }
+```
+
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and an open-source solver, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
 
-Sample output from a quarterly optimization run:
+**Sample output for a 20-room, 12-service hospital:**
 
 ```json
 {
-  "run_id": "opt-2026-Q2-001",
-  "solve_time_seconds": 47.3,
-  "solver_status": "OPTIMAL",
+  "optimization_run_id": "opt-2026-06-02-weekly",
+  "solve_time_seconds": 42.7,
   "optimality_gap": 0.008,
-  "metrics": {
-    "projected_overall_utilization": 0.78,
-    "current_overall_utilization": 0.63,
-    "fairness_index_gini": 0.12,
-    "total_block_changes": 14,
-    "services_gaining_blocks": ["neurosurgery", "urology"],
-    "services_losing_blocks": ["general_surgery"],
-    "services_unchanged": ["cardiac", "orthopedics", "ENT"]
+  "status": "optimal",
+  "proposed_schedule": {
+    "orthopedics": [
+      {"room": "OR-03", "day": "Monday", "slot": "AM", "hours": 5},
+      {"room": "OR-03", "day": "Monday", "slot": "PM", "hours": 5},
+      {"room": "OR-07", "day": "Wednesday", "slot": "AM", "hours": 5},
+      {"room": "OR-07", "day": "Thursday", "slot": "AM", "hours": 5}
+    ],
+    "cardiac_surgery": [
+      {"room": "OR-01", "day": "Tuesday", "slot": "AM", "hours": 5},
+      {"room": "OR-01", "day": "Tuesday", "slot": "PM", "hours": 5},
+      {"room": "OR-01", "day": "Thursday", "slot": "AM", "hours": 5}
+    ]
   },
-  "allocation_summary": [
-    {
-      "service": "orthopedics",
-      "blocks_allocated": 8,
-      "projected_utilization": 0.82,
-      "change": "no_change"
-    },
-    {
-      "service": "general_surgery",
-      "blocks_allocated": 5,
-      "projected_utilization": 0.75,
-      "change": "reduced_by_2"
-    },
-    {
-      "service": "neurosurgery",
-      "blocks_allocated": 4,
-      "projected_utilization": 0.71,
-      "change": "increased_by_2"
-    }
-  ]
+  "comparison": {
+    "current_suite_utilization": 0.64,
+    "proposed_suite_utilization": 0.78,
+    "blocks_changed": 14,
+    "total_blocks": 120,
+    "fairness_gini_current": 0.23,
+    "fairness_gini_proposed": 0.09
+  }
 }
 ```
 
-**Performance Benchmarks:**
+**Performance benchmarks:**
 
-| Metric | Value |
-|--------|-------|
-| Solve time (20 ORs, 15 services) | 30-120 seconds |
-| Solve time (50 ORs, 30 services) | 5-30 minutes |
-| Projected utilization improvement | 10-20 percentage points |
-| Daily release management runtime | < 5 seconds |
-| Data refresh latency | < 15 minutes from source |
-| Scenario comparison (UI) | < 2 seconds |
+| Metric | Typical Value |
+|--------|---------------|
+| Solve time (batch, 20 rooms) | 30-120 seconds |
+| Solve time (real-time reallocation) | 5-15 seconds |
+| Optimality gap achieved | 0.5-2% |
+| Utilization improvement over manual | 10-20 percentage points |
+| Stakeholder acceptance rate | 70-85% of proposed changes accepted |
+| Cost per optimization run | ~$0.50-2.00 (Fargate compute) |
 
-**Where It Struggles:**
-
-- When historical data is sparse (new hospital, new service line), the demand estimates are unreliable
-- When political constraints dominate (the chief of surgery insists on keeping blocks regardless of utilization), the model's recommendations get overridden
-- When case mix changes rapidly (pandemic surges, new surgeon with very different case profile), the trailing data lags reality
-- When the problem is highly constrained (many rooms with specialized equipment, tight staffing), feasible solutions may not exist without relaxing something
+**Where it struggles:** Highly politicized environments where any change from status quo is rejected regardless of data. Services with extremely variable demand (trauma) that resist block scheduling entirely. Hospitals where the scheduling system data is unreliable (garbage-in, garbage-out). And the cold-start problem: the first time you propose changes, resistance is highest because there's no track record of the system producing good results.
 
 ---
 
 ## The Honest Take
 
-Here's what I've learned about OR block scheduling optimization that the textbooks don't tell you:
+Here's what surprised me about OR block scheduling optimization: the math is the easy part. Formulating the model, picking a solver, getting a solution that's provably within 1% of optimal. All straightforward. Any operations research grad student can do it in a week.
 
-**The politics are harder than the math.** Seriously. Building the optimization model is a well-understood engineering problem. Getting a department chair to accept that their utilization data justifies losing a block? That's a human problem no solver can fix. The best implementations frame the optimizer as a "fairness engine" that removes bias from the allocation process. When the data says general surgery is using 45% of their blocks, it's harder to argue for keeping them than when it's just the perioperative director's opinion.
+The hard part is everything else. Getting clean data out of the scheduling system. Defining "utilization" in a way everyone agrees on (wheel-in to wheel-out? first cut to last suture? block start to block end including turnover?). Getting surgeons to agree on preference weights. Getting department chairs to accept that their "earned" time might be better allocated to a growing service. Getting the OR committee to trust a computer's recommendation over thirty years of institutional memory.
 
-**Utilization is a terrible sole objective.** If you optimize purely for utilization, you'll pack the schedule so tight that any case running long creates a cascade of delays. You need slack in the system. A target of 75-80% utilization is more realistic and more humane than chasing 95%.
+The political dynamics cannot be overstated. I've seen mathematically perfect schedules rejected because one influential surgeon's preferred slot moved by 30 minutes. The system needs to account for this. Build continuity into the objective function. Weight it heavily at first (penalize changes from current allocation), then gradually reduce the weight as trust builds. Think of it as an organizational change management problem wrapped in an optimization problem.
 
-**The release management problem is more impactful than the allocation problem.** Hospitals that implement good release rules (auto-release at 72 hours if less than 25% filled, for example) see bigger utilization gains than hospitals that re-optimize allocations quarterly but don't manage releases. Start with release management. It's simpler, faster to implement, and delivers results immediately.
+The other thing that catches teams off guard: the data quality issue. Most hospitals' OR scheduling systems track scheduled times, not actual times. The scheduled block might say 7am-3pm, but the actual first case started at 7:45 (late patient), the last case ended at 2:15, and there was 35 minutes of wasted turnover between cases 2 and 3. If you optimize against scheduled data, you're optimizing against fiction. You need actual utilization data, which often requires a separate data collection effort.
 
-**Your data is worse than you think.** Case duration data from the EHR is notoriously unreliable. "Wheels in" and "wheels out" times are often entered late, rounded, or just wrong. Turnover times are rarely tracked accurately. You'll spend more time cleaning and validating data than building the model. Budget for it.
-
-**Quarterly is too infrequent, monthly is too disruptive.** Most hospitals land on quarterly re-optimization with monthly "adjustment" runs that can make small changes (plus or minus one block per service) without a full reallocation. This balances responsiveness with stability.
+Start with batch, weekly optimization. Get buy-in on the concept. Show the OR committee that the model produces reasonable schedules. Let them override freely at first. Track how often overrides hurt utilization. Build trust incrementally. Real-time reoptimization is the destination, but it's a multi-year journey to get there in most organizations.
 
 ---
 
 ## Variations and Extensions
 
-### Multi-Campus Optimization
+**Release-time optimization.** Add a dynamic component that identifies blocks likely to go unused (based on booking patterns leading up to the block) and automatically releases them to an open-access pool before the release deadline. This captures value from the 15-30% of blocks that historically go unused because the holding service didn't fill them.
 
-For health systems with multiple hospitals, the optimization can span campuses. A surgeon who operates at two sites might have blocks at both, and the system-level optimization can balance load across facilities. This dramatically increases problem size but also increases the opportunity for improvement. The key addition is travel time constraints between campuses.
+**Surgeon-level assignment within blocks.** Once blocks are allocated to services, a second-level optimization assigns specific surgeons to time within their service's blocks. This accounts for surgeon-specific preferences (morning vs. afternoon), case duration patterns, and equipment needs. Essentially a nested optimization where the outer problem is service-to-room and the inner problem is surgeon-to-slot.
 
-### Demand Forecasting Integration
-
-Rather than using trailing historical averages, feed a time-series forecast of future demand into the optimizer. This lets the allocation anticipate seasonal patterns (joint replacements in winter, trauma in summer) rather than react to them a quarter late. A simple ARIMA or Prophet model on weekly case volumes by service is usually sufficient.
-
-### Surgeon-Level Preference Optimization
-
-Instead of allocating blocks to services, allocate to individual surgeons. This is a much larger problem (more decision variables) but produces schedules that better reflect individual practice patterns. It also makes the fairness question more granular: is it fair that Dr. A has prime Tuesday morning slots while Dr. B always gets Friday afternoon?
+**Stochastic optimization for demand uncertainty.** Replace the point demand forecast with a distribution. Formulate a stochastic program that optimizes expected utilization across multiple demand scenarios. This produces schedules that are robust to demand variability rather than optimized for one specific forecast. More complex to formulate and slower to solve, but produces schedules that perform better in practice when demand is uncertain.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 14.4: Nurse Staffing Optimization** - Staffing constraints feed directly into OR block feasibility. The two models can be linked.
-- **Recipe 14.7: OR Case Sequencing** - Once blocks are allocated, the next problem is sequencing individual cases within a block for maximum efficiency.
-- **Recipe 12.3: Surgical Duration Forecasting** - Better duration predictions improve the utilization estimates that drive block allocation.
-- **Recipe 14.1: Appointment Slot Optimization** - Similar optimization structure applied to outpatient scheduling.
+- **Recipe 14.4 (Nurse Staffing Optimization):** Uses similar MIP formulation techniques for a related healthcare scheduling problem; staffing schedules must align with OR block schedules
+- **Recipe 14.7 (OR Case Sequencing):** The downstream problem: once blocks are allocated, sequence individual cases within each block to minimize turnover time
+- **Recipe 12.5 (Hospital Census Forecasting):** Demand forecasting techniques that feed into the OR optimization model
+- **Recipe 14.1 (Appointment Slot Optimization):** A simpler introduction to optimization in healthcare scheduling; good foundation before tackling OR blocks
 
 ---
 
 ## Additional Resources
 
-### AWS Documentation
+**AWS Documentation:**
+- [Amazon SageMaker Built-in Algorithms](https://docs.aws.amazon.com/sagemaker/latest/dg/algos.html)
+- [Amazon ECS on Fargate](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
+- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/eventbridge/latest/userguide/scheduler.html)
+- [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
+- [Amazon QuickSight Embedding](https://docs.aws.amazon.com/quicksight/latest/user/embedded-analytics.html)
 
-- [Amazon SageMaker Processing Jobs](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-job.html) - Running custom containers for optimization workloads
-- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html) - Orchestrating multi-step optimization pipelines
-- [Amazon DynamoDB Developer Guide](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/) - Data modeling for operational scheduling data
-- [Amazon EventBridge Scheduler](https://docs.aws.amazon.com/scheduler/latest/UserGuide/what-is-scheduler.html) - Cron-based triggering for daily optimization runs
-- [Amazon QuickSight](https://docs.aws.amazon.com/quicksight/latest/user/welcome.html) - Building utilization dashboards
+**Optimization Resources:**
+- [Google OR-Tools Documentation](https://developers.google.com/optimization)
+- [HiGHS Solver](https://highs.dev/)
+- [PuLP (Python Linear Programming Library)](https://coin-or.github.io/pulp/)
 
-### Optimization Libraries and Solvers
+<!-- TODO: Verify if there are relevant aws-samples repos for optimization/scheduling use cases -->
 
-- [Google OR-Tools](https://developers.google.com/optimization) - Open-source optimization suite with MIP and CP solvers
-- [PuLP Documentation](https://coin-or.github.io/pulp/) - Python library for formulating linear and integer programs
-- [HiGHS Solver](https://highs.dev/) - High-performance open-source linear and mixed-integer solver
-
-<!-- TODO (TechWriter): Verify if there are specific aws-samples repos for optimization/scheduling workloads on SageMaker -->
-
-<!-- TODO (TechWriter): Add 2-3 AWS Solutions Library or AWS Blog links for optimization/OR workloads per RECIPE-GUIDE requirements -->
-
-### Industry References
-
-- AORN (Association of periOperative Registered Nurses) guidelines on OR utilization metrics
-- Cardoen, B., Demeulemeester, E., & Beliën, J. (2010). "Operating room planning and scheduling: A literature review." European Journal of Operational Research.
+**Industry References:**
+- [INFORMS Healthcare Conference Proceedings](https://www.informs.org/) (search for "operating room scheduling")
 
 ---
 
 ## Estimated Implementation Time
 
-| Phase | Duration |
-|-------|----------|
-| Basic (release management rules only) | 4-6 weeks |
-| Production-ready (full optimization + UI) | 3-5 months |
-| With variations (multi-campus, forecasting) | 6-9 months |
+| Tier | Duration | Notes |
+|------|----------|-------|
+| **Basic** (batch optimization, open-source solver, manual review) | 8-12 weeks | Includes data pipeline, model formulation, solver integration, basic dashboard |
+| **Production-ready** (automated pipeline, stakeholder dashboards, approval workflow) | 16-24 weeks | Adds forecast integration, change management tooling, automated publishing |
+| **With variations** (real-time reoptimization, release-time, stochastic) | 6-12 months | Requires tight EHR integration, event-driven architecture, solver performance tuning |
 
 ---
 
 ## Tags
 
-`optimization` `operations-research` `scheduling` `operating-room` `resource-allocation` `mixed-integer-programming` `perioperative` `utilization`
+`optimization` · `operations-research` · `mixed-integer-programming` · `scheduling` · `operating-room` · `block-scheduling` · `resource-allocation` · `fargate` · `sagemaker` · `eventbridge` · `medium-complexity` · `hipaa`
 
 ---
 
-| [← 14.4: Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization) | [Chapter 14 Index](chapter14-index) | [14.6: Patient Flow / Bed Assignment →](chapter14.06-patient-flow-bed-assignment) |
+*← [Recipe 14.4: Nurse Staffing Optimization](chapter14.04-nurse-staffing-optimization) · [Chapter 14 Index](chapter14-index) · [Next: Recipe 14.6: Patient Flow / Bed Assignment →](chapter14.06-patient-flow-bed-assignment)*
