@@ -179,9 +179,7 @@ flowchart TB
 | **AWS KMS** | Encryption key management for data at rest |
 | **Amazon CloudWatch** | Monitoring solver performance, Lambda errors, utilization metrics |
 
-### Code
-
-#### Walkthrough
+### Code (Pseudocode Walkthrough)
 
 **Step 1: Extract historical demand data.** Before the optimizer can propose a schedule, it needs to understand what each service actually does with its OR time. This step pulls surgical case history (typically 12-24 months) and computes per-service metrics: average weekly case volume, case duration distributions, cancellation rates, and utilization of currently allocated blocks. These metrics become the demand forecast inputs and the baseline against which the new schedule will be measured. Skip this step and the optimizer is flying blind, producing allocations based on nothing.
 
@@ -483,18 +481,6 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
 ---
 
-## Why This Isn't Production-Ready
-
-**Surgeon preference modeling.** The pseudocode treats services as monolithic units. In reality, individual surgeons within a service have specific day preferences (Dr. Smith operates Tuesday/Thursday; Dr. Jones does Monday/Wednesday/Friday). A production system needs surgeon-level preference data and may need to decompose the problem into service-level block allocation followed by surgeon-level assignment within blocks.
-
-**Seasonality handling.** Surgical volumes aren't constant. Orthopedics spikes in winter (ski injuries) and summer (elective joint replacements when people can recover before fall). A production forecasting model needs seasonal decomposition, not just rolling averages.
-
-**Change management workflow.** An optimization output that shows a service losing blocks requires a structured approval workflow: notification to the affected department chair, appeal period, executive sign-off. The technical system needs to integrate with your institutional governance process.
-
-**Integration with the scheduling system.** The block template must flow into whatever surgical scheduling application your institution uses (Epic OpTime, Cerner SurgiNet, etc.). That integration is institution-specific and often the hardest part of the project.
-
----
-
 ## The Honest Take
 
 Here's what nobody tells you about OR block scheduling optimization: the math is the easy part. The solver will happily produce an optimal schedule in 10 minutes. Getting institutional buy-in to actually implement it takes 6-12 months.
@@ -506,6 +492,13 @@ My advice: start with a "what-if" tool, not a mandate. Let department chairs exp
 The block release engine is the quick win. It's non-controversial (nobody loses their allocated blocks), immediately improves utilization, and builds trust in the optimization system. Deploy that first, measure the improvement, then use those results to justify the full scheduling overhaul.
 
 One more thing: the 75% utilization target that every hospital uses as a benchmark is somewhat arbitrary. The "right" utilization depends on your case mix, turnover times, and tolerance for overtime. A 90% utilized OR with frequent overtime cases is not better than a 75% utilized OR that finishes on time every day. Include a utilization ceiling in your constraints, not just a floor.
+
+**What's still missing for production:**
+
+- **Surgeon preference modeling.** The pseudocode treats services as monolithic units. In reality, individual surgeons within a service have specific day preferences (Dr. Smith operates Tuesday/Thursday; Dr. Jones does Monday/Wednesday/Friday). A production system needs surgeon-level preference data and may need to decompose the problem into service-level block allocation followed by surgeon-level assignment within blocks.
+- **Seasonality handling.** Surgical volumes aren't constant. Orthopedics spikes in winter (ski injuries) and summer (elective joint replacements when people can recover before fall). A production forecasting model needs seasonal decomposition, not just rolling averages.
+- **Change management workflow.** An optimization output that shows a service losing blocks requires a structured approval workflow: notification to the affected department chair, appeal period, executive sign-off. The technical system needs to integrate with your institutional governance process.
+- **Integration with the scheduling system.** The block template must flow into whatever surgical scheduling application your institution uses (Epic OpTime, Cerner SurgiNet, etc.). That integration is institution-specific and often the hardest part of the project.
 
 ---
 
@@ -543,7 +536,7 @@ One more thing: the 75% utilization target that every hospital uses as a benchma
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
 **Operations Research in Healthcare:**
-- TODO: Verify link for INFORMS Healthcare journal or relevant OR in healthcare publication
+<!-- TODO (TechWriter): Verify and add link for INFORMS Healthcare journal or relevant OR in healthcare publication -->
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Operations/Scheduling for reference architectures)
 
 ---
