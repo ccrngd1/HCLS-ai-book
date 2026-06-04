@@ -114,6 +114,8 @@ Once images are in the same coordinate space, you need a strategy for combining 
 
 **AWS Step Functions for pipeline orchestration.** A fusion workflow has multiple sequential and parallel stages: DICOM validation, preprocessing per modality, registration (possibly multiple pairs), fusion output generation, quality validation, and DICOM export. Step Functions provides visual workflow definition, retry logic, error handling, and audit trails. Each step can invoke different compute backends (Lambda for lightweight tasks, SageMaker for GPU inference, ECS for custom image processing containers).
 
+<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add per-step error handling guidance: preprocessing failures retry 2x with backoff then fail the job; registration failures retry 1x then route to manual queue; QA failures route to physicist review with intermediate outputs retained in S3; export failures retry 3x then alert operations. Use Step Functions ResultPath to preserve intermediate outputs for debugging. -->
+
 **Amazon ECS (Fargate) for preprocessing containers.** Medical image preprocessing (bias field correction, intensity normalization, resampling, skull stripping) uses specialized libraries (SimpleITK, ANTs, FreeSurfer). These run best in custom containers with specific library versions. Fargate provides serverless container execution without managing the underlying compute.
 
 **AWS HealthImaging for DICOM management.** AWS HealthImaging (formerly Amazon HealthLake Imaging) provides a purpose-built medical imaging store with native DICOM support, sub-second image retrieval, and lossless compression. It integrates with PACS systems for study ingestion and provides API-based access for ML pipelines.
@@ -147,19 +149,22 @@ flowchart TD
     style H fill:#9ff,stroke:#333
 ```
 
+<!-- TODO (TechWriter): Expert review N1 (HIGH). Add a paragraph here covering network path options for multi-GB PHI transfers from institutional PACS to AWS: (1) AWS Direct Connect for dedicated bandwidth and private connectivity (preferred for production radiation oncology); (2) Site-to-Site VPN for encrypted tunnel over existing internet; (3) DICOMweb over TLS for lower-volume use cases. Note bandwidth requirements (50-100 Mbps sustained for departments needing fusion results within 30 minutes of scan completion). -->
+
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | AWS HealthImaging, Amazon S3, AWS Step Functions, Amazon SageMaker, Amazon ECS (Fargate), Amazon DynamoDB, Amazon CloudWatch |
-| **IAM Permissions** | `medical-imaging:*` (HealthImaging), `s3:GetObject/PutObject`, `sagemaker:InvokeEndpoint`, `states:StartExecution`, `ecs:RunTask`, `dynamodb:PutItem/GetItem/Query`, `logs:CreateLogGroup/PutLogEvents` |
+<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace wildcard medical-imaging:* with per-component scoped roles. ECS preprocessing needs only GetImageSet/GetImageFrame. ECS post-processing needs StartDICOMImportJob. SageMaker needs only s3:GetObject/PutObject on the processing bucket. Never grant all permissions as a single shared role. -->
+| **IAM Permissions** | `medical-imaging:*` (HealthImaging), `s3:GetObject/PutObject`, `sagemaker:InvokeEndpoint`, `states:StartExecution`, `ecs:RunTask`, `dynamodb:PutItem/GetItem/Query`, `logs:CreateLogGroup/PutLogEvents`. **Note:** Production deployments must scope each component (ECS tasks, SageMaker execution role, Step Functions role) to only the actions and resources it requires. The list above is the permission union; never apply it as a single shared role. |
 | **BAA** | AWS BAA signed (required: medical images are PHI) |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; HealthImaging: AWS-managed or CMK encryption; SageMaker endpoint: KMS-encrypted volumes; all transit over TLS |
-| **VPC** | Production: all compute in VPC with VPC endpoints for S3, DynamoDB, SageMaker, HealthImaging, and CloudWatch Logs. Private subnets for ECS tasks and SageMaker endpoints. |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; HealthImaging: AWS-managed or CMK encryption; SageMaker endpoint: KMS-encrypted volumes (enable `EnableInterContainerTrafficEncryption` if using multi-instance endpoints); all transit over TLS |
+| **VPC** | Production: all compute in VPC with VPC endpoints for S3 (Gateway), DynamoDB (Gateway), SageMaker Runtime (Interface), HealthImaging (Interface), CloudWatch Logs (Interface), and CloudWatch Monitoring (Interface). Private subnets for ECS tasks and SageMaker endpoints. SageMaker endpoint security group: allow inbound TCP 443 from ECS task and Step Functions VPC endpoint security groups only. |
 | **CloudTrail** | Enabled: log all HealthImaging, S3, and SageMaker API calls for HIPAA audit trail |
 | **GPU Requirements** | SageMaker endpoint: ml.g4dn.xlarge minimum for single-pair registration; ml.g5.2xlarge for production throughput. Batch processing: ml.g4dn.2xlarge instances. |
-| **Sample Data** | Public datasets: TCIA (The Cancer Imaging Archive) provides multi-modal oncology datasets. BraTS challenge provides matched MRI sequences. Never use real patient images in dev without proper IRB and de-identification. |
-| **Cost Estimate** | Per fusion study: ~$0.50 (HealthImaging ingest/retrieve) + ~$1.00-3.00 (SageMaker GPU inference, 30-120 seconds) + ~$0.30 (ECS preprocessing) + ~$0.10 (Step Functions, S3, DynamoDB). Total: $2.50-8.00 depending on complexity and instance size. |
+| **Sample Data** | Public datasets: TCIA (The Cancer Imaging Archive) provides multi-modal oncology datasets. BraTS challenge provides matched MRI sequences. Never use real patient images in dev without proper IRB and de-identification. For institutional test data: coordinate de-identification across all studies in a fusion set using consistent pseudonym mapping. Standard DICOM de-identification must preserve spatial metadata (ImagePositionPatient, ImageOrientationPatient, PixelSpacing) that registration depends on. |
+| **Cost Estimate** | Per fusion study: ~$0.50 (HealthImaging ingest/retrieve) + ~$1.00-3.00 (SageMaker GPU inference, 30-120 seconds) + ~$0.30 (ECS preprocessing) + ~$0.10 (Step Functions, S3, DynamoDB). Total: $2.50-8.00 depending on complexity and instance size. Additional costs at scale: S3 intermediate storage (~1GB/study, implement lifecycle policies); HealthImaging storage for retained studies; data transfer from on-premises if not using Direct Connect. |
 
 ### Ingredients
 
@@ -415,6 +420,10 @@ FUNCTION validate_registration_quality(job_id, fixed_volume, registered_moving, 
     RETURN passed, quality_report
 ```
 
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add a paragraph noting that quality thresholds (MI, TRE, folding fraction) are clinical safety parameters, not software configurations. In production, store thresholds in a versioned configuration with change audit trail. Threshold modifications should require medical physics sign-off and documented validation on a test cohort before deployment. -->
+
+<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add a note on concurrent job handling: with deformable registration taking 30-120 seconds, a single-instance SageMaker endpoint queues concurrent requests. For departments processing >10 fusion studies/hour, configure auto-scaling with a target of InvocationsPerInstance < 2, or use SageMaker Asynchronous Inference for long-running registration jobs. -->
+
 **Step 5: Generate fused output and export to clinical systems.** Once registration passes quality checks, the system generates the clinical deliverables. For radiation therapy, this means creating DICOM Registration Objects (encoding the spatial transformation), resampled image series (the MRI/PET in CT coordinate space), and optionally fused overlay series for visual review. The outputs must be DICOM-compliant to flow back into PACS and treatment planning systems. This step also generates summary visualizations (checkerboard patterns, color overlays) that clinicians use to visually verify alignment before relying on it for treatment decisions.
 
 ```pseudocode
@@ -518,6 +527,8 @@ FUNCTION generate_fusion_output(job_id, fixed_volume, registered_moving,
 | Cost per study | ~$2.50 | ~$5.00-8.00 |
 | Throughput (single endpoint) | ~60 studies/hour | ~15-30 studies/hour |
 
+Pipeline times assume a warm SageMaker endpoint. Cold-start (first request after scale-up) adds 3-5 minutes for model loading. For predictable latency in clinical use, configure minimum instance count of 1 to avoid scale-to-zero.
+
 **Where it struggles:**
 
 - Large body deformations (weight loss between scans, full bladder vs. empty bladder): even deformable registration has limits on how much it can model.
@@ -578,7 +589,7 @@ One more thing: the preprocessing matters more than the registration algorithm. 
 
 **AWS Solutions and Blogs:**
 - [Guidance for Multi-Modal Data Analysis with AWS Health and ML Services](https://aws.amazon.com/solutions/guidance/multi-modal-data-analysis-with-aws-health-and-ml-services/): Reference architecture for multi-modal health data pipelines
-- [Building Medical Imaging AI Solutions with AWS HealthImaging](https://aws.amazon.com/blogs/machine-learning/): <!-- TODO: verify specific blog post URL exists --> AWS ML Blog posts on medical imaging pipelines
+- [Building Medical Imaging AI Solutions with AWS HealthImaging](https://aws.amazon.com/blogs/machine-learning/): <!-- TODO (TechWriter): Expert review V1 (LOW). Verify specific blog post URL exists and replace with confirmed link. --> AWS ML Blog posts on medical imaging pipelines
 
 **External Resources:**
 - [VoxelMorph: A Learning Framework for Deformable Medical Image Registration](https://arxiv.org/abs/1809.05231): Foundational paper for deep learning registration
