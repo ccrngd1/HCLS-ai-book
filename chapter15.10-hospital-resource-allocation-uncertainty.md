@@ -2,6 +2,8 @@
 
 **Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$3,000-$12,000/month (simulation + training infrastructure)
 
+<!-- TODO (TechWriter): Expert review A4 (LOW). Cost range is 4x wide. Clarify assumed retraining frequency (weekly vs monthly) that drives variation, add simulation compute line item (CPU instances for parallel simulators). -->
+
 ---
 
 ## The Problem
@@ -96,7 +98,7 @@ These dynamics are what you build into the simulation environment. The fidelity 
 
 ### Offline vs. Online Learning: The Critical Tradeoff
 
-**You cannot do online RL in a live hospital.** Let me be unambiguous about this. You cannot explore suboptimal resource allocation strategies on real patients to gather training data. The exploration component of RL (trying things to see what happens) is incompatible with patient safety and operational requirements.
+**You cannot do online RL in a live hospital.** Full stop. You cannot explore suboptimal resource allocation strategies on real patients to gather training data. The exploration component of RL (trying things to see what happens) is incompatible with patient safety and operational requirements.
 
 This means all training happens offline, using one of two approaches:
 
@@ -121,6 +123,8 @@ Unlike some RL domains where constraint violations are just suboptimal, hospital
 - Maximum capacity limits (fire code, licensing)
 
 These must be enforced at action selection time, not just penalized in the reward. The architecture needs a constraint checker that vetoes any action violating hard constraints, regardless of what the policy network outputs. The policy learns over time not to propose infeasible actions (because they never result in reward), but the hard constraint layer is the safety guarantee.
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Expand constraint checker architecture: (1) specify it runs inline in the inference Lambda, blocking before any recommendation is emitted, (2) rule definitions stored in versioned DynamoDB table, (3) if ALL top-k policy actions are infeasible, system returns "no recommendation, human judgment required" instead of relaxing constraints, (4) constraint rules updated through governed process with audit trail, (5) conflicting constraints (e.g., staffing ratio unit A vs unit B when total staff insufficient) trigger alert to capacity coordinator. -->
 
 ### Constrained Markov Decision Processes (CMDPs)
 
@@ -159,6 +163,8 @@ The architecture has four major components: data ingestion, simulation environme
 ```
 
 **Data ingestion** pulls real-time operational data from ADT (Admit-Discharge-Transfer) systems, nurse staffing platforms, OR scheduling systems, and equipment tracking. This feeds the state vector for inference and the historical dataset for simulator calibration.
+
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note on state freshness: (1) state aggregator should timestamp-order events with grace period for late arrivals, (2) maintain current state in DynamoDB (not Lambda memory) for durability, (3) mark state vector fields with freshness timestamps, (4) inference Lambda should refuse to recommend if critical fields are older than threshold (e.g., staffing data > 15 minutes old). ADT systems are notorious for delayed messages. -->
 
 **The simulation environment** is a discrete-event simulation of hospital operations. Patients arrive according to learned distributions. They move through the hospital (ED to inpatient, OR to PACU to floor). Length of stay follows diagnosis-specific distributions. Staff shift according to schedules. The simulator must be fast enough to run thousands of episodes for training.
 
@@ -231,8 +237,11 @@ flowchart TB
 | Encryption | S3 SSE-KMS, DynamoDB encryption at rest, Kinesis server-side encryption, Lambda environment variable encryption |
 | VPC | Training and inference in private subnets. VPC endpoints for S3, DynamoDB, SageMaker. No public internet access for PHI-containing workloads. |
 | CloudTrail | All API calls logged. DynamoDB streams for state change audit. |
-| Sample Data | Synthetic hospital operational data for development. Real ADT feeds for calibration (requires data governance approval). |
+| Sample Data | Synthetic hospital operational data for development. Real ADT feeds for calibration (data governance approval needed, and it takes longer than you think). |
 | Cost Estimate | Training: ~$500-2,000 per training run (GPU instances for 8-24 hours). Inference: ~$50-200/month (Lambda invocations every 15-30 min). Data storage: ~$100-500/month. |
+
+<!-- TODO (TechWriter): Expert review S1 (MEDIUM). IAM permissions list is incomplete. Add: kms:Decrypt and kms:GenerateDataKey (scoped to CMK ARN), kinesis:DescribeStream and kinesis:GetShardIterator, cloudwatch:PutMetricData, logs:CreateLogGroup and logs:PutLogEvents, sagemaker:DescribeTrainingJob, and API Gateway permissions. Note that all permissions should use resource-level ARN restrictions. -->
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). VPC endpoint list is incomplete. Add endpoints for Kinesis Streams, Step Functions, CloudWatch, CloudWatch Logs, and API Gateway (or specify private API). Note that NAT Gateway is acceptable as fallback but VPC endpoints preferred for PHI workloads. -->
 
 ### Ingredients
 
@@ -432,6 +441,8 @@ FUNCTION train_policy(simulator, config):
 
 ### Step 4: Offline Policy Evaluation
 
+<!-- TODO (TechWriter): Expert review A2 (HIGH). The importance sampling OPE shown below has known issues: no behavior policy estimation discussion, no variance reduction (weight clipping), and the bootstrap CI is unreliable for weighted estimators. Add: (1) note that behavior policy estimation requires a separate modeling step, (2) recommend PDIS or doubly-robust methods for clinical settings, (3) add weight clipping, (4) note that multiple OPE estimators should be compared for high-stakes domains. -->
+
 Before deploying any learned policy, you must evaluate it against historical data. This tells you whether the policy would have performed better than actual human decisions on real scenarios.
 
 If you skip evaluation, you're deploying a policy trained in simulation without any evidence it works in reality.
@@ -482,6 +493,8 @@ FUNCTION evaluate_policy_offline(policy, historical_episodes):
 
 ### Step 5: Deploy as Decision Support with Human Override
 
+<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add paragraph noting that recommendation logs contain indirect PHI (state vectors include patient census, acuity, staffing that combined with timestamps can re-identify patients). Discuss access restrictions (authorized operations staff and auditors only), retention policies (7 years per HIPAA), and item-level encryption with separate CMKs for audit data. -->
+
 The trained policy produces recommendations, not commands. A human operator sees the recommendation, the reasoning, and decides whether to follow it.
 
 If you skip the human-in-the-loop layer, you've built an autonomous hospital controller. Nobody wants that. Nobody should want that.
@@ -492,6 +505,7 @@ FUNCTION generate_recommendation(hospital_id):
     state = build_state_vector(hospital_id, NOW())
 
     // Load latest approved policy
+    // TODO (TechWriter): Expert review S3 (LOW). Note model artifact integrity verification here: hash check at load time, SageMaker Model Registry lineage tracking.
     policy = LOAD_MODEL(model_registry, stage="approved")
 
     // Get policy recommendation
@@ -614,6 +628,8 @@ Let me be direct about where this stands in 2026.
 **Offline evaluation is necessary but insufficient.** You can estimate policy performance using importance sampling and historical data, but these estimates have wide confidence intervals. The only way to truly validate is a careful pilot deployment with concurrent controls (randomized by time block or unit).
 
 What I'd do differently if starting over: spend the first 6 months on the simulator and data pipeline. Don't touch RL until you have a simulator that hospital operations staff look at and say "yeah, that's roughly how it works." Then start simple (a contextual bandit for bed assignment) and grow toward full RL as you build trust.
+
+<!-- TODO (TechWriter): Expert review CRITICAL #1 (CRITICAL). Add a "Regulatory Considerations" subsection here discussing FDA's 2022 CDS guidance, the 4 criteria for CDS exemption, why this system likely qualifies for exemption if designed as decision support with human override, the risk of losing exemption if human override is removed, and state-level regulatory variation. This is a clinical decision support system making patient-specific recommendations to healthcare professionals. -->
 
 ---
 
