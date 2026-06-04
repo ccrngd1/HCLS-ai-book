@@ -8,13 +8,11 @@
 
 ## Overall Assessment
 
-This is one of the most clinically significant recipes in the cookbook. The problem framing is excellent: the voluntary-reporting-captures-1-to-13-percent statistic, the amlodipine opening scenario, and the honest breakdown of why "just search for side effects" fails all land well. The five-stage NLP pipeline (entity extraction, assertion filtering, relation extraction, severity classification, aggregation) is architecturally sound and properly sequenced. The layered evidence scoring approach for relation extraction is a mature design that acknowledges the precision/recall tradeoffs honestly.
+This recipe tackles one of the most clinically impactful NLP problems in healthcare. The problem statement is excellent: grounding in the 1-13% voluntary reporting capture rate, the amlodipine scenario, and the systematic breakdown of why naive keyword matching fails. The five-stage pipeline (entity extraction, assertion filtering, relation extraction, severity classification, aggregation) is architecturally appropriate and well-sequenced. The layered evidence scoring for relation extraction is a mature, pragmatic design.
 
-The recipe delivers on its promise: a reader finishes knowing how adverse event detection works conceptually, why it's hard, and how to build it on AWS. The honest take about the first week drowning in noise and the months-to-signal-detection reality is exactly what a deployer needs to hear.
+The recipe delivers: a reader finishes understanding why adverse event detection is hard, how the NLP pipeline works conceptually, and how to implement it on AWS. The honest take about the first-week noise flood and the months-to-meaningful-signals timeline is exactly what deployers need.
 
-However: there are security gaps around PHI data flows through Neptune, a missing DLQ on the SQS queue that processes clinical notes, an incomplete cost estimate that understates real-world expenses by 3-5x, and a severity classification default that could cause alert fatigue. None are deployment blockers for a skilled team, but several would trip up a builder following the recipe literally.
-
-Priority breakdown: 0 must-fix, 5 high-severity, 6 medium, 3 low.
+However, there are issues: the cost estimate in the header contradicts the body by 4-10x, there is no DLQ on the primary SQS queue, PHI leaks into SNS alert messages, Neptune access controls are unspecified, and the severity default of Grade 2 defeats the purpose of severity classification. Five HIGH findings, zero CRITICAL.
 
 ---
 
@@ -24,185 +22,180 @@ Priority breakdown: 0 must-fix, 5 high-severity, 6 medium, 3 low.
 
 ### Security Expert Review
 
-#### What's Done Well
+#### Strengths
 
-The PHI baseline is strong: BAA requirement stated explicitly, SSE-KMS on S3 and SQS, DynamoDB encryption at rest, Neptune encryption at rest, TLS for all transit, CloudTrail enabled, VPC with VPC endpoints for all services including Comprehend Medical. The "Never use real patient notes in non-production environments" callout with MIMIC-III as the dev alternative is correct. The `status: "pending_review"` default on all detections (human-in-the-loop before action) is appropriate for a safety-critical system.
+PHI handling baseline is solid: BAA explicitly required, SSE-KMS on S3/SQS, DynamoDB encryption at rest, Neptune encryption at rest, TLS in transit, CloudTrail enabled, VPC with VPC endpoints for all primary services, and the "never use real patient notes in non-production" callout with MIMIC-III as dev alternative. The `status: "pending_review"` default enforces human-in-the-loop before clinical action. The IAM permissions list is explicit and reasonably scoped (except Neptune, noted below).
 
-#### Issue S1: Neptune PHI Access Controls Not Specified (HIGH)
-
-**Location:** Architecture Diagram and "Why These Services" section (Neptune paragraph)
-
-**The problem:** The recipe routes detected adverse events into Amazon Neptune for signal aggregation. The graph contains patient_id nodes, drug nodes, and event nodes with relationship edges. This is a PHI data store: patient identifiers linked to medical conditions and medications. The recipe mentions Neptune "requires VPC deployment" and "encryption at rest" but provides no guidance on:
-- Neptune IAM authentication (required for fine-grained access control)
-- Security group rules limiting which Lambda functions can reach Neptune's port 8182
-- Whether the signal-aggregator Lambda is the only function with Neptune access, or whether the safety dashboard also connects directly
-- Audit logging for Neptune queries (who queried which patient's adverse event graph)
-
-A builder following this recipe will deploy Neptune with default network access from within the VPC, meaning any Lambda or EC2 instance in the same VPC can query the full adverse event graph.
-
-**Suggested fix:** Add to Prerequisites: "Neptune: IAM database authentication enabled, security group restricted to signal-aggregator Lambda and dashboard read-replica. Enable Neptune audit logs to CloudWatch Logs for PHI access tracking." Add a note in the Neptune ingredient row: "Restrict Gremlin/SPARQL query access to the aggregation Lambda and read-only dashboard service via security groups and IAM DB auth."
-
-#### Issue S2: SNS Alert Message Contains Full AE Record Including Patient ID (HIGH)
+#### Issue S1: SNS Alert Publishes Full AE Record With Patient Identifiers (HIGH)
 
 **Location:** Step 6 pseudocode, `store_and_alert` function
 
-**The problem:** The pseudocode publishes the full `ae_record` to SNS for high-severity alerts:
-
+**Problem:** The pseudocode publishes the full `ae_record` to SNS:
 ```text
 PUBLISH to SNS topic "ae-critical-alerts":
     subject: "High-severity adverse event detected"
     message: ae_record (formatted for human readability)
 ```
 
-The `ae_record` contains `patient_id` and `note_id`. SNS messages are delivered to subscribers (email, SMS, HTTPS endpoints, SQS queues). If any subscriber endpoint is outside the HIPAA-compliant boundary (e.g., an email distribution list that includes non-covered recipients, or a webhook to an external incident management system without a BAA), this constitutes PHI disclosure.
+The `ae_record` includes `patient_id` and `note_id`. SNS delivers to subscribers (email, SMS, HTTPS, SQS). If any subscriber endpoint is outside the HIPAA boundary (email to non-covered recipients, webhook to external system without BAA), this constitutes unauthorized PHI disclosure.
 
-**Suggested fix:** Change the SNS message to include only: `ae_id`, `severity`, `medication` (generic name only), `event_description` (clinical finding without patient identifiers), and a link to the internal safety dashboard where authorized users can view full details after authentication. Add a note: "Never include patient_id, note_id, or other direct identifiers in SNS messages. SNS delivery endpoints may not all be within your HIPAA boundary."
+**Fix:** Publish only `ae_id`, `severity`, generic medication name, and event description (no patient identifiers). Include a link to the internal safety dashboard where authenticated, authorized users can view full details. Add note: "Never include patient_id or note_id in SNS messages. Subscriber endpoints may not all be within your HIPAA-covered boundary."
 
-#### Issue S3: IAM Permissions Use Wildcard on Neptune (MEDIUM)
+#### Issue S2: Neptune PHI Access Controls Absent (HIGH)
+
+**Location:** Architecture Diagram and "Why These Services" Neptune paragraph
+
+**Problem:** Neptune stores a graph linking patient_id nodes to drug nodes and adverse event nodes. This is PHI. The recipe mentions "requires VPC deployment" and "encryption at rest" but provides no guidance on:
+- IAM database authentication (Neptune supports this for fine-grained access)
+- Security group rules restricting port 8182 access to only the signal-aggregator Lambda
+- Audit logging for graph queries (who queried which patient's AE relationships)
+- Whether dashboard reads go through a read replica or the primary instance
+
+A builder following this recipe literally will deploy Neptune accessible to any resource in the VPC.
+
+**Fix:** Add to Prerequisites: "Neptune: IAM database authentication enabled, security group inbound 8182 restricted to signal-aggregator Lambda SG only, audit logs enabled to CloudWatch Logs." In the Ingredients table for Neptune: "Access restricted via IAM DB auth and security groups. Enable audit logs for PHI access tracking."
+
+#### Issue S3: Neptune IAM Permission Is Wildcard (MEDIUM)
 
 **Location:** Prerequisites table, IAM Permissions row
 
-**The problem:** The IAM permissions specify `neptune-db:*` with the note "(scoped to cluster)." While scoping to the cluster ARN is better than account-wide access, `neptune-db:*` grants both read and write access to the graph database. The signal-aggregator Lambda needs read+write. A safety dashboard service only needs read. A single wildcard permission applied to all components violates least-privilege.
+**Problem:** `neptune-db:*` (scoped to cluster) grants full read+write to the graph. The signal-aggregator Lambda needs read+write. A safety dashboard service needs read-only. Single wildcard permission for all consumers violates least-privilege.
 
-**Suggested fix:** Specify separate permissions: `neptune-db:ReadDataViaQuery` for read-only consumers (dashboard), `neptune-db:WriteDataViaQuery` and `neptune-db:ReadDataViaQuery` for the signal-aggregator Lambda. Note that Neptune IAM actions are granular and should be scoped per role.
+**Fix:** Split: `neptune-db:ReadDataViaQuery` for read-only consumers, `neptune-db:ReadDataViaQuery` + `neptune-db:WriteDataViaQuery` for the aggregator Lambda. Document per-role.
 
-#### Issue S4: No Retention Policy on DynamoDB Adverse Event Records (MEDIUM)
+#### Issue S4: No DynamoDB TTL or Retention Policy for PHI Records (MEDIUM)
 
-**Location:** Step 6 pseudocode, DynamoDB storage
+**Location:** Step 6, DynamoDB storage; "Why These Services" DynamoDB paragraph
 
-**The problem:** The recipe mentions DynamoDB's "TTL feature can manage retention policies for different severity levels" in the "Why These Services" section but never actually specifies a retention policy or configures TTL in the pseudocode. Adverse event records containing patient_id and clinical findings accumulate indefinitely. Healthcare data retention policies vary by jurisdiction and purpose (pharmacovigilance records may require longer retention than operational records), but the recipe provides no guidance.
+**Problem:** The recipe mentions DynamoDB's "TTL feature can manage retention policies" but never configures TTL or specifies a retention policy. Adverse event records with patient_id and clinical findings accumulate indefinitely. HIPAA requires documented retention and disposal policies for PHI.
 
-**Suggested fix:** Add a note in Step 6 or in a configuration section: "Configure DynamoDB TTL on a `ttl_epoch` attribute. Suggested retention: Grade 1-2 events retain for 2 years (or per institutional policy), Grade 3-4 events retain for 7 years (aligned with medical records retention requirements in most US states). Aggregated signals in Neptune retain independently of individual event records."
+**Fix:** Add to Step 6 or a configuration section: "Configure DynamoDB TTL on `ttl_epoch` attribute. Suggested: Grade 1-2 events retain 2 years, Grade 3-4 events retain 7 years (aligned with most US state medical records retention laws). Document retention policy per institutional compliance requirements."
 
-#### Issue S5: Archive Bucket Has No Object Lock or Versioning Mentioned (LOW)
+#### Issue S5: S3 Archive Lacks Immutability Controls (LOW)
 
-**Location:** Step 1 pseudocode, S3 archive
+**Location:** Step 1, S3 archive
 
-**The problem:** The raw note archive in S3 serves as the audit trail ("every piece of PHI we process must be traceable"). For audit compliance, this archive should be immutable: a processed note should not be deletable or overwritable after archival. The recipe does not mention S3 Object Lock (compliance mode) or even versioning on the archive bucket.
+**Problem:** The audit trail archive should be tamper-proof. No mention of S3 versioning or Object Lock. A malicious or accidental deletion of processed notes destroys the audit trail.
 
-**Suggested fix:** Add to Prerequisites or Step 1: "Enable S3 versioning on the notes-archive bucket. For regulatory compliance, consider S3 Object Lock in compliance mode with a retention period aligned to your records retention policy. This ensures the audit trail is tamper-proof."
+**Fix:** Add: "Enable S3 versioning on the notes-archive bucket. For regulatory environments, enable S3 Object Lock in compliance mode with retention aligned to records retention policy."
 
 ---
 
 ### Architecture Expert Review
 
-#### What's Done Well
+#### Strengths
 
-The five-stage pipeline decomposition is well-reasoned and properly ordered. The layered evidence scoring (causal language 0.6, temporal 0.3, proximity 0.1, knowledge base 0.2) with a 0.4 threshold is a pragmatic design that allows multiple weak signals to compound. The honest acknowledgment that recall for relation extraction is 55-70% (meaning 30-45% of real adverse events are missed) sets correct expectations. The aggregation step using disproportionality analysis is the right approach for pharmacovigilance signal detection. The "Honest Take" section about iterative tuning of expected-effects filters is genuinely useful production guidance.
+The five-stage pipeline is correctly decomposed and ordered. The layered evidence scoring (causal language 0.6, temporal 0.3, proximity 0.1, knowledge base 0.2, threshold 0.4) is pragmatic and allows weak signals to compound. The honest performance benchmarks (55-70% recall, 15-30% false positive rate) set correct expectations. The aggregation step using disproportionality analysis is the correct pharmacovigilance approach. The "Honest Take" on expected-effects tuning and the months-to-signal-detection reality is genuine production wisdom.
 
-#### Issue A1: No Dead Letter Queue on the SQS Notes Queue (HIGH)
+#### Issue A1: No Dead Letter Queue on SQS Notes Queue (HIGH)
 
-**Location:** Architecture Diagram, "Why These Services" SQS paragraph
+**Location:** Architecture Diagram; "Why These Services" SQS paragraph
 
-**The problem:** The recipe describes SQS as providing "durable queue that decouples note ingestion from processing, handles retries on transient failures." But the architecture diagram and pseudocode show no DLQ configuration. If a clinical note consistently fails processing (malformed text, Comprehend Medical service error, Lambda timeout), SQS will retry delivery based on the visibility timeout and maxReceiveCount. Without a DLQ, the poisonous message remains in the queue indefinitely, consuming Lambda invocations on every retry cycle.
+**Problem:** SQS is described as handling "retries on transient failures" but no DLQ is configured. If a note consistently fails processing (malformed text, Comprehend Medical timeout, Lambda error), SQS retries indefinitely based on visibility timeout. Without a DLQ and maxReceiveCount, poison messages cycle forever, burning Lambda invocations.
 
-For a system processing 10,000 notes/day, even a 0.1% failure rate means 10 notes per day cycling endlessly. After a week, that's 70 notes burning Lambda invocations on every visibility timeout expiry.
+At 10,000 notes/day with 0.1% persistent failure rate: 10 notes/day cycling indefinitely. After a month, 300 poison messages consuming retries continuously.
 
-**Suggested fix:** Add a DLQ to the architecture: "Configure a dead-letter queue (`notes-dlq`) with maxReceiveCount of 3. Notes that fail processing 3 times move to the DLQ for manual investigation. Set a CloudWatch alarm on DLQ depth > 0 to alert the operations team. The DLQ must have the same encryption (SSE-KMS) as the primary queue since messages contain note references."
+**Fix:** Add DLQ: "Configure `notes-processing-dlq` with maxReceiveCount=3. Failed notes move to DLQ after 3 attempts. CloudWatch alarm on DLQ depth > 0. DLQ must have same SSE-KMS encryption as primary queue (messages reference PHI)."
 
-#### Issue A2: Cost Estimate Is Significantly Understated (HIGH)
+#### Issue A2: Cost Estimate Internally Contradictory and Understated (HIGH)
 
-**Location:** Prerequisites table, Cost Estimate row; recipe header "~$0.03-0.10 per note"
+**Location:** Recipe header ("~$0.03-0.10 per note"); Prerequisites table, Cost Estimate row
 
-**The problem:** The recipe header claims "$0.03-0.10 per note." The Prerequisites section states "Comprehend Medical: ~$0.01 per 100 characters (a typical note is 2000-5000 chars = $0.20-0.50 per note at full entity detection)."
+**Problem:** The header claims "$0.03-0.10 per note." The Prerequisites section states "$0.01 per 100 characters (a typical note is 2000-5000 chars = $0.20-0.50 per note at full entity detection)." These are contradictory. Furthermore, the recipe calls BOTH `DetectEntitiesV2` AND `InferRxNorm` per note. Each is billed separately. A 3000-character note through both APIs: ~$0.30 + ~$0.30 = ~$0.60.
 
-These numbers are internally contradictory. The header says $0.03-0.10; the body says $0.20-0.50. Furthermore, the recipe calls both `DetectEntitiesV2` AND `InferRxNorm` on every note. InferRxNorm is a separate API call with its own pricing. At $0.01 per 100 characters for each API, processing a 3000-character note through both APIs costs approximately $0.60, not $0.03-0.10.
+At 10,000 notes/day and $0.60/note: $6,000/day, $180,000/month. The header's $0.03-0.10 claim is off by an order of magnitude.
 
-A health system processing 10,000 notes/day at $0.60/note is spending $6,000/day ($180,000/month) on Comprehend Medical alone. This needs to be stated clearly so decision-makers can evaluate ROI.
+**Fix:** Correct header to "$0.40-1.00 per note." Update Prerequisites cost estimate with explicit calculation showing both API calls. Add monthly projection at volume. Note that InferRxNorm only needs to run on notes where medications were detected (not every note), which can reduce costs for non-medication-related notes.
 
-**Suggested fix:** Correct the header cost to "$0.40-1.00 per note" (accounting for both API calls and typical note lengths). Update the Prerequisites to show the calculation explicitly: "DetectEntitiesV2: ~$0.20-0.50 per note + InferRxNorm: ~$0.20-0.50 per note = $0.40-1.00 per note total. At 10,000 notes/day, expect $4,000-10,000/day in Comprehend Medical charges. Batch processing and selective note filtering (processing only notes from relevant departments) can reduce this significantly." Add a note that not every note needs RxNorm normalization; only notes where medications are detected in the first pass.
-
-#### Issue A3: Severity Classification Default of Grade 2 Is Problematic (HIGH)
+#### Issue A3: Severity Default of Grade 2 Destroys Stratification Value (HIGH)
 
 **Location:** Step 5 pseudocode, `classify_severity` function, default return
 
-**The problem:** The function defaults to Grade 2 (moderate) when no severity indicators are found, with the rationale: "if the clinician documented it at all, it likely required some attention." This default means every detected adverse event that lacks explicit severity language (which is the majority of events in routine documentation) gets classified as "moderate." A system where 70-80% of detections are Grade 2 by default provides no meaningful severity stratification for the safety team.
+**Problem:** When no severity indicators are found (which will be the majority of clinical documentation), the function defaults to Grade 2 (moderate). Rationale given: "if the clinician documented it at all, it likely required some attention."
 
-The practical consequence: Grade 2 events presumably don't trigger real-time alerts (only Grade 3+ does), but they crowd the aggregation database with a uniform "moderate" label that conveys no information. The safety dashboard shows everything as moderate. The prioritization value of severity classification is lost.
+Result: 70-80% of detections default to Grade 2. The safety dashboard shows a wall of "moderate" events with no meaningful differentiation. The severity classification step adds no information for the majority of detections.
 
-**Suggested fix:** Change the default to Grade 1 (mild) with the rationale: "Without explicit severity indicators, assume the mildest category. This creates a more useful severity distribution where events explicitly described as requiring intervention (Grade 2+) stand out from baseline mentions. Clinicians who document severity-relevant context ('required dose change,' 'hospitalized') will naturally elevate the grade. The absence of severity language is more consistent with mild, self-limited events that were mentioned but not emphasized." Alternatively, add a "Grade unknown" category that gets flagged for manual severity assignment during review.
+**Fix:** Default to Grade 1 (mild). Rationale: absence of severity indicators is consistent with routine mentions. Events with actual clinical impact will have documentation context ("dose reduced," "admitted," "discontinued") that the indicator matching will catch. Alternative: introduce "ungraded" category flagged for manual severity assignment.
 
-#### Issue A4: Cross-Note Reasoning Dismissed Without Architectural Guidance (MEDIUM)
+#### Issue A4: `lookup_expected_rate` Is an Unexplained Critical Dependency (MEDIUM)
 
-**Location:** "The Honest Take" section, paragraph on implicit mentions
+**Location:** Step 7 pseudocode, aggregation function
 
-**The problem:** The recipe acknowledges that cross-note reasoning (connecting "feels worse" at visit 2 to a new medication started at visit 1) is where many false negatives originate, and advises "plan for it in your roadmap but don't try to build it first." This is sound prioritization advice, but the recipe provides no architectural sketch of how cross-note reasoning would integrate. A reader planning their roadmap has no starting point.
+**Problem:** The aggregation logic calls `lookup_expected_rate(rxnorm_code, event)` as if it is a trivial utility function. Building and maintaining an expected-rate baseline is a significant engineering effort. The recipe provides no guidance on data sources, calculation methodology, or maintenance cadence.
 
-**Suggested fix:** Add 2-3 sentences in the Variations section: "Cross-note temporal reasoning requires maintaining a per-patient medication timeline (start dates, stop dates, dose changes) and comparing each new note's clinical findings against recently started medications. The medication timeline can be maintained in DynamoDB with patient_id as partition key and medication-start-date as sort key, updated from pharmacy feeds or medication reconciliation data. When processing a new note, query the patient's recently-started medications (last 30 days) and evaluate any new clinical findings against that list, even if the medication isn't mentioned in the current note."
+**Fix:** Add after the aggregation pseudocode: "Expected rates can be sourced from: (1) FAERS public data for national reporting rates; (2) institutional historical baseline from first 3-6 months of operation; (3) drug label incidence rates from clinical trials. Most practical: calculate your institution's rate per drug-event pair over a rolling 6-month window, store in a DynamoDB lookup table, update monthly. Flag pairs exceeding 2x baseline with minimum 3 unique patients."
 
-#### Issue A5: Aggregation Step Assumes Expected Rate Lookup Exists but Doesn't Explain It (MEDIUM)
+#### Issue A5: No Idempotency or Deduplication for Re-processed Notes (MEDIUM)
 
-**Location:** Step 7 pseudocode, `lookup_expected_rate` function call
+**Location:** Steps 1-6, full pipeline
 
-**The problem:** The aggregation logic calls `lookup_expected_rate(pair_key.rxnorm_code, pair_key.event)` as if this is a simple function, but building and maintaining an expected-rate baseline is itself a significant engineering challenge. The recipe doesn't explain where expected rates come from, how they're calculated, or how they're maintained. This is not a utility function; it's a core dependency that determines whether signals are valid.
+**Problem:** EHR notes may be amended, addended, or cosigned, each triggering the integration feed again. The pipeline generates a new `ae_id` (unique ID) per detection, so reprocessing the same note creates duplicate adverse event records. No deduplication logic exists.
 
-**Suggested fix:** Add a paragraph after the aggregation pseudocode: "Expected rates can be derived from: (1) FAERS public data, which provides reporting rates for drug-event pairs nationally; (2) your own historical baseline calculated from the first 3-6 months of pipeline operation; or (3) published incidence rates from drug labels and clinical trials. Option (2) is most practical: calculate your institution's historical rate per drug-event pair, then flag pairs exceeding 2x that baseline. Store expected rates in a DynamoDB lookup table keyed by rxnorm_code and normalized event term, updated monthly."
+**Fix:** Add idempotency check: "Before processing, query the archive for this note_id. If previously processed and text is unchanged, skip. If text changed (amendment), delete prior AE records for this note_id and reprocess. Use note_id + text hash as the idempotency key."
 
-#### Issue A6: No Deduplication Logic for Repeated Note Processing (MEDIUM)
+#### Issue A6: Cross-Note Reasoning Mentioned but No Architectural Sketch Provided (MEDIUM)
 
-**Location:** Steps 1-6, entire pipeline
+**Location:** "The Honest Take" section
 
-**The problem:** The recipe processes notes "as they're signed in the EHR." In many EHR systems, notes can be amended, addended, or cosigned, each of which may trigger the integration feed again. If the same note (or a slightly modified version) arrives in the queue multiple times, the pipeline will generate duplicate adverse event records. The DynamoDB storage uses a generated `ae_id`, not a composite key that would prevent duplicates.
+**Problem:** Cross-note reasoning is acknowledged as a key source of false negatives ("'feels worse' at visit 2 connected to medication started at visit 1") but dismissed with "plan for it but don't build it first." A reader planning their roadmap has no architectural starting point.
 
-**Suggested fix:** Add an idempotency check in Step 1 or Step 6: "Before processing, check if this note_id has already been processed (query the archive bucket or maintain a processed-notes set in DynamoDB). If the note has been processed before, check if the text has changed (amendment). For amendments, delete prior AE records for this note_id and reprocess. For exact duplicates, skip. This prevents duplicate AE records from feed retries or EHR integration quirks."
+**Fix:** Add 2-3 sentences in Variations: "Cross-note reasoning requires a per-patient medication timeline (start/stop/dose changes) maintained in DynamoDB or a timeline service, updated from pharmacy feeds. When processing a new note, query medications started in the last 30 days for that patient and evaluate new clinical findings against them, even without explicit medication mention in the current note."
 
 ---
 
 ### Networking Expert Review
 
-#### What's Done Well
+#### Strengths
 
-The VPC requirements are well-specified: "Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, and CloudWatch Logs. Neptune requires VPC deployment." This covers the primary data path correctly. The explicit mention that Neptune requires VPC deployment (it cannot exist outside a VPC) prevents a common confusion point.
+VPC requirements are explicitly stated: "Lambda in VPC with VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, and CloudWatch Logs. Neptune requires VPC deployment." This covers the primary data path. Neptune's mandatory VPC deployment is correctly noted.
 
-#### Issue N1: No VPC Endpoint for SNS (MEDIUM)
-
-**Location:** Prerequisites table, VPC row
-
-**The problem:** The recipe lists VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, and CloudWatch Logs. The `store_and_alert` function publishes to SNS for high-severity alerts. If the Lambda functions are deployed in a VPC (as the prerequisites require), the SNS publish call must either route through a VPC endpoint or through a NAT gateway to reach the public SNS endpoint.
-
-The recipe does not list an SNS VPC endpoint. Without it, the high-severity alert path requires NAT gateway egress, which means: (a) a NAT gateway must exist in the VPC, (b) PHI-adjacent traffic (the alert message) traverses the NAT gateway and public internet to reach SNS, and (c) NAT gateway costs add up at volume.
-
-**Suggested fix:** Add `sns` to the VPC endpoint list in Prerequisites: "VPC endpoints for S3 (gateway), DynamoDB (gateway), SQS, Comprehend Medical, CloudWatch Logs, and SNS (interface). Neptune is accessed directly within the VPC via security group rules."
-
-#### Issue N2: Neptune Security Group Configuration Not Specified (MEDIUM)
-
-**Location:** Prerequisites table, VPC row; "Why These Services" Neptune paragraph
-
-**The problem:** Neptune is deployed in the VPC and accessed by the signal-aggregator Lambda function. The recipe doesn't specify the security group configuration for Neptune's port 8182. Without explicit guidance, a builder may use a permissive security group (allowing all inbound from the VPC CIDR on 8182), which grants any resource in the VPC access to the adverse event graph.
-
-**Suggested fix:** Add a note: "Neptune security group: allow inbound TCP 8182 only from the security group attached to the signal-aggregator Lambda function and the safety dashboard service. Deny all other inbound. This limits graph database access to only the components that need it."
-
-#### Issue N3: No Mention of KMS VPC Endpoint (LOW)
+#### Issue N1: SNS VPC Endpoint Missing (MEDIUM)
 
 **Location:** Prerequisites table, VPC row
 
-**The problem:** The recipe uses KMS encryption (SSE-KMS) on S3, SQS, and DynamoDB. Lambda functions in a VPC making calls to these services will implicitly call KMS for envelope encryption/decryption. Without a KMS VPC endpoint, these calls route through a NAT gateway. The recipe lists a KMS key in the Ingredients table but doesn't include a KMS VPC endpoint in the VPC configuration.
+**Problem:** The recipe lists VPC endpoints for S3, DynamoDB, SQS, Comprehend Medical, and CloudWatch Logs. The `store_and_alert` function publishes to SNS. Lambda in a VPC cannot reach SNS without either a VPC endpoint or NAT gateway. The SNS VPC endpoint is not listed. Without it, high-severity alerts either fail silently or require NAT gateway egress (PHI-adjacent traffic over NAT, additional cost).
 
-**Suggested fix:** Add `kms` to the VPC endpoint list: "Add a VPC endpoint for KMS (`com.amazonaws.{region}.kms`) to ensure encryption operations for S3, SQS, and DynamoDB don't require NAT gateway egress."
+**Fix:** Add `SNS` to VPC endpoint list: "VPC endpoints for S3 (gateway), DynamoDB (gateway), SQS (interface), Comprehend Medical (interface), CloudWatch Logs (interface), and SNS (interface)."
+
+#### Issue N2: Neptune Security Group Not Specified (MEDIUM)
+
+**Location:** Prerequisites table, VPC row
+
+**Problem:** Neptune port 8182 access is not scoped. Without explicit security group guidance, builders may allow all inbound from VPC CIDR, granting any resource in the VPC access to the PHI-containing graph.
+
+**Fix:** Add: "Neptune security group: inbound TCP 8182 allowed only from signal-aggregator Lambda security group and safety dashboard service security group. All other inbound denied."
+
+#### Issue N3: KMS VPC Endpoint Not Mentioned (LOW)
+
+**Location:** Prerequisites table, VPC row
+
+**Problem:** SSE-KMS is used on S3, SQS, DynamoDB. Lambda in VPC implicitly calls KMS for encryption operations. Without a KMS VPC endpoint, these calls route through NAT gateway.
+
+**Fix:** Add KMS to VPC endpoint list: "Add `com.amazonaws.{region}.kms` interface endpoint."
 
 ---
 
 ### Voice Reviewer
 
-#### What's Done Well
+#### Strengths
 
-The opening scenario (amlodipine/orthostatic dizziness) is vivid and specific. The progressive reveal of complexity ("Here's why") is classic CC voice. The parenthetical honesty ("the ground truth of 'all actual adverse events' is unknowable from documentation alone") is well-placed. The "Honest Take" section about the first week drowning in noise is exactly the right register. The progression from "it sounds simple" to "it isn't" is the signature pattern used effectively. No marketing language, no documentation-voice creep detected.
+Opening scenario is vivid, specific, and grounded (amlodipine, orthostatic dizziness, 47 mentions found in retrospective review). The progressive complexity reveal ("Here's why" ... "It isn't") is on-brand. Parenthetical honesty works well ("the ground truth of 'all actual adverse events' is unknowable from documentation alone"). The Honest Take about drowning in noise the first week is exactly the right register. No marketing language. No documentation-voice ("This recipe demonstrates how to leverage..."). The engineering enthusiasm comes through in the detailed explanation of why naive approaches fail.
 
-#### Issue V1: No Em Dashes Found (PASS)
+#### Issue V1: Em Dash Check (PASS)
 
-Zero em dashes in the entire recipe. Clean.
+Zero em dashes found. Clean.
 
-#### Issue V2: Vendor Balance Is Appropriate (PASS)
+#### Issue V2: Vendor Balance (PASS)
 
-The Technology section (approximately 60% of the recipe's word count) is entirely vendor-agnostic. AWS appears only in the AWS Implementation section. A reader on GCP or Azure would learn the full NLP pipeline architecture, the five-stage approach, and the challenges of relation extraction without encountering a single AWS service name. Slightly better than the 70/30 target (closer to 65/35 given the detailed pseudocode in the AWS section), but within acceptable range.
+The Technology section is entirely vendor-agnostic (approximately 60% of total word count). AWS appears only in the AWS Implementation section. A GCP/Azure reader learns the full pipeline architecture, relation extraction challenges, and aggregation methodology without encountering AWS. Within acceptable 70/30 range (actual closer to 65/35 given detailed AWS pseudocode, but acceptable).
 
-#### Issue V3: One Instance of Slightly Academic Tone (LOW)
+#### Issue V3: Slightly Academic Tone in "State of the Art" (LOW)
 
 **Location:** "The State of the Art" subsection
 
-**The problem:** The phrase "Key benchmarks:" followed by bullet points with F1 scores and shared task names reads slightly more like a survey paper than an engineer at a whiteboard. The n2c2/i2b2 and TAC ADR references are valuable but the framing is academic rather than practical.
+**Problem:** "Key benchmarks:" followed by bullet-pointed F1 scores and shared task names (n2c2, TAC ADR) reads like a literature review rather than an engineer explaining at a whiteboard.
 
-**Suggested fix:** Reframe as: "How well does this actually work? The best systems in research competitions (n2c2, TAC ADR) hit 80-90% F1 on finding medications and 60-75% on connecting them to adverse events. In production, most health systems report 70-85% precision on the adverse event detection itself. Translation: you'll catch most of the explicit stuff, miss a chunk of the implicit stuff, and your safety team will still need to validate what you flag."
+**Fix:** Reframe conversationally: "How well does this stuff actually work? Best research systems hit 80-90% F1 on finding medications and 60-75% on connecting them to adverse events. In production at real health systems, you're looking at 70-85% precision. Translation: you'll catch most of the obvious stuff, miss a good chunk of the implicit stuff, and your safety team will still need to review what you flag."
 
 ---
 
@@ -210,15 +203,21 @@ The Technology section (approximately 60% of the recipe's word count) is entirel
 
 ### Conflicts and Overlaps
 
-1. **Security (S2) vs Architecture (A3) on alert content:** The security concern about PHI in SNS messages and the architecture concern about severity defaults interact. If severity defaults are fixed (A3) to produce more Grade 1 events, fewer alerts fire to SNS, reducing the PHI exposure risk (S2). Both should still be fixed independently, but A3 partially mitigates S2's operational exposure.
+1. **Security S1 (SNS PHI) + Architecture A3 (severity default):** If severity defaults are corrected to Grade 1, fewer events trigger Grade 3+ alerts to SNS, reducing the volume of PHI-exposure-risk messages. But the fix for S1 (remove identifiers from messages) is required regardless of volume.
 
-2. **Architecture (A2) vs Voice (cost framing):** The cost understatement in A2 is not just a technical error; it's a trust issue. If the recipe says $0.03-0.10 and reality is $0.40-1.00, the reader's confidence in other claims drops. This should be the highest priority fix from a credibility standpoint.
+2. **Security S2 (Neptune access) + Networking N2 (Neptune SG):** These are the same underlying problem viewed from different lenses. The fix is unified: IAM DB auth + scoped security groups + audit logs. Address together.
 
-3. **Networking (N1, N2, N3) clustering:** The three networking issues are all "missing from the VPC endpoint/security group list" problems. They can be addressed with a single pass through the Prerequisites table and a more detailed VPC configuration note.
+3. **Architecture A2 (cost):** This is a credibility issue that affects the entire recipe. If the reader catches the 10x discrepancy between header and reality, trust in all other claims erodes. Highest priority fix from editorial perspective.
+
+4. **Networking N1/N2/N3 clustering:** All three are "missing from VPC configuration" issues. Single pass through Prerequisites table resolves all.
 
 ### Priority Resolution
 
-The cost estimate error (A2) is the most impactful finding because it affects business decisions (ROI, budgeting, go/no-go). The DLQ absence (A1) is the most likely to cause operational pain in production. The SNS PHI leak (S2) is the most serious compliance risk. These three should be fixed first.
+1. **Cost estimate (A2):** Credibility and business-decision impact. Fix first.
+2. **DLQ (A1):** Operational stability. Standard pattern, easy to add.
+3. **SNS PHI (S1):** Compliance risk with simple fix.
+4. **Neptune access (S2 + N2):** Combined security/networking fix.
+5. **Severity default (A3):** One-line pseudocode change with updated rationale.
 
 ---
 
@@ -226,7 +225,7 @@ The cost estimate error (A2) is the most impactful finding because it affects bu
 
 ### Verdict: **PASS**
 
-The recipe is architecturally sound, clinically accurate in its framing of the adverse event detection challenge, and provides actionable implementation guidance. The five-stage NLP pipeline is correctly structured, the layered evidence scoring is a pragmatic production pattern, and the honest acknowledgment of limitations (55-70% recall, months to signal detection, expected-effects tuning) sets appropriate expectations. No critical findings. The five HIGH findings are individually addressable without restructuring the recipe.
+The recipe is architecturally sound, clinically accurate, and provides actionable guidance. The five-stage NLP pipeline is correctly structured. The layered evidence scoring is production-appropriate. The honest limitations (55-70% recall, months to signals, expected-effects tuning needed) set correct expectations. The domain expertise in explaining why adverse event detection is genuinely hard (implicit mentions, temporal reasoning, negation, severity inference) is strong. Zero CRITICAL findings. Five HIGH findings are individually addressable without structural changes.
 
 ---
 
@@ -234,38 +233,34 @@ The recipe is architecturally sound, clinically accurate in its framing of the a
 
 | # | Severity | Expert | Location | Finding | Fix |
 |---|----------|--------|----------|---------|-----|
-| 1 | HIGH | Architecture | Header + Prerequisites cost row | Cost estimate internally contradictory and understated by 4-10x. Header says $0.03-0.10; body says $0.20-0.50; reality with both API calls is $0.40-1.00/note. | Correct header to $0.40-1.00. Show full calculation including both DetectEntitiesV2 and InferRxNorm. Add monthly estimate at volume. |
-| 2 | HIGH | Architecture | Architecture Diagram, SQS section | No dead letter queue configured. Poison messages (malformed notes, persistent API errors) cycle indefinitely consuming Lambda invocations. | Add DLQ with maxReceiveCount=3, CloudWatch alarm on DLQ depth, same KMS encryption as primary queue. |
-| 3 | HIGH | Security | Step 6 pseudocode, SNS publish | Full ae_record including patient_id published to SNS. If any subscriber is outside HIPAA boundary, this is PHI disclosure. | Publish only ae_id, severity, medication (generic), event description. Include dashboard link for full details. |
-| 4 | HIGH | Security | Architecture Diagram, Neptune section | Neptune PHI access controls unspecified. No IAM DB auth, no security group scoping, no audit logging for graph queries containing patient data. | Add IAM DB auth requirement, security group restricted to aggregator Lambda, Neptune audit logs to CloudWatch. |
-| 5 | HIGH | Architecture | Step 5, classify_severity default | Default Grade 2 (moderate) for events lacking severity language. 70-80% of detections will be "moderate" by default, eliminating meaningful severity stratification. | Default to Grade 1 (mild) or add "Grade unknown" category for manual triage. |
-| 6 | MEDIUM | Architecture | Step 7, lookup_expected_rate call | Expected rate baseline assumed to exist but never explained. This is a critical dependency, not a utility function. | Add paragraph explaining sources: FAERS data, institutional historical baseline (first 3-6 months), published incidence rates. |
-| 7 | MEDIUM | Architecture | Steps 1-6, full pipeline | No deduplication for amended/addended notes re-arriving in the queue. Same note processed multiple times creates duplicate AE records. | Add idempotency check on note_id. For amendments, delete prior AEs and reprocess. For exact duplicates, skip. |
-| 8 | MEDIUM | Architecture | Honest Take section | Cross-note reasoning dismissed without architectural guidance. Reader planning roadmap has no starting point. | Add 2-3 sentences in Variations: medication timeline in DynamoDB, query recent starts when processing new notes. |
-| 9 | MEDIUM | Networking | Prerequisites, VPC row | No SNS VPC endpoint listed. Lambda in VPC cannot reach SNS without it or a NAT gateway. High-severity alerts may fail silently. | Add SNS interface endpoint to VPC endpoint list. |
-| 10 | MEDIUM | Networking | Prerequisites, VPC row | Neptune security group not specified. Default allows any VPC resource to query adverse event graph on port 8182. | Specify: allow inbound 8182 only from signal-aggregator Lambda SG and dashboard service SG. |
-| 11 | MEDIUM | Security | Prerequisites, IAM row | `neptune-db:*` violates least-privilege. Dashboard needs read-only; aggregator needs read+write. | Split into ReadDataViaQuery for dashboard, Read+Write for aggregator. |
-| 12 | MEDIUM | Security | DynamoDB storage, Step 6 | No retention policy on adverse event records. PHI accumulates indefinitely without TTL despite recipe mentioning TTL as a DynamoDB feature. | Add TTL configuration: Grade 1-2 retain 2 years, Grade 3-4 retain 7 years. Document rationale. |
-| 13 | LOW | Networking | Prerequisites, VPC row | No KMS VPC endpoint. Envelope encryption calls for S3/SQS/DynamoDB route through NAT gateway. | Add KMS VPC endpoint to the list. |
-| 14 | LOW | Security | Step 1, S3 archive | Audit trail archive has no Object Lock or versioning. Notes could be deleted or overwritten post-processing. | Add S3 versioning requirement. Note Object Lock in compliance mode for regulatory environments. |
-| 15 | LOW | Voice | "The State of the Art" subsection | Tone shifts slightly academic with "Key benchmarks:" framing. Reads like a survey paper rather than engineer-at-whiteboard. | Reframe as conversational: "How well does this actually work?" followed by practical translation of the numbers. |
+| 1 | HIGH | Architecture | Header + Prerequisites cost row | Cost estimate contradicts itself (header $0.03-0.10 vs body $0.20-0.50) and understates reality by 4-10x. Both DetectEntitiesV2 and InferRxNorm are called per note. | Correct header to "$0.40-1.00 per note." Show full dual-API calculation. Add monthly projection at 10K notes/day. |
+| 2 | HIGH | Architecture | Architecture Diagram, SQS section | No dead letter queue. Poison messages cycle indefinitely burning Lambda invocations. | Add DLQ with maxReceiveCount=3, CloudWatch alarm on depth > 0, same SSE-KMS encryption. |
+| 3 | HIGH | Security | Step 6, SNS publish | Full ae_record with patient_id published to SNS. PHI disclosure risk if any subscriber is outside HIPAA boundary. | Publish only ae_id, severity, medication, event description. Link to dashboard for full details. |
+| 4 | HIGH | Security | Architecture Diagram, Neptune | Neptune PHI access controls unspecified. No IAM DB auth, no SG scoping, no audit logging for queries on patient data graph. | Add IAM DB auth, SG restricted to aggregator Lambda, Neptune audit logs to CloudWatch. |
+| 5 | HIGH | Architecture | Step 5, default severity | Default Grade 2 for events without severity indicators. Majority of detections will be "moderate," eliminating meaningful stratification. | Default to Grade 1 (mild) or add "ungraded" category for manual assignment. |
+| 6 | MEDIUM | Architecture | Step 7, `lookup_expected_rate` | Expected rate baseline treated as trivial utility but is a critical dependency with no explanation of data source or methodology. | Add paragraph: FAERS data, institutional 6-month rolling baseline, or drug label rates. Store in DynamoDB lookup, update monthly. |
+| 7 | MEDIUM | Architecture | Steps 1-6, full pipeline | No idempotency for amended/addended notes. Duplicate AE records created on reprocessing. | Add note_id + text hash idempotency check. Skip unchanged, reprocess amendments with prior record deletion. |
+| 8 | MEDIUM | Architecture | Honest Take section | Cross-note reasoning dismissed without architectural sketch. Readers planning roadmap have no starting point. | Add to Variations: per-patient medication timeline in DynamoDB, query recent starts when processing new notes. |
+| 9 | MEDIUM | Networking | Prerequisites, VPC row | SNS VPC endpoint missing. Lambda in VPC cannot publish alerts without it or NAT gateway. | Add SNS interface endpoint to VPC endpoint list. |
+| 10 | MEDIUM | Networking | Prerequisites, VPC row | Neptune security group unspecified. Any VPC resource can query port 8182 by default. | Specify inbound 8182 only from aggregator Lambda SG and dashboard SG. |
+| 11 | MEDIUM | Security | Prerequisites, IAM row | `neptune-db:*` is wildcard. Dashboard needs read-only; aggregator needs read+write. | Split into ReadDataViaQuery (dashboard) and Read+Write (aggregator). |
+| 12 | MEDIUM | Security | Step 6, DynamoDB | No TTL or retention policy despite recipe mentioning TTL as a feature. PHI accumulates indefinitely. | Configure TTL: Grade 1-2 retain 2 years, Grade 3-4 retain 7 years. Document per institutional policy. |
+| 13 | LOW | Networking | Prerequisites, VPC row | KMS VPC endpoint missing. Encryption operations for S3/SQS/DynamoDB route through NAT gateway. | Add KMS interface endpoint to VPC endpoint list. |
+| 14 | LOW | Security | Step 1, S3 archive | Audit trail archive has no versioning or Object Lock. Notes can be deleted post-processing. | Enable S3 versioning. Note Object Lock in compliance mode for regulated environments. |
+| 15 | LOW | Voice | "The State of the Art" subsection | Slightly academic tone ("Key benchmarks:" + F1 scores) reads like literature review rather than engineer-at-whiteboard. | Reframe conversationally: "How well does this actually work?" with practical translation of numbers. |
 
 ---
 
-### Priority Actions Before Publication
+### Summary of Required Actions
 
-1. **Fix cost estimate (Finding #1).** This is a credibility issue. The 4-10x discrepancy between header and reality will erode reader trust in the entire recipe. Straightforward arithmetic correction.
+1. **Fix cost estimate** (Finding #1): Arithmetic correction + monthly projection. Credibility issue.
+2. **Add DLQ** (Finding #2): Standard SQS pattern, add to diagram and prerequisites.
+3. **Strip PHI from SNS alerts** (Finding #3): Publish reference only, not full record.
+4. **Add Neptune access controls** (Finding #4): IAM DB auth + SG + audit logs.
+5. **Fix severity default** (Finding #5): Change to Grade 1, update rationale comment.
 
-2. **Add DLQ to SQS queue (Finding #2).** Operational necessity for any production queue processing PHI. Standard pattern, easy to add to both the architecture diagram and prerequisites.
-
-3. **Remove patient_id from SNS alert messages (Finding #3).** Compliance risk with a simple fix. Publish a reference (ae_id + dashboard link) instead of the full record.
-
-4. **Add Neptune access controls (Finding #4).** IAM DB auth + security group scoping + audit logs. Standard Neptune security hardening that should be in any recipe using Neptune for PHI-adjacent data.
-
-5. **Fix severity default (Finding #5).** Change default from Grade 2 to Grade 1. One-line change in pseudocode with updated rationale comment.
-
-The remaining findings (6-15) are improvements that raise production-readiness but don't represent misinformation or compliance gaps.
+Findings 6-15 improve production-readiness but are not misinformation or compliance gaps.
 
 ---
 
-*Review complete. Recipe 8.7 is a strong recipe that teaches the adverse event detection domain thoroughly and provides a sound architectural foundation. The findings above are refinements for production deployment, not structural problems with the approach.*
+*Review complete. Recipe 8.7 is architecturally sound and clinically well-grounded. The adverse event detection domain is taught thoroughly with appropriate honesty about limitations. The five HIGH findings are individually addressable refinements, not structural problems.*
