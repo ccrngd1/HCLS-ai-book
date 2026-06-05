@@ -24,7 +24,7 @@ This is the problem space where k-nearest-neighbors and similarity retrieval shi
 
 4. **Heterogeneous streams.** When you process claims across wildly different payers with different rules, a single global model smooths over payer-specific quirks. Similarity search lets you find relevant precedents within the same payer cohort, even with limited data.
 
-Let me be direct about the relationship between this recipe and 7.11. The gradient-boosted model from 7.11 is your primary predictor. It's more accurate, faster to score, and better calibrated when you have representative training data. This recipe is the safety net, the confidence layer, and the explanation engine that wraps around it. You're not replacing the tree model. You're giving it self-awareness about what it doesn't know.
+Here's how this relates to 7.11. The gradient-boosted model from 7.11 is your primary predictor. It's more accurate, faster to score, and better calibrated when you have representative training data. This recipe is the safety net, the confidence layer, and the explanation engine that wraps around it. You're not replacing the tree model. You're giving it self-awareness about what it doesn't know.
 
 ---
 
@@ -137,7 +137,7 @@ Logical stages:
 
 1. **Embedding pipeline.** For each resolved claim, compute a feature vector (or learned embedding). Store this vector alongside the claim's metadata and outcome (paid/denied, denial reason, appeal outcome). Run batch for historical backfill; run incrementally as new claims adjudicate.
 
-2. **Vector index.** An approximate nearest-neighbor index over the claim embeddings. Supports fast similarity queries: "give me the 20 nearest claims to this input, with their distances." Refreshed as new resolved claims enter the system.
+2. **Vector index.** An approximate nearest-neighbor index over the claim embeddings. Supports fast similarity queries: "give me the 20 nearest claims to this input, with their distances." Refreshed as new resolved claims enter the system. New embeddings become searchable after OpenSearch's refresh interval (default: 1 second for standard indexing, longer for bulk operations). For HNSW indexes, newly indexed vectors join the graph during the next segment merge. In practice, expect 1-5 minutes between indexing a new claim and it being retrievable as a neighbor. For the cold-start use case, this latency is acceptable since you're searching historical context, not real-time results.
 
 3. **Similarity query service.** Given a new (unresolved) claim, compute its embedding, query the index, and return the k nearest resolved claims with distances. Used at scoring time and at explanation time.
 
@@ -145,7 +145,11 @@ Logical stages:
 
 5. **Case retrieval API.** Downstream consumers (billing worklists, provider portals) can request "show me similar resolved claims" for any given claim. Returns enriched records with outcome, denial reason, and similarity score.
 
+<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add access control guidance for the case retrieval API: provider portals should only surface cases from the same provider organization (or de-identified cases); internal billing worklists can see broader comparisons. Implement row-level filtering in the OpenSearch query by provider_org_id for provider-facing use cases, or strip identifiable metadata for cross-organization comparisons. -->
+
 6. **Cluster assignment.** Periodically re-cluster the denied claims population. Assign incoming denied claims to their nearest archetype cluster for routing.
+
+<!-- TODO (TechWriter): Expert review ARCH-3 (MEDIUM). Add operational detail: re-cluster monthly (or when denial volume exceeds threshold since last run). Store cluster labels with a cluster_version field in DynamoDB. Downstream routing queries by current cluster version. Alert when cluster composition shifts significantly between runs. -->
 
 7. **Hybrid decision engine.** Combines the primary XGBoost score from 7.11 with the novelty score and kNN outcome distribution to produce a final recommendation: {prediction, confidence, supporting_cases, novelty_flag, recommended_action}.
 
@@ -204,11 +208,11 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon OpenSearch Service, Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge |
-| **IAM Permissions** | (1) Glue role: `s3:GetObject`/`s3:PutObject` on claims and embedding buckets, `es:ESHttpPost`/`es:ESHttpPut` on OpenSearch domain; (2) SageMaker role: `s3:GetObject`/`s3:PutObject` on model and training buckets, `kms:Decrypt`; (3) Lambda hybrid engine: `es:ESHttpPost` on OpenSearch, `sagemaker:InvokeEndpoint` on embedding and XGBoost endpoints, `dynamodb:PutItem`/`dynamodb:GetItem` on predictions table; (4) EventBridge: `lambda:InvokeFunction`, `glue:StartJobRun`, `sagemaker:CreateProcessingJob`. All scoped to specific resource ARNs. |
+| **IAM Permissions** | (1) Glue role: `s3:GetObject`/`s3:PutObject` on claims and embedding buckets, `es:ESHttpPost`/`es:ESHttpPut` on OpenSearch domain; (2) SageMaker role: `s3:GetObject`/`s3:PutObject` on model and training buckets, `kms:Decrypt`; (3) Lambda hybrid engine: `es:ESHttpPost` on OpenSearch, `sagemaker:InvokeEndpoint` on embedding and XGBoost endpoints, `dynamodb:PutItem`/`dynamodb:GetItem` on predictions table; (4) EventBridge: `lambda:InvokeFunction`, `glue:StartJobRun`, `sagemaker:CreateProcessingJob`. All scoped to specific resource ARNs. For OpenSearch, resource-level ARN scoping restricts access to the domain but not to individual indexes. Enable fine-grained access control (FGAC) on the OpenSearch domain and map the Lambda execution role to a backend role with read-only access to the `claim-vectors` index. The Glue role's backend role should have write access to `claim-vectors` but no access to other indexes. |
 | **BAA** | AWS BAA signed. Claim embeddings are derived from PHI (they encode diagnosis codes, procedure codes, patient demographics). Treat embedding vectors as PHI. |
 | **Encryption** | S3: SSE-KMS for all buckets. OpenSearch: encryption at rest and node-to-node encryption enabled. DynamoDB: encryption at rest. SageMaker: KMS-encrypted volumes. All transit over TLS. |
-| **VPC** | OpenSearch domain deployed in VPC (no public endpoint). Lambda functions in same VPC with access to OpenSearch and SageMaker VPC endpoints. Interface endpoints for S3, DynamoDB, SageMaker Runtime, and KMS. |
-| **CloudTrail** | Enabled. Log all OpenSearch queries (they involve PHI-derived vectors). Track who retrieved which case comparisons and when. |
+| **VPC** | OpenSearch domain deployed in VPC (no public endpoint). Lambda functions in same VPC with access to OpenSearch and SageMaker VPC endpoints. Interface endpoints for S3, DynamoDB, SageMaker Runtime, and KMS. AWS Glue connection configured for the same VPC and subnets as the OpenSearch domain, with security group rules allowing port 443 from the Glue connection's ENIs to the OpenSearch domain's security group. Security groups: OpenSearch domain SG allows inbound 443 from Lambda SG and Glue connection SG only. Lambda SG allows outbound 443 to OpenSearch SG and VPC endpoint SGs. No inbound rules needed on Lambda SG. |
+| **CloudTrail** | Enabled. CloudTrail captures OpenSearch management-plane operations. For data-plane query auditing (who searched for which claim embeddings), enable OpenSearch audit logging via fine-grained access control, or implement application-level logging in the Lambda hybrid decision engine that records claim_id, requesting_user, timestamp, and number of results returned for each similarity query. |
 | **Sample Data** | Synthetic claims with embeddings. Generate 50,000+ resolved claims with realistic feature distributions. Include deliberate cold-start scenarios (payers with <50 claims) and novelty cases. Never use real PHI in dev. |
 | **Cost Estimate** | OpenSearch (3x r6g.large.search, 500GB EBS): ~$600-900/month. SageMaker embedding endpoint (ml.m5.large): ~$100/month. Glue jobs: ~$50-100/month. DynamoDB: ~$50-100/month. Lambda: ~$20-50/month. Total: ~$850-1,200/month. Primary cost driver is OpenSearch cluster sizing (scales with number of stored embeddings). |
 
@@ -316,8 +320,13 @@ FUNCTION index_resolved_claims(resolved_claims):
         }
         opensearch.bulk_index("claim-vectors", document)
 
-    // Force merge for query performance
-    opensearch.force_merge("claim-vectors", max_num_segments=1)
+    // For initial historical backfill (one-time bulk load of 500K+ claims),
+    // run force_merge after the load completes and before serving queries.
+    // For incremental indexing (daily/weekly new adjudications), skip this step
+    // and rely on OpenSearch's automatic background merge. Running force_merge
+    // on every incremental batch degrades query performance during the merge.
+    IF is_initial_backfill:
+        opensearch.force_merge("claim-vectors", max_num_segments=1)
 ```
 
 **Step 3: Query for nearest neighbors at scoring time.** When a new claim arrives for prediction, compute its embedding and query the vector index for the k most similar resolved claims. The returned neighbors, along with their distances, give you the raw material for case-based reasoning, novelty detection, and outcome estimation. Skip this and you lose the entire confidence and explanation layer.
@@ -461,6 +470,8 @@ FUNCTION hybrid_decision(claim, primary_score, novelty_result):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.12-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
+<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Add error handling pattern for hybrid decision engine: retry with exponential backoff for transient failures from OpenSearch/SageMaker, graceful degradation (fall back to primary-only scoring if similarity layer is unavailable), SQS dead-letter queue for claims that fail all retries, and CloudWatch alarm on DLQ depth. -->
+
 ### Expected Results
 
 Sample hybrid decision output:
@@ -498,7 +509,7 @@ Sample hybrid decision output:
 | End-to-end hybrid decision | 80-120ms | Embedding (20ms) + kNN query (15ms) + primary model (30ms) + logic (5ms) |
 | Novelty detection recall | ~85% | Catches 85% of truly novel claims (calibrated on holdout) |
 | Novelty detection precision | ~70% | 30% of flagged "novel" claims had usable history upon manual review |
-| Cold-start kNN accuracy (AUC) | 0.68-0.72 | Cross-payer similarity, <50 claims for target payer |
+| Cold-start kNN accuracy (AUC) | 0.68-0.72 | Cross-payer similarity, <50 claims for target payer. The 10-15 point gap vs. the mature primary model is expected: kNN is a bridge signal, not a replacement. |
 | Mature kNN accuracy (AUC) | 0.74-0.78 | Within-payer similarity, >500 claims for target payer |
 | Primary model accuracy (AUC) | 0.82-0.88 | XGBoost with full payer-specific training (from 7.11) |
 
@@ -524,6 +535,8 @@ Let's be real about what this approach can and can't do.
 **Feature scaling makes or breaks it.** If your billed amount ranges from $10 to $500,000 and you don't normalize it, the distance metric will be dominated by dollar differences. Two $500,000 knee replacements with different payers will look more similar than a $500,000 knee replacement and a $5,000 knee replacement from the same payer. Normalize everything. Or use learned embeddings that handle scaling implicitly.
 
 **Fairness and bias carry forward.** If your historical data encodes biased payer decisions (certain demographic groups denied at higher rates for non-clinical reasons), your similarity system will reproduce those patterns. A claim from a demographically similar patient will retrieve biased historical outcomes as "similar precedent." The same fairness monitoring and bias mitigation from Recipe 7.11 applies here. Monitor outcomes by demographic subgroup and flag disparities in the kNN predictions.
+
+**Don't assume embeddings are anonymized.** Dense embeddings can potentially be inverted to recover approximate input features. If an attacker gains read access to your vector index, they could reconstruct diagnosis codes, procedure codes, and demographic signals from the numeric vectors alone. Apply the same access controls to your vector index that you apply to the source claims data. Don't grant broader read access to the OpenSearch domain than you would to the claims database just because "it's just vectors."
 
 **This complements the supervised model. It does not replace it.** For well-represented payer-procedure combinations (where you have thousands of training examples), XGBoost will outperform kNN every time. The gradient-boosted model can learn complex non-linear decision boundaries that kNN with Euclidean/cosine distance cannot represent. Use kNN where the tree model is weak: novelty, explanation, cold start. Not everywhere.
 
