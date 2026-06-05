@@ -22,7 +22,7 @@ For prior-authorization predictions specifically, the value proposition is even 
 
 ## The Technology: Supervised Classification on Tabular Claims Data
 
-### Why This Is a Classification Problem (Not Clustering)
+### This Is Classification, Not Clustering
 
 Let's be precise about what we're building. This is a supervised classification problem. The outcome variable is a known categorical label: paid, denied, or (for prior-auth) approved, denied, or pended. You have abundant labeled historical data because every claim your organization has ever submitted has a final adjudication status. Every PA request has a determination.
 
@@ -41,6 +41,8 @@ For tabular data with mixed feature types (categorical codes, numerical amounts,
 **Missing data tolerance.** Real claims data is messy. Not every claim has every field populated. Tree models handle missing values natively (they learn which direction to send missing values at each split). This is a practical advantage over logistic regression, which requires imputation decisions for every missing feature.
 
 **Baseline models for comparison.** Always start with logistic regression as a baseline. It's fast, interpretable, and gives you a floor to beat. If logistic regression with a few well-chosen features gets you to 0.78 AUC, you know the signal is there. Random forests are a natural second baseline: they give you feature importance for free and are harder to overfit than a single gradient-boosted model.
+
+In practice, most production deployments use a tiered approach: payer-specific models for your top 5-10 payers by volume (where you have enough training data per payer), with a global model as fallback for low-volume payers. Start with a global model for the MVP, but plan the transition to payer-specific models before production launch. The signal difference is significant: what matters for UnitedHealthcare is very different from what matters for Medicare.
 
 Why not deep learning? For structured tabular data with under a million rows, gradient-boosted trees consistently match or beat neural networks in benchmarks. The claims data landscape (high-cardinality categoricals, sparse interaction effects, moderate dataset sizes) is exactly where tree models shine. You'd consider deep learning if you were incorporating unstructured data (clinical notes, faxed documents) into the prediction, but for the structured claim fields alone, stick with trees.
 
@@ -112,13 +114,13 @@ The pipeline has these logical stages:
 
 ### Why These Services
 
-**Amazon SageMaker for model training and real-time inference.** SageMaker handles the full ML lifecycle: training XGBoost/LightGBM models on historical claims data, hosting real-time endpoints for pre-billing scoring, and running batch transform for nightly portfolio-level scoring. The built-in XGBoost container supports the exact model type needed. SageMaker Clarify provides SHAP-based explainability out of the box, which is critical for generating the per-claim explanations that make this operationally useful.
+**Amazon SageMaker for model training and real-time inference.** SageMaker handles the full ML lifecycle: training XGBoost/LightGBM models on historical claims data, hosting real-time endpoints for pre-billing scoring, and running batch transform for nightly portfolio-level scoring. The built-in XGBoost container supports the exact model type needed. SageMaker Clarify provides SHAP-based explainability out of the box, which is critical for generating the per-claim explanations that make this operationally useful. The billing system integration must be fail-open: if the endpoint is unavailable or times out (>500ms), submit the claim without a prediction and queue it for batch scoring in the next cycle. Use an SQS dead-letter queue to capture failed scoring requests so the nightly batch transform catches anything that missed real-time scoring.
 
 **Amazon S3 for the claims data lake.** All historical claims, adjudication outcomes, feature datasets, and model artifacts live in S3. Claims data is PHI (it contains patient identifiers, diagnosis codes, and service dates), so SSE-KMS encryption is mandatory. Partitioning by date and payer enables efficient feature computation queries.
 
 **AWS Glue for feature engineering.** The heavy ETL that joins claims history, eligibility data, payer rules, and provider statistics into model-ready feature sets. Glue handles the complex aggregations: computing rolling denial rates per payer-procedure combination, provider-specific denial patterns, and temporal features. Runs on a schedule and on-demand when new claim batches arrive.
 
-**Amazon DynamoDB for prediction storage and real-time lookup.** Stores scored predictions with their explanations for fast lookup by claim ID. The billing system queries DynamoDB in real-time during claim creation to surface denial risk before submission. A GSI on `risk_score` enables the worklist engine to query all high-risk claims efficiently.
+**Amazon DynamoDB for prediction storage and real-time lookup.** Stores scored predictions with their explanations for fast lookup by claim ID. The billing system queries DynamoDB in real-time during claim creation to surface denial risk before submission. A GSI on `risk_score` enables the worklist engine to query all high-risk claims efficiently. Set TTL on prediction records based on your organization's retention policy: retain for the claim's appeal window (typically 60-180 days post-adjudication) plus an audit buffer. Archive to S3 Glacier for long-term compliance retention if needed.
 
 **Amazon EventBridge for orchestration.** Triggers the feature pipeline when new adjudication data arrives, schedules nightly batch scoring, and triggers model retraining on a weekly cadence (or when monitoring detects drift).
 
@@ -168,13 +170,13 @@ flowchart TD
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge, Amazon CloudWatch |
-| **IAM Permissions** | Service-specific execution roles: (1) Glue role: `s3:GetObject`/`s3:PutObject` on feature and claims buckets, connectivity to billing/PM system; (2) SageMaker role: `s3:GetObject`/`s3:PutObject` on model and feature buckets, `kms:Decrypt`, `sagemaker:CreateEndpoint`; (3) Lambda worklist role: `dynamodb:Query`/`dynamodb:GetItem`, write to downstream queues; (4) EventBridge role: `lambda:InvokeFunction`, `sagemaker:CreateTransformJob`, `sagemaker:CreateTrainingJob`. All scoped to specific resource ARNs. |
+| **IAM Permissions** | Service-specific execution roles: (1) Glue role: `s3:GetObject`/`s3:PutObject` on feature and claims buckets, connectivity to billing/PM system; (2) SageMaker role: `s3:GetObject`/`s3:PutObject` on model and feature buckets, `kms:Decrypt`, `sagemaker:CreateEndpoint`; (3) Lambda worklist role: `dynamodb:Query`/`dynamodb:GetItem` on `arn:aws:dynamodb:*:*:table/claim-predictions` and its indexes, write to downstream queues; (4) EventBridge role: `lambda:InvokeFunction`, `sagemaker:CreateTransformJob`, `sagemaker:CreateTrainingJob`. All scoped to specific resource ARNs. |
 | **BAA** | AWS BAA signed. Claims data is PHI: contains patient IDs, diagnosis codes, procedure codes, dates of service, and financial information. |
 | **Encryption** | S3: SSE-KMS for all buckets (claims data, features, models). DynamoDB: encryption at rest enabled. SageMaker: KMS-encrypted training volumes and endpoint storage. All transit over TLS. |
-| **VPC** | Production: SageMaker training and endpoints in VPC with interface endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs, and KMS. Glue jobs in VPC with connectivity to billing system (Direct Connect or VPN). Security groups restrict access to minimum required ports. |
+| **VPC** | Production: SageMaker training and endpoints in VPC with interface endpoints for S3, DynamoDB, SageMaker API, CloudWatch Logs, and KMS. Glue jobs in VPC with connectivity to billing system (Direct Connect or VPN). Security groups restrict access to minimum required ports. Glue job security groups should restrict egress to the billing system's specific IP address and port only. |
 | **CloudTrail** | Enabled for all API calls. Critical for audit: log who accessed predictions, when claims were flagged, and what actions were taken. Supports compliance review of model-influenced decisions. |
 | **Sample Data** | Synthetic claims data with realistic denial patterns. Model denial rates of 10-15% overall with payer-specific and procedure-specific variation. Include common denial reasons (no PA, medical necessity, bundling, timely filing). Never use real claims in dev environments. |
-| **Cost Estimate** | SageMaker training: ~$10-25 per weekly training run (ml.m5.2xlarge, 2-4 hours for large claim volumes). Real-time endpoint: ~$150-300/month (ml.m5.xlarge). Batch transform: ~$5-10 per nightly run. Glue: ~$1-3/DPU-hour. DynamoDB: ~$50-100/month. Total: ~$400-800/month for a mid-size health system. |
+| **Cost Estimate** | SageMaker training: ~$10-25 per weekly training run (ml.m5.2xlarge, 2-4 hours for large claim volumes). Real-time endpoint: ~$150-300/month (ml.m5.xlarge). Batch transform: ~$5-10 per nightly run. Glue: ~$1-3/DPU-hour. DynamoDB: ~$50-100/month. Total: ~$400-800/month for a mid-size health system. SHAP computation is the main cost variable for real-time scoring; at >2,000 daily flagged claims, consider auto-scaling the endpoint or pre-computing SHAP in the batch transform job. |
 
 ### Ingredients
 
@@ -395,7 +397,7 @@ FUNCTION train_denial_model(training_data_path):
     RETURN model_artifact, evaluation, shap_baseline
 ```
 
-**Step 3: Real-time scoring at claim creation.** When a coder finalizes a claim in the billing system, the system calls the SageMaker real-time endpoint to get a denial probability and explanation before submission. If the probability exceeds the threshold, the system surfaces a warning with specific reasons. The coder can then fix the issue, override the warning with a reason, or route to a supervisor. This is the highest-value prediction point because the intervention (fixing the claim) costs nearly nothing compared to reworking a denial later.
+**Step 3: Real-time scoring at claim creation.** When a coder finalizes a claim in the billing system, the system calls the SageMaker real-time endpoint to get a denial probability and explanation before submission. If the probability exceeds the threshold, the system surfaces a warning with specific reasons. The coder can then fix the issue, override the warning with a reason, or route to a supervisor. Every override must be logged: capture the coder's identity, a reason code (e.g., "documentation confirms medical necessity," "PA obtained through alternate channel"), and timestamp. Store overrides in the prediction table with `status: OVERRIDDEN`. Track override rates per coder and per risk tier; high override rates at the HIGH tier may indicate model drift or training gaps. This is the highest-value prediction point because the intervention (fixing the claim) costs nearly nothing compared to reworking a denial later.
 
 ```pseudocode
 FUNCTION score_claim_realtime(claim):
@@ -436,6 +438,12 @@ FUNCTION score_claim_realtime(claim):
         // "Payer BlueCross denies 67% of CPT 27447 claims without active PA"
         // "Provider Dr. Smith has a 34% denial rate with this payer (org avg: 11%)"
         // "No modifier 59 present for bundled procedure pair"
+        //
+        // Consider tiering explanation visibility. Claim-level explanations
+        // (missing PA, modifier issue) are safe for all coders.
+        // Provider-level performance explanations should be restricted to
+        // supervisors or quality improvement staff, depending on your
+        // state's peer review privilege laws.
 
     // Store prediction in DynamoDB for audit and worklist
     dynamodb.put_item(
@@ -620,9 +628,17 @@ Let's talk about what makes this harder than it looks on paper.
 
 **The "fix it before submission" intervention works too well.** Here's the irony. If your model is good and your coders act on the flags, your denial rate drops. Which means your training data shifts: the claims you submit are cleaner, so the model sees fewer denials for the patterns it's catching. This is a success, but it complicates retraining. You need to track which claims were flagged and corrected (counterfactual data) to avoid the model learning that those patterns are safe because they no longer get denied (they no longer get denied because the model flagged them).
 
+<!-- TODO (TechWriter): Expert review A-1 (HIGH). Add architectural implementation of counterfactual tracking: store pre-correction feature snapshot alongside corrected claims, tag claims as {intervention: NONE|CORRECTED|ESCALATED}, and document retraining strategy (exclude corrected claims from training, or use pre-correction features with predicted-denial pseudo-labels, or train on corrected features but validate against pre-correction features to monitor signal loss). This should be in the architecture section (step 6 feedback loop), not only here. -->
+
 **Precision vs. recall is a real tradeoff with operational consequences.** If you flag too many claims (high recall, low precision), your coders develop "alert fatigue" and start ignoring the system. If you flag too few (high precision, low recall), you miss preventable denials. The right threshold depends on your coding staff capacity and the cost of a false alarm (wasted reviewer time) versus the cost of a missed denial (rework cost). This is a business decision, not a model decision. Expect to tune it for months after launch.
 
 **Regulatory and fairness considerations are not afterthoughts.** If your model's denial predictions correlate with patient demographics in ways that result in differential treatment (e.g., claims for certain patient populations get extra scrutiny), you have a fairness problem even if the model is "just predicting what the payer will do." Monitor model performance across demographic groups. Use SageMaker Clarify to detect disparate impact. Ensure that the model's predictions don't result in differential access to care or services.
+
+**Be careful with "route to alternative pathway" recommendations.** The model predicts financial outcomes (will the payer pay?), not clinical appropriateness (is this the right treatment?). If the clinically appropriate procedure has a high predicted denial rate, the right answer is to strengthen the PA submission, not to change the treatment plan. Clinical decisions must remain independent of denial predictions. The model's job is to reduce administrative friction for clinically appropriate care, not to optimize treatment selection for financial outcomes. Make this boundary explicit in your operational policies and training materials.
+
+<!-- TODO (TechWriter): Expert review R-1 (HIGH). Add paragraph covering state gold-carding laws (TX HB 3459, LA, WV, others) and CMS prior-auth reform (CMS-0057-F, effective 2026). Discuss how gold-carding exemptions should suppress PA flags for qualifying provider-service pairs, and how the CMS FHIR API mandate will change the feature landscape for PA prediction models. -->
+
+<!-- TODO (TechWriter): Expert review R-2 (HIGH). Add architectural implementation of fairness monitoring: SageMaker Clarify bias detection job running weekly (DPPL and DI metrics across patient_age_group, coverage_type, place_of_service, procedure category), CloudWatch alarms when subgroup precision/recall diverges >10pp from population average, quarterly fairness report for compliance review. Add these to the architecture diagram and CloudWatch monitoring section. -->
 
 ---
 

@@ -527,8 +527,7 @@ def explain_prediction(model, X_test, feature_names: list, claim_index: int = 0)
     # TreeExplainer is optimized for tree models (exact, fast)
     explainer = shap.TreeExplainer(model)
 
-    # Compute SHAP values for the test set (or a single instance)
-    dmatrix = xgb.DMatrix(X_test)
+    # TreeExplainer accepts DataFrames directly for xgb.train() models
     shap_values = explainer.shap_values(X_test)
 
     # Get the explanation for one specific claim
@@ -632,9 +631,11 @@ def train_on_sagemaker(
     sess = sagemaker.Session()
     scale_pos_weight = (1 - denial_rate) / denial_rate
 
-    # The SageMaker XGBoost container matches our local training parameters
+    # The SageMaker XGBoost framework estimator runs a custom training script.
+    # For the built-in algorithm (no custom code), use sagemaker.estimator.Estimator
+    # with the XGBoost image URI and omit entry_point.
     xgb_estimator = XGBoost(
-        entry_point="train.py",        # Not needed for built-in algo; included for custom preprocessing
+        entry_point="train.py",        # Required for framework estimator mode (custom preprocessing)
         framework_version="1.7-1",     # XGBoost version in the container
         role=SAGEMAKER_ROLE_ARN,
         instance_count=1,
@@ -746,9 +747,17 @@ def score_claim_realtime(endpoint_name: str, claim_features: dict) -> dict:
     """
     sm_runtime = boto3.client("sagemaker-runtime")
 
-    # Serialize features as CSV (SageMaker XGBoost expects CSV input)
-    # Order must match training feature order exactly
-    feature_values = [str(claim_features.get(f, 0)) for f in claim_features]
+    # Serialize features as CSV (SageMaker XGBoost expects CSV input).
+    # CRITICAL: order must match training feature order exactly.
+    # Use a canonical feature list, not the dictionary's key order.
+    FEATURE_ORDER = [
+        "payer", "cpt_code", "icd10_primary", "place_of_service",
+        "provider_type", "specialty", "modifier_1", "payer_cpt",
+        "num_diagnoses", "patient_age", "claim_amount_log",
+        "num_line_items", "pa_required", "pa_on_file", "pa_gap",
+        "has_secondary_insurance", "is_resubmission", "days_since_service",
+    ]
+    feature_values = [str(claim_features.get(f, 0)) for f in FEATURE_ORDER]
     payload = ",".join(feature_values)
 
     response = sm_runtime.invoke_endpoint(
@@ -957,6 +966,8 @@ This example demonstrates the core ML pipeline, but deploying a claim denial pre
 **Testing.** Unit tests for feature engineering logic (the encoding, interaction features, and derived metrics). Integration tests that score a known claim and verify the output format. Load tests for the real-time endpoint (how many concurrent claims per second before latency degrades?). Fairness tests: does model performance vary across patient demographics?
 
 **Threshold calibration.** The thresholds (0.40, 0.70) in this example are arbitrary. Production thresholds need calibration against your specific coder capacity. If you flag 2,000 claims per day but your team can only review 200, you need a higher threshold. If you flag 50 but your team has capacity for 500, lower it. This is an ongoing tuning process, not a one-time setting.
+
+**DynamoDB numeric types.** DynamoDB does not accept Python floats. Convert all numeric values to `Decimal` before calling `put_item`. The `Decimal` import at the top of this file is there for this reason. Wrap prediction probabilities and dollar amounts with `Decimal(str(value))` to avoid `TypeError` at write time.
 
 **Batch vs. real-time tradeoffs.** Real-time scoring (at claim creation) gives instant feedback but costs more (endpoint running 24/7). Batch scoring (nightly) is cheaper but means claims created today don't get scored until tonight. Most organizations start with nightly batch, then add real-time for high-volume billers or specific high-risk procedure categories.
 
