@@ -190,6 +190,8 @@
   * [Python Example](chapter07.10-python-example)
 * [7.11 — Claim Denial / Prior-Auth Determination Prediction](chapter07.11-claim-denial-prediction)
   * [Python Example](chapter07.11-python-example)
+* [7.12 — Cohort Matching for Novel Claims](chapter07.12-claim-cohort-matching)
+  * [Python Example](chapter07.12-python-example)
 
 ---
 
