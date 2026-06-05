@@ -188,6 +188,8 @@
   * [Python Example](chapter07.09-python-example)
 * [7.10 — Optimal Intervention Timing Prediction](chapter07.10-optimal-intervention-timing-prediction)
   * [Python Example](chapter07.10-python-example)
+* [7.11 — Claim Denial / Prior-Auth Determination Prediction](chapter07.11-claim-denial-prediction)
+  * [Python Example](chapter07.11-python-example)
 
 ---
 
