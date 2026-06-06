@@ -604,4 +604,4 @@ Use a fast approximate search (HNSW) to retrieve 100 candidates, then re-rank th
 
 ---
 
-[← Recipe 7.11: Claim Denial / Prior-Auth Determination Prediction](chapter07.11-claim-denial-prediction) | [Chapter 7 Index](chapter07-index) | [Chapter 8: NLP →](chapter08-preface)
+[← Recipe 7.11: Claim Denial / Prior-Auth Determination Prediction](chapter07.11-claim-denial-prediction) | [Chapter 7 Index](chapter07-preface) | [Chapter 8: NLP →](chapter08-preface)
