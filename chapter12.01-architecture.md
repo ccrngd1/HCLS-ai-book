@@ -52,7 +52,7 @@ flowchart LR
 | **VPC** | Production: SageMaker training and inference jobs in VPC with VPC endpoints for S3, CloudWatch Logs, and KMS. SageMaker requires this configuration for HIPAA workloads. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, and DynamoDB API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic appointment volume data. The [M5 Forecasting Competition dataset on Kaggle](https://www.kaggle.com/competitions/m5-forecasting-accuracy/data) is a good public dataset for testing forecasting code, though it's retail not healthcare. For healthcare-shaped synthetic data, generate from a known process (trend + weekly seasonality + holiday effects + noise) so you can validate your pipeline against ground truth. Never use real patient appointment data in dev. |
-| **Cost Estimate** | SageMaker training (ml.m5.large, ~30 min/day): ~$0.07/day. SageMaker batch transform (~5 min/day): ~$0.01/day. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $50–$200/month for a single clinic, dominated by SageMaker compute and dependent on how much hyperparameter tuning you do. |
+| **Cost Estimate** | SageMaker training (ml.m5.large, ~30 min/day): ~$0.07/day. SageMaker batch transform (~5 min/day): ~$0.01/day. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $50-$200/month for a single clinic, dominated by SageMaker compute and dependent on how much hyperparameter tuning you do. |
 
 <!-- TODO (TechWriter): V1. Verify SageMaker pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
 
@@ -219,11 +219,11 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end pipeline runtime | 15–45 minutes nightly |
-| Forecast accuracy (7-day MAPE) | 5–10% for stable clinics |
-| Forecast accuracy (30-day MAPE) | 8–15% for stable clinics |
-| Forecast accuracy (90-day MAPE) | 12–20% for stable clinics |
-| Cost per clinic per month | $50–$200 (dominated by SageMaker compute) |
+| End-to-end pipeline runtime | 15-45 minutes nightly |
+| Forecast accuracy (7-day MAPE) | 5-10% for stable clinics |
+| Forecast accuracy (30-day MAPE) | 8-15% for stable clinics |
+| Forecast accuracy (90-day MAPE) | 12-20% for stable clinics |
+| Cost per clinic per month | $50-$200 (dominated by SageMaker compute) |
 | Forecast availability latency | Available by 8 AM after nightly run |
 
 <!-- TODO (TechWriter): A1. Accuracy benchmarks above are typical industry figures for healthcare appointment forecasting on stable clinics with 2+ years of clean history. Confirm these ranges against your reference data sources before publication. -->
@@ -281,9 +281,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (one clinic, daily forecast):** 1–2 weeks
-- **Production-ready (monitoring, drift detection, alerting):** 4–6 weeks
-- **With variations (hourly, per-provider, no-show adjustment):** 8–12 weeks
+- **Basic pipeline (one clinic, daily forecast):** 1-2 weeks
+- **Production-ready (monitoring, drift detection, alerting):** 4-6 weeks
+- **With variations (hourly, per-provider, no-show adjustment):** 8-12 weeks
 
 ---
 

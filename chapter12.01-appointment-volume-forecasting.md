@@ -33,11 +33,20 @@ Editor notes (ch12-r01-edit, iter-443):
   * TODO markers (N1, V1, N2, N3, A1, N4) are intact and carry finding IDs
     on the same line so the follow-up task generator can track them.
 - No content changes in this iteration.
+
+Editor notes (ch12-r01-archsplit, iter-1576):
+- Polish pass after mechanical split into main recipe + architecture companion.
+- Confirmed architecture callout is correctly placed at end of General
+  Architecture Pattern section.
+- Confirmed The Honest Take has no dangling AWS references.
+- Confirmed architecture companion opens cleanly with backlink header.
+- Replaced en dashes (U+2013) with hyphens in numeric ranges (cost, MAPE).
+- No structural changes, no new content.
 -->
 
 # Recipe 12.1: Appointment Volume Forecasting ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50–$200 per month for a single clinic forecast
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-$200 per month for a single clinic forecast
 
 ---
 
@@ -85,6 +94,7 @@ Three families of methods cover most of what you need for appointment volume for
 
 **Modern decomposition methods (Prophet and friends).** Frameworks like [Prophet](https://facebook.github.io/prophet/) (originally developed at Meta for business forecasting) frame forecasting as a curve-fitting problem with explicit components for trend, multiple seasonalities, holiday effects, and changepoints. They handle missing data gracefully, accept holiday calendars and special events as structured inputs, and produce reasonable forecasts on noisy real-world data with very little tuning. For most healthcare appointment forecasting use cases, Prophet is the pragmatic choice. It's not the most accurate method available, but it's accurate enough, and the maintenance burden is dramatically lower than for ARIMA.
 
+<!-- TODO (TechWriter): V3. The Technology section mentions "Amazon's DeepAR" and links to AWS SageMaker docs, which introduces vendor-specific content into the vendor-agnostic portion of the main recipe. Consider reframing as a generic deep learning approach with DeepAR as one example, moving the AWS link to the architecture companion. -->
 **Deep learning approaches (DeepAR, N-BEATS, Temporal Fusion Transformer).** Neural network methods that learn forecasting models across many related time series jointly. These shine when you have hundreds or thousands of related series (one per provider, one per specialty, one per location) and want to share strength across them. Amazon's [DeepAR](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html) is a built-in algorithm in SageMaker that implements this pattern. For a single clinic forecasting total daily volume, deep learning is overkill. For a health system forecasting volume across hundreds of clinics simultaneously, it earns its keep.
 
 ### Why This Is Harder Than It Looks
@@ -101,7 +111,7 @@ Here's the honest list of things that humble first-time forecasters:
 
 **Cancellations and no-shows.** Booked appointment volume is not the same as actual patient volume. A clinic with a 20% no-show rate has a forecasting problem on top of a forecasting problem: predict scheduled appointments, then predict the show rate, then multiply. Recipe 7.1 covers no-show prediction in detail. For a basic volume forecast, modeling scheduled volume is a good starting point, with no-show adjustment as a refinement.
 
-The good news: for appointment volume at a single clinic with two or more years of clean historical data, modern forecasting methods routinely achieve 5–10% mean absolute percentage error on weekly forecasts. That's accurate enough for almost every operational decision a clinic makes.
+The good news: for appointment volume at a single clinic with two or more years of clean historical data, modern forecasting methods routinely achieve 5-10% mean absolute percentage error on weekly forecasts. That's accurate enough for almost every operational decision a clinic makes.
 
 ### The General Architecture Pattern
 
