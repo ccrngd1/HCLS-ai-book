@@ -1,6 +1,6 @@
 # Recipe 1.5: Claims Attachment Processing 🔶
 
-**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20–2.40 per 30-page claims package 
+**Complexity:** Complex · **Phase:** Phase 2 · **Estimated Cost:** ~$2.20-2.40 per 30-page claims package 
 
 ---
 
@@ -115,7 +115,7 @@ The pipeline has four stages, building directly on Recipe 1.4's hybrid pattern.
 
 **Stage 4: LLM claim line matching and assembly.** The extraction results from all segments are matched against the claim's line items using LLM reasoning. The model is asked, per clinical document, which claim lines it supports and why. The final record identifies which lines have documentation support and which don't.
 
-```
+```text
 [Claims Attachment Arrives] → [Full Document Extraction (OCR + Structure)]
                                               ↓
                                   [Group Blocks by Page]

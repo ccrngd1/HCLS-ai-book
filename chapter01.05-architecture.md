@@ -71,10 +71,10 @@ flowchart TB
 | **BAA** | AWS BAA signed. Claims attachments contain some of the most sensitive PHI categories: surgical operative notes, pathology results with cancer diagnoses, full-episode discharge summaries, and financial responsibility data. Bedrock, Textract, and Comprehend Medical are all HIPAA-eligible under the same BAA. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. S3 Object Lock in compliance mode on the claims-attachment-records bucket. DynamoDB: encryption at rest. All API calls over TLS. Step Functions execution history: SSE. Bedrock and Comprehend Medical do not retain or train on customer data sent via their APIs. |
 | **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, SQS, Comprehend Medical, Step Functions, CloudWatch Logs, and KMS. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe) and `com.amazonaws.REGION.bedrock` (model management API, needed only if Lambda programmatically enables or lists models). A VPC with only `com.amazonaws.REGION.bedrock` will fail to route Converse API calls through the private endpoint; in a HIPAA-compliant VPC with no internet egress, this is deployment-breaking. For this recipe, `bedrock-runtime` is the required endpoint. Claims data should not traverse the public internet. |
-| **Lambda Timeouts** | Lambda's default 3-second timeout fails on the first Bedrock call. This recipe makes approximately 40 Bedrock calls per 30-page package (29 boundary pairs + 5 classifications + 3–4 clinical extractions + 3–4 claim matching calls), so timeout configuration matters more here than in Recipe 1.4. Minimum recommended timeouts per function: `doc-segmenter` 5–10 minutes (29 sequential Nova Lite calls at ~300ms each, plus retry margin), `doc-classifier` 3–5 minutes, `extract-clinical` 5 minutes (one Sonnet call per document, possible retry), `claim-matcher` 5 minutes per clinical document, `claim-assembler` 2 minutes. Step Functions also enforces a state-level timeout independently; configure both. Use provisioned concurrency for time-sensitive claims packages. |
+| **Lambda Timeouts** | Lambda's default 3-second timeout fails on the first Bedrock call. This recipe makes approximately 40 Bedrock calls per 30-page package (29 boundary pairs + 5 classifications + 3-4 clinical extractions + 3-4 claim matching calls), so timeout configuration matters more here than in Recipe 1.4. Minimum recommended timeouts per function: `doc-segmenter` 5-10 minutes (29 sequential Nova Lite calls at ~300ms each, plus retry margin), `doc-classifier` 3-5 minutes, `extract-clinical` 5 minutes (one Sonnet call per document, possible retry), `claim-matcher` 5 minutes per clinical document, `claim-assembler` 2 minutes. Step Functions also enforces a state-level timeout independently; configure both. Use provisioned concurrency for time-sensitive claims packages. |
 | **CloudTrail** | Enabled for all services including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Every extraction, every Bedrock call, and every DynamoDB write needs to be in the audit trail. |
 | **Sample Data** | CMS publishes [sample 837 transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets) for claim line item reference. Build synthetic multi-document PDFs by concatenating an operative report template, a pathology report, a discharge summary, a payer EOB printout, and therapy notes. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT, 30 pages): ~$2.10. Nova Lite boundary detection (29 page pairs at ~500 tokens each): ~$0.003, negligible. Nova Lite document classification (5 documents at ~2,000 tokens each): ~$0.001, negligible. Claude Sonnet 4.6 claim matching (3 clinical documents × one call each with claim lines): ~$0.05–0.12. Comprehend Medical ICD-10 validation on extracted concepts: ~$0.02–0.08. Step Functions Standard Workflows: ~$0.002. Per-package total: roughly **$2.20–2.40 for a typical 30-page package**. At 300,000 packages per year: $660K–720K. At 500,000: $1.1M–1.2M. Compare to manual attachment review at 30–60 minutes per case at $35–55/hour loaded cost: at 500,000 packages, manual review runs $8.75M–27.5M per year. The LLM approach is actually *cheaper* than a comparable Comprehend Medical per-character billing pipeline while producing richer output. |
+| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT, 30 pages): ~$2.10. Nova Lite boundary detection (29 page pairs at ~500 tokens each): ~$0.003, negligible. Nova Lite document classification (5 documents at ~2,000 tokens each): ~$0.001, negligible. Claude Sonnet 4.6 claim matching (3 clinical documents × one call each with claim lines): ~$0.05-0.12. Comprehend Medical ICD-10 validation on extracted concepts: ~$0.02-0.08. Step Functions Standard Workflows: ~$0.002. Per-package total: roughly **$2.20-2.40 for a typical 30-page package**. At 300,000 packages per year: $660K-720K. At 500,000: $1.1M-1.2M. Compare to manual attachment review at 30-60 minutes per case at $35-55/hour loaded cost: at 500,000 packages, manual review runs $8.75M-27.5M per year. The LLM approach is actually *cheaper* than a comparable Comprehend Medical per-character billing pipeline while producing richer output. |
 
 ### Ingredients
 
@@ -107,7 +107,7 @@ flowchart TB
 
 **Steps 1 and 2: Async Textract extraction and result retrieval.** These steps are identical to Recipe 1.4. Include LAYOUT in the `FeatureTypes` list. The `claim-start` Lambda submits the async job and exits. The `claim-retrieve` Lambda fires on the SNS completion notification, retrieves all Textract result pages, writes the raw block list to S3, and starts the Step Functions state machine with the S3 key and the claim ID.
 
-```
+```pseudocode
 FUNCTION retrieve_and_handoff(textract_job_id, attachment_key, claim_id, state_machine_arn):
     // Retrieve all Textract blocks (same paginated call as Recipe 1.4)
     all_blocks = retrieve_all_textract_blocks(textract_job_id)
@@ -131,7 +131,7 @@ FUNCTION retrieve_and_handoff(textract_job_id, attachment_key, claim_id, state_m
 
 The one addition: extract the **header region** for each page. The header is the top portion of the page (roughly the first 15% by vertical position) where facility name, document title, patient identifier, and date typically live. The boundary detection model uses this region as context.
 
-```
+```pseudocode
 FUNCTION extract_header_region(page_blocks):
     // Textract bounding boxes are normalized: Top=0.0 is top of page, Top=1.0 is bottom.
     // "Header region" = Top < 0.15 (the top 15% of the page).
@@ -154,7 +154,7 @@ The boundary detector sends consecutive page pairs to Nova Lite and asks: are th
 
 The output is a list of logical document segments, each defined by a start page, end page, and the model's reasoning for why a boundary was detected.
 
-```
+```pseudocode
 BOUNDARY_DETECTION_SYSTEM_PROMPT = """
 You are a healthcare document analyst. Your job is to determine whether two consecutive
 pages from a claims attachment PDF belong to the same logical document.
@@ -279,7 +279,7 @@ A few notes on the design. We use 1,500 characters of each page's text (not the 
 
 Recipe 1.4 introduced the classification prompt pattern for individual pages. Here we extend it to whole documents. The LLM has more context now: instead of classifying page 5 of an operative report in isolation (dense clinical prose with no title line), it classifies pages 3 through 7 together and has the full operative report vocabulary to work with.
 
-```
+```pseudocode
 DOCUMENT_CLASSIFICATION_SYSTEM_PROMPT = """
 You are a healthcare document classifier. Your job is to identify what type of
 document is contained in a claims attachment segment.
@@ -380,7 +380,7 @@ Financial documents (EOBs and billing statements) go through Textract table pars
 
 > **Why not skip OCR and send everything to the LLM?** Vision LLMs handle document understanding well but struggle with faithful numerical extraction from tables. Industry testing consistently shows that LLMs silently replace missing table values with plausible guesses, transpose digits, and rename headers: errors that look correct on review but corrupt downstream calculations. For financial documents like EOBs and billing statements, where dollar amounts and procedure codes must be exact, purpose-built OCR remains more reliable. This recipe uses OCR for extraction and LLMs for intelligence: the same hybrid architecture that the document processing industry is converging on as best practice [1][2][3].
 
-```
+```pseudocode
 CLINICAL_EXTRACTION_SYSTEM_PROMPT = """
 You are a clinical documentation analyst reviewing a claims attachment document.
 Extract all clinically and administratively relevant information.
@@ -462,7 +462,7 @@ The rule-based approach maintained a `CPT_PROCEDURE_DESCRIPTIONS` lookup table m
 
 The model reasons from clinical knowledge. It knows that "cemented total condylar knee replacement" describes 27447. It knows that "left total hip" on an operative report with a CPT code of 27130 is a match. It can flag when a procedure description sounds like a related but distinct code (for example, a partial knee replacement versus a total). It surfaces the specific passage from the document that supports its conclusion.
 
-```
+```pseudocode
 CLAIM_MATCHING_SYSTEM_PROMPT = """
 You are a medical claims analyst. Your job is to determine which claim line items
 are supported by the clinical documentation in a given document.
@@ -619,7 +619,7 @@ Notice what changes compared to the lookup table approach. The LLM returns `matc
 
 **Step 8: Assemble the unified claims attachment record.** The assembler collects all extraction results and the claim line matching output, deduplicates clinical entities across documents, and writes the final record.
 
-```
+```pseudocode
 FUNCTION assemble_claims_attachment_record(
     attachment_key, claim_id, page_count,
     classified_segments, extraction_results, line_support
@@ -851,19 +851,19 @@ Notice the `match_reasoning` and `evidence_type` fields in the claim line assess
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (30-page package) | 55–120 seconds (Textract async dominates; LLM steps add 5–15 seconds) |
-| End-to-end latency (50-page package) | 90–180 seconds |
-| Document boundary detection accuracy (LLM) | 86–94% (vs. 78–88% for rule-based) |
-| Document classification accuracy (LLM, full doc context) | 91–96% (vs. 83–91% keyword heuristics) |
-| Overall pipeline accuracy (boundary × classification) | 78–90% (vs. 68–80% rule-based) |
-| Claim line matching accuracy (CPT/procedure match) | 88–94% (vs. 75–85% lookup table) |
-| ICD-10 inference accuracy (typed clinical narrative) | 83–90% |
-| Cost per 30-page package | ~$2.20–2.40 |
-| Cost per 50-page package | ~$3.50–4.00 |
+| End-to-end latency (30-page package) | 55-120 seconds (Textract async dominates; LLM steps add 5-15 seconds) |
+| End-to-end latency (50-page package) | 90-180 seconds |
+| Document boundary detection accuracy (LLM) | 86-94% (vs. 78-88% for rule-based) |
+| Document classification accuracy (LLM, full doc context) | 91-96% (vs. 83-91% keyword heuristics) |
+| Overall pipeline accuracy (boundary × classification) | 78-90% (vs. 68-80% rule-based) |
+| Claim line matching accuracy (CPT/procedure match) | 88-94% (vs. 75-85% lookup table) |
+| ICD-10 inference accuracy (typed clinical narrative) | 83-90% |
+| Cost per 30-page package | ~$2.20-2.40 |
+| Cost per 50-page package | ~$3.50-4.00 |
 
-The 78–90% overall pipeline accuracy looks similar to the upper end of what rule-based systems achieved. The key difference is the failure mode distribution. Rule-based systems fail on predictable classes: non-standard headers, variant terminology, unusual payer templates. LLM systems fail on genuinely ambiguous content, which is harder to predict but often easier to route to review. The LLM misses are more surprising; the rule-based misses are more systematic.
+The 78-90% overall pipeline accuracy looks similar to the upper end of what rule-based systems achieved. The key difference is the failure mode distribution. Rule-based systems fail on predictable classes: non-standard headers, variant terminology, unusual payer templates. LLM systems fail on genuinely ambiguous content, which is harder to predict but often easier to route to review. The LLM misses are more surprising; the rule-based misses are more systematic.
 
-**Where it still struggles:** Continuous EHR print jobs where a provider dumps everything (problem list, medication list, all visit notes) into a single PDF with no visual breaks between logical documents. The boundary detection model finds no strong signals and treats the entire run as one document. Classification then fails because the aggregated text contains vocabulary from multiple document types. Very short segments (1–2 pages) from faxed cover sheets or administrative pages that got stitched between clinical documents tend to classify as "other" and route to review. And the claim matching step can express high confidence on claims where the documentation language is superficially similar to the CPT description but the clinical content doesn't actually support it. Always set a human review path for unsupported lines.
+**Where it still struggles:** Continuous EHR print jobs where a provider dumps everything (problem list, medication list, all visit notes) into a single PDF with no visual breaks between logical documents. The boundary detection model finds no strong signals and treats the entire run as one document. Classification then fails because the aggregated text contains vocabulary from multiple document types. Very short segments (1-2 pages) from faxed cover sheets or administrative pages that got stitched between clinical documents tend to classify as "other" and route to review. And the claim matching step can express high confidence on claims where the documentation language is superficially similar to the CPT description but the clinical content doesn't actually support it. Always set a human review path for unsupported lines.
 
 ---
 
@@ -912,7 +912,7 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 
 **Bedrock Data Automation as a managed alternative.** Amazon Bedrock Data Automation (BDA), generally available since March 2025, handles OCR, extraction, and classification in a single API call with custom "blueprints" per document type. If you want to minimize the pipeline you manage, BDA is worth evaluating. The trade-off: less control over the individual steps, and BDA is currently limited to us-east-1 and us-west-2. This recipe takes the longer route because it teaches the underlying architecture and gives you full control over model selection and tiering. BDA is the "batteries included" option; this recipe is the "build it yourself" option. Both are reasonable depending on your operational priorities.
 
-**Structured claims workstation integration.** Surface the `claim_line_support` output directly in the claims examiner's workstation. The examiner opens a claim and sees: "Line 1 (CPT 27447): Supported. Operative report pages 1–6: right total knee arthroplasty with cemented components, consistent with CPT 27447. Line 2 (CPT 88305): Supported. Pathology report pages 7–9: specimen consistent with CPT 88305. Line 3 (CPT 97010): No documentation found for date 03/14/2026." The examiner's job becomes verification rather than discovery. For unsupported lines, the specific gap is surfaced with enough context to know exactly what's missing. The `match_reasoning` field drives this view; for lines where the examiner wants to see the source text, `pages` in each assessment tells them exactly where to look in the attachment. This is where the evidence labeling pays off: the examiner knows they're reading a model summary, not a document quote, and can make a judgment accordingly.
+**Structured claims workstation integration.** Surface the `claim_line_support` output directly in the claims examiner's workstation. The examiner opens a claim and sees: "Line 1 (CPT 27447): Supported. Operative report pages 1-6: right total knee arthroplasty with cemented components, consistent with CPT 27447. Line 2 (CPT 88305): Supported. Pathology report pages 7-9: specimen consistent with CPT 88305. Line 3 (CPT 97010): No documentation found for date 03/14/2026." The examiner's job becomes verification rather than discovery. For unsupported lines, the specific gap is surfaced with enough context to know exactly what's missing. The `match_reasoning` field drives this view; for lines where the examiner wants to see the source text, `pages` in each assessment tells them exactly where to look in the attachment. This is where the evidence labeling pays off: the examiner knows they're reading a model summary, not a document quote, and can make a judgment accordingly.
 
 ---
 
@@ -962,6 +962,7 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 
 --- 
 
+<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations) before navigation. Add this section. -->
 
 ---
 
