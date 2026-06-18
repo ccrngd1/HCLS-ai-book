@@ -83,7 +83,7 @@ Except there are problems with this obvious approach:
 
 The practical approach is to use your coded encounter data as the training foundation, but apply several corrections: filter to encounters coded by your most experienced coders (or coded consistently by multiple coders), restrict to the most recent 2-3 fiscal years to avoid code version drift, and augment with synthetic examples for rare codes using the code descriptions themselves as pseudo-clinical text.
 
-### The General Architecture Pattern
+### General Architecture Pattern
 
 ```text
 [Clinical Note] → [Text Preprocessing] → [Section Segmentation] → [Concept Extraction]

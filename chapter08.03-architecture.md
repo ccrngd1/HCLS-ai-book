@@ -68,9 +68,7 @@ flowchart LR
 | **AWS KMS** | Customer-managed encryption for all PHI at rest. |
 | **Amazon CloudWatch** | Operational metrics: suggestion latency, confidence distributions, API error rates, coder acceptance rates. |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add input validation guidance before preprocessing: verify UTF-8 encoding, enforce minimum length (e.g., 50 chars), reject binary/null bytes, validate encounter_id format. Mention API Gateway rate limiting and authentication to prevent cost-based DoS. -->
 
@@ -434,6 +432,8 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 - **Annual code updates:** New codes added in October each year aren't in the model until AWS retrains
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets covering gaps a production deployment must close (e.g., no human-in-the-loop enforcement, no code version drift handling, no A/B framework for threshold tuning). -->
 
 ## Variations and Extensions
 
