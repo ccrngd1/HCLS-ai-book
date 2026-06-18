@@ -1,6 +1,6 @@
 # Recipe 12.9: Epidemic Forecasting ⭐⭐⭐⭐
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$1,200–$5,000 per month per regional surveillance workload
+**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$1,200-$5,000 per month per regional surveillance workload
 
 ---
 

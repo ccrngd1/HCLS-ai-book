@@ -78,7 +78,7 @@ flowchart LR
 | **VPC** | Production: SageMaker training, inference, and processing in private subnets with VPC endpoints for S3, DynamoDB, KMS, Step Functions, CloudWatch Logs, Glue, SageMaker API/Runtime, ECR (for custom container image pulls), SNS (for calibration drift alarms), and EventBridge. Lambda functions that access VPC resources require VPC configuration with appropriate security groups. Aurora in private subnets. Kinesis access via VPC endpoints. Public-facing static site is the only externally addressable surface. |
 | **CloudTrail** | Enabled for all data-plane services, with CloudTrail data events on PHI-bearing S3 buckets and on the case-line-list DynamoDB tables. The audit trail of who accessed individual-level data is non-negotiable, especially during outbreak investigations where access patterns are scrutinized. CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode. |
 | **Sample Data** | Public surveillance datasets are abundant. CDC's [FluView](https://www.cdc.gov/flu/weekly/index.htm), [WHO FluNet](https://www.who.int/tools/flunet), and the [COVID-19 Forecast Hub historical data](https://github.com/cdcepi/Flusight-forecast-data) (the project moved between organizations during the pandemic; verify current URL during implementation) provide multi-year time series suitable for development and back-testing. State-level reporting often makes aggregate data publicly available with a brief lag. Synthetic data generators based on SEIR simulations are useful for testing the ingestion pipeline against known ground truth. Never use real individual-level case-line-list data in dev. |
-| **Cost Estimate** | Surveillance ingestion (Kinesis or MSK, plus S3): ~$200–$600/month depending on volume. Glue ETL (daily harmonization): ~$150–$400/month. SageMaker training (weekly retrains across model families): ~$300–$800/month. SageMaker inference (daily forecast runs): ~$200–$600/month. Aurora PostgreSQL: ~$200–$500/month. DynamoDB: ~$50–$200/month. QuickSight, CloudFront, S3 hosting: ~$100–$300/month. Lambda, Step Functions, EventBridge, KMS, CloudWatch, audit: ~$200–$500/month. Total: ~$1,200–$5,000/month per regional surveillance workload depending on geography count, signal count, and ensemble size. |
+| **Cost Estimate** | Surveillance ingestion (Kinesis or MSK, plus S3): ~$200-$600/month depending on volume. Glue ETL (daily harmonization): ~$150-$400/month. SageMaker training (weekly retrains across model families): ~$300-$800/month. SageMaker inference (daily forecast runs): ~$200-$600/month. Aurora PostgreSQL: ~$200-$500/month. DynamoDB: ~$50-$200/month. QuickSight, CloudFront, S3 hosting: ~$100-$300/month. Lambda, Step Functions, EventBridge, KMS, CloudWatch, audit: ~$200-$500/month. Total: ~$1,200-$5,000/month per regional surveillance workload depending on geography count, signal count, and ensemble size. |
 
 <!-- TODO (TechWriter): V1. Verify SageMaker, Aurora, and Kinesis pricing assumptions against the AWS pricing calculator before publication. AWS pricing changes; the figures above are typical ranges as of recipe authoring. -->
 
@@ -464,16 +464,16 @@ FUNCTION validate_and_surface(ensemble_forecast, observed_outcomes_for_past_hori
 
 | Metric | Typical Value |
 |--------|---------------|
-| Surveillance ingestion (per source per day) | 30s–5min |
-| Harmonization (full state-level rebuild, weekly) | 20–60 min |
-| Nowcasting (state-level, all signals) | 15–45 min |
-| Per-model forecast generation (compartmental, with sampling) | 30–120 min |
-| Per-model forecast generation (statistical) | 5–20 min |
-| Ensemble combination | 5–15 min |
-| Validation and publishing | 10–25 min |
-| End-to-end weekly forecast cycle | 2–4 hours |
-| Calibration on backtest (95% interval coverage at horizon 4) | 88–94% |
-| Cost per regional surveillance workload per month | $1,200–$5,000 |
+| Surveillance ingestion (per source per day) | 30s-5min |
+| Harmonization (full state-level rebuild, weekly) | 20-60 min |
+| Nowcasting (state-level, all signals) | 15-45 min |
+| Per-model forecast generation (compartmental, with sampling) | 30-120 min |
+| Per-model forecast generation (statistical) | 5-20 min |
+| Ensemble combination | 5-15 min |
+| Validation and publishing | 10-25 min |
+| End-to-end weekly forecast cycle | 2-4 hours |
+| Calibration on backtest (95% interval coverage at horizon 4) | 88-94% |
+| Cost per regional surveillance workload per month | $1,200-$5,000 |
 
 <!-- TODO (TechWriter): A1. Performance benchmarks above are typical figures for production state-level respiratory virus forecasting systems running weekly cycles. Confirm against your reference data sources before publication. -->
 
@@ -571,9 +571,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (single pathogen, single jurisdiction, statistical models only, weekly cadence, no public-facing surface):** 10–14 weeks
-- **Production-ready (multi-source fusion, compartmental + statistical ensemble, scenario forecasting, calibration monitoring, internal and operational surfaces):** 28–40 weeks
-- **With variations (multi-pathogen integration, fine-resolution spatial, genomic-aware, federated forecast hub publishing, public-facing dashboard, outbreak-response mode):** 48–72 weeks
+- **Basic pipeline (single pathogen, single jurisdiction, statistical models only, weekly cadence, no public-facing surface):** 10-14 weeks
+- **Production-ready (multi-source fusion, compartmental + statistical ensemble, scenario forecasting, calibration monitoring, internal and operational surfaces):** 28-40 weeks
+- **With variations (multi-pathogen integration, fine-resolution spatial, genomic-aware, federated forecast hub publishing, public-facing dashboard, outbreak-response mode):** 48-72 weeks
 
 ---
 
