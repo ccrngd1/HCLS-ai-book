@@ -224,7 +224,7 @@ flowchart LR
 
 
 
-```
+```pseudocode
 ON encounter_initiated(clinician_id, patient_id,
                        declared_language, declared_dialect,
                        encounter_type, topic_category):
@@ -362,7 +362,7 @@ ON encounter_initiated(clinician_id, patient_id,
 
 
 
-```
+```pseudocode
 FUNCTION route_audio_to_asr(encounter_id,
                             patient_audio_stream,
                             clinician_audio_stream):
@@ -441,7 +441,7 @@ FUNCTION route_audio_to_asr(encounter_id,
 
 
 
-```
+```pseudocode
 ON asr_finalized_transcript(encounter_id, speaker, segment):
     // Triggered when an ASR stream finalizes a transcript
     // segment. speaker is "patient" or "clinician".
@@ -631,7 +631,7 @@ ON asr_finalized_transcript(encounter_id, speaker, segment):
 
 **Step 4: Synthesize target-language audio with neural TTS, pronunciation lexicons, and streaming output.** The verified translation goes to TTS with the appropriate voice for the target language and dialect, with a pronunciation lexicon applied for institution-specific terms (drug names, provider names, location names). Output streams to the listener as audio bytes are produced. Skip the lexicon and drug names get mispronounced in ways that confuse the listener; skip streaming output and time-to-first-audio doubles, breaking the conversational flow.
 
-```
+```pseudocode
 FUNCTION synthesize_translated_audio(
         encounter_id, translated_text,
         target_language, target_audience):
@@ -700,7 +700,7 @@ FUNCTION synthesize_translated_audio(
 
 **Step 5: Manage turn-taking and barge-in with a conversational state machine.** The conversational state machine tracks who is speaking, when the system is translating, when the system is playing translated audio to a listener, and how to handle interruptions. Barge-in (a speaker starting before the system has finished translating the previous turn) gracefully halts in-flight TTS and queues the new audio. Skip the state machine and the conversation feels like a walkie-talkie; skip barge-in handling and speakers talk over the system's output and lose content.
 
-```
+```pseudocode
 ON vad_event(encounter_id, speaker, event_type):
     // event_type: "speech_start", "speech_end", "silence"
     state = encounter_table.get(encounter_id)
@@ -782,7 +782,7 @@ FUNCTION handle_barge_in(encounter_id,
 
 
 
-```
+```pseudocode
 FUNCTION escalate_to_human(encounter_id, reason,
                            segment, additional_context):
     state = encounter_table.get(encounter_id)
@@ -874,7 +874,7 @@ FUNCTION escalate_to_human(encounter_id, reason,
 
 
 
-```
+```pseudocode
 ON encounter_ended(encounter_id, end_reason):
     state = encounter_table.get(encounter_id)
 

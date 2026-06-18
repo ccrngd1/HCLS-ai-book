@@ -152,7 +152,7 @@ A few practical updates worth knowing.
 
 A real-time medical interpretation system decomposes into nine logical stages: encounter setup with language declaration and consent capture, per-speaker audio capture with channel separation where possible, streaming source-language ASR with medical-vocabulary customization, machine translation source-to-target with medical-domain customization and confidence scoring, streaming target-language TTS synthesis with pronunciation lexicons, turn-taking and barge-in handling that supports natural conversational flow, confidence-based human-interpreter escalation with seamless handoff, audio retention and audit per consent and policy, and continuous per-language-pair quality monitoring with disparity detection.
 
-```
+```text
 ┌─────── ENCOUNTER SETUP & CONSENT ────────────────────────┐
 │                                                           │
 │   [Language declaration]                                  │
