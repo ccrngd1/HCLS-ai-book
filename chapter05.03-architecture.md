@@ -178,7 +178,7 @@ flowchart LR
 
 **Step 1: Ingest patient address records.** Address records arrive from registration events (real-time), insurance feeds (periodic batch), HIE referrals (per-event), and patient-portal updates (real-time). Each source produces a raw address with source-specific field formatting. Capture the source, the timestamp, the patient identifier, the address role (physical, mailing, historical), and the raw fields. Skip this and you lose the audit trail you'll need when the standardization changes the address and you need to explain why.
 
-```
+```pseudocode
 FUNCTION ingest_address_record(source_event):
     raw = {
         patient_id: source_event.patient_id,
@@ -206,7 +206,7 @@ FUNCTION ingest_address_record(source_event):
 
 **Step 2: Standardize against the USPS reference data via the vendor API.** The CASS-certified vendor takes the raw input and returns a structured, validated, USPS-conformant standardized record. The vendor handles the heavy lifting: parsing, USPS rule application, DPV validation, correction logic, and metadata enrichment. Skip this and you'll be implementing CASS yourself, which is a multi-quarter project that you'll then have to maintain through every USPS reference-data update.
 
-```
+```pseudocode
 FUNCTION standardize_address(raw):
     // Step 2A: short-circuit for non-US addresses. The CASS vendor
     // covers US addresses only; international addresses go through
@@ -334,7 +334,7 @@ FUNCTION standardize_address(raw):
 
 **Step 3: Persist the standardized record and emit events.** Write the structured standardized record to DynamoDB keyed on `(patient_id, address_role)` so downstream consumers can look up the current address per role. Also write to S3 for the audit trail and for analytics. If the standardization changed the address, emit an `address_standardized` event so downstream consumers can refresh their copies.
 
-```
+```pseudocode
 FUNCTION persist_standardized_record(patient_id, raw, standardized):
     // Step 3A: read the previous record for this (patient_id,
     // address_role) so we can detect changes.
@@ -403,7 +403,7 @@ FUNCTION persist_standardized_record(patient_id, raw, standardized):
 
 **Step 4: Infer household membership for a co-location group.** Group all patient records sharing a canonical address hash. Apply privacy suppression. Evaluate corroborating evidence (last-name overlap, insurance-subscriber overlap, age patterns). Emit graded household-membership records. Skip this and you have a list of co-located patients but no usable household structure for downstream consumers.
 
-```
+```pseudocode
 FUNCTION infer_household_for_address(canonical_hash):
     // Step 4A: pull all patient records sharing the canonical hash.
     co_located_records = DynamoDB.Query("patient-address",
@@ -547,7 +547,7 @@ FUNCTION infer_household_for_address(canonical_hash):
 
 **Step 5: Periodic refresh against the latest USPS reference data and NCOA.** USPS reference data updates monthly. NCOA processing typically runs quarterly. Both can change a previously-validated address: a building gets demolished, a ZIP+4 changes due to a postal-route restructure, a patient is detected as a mover via NCOA. The refresh re-standardizes the population, detects drifts, and updates the address store. Skip the refresh and your address data decays; outreach campaigns get worse over time, SDOH analytics drift from reality, the patient matcher loses signal it should have.
 
-```
+```pseudocode
 FUNCTION monthly_usps_refresh():
     // Step 5A: pull the entire population of standardized addresses.
     all_addresses = DynamoDB.Scan("patient-address")

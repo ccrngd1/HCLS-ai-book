@@ -114,7 +114,7 @@ A few practical updates worth knowing:
 
 The pipeline has six logical stages: ingest patient address records from source systems, standardize each address through a CASS-certified validator, geocode the standardized addresses (optional but commonly co-located with standardization), persist the structured form with provenance, infer household groupings with confidence scoring, and re-process periodically to detect movers and stale addresses.
 
-```
+```text
 ┌────────────── INGEST ─────────────────────────────┐
 │                                                    │
 │  [Source Patient Records]                         │
@@ -305,7 +305,7 @@ The thing I would do differently the second time: invest more heavily in the pat
 
 The thing that has aged surprisingly well in the standardization domain is the underlying USPS infrastructure. The CASS certification program has been around for decades, the reference data updates run on a predictable cadence, the vendor ecosystem is mature, and the API patterns are stable. The interesting innovation is happening at the edges: machine learning for ambiguous-address resolution, embeddings for cross-language address matching, privacy-preserving household linkage for cross-organizational use cases. The core (use a CASS-certified vendor for US addresses) is solid and not changing fast. Build the boring core first, then experiment at the edges if your population needs it.
 
-Last point, because it is specific to the regulatory context: HIPAA's de-identification standards (Safe Harbor and Expert Determination) treat addresses above the state-or-three-digit-ZIP level as identifiers that must be removed for de-identified datasets. <!-- TODO: confirm; HIPAA Privacy Rule § 164.514 lists the 18 Safe Harbor identifiers including geographic subdivisions smaller than a state with limited exceptions for the first three digits of ZIP code under specified population thresholds. --> The standardized address is therefore a sensitive identifier in its own right, not just a piece of demographic data. Treat the standardized address store with the same encryption and access-control posture as the rest of the patient demographics. Apply Lake Formation column-level controls or equivalent for analytics consumers who do not need the full address. Do not pipe standardized addresses into low-sensitivity analytics environments without de-identification. The convenience of having the address available everywhere is real; the privacy posture of having it available everywhere is not what you want.
+Last point, because it is specific to the regulatory context: HIPAA's de-identification standards (Safe Harbor and Expert Determination) treat addresses above the state-or-three-digit-ZIP level as identifiers that must be removed for de-identified datasets. <!-- TODO: confirm; HIPAA Privacy Rule § 164.514 lists the 18 Safe Harbor identifiers including geographic subdivisions smaller than a state with limited exceptions for the first three digits of ZIP code under specified population thresholds. --> The standardized address is therefore a sensitive identifier in its own right, not just a piece of demographic data. Treat the standardized address store with the same encryption and access-control posture as the rest of the patient demographics. Apply column-level access controls (or equivalent) for analytics consumers who do not need the full address. Do not pipe standardized addresses into low-sensitivity analytics environments without de-identification. The convenience of having the address available everywhere is real; the privacy posture of having it available everywhere is not what you want.
 
 ---
 
@@ -327,7 +327,7 @@ Last point, because it is specific to the regulatory context: HIPAA's de-identif
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `address-standardization` · `cass-certified` · `usps` · `ncoa` · `household-linkage` · `geocoding` · `sdoh` · `population-health` · `outreach` · `dynamodb` · `lambda` · `glue` · `step-functions` · `event-driven` · `simple` · `mvp` · `hipaa` · `privacy`
+`entity-resolution` · `record-linkage` · `address-standardization` · `cass-certified` · `usps` · `ncoa` · `household-linkage` · `geocoding` · `sdoh` · `population-health` · `outreach` · `event-driven` · `simple` · `mvp` · `hipaa` · `privacy`
 
 ---
 
