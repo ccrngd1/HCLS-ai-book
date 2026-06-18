@@ -188,7 +188,7 @@ flowchart TB
 
 **Step 1: Ingest and normalize claims plus reference data.** Claims arrive from a clearinghouse in 837 format or from internal adjudication in a proprietary format. Provider data arrives from NPPES (monthly FTP), LEIE (monthly), state filings (variable). The normalization step parses each source, canonicalizes identifiers, and lands everything in the data lake with explicit source-of-truth tracking.
 
-```
+```pseudocode
 FUNCTION normalize_claim(raw_claim):
     // Parse the 837 or proprietary payload into a canonical claim structure.
     claim = parse_claim(raw_claim)
@@ -242,7 +242,7 @@ FUNCTION normalize_claim(raw_claim):
 
 **Step 2: Resolve entities across sources.** Provider, organization, patient, and ownership entities may appear in multiple sources with different identifiers. Entity resolution produces canonical IDs that the rest of the pipeline uses.
 
-```
+```pseudocode
 FUNCTION resolve_providers(claims_batch, external_provider_data):
     // Standard identifiers are the starting point.
     // NPI is authoritative for individual providers when present and valid.
@@ -328,7 +328,7 @@ and to separate the three edge types, and update Step 6 to be explicit
 about which node types and edge types participate in the
 community-detection projection. -->
 
-```
+```pseudocode
 FUNCTION refresh_graph(since_timestamp):
     // Incremental refresh: only process claims, enrollments, and external data
     // changed since the last refresh.
@@ -445,7 +445,7 @@ FUNCTION refresh_graph(since_timestamp):
 
 **Step 4: Run the rules layer.** Every claim (and every provider-day aggregate) goes through rule evaluation. Rules are versioned and explainable; each flag carries the rule ID and the input values that triggered it.
 
-```
+```pseudocode
 FUNCTION run_rules_on_claim(canonical_claim, resolved_entities):
     flags = []
     rules = lab_rules.get_active_rules()
@@ -538,7 +538,7 @@ FUNCTION run_rules_on_claim(canonical_claim, resolved_entities):
 
 **Step 5: Run the statistical layer at provider scope.** Per-provider feature computation (daily or weekly cadence) and detection of distributional drift versus peer groups and versus self-history.
 
-```
+```pseudocode
 FUNCTION score_provider_statistics(provider_id, evaluation_window):
     features = FeatureStore.GetRecord(
         feature_group = "provider-features",
@@ -630,7 +630,7 @@ FUNCTION score_provider_statistics(provider_id, evaluation_window):
 
 **Step 6: Run the graph layer.** Graph features and community detection. Output is graph-based flags with subgraph descriptors that investigators can open.
 
-```
+```pseudocode
 FUNCTION run_graph_analytics():
     // Community detection on the full graph. Louvain is the standard.
     communities = Neptune.RunAlgorithm(
@@ -752,7 +752,7 @@ included in any regulatory-referral package. State MFCU asking "why was
 this flag fired in November when the LEIE record was added in June?"
 requires the LEIE-extract date in the evidence trail. -->
 
-```
+```pseudocode
 FUNCTION on_flag_event(flag):
     // Determine the target entity (provider, organization, community, or patient).
     target = resolve_target(flag)
@@ -827,7 +827,7 @@ PHI. Strong candidate for a cookbook-wide PHI-minimization appendix. -->
 
 **Step 8: Documentation review assistance.** When an investigator escalates a case that requires medical records, the documentation-assist service coordinates Comprehend Medical entity extraction and LLM-based review.
 
-```
+```pseudocode
 FUNCTION assist_documentation_review(case_id, medical_records_uri):
     // Load the medical records (already in S3, behind appropriate access controls).
     documents = load_documents(medical_records_uri)
@@ -911,7 +911,7 @@ machine to Step 9, or add an explicit cross-link to the Provider
 appeals and due-process workflows bullet in "Why This Isn't Production-
 Ready" so a reader following the pseudocode does not miss the gap. -->
 
-```
+```pseudocode
 FUNCTION on_case_outcome(case_id, outcome_event):
     // outcome_event: { case_id, investigator_id, outcome_type, confirmed_loss,
     //                  decision_rationale, supporting_flags, decision_date }

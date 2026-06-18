@@ -335,7 +335,7 @@ Unlike most recipes in this book, the FWA pipeline is shaped heavily by law, reg
 
 At a conceptual level, the FWA detection pipeline has to ingest heterogeneous data continuously, maintain a relationship graph that reflects the current state of providers, entities, and claims, run multiple detectors (rule-based, statistical, graph-based, model-based) at different cadences, and feed a case management workflow where investigators do the real work. Underneath sits audit logging that would satisfy a federal subpoena, because the outputs of this system sometimes end up as evidence.
 
-```
+```text
 ┌──────────────── FWA DETECTION PIPELINE ───────────────────────────┐
 │                                                                   │
 │   [Claims feed]         [Eligibility feed]      [Remittance]      │
