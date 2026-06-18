@@ -65,10 +65,10 @@ flowchart TB
 | **BAA** | AWS BAA signed. Bedrock is a HIPAA-eligible service. PHI can be sent to Bedrock models under the BAA. Models do not retain or train on customer data sent via Bedrock APIs. Same BAA covers Textract, Comprehend Medical, and Bedrock. |
 | **Encryption** | S3: SSE-KMS with customer-managed key. DynamoDB: encryption at rest enabled. All API calls over TLS. Text sent to Bedrock and Comprehend Medical is not retained by AWS. Step Functions execution history encrypted at rest via SSE. |
 | **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), Textract, DynamoDB, SNS, Comprehend Medical, Step Functions, CloudWatch Logs, KMS, and Bedrock. Bedrock requires **two separate interface endpoints**: `com.amazonaws.REGION.bedrock` (model management API) and `com.amazonaws.REGION.bedrock-runtime` (Converse API, used by all Lambda functions in this recipe). A VPC with only `com.amazonaws.REGION.bedrock` will silently drop all Converse API calls in a no-egress HIPAA environment. Most deployments need only `bedrock-runtime`; include `bedrock` if you also manage model access programmatically. |
-| **Lambda Timeouts** | Lambda's default 3-second timeout will fail on the first Bedrock Sonnet call (typical latency: 2–5 seconds under normal load, 10–15 seconds under high load). Configure minimum timeouts: `pa-classify` 3–5 minutes (classification averages 1–3 seconds per page; sequential processing of a 12-page submission needs margin), `pa-extract-clinical` 5–10 minutes (Sonnet calls can reach 15 seconds at peak; a 4-page sequential extraction with retries needs the full window), `pa-assembler` 2 minutes. Use provisioned concurrency to eliminate Lambda cold-start latency for time-sensitive expedited PA submissions. |
+| **Lambda Timeouts** | Lambda's default 3-second timeout will fail on the first Bedrock Sonnet call (typical latency: 2-5 seconds under normal load, 10-15 seconds under high load). Configure minimum timeouts: `pa-classify` 3-5 minutes (classification averages 1-3 seconds per page; sequential processing of a 12-page submission needs margin), `pa-extract-clinical` 5-10 minutes (Sonnet calls can reach 15 seconds at peak; a 4-page sequential extraction with retries needs the full window), `pa-assembler` 2 minutes. Use provisioned concurrency to eliminate Lambda cold-start latency for time-sensitive expedited PA submissions. |
 | **CloudTrail** | Enabled for all API calls including Bedrock. Bedrock model invocations are logged with model ID, token counts, and latency. Prior auth submissions are clinical decision records; the complete audit trail is a regulatory requirement. |
-| **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1–2 clinical notes, a lab results page, and a physician letter. HL7 FHIR examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for test cases. Never use real PHI in development. |
-| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT): ~$0.07/page, or $0.70 for a 10-page submission. Bedrock Nova Lite classification: ~$0.0002/page, negligible. Bedrock Sonnet 4.6 clinical reasoning (4 clinical pages): ~$0.05–0.06. Comprehend Medical InferICD10CM on extracted concepts (shorter inputs): ~$0.02–0.05. Step Functions Standard Workflows: ~$0.002/submission. Per-submission total: ~$0.80–1.00. At 500,000 submissions/year, the end-to-end pipeline cost (Textract, Bedrock, Comprehend Medical, Step Functions, Lambda, DynamoDB) is approximately $375,000–$450,000 annually. See the Technology section for a per-component breakdown. Prompt caching on the classification system prompt can reduce Bedrock input costs by up to 90%, bringing the LLM line item to under $10,000/year at that volume. |
+| **Sample Data** | CMS publishes the [CMS-1500 form](https://www.cms.gov/medicare/cms-forms/cms-forms/downloads/cms1500.pdf) for cover sheet layout reference. Create synthetic multi-page PDFs combining a cover sheet, 1-2 clinical notes, a lab results page, and a physician letter. HL7 FHIR examples (see the [HL7 FHIR R4 examples directory](https://hl7.org/fhir/R4/examples.html)) provide realistic clinical document content for test cases. Never use real PHI in development. |
+| **Cost Estimate** | Textract async (FORMS+TABLES+LAYOUT): ~$0.07/page, or $0.70 for a 10-page submission. Bedrock Nova Lite classification: ~$0.0002/page, negligible. Bedrock Sonnet 4.6 clinical reasoning (4 clinical pages): ~$0.05-0.06. Comprehend Medical InferICD10CM on extracted concepts (shorter inputs): ~$0.02-0.05. Step Functions Standard Workflows: ~$0.002/submission. Per-submission total: ~$0.80-1.00. At 500,000 submissions/year, the end-to-end pipeline cost (Textract, Bedrock, Comprehend Medical, Step Functions, Lambda, DynamoDB) is approximately $375,000-$450,000 annually. See the Technology section for a per-component breakdown. Prompt caching on the classification system prompt can reduce Bedrock input costs by up to 90%, bringing the LLM line item to under $10,000/year at that volume. |
 
 ### Ingredients
 
@@ -102,7 +102,7 @@ flowchart TB
 
 The one structural change from Recipe 1.2: `pa-retrieve` writes the raw Textract output to S3 (as JSON, keyed to the job ID), then starts the Step Functions state machine with the S3 reference. This keeps the payload small and bypasses Step Functions' 256 KB input limit. Every subsequent step reads from S3 rather than receiving raw blocks in its input.
 
-```
+```pseudocode
 FUNCTION retrieve_and_handoff(textract_job_id, document_key, state_machine_arn):
     // Retrieve all Textract result pages (same paginated call as Recipe 1.2)
     all_blocks = retrieve_all_textract_blocks(textract_job_id)
@@ -123,7 +123,7 @@ FUNCTION retrieve_and_handoff(textract_job_id, document_key, state_machine_arn):
 
 **Step 3: Group Textract blocks by page.** Read the S3 Textract output, group blocks by page number, extract full page text from LINE blocks, and flag which structural features each page has (form fields, tables, layout elements). These structural signals feed into the LLM classification prompt as metadata.
 
-```
+```pseudocode
 FUNCTION group_blocks_by_page(all_blocks):
     pages = empty map  // page_number -> { blocks, text, has_tables, has_forms, layout_blocks }
 
@@ -166,7 +166,7 @@ Why temperature=0? Because classification should be as consistent as possible. T
 
 Why include structural metadata in the prompt rather than just the page text? Because "this page has form fields and no tables" is useful signal. A page of text that looks ambiguous without structural context often resolves cleanly with it.
 
-```
+```pseudocode
 // System prompt for page classification.
 // The instruction to return JSON with a specific schema is critical:
 // temperature=0 plus an explicit schema gives you consistent structured output.
@@ -260,7 +260,7 @@ FUNCTION classify_all_pages(pages, classification_model_id):
 
 **Step 5: Fan out to two extraction paths.** Based on the classification from Step 4, each page routes to one of two extraction functions. Cover sheets go to the Textract forms extractor. Everything else with narrative content goes to the Bedrock clinical extractor. Pages classified as "other" or below a confidence threshold go to a pass-through that preserves their raw text and flags them for human review.
 
-```
+```pseudocode
 EXTRACTION_ROUTER = {
     "cover_sheet":      extract_cover_sheet,    // Textract FORMS-based extraction
     "clinical_note":    extract_clinical_page,  // Bedrock Sonnet reasoning
@@ -300,7 +300,7 @@ FUNCTION route_and_extract(page_num, classification, page_data, block_map,
 
 The **cover sheet extractor** is unchanged from the original recipe. It uses Textract key-value pairs and a FIELD_MAP to normalize label variants to canonical field names. See Recipe 1.1 for the full implementation. The point stands: Textract is the right tool for structured form extraction, and changing tools here would add cost and complexity for zero improvement.
 
-```
+```pseudocode
 // Cover sheet field map: canonical name → list of known label variants.
 // Notice that "service requested code" and "dx indication" are in here now.
 // The LLM handles template variability in classification; the field map still
@@ -341,7 +341,7 @@ The **clinical page extractor** is where the architecture changes most significa
 
 After LLM extraction, we run `InferICD10CM` on the extracted diagnosis text. This is the validation step: the LLM gives us the clinical concepts in natural language, and Comprehend Medical maps them to high-confidence ICD-10 codes.
 
-```
+```pseudocode
 // System prompt for clinical evidence extraction.
 // A capable model (Sonnet or equivalent) is required here.
 // The schema in the prompt is how we get structured JSON output reliably.
@@ -373,7 +373,7 @@ most important for prior authorization decisions. Be thorough on those.
 """
 ``` 
 
-```
+```pseudocode
 FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
     page_text = page_data.text
 
@@ -431,7 +431,7 @@ FUNCTION extract_clinical_page(page_data, block_map, clinical_model_id):
 
 The **lab results extractor** is unchanged. Lab results pages are structured tables, and Textract is exactly the right tool for them. The Bedrock LLM adds nothing here that Textract doesn't already provide better and cheaper. This is the "right tool for the job" principle in practice: just because you can send a lab results table to an LLM doesn't mean you should.
 
-```
+```pseudocode
 LAB_COLUMN_MAP = {
     "test_name":       ["test", "test name", "analyte", "component", "description"],
     "result":          ["result", "value", "result value", "your result"],
@@ -470,7 +470,7 @@ FUNCTION extract_lab_page(page_data, block_map, _model_id):
 
 **Step 6: Assemble the structured prior auth record.** The assembler receives extraction results from all pages and merges them into a single coherent record. The structure is similar to the original recipe, with one meaningful addition: `medical_necessity_evidence` and `failed_treatments` are now first-class fields. These are the fields that matter most for the clinical criteria matching step downstream.
 
-```
+```pseudocode
 FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
     record = {
         document_key:         document_key,
@@ -723,15 +723,15 @@ Notice what the LLM extraction produces that the previous keyword classifier plu
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (10-page submission) | 30–60 seconds (Textract async dominates; Bedrock adds 3–8 seconds) |
-| End-to-end latency (20-page submission) | 55–100 seconds |
-| Page classification accuracy (LLM, temperature=0) | 92–97% |
-| Cover sheet field extraction accuracy | 92–97% (Textract, unchanged) |
-| Clinical evidence extraction completeness | 88–95% (depends on OCR quality of source document) |
-| ICD-10 code accuracy (Comprehend Medical validation on typed notes) | 87–94% |
-| ICD-10 code accuracy (handwritten pages) | 62–80% (OCR errors compound downstream) |
-| Lab results table extraction accuracy | 94–99% (typed, printed lab reports) |
-| Cost per 10-page submission | ~$0.80–1.00 |
+| End-to-end latency (10-page submission) | 30-60 seconds (Textract async dominates; Bedrock adds 3-8 seconds) |
+| End-to-end latency (20-page submission) | 55-100 seconds |
+| Page classification accuracy (LLM, temperature=0) | 92-97% |
+| Cover sheet field extraction accuracy | 92-97% (Textract, unchanged) |
+| Clinical evidence extraction completeness | 88-95% (depends on OCR quality of source document) |
+| ICD-10 code accuracy (Comprehend Medical validation on typed notes) | 87-94% |
+| ICD-10 code accuracy (handwritten pages) | 62-80% (OCR errors compound downstream) |
+| Lab results table extraction accuracy | 94-99% (typed, printed lab reports) |
+| Cost per 10-page submission | ~$0.80-1.00 |
 
 **Where it still struggles:** Multi-generation faxes where OCR quality is poor enough to confuse even the LLM. Pages where the clinical content is terse and abbreviated in ways that lose context after OCR ("Hx: OA bilat LE, failed PT, NSAID, CSI x3"). Cover sheets from very small specialty payers with completely non-standard layouts. And the ICD-10 validation step still hits the "code written as a code" problem: `InferICD10CM` expects natural language, not "M17.11" written as the diagnosis field.
 
@@ -816,6 +816,8 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations) before navigation. Add this section. -->
 
 --- 
 

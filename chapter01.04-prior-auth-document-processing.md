@@ -1,6 +1,6 @@
 # Recipe 1.4: Prior Authorization Document Processing 🔶
 
-**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.80–1.00 per 10-page submission
+**Complexity:** Moderate · **Phase:** MVP · **Estimated Cost:** ~$0.80-1.00 per 10-page submission
 
 ---
 
@@ -169,18 +169,18 @@ For a typical 10-page prior auth submission with 4 clinical pages:
 |-----------|-------------|--------------|
 | Textract (FORMS+TABLES+LAYOUT) | ~$0.70 | ~$0.70 (unchanged) |
 | Classification | ~$0.01 (keyword logic, negligible) | ~$0.002 (Nova Lite, negligible) |
-| Clinical extraction (Comprehend Medical) | ~$0.10–0.25 per clinical page | N/A |
-| Clinical reasoning (Sonnet 4.6) | N/A | ~$0.012–0.015 per clinical page |
+| Clinical extraction (Comprehend Medical) | ~$0.10-0.25 per clinical page | N/A |
+| Clinical reasoning (Sonnet 4.6) | N/A | ~$0.012-0.015 per clinical page |
 | ICD-10 code validation | Included above | ~$0.02 (Comprehend Medical, shorter inputs) |
-| **Total per submission** | **~$0.85–1.25** | **~$0.80–1.00** |
+| **Total per submission** | **~$0.85-1.25** | **~$0.80-1.00** |
 
 The total is comparable. But the composition tells a different story. The expensive Comprehend Medical per-character billing gives way to Sonnet per-token billing, which is cheaper per unit and produces richer, more structured output. Nova Lite classification is effectively free at any submission volume.
 
 Here's where the cost shock actually comes from. Suppose you're new to LLM pricing and reach for Sonnet on every page, not just the clinical ones: 10 pages × $0.015/page = $0.15/submission × 500,000 submissions = $75,000/year just for the LLM step. That's real money and a noticeable increase over the old approach.
 
-Model tiering is the resolution. Apply Nova Lite to classification (10 pages) and Sonnet only to clinical pages (3–4 pages). Total LLM cost drops to roughly $0.05–$0.07 per submission. The Textract cost dominates the total, as it should.
+Model tiering is the resolution. Apply Nova Lite to classification (10 pages) and Sonnet only to clinical pages (3-4 pages). Total LLM cost drops to roughly $0.05-$0.07 per submission. The Textract cost dominates the total, as it should.
 
-At 500,000 submissions per year: the LLM line item is $25,000–$35,000 annually. The Textract line item is roughly $280,000 (based on an 8-page average submission; for 10-page average, closer to $350,000). The whole pipeline runs for approximately $375,000–$450,000 per year, including Step Functions, Lambda, DynamoDB, and Comprehend Medical validation costs. That looks very different from the "AI is expensive" narrative once you've done the math.
+At 500,000 submissions per year: the LLM line item is $25,000-$35,000 annually. The Textract line item is roughly $280,000 (based on an 8-page average submission; for 10-page average, closer to $350,000). The whole pipeline runs for approximately $375,000-$450,000 per year, including Step Functions, Lambda, DynamoDB, and Comprehend Medical validation costs. That looks very different from the "AI is expensive" narrative once you've done the math.
 
 One more lever: prompt caching. When classifying thousands of pages with the same system prompt, Bedrock's prompt caching cuts input token costs by up to 90% on cache hits. At volume, that brings the LLM line item to under $10,000 per year.
 
@@ -198,7 +198,7 @@ For page classification and clinical evidence extraction in a prior auth pipelin
 
 ### The General Architecture Pattern
 
-```
+```text
 [Submission Arrives] → [Full Document Extraction (OCR + Structure)]
                                         ↓
                               [Group Pages by Number]
@@ -249,7 +249,7 @@ The "aha moment" with LLM classification is surprisingly mundane. You send a pag
 
 That experience recalibrates your intuition about what's worth automating with an LLM versus a specialized service. Page classification: yes, absolutely. Lab values from a structured table: no, Textract handles that better and cheaper. The model tiering concept is how you apply that intuition systematically rather than making it up case by case.
 
-Now for the cost shock, because I promised honesty. Go calculate what Sonnet 4.6 costs at 500,000 submissions per year with 4 clinical pages each: 500,000 × 4 × $0.015 per page = $30,000 per year for the Sonnet step alone. That sounds like a lot until you compare it to a single clinical reviewer FTE at $150,000–$200,000 fully loaded. The pipeline is still a bargain. But the number is real, and it will land in your AWS bill.
+Now for the cost shock, because I promised honesty. Go calculate what Sonnet 4.6 costs at 500,000 submissions per year with 4 clinical pages each: 500,000 × 4 × $0.015 per page = $30,000 per year for the Sonnet step alone. That sounds like a lot until you compare it to a single clinical reviewer FTE at $150,000-$200,000 fully loaded. The pipeline is still a bargain. But the number is real, and it will land in your AWS bill.
 
 Model tiering is how you make that number smaller. Nova Lite for classification is effectively free at any realistic volume. Haiku 4.5 instead of Sonnet 4.6 for less complex narrative pages cuts the per-page cost by 70%. Prompt caching on the repeated classification system prompt cuts input costs by 90%. These are not hypothetical optimizations. They are the difference between a $30K/year LLM budget and an $8K/year one.
 
