@@ -88,7 +88,7 @@ flowchart TD
 
 **Step 1: Receive and buffer the DICOM study.** Scanners send images as they're reconstructed, one DICOM instance (slice) at a time via DICOM C-STORE. A CT head might arrive as 200+ individual slices over 30-60 seconds. The system needs to buffer these and detect when the study is "complete" (all expected series have arrived). This is trickier than it sounds: there's no explicit "study complete" signal in DICOM. Common approaches include a timeout after the last received instance, or checking the NumberOfSeriesRelatedInstances against received count. Getting this wrong means either processing incomplete studies (missing slices = wrong inference) or waiting too long (defeating the purpose of fast triage). One additional failure mode: if a scanner drops connection mid-transfer, the timeout fires on an incomplete volume. If the received instance count is significantly below the expected count for the study type (e.g., a CT head with fewer than 100 slices when 150-300 is typical), flag the study as potentially incomplete and either skip inference or run with a lowered confidence threshold. Log incomplete studies for manual review.
 
-```
+```pseudocode
 FUNCTION receive_dicom_study(dicom_instances):
     // Buffer incoming DICOM instances, grouped by StudyInstanceUID.
     // StudyInstanceUID is the unique identifier for a complete imaging study.
@@ -108,7 +108,7 @@ FUNCTION receive_dicom_study(dicom_instances):
 
 **Step 2: Classify the study and select models.** Once the study is complete, examine its DICOM metadata to determine what kind of study it is and which AI models should analyze it. This routing decision is based on Modality (CT, MR, CR/DX), BodyPartExamined, StudyDescription, and sometimes ProtocolName. The challenge: these fields are inconsistently populated across sites. "CT HEAD W/O CONTRAST" at one hospital might be "CT Brain Non-Con" at another. Build a flexible classifier that handles variations, and log unrecognized study types for manual mapping updates.
 
-```
+```pseudocode
 FUNCTION classify_and_route(study_uid):
     // Retrieve DICOM metadata for the study (not pixel data, just headers).
     metadata = get_study_metadata(study_uid)
@@ -148,7 +148,7 @@ FUNCTION classify_and_route(study_uid):
 
 **Step 3: Preprocess and run inference.** Each model has specific input requirements. A chest X-ray model expects a single 2D image resized to 512x512 or 1024x1024 pixels, normalized to [0,1]. A CT head model expects a 3D volume resampled to uniform voxel spacing (typically 1mm isotropic), windowed to brain/subdural windows, and potentially cropped to the region of interest. Preprocessing is model-specific and must handle the variability of real-world scanner output (different pixel spacings, different bit depths, different photometric interpretations). Get preprocessing wrong and model performance degrades silently. You won't get an error; you'll get confident wrong answers.
 
-```
+```pseudocode
 FUNCTION run_inference(study_uid, model_name):
     // Load pixel data from the imaging store.
     pixel_data = load_pixel_data(study_uid)
@@ -183,7 +183,7 @@ FUNCTION run_inference(study_uid, model_name):
 
 **Step 4: Aggregate findings and assign priority.** Multiple models may run on a single study, each producing its own findings. This step consolidates all findings, deduplicates where models overlap, and maps the combined findings to a clinical priority level. Priority assignment is the critical clinical decision: it determines worklist order. The mapping from findings to priority must be defined by radiologists and site medical directors, not by engineers. Common priority levels: STAT (read within 15 minutes), Urgent (read within 1 hour), Routine (standard queue order).
 
-```
+```pseudocode
 // Priority mapping: clinically defined, site-configurable.
 PRIORITY_RULES = {
     "STAT": [
@@ -238,7 +238,7 @@ FUNCTION assign_priority(study_uid, all_findings):
 
 **Step 5: Update worklist and notify.** The final step communicates the priority back to the radiologist's workflow. For STAT findings, this means both reprioritizing the study in the worklist AND sending an immediate alert. The worklist update mechanism depends entirely on your PACS/RIS vendor. Common integration patterns: HL7 ORM messages to the RIS, DICOM Modality Worklist updates, or vendor-specific APIs. Some modern PACS systems support FHIR-based integrations. This is the step where vendor-specific integration work dominates. Plan for it.
 
-```
+```pseudocode
 FUNCTION update_worklist_and_notify(triage_result):
     // Store the triage result for audit trail and dashboard.
     write_to_database("study_triage_results", triage_result)
@@ -339,6 +339,8 @@ FUNCTION update_worklist_and_notify(triage_result):
 - Unusual anatomy (post-surgical, congenital variants) that the model hasn't seen in training
 - Multi-finding studies where one critical finding masks another
 - Edge cases in modality routing (combined studies, non-standard protocols)
+
+<!-- TODO (TechWriter): Architecture companion is missing a "Why This Isn't Production-Ready" section per RECIPE-GUIDE. Should appear between Expected Results and Variations. -->
 
 ---
 

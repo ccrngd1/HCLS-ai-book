@@ -1,6 +1,6 @@
 # Recipe 9.7: Radiology AI Triage (Multi-Modality) 🏥
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.50–$2.00 per study
+**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.50-$2.00 per study
 
 ---
 
@@ -70,7 +70,7 @@ That last step is the integration challenge. Radiologists work in PACS (Picture 
 
 ### The General Architecture Pattern
 
-```
+```text
 [Scanner] → [DICOM Router] → [Study Classifier] → [Model Selector] → [Inference Engine(s)]
                                                                               ↓
 [Worklist Manager] ← [Priority Aggregator] ← [Finding Consolidator] ← [Model Results]
@@ -115,5 +115,7 @@ The thing that surprised me most: radiologists actually like these systems when 
 - **Recipe 9.6 (Diabetic Retinopathy Screening):** Another FDA-regulated imaging AI use case with similar regulatory considerations
 - **Recipe 14.3 (Radiology Worklist Optimization):** Complementary recipe covering non-AI worklist optimization (scheduling, load balancing)
 - **Recipe 12.10 (Physiological Waveform Analysis):** Similar real-time inference pattern applied to continuous monitoring data
+
+<!-- TODO (TechWriter): Main recipe is missing Tags section and navigation footer per RECIPE-GUIDE. Tags currently live only in the architecture companion. Add them here. -->
 
 ---
