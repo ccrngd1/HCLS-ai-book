@@ -125,7 +125,7 @@ Real-time intraoperative use is the dream, but it's years away from routine clin
 
 One more thing: surgeon buy-in is everything. If the surgical staff perceives this as surveillance rather than a learning tool, adoption will be zero regardless of how good the technology is. Frame it as "your personal performance coach" not "big brother in the OR."
 
-Two operational concerns that will bite you if you ignore them: First, data retention. Configure S3 lifecycle policies and DynamoDB TTL aligned with your institution's records retention policy. Typical surgical video retention is 7-10 years; check state-specific requirements. Implement a deletion workflow that removes video, frames, features, and index entries together when retention expires. You do not want orphaned PHI sitting in a forgotten S3 bucket.
+Two operational concerns that will bite you if you ignore them: First, data retention. Configure storage lifecycle policies and index expiration aligned with your institution's records retention policy. Typical surgical video retention is 7-10 years; check state-specific requirements. Implement a deletion workflow that removes video, frames, features, and index entries together when retention expires. You do not want orphaned PHI sitting in a forgotten storage bucket.
 
 Second, model versioning. When you deploy a new model version, decide whether to reprocess historical procedures. Store `model_version` in the index so you can filter by version. Consider maintaining a "gold standard" set of manually-annotated procedures for regression testing new models against. Without this, you'll have no way to tell whether your v2 model is actually better than v1 on your institution's cases.
 

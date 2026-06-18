@@ -436,6 +436,8 @@ FUNCTION store_results(procedure_id, analysis_results):
 - Instrument detection fails when instruments are partially occluded or when multiple instruments overlap visually.
 - Generalization across surgeons is imperfect. A model trained primarily on right-handed surgeons may perform worse on left-handed technique.
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section here (between Expected Results and Variations) per the architecture companion template. -->
+
 ---
 
 ## Variations and Extensions
