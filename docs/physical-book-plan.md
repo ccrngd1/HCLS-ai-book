@@ -1,7 +1,7 @@
 # Physical Book Plan & Main-Third Finalization
 
 Status: **DRAFT — pending selection sign-off**
-Last updated: 2026-06-18
+Last updated: 2026-06-18 (finding-resolution overnight runbook added, section 6b)
 
 ## 1. Vision
 
@@ -107,6 +107,34 @@ For the *later* full-book pass, after the physical book ships. The median recipe
 - **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online").
 - **Phase D — Publish.** KDP or IngramSpark.
 - **Phase E — Book-wide tightening.** Work the 41-recipe backlog (§5) via a ralph run (TechEditor edits, TechExpertReviewer enforces rubric), independent/parallel, plus scaffolding + vendor cleanup across the broader corpus.
+
+## 6b. Finding-resolution overnight run (added 2026-06-18)
+
+Pilot (`ch02-r05-findings`, recipe 2.5) ran 2026-06-18 and passed: TechWriter resolved 21 findings (0 open + 3 deferred as `[NEEDS HUMAN]`), TechExpertReviewer validated, fixes verified real (S1 SMS-to-portal-link, S3 IAM ARN scoping, N1 VPC endpoints). Design is proven; the batch is ready to scale to the remaining ~145 recipes.
+
+**Mechanism:** per-recipe task (one per recipe, not per finding), TechWriter resolves the findings listed in `chapterNN.RR-todo.md`, TechExpertReviewer validates. Items needing an external citation or an author decision are deferred in the todo file prefixed `[NEEDS HUMAN]`. Improves the digital edition only (flagship main files are already clean).
+
+**To launch (from the book root):**
+
+```bash
+# 1. Generate the remaining ~145 finding-resolution tasks from the -todo.md files
+python3 gen_finding_tasks.py
+
+# 2. Pre-clean stale worktrees
+rm -rf /tmp/ralph-worktrees; git worktree prune; git branch | grep ralph/worker | xargs -r git branch -D
+
+# 3. Launch (opus-4.6, concurrency 4 from ralph.config.json, 16h cap)
+/mnt/c/Users/lawsnic/OneDrive\ -\ amazon.com/Documents/projects/kiro-ralph-loop/.venv/bin/ralph run \
+  --model claude-opus-4.6 --wall-clock-timeout-ms 57600000 --max-iterations 500
+```
+
+**Morning-after checklist:**
+- Review deferrals: `grep -l 'NEEDS HUMAN' chapter*-todo.md` then read each.
+- Rebuild HTML and confirm warnings == baseline (2 RECIPE-GUIDE placeholders).
+- Spot-check a few high-stakes recipes (HIPAA/security findings) for correctness.
+- All per-task changes are git-committed and reversible (`ralph rollback <N>` or `git revert`).
+
+**Helpers (committed):** `check_findings.py` (guardrail), `gen_finding_tasks.py` (batch generator), `specs/ch02-r05-findings.md` (proven template).
 
 ## 7. Open decisions
 
