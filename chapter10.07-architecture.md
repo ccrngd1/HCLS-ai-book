@@ -234,7 +234,7 @@ flowchart LR
 
 **Step 1: Capture consent at encounter start, identify bystanders, and bootstrap the ambient session.** When the clinician opens the encounter (typically by selecting the patient in the EHR and starting the visit), the system captures the appropriate consent, identifies who is in the room, and bootstraps an ambient-documentation session that links the encounter ID to the audio capture path. Skip the per-encounter bystander identification and you risk recording someone who has not consented, which is both a privacy and compliance violation.
 
-```
+```pseudocode
 ON encounter_start(encounter_id, patient_id, clinician_id,
                     patient_jurisdiction, visit_type, room_id):
 
@@ -334,7 +334,7 @@ ON encounter_start(encounter_id, patient_id, clinician_id,
 
 **Step 2: Stream audio from the in-room device to HealthScribe streaming, with VAD, beamforming, and movement-robust diarization.** As audio is captured by the in-room device, voice activity detection and beamforming at the device produce a cleaned audio stream that is sent to HealthScribe (or, for institutions using a custom pipeline, Transcribe Medical streaming with the institution's diarization layer). The streaming pipeline produces a rolling transcript with per-segment speaker labels and confidence. Skip the device-side audio cleanup and the cloud ASR receives audio with significantly more noise and reverberation than necessary, with measurable accuracy impact.
 
-```
+```pseudocode
 FUNCTION stream_audio_to_healthscribe(session_id):
     state = encounter_state_table.get(session_id)
 
@@ -440,7 +440,7 @@ FUNCTION handle_streaming_segment(session_id, event):
 
 **Step 3: After the encounter ends, run batch HealthScribe reprocessing for the canonical transcript and structured note draft.** When the encounter ends (either by clinician signal or by EHR encounter close), a batch HealthScribe job runs over the full audio with full discourse context, producing the canonical transcript with diarization plus the structured clinical note draft. The batch output is the canonical record. Skip the batch reprocessing and the canonical transcript is the streaming output, which is fine for navigation but suboptimal for the documentation that will end up in the chart.
 
-```
+```pseudocode
 ON encounter_end(session_id):
     state = encounter_state_table.get(session_id)
 
@@ -527,7 +527,7 @@ FUNCTION run_batch_healthscribe(session_id):
 
 **Step 4: Render the institutional-template note from the HealthScribe draft using Bedrock, with citation grounding and faithfulness checks.** HealthScribe's default note format may not match the institution's template. The Bedrock-rendering step takes the HealthScribe structured output plus the canonical transcript plus the EHR context and produces the institution-specific note format. The Bedrock rendering is grounded: every claim in the rendered note carries a citation back to the supporting transcript segment or EHR source. A faithfulness-check pass scores the rendered note against the source for fabrication and contradictions. Skip the faithfulness check and the rendered note may include fluent-sounding clinical content that the patient never said, which is the worst class of failure for this recipe.
 
-```
+```pseudocode
 FUNCTION render_institutional_note(session_id,
                                     canonical_transcript,
                                     healthscribe_note_draft):
@@ -643,7 +643,7 @@ FUNCTION render_institutional_note(session_id,
 
 **Step 5: Extract structured clinical entities and present them for explicit clinician confirmation.** Beyond the narrative note, the system extracts structured clinical entities (medications, problems, allergies, vitals, orders, follow-up actions) using Comprehend Medical for the canonical coding (RxNorm, ICD-10) and a Bedrock LLM for the higher-level structuring. Each extracted field is presented to the clinician for explicit confirmation before being applied to the structured chart. Skip the explicit confirmation and the structured chart can be silently modified with content the clinician would not have endorsed. Recipe 2.8 covers this pattern in detail; the in-person workflow is the same.
 
-```
+```pseudocode
 FUNCTION extract_structured_fields(session_id,
                                     canonical_transcript):
     state = encounter_state_table.get(session_id)
@@ -750,7 +750,7 @@ FUNCTION extract_structured_fields(session_id,
 
 **Step 6: Present the draft to the clinician for review-and-sign with side-by-side transcript display and structured-field confirmation.** The clinician opens the review interface, sees the draft note alongside the transcript with click-through citations, reviews flagged uncertain segments, confirms each structured-field extraction explicitly, edits the narrative as needed, and signs. The signed note is the legal record; the audio is at most ephemeral. Skip the side-by-side display and the clinician cannot easily verify what was actually said versus what the LLM produced. Recipe 2.8 covers the review-and-sign pattern in detail.
 
-```
+```pseudocode
 ON clinician_review_request(session_id, clinician_id):
     state = encounter_state_table.get(session_id)
     note_draft = note_draft_archive.get(session_id)
@@ -871,7 +871,7 @@ ON clinician_sign(session_id, clinician_id):
 
 **Step 7: Audit, archive, retain audio per policy, and feed cohort-stratified accuracy monitoring.** Every encounter produces a durable audit record: the transcript, the rendered draft, the clinician edits, the structured-field decisions, the signed final note, the consent and bystander events. Audio is retained briefly per institutional policy and then deleted. Cohort-stratified metrics (per-language, per-specialty, per-clinician, per-patient-cohort, per-audio-quality-band) feed the equity-monitoring dashboard. Skip the audio retention enforcement and the institution silently accumulates biometric data beyond its policy commitment, which is a compliance exposure. Skip the cohort segmentation and the system's per-cohort failure modes are invisible until a complaint or a regulator surfaces them.
 
-```
+```pseudocode
 FUNCTION audit_archive_and_telemetry(session_id):
     state = encounter_state_table.get(session_id)
     note = note_state_table.get(session_id)

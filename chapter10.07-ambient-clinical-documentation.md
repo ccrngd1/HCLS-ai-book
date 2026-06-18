@@ -205,7 +205,7 @@ A few practical updates worth knowing.
 
 An in-person ambient clinical documentation system decomposes into eight logical stages: encounter setup and consent capture (the visit begins with the appropriate disclosures and the ambient feature is enabled per institutional policy), in-room audio capture (the audio is captured by the device or microphone array, with VAD and noise suppression applied), streaming ASR with diarization (the audio becomes a real-time transcript with speaker labels), in-encounter live display (optional, the live transcript appears for the clinician to monitor during the encounter), batch ASR for finalization (a higher-accuracy transcript is produced after the encounter), clinical-content classification and LLM-driven note generation (the relevant transcript segments become a draft note with extracted clinical data), clinician review and signature (the clinician reviews, edits, confirms structured extractions, and signs), and audit, archive, and learning (the audio, transcript, generated note, and metadata are stored with appropriate retention).
 
-```
+```text
 ┌─────── ENCOUNTER SETUP & CONSENT CAPTURE ────────────────┐
 │                                                           │
 │   [Encounter begins in clinic exam room]                  │
