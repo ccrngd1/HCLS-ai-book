@@ -204,7 +204,7 @@ A few practical updates worth knowing.
 
 A healthcare triage bot decomposes into ten logical stages: channel entry, input safety screening with continuous-emergency-screening, identity-and-chart-context loading, symptom identification and protocol selection, structured protocol-driven questioning, clinical-decision-rule computation, acuity scoring and recommendation, output safety screening with conservative-bias verification, recommendation delivery, and nurse-line escalation when applicable. The cross-cutting concerns from recipes 11.1 through 11.5 carry forward; this recipe adds four new ones (clinical-protocol-corpus governance with medical-director sign-off, conservative-bias-default policy, continuous-emergency-screening pipeline, and FDA-strategy-alignment artifact maintenance).
 
-```
+```text
 ┌────────── CHANNEL ENTRY ─────────────────────────────────┐
 │                                                           │
 │   [Patient opens chat in institution's app, member        │
@@ -674,9 +674,9 @@ The thing that surprises engineers coming from generic-chatbot backgrounds is ho
 
 The thing that surprises clinical leaders coming from nurse-line operations backgrounds is how dependent the bot's quality is on the explicitness of the protocols. Nurses with experience can navigate informal protocol gaps; the bot cannot. Formalizing the protocols at a level the bot can use without losing the clinical wisdom that lives in nurses' heads is multi-quarter clinical work, with clinical-leadership ownership and named accountability.
 
-The thing about Amazon Bedrock specifically: same as recipes 11.2 through 11.5, Bedrock Agents is the right level of abstraction for this recipe. The Agent handles the multi-step LLM-and-tool orchestration; the action groups are the bot's tool surface; Knowledge Bases provides the protocol RAG; Guardrails provides safety filtering. The institutional value lives in the protocol corpus, the clinical-decision-rule library, the chart-context integration, and the regulatory artifact, not in the Bedrock features themselves.
+The thing about cloud-service selection: same as recipes 11.2 through 11.5, the institutional value lives in the protocol corpus, the clinical-decision-rule library, the chart-context integration, and the regulatory artifact, not in the specific cloud services. The managed-agent pattern (LLM orchestration with tool-use action groups, managed RAG for protocol retrieval, and managed guardrails for scope enforcement) is the right level of abstraction. Service-level details are in the [Architecture and Implementation companion](chapter11.06-architecture).
 
-The thing about cost: per-resolved-conversation infrastructure cost is small relative to the cost of even a single avoided unnecessary ED visit, and small relative to the cost of even a single avoided delay-in-treatment for a time-sensitive condition. The dominant project cost is the clinical and regulatory engineering, not the AWS bill.
+The thing about cost: per-resolved-conversation infrastructure cost is small relative to the cost of even a single avoided unnecessary ED visit, and small relative to the cost of even a single avoided delay-in-treatment for a time-sensitive condition. The dominant project cost is the clinical and regulatory engineering, not the cloud bill.
 
 The thing about regulatory exposure: the bot is a patient-facing clinical tool subject to scrutiny by FDA (where applicable), state medical boards (in some states with AI-mediated patient-care rules), state insurance regulators (for payer-side deployments), and the institutional malpractice insurer. The institutional regulatory team is involved from day one; FDA-experienced regulatory counsel is part of the team for any deployment that may approach the SaMD line.
 

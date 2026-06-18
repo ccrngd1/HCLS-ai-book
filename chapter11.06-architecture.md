@@ -243,7 +243,7 @@ flowchart LR
 
 **Step 1: Receive the chat message, bootstrap the session, and run input safety with continuous emergency screening.** This is the architectural floor for the triage bot. The continuous emergency screen runs on every patient utterance, not just the first. A patient who starts with a vague concern and then mid-conversation reveals "actually I am bleeding heavily" needs immediate emergency routing regardless of where the conversation was. Skip this and the bot composes a thoughtful triage answer for a patient who needs an ambulance now.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id,
                   user_message, auth_context,
                   deep_link_params):
@@ -324,7 +324,7 @@ ON receive_message(channel, channel_session_id,
 
 **Step 2: On a fresh session, load the patient's chart context.** This is what makes the bot patient-specific rather than generic. The protocol selection and the recommendation calibration both depend on chart context. A 25-year-old with no chronic conditions and a 75-year-old with anticoagulation and hypertension presenting with the same chief complaint should receive different recommendations. Skip this step and the bot's recommendations are no better than a generic web symptom checker.
 
-```
+```pseudocode
 FUNCTION load_chart_context(session_id):
     // Step 2A: chart context lookup.
     chart = chart_context_lookup_tool.invoke({
@@ -393,7 +393,7 @@ FUNCTION load_chart_context(session_id):
 
 **Step 3: Identify the presenting symptom and select the protocol.** The bot maps the patient's free-form complaint to one of the institution's validated protocols. Multi-symptom presentations select the highest-acuity-eligible protocol with cross-reference to the others. Pediatric versus adult, pregnancy, oncology treatment, and other special-population flags route to the appropriate protocol variant. Skip this and the bot tries to ask one-size-fits-all questions, which is the failure mode of the previous-generation symptom checkers.
 
-```
+```pseudocode
 FUNCTION select_protocol(session_id, user_message):
     // Step 3A: identify the presenting symptom(s).
     symptom_id = intent_classify_tool.invoke({
@@ -471,7 +471,7 @@ FUNCTION select_protocol(session_id, user_message):
 
 **Step 4: Conduct the structured protocol-driven questioning.** The bot follows the protocol's question sequence in conversational form. The LLM may rephrase questions for clarity and may adjust order based on what the patient has volunteered. The bot does not skip protocol questions, does not invent new ones, and does not drift outside the protocol's scope. Continuous emergency screening runs in parallel on every patient response. Skip this step and the bot has no clinical foundation for its recommendation.
 
-```
+```pseudocode
 FUNCTION conduct_protocol_questioning(session_id):
     protocol = protocol_retrieve_tool.invoke({
         protocol_id:
@@ -565,7 +565,7 @@ FUNCTION conduct_protocol_questioning(session_id):
 
 **Step 5: Compute clinical-decision rules where the protocol calls for them.** The arithmetic for HEART, Wells, Centor, Ottawa, and similar rules is structured. The LLM does this poorly. The deterministic clinical-rule tool encapsulates the computation, returns a structured score with risk stratum and rule-mapped recommendation, and the LLM presents the result. Skip the deterministic tool and the bot's risk stratification is sometimes wrong by enough to change the recommendation.
 
-```
+```pseudocode
 FUNCTION compute_clinical_rules(session_id):
     protocol = session.selected_protocol
     rule_invocations = protocol.rules_to_invoke(
@@ -608,7 +608,7 @@ FUNCTION compute_clinical_rules(session_id):
 
 **Step 6: Compute the acuity recommendation with conservative-bias enforcement.** The recommendation combines the protocol decision logic with any clinical-decision-rule outputs. When the protocol-driven and rule-driven recommendations diverge, the higher-acuity recommendation wins. Special-population flags can upgrade acuity (anticoagulated patient with bleeding presentation, immunosuppressed patient with infection presentation, oncology patient with neutropenic-fever-like presentation). Skip the conservative-bias enforcement and the bot occasionally selects a lower-acuity recommendation when the chart context warranted otherwise.
 
-```
+```pseudocode
 FUNCTION compute_recommendation(session_id):
     protocol_recommendation =
         session.selected_protocol.recommend(
@@ -664,7 +664,7 @@ FUNCTION compute_recommendation(session_id):
 
 **Step 7: Run output safety screening with citation verification and conservative-bias verification.** Every recommendation must trace to a cited protocol, with the protocol version preserved. Conservative-bias verification re-checks that the bot took the higher-acuity path where the recommendation could plausibly have been higher acuity. Required regulatory disclaimers must be present. Emergency-instruction completeness checks for high-acuity recommendations. Red-flag-symptom completeness checks for low-acuity recommendations. Skip this step and the bot occasionally produces ungrounded, under-acuity, or under-instructed recommendations.
 
-```
+```pseudocode
 FUNCTION screen_output(session_id, response,
                        tool_call_history):
     // Step 7A: standard checks.
@@ -786,7 +786,7 @@ FUNCTION screen_output(session_id, response,
 
 **Step 8: Persist the durable triage-decision record alongside the conversation log.** The conversation log captures the dialog. The triage-decision-record journal captures, separately, every recommendation with its citation evidence and version stamps. This is the audit surface for clinical-quality review, for regulatory review (where applicable), for outcome correlation, and for any case where the recommendation is later disputed. Skip this and the audit story is intact only at the conversation level, which is enough for some reviews and not enough for clinical-quality and regulatory ones.
 
-```
+```pseudocode
 FUNCTION persist_triage_decision_record(
         session_id, response):
     decision_record = {
@@ -858,7 +858,7 @@ FUNCTION persist_triage_decision_record(
 
 **Step 9: Persist the durable conversation record on session close.** Same archive pattern as the previous chapter 11 recipes, with triage-specific dimensions on the cohort axes (pediatric-vs-adult, age cohort, sex, language, channel, presenting symptom category, protocol used, recommended care level, escalation disposition).
 
-```
+```pseudocode
 FUNCTION close_conversation_and_archive(session_id,
                                          reason):
     state = conversation_state_table.get(session_id)
@@ -1001,7 +1001,7 @@ FUNCTION close_conversation_and_archive(session_id,
 
 **Sample conversation (illustrative, abbreviated):**
 
-```
+```text
 Bot:     Hi, I'm the triage assistant. I can help
          you figure out the right next step for what
          you're experiencing. The questions I'll ask
