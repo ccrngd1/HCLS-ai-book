@@ -195,7 +195,7 @@ flowchart LR
 
 **Step 1: Construct the cohort and outcome labels per treatment-comparator pair using target trial emulation.** Cohort construction is the foundation of every downstream causal estimate. The target-trial protocol is specified explicitly: who is eligible, when the index date is, what the washout window excludes, what the treatment exposure is, what the comparator is, what the outcomes are with explicit timing, and what censoring rules apply. Skip the explicit protocol and you build a cohort with implicit decisions that bias the resulting estimates in ways nobody can audit.
 
-```
+```pseudocode
 FUNCTION construct_cohort(treatment_pair, run_date):
     // Load the target-trial protocol from the treatment catalog. The
     // protocol is a structured spec with eligibility, washout,
@@ -306,7 +306,7 @@ FUNCTION construct_cohort(treatment_pair, run_date):
 
 **Step 2: Train the propensity, outcome, and CATE-ensemble models per treatment-comparator pair.** The propensity model estimates the probability of receiving each treatment given covariates; this anchors the doubly-robust methods. The outcome model estimates outcome given covariates and treatment; this feeds the meta-learners. The CATE ensemble runs at least two estimators from different method families (causal forest, DR-learner, BART, or equivalent) so that disagreement among them surfaces model misspecification. Skip the ensemble and you cannot tell whether your point estimate is robust or a methodological artifact.
 
-```
+```pseudocode
 FUNCTION train_pair_models(cohort_id, run_date):
     cohort_metadata = DynamoDB.GetItem("cohort-metadata", cohort_id)
     cohort = read_parquet(cohort_metadata.cohort_path)
@@ -436,7 +436,7 @@ FUNCTION train_pair_models(cohort_id, run_date):
 
 **Step 3: Run the calibration and fairness tests, and gate model promotion through governance.** A trained model is not a production model. Calibration tests check that predicted treatment effects match observed effects in held-out cohorts and in subgroups. Fairness tests check that calibration is consistent across protected subpopulations. The governance gate is a human review of the test results before the new model artifacts are promoted to production. Skip this and you ship a model with unknown calibration on the populations it will most affect.
 
-```
+```pseudocode
 FUNCTION evaluate_and_gate_pair_models(treatment_pair_id, run_date):
     pair = DynamoDB.GetItem("treatment-comparison-pairs", treatment_pair_id)
     cohort = read_parquet(lookup_cohort_path(pair.cohort_id))
@@ -569,7 +569,7 @@ FUNCTION evaluate_and_gate_pair_models(treatment_pair_id, run_date):
 
 **Step 4: Score an index patient on demand at the point of care, retrieve the similar-patient cohort, and compute uncertainty.** When the clinician opens the patient's chart and requests treatment guidance, the system identifies eligible treatment-comparator pairs from the catalog, invokes each pair's CATE ensemble, retrieves the similar-patient cohort underlying the estimate, computes uncertainty across all sources, and flags out-of-distribution cases. Skip the OOD flag and the system silently extrapolates predictions to patients who are not represented in the training data, which is exactly the case where the prediction is least reliable.
 
-```
+```pseudocode
 FUNCTION score_patient(patient_id, request_context):
     // request_context includes the requesting clinician, the
     // index condition, the visit context, and any clinician-supplied
@@ -730,7 +730,7 @@ FUNCTION score_patient(patient_id, request_context):
 
 **Step 5: Generate the clinician-facing comparison briefing with strict validator enforcement.** The structured scoring result is rendered into a paragraph the clinician reads at the point of care. The LLM packages the comparison; the validator enforces strict no-recommendation language, explicit uncertainty, and required caveats. Skip the validator and an LLM that has been trained on the broader internet may quietly insert recommendation language ("the evidence supports prescribing X") that the clinician interprets as the system selecting a treatment.
 
-```
+```pseudocode
 FUNCTION generate_briefing(scoring_run_id):
     scoring = DynamoDB.GetItem("scoring-results", scoring_run_id)
 
@@ -849,7 +849,7 @@ FUNCTION generate_briefing(scoring_run_id):
 
 **Step 6: Capture the clinician's decision and the patient's subsequent outcome, and feed the matched pair back into surveillance and retraining.** The decision record links the prediction at the time of decision to the actual treatment chosen and (later) the actual outcome. The matched prediction-outcome pair is the feedback that drives calibration drift detection, cohort-stratified performance monitoring, adverse-event surveillance, and retraining triggers. Skip this and you have a prediction system with no feedback loop, which is the single most common reason production ML systems quietly degrade over time.
 
-```
+```pseudocode
 FUNCTION record_decision(scoring_run_id, decision_payload):
     // decision_payload includes:
     //   - clinician_id (from the authenticated session)
