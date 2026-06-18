@@ -105,7 +105,7 @@ The technology is proven. The challenge is implementation: getting the infrastru
 
 At a conceptual level, an adaptive randomization system has these components:
 
-```
+```text
 [Outcome Data] → [Posterior Update Engine] → [Allocation Calculator] → [Randomization Service]
                                                                               ↓
 [Trial Management System] ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← [Assignment]
@@ -160,3 +160,10 @@ Start with a trial where the ethical case is strong (rare disease, high unmet ne
 - **Recipe 14.9 (Chemotherapy Scheduling):** Optimization in oncology trials; complementary to adaptive randomization for dose-finding
 
 ---
+
+**Tags:** `reinforcement-learning`, `clinical-trials`, `adaptive-design`, `thompson-sampling`, `bayesian`, `multi-armed-bandit`, `randomization`, `regulatory`, `fda`
+
+---
+
+| [← Recipe 15.2: Notification Timing Optimization](chapter15.02-notification-timing-optimization) | [Chapter 15 Index](chapter15-preface) | [Recipe 15.4: Sepsis Treatment Optimization →](chapter15.04-sepsis-treatment-optimization) |
+|:---|:---:|---:|

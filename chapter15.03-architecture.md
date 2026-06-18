@@ -71,13 +71,11 @@ flowchart TD
 | **AWS KMS** | Encryption key management for all data at rest (customer-managed keys for Part 11 auditability) |
 | **AWS WAF** | Rate limiting and IP allowlisting for the randomization API |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Initialize trial parameters.** Before the trial starts, you define the prior distributions for each arm, the allocation constraints, and the update schedule. This configuration is the "protocol" for the adaptive system. It must be locked before the first patient is enrolled (protocol amendments require regulatory approval). The priors are typically uninformative (Beta(1,1) for binary outcomes, meaning "we know nothing"), but can incorporate historical data if justified. Minimum allocation constraints prevent any arm from dropping below a floor (typically 10-20%) to ensure sufficient data for inference.
 
-```
+```pseudocode
 CONFIGURATION:
     trial_id          = "TRIAL-2026-001"
     arms              = ["Control", "Treatment_A", "Treatment_B"]
@@ -103,7 +101,7 @@ CONFIGURATION:
 
 **Step 2: Posterior update.** When new outcomes arrive, the system updates its beliefs about each arm's effectiveness. For binary outcomes with Beta priors, this is analytically simple: add successes to alpha, add failures to beta. The posterior is Beta(alpha + successes, beta + failures). This step runs as a batch job (SageMaker Processing) triggered by the Step Functions orchestrator whenever the update criteria are met. The output is a new set of posterior parameters stored in DynamoDB, immediately available to the randomization service.
 
-```
+```pseudocode
 FUNCTION update_posteriors(trial_id):
     // Load current posterior state
     current_state = read from DynamoDB table "allocation-state" where key = trial_id
@@ -148,7 +146,7 @@ FUNCTION update_posteriors(trial_id):
 
 **Step 3: Compute Thompson Sampling allocation.** This is the core RL logic. To determine allocation probabilities, we simulate many draws from each arm's posterior and count how often each arm "wins" (produces the highest sampled value). The winning frequency becomes the allocation probability, subject to the min/max constraints. This approach naturally balances exploration and exploitation: arms with uncertain posteriors (wide distributions) occasionally win and get explored; arms with well-characterized poor performance rarely win.
 
-```
+```pseudocode
 FUNCTION compute_thompson_allocation(posteriors, min_alloc, max_alloc):
     num_simulations = 10000   // more simulations = more stable probabilities
     win_counts = initialize all arms to 0
@@ -192,7 +190,7 @@ FUNCTION apply_allocation_constraints(raw_probs, min_alloc, max_alloc):
 
 In production, the assignment write and enrollment counter increment must be atomic (use a DynamoDB transaction). A patient assignment without a corresponding counter increment creates an audit discrepancy that regulators will flag. The pseudocode below shows the logical steps; see the Python companion for the transactional implementation pattern.
 
-```
+```pseudocode
 FUNCTION randomize_patient(trial_id, patient_id, stratification_factors):
     // Read current allocation state
     state = read from DynamoDB "allocation-state" where key = trial_id
@@ -234,7 +232,7 @@ FUNCTION randomize_patient(trial_id, patient_id, stratification_factors):
 
 DSMB override actions require a separate IAM role with explicit `dynamodb:PutItem` permission scoped to the allocation-state table, restricted to authorized DSMB statisticians. Consider requiring MFA or a step-up authentication mechanism for arm-dropping actions, as these are irreversible and affect patient safety.
 
-```
+```pseudocode
 FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
     // DSMB decisions override the algorithm
     // These are human decisions with regulatory authority
@@ -319,6 +317,8 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 - Multi-site trials with high concurrent enrollment. Multiple patients randomized between posterior updates all use the same allocation probabilities. Over many patients, the law of large numbers ensures correct aggregate allocation, but short-term deviations from target probabilities are possible. For trials requiring strict sequential randomization, add a DynamoDB conditional write with a sequence number to serialize assignments.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
 
 ## Variations and Extensions
 
