@@ -1,10 +1,9 @@
 # Open TODOs — Recipe 2.5: After-Visit Summary Generation
 
-> Auto-extracted 2026-06-18 from inline source comments (22 items; S2+L21 resolved 2026-06-18). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+> Auto-extracted 2026-06-18 from inline source comments (21 items; S2+L21+L25 resolved 2026-06-18). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 
 ## main — `chapter02.05-after-visit-summary-generation.md`
 
-- **L25** — TODO: verify current CMS readmission statistics
 - **L202** — TODO: verify recipe number once Chapter 11 is drafted
 
 ## architecture — `chapter02.05-architecture.md`
