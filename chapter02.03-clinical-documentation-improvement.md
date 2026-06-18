@@ -23,6 +23,13 @@ Editorial pass 4 (TechEditor, 2026-05-11):
 - Re-verified against chapter 1 reference files that bare-fenced pseudocode blocks (triple backticks with no language tag) match the established book convention; chapter01.02 uses the same style. No change required.
 - Re-verified: zero em dashes, zero en dashes, no hype markers, all nine external URLs in Additional Resources well-formed, all internal links now point to real filenames, header hierarchy intact, RECIPE-GUIDE section order intact, vendor balance approximately 70/30, all six TechWriter TODOs preserved.
 - No remaining fixable issues at the editing layer. Handing back to the pipeline.
+
+Editorial pass 5 (TechEditor, 2026-06-17):
+- Post-split polish. File was mechanically split from a combined recipe into main (story/concepts) and architecture companion (AWS implementation/pseudocode).
+- Verified: General Architecture Pattern contains no AWS service references; The Honest Take contains no dangling references to AWS content now in the companion; architecture callout is correctly placed at the end of General Architecture Pattern.
+- Fixed bare code fence on the pipeline flow diagram (added `text` language tag).
+- RECIPE-GUIDE compliance for post-split main recipe confirmed: The Problem, The Technology, General Architecture Pattern (with callout), The Honest Take, Related Recipes, Tags, Navigation. All present and in order.
+- Zero em dashes, zero en dashes, no hype markers, all TODOs preserved.
 -->
 
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
@@ -99,7 +106,7 @@ The RAG pattern here is: extract diagnoses from the note, retrieve relevant codi
 
 ### The General Architecture Pattern
 
-```
+```text
 [Clinical Note] → [Extract Key Clinical Elements] → [Retrieve Coding Guidelines] → [Identify Specificity Gaps] → [Generate CDI Suggestions] → [Prioritize and Filter] → [Present to CDI Specialist / Physician]
 ```
 

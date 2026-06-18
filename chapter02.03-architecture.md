@@ -1,3 +1,11 @@
+<!--
+Editorial pass 5 (TechEditor, 2026-06-17):
+- Post-split polish. This file was mechanically split from the combined recipe to hold the AWS implementation and pseudocode.
+- Added `pseudocode` language tags to all six bare code fences (Steps 1-6). Hard requirement per editorial checklist.
+- Verified: backlink header opens cleanly with correct link to main recipe; no story/concept sections duplicated here; Python callout present after walkthrough; navigation footer links back to main recipe and Python example.
+- Zero em dashes, zero en dashes. All existing TODOs preserved.
+-->
+
 # Recipe 2.3 Architecture and Implementation: Clinical Documentation Improvement (CDI) Suggestions
 
 *Companion to [Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions](chapter02.03-clinical-documentation-improvement). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -76,7 +84,7 @@ flowchart LR
 
 **Step 1: Receive and parse the clinical note.** When a clinical note arrives (via EHR integration, HL7 feed, or direct upload), the system stores it in S3 and triggers the analysis pipeline. The note needs basic parsing to identify its structure: which sections contain the assessment, which contain the plan, where are the lab results referenced. This structural awareness helps the LLM focus its analysis on the right sections.
 
-```
+```pseudocode
 FUNCTION receive_note(note_content, metadata):
     // Store the raw note for audit trail and reprocessing capability.
     // metadata includes: patient_encounter_id, provider_id, note_type, timestamp
@@ -92,7 +100,7 @@ FUNCTION receive_note(note_content, metadata):
 
 **Step 2: Extract clinical elements.** Before checking for specificity gaps, you need to understand what the note actually contains. This step uses the LLM to extract structured clinical elements: diagnoses mentioned, medications prescribed, lab values referenced, and procedures performed. This extraction gives you the "what's documented" baseline that you'll compare against coding requirements.
 
-```
+```pseudocode
 FUNCTION extract_clinical_elements(note_content):
     // Ask the LLM to identify key clinical elements in the note.
     // This is a structured extraction task: we want JSON output, not prose.
@@ -124,7 +132,7 @@ FUNCTION extract_clinical_elements(note_content):
 
 **Step 3: Retrieve relevant coding guidelines.** Based on the diagnoses extracted in Step 2, query the knowledge base for the relevant ICD-10-CM guidelines, specificity requirements, and organizational query templates. This grounds the LLM's suggestions in authoritative, current coding rules rather than relying on potentially outdated training data.
 
-```
+```pseudocode
 FUNCTION retrieve_guidelines(diagnoses):
     // For each diagnosis found in the note, retrieve the relevant coding guidelines.
     // The knowledge base contains: ICD-10-CM guidelines, specificity requirements,
@@ -157,7 +165,7 @@ FUNCTION retrieve_guidelines(diagnoses):
 
 **Step 4: Identify specificity gaps and generate suggestions.** This is the core CDI step. The LLM receives the clinical note, the extracted elements, and the retrieved coding guidelines. It identifies where the documentation falls short of coding specificity requirements and generates physician-friendly suggestions for each gap. The key constraint: suggestions must be phrased as questions, never as assertions. The physician decides what to document.
 
-```
+```pseudocode
 FUNCTION generate_cdi_suggestions(note_content, clinical_elements, guidelines):
     // The main CDI analysis: compare what's documented against what's required.
     // Generate suggestions only where there's a genuine specificity gap.
@@ -210,7 +218,7 @@ FUNCTION generate_cdi_suggestions(note_content, clinical_elements, guidelines):
 
 **Step 5: Prioritize and filter suggestions.** Not every gap is worth querying. This step applies business rules: suppress low-confidence suggestions, limit total suggestions per note (to avoid alert fatigue), and prioritize by estimated financial and clinical impact. The thresholds here are tunable and should be calibrated based on your organization's CDI acceptance rates.
 
-```
+```pseudocode
 MAX_SUGGESTIONS_PER_NOTE = 5        // more than this causes alert fatigue
 CONFIDENCE_THRESHOLD     = "medium"  // suppress "low" confidence suggestions
 
@@ -237,7 +245,7 @@ FUNCTION prioritize_suggestions(suggestions):
 
 **Step 6: Store results and notify.** Write the suggestions to DynamoDB for lifecycle tracking and trigger notification to the CDI specialist's workqueue (or directly to the physician for concurrent CDI workflows). Every suggestion gets a unique ID and a status that will be updated as it moves through the review process.
 
-```
+```pseudocode
 FUNCTION store_and_notify(encounter_id, suggestions, suppressed):
     // Write each suggestion as a separate DynamoDB item for individual lifecycle tracking
     FOR each suggestion in suggestions.active_suggestions:
