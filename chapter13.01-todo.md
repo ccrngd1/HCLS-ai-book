@@ -1,0 +1,10 @@
+# Open TODOs — Recipe 13.1: Drug Formulary Navigation ⭐
+
+> Auto-extracted 2026-06-18 from inline source comments (4 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## architecture — `chapter13.01-architecture.md`
+
+- **L41** — TODO (TechWriter): Expert review S1 (HIGH). Split IAM permissions into read-only (query Lambda: neptune-db:ReadDataViaQuery, neptune-db:connect) and read-write (loader Lambda: neptune-db:ReadDataViaQuery, neptune-db:WriteDataViaQuery, neptune-db:connect). Add note about enabling Neptune IAM authentication on the cluster.
+- **L43** — TODO (TechWriter): Expert review N1 (HIGH). Expand VPC section to specify: Lambda in private subnets, required VPC endpoints (S3 gateway, CloudWatch Logs interface, STS interface for IAM auth), security group rules (Lambda SG -> Neptune SG on port 8182, Lambda SG -> Redis SG on port 6379), and NAT gateway requirement if Lambda needs internet access for RxNorm API calls.
+- **L163** — TODO (TechWriter): Expert review A1 (HIGH). Add error handling guidance for the ingest pipeline: SQS dead letter queue on the S3 event notification or Lambda async invocation config, CloudWatch alarm on DLQ messages, and note that for production the Step Functions orchestration (already mentioned as optional) should be considered mandatory for retry logic and execution history. Mention idempotency: MERGE operations prevent duplicates, but partial loads could leave the graph inconsistent without transaction boundaries.
+- **L247** — TODO (TechWriter): Expert review S2 (HIGH). Add guidance on Redis security posture: (1) Enable ElastiCache AUTH (Redis AUTH token or IAM-based access control via ElastiCache for Redis 7.0+). (2) Note that cache keys containing plan_id create an access pattern log of medication inquiries per member; recommend using plan-type identifiers rather than member-specific plan IDs where possible, or document PHI implications if member-specific caching is required. (3) Confirm TLS in-transit is required for Lambda-to-Redis connections.

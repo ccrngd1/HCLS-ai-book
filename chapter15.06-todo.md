@@ -1,0 +1,13 @@
+# Open TODOs — Recipe 15.6: Glucose Control in ICU
+
+> Auto-extracted 2026-06-18 from inline source comments (7 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## architecture — `chapter15.06-architecture.md`
+
+- **L54** — TODO (TechWriter): Expert review A1 (HIGH). Add error handling and circuit breaker pattern to the inference path. Specify behavior when SageMaker endpoint is unavailable or DynamoDB read fails (return explicit "no recommendation available, use standard protocol" rather than failing silently). Add CloudWatch alarms on Lambda error rates and endpoint 5xx responses.
+- **L56** — TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms.
+- **L71** — TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permission list with role-separated guidance. Separate into at least 4 roles: (1) State Constructor Lambda with scoped DynamoDB and SageMaker InvokeEndpoint access, (2) Safety Constraint Lambda with read-only patient state and write to recommendation store, (3) Training Pipeline role with S3 and SageMaker training permissions, (4) Monitoring role with CloudWatch access. Add resource ARN constraints to all permissions.
+- **L73** — TODO (TechWriter): Expert review A3 (MEDIUM). Add latency budget note: target end-to-end < 3 seconds. State construction ~50-200ms, SageMaker inference ~50-200ms, safety constraints ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint.
+- **L75** — TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment.
+- **L330** — TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance.
+- **L433** — TODO (TechWriter): Expert review S3 (MEDIUM). Add note about de-identification requirements for production data feeding back into retraining. Clarify pseudonymization requirements for episode logs, IRB coverage for retraining pipeline, and PHI status of temporal glucose patterns (re-identification risk persists even after pseudonymization).

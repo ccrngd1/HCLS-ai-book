@@ -1,0 +1,23 @@
+# Open TODOs — Recipe 15.10: Hospital Resource Allocation Under Uncertainty
+
+> Auto-extracted 2026-06-18 from inline source comments (14 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+
+## main — `chapter15.10-hospital-resource-allocation-uncertainty.md`
+
+- **L5** — TODO (TechWriter): Expert review A4 (LOW). Cost range is 4x wide. Clarify assumed retraining frequency (weekly vs monthly) that drives variation, add simulation compute line item (CPU instances for parallel simulators).
+- **L127** — TODO (TechWriter): Expert review A1 (HIGH). Expand constraint checker architecture: (1) specify it runs inline in the inference Lambda, blocking before any recommendation is emitted, (2) rule definitions stored in versioned DynamoDB table, (3) if ALL top-k policy actions are infeasible, system returns "no recommendation, human judgment required" instead of relaxing constraints, (4) constraint rules updated through governed process with audit trail, (5) conflicting constraints (e.g., staffing ratio unit A vs unit B when total staff insufficient) trigger alert to capacity coordinator.
+- **L167** — TODO (TechWriter): Expert review A3 (MEDIUM). Add note on state freshness: (1) state aggregator should timestamp-order events with grace period for late arrivals, (2) maintain current state in DynamoDB (not Lambda memory) for durability, (3) mark state vector fields with freshness timestamps, (4) inference Lambda should refuse to recommend if critical fields are older than threshold (e.g., staffing data > 15 minutes old). ADT systems are notorious for delayed messages.
+- **L363** — TODO (TechWriter): Expert review A2 (HIGH). The importance sampling OPE shown below has known issues: no behavior policy estimation discussion, no variance reduction (weight clipping), and the bootstrap CI is unreliable for weighted estimators. Add: (1) note that behavior policy estimation requires a separate modeling step, (2) recommend PDIS or doubly-robust methods for clinical settings, (3) add weight clipping, (4) note that multiple OPE estimators should be compared for high-stakes domains.
+- **L415** — TODO (TechWriter): Expert review S2 (MEDIUM). Add paragraph noting that recommendation logs contain indirect PHI (state vectors include patient census, acuity, staffing that combined with timestamps can re-identify patients). Discuss access restrictions (authorized operations staff and auditors only), retention policies (7 years per HIPAA), and item-level encryption with separate CMKs for audit data.
+- **L551** — TODO (TechWriter): Expert review CRITICAL #1 (CRITICAL). Add a "Regulatory Considerations" subsection here discussing FDA's 2022 CDS guidance, the 4 criteria for CDS exemption, why this system likely qualifies for exemption if designed as decision support with human override, the risk of losing exemption if human override is removed, and state-level regulatory variation. This is a clinical decision support system making patient-specific recommendations to healthcare professionals.
+
+## architecture — `chapter15.10-architecture.md`
+
+- **L73** — TODO (TechWriter): Expert review S1 (MEDIUM). IAM permissions list is incomplete. Add: kms:Decrypt and kms:GenerateDataKey (scoped to CMK ARN), kinesis:DescribeStream and kinesis:GetShardIterator, cloudwatch:PutMetricData, logs:CreateLogGroup and logs:PutLogEvents, sagemaker:DescribeTrainingJob, and API Gateway permissions. Note that all permissions should use resource-level ARN restrictions.
+- **L74** — TODO (TechWriter): Expert review N1 (MEDIUM). VPC endpoint list is incomplete. Add endpoints for Kinesis Streams, Step Functions, CloudWatch, CloudWatch Logs, and API Gateway (or specify private API). Note that NAT Gateway is acceptable as fallback but VPC endpoints preferred for PHI workloads.
+- **L91** — TODO (TechWriter): RECIPE-GUIDE compliance gap. The architecture companion is missing "Pseudocode Walkthrough," "Expected Results," and "Why This Isn't Production-Ready" sections. These currently live in the main recipe file. A future pass should move them here per the three-file structure in RECIPE-GUIDE.md.
+- **L122** — TODO (TechWriter): Verify and link specific papers on offline RL for resource allocation
+- **L123** — TODO (TechWriter): Verify and link hospital simulation modeling references (discrete-event simulation in healthcare)
+- **L124** — TODO (TechWriter): Verify and link Constrained MDP references (CPO, Lagrangian methods)
+- **L128** — TODO (TechWriter): Verify AHA or similar source for ED boarding cost statistics
+- **L129** — TODO (TechWriter): Verify AHRQ resources on hospital capacity management
