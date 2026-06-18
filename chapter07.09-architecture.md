@@ -90,7 +90,7 @@ flowchart TD
 
 **Step 1: Extract clinical features from FHIR store.** When a prediction is triggered (either by new data arriving or by the scheduled 4-hour refresh), the system queries HealthLake for the patient's current ICU data. This includes vital signs, laboratory results, medications, and clinical assessments from the current admission. The query window matters: we want the full ICU trajectory, not just the most recent values, because temporal patterns (is the patient getting better or worse?) are among the strongest predictors. Skip this step or use stale data, and the prediction reflects yesterday's patient, not today's.
 
-```
+```pseudocode
 FUNCTION extract_icu_features(patient_id, admission_id):
     // Query the FHIR store for all relevant observations during this ICU stay.
     // We need vital signs, labs, medications, and assessments.
@@ -141,7 +141,7 @@ FUNCTION extract_icu_features(patient_id, admission_id):
 
 **Step 2: Engineer temporal features.** Raw clinical data isn't model-ready. A heart rate of 110 means something different if it's been 110 for three days (chronic tachycardia, possibly compensated) versus if it jumped from 70 to 110 in the last hour (acute decompensation). This step transforms raw time-series data into features that capture both current state and trajectory. The feature set includes: worst/best values in multiple time windows, trends (slope over last 6/12/24 hours), variability (coefficient of variation), and derived physiological indices. Missing values are handled explicitly: a missing lactate is informative (either the clinician didn't think it was needed, or the result isn't back yet), not just a gap to fill.
 
-```
+```pseudocode
 FUNCTION engineer_features(raw_data):
     features = empty map
     
@@ -227,7 +227,7 @@ FUNCTION engineer_features(raw_data):
 
 **Step 3: Score with the mortality model.** The engineered feature vector is sent to the SageMaker endpoint hosting the trained model. The model returns a raw probability score along with SHAP explanations for the prediction. For gradient boosted trees, the raw score is the output of the sigmoid function applied to the sum of tree predictions. The raw score reflects the training population's mortality rate, which may not match your hospital's population. That's why we don't use this score directly. It goes through calibration in the next step. Use the raw score without calibration and you have a prediction that's relatively correct (ranks patients properly) but absolutely wrong (the probabilities don't mean what they say).
 
-```
+```pseudocode
 FUNCTION score_patient(features):
     // Format the feature vector for the SageMaker endpoint.
     // The model expects features in a specific order matching the training schema.
@@ -266,7 +266,7 @@ FUNCTION score_patient(features):
 
 **Step 4: Apply local calibration.** The raw model score is transformed through a calibration function trained on your hospital's recent outcomes. This is where the model becomes honest for your population. The calibration function is typically isotonic regression or Platt scaling, fitted on the last 6-12 months of local predictions and outcomes. It's retrained monthly as new outcome data accumulates. Without this step, a model trained on academic medical center data will systematically overestimate mortality at a community hospital (or vice versa). The calibrated score is what gets shown to clinicians.
 
-```
+```pseudocode
 FUNCTION calibrate_score(raw_score, hospital_id):
     // Load the hospital-specific calibration function.
     // This was fitted on recent local outcomes and is refreshed monthly.
@@ -298,7 +298,7 @@ FUNCTION calibrate_score(raw_score, hospital_id):
 
 **Step 5: Store prediction and serve to clinical display.** The calibrated prediction, along with its contributing factors and metadata, is written to DynamoDB for durability and audit. It's simultaneously made available via API Gateway for the clinical dashboard or EHR integration. The stored record includes everything needed for outcome tracking: the prediction, when it was made, what model version produced it, and what the top contributing features were. This enables retrospective analysis of model performance and supports the retraining pipeline. The clinical display shows the probability, the confidence interval, the top contributing factors in plain language, and a clear disclaimer that this is a statistical estimate to inform (not replace) clinical judgment.
 
-```
+```pseudocode
 FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_output):
     prediction_id = generate unique ID
     timestamp = current UTC timestamp (ISO 8601)
@@ -429,6 +429,8 @@ FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_out
 - Populations with significant demographic shift from training data
 - Cases where withdrawal of life-sustaining treatment is the proximate cause of death (self-fulfilling prophecy)
 - Rapidly changing clinical status where 4-hour rescoring misses the inflection point (mitigated by event-triggered rescoring)
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add per template. -->
 
 ---
 

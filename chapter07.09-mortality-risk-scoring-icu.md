@@ -1,6 +1,6 @@
 # Recipe 7.9: Mortality Risk Scoring (ICU)
 
-**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.02–$0.08 per prediction
+**Complexity:** Complex · **Phase:** Production · **Estimated Cost:** ~$0.02-$0.08 per prediction
 
 ---
 
@@ -91,7 +91,7 @@ Subgroup calibration analysis is mandatory before deployment. Not just overall A
 
 ### The General Architecture Pattern
 
-```
+```text
 [EHR Data Stream] → [Feature Engineering] → [Model Inference] → [Calibration] → [Clinical Display]
                                                                         ↓
                                                               [Outcome Tracking]
