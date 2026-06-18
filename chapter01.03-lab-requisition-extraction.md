@@ -72,7 +72,7 @@ This separation is intentional. Structural extraction and clinical NLP are diffe
 
 The two stages also operate at different speeds and costs. Structural extraction (the Textract job) runs once per document and takes 5 to 15 seconds. Clinical NLP (Comprehend Medical calls) runs on text snippets and is fast enough to do synchronously. The natural implementation is to run the async Textract job, wait for completion, and then make the Comprehend Medical calls within the same processing Lambda.
 
-```
+```text
 [Ingest] → [Submit Textract Job] → [Await Completion] → [Parse Structure]
                                                                ↓
                                                     [Extract Diagnosis Text]

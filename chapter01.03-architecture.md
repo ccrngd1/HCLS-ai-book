@@ -88,7 +88,7 @@ flowchart LR
 
 **Step 3: Parse the structured fields and ordered tests.** Lab requisitions combine two types of structured content: key-value pairs for patient demographics and provider identification, and checkbox grids for the ordered tests. This step handles both. The key-value parsing is the same as Recipe 1.1 and Recipe 1.2. The checkbox parsing captures which tests were ordered. For each checked test, we attempt an immediate lookup against the CPT code table. Tests that don't match are preserved with a flag: not matching the table is different from not being ordered.
 
-```
+```pseudocode
 // CPT lookup table: normalized test name -> CPT code
 // This covers the most common panels and individual tests.
 // It requires ongoing maintenance as the lab's test catalog evolves.
@@ -155,7 +155,7 @@ FUNCTION parse_forms_and_checkboxes(all_blocks, block_map):
 
 **Step 4: Extract the diagnosis text.** The diagnosis field is the bridge between the structured extraction and the clinical NLP step. Lab requisitions have a dedicated area for diagnosis information, but it's filled with free text: sometimes formal diagnosis names, sometimes ICD-10 codes written directly, sometimes abbreviations, and sometimes a mix of all three. This step locates the diagnosis field(s) in the key-value output and extracts the raw text for NLP processing. The FIELD_MAP approach from Recipe 1.1 handles the common label variants. We also extract any clinical notes or "additional information" fields, which sometimes contain context that Comprehend Medical can use.
 
-```
+```pseudocode
 // Canonical field names for diagnosis-related content on lab requisitions.
 // Different requisition templates use different label text.
 DIAGNOSIS_LABELS = [
@@ -200,7 +200,7 @@ We apply a confidence threshold before accepting any code. The threshold here (0
 
 We take the highest-confidence code per entity (the first concept in the sorted list). In practice, a well-specified diagnosis phrase maps to one primary code. If the same entity maps to multiple codes above the threshold, that usually indicates ambiguity in the original text that needs human review.
 
-```
+```pseudocode
 // Minimum confidence score to accept a Comprehend Medical ICD-10 inference.
 // Lower than OCR thresholds because CM confidence and OCR confidence are different scales.
 // Adjust based on downstream use: billing systems need higher thresholds than draft queues.
@@ -252,7 +252,7 @@ FUNCTION infer_icd10_codes(diagnosis_text):
 
 This step also helps catch clinical context that affects how the form should be processed. An entity tagged with a "NEGATION" trait means the patient does NOT have that condition. An entity tagged "PERTAINS_TO_FAMILY" means a family member has it, not the patient. These traits can change the meaning of a diagnosis entirely.
 
-```
+```pseudocode
 FUNCTION detect_clinical_entities(text):
     IF text is null or empty:
         RETURN {}
@@ -290,7 +290,7 @@ FUNCTION detect_clinical_entities(text):
 
 The mapping table encodes a simplified version of CMS LCD policies: for each diagnosis code prefix, which CPT codes are commonly supported. The prefix approach (first three characters of the ICD-10 code) avoids building an exhaustive code-level table while still capturing the relevant diagnostic categories.
 
-```
+```pseudocode
 // Simplified medical necessity mapping: ICD-10 prefix -> list of supported CPT codes.
 // This is a starting point, not a comprehensive policy engine.
 // Real medical necessity validation requires a full LCD/NCD policy integration.
@@ -325,12 +325,12 @@ FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
 
         IF test.cpt_code not in supported_cpts:
             // This test doesn't match any of our diagnosis codes.
-            // Flag it for review. It may still be medically necessary —
-            // our mapping table is incomplete — but it's worth a human look.
+            // Flag it for review. It may still be medically necessary;
+            // our mapping table is incomplete. Worth a human look.
             flags.append({
                 test_name: test.test_name,
                 cpt_code:  test.cpt_code,
-                note:      "No supporting diagnosis found in extracted codes — review for medical necessity"
+                note:      "No supporting diagnosis found in extracted codes. Review for medical necessity."
             })
 
     RETURN flags
@@ -342,7 +342,7 @@ FUNCTION check_medical_necessity(icd10_codes, ordered_tests):
 
 **Step 8: Assemble the final record and store it.** The last step combines the output of all previous steps into a single structured record and writes it to DynamoDB. Every composite confidence score from both Textract and Comprehend Medical travels with the record. The `needs_review` flag is set if any field was flagged by either system. The `icd10_flagged` list captures low-confidence code inferences separately from low-confidence text extractions, because the two types of uncertainty have different implications for downstream reviewers.
 
-```
+```pseudocode
 FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
                              ordered_tests, icd10_accepted, icd10_flagged,
                              clinical_entities, necessity_flags, text_flagged):
@@ -452,7 +452,7 @@ FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
     {
       "test_name": "Lipid Panel",
       "cpt_code": "80061",
-      "note": "No supporting diagnosis found in extracted codes — review for medical necessity"
+      "note": "No supporting diagnosis found in extracted codes. Review for medical necessity."
     }
   ],
   "flagged_fields": []
@@ -463,11 +463,11 @@ FUNCTION assemble_and_store(document_key, patient_fields, provider_fields,
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 10–20 seconds (dominated by async Textract job) |
-| ICD-10 inference accuracy | 85–95% for common diagnoses in clear text |
-| ICD-10 inference accuracy (from OCR of handwritten text) | 65–80% (OCR errors compound NLP errors) |
-| Checkbox test detection accuracy | 97–99% for cleanly printed checkboxes |
-| CPT mapping coverage | 80–90% for common panels; long tail requires table expansion |
+| End-to-end latency | 10-20 seconds (dominated by async Textract job) |
+| ICD-10 inference accuracy | 85-95% for common diagnoses in clear text |
+| ICD-10 inference accuracy (from OCR of handwritten text) | 65-80% (OCR errors compound NLP errors) |
+| Checkbox test detection accuracy | 97-99% for cleanly printed checkboxes |
+| CPT mapping coverage | 80-90% for common panels; long tail requires table expansion |
 | Cost per lab requisition | ~$0.04-0.06 (Textract + two Comprehend Medical calls, varies with text length) |
 | Throughput | Textract is the bottleneck; scales via concurrency limits |
 
