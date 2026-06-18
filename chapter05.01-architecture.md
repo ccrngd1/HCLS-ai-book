@@ -159,7 +159,7 @@ flowchart LR
 
 **Step 1: Normalize each patient record.** Aggressive normalization is the single biggest lever for matching accuracy. Skip this step and downstream comparators will spend their time on case differences, whitespace, formatting variations, and diacritics rather than the substantive differences that should drive the match decision.
 
-```
+```pseudocode
 FUNCTION normalize_record(raw_record):
     normalized = {}
 
@@ -238,7 +238,7 @@ FUNCTION normalize_record(raw_record):
 
 **Step 2: Generate candidate pairs through multiple blocking passes.** Single-pass blocking misses real duplicates. Multi-pass blocking dramatically improves recall at modest cost. Skip this and the matcher will look great on easy duplicates and silently miss the harder ones.
 
-```
+```pseudocode
 FUNCTION generate_candidate_pairs(normalized_records):
     candidate_pairs = set()  // deduplicating set; same pair from
                               // multiple passes counts once
@@ -301,7 +301,7 @@ FUNCTION generate_candidate_pairs(normalized_records):
 
 **Step 3: Score each candidate pair with field-specific comparators and the probabilistic combiner.** Per-field comparators tuned to the specific field types. Probabilistic combination via Fellegi-Sunter with EM-estimated m and u probabilities. Skip the per-field tuning and you'll get bad scores on common patterns (transposed DOB digits, nicknames, hyphenated names). Skip the probabilistic combination and you'll be doing ad-hoc weighted scoring that doesn't reflect the actual information value of each field.
 
-```
+```pseudocode
 FUNCTION score_pair(record_a, record_b, model):
     // model contains the EM-estimated m and u probabilities per
     // field (these are estimated once, periodically re-estimated as
@@ -368,7 +368,7 @@ FUNCTION score_pair(record_a, record_b, model):
 
 **Step 4: Route by threshold.** Three buckets: auto-match, review, auto-non-match. Thresholds set by clinical leadership in consultation with HIM. Skip the conservative-thresholds discipline and you'll either auto-merge wrong patients (patient safety hazard) or flood the review queue with garbage (reviewer burnout, system collapse).
 
-```
+```pseudocode
 FUNCTION route_pair(pair_score, thresholds):
     // thresholds is a clinical-leadership-approved configuration:
     //   - HIGH_THRESHOLD: above this, auto-match
@@ -425,7 +425,7 @@ FUNCTION route_pair(pair_score, thresholds):
 
 **Step 5: Apply the merge with survivorship rules and full audit.** The merge is the action that actually links the source records into a single patient identity. Survivorship rules decide which fields win on the golden record. Full provenance preserves the path back to the source records and supports unmerge. Skip the survivorship discipline and the merged record will be missing fields or carrying stale ones; skip the provenance and you cannot unmerge cleanly when a wrong merge surfaces.
 
-```
+```pseudocode
 FUNCTION apply_merge(record_a, record_b, decision_metadata):
     // decision_metadata is the audit context: who or what decided
     // (auto-match with score X, or human reviewer with ID Y), the

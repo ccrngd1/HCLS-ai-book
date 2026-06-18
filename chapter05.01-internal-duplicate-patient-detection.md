@@ -122,7 +122,7 @@ A few practical updates worth knowing:
 
 The pipeline has five logical stages: ingest and normalize the source records, generate candidate pairs through blocking, score the pairs with similarity functions and the probabilistic combiner, route the scored pairs to auto-action or human review, and persist the resolved identity decisions with full audit and reversibility.
 
-```
+```text
 ┌────────────── INGEST AND NORMALIZE ───────────────┐
 │                                                    │
 │  [Source Patient Records (registration system)]    │
