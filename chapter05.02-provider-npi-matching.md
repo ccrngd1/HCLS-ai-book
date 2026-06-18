@@ -107,7 +107,7 @@ A few practical updates worth knowing:
 
 The pipeline has six logical stages: ingest the internal provider records and the registry data, normalize both sides, generate candidate matches through blocking, score the candidates, route by threshold to auto-attach or review, and persist the resolved NPI assignments with a re-verification schedule.
 
-```
+```text
 ┌────────────── INGEST AND NORMALIZE ───────────────┐
 │                                                    │
 │  [Internal Provider Records]   [NPPES Registry]    │
@@ -313,7 +313,7 @@ Last point, because it is specific to the regulatory context: provider directory
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `provider-matching` · `npi` · `nppes` · `credentialing` · `provider-directory` · `network-adequacy` · `fellegi-sunter` · `probabilistic-linkage` · `blocking` · `string-similarity` · `drift-detection` · `re-verification` · `dynamodb` · `opensearch` · `glue` · `splink` · `step-functions` · `lambda` · `simple` · `mvp` · `hipaa` · `no-surprises-act`
+`entity-resolution` · `record-linkage` · `provider-matching` · `npi` · `nppes` · `credentialing` · `provider-directory` · `network-adequacy` · `fellegi-sunter` · `probabilistic-linkage` · `blocking` · `string-similarity` · `drift-detection` · `re-verification` · `splink` · `simple` · `mvp` · `hipaa` · `no-surprises-act`
 
 ---
 

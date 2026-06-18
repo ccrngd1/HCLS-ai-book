@@ -172,7 +172,7 @@ flowchart LR
 
 **Step 1: Ingest and normalize the NPPES download.** The monthly NPPES Downloadable File arrives as a large CSV with a documented schema. Convert to parquet for efficient downstream processing, normalize the field formats to match the canonical schema, and compute the metaphone codes used for blocking. Skip this step and you'll be CSV-scanning every match operation, which gets slow fast.
 
-```
+```pseudocode
 FUNCTION normalize_nppes_record(raw_nppes_row):
     normalized = {}
 
@@ -267,7 +267,7 @@ FUNCTION normalize_nppes_record(raw_nppes_row):
 
 **Step 2: Normalize the internal provider record.** Internal provider records come from credentialing systems, HR systems, or network management systems, each with its own schema. Normalize to the same canonical fields so the matcher can compare apples to apples. Skip this and you'll be writing match code that hard-codes assumptions about a particular source schema.
 
-```
+```pseudocode
 FUNCTION normalize_internal_provider(raw_internal_record):
     normalized = {}
 
@@ -333,7 +333,7 @@ FUNCTION normalize_internal_provider(raw_internal_record):
 
 **Step 3: Generate candidates from the registry.** Multiple blocking passes against the NPPES index. The first pass uses license-number-plus-state when available, which is the highest-information lookup and often returns a single candidate. Subsequent passes catch records that lack a license-number field or where the license-state is not in the internal record. Skip the multi-pass strategy and you'll miss real matches in records with patchy data.
 
-```
+```pseudocode
 FUNCTION generate_candidates(internal_record, nppes_index):
     candidates = set()
 
@@ -425,7 +425,7 @@ FUNCTION generate_candidates(internal_record, nppes_index):
 
 **Step 4: Score each candidate against the internal record.** Per-field comparators and the Fellegi-Sunter combiner. Hard filters first (deactivation, type mismatch, license-state mismatch) to drop obviously-wrong candidates before scoring. Skip the hard filters and you'll be wasting comparator cycles on candidates that should never have been considered.
 
-```
+```pseudocode
 FUNCTION score_candidates(internal_record, candidates, model):
     scored = []
 
@@ -514,7 +514,7 @@ FUNCTION score_candidates(internal_record, candidates, model):
 
 **Step 5: Route by threshold and margin.** Two thresholds and a margin requirement. The margin requirement is what catches the same-name-in-the-same-state confounder that pure absolute thresholds miss. Skip the margin requirement and you'll auto-attach to the wrong NPI on records where multiple plausible candidates exist.
 
-```
+```pseudocode
 FUNCTION route_match(internal_record, scored_candidates, thresholds):
     IF scored_candidates IS EMPTY:
         // no candidates passed the hard filters; route to review
@@ -583,7 +583,7 @@ FUNCTION queue_for_review(internal_record, scored_candidates, reason):
 
 **Step 6: Attach the NPI and schedule re-verification.** After an auto-attach or a human review with a positive decision, write the assignment to DynamoDB, snapshot the drift-relevant fields, schedule the next re-verification, and emit the assignment event for downstream consumers. Skip the drift snapshot and you have no efficient way to detect when registry data changes between re-verifications; skip the schedule and re-verification becomes a manual chore that everybody forgets.
 
-```
+```pseudocode
 FUNCTION attach_npi(internal_record, matched_candidate, decision_metadata):
     // decision_metadata: who decided (auto_match_pipeline,
     //   review_queue_decision_by_user_X), the score, the model
