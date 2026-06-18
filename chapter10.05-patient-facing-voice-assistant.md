@@ -509,7 +509,7 @@ The patient-facing voice assistant is the recipe in this chapter where the opera
 - **Recipe 2.6 (Clinical Note Summarization):** Chapter 2, LLM-driven summarization. The conversation-summary-for-warm-handoff pattern in this recipe uses similar techniques on a smaller scale.
 - **Recipe 2.1 (Patient Message Response Drafting):** Chapter 2, LLM-drafted responses to patient messages. The scope-containment patterns in this recipe map closely onto the message-response-drafting patterns in 2.1, since both are patient-facing LLM-driven interactions with the same scope discipline requirements.
 - **Recipe 11.x (Conversational AI / Virtual Assistants):** Chapter 11 covers the broader conversational-AI patterns; this recipe is the voice-and-telephony specialization of that pattern.
-- **Recipe 4.1 (Appointment Reminder Channel Optimization):** Chapter 4, personalization of outbound reminders. The outbound-proactive-voice extension above draws from this pattern.
+- **Recipe 4.1 (Appointment Reminder Channel Optimization):** Chapter 4, personalization of outbound reminders. The outbound-proactive-voice variation in the [architecture companion](chapter10.05-architecture) draws from this pattern.
 
 ---
 
