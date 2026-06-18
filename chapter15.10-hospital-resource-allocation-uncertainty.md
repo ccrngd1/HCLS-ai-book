@@ -175,7 +175,7 @@ The architecture has four major components: data ingestion, simulation environme
 ---
 
 
-> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.10-architecture). The Python example is linked from there.
+> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and implementation details, see the [Architecture and Implementation companion](chapter15.10-architecture). The Python example is linked from there.
 
 ## Code: Pseudocode Walkthrough
 
@@ -519,7 +519,7 @@ FUNCTION handle_human_decision(recommendation_id, decision):
 | Staffing ratio violations/day | 4.2 | 1.8 (-57%) | Proactive floating recommendations |
 | Patient transfers between units | 18.7/day | 14.3/day (-24%) | Better initial placement |
 | Recommendation acceptance rate | N/A | 62% | Early pilot data typical for decision support |
-| Recommendation latency | N/A | <800ms | Cold start Lambda |
+| Recommendation latency | N/A | <800ms | Cold start serverless function |
 
 **Important caveat:** These are simulation-based estimates validated against historical data using offline policy evaluation. Real-world performance will differ. Pilot deployment with careful A/B evaluation is required before claiming these improvements.
 

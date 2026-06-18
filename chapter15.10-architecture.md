@@ -1,6 +1,6 @@
 # Recipe 15.10 Architecture and Implementation: Hospital Resource Allocation Under Uncertainty
 
-*Companion to [Recipe 15.10: Hospital Resource Allocation Under Uncertainty](chapter15.10-hospital-resource-allocation-uncertainty). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 15.10: Hospital Resource Allocation Under Uncertainty](chapter15.10-hospital-resource-allocation-uncertainty). This page covers the AWS architecture, services, and prerequisites. For the problem framing, conceptual approach, and pseudocode walkthrough, start with the main recipe.*
 
 ---
 
@@ -88,6 +88,8 @@ flowchart TB
 
 ---
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance gap. The architecture companion is missing "Pseudocode Walkthrough," "Expected Results," and "Why This Isn't Production-Ready" sections. These currently live in the main recipe file. A future pass should move them here per the three-file structure in RECIPE-GUIDE.md. -->
+
 ## Variations and Extensions
 
 ### 1. Multi-Hospital System Coordination
@@ -135,9 +137,6 @@ Rather than reacting to current state, use forecasting models (see Chapter 12 re
 | Basic (simulation only) | 4-6 months | Hospital simulator, basic RL training loop, offline evaluation against historical data. No live integration. Proves feasibility. |
 | Production-ready | 12-18 months | Real-time data pipeline, validated simulator, trained and evaluated policy, decision support UI, human workflow integration, monitoring. |
 | With variations | 18-24 months | Multi-campus coordination, surge mode, predictive pre-positioning, continuous learning from human feedback. |
-
----
-
 
 ---
 
