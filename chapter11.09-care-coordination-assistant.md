@@ -214,7 +214,7 @@ A few practical updates worth knowing.
 
 A healthcare care coordination assistant decomposes into ten logical stages: enrollment with caregiver setup, longitudinal-coordination-state initialization, cross-organizational data ingestion, seam-detection and protocol-driven trigger evaluation, channel entry, input safety screening with continuous emergency screening, identity-and-coordination-context loading, conversation handling with protocol-grounded responses, output safety screening, and care-team reporting with outcome correlation. The cross-cutting concerns from recipes 11.1 through 11.8 carry forward; this recipe adds five new ones (cross-organizational data integration with provenance, longitudinal-coordination-state-as-system-of-record, referral-and-transition-of-care state machines, seam-detection rule engine with clinical-leadership ownership, and caregiver-as-first-class-participant identity model).
 
-```
+```text
 ┌────────── ENROLLMENT + CAREGIVER SETUP ──────────────────┐
 │                                                           │
 │   [Patient enrolls via primary care home, payer,         │
@@ -269,9 +269,10 @@ A healthcare care coordination assistant decomposes into ten logical stages: enr
 │      relationship                                         │
 │                                                           │
 │   [Storage architecture]                                  │
-│    - Structured state: DynamoDB tables with provenance    │
+│    - Structured state: key-value tables with provenance   │
 │      indexing                                             │
-│    - Conversation transcript: S3 with vector retrieval    │
+│    - Conversation transcript: object store with vector    │
+│      retrieval                                            │
 │    - Recent-context summary: cached, refreshed per        │
 │      conversation                                         │
 │    - Longitudinal-coordination summary: refreshed         │

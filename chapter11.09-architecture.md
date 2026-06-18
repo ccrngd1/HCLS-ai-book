@@ -392,7 +392,7 @@ flowchart LR
 
 **Step 1: Enroll the patient and capture cross-organizational consent with caregiver setup.** Enrollment is more involved than for the previous chapter 11 bots because the consent posture covers multiple data sources, multiple sharing relationships, and (often) one or more caregivers with proxy-access scope. The consent flow has been reviewed by legal counsel familiar with HIPAA, the Information Blocking rule, state-specific medical-record statutes, state-specific caregiver-consent rules, and (where applicable) 42 CFR Part 2, state-specific mental-health-record protections, and other sensitive-record rules. Skip this step or treat it as boilerplate, and the deployment's regulatory posture is compromised before the first conversation.
 
-```
+```pseudocode
 ON enroll_patient(patient_id, enrollment_program_id,
                   legal_consent_form_signed,
                   caregiver_designations,
@@ -529,7 +529,7 @@ What can go wrong if you skip or shortcut this: the assistant operates without a
 
 **Step 2: Ingest cross-organizational data with provenance discipline.** The ingestion layer is the architectural floor for the coordination assistant. Every data point ingested is recorded with its source, its timestamp, its ingestion path, and its integrity hash. The ingestion pipeline is composed of per-source adapters; each adapter handles authentication, rate limiting, format translation, sensitive-record classification, and provenance recording.
 
-```
+```pseudocode
 ON ingest_event(source_type, raw_message, ingestion_metadata):
     // Step 2A: route to the appropriate per-source adapter.
     adapter = select_adapter(source_type)
@@ -634,7 +634,7 @@ What can go wrong if you skip or shortcut this: the assistant has no provenance 
 
 **Step 3: Run the seam-detection rule engine and the protocol-trigger evaluator.** Seam detection is the assistant's distinctive value layer. The rules and the protocols are institutional content with named clinical-leadership ownership; the engine runs them deterministically (or with calibrated heuristic models) and routes detected gaps to the appropriate human or to the patient-and-caregiver engagement scheduler.
 
-```
+```pseudocode
 ON care_event_or_periodic_tick(patient_id, event):
     // Step 3A: load the patient's coordination state and
     // the relevant protocol context.
@@ -759,7 +759,7 @@ What can go wrong if you skip or shortcut this: the assistant cannot detect the 
 
 **Step 4: Initiate the conversation surface with input safety, identity, and coordination context.** A conversation can be patient-initiated, caregiver-initiated, or assistant-initiated (from a care-event trigger or a protocol-driven engagement). Whichever the entry point, the conversation handler runs the same input-safety pipeline as the previous chapter 11 bots, plus the continuous emergency-screening pass that every patient-or-caregiver utterance receives, plus identity-verification with the speaker-role distinction (patient vs. caregiver), plus the coordination-state context loading.
 
-```
+```pseudocode
 ON conversation_turn(session_id, utterance, channel,
                      auth_context, speaker_role):
     // Step 4A: input safety with continuous emergency screen.
@@ -871,7 +871,7 @@ What can go wrong if you skip or shortcut this: the assistant treats every conve
 
 **Step 5: Run the agent's tool-use loop with citation discipline.** The agent's job is to take the user's utterance, decide what coordination tools to call, retrieve the necessary state and protocols, and compose a grounded response. Each tool call is recorded in the tool-call ledger; each retrieved citation is preserved in the response trace. The LLM does not fabricate coordination-state assertions; if a tool call returns "unknown" or "not in coordination state," the assistant says so honestly.
 
-```
+```pseudocode
 ON agent_invocation(prompt_context, tools, guardrails, kbs):
     // Step 5A: model produces an initial plan and tool-call
     // sequence. The LLM is instructed to call tools to
@@ -983,7 +983,7 @@ What can go wrong if you skip or shortcut this: the tool-call audit trail is inc
 
 **Step 6: Run output safety with protocol-faithfulness verification.** Output safety has the standard primitives from recipe 11.1 (scope filter, vendor-managed guardrail layer, persona-and-tone check). The coordination-specific addition is a faithfulness verifier that confirms the response's coordination-state assertions cite preserved provenance and the response's protocol instructions cite preserved protocol content. A response that asserts coordination facts without citation, or delivers protocol instructions without citation, is regenerated with a stricter constraint or replaced with a safe-fallback template.
 
-```
+```pseudocode
 ON output_safety(composed_response, tool_results, citations,
                  prompt_context):
     // Step 6A: standard output-safety primitives.
@@ -1105,7 +1105,7 @@ What can go wrong if you skip or shortcut this: the assistant produces coordinat
 
 **Step 7: Orchestrate transitions of care with Step Functions.** When a discharge event arrives (the institution's hospital sends an HL7 ADT-A03 discharge message; or the receiving home-health agency confirms admission to home health; or the SNF confirms admission), the assistant initiates the appropriate transition-of-care workflow. The workflow is a Step Functions state machine, version-controlled, signed off by clinical leadership, with deterministic state transitions and explicit completion criteria. The LLM operates on top of the state machine as the conversational interface; the state machine drives the protocol.
 
-```
+```pseudocode
 ON discharge_event(patient_id, discharge_event):
     // Step 7A: identify the appropriate transition protocol
     // based on the discharge destination and the admission
@@ -1201,7 +1201,7 @@ What can go wrong if you skip or shortcut this: the discharge-to-home gap (the 4
 
 **Step 8: Track referral lifecycles to closure.** Referrals are first-class coordination objects with a structured lifecycle (ordered, communicated, scheduled, attended, consult-note-received, closed). Each transition has specified time windows. The referral-lifecycle subsystem is a state machine; the LLM operates on top of it.
 
-```
+```pseudocode
 ON referral_event(patient_id, referral_event):
     // Step 8A: classify the event type.
     event_type = classify_referral_event(referral_event)
@@ -1298,7 +1298,7 @@ What can go wrong if you skip or shortcut this: referrals stay open indefinitely
 
 **Step 9: Handle medication-reconciliation seams across pharmacies and clinicians.** Medication reconciliation is one of the most consequential and most data-quality-sensitive coordination tasks. The assistant maintains the patient's medication list as a single source of truth synthesized from all known pharmacy fills, all known clinician orders, and all patient-reported medications. The reconciliation logic is robust to the data-quality issues common in pharmacy and clinician feeds (inconsistent medication-naming, inconsistent dose representation, inconsistent dosing-instruction parsing, incomplete coverage). When a discrepancy is detected, the assistant flags it for human reconciliation rather than attempting clinical judgment.
 
-```
+```pseudocode
 ON medication_event(patient_id, medication_event):
     // Step 9A: classify the source.
     source_type = medication_event.source_type
@@ -1383,7 +1383,7 @@ What can go wrong if you skip or shortcut this: the patient's medication list ac
 
 **Step 10: Generate care-team reporting and outcome correlation.** The care team has visibility into the assistant's activity through structured summaries (real-time alerts for high-priority gaps; weekly digests; monthly summaries; transition-of-care closure reports; quarterly clinical-review packets). The reporting is designed for the care team's workflow and is reviewed by clinical leadership before launch. Outcome-correlation runs against coordination-specific outcomes (referral closure rate, transition-of-care completion rate, medication-reconciliation accuracy, avoidable-readmission rate, avoidable-ED-utilization rate, patient-and-caregiver-reported coordination experience) on multi-quarter windows.
 
-```
+```pseudocode
 ON reporting_tick(reporting_window):
     // Step 10A: real-time alerts (already streamed during
     // operations). This step produces the periodic-summary
@@ -1526,7 +1526,7 @@ What can go wrong if you skip or shortcut this: the care team has no visibility 
 
 **Sample conversation (illustrative, abbreviated, post-discharge welcome-home check-in):**
 
-```
+```text
 Bot:     Hi Mr. Chen, this is the coordination tool from
          your primary care home, checking in two days
          after your hospital discharge. I'm a chat tool,
@@ -1637,7 +1637,7 @@ Bot:     Tiredness for a few days after a hospital
 
 **Sample care-team alert (illustrative, generated from the conversation above):**
 
-```
+```text
 ALERT: Medication discrepancy seam, priority MEDIUM
        (clinical-judgment required)
 
