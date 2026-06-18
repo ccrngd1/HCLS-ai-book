@@ -192,7 +192,7 @@ flowchart LR
 
 **Step 1: Standardize and prepare the per-participant demographic-feature set.** Every participating organization standardizes its demographic features under the same schema before encoding. The standardization is the same work that a conventional matcher does (case-folding, whitespace stripping, USPS address standardization, diacritic folding) but it has to be deterministic and cross-participant-compatible because any divergence in standardization produces encoded records that the matcher cannot reliably compare. Skip the standardization step and the encoding produces records whose Bloom filters carry the institution's idiosyncratic demographic-feature representation rather than the cross-participant-compatible representation, and the linkage rate drops substantially.
 
-```
+```pseudocode
 FUNCTION standardize_and_prepare(source_record_batch,
                                      participant_id,
                                      consent_filter_policy,
@@ -291,7 +291,7 @@ FUNCTION standardize_and_prepare(source_record_batch,
 
 **Step 2: Apply the cryptographic encoding under the pinned protocol parameterization.** The encoding step is per-participant; it transforms the standardized record into a Cryptographic-Long-Term-Key (CLK) encoded form. The CLK is a single Bloom filter that combines the per-feature Bloom filters under the per-feature bit allocation. The matcher consumes the CLK without seeing the underlying demographic features. Skip the parameterization-version pinning and you produce encoded records that are not comparable to the counterparty's records produced under a different parameterization version, and the linkage silently fails.
 
-```
+```pseudocode
 FUNCTION encode_record(prepared_record, parameterization_version):
     // Step 2A: load the protocol parameterization. The
     // parameterization is loaded from a versioned
@@ -441,7 +441,7 @@ FUNCTION encode_record(prepared_record, parameterization_version):
 
 **Step 3: Exchange the encoded records under the trust architecture.** The participating organizations deliver their encoded payloads to the linkage-execution endpoint. The exchange is the trust-architecture-defining step; the choice of transport, authentication, and audit posture reflects the protocol's specific privacy claims. Skip the exchange-time auditing and the protocol's audit posture is broken: a counterparty that uploaded an encoded payload cannot prove what it uploaded if the linkage's results are later disputed.
 
-```
+```pseudocode
 FUNCTION exchange_encoded_records(encoded_record_envelopes,
                                        trust_architecture_config,
                                        cycle_id):
@@ -566,7 +566,7 @@ FUNCTION exchange_encoded_records(encoded_record_envelopes,
 
 **Step 4: Match the encoded records under the protocol's matching function.** The matcher operates on the encoded data without ever seeing the underlying demographics. The matching function is protocol-specific: Sørensen-Dice for Bloom filters, equality for tokenized data, the SMPC primitives for the SMPC family. The thresholds are calibrated separately from the conventional matcher's thresholds because the encoded scoring function is different. Skip the encoded-data threshold calibration and you re-use the conventional thresholds, which produces silent linkage failures because the encoded similarity scores are systematically lower for the same underlying record pair.
 
-```
+```pseudocode
 FUNCTION match_encoded_records(encoded_record_sets,
                                     parameterization,
                                     threshold_calibration,
@@ -650,7 +650,7 @@ FUNCTION match_encoded_records(encoded_record_sets,
 
 **Step 5: Apply the disclosure policy and route the linkage results.** The matcher produces match decisions; the disclosure step transforms the decisions into the form the protocol authorizes for delivery to the consumer. The disclosure form is protocol-specific: per-record yes/no flags, intersection counts, encrypted match indicators, k-anonymous summaries, differentially-private aggregates. Skip the disclosure-policy step and you deliver the per-record matches to a consumer that the protocol authorized only for aggregate-level disclosure, which is a privacy violation that the audit cannot retract.
 
-```
+```pseudocode
 FUNCTION disclose_linkage_results(match_results,
                                        disclosure_policy,
                                        cycle_id):
@@ -765,7 +765,7 @@ FUNCTION disclose_linkage_results(match_results,
 
 **Step 6: React to invalidation events that supersede the linkage.** A linkage that was wrong, a salt that has rotated, a parameterization that has been upgraded, a consent that has been withdrawn, an underlying identity-merge or name-change reversal from recipes 5.1 or 5.7 all invalidate the prior linkage in different ways. The invalidation pipeline subscribes to these events and triggers the appropriate response (re-encode the affected records, re-run the matcher, communicate the superseded result to the consumer, route the affected records out of future cycles). Skip the invalidation pipeline and the prior linkage results drift out of sync with the underlying identity infrastructure; the drift compounds over time and undermines trust in every subsequent cycle.
 
-```
+```pseudocode
 FUNCTION invalidate_on_event(invalidation_event):
     // Identify the affected linkage cycles and the
     // affected encoded records.
