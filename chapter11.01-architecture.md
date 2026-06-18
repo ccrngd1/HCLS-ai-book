@@ -189,7 +189,7 @@ flowchart LR
 
 **Step 1: Receive the chat message, bootstrap the session, and play the disclosure.** A patient opens the chat widget and sends a message. The system either creates a new conversation session or continues an existing one. On the first message of a new session, the bot's response includes a friendly disclosure (it is a chatbot, not a human; here is the scope; here is how to reach a human directly). Skip the disclosure and the institution risks deceiving patients about who they are talking to, which is the wrong way to start any healthcare interaction.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id, user_message):
     // Step 1A: identify the conversation session.
     // Web and app channels typically pass a stable
@@ -249,7 +249,7 @@ ON receive_message(channel, channel_session_id, user_message):
 
 **Step 2: Screen the input for crisis signals, prompt injection, and inadvertent PHI.** Every user message runs through a parallel screening pass before it is allowed to proceed to intent classification. Crisis detection is the highest-priority screen and preempts everything else. Skip the parallel screening and a patient mentioning chest pain while asking about parking has their crisis signal lost in the dialog flow.
 
-```
+```pseudocode
 FUNCTION screen_input(session_id, user_message, language):
     // Step 2A: crisis detection. Run the per-language
     // detector. The detector is layered: keyword list,
@@ -340,7 +340,7 @@ FUNCTION handle_screening_action(session_id, screening_result):
 
 **Step 3: Classify the intent and check it against the bot's scope.** Within the non-screening flow, the system maps the user's question to a coarse category (in-scope or out-of-scope, with a specific subcategory). Out-of-scope categories have explicit refusal-and-handoff templates. Skip the explicit out-of-scope handling and the LLM may attempt to answer questions it should refuse, which is the worst class of failure for an FAQ bot.
 
-```
+```pseudocode
 FUNCTION classify_scope(session_id, user_message, language):
     // Step 3A: lightweight LLM classifier with
     // structured output. The prompt enumerates the
@@ -442,7 +442,7 @@ FUNCTION classify_scope(session_id, user_message, language):
 
 **Step 4: Retrieve relevant chunks from the knowledge base.** When the question is in scope, the system retrieves the most relevant content from the institutional knowledge base. The retrieval is hybrid (vector plus keyword), filtered by the question's category metadata, and re-ranked. When retrieval surfaces nothing relevant, the system tells the generation step explicitly so the bot can refuse rather than fabricate. Skip the no-results handling and the bot makes up answers when the corpus does not actually contain them.
 
-```
+```pseudocode
 FUNCTION retrieve_chunks(session_id, user_message,
                         category, language):
     // Step 4A: invoke Bedrock Knowledge Bases retrieval.
@@ -488,7 +488,7 @@ FUNCTION retrieve_chunks(session_id, user_message,
 
 **Step 5: Generate the grounded response with explicit citation discipline.** The system passes the retrieved chunks, the user's question, the conversation history, and the carefully-crafted system prompt to the LLM. The system prompt enforces the persona, the scope, and the citation discipline. The response references chunk identifiers, which the post-processing step renders as user-facing citations. Skip the citation discipline and the system loses the ability to verify what the model produced was actually grounded in the corpus.
 
-```
+```pseudocode
 FUNCTION generate_grounded_response(session_id, user_message,
                                     chunks, language):
     // Step 5A: handle the no-results path explicitly.
@@ -580,7 +580,7 @@ FUNCTION generate_grounded_response(session_id, user_message,
 
 **Step 6: Screen the output for scope drift, hallucination, and policy violations.** Even with a careful system prompt and a guardrail layer, the LLM occasionally produces output that drifts out of scope or makes claims not supported by the retrieved chunks. The output-screening pass catches these before delivery. Skip this layer and the bot ships responses that violate scope, which is exactly the failure mode the system is supposed to prevent.
 
-```
+```pseudocode
 FUNCTION screen_output(session_id, response, grounded_in_chunks,
                        retrieved_chunks):
     // Step 6A: scope filter. Independent of the input
@@ -664,7 +664,7 @@ FUNCTION screen_output(session_id, response, grounded_in_chunks,
 
 **Step 7: Deliver the response, offer follow-up paths, and log everything.** The cleared response is delivered through the channel. The system optionally offers explicit follow-up paths (was this helpful, would you like to talk to a person, anything else I can help with). Every aspect of the turn is captured in the audit log. Skip the audit logging and the institution loses both the compliance record and the operational signal needed to improve the bot.
 
-```
+```pseudocode
 FUNCTION deliver_and_log(session_id, channel, response,
                         audit_stamp, screening_results):
     // Step 7A: send the response to the user through
@@ -752,7 +752,7 @@ FUNCTION deliver_and_log(session_id, channel, response,
 
 **Step 8: Handle the conversation close, archive the audit record, and feed cohort-stratified accuracy monitoring.** The conversation ends (the user closes the widget, the session times out, or the user explicitly says goodbye). The system writes the final durable audit record, emits the lifecycle event, and contributes to the per-cohort metrics that the operations team monitors. Skip the cohort segmentation and the bot's per-cohort failure modes are invisible until a complaint surfaces them.
 
-```
+```pseudocode
 FUNCTION close_conversation_and_archive(session_id, reason):
     state = conversation_state_table.get(session_id)
     metadata =
@@ -835,7 +835,7 @@ FUNCTION close_conversation_and_archive(session_id, reason):
 
 **Sample conversation (illustrative):**
 
-```
+```text
 Bot:     Hi! I'm Riverside Clinic's chat assistant.
          I can help with hours, locations, parking,
          insurance, what to bring to a visit, and

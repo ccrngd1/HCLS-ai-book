@@ -172,7 +172,7 @@ A few practical updates worth knowing.
 
 A healthcare FAQ chatbot decomposes into seven logical stages: channel entry, input safety screening, intent and scope classification, retrieval over the institutional knowledge base, grounded response generation, output safety screening, and audit logging. A handful of cross-cutting concerns (knowledge-base curation lifecycle, persona and prompt management, escalation and handoff, per-cohort monitoring) span the stages.
 
-```
+```text
 ┌────────── CHANNEL ENTRY ─────────────────────────────────┐
 │                                                           │
 │   [Patient connects through one of the configured         │
@@ -333,7 +333,7 @@ A healthcare FAQ chatbot decomposes into seven logical stages: channel entry, in
 │      an explicit refusal-and-handoff                      │
 │                                                           │
 │   [Vendor-managed guardrail layer]                        │
-│    - Bedrock Guardrails or equivalent                     │
+│    - Managed guardrail service or equivalent              │
 │    - Defense-in-depth filtering of harmful content,       │
 │      restricted topics                                    │
 │                                                           │
