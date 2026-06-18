@@ -222,7 +222,7 @@ flowchart LR
 
 **Step 1: Set up the assessment session with the SLP-selected instruments, stimuli, and patient context.** When the SLP initiates an assessment, the system records which assessment instruments she has selected, generates the per-instrument stimulus list, captures patient context (age, language background, prior assessment history, current goals), and records the consent terms. Skip any of these and the resulting audio cannot be reliably scored: the system does not know which phonemes to expect, which norms to apply, or whether the SLP has the authorization to capture the audio.
 
-```
+```pseudocode
 ON session_initiated(slp_id, patient_id, selected_instruments,
                      deployment_context):
 
@@ -324,7 +324,7 @@ ON session_initiated(slp_id, patient_id, selected_instruments,
 
 **Step 2: Capture audio per task with task-aware quality assessment and recapture prompts on failure.** Each instrument has its own task structure: articulation inventories elicit one stimulus at a time, fluency probes capture continuous speech segments, voice-quality tasks elicit sustained vowels. The capture system handles each task type appropriately, runs quality checks, and prompts for recapture on failure. Skip the per-task quality gating and the system silently scores low-quality audio, producing unreliable results that the SLP has to manually override.
 
-```
+```pseudocode
 FUNCTION capture_session_audio(session_id):
     state = session_table.get(session_id)
     captured_tasks = []
@@ -409,7 +409,7 @@ FUNCTION capture_session_audio(session_id):
 
 **Step 3: Extract acoustic, phonetic, and linguistic features per task, with disordered-speech-tolerant alignment and confidence scoring.** Each task is processed through the appropriate feature pipeline: articulation tasks run through forced alignment and phoneme classification with substitution and omission detection; fluency tasks run through fluency-event detection; voice-quality tasks run through acoustic-feature extraction; connected-speech tasks add transcription and linguistic-feature extraction. Per-feature confidence is captured throughout. Skip the disordered-speech-tolerant configurations and the alignment fails on the population the system is meant to serve.
 
-```
+```pseudocode
 FUNCTION extract_features(session_id):
     state = session_table.get(session_id)
     feature_set = {
@@ -574,7 +574,7 @@ FUNCTION extract_features(session_id):
 
 **Step 4: Score each instrument with population-norm comparison and per-item confidence-based SLP-review flagging.** For each assessment instrument, the scoring engine combines per-task features into instrument-aligned scores (percent-consonants-correct for articulation, percent-syllables-stuttered for fluency, CAPE-V dimensions for voice quality, and so on). Items with model confidence below the threshold are flagged for SLP review rather than auto-scored. Population norms are applied to interpret the raw scores against age-and-sex-appropriate benchmarks. Skip the confidence-based flagging and the system silently misclassifies the items where it is uncertain, producing systematic errors that erode SLP trust.
 
-```
+```pseudocode
 FUNCTION score_instruments(session_id):
     state = session_table.get(session_id)
     feature_set = feature_set_archive.get(session_id)
@@ -706,7 +706,7 @@ FUNCTION score_instruments(session_id):
 
 **Step 5: Compute longitudinal comparison against the patient's prior sessions and against the active therapy goals.** Within-patient progress is the clinically richest signal. The system computes per-instrument deltas against the prior session and trend lines across all prior sessions, evaluates progress against each active therapy goal, and detects trajectory patterns (plateau, regression, acceleration). Skip the longitudinal layer and the SLP loses the comparison that is most useful for therapy-planning decisions.
 
-```
+```pseudocode
 FUNCTION compute_longitudinal(session_id):
     state = session_table.get(session_id)
     current_scores = state.instrument_scores
@@ -810,7 +810,7 @@ FUNCTION compute_longitudinal(session_id):
 
 **Step 6: Hand off to the SLP for review, override, and clinical interpretation.** The SLP-facing review interface presents the per-item scores with confidence values, highlights items flagged for review, supports audio playback for any item, and shows the longitudinal comparison alongside. The SLP can override individual item scores with a reasoning capture, accept high-confidence items in bulk, add free-text observations, and provide the clinical interpretation (working diagnosis, goal modifications, recommended therapy frequency, discharge readiness assessment). Skip the SLP-in-the-loop step and the system ships uncertain items as confident-looking auto-scores and loses the feedback signal for ongoing model improvement.
 
-```
+```pseudocode
 ON slp_review_initiated(session_id, slp_id):
     state = session_table.get(session_id)
 
@@ -927,7 +927,7 @@ ON slp_submits_review(session_id, slp_id, edits,
 
 **Step 7: Generate the assessment-report documentation, the patient-and-parent-friendly summary, and the EHR or SIS write-back.** The system generates a structured assessment report from the SLP-validated scores, the clinical interpretation, and the longitudinal context. It also generates a parent-and-patient-friendly summary at appropriate reading level, with home-practice recommendations. The documentation flows to the EHR (for clinical settings) or the school SIS (for school deployments) as discrete data, FHIR resources, and PDF artifacts. Skip the structured documentation and the SLP loses the productivity benefit; skip the patient-friendly summary and parents and patients are left with clinical-jargon outputs they cannot act on.
 
-```
+```pseudocode
 FUNCTION generate_documentation(session_id):
     state = session_table.get(session_id)
 
@@ -1079,7 +1079,7 @@ FUNCTION generate_documentation(session_id):
 
 **Step 8: Audit, retain audio per consent, and feed post-deployment surveillance.** Every session produces a durable audit record with the SLP's edits, the per-item confidence values, the model versions used, and the linked patient outcomes where available. Audio is retained per the consent terms and then deleted; feature vectors are retained longer for model improvement and longitudinal analysis. Per-population surveillance metrics feed the dashboards that track the system's performance against SLP gold-standard scoring over time. Skip the surveillance pipeline and per-population drift surfaces only through SLP complaints.
 
-```
+```pseudocode
 FUNCTION audit_and_surveillance(session_id):
     state = session_table.get(session_id)
 

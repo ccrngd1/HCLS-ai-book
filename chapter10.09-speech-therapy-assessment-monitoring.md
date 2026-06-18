@@ -114,7 +114,7 @@ A few practical updates worth knowing.
 
 A speech-therapy assessment and monitoring system decomposes into eight logical stages: SLP-driven session setup with stimulus selection and consent capture, audio capture with task-segmented acquisition, preprocessing and disordered-speech-tolerant feature extraction, per-instrument scoring with confidence assessment, longitudinal comparison against the patient's own baseline and against population norms, SLP review with edit-and-acknowledge workflow, documentation generation aligned with billing and outcome-tracking requirements, and longitudinal storage with progress-tracking analytics.
 
-```
+```text
 ┌─────── SESSION SETUP & CONSENT ──────────────────────────┐
 │                                                           │
 │   [SLP selects assessment instrument(s) and stimuli]      │
