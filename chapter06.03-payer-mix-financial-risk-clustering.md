@@ -113,10 +113,9 @@ Since clustering is unsupervised, you can't measure accuracy in the traditional 
 
 **Monitoring:** Track cluster membership over time. Alert when the population distribution shifts (e.g., Cluster 1 growing from 15% to 22% of the population over 6 months). Re-run clustering periodically (monthly or quarterly) to capture population changes. Define a retention policy for historical cluster assignments: retain patient-level assignments for 24-36 months for trend analysis, then aggregate to cluster-level statistics only. Ensure your retention policy aligns with your organization's HIPAA data retention schedule and any applicable state privacy laws.
 
----
-
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter06.03-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

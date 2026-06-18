@@ -69,9 +69,7 @@ flowchart TD
 | **Amazon SNS** | Delivers alerts when population distribution shifts beyond threshold |
 | **AWS KMS** | Encryption key management for all data at rest |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Extract and join source data.** The first challenge is assembling a unified patient-level dataset from systems that were never designed to talk to each other. Billing knows about charges and payments. The EHR knows about visits and diagnoses. Eligibility knows about coverage. Each system has its own patient identifier, its own data model, and its own update cadence. This step pulls from each source, resolves to a single patient identity (using your MPI or whatever patient matching you have), and produces one row per patient with columns from all sources. Skip this step and you're clustering on incomplete information, which produces clusters that reflect data availability rather than actual financial risk.
 
