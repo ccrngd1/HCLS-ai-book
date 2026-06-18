@@ -72,7 +72,7 @@ New members are the hardest to score. A member who joined three months ago has a
 
 The churn prediction pipeline has four logical stages:
 
-```
+```text
 [Feature Store Assembly] → [Model Training / Scoring] → [Risk Stratification] → [Intervention Routing]
 ```
 
@@ -121,7 +121,7 @@ The ethical dimension is real. Churn models can inadvertently encode discriminat
 
 ## Tags
 
-`predictive-analytics` · `churn` · `disenrollment` · `retention` · `xgboost` · `sagemaker` · `glue` · `classification` · `health-plan` · `member-engagement` · `hipaa` · `simple-medium`
+`predictive-analytics` · `churn` · `disenrollment` · `retention` · `xgboost` · `classification` · `health-plan` · `member-engagement` · `hipaa` · `simple-medium`
 
 ---
 

@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the full ML lifecycle: notebook environments for exploration, managed training jobs for the actual model build, and real-time or batch endpoints for scoring. For churn prediction specifically, the built-in XGBoost algorithm is well-optimized and saves you from managing your own training infrastructure. SageMaker also handles model versioning and A/B testing, which matters when you're iterating on features.
 
@@ -20,7 +18,7 @@
 
 **Amazon QuickSight for retention dashboards.** Leadership wants to see churn risk distribution, intervention effectiveness, and trend lines. QuickSight connects directly to the scoring results in S3 (via Athena) and provides self-service dashboards without building a custom BI layer.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -70,7 +68,7 @@ flowchart TD
     style L fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -83,7 +81,7 @@ flowchart TD
 | **Sample Data** | Synthetic membership data with behavioral features. CMS publishes [synthetic Medicare claims](https://data.cms.gov/collection/synthetic-medicare-enrollment-fee-for-service-claims-and-prescription-drug-event) for development. Never use real member data in dev/test. |
 | **Cost Estimate** | Glue: ~$0.44/DPU-hour for feature jobs; SageMaker training: ~$0.05/instance-hour (ml.m5.xlarge); Batch Transform: ~$0.05/instance-hour; DynamoDB: on-demand ~$1.25/million writes. Total for 100K members scored weekly: ~$50-100/month. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -97,18 +95,16 @@ flowchart TD
 | **Amazon Athena** | Ad-hoc queries against feature store and scoring results |
 | **AWS KMS** | Encryption key management for all PHI data at rest |
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including XGBoost for classification, batch transform, and model monitoring
 > - [`aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue ETL patterns for feature engineering and data transformation
 
-#### Walkthrough
-
 **Step 1: Feature assembly.** This is where the real work happens. You're pulling data from half a dozen source systems and computing features that capture each member's relationship with your organization over time. The key insight: churn prediction is mostly a feature engineering problem. The model itself is almost commodity. Get the features right and even a simple model performs well. Get them wrong and no amount of model complexity will save you. Each feature should answer a question: "Is this member's behavior changing in a way that suggests disengagement?"
 
-```
+```pseudocode
 FUNCTION assemble_member_features(member_id, as_of_date):
     // Pull raw data from each source system for this member.
     // "as_of_date" is the prediction point: we only use data available before this date.
@@ -169,7 +165,7 @@ FUNCTION assemble_member_features(member_id, as_of_date):
 
 **Step 2: Label historical data.** To train the model, you need labeled examples: members who churned and members who stayed. This step looks backward in time to create the training dataset. The label window and observation window must not overlap, or you'll leak future information into your features. This is the most common mistake in churn model development, and it produces models that look great in testing but fail in production.
 
-```
+```pseudocode
 FUNCTION create_training_dataset(members, label_date, observation_cutoff):
     // "observation_cutoff" is the last date we can use for features.
     // "label_date" is when we check the outcome (did they churn?).
@@ -198,7 +194,7 @@ FUNCTION create_training_dataset(members, label_date, observation_cutoff):
 
 **Step 3: Train the model.** With features and labels assembled, train a gradient boosted tree classifier. The key decisions here are handling class imbalance (churn is typically 5-15% of the population, so the classes are imbalanced) and selecting the right evaluation metric. AUC-PR (area under the precision-recall curve) is more informative than AUC-ROC for imbalanced problems.
 
-```
+```pseudocode
 FUNCTION train_churn_model(training_data):
     // Split into train and validation sets.
     // Use time-based splitting, not random: train on older data, validate on newer.
@@ -233,7 +229,7 @@ FUNCTION train_churn_model(training_data):
 
 **Step 4: Score current membership.** Apply the trained model to all currently enrolled members to produce churn risk scores. This runs on a schedule (weekly is typical) and writes results to both the feature store (for analysis) and the operational database (for real-time lookup).
 
-```
+```pseudocode
 FUNCTION score_membership(model, calibrator, active_members, scoring_date):
     // Score every active member as of today.
     results = []
@@ -293,7 +289,7 @@ FUNCTION recommend_intervention(top_drivers):
 
 **Step 5: Store and serve results.** Write scoring results to both the analytical store (S3/Parquet for dashboards and analysis) and the operational store (DynamoDB for real-time lookup by member ID). Downstream systems query DynamoDB when a member calls in, logs into the portal, or is being reviewed by a care manager.
 
-```
+```pseudocode
 FUNCTION store_and_serve(results, scoring_date):
     // Write full results to S3 for analytics and dashboarding.
     // Partitioned by date so historical scores are preserved for trend analysis.
@@ -329,7 +325,7 @@ FUNCTION store_and_serve(results, scoring_date):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a scored member:**
 
@@ -367,6 +363,8 @@ FUNCTION store_and_serve(results, scoring_date):
 **Where it struggles:** New members with less than 6 months tenure (cold start). Members who churn due to employer decisions (group-level switches, not individual choice). Sudden life events (relocation, job loss) with no prior behavioral signal. Markets with aggressive competitor pricing where the decision is purely financial.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (e.g., model monitoring, fairness audits, retraining automation, integration testing with intervention systems). -->
 
 ## Variations and Extensions
 
