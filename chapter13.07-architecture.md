@@ -114,7 +114,7 @@ Each source database publishes data in its own format. We download, validate, an
 
 This step matters because stale or corrupted source data propagates errors throughout the graph. A bad ClinVar download could reclassify thousands of variants incorrectly. Validation catches this before it reaches the graph.
 
-```
+```pseudocode
 FUNCTION ingest_source(source_name, source_url, expected_format):
     // Download the latest release from the source
     raw_data = download(source_url)
@@ -144,7 +144,7 @@ This is the hardest engineering step. Different sources use different identifier
 
 If you skip this step, you end up with duplicate nodes: "CYP2D6" from PharmGKB and "CYP2D6" from DrugBank as separate, unconnected entities. The graph becomes fragmented and queries miss relationships that cross source boundaries.
 
-```
+```pseudocode
 FUNCTION resolve_entities(source_records):
     resolved = []
     
@@ -203,7 +203,7 @@ Transform resolved records into graph nodes and edges with evidence metadata.
 
 This step creates the actual knowledge graph structure. Each relationship carries its evidence level, source, and publication date so that downstream queries can filter by confidence.
 
-```
+```pseudocode
 FUNCTION build_graph_load_files(resolved_records):
     nodes = []
     edges = []
@@ -292,7 +292,7 @@ This step encodes the translation tables that convert raw genotypes into clinica
 
 Without this, you have variant data but no clinical interpretation. A clinician doesn't act on "CYP2D6*4/*4." They act on "poor metabolizer." This mapping is gene-specific and maintained by CPIC.
 
-```
+```pseudocode
 FUNCTION load_diplotype_phenotype_mappings():
     // CPIC publishes translation tables per gene
     // Example: CYP2D6 has ~100 star alleles with activity scores
@@ -350,7 +350,7 @@ Given a patient's genetic test results and current medications, traverse the gra
 
 This is the clinical payoff. Everything above was infrastructure. This step answers the question: "For this specific patient, which of their medications might be affected by their genetics, and what should we do about it?"
 
-```
+```pseudocode
 FUNCTION query_patient_pharmacogenomics(patient_variants, current_medications, evidence_threshold="2A"):
     findings = []
     
@@ -434,7 +434,7 @@ Orchestrate the periodic refresh of the knowledge graph as sources publish new d
 
 This step keeps the graph current. Pharmacogenomic knowledge evolves rapidly. A graph that's six months stale might miss newly actionable gene-drug pairs or updated evidence classifications.
 
-```
+```pseudocode
 FUNCTION run_graph_update_pipeline(triggered_sources):
     // Create a new graph version (don't modify the live graph in place)
     new_version = generate_version_id()  // e.g., "v2026-05-31"
@@ -556,6 +556,8 @@ Sample output from a patient pharmacogenomics query:
 - Patients with ancestry not well-represented in frequency databases (allele frequency data may be unreliable)
 - Novel drugs without established pharmacogenomic data (graph has no edges to traverse)
 - Conflicting evidence between sources (requires human adjudication workflow)
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. The "Where It Struggles" subsection above serves as the production-readiness assessment, but RECIPE-GUIDE expects a standalone H2 "Why This Isn't Production-Ready" section between Expected Results and Variations. Consider promoting to its own section. -->
 
 ---
 

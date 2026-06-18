@@ -92,7 +92,7 @@ Each source uses different identifiers. PharmGKB uses its own accession numbers.
 
 ### The General Architecture Pattern
 
-```
+```text
 [Source Databases] → [ETL / Integration] → [Entity Resolution] → [Knowledge Graph]
                                                                         ↓
 [Patient Genomic Data] → [Variant Annotation] → [Query Engine] ← [Evidence Filtering]
