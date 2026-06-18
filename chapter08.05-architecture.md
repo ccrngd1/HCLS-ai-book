@@ -403,6 +403,8 @@ FUNCTION store_results(patient_id, extracted_problems, recommendations, note_id)
 - Specialty-specific shorthand (orthopedic notes are particularly terse)
 - Combination/compound conditions: "diabetes with nephropathy and retinopathy" is one problem or three?
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section here (between Expected Results and Variations). Should cover gaps like: no clinician review UI, no feedback loop to improve assertion accuracy, no multi-note aggregation, no handling of conflicting assertions across notes, no SNOMED hierarchy-aware deduplication. -->
+
 ---
 
 ## Variations and Extensions
