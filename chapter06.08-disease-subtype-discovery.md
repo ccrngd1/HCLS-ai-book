@@ -108,9 +108,9 @@ These tell you whether the clusters are well-separated in feature space. They do
 
 If your clusters have beautiful silhouette scores but identical outcomes across groups, they're not clinically useful subtypes. If they have mediocre silhouette scores but dramatically different 5-year mortality rates, they might be the most important finding in your dataset.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
-```
+```text
 [Cohort Definition] → [Feature Extraction] → [Preprocessing] → [Dimensionality Reduction]
     → [Multi-Algorithm Clustering] → [Consensus/Stability Analysis]
     → [Clinical Validation] → [Subtype Characterization] → [Deployment/Monitoring]

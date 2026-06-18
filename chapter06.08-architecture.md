@@ -87,7 +87,7 @@ flowchart TD
 
 **Step 1: Define the cohort.** Before any clustering happens, you need a clean, well-defined patient population. This means selecting patients with the target diagnosis, applying minimum data completeness thresholds, and defining the observation window. A cohort with 40% missing lab values will produce clusters driven by missingness patterns rather than biology. This step also handles temporal alignment: for each patient, define an "index date" (diagnosis date, first encounter, etc.) and extract features relative to that anchor. Skip this step and your clusters will reflect data availability rather than disease biology.
 
-```
+```pseudocode
 FUNCTION define_cohort(diagnosis_codes, min_data_completeness, observation_window):
     // Select all patients with the target diagnosis within the study period.
     // diagnosis_codes: list of ICD-10 codes defining the disease (e.g., I50.x for heart failure)
@@ -114,7 +114,7 @@ FUNCTION define_cohort(diagnosis_codes, min_data_completeness, observation_windo
 
 **Step 2: Extract and engineer features.** This is where clinical expertise matters most. You're building a numerical representation of each patient that captures the dimensions along which subtypes might differ. For each patient, extract labs (using the value closest to index date, or the median over the observation window), medications (binary indicators or duration-weighted), comorbidities (binary or severity-scored), vitals, and any other relevant structured data. Feature engineering choices here directly determine what subtypes you can discover.
 
-```
+```pseudocode
 FUNCTION extract_features(cohort, feature_config):
     // feature_config defines which features to extract and how to summarize them.
     // Example config entry: { name: "bnp_baseline", source: "labs", loinc: "42637-9",
@@ -153,7 +153,7 @@ FUNCTION extract_features(cohort, feature_config):
 
 **Step 3: Preprocess and reduce dimensions.** Raw clinical features have wildly different scales (BNP ranges from 0 to 35,000 pg/mL; ejection fraction ranges from 5 to 75%). Without normalization, high-magnitude features dominate the distance calculations and clustering finds "BNP subtypes" rather than meaningful phenotypes. After scaling, apply PCA to identify how many dimensions carry meaningful variance and reduce the feature space accordingly. This step also handles remaining missing values through imputation.
 
-```
+```pseudocode
 FUNCTION preprocess_and_reduce(feature_matrix, variance_threshold=0.90):
     // Step 3a: Handle remaining missing values
     // Multiple imputation is preferred for research; median imputation is acceptable for exploration
@@ -183,7 +183,7 @@ FUNCTION preprocess_and_reduce(feature_matrix, variance_threshold=0.90):
 
 **Step 4: Run multi-algorithm clustering.** Don't bet on a single algorithm or a single K. Run K-means, GMM, and hierarchical clustering across K=2 through K=10. For each combination, record the cluster assignments and internal validation metrics. This gives you a landscape of possible groupings rather than a single answer. The goal is to identify values of K and algorithm choices where the results converge, suggesting genuine structure rather than algorithmic artifacts.
 
-```
+```pseudocode
 FUNCTION run_multi_algorithm_clustering(reduced_matrix, k_range=[2,3,4,5,6,7,8,9,10]):
     // Store all results for comparison
     all_results = empty list
@@ -216,7 +216,7 @@ FUNCTION run_multi_algorithm_clustering(reduced_matrix, k_range=[2,3,4,5,6,7,8,9
 
 **Step 5: Consensus clustering and stability analysis.** This is where you separate signal from noise. Run the clustering 100+ times with bootstrap resampling (randomly sampling 80% of patients each time) and track how often each pair of patients ends up in the same cluster. Build a consensus matrix: entry (i,j) is the fraction of runs where patient i and patient j were co-clustered. Cluster the consensus matrix itself to find the final stable groupings. Patients who consistently cluster together across resamples are genuinely similar; patients who bounce between clusters are on the boundary.
 
-```
+```pseudocode
 FUNCTION consensus_clustering(scaled_matrix, k, n_iterations=100, subsample_fraction=0.8):
     // We use the full scaled feature space here rather than PCA-reduced space.
     // Bootstrap resampling provides implicit regularization, and retaining all features
@@ -260,7 +260,7 @@ FUNCTION consensus_clustering(scaled_matrix, k, n_iterations=100, subsample_frac
 
 **Step 6: Clinical validation and characterization.** The clusters mean nothing until validated against outcomes. For each discovered subtype, compute outcome differences (mortality, readmission, disease progression), treatment response differences, and generate interpretable profiles. Present these to clinical domain experts for review. A cluster is clinically meaningful if: (a) it has distinct outcomes, (b) a clinician can recognize the phenotype, and (c) it suggests actionable differences in care.
 
-```
+```pseudocode
 FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data):
     n_clusters = number of unique values in labels
     characterization = empty map
@@ -308,7 +308,7 @@ FUNCTION validate_and_characterize(cohort, feature_matrix, labels, outcomes_data
 
 Train a supervised classifier (random forest, gradient boosting) on the original cohort using the cluster labels as the target. This classifier can then be deployed as a real-time endpoint that takes a new patient's features and returns their predicted subtype. Consider adding a confidence threshold: if the maximum predicted probability is below 0.6, flag the patient as "unclassifiable" rather than forcing assignment to a subtype. These boundary patients may represent emerging subtypes not captured in the original discovery cohort.
 
-```
+```pseudocode
 FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
     // Split into train/test to estimate assignment accuracy
     train_features, test_features, train_labels, test_labels = split(
@@ -415,6 +415,8 @@ FUNCTION train_subtype_classifier(feature_matrix, validated_labels):
 **Memory note:** Consensus clustering memory scales quadratically with cohort size (the N x N consensus matrix). For the 14,000-patient example, an ml.m5.4xlarge (64 GB RAM) is sufficient. For cohorts above 20,000 patients, consider block-diagonal approximation, sparse consensus matrices (only store entries above a threshold), or mini-batch consensus approaches.
 
 **Where it struggles:** Diseases with continuous spectrums rather than discrete subtypes (the clusters are real but boundaries are fuzzy). Cohorts with high missingness (clusters reflect data availability). Small cohorts (< 1,000 patients) where statistical power is insufficient. Features that are confounded by treatment (patients on different drugs look different because of the drugs, not because of underlying biology).
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" H2 section between Expected Results and Variations. The "Where it struggles" paragraph above covers some of this, but the RECIPE-GUIDE expects a standalone section addressing production gaps (model governance, drift monitoring, clinical workflow integration, etc.). -->
 
 ---
 
