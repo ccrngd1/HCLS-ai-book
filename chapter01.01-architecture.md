@@ -6,7 +6,7 @@
 
 ## The AWS Implementation
 
-Now let's get specific. Here's how I'd build this on AWS, and why each service is the right tool for each job.
+Let's get specific. Here's how I'd build this on AWS, and why each service is the right tool for each job.
 
 ### Why These Services
 
@@ -71,7 +71,7 @@ flowchart LR
 
 **Step 1: Textract call.** When a card image lands in the storage bucket, the system wakes up automatically and passes it to Amazon Textract for analysis. The key choice is requesting FORMS extraction rather than basic text recognition. FORMS mode is specifically designed for documents where labels and values are paired together ("Member ID: XGP928471003"). Basic text recognition would return a jumble of characters with no structure; FORMS mode returns an organized list of matched label-value pairs. Because insurance cards are single-page, results come back immediately (under 3 seconds in practice). Multi-page documents would require a different, background-processing approach. Skip this step or use basic OCR, and everything downstream breaks: you'd be trying to reconstruct structure from unstructured text, and accuracy would drop significantly.
 
-```
+```pseudocode
 FUNCTION extract_card(bucket, key):
     // Send the card image to Textract for intelligent analysis.
     // "bucket" is the name of the storage container; "key" is the filename/path of the image.
@@ -85,7 +85,7 @@ FUNCTION extract_card(bucket, key):
 
 **Step 2: Parse key-value pairs.** Textract doesn't return a tidy spreadsheet. It returns a list of text building blocks, each one representing a detected region of the image, connected by links that indicate which label belongs with which value. This step walks through that structure and assembles the matched pairs. Think of it as sorting through a pile of index cards where some say "Member ID" and others say "XGP928471003", following the arrows that connect each label to its corresponding answer. The output is a clean map of label text to value text, each accompanied by a confidence score reflecting how clearly Textract was able to read it. Skip this step and you're left with raw building blocks that no downstream system can use.
 
-```
+```pseudocode
 FUNCTION parse_key_value_pairs(textract_response):
     // Pull out the full list of detected text regions ("blocks") from Textract's response.
     // Each block represents one piece of detected content: a word, a label, or a value.
@@ -146,7 +146,7 @@ FUNCTION parse_key_value_pairs(textract_response):
 }
 ```
 
-```
+```pseudocode
 FUNCTION normalize_fields(raw_kv):
     // Start with an empty result set. We'll populate it with standardized field names.
     normalized = empty map
@@ -176,7 +176,7 @@ FUNCTION normalize_fields(raw_kv):
 
 **Step 4: Confidence gating.** Not every field Textract reads is equally reliable. Glare across the member ID, a worn digit, a card photographed at a steep angle: all of these reduce confidence in the extracted value. This step applies a quality gate: any field below 90% confidence is held back from automatic processing and routed to a human for verification. This matters both for accuracy and for compliance. A wrong member ID on a claim triggers denied reimbursement, billing investigations, and patient frustration. The cost of a human taking five seconds to confirm a borderline value is far lower than the cost of a wrong value silently becoming a fact in your systems of record. The full human review queue that these flagged fields feed into is built in Recipe 1.6.
 
-```
+```pseudocode
 CONFIDENCE_THRESHOLD = 90.0  // fields below 90% confidence go to human review, not directly to the database
 
 FUNCTION flag_low_confidence(fields):
@@ -209,7 +209,7 @@ FUNCTION flag_low_confidence(fields):
 
 **Step 5: Store results.** The final step writes everything to the database: the high-confidence fields ready for immediate use, the flagged fields awaiting human verification, and a timestamp for the audit trail. Every record includes a `needs_review` flag so downstream systems and review queues can instantly identify cards that require attention. In healthcare, every system touching PHI needs an auditable record: what was processed, when, and what came out. This step creates that record. It also enables reprocessing: if Textract releases a new model version with improved accuracy, you can identify historical scans with low-confidence fields and run them through again.
 
-```
+```pseudocode
 FUNCTION store_result(image_key, fields, flagged):
     // Write a complete, permanent record of this extraction to the database.
     // This record is the authoritative output of the pipeline for this card scan.
@@ -251,9 +251,9 @@ FUNCTION store_result(image_key, fields, flagged):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 1.5–3 seconds |
-| Field extraction accuracy | 95–99% for printed cards |
-| Confidence score (clean cards) | 95–99.5% per field |
+| End-to-end latency | 1.5-3 seconds |
+| Field extraction accuracy | 95-99% for printed cards |
+| Confidence score (clean cards) | 95-99.5% per field |
 | Cost per card | ~$0.002 (Textract + Lambda + DynamoDB) |
 | Throughput | ~50 cards/second (Lambda concurrency limited) |
 
@@ -300,6 +300,8 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **AWS Solutions and Blogs:**
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
 - [Automating Paper-to-Electronic Healthcare Claims Processing with AWS](https://aws.amazon.com/blogs/storage/automating-paper-to-electronic-healthcare-claims-processing-with-aws): End-to-end architecture for digitizing paper healthcare claims
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations). Also, "### Code" heading should be "### Pseudocode Walkthrough" per RECIPE-GUIDE spec. -->
 
 --- 
 

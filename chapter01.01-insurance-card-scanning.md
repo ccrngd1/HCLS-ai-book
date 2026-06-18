@@ -65,11 +65,13 @@ Here's the honest list of things that will humble you when you first build this:
 
 The good news: for standard, well-photographed printed cards, modern systems achieve 95-99% field accuracy. That's good enough for most healthcare workflows when paired with a confidence score and a human review queue for the uncertain cases.
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. "General Architecture Pattern" should be H2, not H3 under "The Technology." Currently nested as a subsection. -->
+
 ### The General Architecture Pattern
 
 At a conceptual level, the pipeline looks like this:
 
-```
+```text
 [Capture] → [OCR / KVP Extraction] → [Normalize Fields] → [Store] → [Expose via API]
 ```
 
@@ -104,7 +106,7 @@ The part that surprised me: front-of-card processing gets you maybe 70% of what 
 ## Related Recipes
 
 - **Recipe 1.2 (Patient Intake Form Digitization):** Extends this single-image pattern to multi-section forms with tables and checkboxes
-- **Recipe 1.4 (Prior Auth Document Processing):** Uses the same Textract FORMS foundation but on multi-page documents
+- **Recipe 1.4 (Prior Auth Document Processing):** Uses the same forms extraction foundation but on multi-page documents
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Builds the human review queue that confidence flagging in this recipe feeds into
 - **Recipe 8.1 (Insurance Eligibility Matching):** Consumes the structured output from this recipe to verify coverage in real time
 
