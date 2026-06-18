@@ -42,7 +42,7 @@ Simple key-value extraction works on a mental model of "there's a label somewher
 
 Tables are different. In a medication table, the structure is:
 
-```
+```text
 | Medication Name | Dosage  | Frequency    | Prescribing Physician |
 |-----------------|---------|--------------|----------------------|
 | Metformin       | 500mg   | Twice daily  | Dr. Chen             |
@@ -78,7 +78,7 @@ Handwriting in mixed documents is a real problem, and I want to be direct about 
 
 At a conceptual level, the multi-page intake form pipeline looks like this:
 
-```
+```text
 [Ingest] → [Submit Job] → [Wait for Completion] → [Retrieve Pages] → [Parse & Classify] → [Normalize] → [Store]
 ```
 
@@ -104,13 +104,14 @@ That's the pattern. The async job-based shape is the key conceptual shift from R
 
 ## The Honest Take
 
-The async pattern is architecturally more complex than the synchronous call from Recipe 1.1, but don't let that scare you. The SNS trigger model is actually quite clean once you've built it: two Lambdas with one-thing-each responsibility, connected by a notification. It's easier to debug than you might expect because each Lambda has a narrow scope.
+The async pattern is architecturally more complex than the synchronous call from Recipe 1.1, but don't let that scare you. The event-driven model is actually quite clean once you've built it: two small functions with one-thing-each responsibility, connected by a notification. It's easier to debug than you might expect because each function has a narrow scope. (For the specific AWS services and their quirks, see the [Architecture companion](chapter01.02-architecture).)
 
-The thing that will surprise you is the Textract service role. Textract needs its own IAM role to publish to your SNS topic; it can't use your Lambda's execution role. This is easy to miss because it's not how most AWS services work. You'll know you got it wrong when your jobs submit successfully but completion notifications never arrive. Check the IAM PassRole permission on your Lambda and make sure the Textract service role has `sns:Publish` on your topic.
+<!-- TODO (TechWriter): The Honest Take paragraph 2 contains AWS-specific implementation detail (Textract service role, IAM PassRole, sns:Publish). Consider generalizing to a vendor-agnostic "service role" gotcha or moving the detail to the architecture companion. -->
+The thing that will surprise you is the extraction service role. The document processing service needs its own dedicated role to publish to your notification topic; it can't use your function's execution role. This is easy to miss because it's not how most services work. You'll know you got it wrong when your jobs submit successfully but completion notifications never arrive. Check the role-passing permission on your function and make sure the extraction service role has publish access on your topic.
 
 Table parsing is more reliable than I expected for printed forms. The failure mode isn't random errors in cells; it's structural: entire rows occasionally get merged together, especially when table lines are faint in the scan. The solution is scan quality, not code changes. A decent document scanner at 300 DPI produces much better results than a phone photograph of a paper form.
 
-Checkbox detection is the pleasant surprise. I expected it to be the weakest part of this recipe and it ended up being the most reliable. Textract correctly classifies selected vs. unselected at 97-99% accuracy for standard printed checkboxes. The failure cases are mostly unusual marking styles (patients who put a number rather than an X, or who circled the entire question instead of the box). You'll see these in your flagged fields, which is the right outcome.
+Checkbox detection is the pleasant surprise. I expected it to be the weakest part of this recipe and it ended up being the most reliable. Modern extraction services correctly classify selected vs. unselected at 97-99% accuracy for standard printed checkboxes. The failure cases are mostly unusual marking styles (patients who put a number rather than an X, or who circled the entire question instead of the box). You'll see these in your flagged fields, which is the right outcome.
 
 The honest scope boundary: this recipe handles printed text well and checkboxes well. It handles tables reasonably well. It handles handwriting with a shrug and an honest confidence score. If your patient population trends toward handwritten completion (older patients in some demographics tend to fill forms in cursive), your flagged field rate will be higher than the benchmarks above. That's not a failure; that's the confidence gating doing its job. Build the review queue from Recipe 1.6 before you go to production.
 
@@ -119,8 +120,8 @@ The honest scope boundary: this recipe handles printed text well and checkboxes 
 ## Related Recipes
 
 - **Recipe 1.1 (Insurance Card Scanning):** The synchronous single-page foundation this recipe builds on. Start there if you haven't yet: the field normalization and confidence gating patterns carry forward directly.
-- **Recipe 1.3 (Lab Requisition Form Extraction):** The next step up in complexity. Adds Amazon Comprehend Medical on top of the Textract foundation established here: extracting ICD-10 codes and clinical entities from the free-text sections that this recipe intentionally leaves unparsed.
-- **Recipe 1.6 (Handwritten Clinical Note Digitization):** Addresses the handwriting problem this recipe sidesteps. Builds the full tiered confidence pipeline and Amazon A2I human review queue that the flagged fields from this recipe feed into.
+- **Recipe 1.3 (Lab Requisition Form Extraction):** The next step up in complexity. Adds medical NLP on top of the document extraction foundation established here: extracting ICD-10 codes and clinical entities from the free-text sections that this recipe intentionally leaves unparsed.
+- **Recipe 1.6 (Handwritten Clinical Note Digitization):** Addresses the handwriting problem this recipe sidesteps. Builds the full tiered confidence pipeline and human review queue that the flagged fields from this recipe feed into.
 - **Recipe 8.1 (Insurance Eligibility Matching):** Consumes the member ID and group number from the insurance section of this recipe to verify coverage in real time.
 
 ---
