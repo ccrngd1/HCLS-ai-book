@@ -1,4 +1,16 @@
 <!--
+TechEditor pass (v12 - archsplit polish) - 2026-06-17
+
+Post-split seam check. The main recipe was mechanically split from its
+architecture companion (chapter02.05-architecture.md). Verified:
+- General Architecture Pattern section: no dangling AWS references. ✓
+- The Honest Take section: no dangling AWS references. ✓
+- Architecture callout: well-placed between General Architecture and Honest Take. ✓
+- One fix: added `text` language tag to the pipeline-diagram fence (line ~491).
+- No em dashes (U+2014): 0. No en dashes (U+2013): 0.
+- All TODO markers preserved.
+- No structural changes, no new claims, no content moves.
+
 TechEditor pass (v11) - 2026-05-31
 
 No file content changes. Editorial checklist confirmed passing (em dashes=0,
@@ -488,7 +500,7 @@ The model is a writer, not a decision maker. Everything it says has to come from
 
 At the conceptual level, the pipeline looks like this:
 
-```
+```text
 [Visit Ends / Note Signed]
     → [Pull Encounter Data]
     → [Extract Structured Summary Object]

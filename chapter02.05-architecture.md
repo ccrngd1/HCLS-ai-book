@@ -1,3 +1,18 @@
+<!--
+TechEditor pass (v1 - archsplit polish) - 2026-06-17
+
+Post-split seam check. This file was mechanically split from the main recipe.
+Verified:
+- Backlink header opens cleanly with link back to main recipe. ✓
+- Section structure matches RECIPE-GUIDE architecture-companion spec. ✓
+- Seven pseudocode fences were bare (no language tag); added `pseudocode` to
+  all seven, matching Chapter 1 convention.
+- mermaid and json fences already tagged. ✓
+- No em dashes (U+2014): 0. No en dashes (U+2013): 0.
+- All TODO markers preserved.
+- No structural changes, no new claims, no content moves.
+-->
+
 # Recipe 2.5 Architecture and Implementation: After-Visit Summary Generation
 
 *Companion to [Recipe 2.5: After-Visit Summary Generation](chapter02.05-after-visit-summary-generation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -164,7 +179,7 @@ flowchart TB
      note-signed events produce duplicate summaries, duplicate LLM charges, and
      duplicate patient deliveries. See Finding A3. -->
 
-```
+```pseudocode
 FUNCTION receive_note_signed_event(event):
     // The event payload from EventBridge. Fields vary by EHR integration.
     // event.encounter_id:     FHIR Encounter ID
@@ -195,7 +210,7 @@ FUNCTION receive_note_signed_event(event):
 
 **Step 2: Pull encounter data from the EHR.** Retrieve everything from the visit that a patient would need to know about. The scope is intentionally narrow: today's encounter, not the patient's full chart. Narrow scope keeps cost down, keeps latency low, and keeps the "minimum necessary" HIPAA principle satisfied.
 
-```
+```pseudocode
 FUNCTION pull_encounter_data(patient_id, encounter_id):
     // Fetch the FHIR resources related to this specific encounter.
     // HealthLake supports the _revinclude parameter to pull everything that references an encounter.
@@ -251,7 +266,7 @@ FUNCTION pull_encounter_data(patient_id, encounter_id):
      Consider noting the byte-safe pattern (encode to utf-8, slice bytes, decode
      errors=ignore) for multilingual use cases. See Finding 4 in the code review. -->
 
-```
+```pseudocode
 FUNCTION extract_summary_object(encounter_data):
     // Start with what's already structured in the EHR.
     // Medication changes from MedicationRequest resources:
@@ -332,7 +347,7 @@ FUNCTION extract_summary_object(encounter_data):
 
 **Step 4: Generate the patient-facing summary.** Now the writing step. Given the structured summary object and the patient's preferences, produce prose at the target reading level in the target language. Per-section generation is often cleaner than single-prompt; it lets you enforce the required structure and handle section-level failures independently.
 
-```
+```pseudocode
 FUNCTION generate_summary(summary_object, patient_prefs):
     // Build a prompt that enforces:
     // - Reading level target
@@ -407,7 +422,7 @@ FUNCTION generate_summary(summary_object, patient_prefs):
      This pairs with CODE REVIEW Finding 3, where the Python orchestrator currently
      auto-delivers when attempts are exhausted on non-high-risk visits. -->
 
-```
+```pseudocode
 FUNCTION validate_summary(summary_text, provenance, summary_object):
     unverified = empty list
     
@@ -452,7 +467,7 @@ FUNCTION validate_summary(summary_text, provenance, summary_object):
 
 **Step 6: Apply a readability check.** Even with a reading-level instruction in the prompt, outputs drift. A readability check closes the loop: compute a Flesch-Kincaid Grade Level on the generated text, and if it exceeds the patient's target, regenerate with a stronger simplification instruction. This is cheap (the formula is just arithmetic) and it catches reading-level failures that the model itself wouldn't notice.
 
-```
+```pseudocode
 FUNCTION check_readability(summary_text, target_grade_level):
     // Flesch-Kincaid Grade Level formula:
     // 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
@@ -496,7 +511,7 @@ If the readability check fails, the pipeline loops back to Step 4 with an extra 
      covering HIPAA consent, content-minimization best practice, lack of SMS
      end-to-end encryption, and jurisdiction-specific overlays. See Finding S1. -->
 
-```
+```pseudocode
 FUNCTION render_and_deliver(summary_id, summary_text, patient_prefs):
     // Render all applicable formats based on patient preferences
     rendered = empty dict
