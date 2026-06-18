@@ -104,9 +104,7 @@ flowchart TD
 | **Amazon CloudWatch** | Monitors model latency, prediction drift, scoring throughput, and alerting |
 | **AWS KMS** | Manages encryption keys for all data stores and model artifacts |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Assemble patient timelines.** The foundation of any timing model is a complete, time-ordered sequence of clinical events for each patient. This step pulls data from multiple source systems (EHR, claims, pharmacy, labs) and aligns everything on a unified timeline. Each event gets a timestamp, an event type, and relevant attributes. The output is one record per patient containing their full event history, sorted chronologically. This is the hardest engineering step in the entire pipeline. Healthcare data is fragmented across systems with different identifiers, different time zones, and different update frequencies. Getting this right is 60% of the work. Skip this step or do it poorly, and your model trains on incomplete or misaligned data, producing timing predictions that are systematically wrong.
 
@@ -494,6 +492,8 @@ Without provisioned concurrency, Lambda cold starts in VPC can push real-time pa
 - Populations underrepresented in training data produce poorly calibrated timing estimates
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (model monitoring, A/B holdout ethics, integration testing with EHR, etc.). -->
 
 ## Variations and Extensions
 
