@@ -210,7 +210,7 @@ flowchart TB
 
 **Step 1: Ingest and normalize an audit event from the EHR.** The EHR audit feed publishes events on a near-real-time cadence. The ingest Lambda parses the source-specific format (Epic, Cerner, MEDITECH each differ), validates the schema, and writes a canonical event to the stream.
 
-```
+```pseudocode
 FUNCTION on_ehr_audit_event(raw_event, source_format):
     // Parse the source-specific payload. EHR audit log formats vary
     // substantially by vendor; the parser is selected per source.
@@ -259,7 +259,7 @@ FUNCTION on_ehr_audit_event(raw_event, source_format):
 
 **Step 2: Enrich the event with identity, schedule, care-team, and sensitivity context.** The enrichment Lambda joins the canonical event against the identity, scheduling, care-team, and patient-flag stores. Enrichment quality drives detection quality.
 
-```
+```pseudocode
 FUNCTION enrich(event):
     // Identity context. HRIS data refreshed nightly into a fast-lookup store.
     identity = DynamoDB.GetItem(
@@ -326,7 +326,7 @@ FUNCTION enrich(event):
 
 **Step 3: Run the rules-engine detector.** The rules engine evaluates the explicit policy rules. Each rule is versioned, has a precise definition, and produces a flag with an explanation.
 
-```
+```pseudocode
 FUNCTION run_rules_engine(event):
     flags = []
 
@@ -439,7 +439,7 @@ FUNCTION run_rules_engine(event):
 
 **Step 4: Compute per-user behavioral baselines and detect deviations.** Per-user rolling-window features are compared to the user's historical baseline and to peer-group distributions. A user whose behavior shifts substantially gets a deviation score.
 
-```
+```pseudocode
 FUNCTION run_baseline_detector(event):
     workforce_id = event.workforce_id
 
@@ -515,7 +515,7 @@ FUNCTION run_baseline_detector(event):
 
 **Step 5: Run the graph-based detector.** The relationship graph captures the documented connections between workforce members and patients. The detector evaluates whether the access has any plausible relationship path through the graph. Patterns where a user accesses patients with no graph connection to their documented work are flagged.
 
-```
+```pseudocode
 FUNCTION run_graph_detector(event):
     // Query Neptune for any documented care-relationship path.
     paths = Neptune.Query(f"""
@@ -588,7 +588,7 @@ FUNCTION run_graph_detector(event):
 
 **Step 6: Combine detector outputs into a composite case score.** Each detector produces a score (rules, baseline deviation, graph relationship, sequence model). The composite combines them with calibrated weights. Calibration ensures that a composite score of 0.8 corresponds to roughly the same probability of being a confirmed violation across cohorts.
 
-```
+```pseudocode
 FUNCTION composite_score(event, rules_flags, baseline_output, graph_output, sequence_output):
     // Weight detectors. Weights are tuned per cohort using historical
     // adjudicated cases.
@@ -646,7 +646,7 @@ FUNCTION composite_score(event, rules_flags, baseline_output, graph_output, sequ
 
 **Step 7: Build the investigator-facing case package.** The case builder groups related scored events into a single case (the same user repeatedly accessing the same patient becomes one case, not many), assembles the supporting evidence, generates the LLM narrative, and applies suppression rules.
 
-```
+```pseudocode
 FUNCTION build_case(score_record):
     // Group: does this score belong to an existing open case?
     existing_case = find_existing_case(
@@ -770,7 +770,7 @@ FUNCTION build_case(score_record):
 
 **Step 8: Capture investigator outcomes and feed the learning loop.** The privacy office investigator adjudicates the case. Outcomes flow back as labels for retraining, suppression rules, and threshold tuning.
 
-```
+```pseudocode
 FUNCTION on_investigator_action(action):
     case = DynamoDB.GetItem(
         table = "case-state",
