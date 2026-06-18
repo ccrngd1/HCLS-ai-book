@@ -1,3 +1,11 @@
+<!--
+Editorial pass (TechEditor, 2026-06-17):
+- Post-split polish. Verified backlink header opens cleanly and links to main recipe.
+- Added `pseudocode` language tags to all 7 walkthrough code blocks (bare ``` violations).
+- Final sweep: zero em dashes, zero en dashes, zero bare code block openings, all TODO markers
+  preserved with finding IDs on same line, section order matches RECIPE-GUIDE architecture companion spec.
+-->
+
 # Recipe 2.4 Architecture and Implementation: Prior Authorization Letter Generation
 
 *Companion to [Recipe 2.4: Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -101,7 +109,7 @@ flowchart TB
 
 **Step 1: Receive the prior auth request and identify context.** The trigger for the pipeline comes from the clinician's workflow: they order a service that requires prior authorization. The EHR or practice management system sends the request to your pipeline with the essentials: patient ID, payer ID, requested service code, ordering provider. The first step stores this context and initializes the workflow state. <!-- TODO: expert review (A4) flagged that duplicate PA submissions from the EHR (retry on perceived timeout, user double-click, duplicate HL7 ADT events) will create two cases with two UUIDs, two full pipeline runs, and two letters potentially submitted to the payer. Suggest adding an idempotency step: derive a deterministic request fingerprint from `(patient_id, payer_id, service_code, diagnosis_code, order_datetime)` and use a DynamoDB conditional write (`attribute_not_exists(fingerprint)`) before starting a new case. If the fingerprint already exists, return the existing case_id instead of starting a second Step Functions execution. -->
 
-```
+```pseudocode
 FUNCTION receive_pa_request(request):
     // The request payload includes everything we need to kick off the pipeline.
     // request.patient_id:        the patient this is for
@@ -136,7 +144,7 @@ FUNCTION receive_pa_request(request):
 
 **Step 2: Retrieve the payer's coverage policy and extract criteria.** This is where you turn a payer's PDF medical policy into a structured checklist of criteria. Because policies change, this is a retrieval-plus-extraction step each time (though you can cache heavily). The criteria extraction uses the LLM to parse the policy prose into a structured list of conditions that the patient must meet.
 
-```
+```pseudocode
 FUNCTION retrieve_and_extract_criteria(payer_id, service_code, diagnosis_code):
     // First, retrieve the relevant policy from the payer-policies knowledge base.
     // The knowledge base contains the current medical policies for all contracted payers.
@@ -193,7 +201,7 @@ FUNCTION retrieve_and_extract_criteria(payer_id, service_code, diagnosis_code):
 
 **Step 3: Retrieve patient clinical data and extract relevant facts.** Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts. <!-- TODO: expert review (S2) flagged that the pseudocode below pulls two years of clinical data across six FHIR resource types plus unstructured notes, then sends that payload to the model in a loop (one call per criterion). That is the opposite of HIPAA minimum necessary. A production implementation should scope the FHIR query by specialty-relevant resource categories and a shorter default window (12 months, extendable if a specific criterion demands longer history) and consider per-call redaction of identifiers (patient name, MRN, DOB) the LLM does not need to see. Add a paragraph here framing the production scoping requirement without rewriting the pseudocode. -->
 
-```
+```pseudocode
 FUNCTION retrieve_patient_facts(patient_id, criteria, diagnosis_code):
     // Pull the patient's relevant clinical data. The scope of "relevant" is driven
     // by what criteria we need to satisfy.
@@ -260,7 +268,7 @@ FUNCTION retrieve_patient_facts(patient_id, criteria, diagnosis_code):
 
 **Step 4: Map facts to criteria and identify gaps.** With criteria on one side and facts on the other, determine which criteria are satisfied, which have partial evidence, and which are unmet. This mapping is the substance of the prior auth argument. Gaps identified here are either flagged for the physician to address before submission or become reasons to not submit at all.
 
-```
+```pseudocode
 FUNCTION map_facts_to_criteria(criteria, facts):
     // For each criterion, assess whether the available facts satisfy it.
     // This is mostly rule-based with LLM assistance for judgment calls.
@@ -328,7 +336,7 @@ FUNCTION map_facts_to_criteria(criteria, facts):
 
 **Step 5: Retrieve supporting evidence for citations.** Based on the condition and requested service, pull relevant clinical guidelines and literature from the evidence knowledge base. These will be cited in the letter to anchor the request in established medical practice. The key architectural rule: every citation in the letter comes from this retrieval, never from the model's prior knowledge.
 
-```
+```pseudocode
 FUNCTION retrieve_supporting_evidence(diagnosis_code, service_code, key_facts):
     // Retrieve guidelines and literature that support the use of this service 
     // for this diagnosis in patients like this one.
@@ -372,7 +380,7 @@ FUNCTION retrieve_supporting_evidence(diagnosis_code, service_code, key_facts):
 
 **Step 6: Generate the letter narrative.** Finally, the actual letter generation. All inputs are now structured: the criteria with status, the supporting facts with provenance, the citations with verified references, and the payer's expected letter format. The LLM weaves these into prose that fits the payer's template and reads as persuasive clinical writing.
 
-```
+```pseudocode
 FUNCTION generate_letter(case, mappings, citations, patient_info, provider_info, payer_info):
     // Build the generation prompt. This is where prompt engineering lives.
     // The prompt enforces: use only provided facts, cite only provided evidence,
@@ -444,7 +452,7 @@ FUNCTION generate_letter(case, mappings, citations, patient_info, provider_info,
 
 **Step 7: Validate claims and prepare for physician review.** Before the letter goes to the physician, a validation step checks that every factual claim in the letter traces back to a source fact and that every citation matches a retrieved reference. This catches hallucinations the model may have introduced despite the prompt constraints. <!-- TODO: expert review (A3) flagged that `REQUIRES_REGENERATION` does not define retry semantics. A naive implementation will loop indefinitely at the same temperature and prompt, burning cost without changing outputs. Suggest adding guidance: cap retries at 2-3 attempts, vary the strategy on each retry (temperature=0 for the first retry, then an explicit negative-constraint prompt on the second retry naming the previously-fabricated claims, then escalate to human composition after exhaustion), track retry counts per case in DynamoDB, and emit a metric when a case exhausts retries. -->
 
-```
+```pseudocode
 FUNCTION validate_letter(letter, provenance, inputs):
     // Check that every claimed fact exists in the inputs
     unverified_claims = empty list

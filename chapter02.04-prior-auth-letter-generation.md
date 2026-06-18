@@ -1,4 +1,11 @@
 <!--
+Editorial pass 4 (TechEditor, 2026-06-17):
+- Post-split polish. Verified architecture callout is well placed at end of General Architecture Pattern.
+- Confirmed The Honest Take contains zero AWS service references (no dangling pointers to moved content).
+- Added `text` language tag to the pipeline-flow code block (bare ``` violation).
+- Final sweep: zero em dashes, zero en dashes, zero bare code block openings, header hierarchy intact,
+  all existing TODO markers preserved with finding IDs on same line.
+
 Editorial pass 3 (TechEditor, 2026-05-31):
 - Softened "embarrassingly good" to "unusually strong" in The Honest Take opening per voice review finding V3. The original was borderline hyperbole for a technical cookbook; the replacement keeps the same point in a register consistent with the measured tone of the surrounding paragraphs.
 - Final verification: zero em dashes (U+2014, U+2013), header hierarchy intact (H1 title only, H2 major sections, H3 subsections), RECIPE-GUIDE section order preserved, all TODO markers from prior passes intact and properly formatted with finding IDs on the same line, vendor balance holds (~70/30), no documentation-voice or announcement-voice patterns, no fabricated URLs, Python companion callout present, navigation footer intact.
@@ -125,7 +132,7 @@ Each of these lives in a different system, has a different update cadence, and r
 
 At the conceptual level, the pipeline looks like this:
 
-```
+```text
 [Prior Auth Request Submitted] 
     → [Identify Payer + Requested Service] 
     → [Retrieve Payer Coverage Policy] 
