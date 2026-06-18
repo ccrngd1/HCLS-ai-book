@@ -1,192 +1,34 @@
 <!--
-TechEditor pass v1 (2026-05-15):
-- Style hygiene: zero em dashes confirmed, en dashes restricted to numeric ranges, header
-  hierarchy clean (H1 -> H2 -> H3 with one H4 under Code), all fenced blocks tagged where
-  applicable, voice and 70/30 vendor balance preserved.
-- Content untouched per persona constraints (no new claims, no wholesale rewrites).
-- Inline TODOs added for the HIGH and MEDIUM technical findings raised in
-  reviews/chapter03.02-expert-review.md so the TechWriter can address them in a single
-  coordinated pass on the patient-baseline subsystem and the feedback-loop artifacts.
-
-TechEditor pass v2 (2026-05-15):
-- Re-ran the editorial checklist; v1 findings hold. No additional in-place fixes were
-  warranted.
-- Re-confirmed character-level hygiene against Chapter 1 / Recipe 3.1 precedent: 0 em
-  dashes, 28 en dashes (all in numeric ranges in the cost row, performance benchmarks
-  table, and implementation-time tiers), 0 curly quotes, 0 horizontal ellipsis, 0
-  non-breaking spaces, 0 trailing whitespace, 0 stray double-spaces in prose.
-- Re-confirmed code-fence convention matches Chapter 1 published precedent: `json` and
-  `mermaid` blocks are language-tagged; pseudocode and ASCII-art diagram fences are
-  intentionally untagged (Chapter 1 sets this convention). Inline backticks are applied
-  consistently on identifiers, API method names, and configuration constants.
-- Re-confirmed link form: every URL in Additional Resources is well-formed and points
-  to a known-real domain (docs.aws.amazon.com, github.com/aws, github.com/aws-samples,
-  github.com/shap/shap, github.com/synthetichealth/synthea, ahrq.gov, pcori.org,
-  en.wikipedia.org). The four HTML-comment forward-placeholder TODOs that flag
-  unverified citations (no-show reduction percentage, performance benchmark ranges,
-  transportation intervention effectiveness, additional aws-samples / blog references)
-  are the right discipline; resolve before publication.
-- Re-confirmed RECIPE-GUIDE compliance: all required sections present and in canonical
-  order (The Problem -> The Technology -> General Architecture Pattern -> The AWS
-  Implementation [Why These Services -> Architecture Diagram -> Prerequisites ->
-  Ingredients -> Code -> Expected Results] -> Why This Isn't Production-Ready -> The
-  Honest Take -> Variations and Extensions -> Related Recipes -> Additional Resources
-  -> Estimated Implementation Time -> Tags -> Navigation footer).
-- Re-confirmed voice and the 70/30 vendor balance: the conceptual sections (Problem,
-  Technology, General Architecture Pattern) are vendor-neutral; AWS service names enter
-  at "The AWS Implementation" and stay there. No documentation-voice, no marketing
-  language, no LinkedIn-influencer phrasing, no announcement statements.
-- TODO inventory unchanged from v1: 19 markers across the file. Three are inline `//`
-  comments inside pseudocode blocks (the A2 MIN_BASELINE_OBSERVATIONS reminder in Step
-  3, the A1 baseline-update reminder in Step 5, and the A5 temporal-split reminder in
-  the retrain block); the rest are HTML-comment TODOs. All are owned by the TechWriter
-  and are tracked against findings in reviews/chapter03.02-expert-review.md and
-  reviews/chapter03.02-code-review.md. The single sentence-fragment TODO in The Problem
-  section (the trailing clause about double-booking and waiting patients) requires a
-  TechWriter call on intended meaning; it is flagged rather than guessed at.
-- The file is ready for the TechWriter coordinated pass on the patient-baseline
-  subsystem (A1 + A2 fixes, propagated to the Python companion's
-  `_load_or_create_baseline` and `_update_patient_baseline`) and the feedback-loop
-  artifacts (A3 idempotency, A4 DLQs, A5 temporal validation, A6 feature-contribution
-  reframing). Editorial polish is otherwise complete.
-
-TechEditor pass v3 (2026-05-15):
-- Re-verified character-level hygiene with an encoding-aware UTF-8 byte-decoding
-  tool to confirm v2 counts: 0 em dashes (U+2014), 28 en dashes (U+2013) all
-  contained within numeric ranges (cost row L56 + L365, performance-benchmarks
-  table L829-L834, implementation-time tiers L979-L981), 0 curly single quotes,
-  0 curly double quotes, 0 horizontal ellipsis, 0 non-breaking spaces. Earlier
-  console-encoding noise on the en-dash count is resolved.
-- Re-confirmed header hierarchy: H1=1 (title), H2=11 (top-level sections), H3=13
-  (subsections), H4=1 (the intentional `Walkthrough` under `Code`, matching the
-  Chapter 1 published precedent), H5=0. No skipped levels.
-- Re-confirmed TODO inventory: 23 line-level TODO occurrences (the v2 count of 19
-  reflected unique markers; the 23 includes inline pseudocode TODO comments and
-  the references to TODO IDs inside this comment block). All markers are owned
-  by the TechWriter and trace to specific findings in the expert review and code
-  review. Nothing in the editorial scope.
-- The eight items in the editorial checklist (grammar/mechanics, code formatting,
-  link verification, header hierarchy, readability, voice drift, RECIPE-GUIDE
-  compliance, vendor balance) are clean. No structural reordering, no new claims,
-  no in-place rewrites required.
-- Final state: editorial polish is complete and re-verified. The remaining work
-  is technical. The TechWriter should pick up the A1 + A2 coordinated pass on the
-  patient-baseline subsystem (prose + pseudocode + Python companion) and address
-  A3-A6, S1-S4, and N1-N2 in the same arc. The four HTML-comment forward
-  placeholders for unverified industry citations (no-show reduction percentage,
-  performance benchmark ranges, transportation intervention effectiveness,
-  additional aws-samples / blog references) should be resolved before the recipe
-  goes to publication, but they read cleanly as forward placeholders in the
-  meantime.
-
-TechEditor pass v4 (2026-05-15):
-- Re-ran the full editorial checklist independently of prior passes. All counts
-  reproduce: 0 em dashes (U+2014), 28 en dashes (U+2013) all within numeric ranges
-  (verified line-by-line: L85 cost row, L394 cost-estimate row, L858-L863 performance
-  benchmarks table, L1008-L1010 implementation-time tiers), 0 curly quotes, 0
-  ellipsis characters, 0 non-breaking spaces, 0 trailing whitespace lines.
-- Re-confirmed code-fence inventory: 10 fenced blocks total. 1 mermaid (architecture
-  diagram), 2 json (sample intervention-queue and investigation-queue records), 7
-  untagged (pseudocode and ASCII-art pipeline diagram). Cross-checked against
-  Chapter 1.01 published precedent (1 mermaid, 3 json, 6 untagged): the convention
-  matches. Pseudocode and ASCII-art fences are intentionally untagged per the
-  Chapter 1 baseline.
-- Re-confirmed link inventory: 28 markdown links total. 24 absolute URLs to known
-  domains (docs.aws.amazon.com x8, aws.amazon.com x4, github.com/aws x2,
-  github.com/aws-samples x2, github.com/aws/amazon-sagemaker-examples/tree/main x1,
-  github.com/synthetichealth/synthea x2, github.com/shap/shap x1, ahrq.gov x1,
-  pcori.org x1, en.wikipedia.org x1). 4 internal cross-references (Recipe 3.1
-  duplicate-claim-detection, chapter03-preface, chapter03.03-billing-code-anomalies,
-  chapter03.02-python-example). All well-formed; no fabricated GitHub URLs.
-- Re-confirmed header hierarchy holds: 1 H1, 11 H2, 13 H3, 1 H4 (Walkthrough under
-  Code), 0 H5. No skipped levels.
-- Re-confirmed voice and 70/30 vendor balance hold. Conceptual sections (Problem,
-  Technology, General Architecture Pattern) are vendor-neutral; AWS service names
-  appear at "The AWS Implementation" and stay there. No documentation-voice, no
-  marketing language, no LinkedIn-influencer phrasing.
-- TODO inventory is stable at 27 line-level occurrences (matches v3 expectation
-  once meta-references inside this comment block are counted). All flagged as
-  TechWriter follow-up; none are in editorial scope.
-- No in-place edits warranted in this iteration. The recipe is editorial-ready;
-  the open work is the TechWriter's coordinated pass on the patient-baseline
-  subsystem (A1 + A2), the feedback-loop artifacts (A3 idempotency, A4 DLQs,
-  A5 temporal validation, A6 feature-contribution reframing), the PHI-handling
-  additions (S1 high-stigma specialty disclosure, S2 subgroup-data governance,
-  S3 per-consumer IAM scoping, S4 real-time-scoring egress), the VPC-endpoint
-  precision (N1, N2), the publication-readiness polish (V1 future-dated timestamps,
-  V2 alpha decay-factor intuition, V3 industry-figure citation verification), and
-  the sentence-fragment clarification in The Problem section ("and a legitimate
-  reason someone had to wait"). Coordinate the Python-companion update with the
-  A1 + A2 pseudocode change in a single pass.
-
-TechEditor pass v5 (2026-05-15):
-- Re-ran the full editorial checklist a fifth time and confirmed the v4 state
-  reproduces exactly: 0 em dashes (U+2014), 28 en dashes (U+2013) all in numeric
-  ranges (cost row L125, cost-estimate row L434, performance benchmarks L898-L903,
-  implementation-time tiers L1048-L1050), 0 curly quotes, 0 ellipsis chars, 0
-  non-breaking spaces, 0 trailing whitespace.
-- Re-confirmed structure: 1 H1, 11 H2, 13 H3, 1 H4 (Walkthrough under Code), 0 H5;
-  10 fenced blocks (1 mermaid, 2 json, 7 untagged for pseudocode and ASCII-art per
-  Chapter 1 precedent); 28 markdown links (24 absolute across docs.aws.amazon.com,
-  aws.amazon.com, github.com, ahrq.gov, pcori.org, en.wikipedia.org and 4 internal
-  cross-references; no fabricated URLs).
-- Re-confirmed TODO inventory: 28 line-level occurrences. All trace to HTML
-  comments owned by the TechWriter (the A1, A2, A3, A4, A5, A6, S1 callouts and
-  the sentence-fragment flag in The Problem) or to inline pseudocode `//` comments
-  (the A1, A2, A5 reminders in Steps 3 and 5) or to meta-references inside this
-  comment block. None are in editorial scope.
-- Re-ran the documentation-voice and marketing-language scan: zero matches on the
-  standard offender list ("We are excited," "This recipe demonstrates," "leveraging
-  the power," "seamlessly," "industry-leading," "cutting-edge," "state-of-the-art,"
-  "unlock," "empower," "revolutionize," "transform your," "game-changing," "next-
-  generation"). Voice and the 70/30 vendor balance hold.
-- No in-place edits warranted in this iteration. The recipe is editorial-ready
-  and has been so since v1; v2 through v5 have re-verified rather than added new
-  fixes. The remaining work is exclusively the TechWriter's coordinated pass on
-  the patient-baseline subsystem (A1 + A2), the feedback-loop artifacts (A3, A4,
-  A5, A6), the PHI-handling additions (S1, S2, S3, S4), the VPC-endpoint precision
-  (N1, N2), the publication-readiness polish (V1, V2, V3), and the L149 sentence-
-  fragment clarification. The Python companion update must move in lockstep with
-  the A1 + A2 pseudocode change.
-
-TechEditor pass v6 (2026-05-20):
-- Re-verified independently with grep counts on the published file. State matches
-  v5: 0 em dashes, 11 lines containing en dashes (all numeric ranges across the
-  cost row, cost-estimate row, performance-benchmarks table, and implementation-
-  time tiers), 1 H1 + 11 H2 + 13 H3 + 1 H4, 0 hits on the documentation-voice /
-  marketing-language offender list within body text (the only matches are the
-  enumeration of the offender list itself inside this version-history block,
-  which is the intended structural exception).
-- No in-place edits made in this pass. v1's editorial fixes hold; v2-v5 have
-  each independently re-verified that the file is editorially ready and that no
-  further in-scope edits are warranted.
-- The remaining work is unchanged and is owned by the TechWriter:
-  * A1 + A2 coordinated pass on the patient-baseline subsystem (prose +
-    pseudocode + Python companion `_update_patient_baseline` and
-    `_load_or_create_baseline`)
-  * A3 outcome-event idempotency on the EventBridge -> outcome-joiner Lambda
-    path
-  * A4 DLQ + poison-message handling for outcome-joiner, routing, and
-    deviation-calc Lambdas
-  * A5 temporal validation in the retrain pipeline
-  * A6 feature-contributions reframing in the Expected Results sample
-  * S1 high-stigma specialty disclosure paragraph in "PHI handling in the
-    outreach messages"
-  * S2 subgroup-data governance row in Prerequisites
-  * S3 per-consumer IAM scoping in the IAM row
-  * S4 PHI-handling notes on the real-time-scoring and self-reschedule
-    extensions
-  * N1 + N2 VPC-endpoint precision (CloudWatch monitoring vs Logs, EventBridge
-    events vs Scheduler, SageMaker api/runtime/featurestore-runtime, Glue,
-    Step Functions)
-  * V1 future-dated timestamps in the Expected Results sample
-  * V2 alpha decay-factor intuition for non-ML readers
-  * V3 industry-figure citation verification (the no-show reduction percentage,
-    the performance-benchmark ranges, the transportation-intervention
-    effectiveness claim)
-  * L149 sentence-fragment clarification in The Problem
-- The aws-samples and AWS-blog forward-placeholder TODOs read cleanly in
-  published form and can remain as TODOs.
+TechEditor pass v7 (2026-06-17):
+- Post-split polish. This file was mechanically split from a monolithic recipe
+  into a main recipe (this file: story and concepts) and an architecture
+  companion (chapter03.02-architecture.md: AWS implementation and pseudocode).
+  This pass verifies that the main recipe reads as a coherent standalone document
+  after the split.
+- Confirmed: General Architecture Pattern section is fully vendor-agnostic. No
+  AWS service names, no references to pseudocode or code blocks that now live in
+  the companion. The section ends with the architecture callout linking to the
+  companion, matching the RECIPE-GUIDE template.
+- Confirmed: The Honest Take section contains no dangling references to AWS
+  content. All discussion is conceptual and self-contained.
+- Confirmed: architecture callout is well placed (end of General Architecture
+  Pattern, before The Honest Take) and uses the canonical wording from RECIPE-GUIDE.
+- Confirmed: 0 em dashes (U+2014), 0 en dashes (U+2013), all code fences tagged
+  (2 fenced blocks, both `text`). Header hierarchy: 1 H1, 5 H2, 7 H3, 0 H4.
+  No skipped levels.
+- Confirmed: sections present and in order per RECIPE-GUIDE for the main file:
+  The Problem, The Technology, General Architecture Pattern (with callout),
+  The Honest Take, Related Recipes, Tags, Navigation footer.
+- Confirmed: 0 documentation-voice, 0 marketing-language hits.
+- Previous version-history (v1-v6) described the pre-split monolithic file and
+  referenced sections, line numbers, code-fence counts, and link inventories
+  that are no longer accurate for this file. Replaced with this post-split
+  summary. The v1-v6 editorial findings remain valid for the content that now
+  lives in the architecture companion; the companion carries its own editorial
+  history.
+- TODO inventory for this file: 1 HTML-comment TODO in The Problem (sentence-
+  fragment clarification, owned by TechWriter). All other TODOs from v1-v6 now
+  live in the architecture companion where the relevant content landed.
 -->
 
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐

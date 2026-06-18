@@ -1,3 +1,27 @@
+<!--
+TechEditor pass v7 (2026-06-17):
+- Post-split polish. This file was extracted from the monolithic Recipe 3.2 to
+  serve as the architecture companion per RECIPE-GUIDE three-file structure. This
+  pass verifies that the companion opens cleanly and reads as a standalone
+  implementation reference.
+- Confirmed: backlink header references the main recipe correctly and sets
+  context for a reader arriving directly.
+- Confirmed: sections present per RECIPE-GUIDE architecture companion spec:
+  Why These Services, Architecture Diagram, Prerequisites, Ingredients,
+  Code (Pseudocode Walkthrough), Expected Results, Why This Isn't Production-Ready,
+  Variations and Extensions, Additional Resources, Estimated Implementation Time,
+  Navigation footer.
+- Confirmed: 0 em dashes (U+2014), 0 en dashes (U+2013). All code fences tagged
+  (1 mermaid, 2 json, 2 pseudocode, 3 text). Header hierarchy: 1 H1, 5 H2,
+  5 H3, 1 H4. No skipped levels.
+- Confirmed: Python companion callout present after the pseudocode walkthrough.
+- TODO inventory: 4 HTML-comment TODOs (no-show reduction citation, benchmark
+  ranges, transportation intervention citation, aws-samples repo verification),
+  plus 1 provider-level dashboard suggestion. All owned by TechWriter. The
+  remaining TechWriter findings (A1-A6, S1-S4, N1-N2, V1-V3) from the expert
+  and code reviews apply to content in this file; markers are inline where the
+  fixes would land.
+-->
 # Recipe 3.2 Architecture and Implementation: Patient No-Show Pattern Detection
 
 *Companion to [Recipe 3.2: Patient No-Show Pattern Detection](chapter03.02-patient-no-show-pattern-detection). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
