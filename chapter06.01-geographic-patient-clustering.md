@@ -74,7 +74,7 @@ Generic geographic clustering (where should we put a Starbucks?) differs from he
 
 ### The General Architecture Pattern
 
-```
+```text
 [Address Data] → [Geocode] → [Clean/Filter] → [Cluster] → [Enrich] → [Visualize/Analyze]
 ```
 
@@ -116,5 +116,7 @@ One more thing: don't forget that clusters change. Run this quarterly, not once.
 - **Recipe 6.2 (Utilization Pattern Segmentation):** Segments patients by behavior; combine with geographic clusters for "where do high-utilizers live?" analysis
 - **Recipe 7.1 (Readmission Risk Scoring):** Risk scores can enrich geographic clusters to identify high-risk neighborhoods
 - **Recipe 14.3 (Facility Location Optimization):** Uses cluster output as input for mathematical optimization of facility placement
+
+<!-- TODO (TechWriter): Main recipe is missing Tags and Navigation footer sections per RECIPE-GUIDE. Tags are currently only on the architecture companion. Add them here. -->
 
 ---

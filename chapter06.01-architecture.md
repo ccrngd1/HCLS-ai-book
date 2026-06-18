@@ -68,13 +68,11 @@ flowchart TD
 | **AWS KMS** | Manages encryption keys for all data at rest |
 | **Amazon CloudWatch** | Logs, metrics, and alarms for pipeline monitoring |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Extract and prepare address data.** The pipeline starts by pulling patient addresses from your source system (EHR extract, enrollment file, claims data warehouse). The key decision here is what to include beyond the address itself. At minimum, you need a patient identifier and the full address. For enrichment later, include demographics (age, payer type) and utilization data (visit count, last visit date). This step also handles basic data quality: removing records with no address, standardizing state abbreviations, and flagging PO Boxes for special handling. Skip this step or skip the quality checks, and your geocoding step will waste API calls on addresses that can never resolve to meaningful coordinates.
 
-```
+```pseudocode
 FUNCTION extract_patient_addresses(source_connection):
     // Pull patient records with geographic and demographic data.
     // We need more than just addresses: the enrichment fields make clusters actionable.
@@ -109,7 +107,7 @@ FUNCTION extract_patient_addresses(source_connection):
 
 **Step 2: Geocode addresses to coordinates.** This is where text addresses become plottable points. The geocoding service takes a street address and returns a latitude/longitude pair with a confidence score. We process addresses in client-side batches for throughput management (controlling concurrency and rate limiting), but each address is geocoded individually. The confidence score matters because a low-confidence geocode (the service guessed at the location) can place a patient miles from their actual home, distorting your clusters. We set a threshold and route low-confidence results to a "needs review" bucket rather than silently including bad coordinates.
 
-```
+```pseudocode
 GEOCODE_CONFIDENCE_THRESHOLD = 0.85  // below this, the coordinate is too uncertain to trust
 
 FUNCTION geocode_addresses(records, place_index_name):
@@ -150,7 +148,7 @@ FUNCTION geocode_addresses(records, place_index_name):
 
 **Step 3: Clean and filter coordinates.** Even after geocoding, the data needs one more pass. Coordinates at (0, 0) mean the geocoder returned a default rather than admitting failure. Coordinates outside your service area bounding box are patients who've moved or were entered incorrectly. Duplicate coordinates (multiple patients at the same address, like a nursing home) need to be handled: you might want to count them as one point for clustering but retain the patient count for enrichment. This step ensures that what goes into the clustering algorithm is clean, bounded, and representative.
 
-```
+```pseudocode
 FUNCTION clean_coordinates(geocoded_records, bounding_box):
     // bounding_box = { min_lat, max_lat, min_lon, max_lon }
     // Defines your service area. Points outside are excluded from clustering.
@@ -181,7 +179,7 @@ FUNCTION clean_coordinates(geocoded_records, bounding_box):
 
 **Step 4: Run the clustering algorithm.** This is the core analytical step. We use DBSCAN because it doesn't require pre-specifying the number of clusters, handles irregular shapes, and identifies noise points (isolated patients who don't belong to any dense cluster). The two parameters to tune are epsilon (the maximum distance between two points for them to be considered neighbors) and min_samples (the minimum number of points to form a dense region). For healthcare facility planning, an epsilon of 2-5 km and min_samples of 50-200 patients is a reasonable starting range, but these depend entirely on your population density and operational question.
 
-```
+```pseudocode
 // DBSCAN parameters: these are the knobs you'll tune.
 // epsilon: maximum distance (in km) between two points to be considered neighbors.
 //          Smaller = tighter clusters, more noise points. Larger = looser clusters.
@@ -224,7 +222,7 @@ FUNCTION cluster_patients(cleaned_records):
 
 **Step 5: Enrich clusters with metadata.** A cluster is just a set of coordinates until you attach meaning. This step computes summary statistics for each cluster: centroid (geographic center), patient count, demographic breakdown, utilization patterns, and payer mix. These enrichments transform "there's a dense area here" into "there are 3,200 patients here, average age 58, 40% Medicare, averaging 6.2 visits per year, and the nearest existing clinic is 12 miles away." That's the information a strategy team needs to make a facility decision.
 
-```
+```pseudocode
 FUNCTION enrich_clusters(clustered_records, num_clusters):
     cluster_metadata = empty map
 
@@ -268,7 +266,7 @@ Table design: the `patient-clusters` table uses `patient_id` (string, opaque ide
 
 <!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add S3 lifecycle policy recommendation: retain current and previous snapshot, expire older snapshots after 6-12 months. Each snapshot contains PHI; minimizing retained copies reduces exposure surface. -->
 
-```
+```pseudocode
 FUNCTION store_results(clustered_records, cluster_metadata):
     // Write per-patient assignments to DynamoDB for fast point lookups.
     // Use case: "Which cluster does patient X belong to?"
@@ -341,6 +339,8 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 - PO Box addresses geocode to the post office, not the patient's home. High PO Box rates (common in rural areas) distort cluster locations.
 - Apartment complexes and nursing homes create artificial density spikes. 500 patients at one address looks like a cluster core but represents a single building, not a neighborhood.
 - Seasonal populations (snowbirds, college students) shift dramatically between summer and winter. A single snapshot misses this.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add one covering gaps like lack of automated parameter tuning, missing drive-time validation, no CI/CD pipeline, and absence of data drift monitoring. -->
 
 ---
 
