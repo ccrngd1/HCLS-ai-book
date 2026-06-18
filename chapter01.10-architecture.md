@@ -142,7 +142,7 @@ flowchart TB
 
 Before processing starts, you need a manifest: one row per chart with the S3 location, chart ID, and member ID. The manifest is what AWS Batch uses to distribute work across its fleet. This step also initializes the DynamoDB tracking record for each chart, which serves as the idempotency guard for the entire pipeline.
 
-```
+```pseudocode
 // Manifest structure: one CSV row per chart
 // Format: bucket, key, chart_id, member_id, scan_date, estimated_page_count
 
@@ -212,7 +212,7 @@ FUNCTION submit_batch_migration_job(manifest_key: string, job_count: int) -> str
 
 Fixing quality issues before OCR is dramatically cheaper than paying for Textract on garbage input, discovering the output is garbage, and re-processing. This step runs per chart, inside each Batch worker, before any API calls.
 
-```
+```pseudocode
 FUNCTION preprocess_chart(chart_pdf_key: string) -> tuple[string, dict]:
     pdf_bytes = download_s3_object(bucket="charts-raw", key=chart_pdf_key)
     pages     = split_pdf_into_pages(pdf_bytes)
@@ -282,7 +282,7 @@ FUNCTION is_blank_page(img, white_threshold: float) -> bool:
 
 Textract runs on every page as the quality signal generator. Word-level confidence scores determine which pages route to the vision path (low confidence = image quality issues) versus the text extraction path (high confidence = reliable OCR output). We use `DetectDocumentText` (not `AnalyzeDocument`) for this first pass: it is 44 times cheaper per page ($0.0015 vs $0.065) and gives us everything we need for quality triage.
 
-```
+```pseudocode
 FUNCTION start_textract_ocr(processed_chart_key: string, chart_id: string) -> string:
     response = textract_client.start_document_text_detection(
         DocumentLocation={
@@ -363,7 +363,7 @@ Every page gets classified. Nova Lite handles this at Tier 1 cost: roughly $0.00
 
 At chart migration scale, this step runs as a batch inference job: you assemble a JSONL file with one request per page, submit it to Bedrock, and process results the next morning. The function below shows both the JSONL generation (for batch) and the synchronous format (for testing).
 
-```
+```pseudocode
 // Classification prompt. The system portion gets cached.
 // This same prompt runs for every page in the migration program.
 CLASSIFICATION_SYSTEM_PROMPT = """
@@ -492,7 +492,7 @@ FUNCTION submit_classification_batch_job(jsonl_keys: list) -> string:
 
 After classification results arrive, the routing Lambda reads the results JSONL and assigns each page to its extraction tier. Pages routed to Tier 4 (Opus) need their images pre-staged in S3 for the vision call. Pages routed to Tier 1 (skip) are noted and excluded from extraction.
 
-```
+```pseudocode
 CONFIDENCE_TO_VISION_PATH = 0.65   // below this, route to vision regardless of classification tier
 CONFIDENCE_TO_OPUS       = 0.45    // below this, escalate to Tier 4 Opus
 
@@ -564,7 +564,7 @@ The extraction batch jobs run in parallel: one job for Tier 2 (Nova Pro), one fo
 
 This is the longest-running phase: depending on job size, Bedrock batch inference jobs complete in two to eight hours. The Step Functions per-chart execution waits on a polling loop that checks job status every 30 minutes.
 
-```
+```pseudocode
 // Tier 2: Nova Pro extraction prompt
 EXTRACTION_TIER2_SYSTEM = """
 You are extracting structured clinical information from a scanned medical record page.
@@ -733,7 +733,7 @@ Return ONLY valid JSON.
 
 After extraction results arrive from all tiers, the clinical concepts (diagnoses, medications) need code validation. LLMs understand clinical language; they do not reliably produce correct ICD-10-CM codes or RxNorm CUIs on their own. Comprehend Medical's inference APIs map extracted text descriptions to validated codes.
 
-```
+```pseudocode
 FUNCTION validate_codes_with_comprehend_medical(extractions: dict) -> dict:
     // extractions: map of page_num -> extraction_result from all tiers
 
@@ -796,7 +796,7 @@ The FHIR mapping step takes validated extraction results and generates structure
 
 > **Mandatory Code Validation.** Any ICD-10, RxNorm, or CPT code emitted by the LLM FHIR mapping stage must be validated against an authoritative code reference before HealthLake ingestion. Use Comprehend Medical `InferICD10CM` for ICD-10 codes. For CPT codes, validate against the AMA CPT code file or an equivalent reference. For RxNorm, use Comprehend Medical `DetectEntitiesV2`. A hallucinated medical code (e.g., `M17.1` vs. `M17.11`, or a plausible-sounding but nonexistent code) that lands in HealthLake will corrupt the longitudinal record silently. This validation step is not optional.
 
-```
+```pseudocode
 FHIR_MAPPING_SYSTEM = """
 You are generating FHIR R4 resources from extracted historical medical record data.
 The data was extracted from paper charts via OCR and LLM analysis.
@@ -956,7 +956,7 @@ FUNCTION assemble_fhir_bundle(chart_id: string,
 
 HealthLake's bulk import reads NDJSON from S3: one FHIR resource per line. To avoid one import job per chart (expensive setup overhead at scale), accumulate completed charts and batch-submit import jobs covering 1,000 to 5,000 charts at a time.
 
-```
+```pseudocode
 FUNCTION write_fhir_bundle_to_s3(chart_id: string,
                                    bundle: dict) -> string:
     ndjson_lines = join(json_serialize(r) for r in bundle.resources, separator="\n")
@@ -1038,7 +1038,7 @@ FUNCTION submit_healthlake_import_batch(datastore_id: string, batch_size: int = 
 
 After HealthLake confirms import success, the source PDF moves to Glacier. This is handled by an S3 Lifecycle rule (set once at bucket creation) rather than per-chart API calls.
 
-```
+```pseudocode
 // S3 Lifecycle policy for the charts-raw bucket.
 // Applied once; no per-chart API calls needed.
 LIFECYCLE_POLICY = {

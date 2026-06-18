@@ -1,6 +1,6 @@
 # Recipe 1.10: Historical Chart Migration 🔷
 
-**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.80–8.00 per chart (varies by page count, handwriting density, and model tier distribution)
+**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.80-8.00 per chart (varies by page count, handwriting density, and model tier distribution)
 
 ---
 
@@ -186,7 +186,7 @@ The critical addition at this scale: the inner tier no longer calls Bedrock APIs
 
 The four LLM model tiers of the pipeline (plus the Textract base layer that feeds them): 
 
-```
+```text
 [All pages]
      |
      v
@@ -241,14 +241,14 @@ Batch inference throughput is excellent for most of the pipeline, but there are 
 
 The Textract quota increase is not optional, and the lead time is real. If you are reading this two weeks before your program launches without having filed a support case, file one today. If you file it today, you may still be waiting when you launch.
 
-One last thing about cost. The blended cost estimate of $1.11 per chart in the sample output above is achievable with a well-tuned tier routing configuration and batch inference on everything. It assumes 68% of pages land in Tier 2 (Nova Pro). If your archive has dense handwriting, expect a higher Tier 3 and Tier 4 fraction, and higher per-chart costs. For charts with extremely high handwriting density (40%+ Tier 3/4), costs in the $3 to $5 range are realistic. That is still dramatically better than the $15 to $50 per chart that the A2I-heavy prior-generation approach produced. But validate your distribution on a pilot before committing to a program-level budget.
+One last thing about cost. The blended cost estimate of $1.11 per chart in the architecture companion's pilot output is achievable with a well-tuned tier routing configuration and batch inference on everything. It assumes 68% of pages land in Tier 2 (Nova Pro). If your archive has dense handwriting, expect a higher Tier 3 and Tier 4 fraction, and higher per-chart costs. For charts with extremely high handwriting density (40%+ Tier 3/4), costs in the $3 to $5 range are realistic. That is still dramatically better than the $15 to $50 per chart that the A2I-heavy prior-generation approach produced. But validate your distribution on a pilot before committing to a program-level budget.
 
 ---
 
 ## Related Recipes
 
-- **Recipe 1.2 (Patient Intake Form Digitization):** The async Textract pattern and SNS notification model used in Step 3. The base OCR architecture comes directly from Recipe 1.2.
-- **Recipe 1.4 (Prior Authorization Document Processing):** Introduces Bedrock as the classification and reasoning layer, and the model tiering concept that this recipe extends to four tiers. Read Recipe 1.4 before implementing Steps 4 and 5.
+- **Recipe 1.2 (Patient Intake Form Digitization):** The async Textract pattern and SNS notification model used in the base OCR stage. The base OCR architecture comes directly from Recipe 1.2.
+- **Recipe 1.4 (Prior Authorization Document Processing):** Introduces Bedrock as the classification and reasoning layer, and the model tiering concept that this recipe extends to four tiers. Read Recipe 1.4 before implementing the classification and extraction stages.
 - **Recipe 1.5 (Claims Attachment Processing):** Document boundary detection algorithm used in the segmentation stage, and LLM-based document classification patterns extended here to the full chart taxonomy. Recipe 1.5 is the primary reference for the boundary detection logic.
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** The vision model approach (sending page images directly to multimodal LLMs) used in the Tier 3 and Tier 4 vision paths. Recipe 1.6 covers the confidence tiering and dual-path architecture in detail. This recipe applies the same approach at much larger scale.
 - **Recipe 8.3 (Entity Resolution: Member Matching):** Post-migration, links chart records from multiple source systems to current member identities. Essential when charts span multiple acquired organizations or legacy systems with different member ID schemes.
