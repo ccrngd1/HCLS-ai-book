@@ -301,7 +301,7 @@ flowchart LR
 
 **Step 1: Enroll the patient and capture mental-health-specific consent.** Enrollment requires explicit consent that has been reviewed by behavioral-health legal counsel and clinical leadership. The consent flow is not generic terms-of-service; it covers the bot's nature (chat tool, not a person, not a therapist), the bot's scope (structured therapeutic-content delivery, mood tracking, crisis screening, warm handoff), the privacy posture (specifically including state-specific mental-health-record protections where they exceed HIPAA baseline), the crisis-pathway behavior (988, institutional crisis line, 911), and the data-sharing posture with the patient's care team (collected separately and revocable). Skip this step or treat it as boilerplate, and the entire deployment's clinical and regulatory posture is compromised.
 
-```
+```pseudocode
 ON enroll_patient(patient_id, target_population_segment,
                   legal_consent_form_signed,
                   state_of_residence):
@@ -419,7 +419,7 @@ ON enroll_patient(patient_id, target_population_segment,
 
 **Step 2: Handle conversation entry with disclosure refresh and identity-context loading.** Every session begins with an explicit disclosure refresh: the bot is a chat tool, not a person; not a therapist; cannot diagnose; the crisis line is reachable at any time. The disclosure refresh is more than legal coverage: it sets the relationship boundary and reinforces it across sessions. After disclosure, the bot loads the patient's longitudinal context including the safety plan if one is on file, recent symptom-tracking data, and recent conversation history. Skip the disclosure refresh and the bot drifts toward companion-pattern in extended interactions.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id,
                   user_message, auth_context):
     // Step 2A: identify or create the conversation
@@ -545,7 +545,7 @@ ON receive_message(channel, channel_session_id,
 
 **Step 3: Handle the crisis pathway when crisis screening triggers.** The crisis pathway is the most consequential response the bot ever produces. The bot does not attempt to talk a patient through an active crisis using AI alone. The bot anchors briefly (acknowledges the disclosure, validates the patient's reach-out, surfaces the immediate safety frame), identifies the crisis level (acute emergency, suicidal crisis without acute means, sensitive disclosure with crisis adjacency), routes to the appropriate human resource (911, 988, institutional crisis line, platform's licensed clinician), surfaces the patient's safety plan if applicable, and stays present until the human responder has joined. Skip this discipline or treat it as a fallback rather than a primary system component, and the bot is operating without its core safety architecture.
 
-```
+```pseudocode
 FUNCTION handle_crisis_pathway(session_id,
                                crisis_dimensions,
                                urgency,
@@ -729,7 +729,7 @@ FUNCTION handle_crisis_pathway(session_id,
 
 **Step 4: Generate the response with therapeutic-content-grounded reasoning, scope discipline, and companion-pattern avoidance.** The LLM operates as a Bedrock Agent with the support tool surface. The system prompt explicitly forbids the companion pattern, explicitly scopes the bot away from therapy, and grounds therapeutic content delivery in the institution's reviewed library. Tool calls retrieve specific therapeutic-content items, safety-plan elements, recent symptom-tracking data, conversation history, and clinical-rule scoring as needed. Skip the companion-pattern avoidance and the bot drifts in extended sessions; skip the scope discipline and the bot delivers therapy without being a therapist.
 
-```
+```pseudocode
 FUNCTION handle_conversation(session_id, user_message):
     session = conversation_state_table.get(session_id)
     longitudinal_context = session.longitudinal_context
@@ -815,7 +815,7 @@ FUNCTION handle_conversation(session_id, user_message):
 
 **Step 5: Run output safety with companion-pattern detection, scope verification, and citation grounding.** Every response runs through output safety before delivery. The companion-pattern detector checks for first-person emotional claims, simulated friendship, simulated affection, and simulated personhood. The scope verifier rejects responses that attempt therapy, diagnosis, or medication recommendations. The citation verifier confirms therapeutic-content delivery is grounded in cited library content. Skip this and the bot's scope discipline erodes turn by turn over extended interactions.
 
-```
+```pseudocode
 FUNCTION screen_support_output(session_id, response,
                                citations, tool_calls):
     // Step 5A: standard output safety primitives.
@@ -947,7 +947,7 @@ FUNCTION screen_support_output(session_id, response,
 
 **Step 6: Persist support-decision records, sensitive-disclosure records, and longitudinal updates.** The conversation log captures dialog. The support-decision-record journal captures, separately, every support decision (therapeutic-content delivery, safety-plan reference, symptom-log update, crisis-pathway engagement, warm-handoff initiation, mandatory-report routing) with version stamps. The sensitive-disclosure store, separately keyed and access-restricted, captures sensitive disclosures with appropriate handling. The longitudinal store is updated with stated preference changes, symptom tracking, and the conversation summary. Skip the separate sensitive-disclosure surface and a routine audit query exposes information that should have been more tightly governed.
 
-```
+```pseudocode
 FUNCTION persist_support_artifacts(session_id, response,
                                    citations, tool_calls,
                                    sensitive_disclosures,
@@ -1063,7 +1063,7 @@ FUNCTION persist_support_artifacts(session_id, response,
 
 **Step 7: Generate care-team reports (consent-gated) and run outcome correlation.** The care-team reporting is consent-gated: only patients who have explicitly consented to information sharing have summaries delivered to their therapist, psychiatrist, or primary care physician. Real-time alerts for crisis events flow only with appropriate consent. The outcome-correlation pipeline pulls subsequent encounter records, screening-instrument trajectories, hospitalization rates, treatment adherence, and (with appropriate caution about attribution) attempted-suicide rates. Mental-health outcome attribution is harder than chronic-disease outcome attribution; the analysis is suggestive rather than causal. Skip the consent-gating and the deployment fails state-specific mental-health-privacy compliance.
 
-```
+```pseudocode
 FUNCTION generate_care_team_reports():
     // Step 7A: real-time alerts (consent-gated).
     new_alerts = care_team_alert_queue.poll_new()
@@ -1184,7 +1184,7 @@ FUNCTION generate_care_team_reports():
 
 **Sample conversation (illustrative, abbreviated, in-scope, not crisis):**
 
-```
+```text
 Bot:     Hi Sam, I'm the support chat tool from your
          employer's mental-health platform. Just a
          reminder before we get started: I'm a chat
@@ -1286,7 +1286,7 @@ Bot:     Sounds good, Sam. I logged this conversation
 
 **Sample crisis-pathway conversation (illustrative, abbreviated):**
 
-```
+```text
 Bot:     Hi Sam, just a reminder I'm a chat tool, not
          a person, and not a therapist. If you're in
          crisis you can reach 988 anytime. How are

@@ -204,7 +204,7 @@ A few practical updates worth knowing.
 
 A healthcare mental-health support bot decomposes into ten logical stages: enrollment and consent, longitudinal-store initialization, channel entry with disclosure, input safety screening with continuous crisis screening, identity-and-context loading with safety-plan retrieval, conversation handling with therapeutic-content-grounded responses, output safety screening with companion-pattern detection, warm-handoff routing to licensed clinicians when applicable, care-team reporting with consent enforcement, and audit logging with mental-health-specific retention discipline. The cross-cutting concerns from recipes 11.1 through 11.7 carry forward; this recipe adds five new ones (continuous crisis-screening pipeline as architectural primitive, therapeutic-content-corpus governance with behavioral-health-clinical-leadership ownership, companion-pattern avoidance discipline, warm-handoff infrastructure with licensed-clinician workforce capacity sizing, and mental-health-specific privacy-and-consent posture).
 
-```
+```text
 ┌────────── ENROLLMENT + CONSENT ──────────────────────────┐
 │                                                           │
 │   [Patient enrolls via institution app, payer benefits    │
@@ -663,9 +663,9 @@ The thing that surprises clinical leaders coming from behavioral-health practice
 
 The thing that surprises business leaders is how long the time horizon is, and how the licensed-clinician workforce is the dominant cost. The infrastructure cost is meaningful; the licensed-clinician workforce cost is typically larger. A deployment that under-invests in the licensed workforce is a deployment with safety gaps. The economics work because the bot handles the routine touches while the licensed-clinician workforce focuses on the cases that need clinical judgment, but the workforce is not optional.
 
-The thing about Amazon Bedrock specifically: same as recipes 11.2 through 11.7, Bedrock Agents is the right level of abstraction. The Agent handles the multi-step LLM-and-tool orchestration; the action groups are the support tools; Knowledge Bases provides the multi-corpus RAG; Guardrails provides safety filtering with mental-health-specific denied topics. The institutional value lives in the therapeutic-content library, the crisis classifier, the warm-handoff workforce integration, the consent posture, the regulatory artifact, and the per-cohort equity monitoring, not in the Bedrock features themselves.
+The thing about cloud implementation specifically: the institutional value lives in the therapeutic-content library, the crisis classifier, the warm-handoff workforce integration, the consent posture, the regulatory artifact, and the per-cohort equity monitoring, not in the cloud-service features themselves. The [Architecture and Implementation companion](chapter11.08-architecture) covers the service selection and cost model in detail.
 
-The thing about cost: as noted, the dominant operational cost is the licensed-clinician workforce, not the AWS infrastructure. The infrastructure cost is small relative to the cost of even a single avoided psychiatric hospitalization, and a single avoided suicide attempt has individual and societal consequences that no actuarial accounting can capture.
+The thing about cost: the dominant operational cost is the licensed-clinician workforce, not the cloud infrastructure. The infrastructure cost is small relative to the cost of even a single avoided psychiatric hospitalization, and a single avoided suicide attempt has individual and societal consequences that no actuarial accounting can capture.
 
 The thing about regulatory exposure: patient-facing mental-health software with therapeutic claims is among the most regulated categories of healthcare software. Several authorized prescription digital therapeutics exist; the FDA's posture continues to evolve. The institutional regulatory team is involved from day one.
 
