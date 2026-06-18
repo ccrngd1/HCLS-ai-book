@@ -172,7 +172,7 @@ A few practical updates worth knowing.
 
 The pipeline has six logical stages: route incoming federated queries to the local matcher with the appropriate authorization context, run the local matcher against the local MPI under the cross-network tolerance, return federated-discovery responses with the per-record attribution and the per-record sensitivity overlay applied, originate outbound federated queries from local user-driven or patient-driven flows, consume federated-discovery responses and consolidate them into the user-facing presentation, and operate the cross-cutting concerns (audit at every hop, dispute resolution, capacity management, governance evolution).
 
-```
+```text
 ┌────────────── INBOUND-QUERY HANDLING ─────────────┐
 │                                                    │
 │  [Federated patient-discovery query arrives at the │

@@ -214,7 +214,7 @@ flowchart LR
 
 **Step 1: Handle the inbound federated patient-discovery query.** A query from the participant's QHIN arrives at the TEFCA gateway. The query carries the originating-attribution chain, the exchange-purpose claim, the demographic-feature payload, and the QHIN's request signature. The gateway authenticates the request, validates the attribution chain, validates the exchange-purpose claim against the participant's authorization scope, and dispatches the query to the local matcher with the appropriate authorization context. Skip the authentication-and-validation step and you accept malformed or unauthorized queries that produce wrong-record disclosures with audit-trail attribution to the QHIN that did not actually originate them.
 
-```
+```pseudocode
 FUNCTION handle_inbound_patient_discovery_query(
     request_payload, request_signature, request_metadata):
 
@@ -351,7 +351,7 @@ FUNCTION handle_inbound_patient_discovery_query(
 
 **Step 2: Run the local matcher under the cross-network tolerance.** The local matcher consults the local MPI with a tolerance calibrated for cross-network use cases. The cross-network tolerance is typically higher-recall than the internal-application tolerance: the federation's queries that the participant should respond to are not silently dropped by an over-tight tolerance. Skip the dual-calibration and the federation's queries that the participant should respond to are silently dropped, which is an information-blocking compliance concern.
 
-```
+```pseudocode
 FUNCTION run_local_matcher_under_cross_network_tolerance(
     demographic_features, authorization_context, query_id):
 
@@ -481,7 +481,7 @@ FUNCTION run_local_matcher_under_cross_network_tolerance(
 
 **Step 3: Apply the per-record-type sensitivity overlay and the jurisdictional overlay.** The candidate set is filtered through the applicable overlay rules before disclosure. The overlay rules are versioned and per-jurisdiction; the participant's overlay-rule engine consults the patient's residence jurisdiction, the requesting participant's jurisdiction, the use case's authorization scope, and the record-type sensitivity classification to produce a per-candidate disclosure decision. Skip the overlay step and you disclose records that the applicable jurisdictional rule would have suppressed, which is a regulatory violation.
 
-```
+```pseudocode
 FUNCTION apply_sensitivity_overlay(
     candidate_set, authorization_context, query_id):
 
@@ -618,7 +618,7 @@ FUNCTION apply_sensitivity_overlay(
 
 **Step 4: Originate an outbound federated patient-discovery query.** A local user or patient initiates a cross-network query. The query-formulation logic balances recall (sending enough demographic features that the federation can match the patient under plausible variation) with the per-feature suppression-for-sensitivity discipline. The signed query is submitted to the participant's QHIN, which routes it through the federation. Skip the query-formulation discipline and the outbound query produces either insufficient recall (the federation does not match the patient because too few features were sent) or excessive disclosure (the query exposes more demographic data than the use case requires).
 
-```
+```pseudocode
 FUNCTION originate_outbound_patient_discovery_query(
     user_or_patient_identity,
     requested_demographics,
@@ -732,7 +732,7 @@ FUNCTION originate_outbound_patient_discovery_query(
 
 **Step 5: Consume and consolidate the federated-discovery responses.** Responses arrive asynchronously. The consolidation logic validates each response, normalizes the demographic-feature representations across responders, groups candidates by patient identity, applies the use-case-specific presentation filter, and presents the consolidated view to the user. Partial results are presented when the response window expires before all responses have arrived. Skip the per-response signature validation and you accept malformed or unauthorized responses that produce wrong-record disclosures.
 
-```
+```pseudocode
 FUNCTION consume_and_consolidate_responses(
     federation_handle, query_id,
     response_window_seconds, use_case_context):
@@ -854,7 +854,7 @@ FUNCTION consume_and_consolidate_responses(
 
 **Step 6: Handle document-query and retrieval for selected candidates.** The user reviews the consolidated view and selects candidates for document retrieval. The document-query orchestrator formulates per-candidate document-query requests, routes them through the QHIN federation, consumes the document responses, and consolidates them into the user's longitudinal-record view. Skip the per-document attribution discipline and the consolidated record loses the source attribution that subsequent operational concerns (dispute resolution, downstream analytics, regulatory reporting) depend on.
 
-```
+```pseudocode
 FUNCTION execute_document_query_and_retrieval(
     selected_candidates, user_or_patient_identity,
     use_case_context, query_id):
