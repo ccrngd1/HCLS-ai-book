@@ -208,7 +208,7 @@ flowchart LR
 
 **Step 1: Aggregate inputs and freeze them in a plan-input record.** Plan generation depends on a snapshot of the patient's state and the upstream signals from Recipes 4.1 through 4.8. The aggregation is at a single point in time, with the inputs frozen so that the plan can be reproduced and audited. Skip the freezing step and a plan generated on Tuesday cannot be reproduced from Wednesday's data, which makes investigation of any later issue impossible.
 
-```
+```pseudocode
 FUNCTION aggregate_plan_inputs(patient_id, request_context):
     // request_context includes the trigger (scheduled review,
     // event-driven, manual request), the requesting clinician
@@ -309,7 +309,7 @@ FUNCTION aggregate_plan_inputs(patient_id, request_context):
 
 **Step 2: Derive the goal set from condition-specific guidelines, goals-of-care preferences, and quality-program requirements.** Goals are the structural backbone of the plan. Condition-specific guidelines drive the baseline goal set; goals-of-care preferences re-weight (or in some cases remove) goals; quality-program requirements add measure-linked goals and weighting. Skip the goals-of-care alignment and you produce an aggressive disease-management plan for a patient who has elected comfort-focused care, which is exactly the failure mode that erodes patient trust.
 
-```
+```pseudocode
 FUNCTION derive_goal_set(plan_input_record):
     goal_set = []
 
@@ -408,7 +408,7 @@ FUNCTION derive_goal_set(plan_input_record):
 
 **Step 3: Assemble candidate actions per goal, then run reconciliation (interactions, burden, capacity, schedule).** Action assembly produces the candidate set; reconciliation removes infeasible actions, surfaces deprescribing candidates, and compresses the action set to a feasible total burden. Reconciliation is where the multi-condition synthesis actually happens; skip it and you produce an action set that looks comprehensive on paper and is unworkable in practice.
 
-```
+```pseudocode
 FUNCTION assemble_and_reconcile_actions(goal_set, plan_input_record):
     candidate_actions = []
 
@@ -562,7 +562,7 @@ FUNCTION assemble_and_reconcile_actions(goal_set, plan_input_record):
 
 **Step 4: Finalize the plan into a structured plan record with goals, sequenced actions, owners, and dependencies.** The plan record is the system of record. Every downstream activity (narrative generation, review, activation, feedback) operates on it. Skip the explicit structuring and the system has nothing to reproduce, audit, or update against; you have a one-shot document, not a plan.
 
-```
+```pseudocode
 FUNCTION finalize_plan(goal_set, retained_actions, reconciliation_record,
                         plan_input_record):
     // Step 4A: bucket actions by horizon. The horizons are
@@ -647,7 +647,7 @@ FUNCTION finalize_plan(goal_set, retained_actions, reconciliation_record,
 
 **Step 5: Generate the clinician-facing, patient-facing, and care-team-internal narratives, with strict validator enforcement.** The narratives are the human-readable artifacts; the structured plan is the audit-ready system of record. Skip the structured-then-narrative direction and the LLM becomes the source of truth, which is the failure mode that makes care plan generation systems clinically unsafe.
 
-```
+```pseudocode
 FUNCTION generate_narratives(plan_record):
     narratives = {}
 
@@ -791,7 +791,7 @@ FUNCTION finalize_narrative(raw_narrative, validation_result, observed_context):
 
 **Step 6: Activate approved actions, capture feedback, and trigger plan revisions when conditions, outcomes, or scheduled review intervals warrant.** Activation flips the structured actions into operational tasks; feedback closes the loop; revision keeps the plan alive. Skip the feedback loop and the plan is a one-shot artifact that ages out of relevance, which is the most common reason care plans become the stale document Linda's plan started as.
 
-```
+```pseudocode
 FUNCTION activate_plan(plan_id, activation_payload):
     // activation_payload includes:
     //   - approving_clinician_id (from the authenticated session)
