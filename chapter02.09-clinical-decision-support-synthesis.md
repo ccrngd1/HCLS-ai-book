@@ -1,4 +1,10 @@
 <!--
+Editor pass v2 (TechEditor, 2026-06-17):
+- Transition-seam fix: removed AWS-specific "DynamoDB status and S3 archive
+  prefix" from the General Architecture Pattern section (vendor-agnostic);
+  replaced with vendor-neutral "separate status tracking and archive path."
+  The architecture companion retains the AWS-specific detail.
+
 Editor pass v1 (TechEditor, 2026-05-15):
 - A1 (HIGH): Architecture diagram updated with bounded retry edge and a
   Human Review Queue terminal node (does not flow to delivery). Post-generation
@@ -251,7 +257,7 @@ Let's walk through each stage conceptually.
 
 **Grounded synthesis.** Construct the generation prompt with the patient context, the retrieved sources with source tiers, and the deterministic safety-check results. Instruct the model to produce a structured recommendation set: assessment summary, ranked recommendations, per-recommendation reasoning with citations, flagged interactions and contraindications (including those surfaced by the deterministic check), uncertainty flags, items for clinician to consider.
 
-**Post-generation validation.** Every recommendation traces to a source. Every dose appears verbatim in a retrieved structured record. Every interaction surfaced by the deterministic check appears in the final output. No recommendation contradicts a contraindication that appeared in the retrieval. Numeric thresholds preserve. Validation failures retry with stricter prompting up to a bounded number of attempts. Retry-exhausted failures route to a distinct human-review queue (separate DynamoDB status and S3 archive prefix) and do NOT proceed to tier/suppress/render or flow to the clinician UI. The orchestrator must distinguish `VALIDATED` from `VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW`; only `VALIDATED` (and `NO_EVIDENCE`, where the system explicitly declines) proceed to delivery.
+**Post-generation validation.** Every recommendation traces to a source. Every dose appears verbatim in a retrieved structured record. Every interaction surfaced by the deterministic check appears in the final output. No recommendation contradicts a contraindication that appeared in the retrieval. Numeric thresholds preserve. Validation failures retry with stricter prompting up to a bounded number of attempts. Retry-exhausted failures route to a distinct human-review queue (separate status tracking and archive path) and do NOT proceed to tier/suppress/render or flow to the clinician UI. The orchestrator must distinguish `VALIDATED` from `VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW`; only `VALIDATED` (and `NO_EVIDENCE`, where the system explicitly declines) proceed to delivery.
 
 **Tiering and suppression.** Score the recommendation set against clinician-engagement history for this patient in this encounter. If nothing new and material is present, suppress. If critical items are present, elevate visibility. If the same recommendation has been rejected for this patient, suppress or downgrade.
 
