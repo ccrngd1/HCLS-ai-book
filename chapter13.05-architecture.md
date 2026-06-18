@@ -450,6 +450,8 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
 
 **Where it struggles:** Pathways with many parallel branches create combinatorial state spaces. Condition evaluation that requires pulling data from slow EHR APIs adds latency. Pathways that reference subjective clinical judgment ("if clinician feels patient is improving") can't be fully automated. And the biggest challenge: getting clinicians to actually model their pathways as structured graphs rather than prose documents.
 
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add a section covering gaps a production deployment must close (e.g., HL7/FHIR integration testing, pathway authoring UI, clinical committee governance workflow). -->
+
 ---
 
 ## Variations and Extensions

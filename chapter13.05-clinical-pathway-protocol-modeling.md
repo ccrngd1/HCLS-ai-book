@@ -102,7 +102,7 @@ This is where knowledge graphs shine over simpler representations. The pathway g
 
 ## The Honest Take
 
-Here's what will surprise you about this project: the technology is the easy part. Neptune handles graph queries beautifully. Lambda scales fine. DynamoDB is fast. The hard part is getting clinical pathways out of people's heads and into a structured graph format.
+Here's what will surprise you about this project: the technology is the easy part. Graph databases handle traversal queries beautifully. Serverless compute scales fine. Key-value stores are fast. The hard part is getting clinical pathways out of people's heads and into a structured graph format.
 
 Most clinical pathways exist as Word documents or PDFs written by committee. They contain ambiguous language ("consider escalation if not improving"), implicit knowledge ("experienced clinicians know to check lactate here even though it's not written down"), and institutional variation ("we do it this way because Dr. Martinez prefers it"). Converting that into a formal graph with explicit conditions requires clinical informaticists who understand both the medicine and the data model. Budget more time for pathway modeling than for engineering.
 
