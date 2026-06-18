@@ -10,14 +10,9 @@
 
 **Amazon Kinesis Data Streams for real-time state ingestion.** ADT events arrive as a stream (HL7 messages, FHIR notifications, or custom events from the EHR). Kinesis handles the ingestion at whatever rate your hospital generates events (typically hundreds to low thousands per hour) with ordering guarantees within a shard. The stream serves as a buffer between the event source and your processing logic.
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add note on configuring a DLQ (SQS) on the Lambda event source mapping for Kinesis processing failures. A lost ADT event means state model diverges from reality. Alarm on DLQ depth and investigate immediately. -->
-<!-- TODO (TechWriter): Expert review A4 (LOW). Add brief shard count guidance: single shard sufficient for most single-hospital deployments (up to ~3,600 events/hour); partition by facility ID for multi-campus. -->
-
 **Amazon DynamoDB for the state model.** The live bed state needs single-digit-millisecond reads (the optimization engine queries it every few minutes) and fast writes (every ADT event updates it). DynamoDB's key-value model maps naturally to bed state: partition key is bed ID, attributes are current occupant, status, constraints, and timestamps. A GSI on unit gives you fast unit-level queries.
 
 **Amazon ElastiCache (Redis) for the working state and debounce logic.** The debounce timer ("wait 60 seconds after the last state change before re-optimizing") and the in-flight recommendation state (which assignments have been recommended but not yet accepted) live in Redis. It's faster than DynamoDB for this pattern and supports TTLs natively for expiring stale recommendations.
-
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add note specifying ElastiCache Redis with Multi-AZ replication as minimum production config. Add graceful degradation strategy: if Redis unavailable, fall back to periodic EventBridge schedule; if in-flight state unreadable, treat all beds as potentially available and flag recommendations with lower confidence. -->
 
 **AWS Step Functions for the optimization pipeline.** The sequence of "gather current state, run optimizer, validate results, publish recommendations" is a short workflow that benefits from Step Functions' error handling and retry logic. If the optimizer fails or times out, Step Functions handles the retry without custom code.
 
@@ -89,9 +84,6 @@ flowchart TD
 | CloudTrail | Audit logging for all assignment decisions and overrides |
 | Sample Data | Synthetic ADT event streams with realistic arrival patterns. Synthetic bed inventory with constraint attributes. Never use real PHI in dev. |
 | Cost Estimate | ~$500-800/month base (Kinesis + DynamoDB + Lambda + ElastiCache). ~$1,000-1,500/month at scale with high event volumes and WebSocket connections. |
-
-<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add VPC endpoint list to prerequisites: DynamoDB (gateway), S3 (gateway), Kinesis (interface), Step Functions (interface), EventBridge (interface), CloudWatch Logs (interface), execute-api (interface), KMS (interface). Budget ~$50-60/month for interface endpoints in 3-AZ deployment. -->
-<!-- TODO (TechWriter): Expert review N2 (MEDIUM). Add paragraph in State Ingestion or prerequisites on EHR integration network path: Direct Connect + VPN backup for on-premises EHR; VPC peering/PrivateLink for cloud-hosted EHR; monitor connection health; surface stale-state warning if ADT feed down >5 minutes. -->
 
 ## Ingredients
 
@@ -442,8 +434,6 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
 - **"Soft" bed blocks:** Some hospitals informally reserve beds for specific services ("those two beds are always for cardiology"). These aren't in any system but staff enforce them religiously. The optimizer doesn't know about them and gets overridden, and you'll spend weeks tracking down why acceptance rates are low on certain units.
 - **Discharge prediction uncertainty:** If your predicted discharge time is wrong by 2 hours, beds you planned on aren't available when you need them. The optimization is only as good as the discharge predictions feeding it, and those predictions are often optimistic.
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE. Content could expand on the "Where It Struggles" bullets above plus production gaps like formal validation testing, integration certification with specific EHR vendors, and clinical safety review processes. -->
-
 ---
 
 ## Variations and Extensions
@@ -493,7 +483,6 @@ Build a separate optimization profile for surge conditions (pandemic, mass casua
 | With variations | 24-36 weeks | Predictive pre-positioning, multi-campus support, surge mode, ML-based discharge predictions |
 
 ---
-
 
 ---
 

@@ -558,7 +558,6 @@ def compute_key_drivers(
 ```python
 dynamodb = boto3.resource("dynamodb")
 
-
 def store_tier_assignments(
     df: pd.DataFrame,
     labels: np.ndarray,
@@ -634,7 +633,6 @@ def store_tier_assignments(
 
 ```python
 s3_client = boto3.client("s3")
-
 
 def upload_results_to_s3(
     df: pd.DataFrame,
@@ -779,7 +777,6 @@ def run_severity_stratification() -> dict:
     print("\n--- Summary ---")
     print(json.dumps(summary, indent=2))
     return summary
-
 
 # Run the pipeline
 if __name__ == "__main__":

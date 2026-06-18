@@ -102,7 +102,6 @@ This step downloads and validates source database files. Each pharmacogenomics k
 
 s3_client = boto3.client("s3")
 
-
 def ingest_source(source_name: str, source_url: str, expected_record_count_min: int) -> str:
     """
     Download a source database file and stage it in S3.
@@ -209,7 +208,6 @@ DRUG_XREF = {
     },
 }
 
-
 def resolve_gene(symbol: str = None, entrez_id: str = None) -> Optional[dict]:
     """
     Resolve a gene identifier to its canonical form.
@@ -224,7 +222,6 @@ def resolve_gene(symbol: str = None, entrez_id: str = None) -> Optional[dict]:
     # Unresolved entity. In production, log this for manual review.
     print(f"[EntityResolution] WARNING: Could not resolve gene symbol={symbol} entrez={entrez_id}")
     return None
-
 
 def resolve_drug(name: str = None, drugbank_id: str = None) -> Optional[dict]:
     """
@@ -256,7 +253,6 @@ Transform resolved entities into Neptune's CSV bulk load format. Neptune expects
 
 import csv
 import io
-
 
 def build_node_csv(nodes: list) -> str:
     """
@@ -294,7 +290,6 @@ def build_node_csv(nodes: list) -> str:
 
     return output.getvalue()
 
-
 def build_edge_csv(edges: list) -> str:
     """
     Build a Neptune-compatible CSV for edge loading.
@@ -327,7 +322,6 @@ def build_edge_csv(edges: list) -> str:
         ])
 
     return output.getvalue()
-
 
 def upload_graph_load_files(nodes: list, edges: list, version: str) -> dict:
     """
@@ -373,7 +367,6 @@ Trigger Neptune's bulk loader to ingest the CSV files from S3. This is how you l
 
 import time
 
-
 def trigger_neptune_bulk_load(version: str, neptune_load_role_arn: str) -> str:
     """
     Start a Neptune bulk load job from S3.
@@ -411,7 +404,6 @@ def trigger_neptune_bulk_load(version: str, neptune_load_role_arn: str) -> str:
     load_id = response.json()["payload"]["loadId"]
     print(f"[BulkLoad] Started load job {load_id} for version {version}")
     return load_id
-
 
 def wait_for_load_completion(load_id: str, timeout_seconds: int = 3600) -> dict:
     """
@@ -453,7 +445,6 @@ This is the clinical payoff. Given a patient's genetic variants and current medi
 # Maps to pseudocode Step 5 in the main recipe.
 # Queries the graph for a specific patient's actionable findings.
 
-
 def execute_opencypher_query(query: str, parameters: dict = None) -> list:
     """
     Execute an openCypher query against Neptune.
@@ -473,7 +464,6 @@ def execute_opencypher_query(query: str, parameters: dict = None) -> list:
     response.raise_for_status()
     return response.json().get("results", [])
 
-
 def get_patient_phenotype(gene: str, diplotype: str) -> Optional[dict]:
     """
     Look up the metabolizer phenotype for a given gene and diplotype.
@@ -492,7 +482,6 @@ def get_patient_phenotype(gene: str, diplotype: str) -> Optional[dict]:
     if results:
         return results[0]
     return None
-
 
 def find_gene_drug_interactions(drug_rxnorm_cui: str, evidence_threshold: str) -> list:
     """
@@ -518,7 +507,6 @@ def find_gene_drug_interactions(drug_rxnorm_cui: str, evidence_threshold: str) -
         "levels": acceptable_levels,
     })
 
-
 def get_recommendation(gene: str, phenotype: str, drug_rxnorm_cui: str) -> Optional[dict]:
     """
     Get the CPIC recommendation for a specific gene-phenotype-drug combination.
@@ -541,7 +529,6 @@ def get_recommendation(gene: str, phenotype: str, drug_rxnorm_cui: str) -> Optio
     if results:
         return results[0]
     return None
-
 
 def check_phenoconversion(current_medications: list, gene: str, genetic_phenotype: str) -> Optional[dict]:
     """
@@ -588,7 +575,6 @@ def check_phenoconversion(current_medications: list, gene: str, genetic_phenotyp
             ),
         }
     return None
-
 
 def query_patient_pharmacogenomics(
     patient_variants: list,
@@ -688,7 +674,6 @@ Here's how you'd run the complete query for a patient. This assembles all the st
 # FULL PIPELINE
 # =============================================================================
 
-
 def run_patient_query_example():
     """
     Demonstrate the full patient query flow.
@@ -740,7 +725,6 @@ def run_patient_query_example():
     print(json.dumps(results, indent=2, default=str))
 
     return results
-
 
 def run_graph_update_example():
     """
@@ -802,7 +786,6 @@ def run_graph_update_example():
     print("  (Skipped in example. Would trigger Neptune bulk loader)")
 
     print(f"\nGraph update pipeline complete for version {version}")
-
 
 # Run the examples
 if __name__ == "__main__":

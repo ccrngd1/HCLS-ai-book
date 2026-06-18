@@ -434,8 +434,6 @@ FUNCTION publish_schedule(schedule, schedule_type):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add "Why This Isn't Production-Ready" section before Variations, per architecture companion template. -->
-
 ## Variations and Extensions
 
 **Multi-unit float pool optimization.** Extend the model to include float pool nurses who can be assigned to any unit based on qualifications. The solver decides both the unit assignment and the shift assignment simultaneously. This is particularly valuable for health systems with centralized staffing offices.
@@ -459,8 +457,6 @@ FUNCTION publish_schedule(schedule, schedule_type):
 - [Google OR-Tools CP-SAT Solver](https://developers.google.com/optimization/cp/cp_solver)
 - [Google OR-Tools Nurse Scheduling Example](https://developers.google.com/optimization/scheduling/employee_scheduling)
 - [HiGHS Optimization Solver](https://highs.dev/)
-
-<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add URLs for Burke et al. "The State of the Art of Nurse Rostering" survey paper and INFORMS Healthcare conference proceedings, or remove this subsection if links cannot be verified. -->
 
 ---
 

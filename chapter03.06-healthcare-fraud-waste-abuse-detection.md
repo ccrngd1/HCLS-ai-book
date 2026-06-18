@@ -1,142 +1,3 @@
-<!--
-Editor pass (TechEditor, 2026-05-15): style/voice check (zero em-dashes
-verified; 70/30 vendor balance preserved); replaced real-sounding sample
-provider name "Pine Ridge Medical Associates" with explicitly synthetic
-name (privacy/reputation hygiene); added Luhn-validity disclaimer on
-sample NPIs; added a draft-date disclaimer on sample timestamps; added
-TODO markers for substantive technical concerns surfaced by the expert
-review (graph-construction missing claim vertices; outcome-event
-idempotency at the evidence-aggregator; DLQ posture for the four
-critical Lambdas; provider appeals workflow architectural backstop;
-reference-data versioning propagation; legal-privilege infrastructure
-primitives) that require TechWriter follow-up rather than in-place
-rewriting. Preserved all existing TODOs from earlier personas. Section
-order and structural claims unchanged.
-
-Final pass (TechEditor, 2026-05-15): re-verified zero em-dashes (any
-en-dash matches are confined to the ASCII-art architecture-pattern
-block-diagram inside a fenced code block, not in prose); confirmed
-header hierarchy (one H1, structured H2/H3/H4 progression with no
-skipped levels); confirmed all sample provider/organization names in
-Expected Results carry an explicit "(sample)" suffix or are obviously
-synthetic placeholders ("Corp Shell A LLC"); confirmed sample NPIs
-remain `<synthetic-NPI>` placeholders behind the Luhn-validity
-disclaimer; confirmed legal citations (42 USC 1320a-7b, 42 USC 1395nn,
-31 USC 3729-3733, 42 CFR 411.354, 42 CFR 422.504(h), 42 CFR 438.608,
-45 CFR 164.512(f)) are correctly formatted; confirmed all 17 TODO
-markers are well-formed and addressed to TechWriter for follow-up.
-No further in-place rewrites; recipe is ready for publication pending
-TechWriter resolution of flagged TODOs.
-
-Sign-off pass (TechEditor, 2026-05-15): re-verified mechanical
-checklist on the main recipe. Direct grep for U+2014 and the en-dash
-range (U+2010 through U+2015 plus U+2212): zero matches in prose.
-Direct grep for documentation-voice and announcement anti-patterns
-("we are excited", "this recipe demonstrates", "in this recipe we
-will", "need to talk about"): zero matches. Code-fence inventory: 28
-fenced blocks, 4 with explicit language tags (one `mermaid`, three
-`json` for the Expected Results sample alerts) and 24 unlabeled for
-pseudocode and ASCII-art block-diagrams; matches the convention
-established in chapter01 and used consistently through chapter03.05.
-Header hierarchy unchanged (one H1, structured H2/H3/H4 progression).
-TODO inventory: 17 well-formed `<!-- TODO (TechWriter): ... -->`
-markers in prose plus references to those TODOs in this editor
-comment block; all preserved. No prose edits; the prior two passes
-already settled voice, hygiene, and safety. Recipe is publication-
-ready as a standalone file.
-
-Cross-file flag for TechWriter (publication blocker, not a TechEditor
-fix): the companion `chapter03.06-python-example.md` is in the FAIL
-state from code review (`reviews/chapter03.06-code-review.md`,
-2026-05-14). One ERROR (`aggregate_flags_to_cases` writes flag dicts
-containing Python floats to DynamoDB; the resource-API serializer
-raises `TypeError: Float types are not supported. Use Decimal types
-instead.` the first time a statistical or graph flag reaches the
-put_item call) and five WARNINGs (OWNERSHIP_CASCADE detector cannot
-fire because organization nodes are never created; "Rule 3: LEIE
-exclusion" comment does not match the code which checks the
-`UNRESOLVED:` prefix; patient node ID is the raw patient_id rather
-than a hash, contradicting the main recipe's Step 3 pseudocode and
-the privacy rationale; `capture_case_outcome` S3 put_object uses
-`ServerSideEncryption="aws:kms"` without `SSEKMSKeyId`; deterministic
-case-id idempotency is undermined by `uuid.uuid4()` per call). The
-ERROR breaks the demo for any realistic full-pipeline run and is a
-publication blocker. WARNINGs 2 and 3 (graph-construction
-inconsistency, patient-node hashing) parallel the main recipe's
-Step 3 expert-review TODO (S1) and should be fixed in lockstep so
-the pseudocode and the Python companion remain in agreement. The
-TechEditor persona is not the right pass to apply these fixes;
-TechWriter should pick up `chapter03.06-python-example.md` against
-the code-review checklist before this recipe goes to publication.
-
-Final iteration confirmation (TechEditor, 2026-05-15): re-ran the
-mechanical checklist on this iteration. U+2014 em-dash count: 0.
-U+2212 minus-sign count: 0. U+2013 en-dash count: 17, all confined
-to the ASCII-art block-diagrams inside fenced code blocks (zero
-prose en-dashes). Documentation-voice and announcement
-anti-pattern grep ("we are excited", "this recipe demonstrates",
-"in this recipe we will", "let's talk about", "we need to talk
-about", "aws architects, we"): zero matches in prose; all hits
-confined to this editor comment block where the patterns are
-enumerated as items to check for. Header hierarchy: one H1 (the
-title), 11 H2 (Problem / Technology / General Architecture Pattern
-/ AWS Implementation / Why This Isn't Production-Ready / Honest
-Take / Variations and Extensions / Related Recipes / Additional
-Resources / Estimated Implementation Time / Tags), structured H3
-subsections under Technology and AWS Implementation, one H4
-(Walkthrough) under Code; no skipped levels; matches the
-chapter03.04 and chapter03.05 patterns. TechWriter TODO inventory
-unchanged at 16 well-formed `TODO (TechWriter)` markers. Sample
-provider-name discipline confirmed: every entity name in the
-Expected Results sample alerts carries either an explicit
-"(sample)" suffix or is an obvious synthetic placeholder. Sample
-NPIs remain `<synthetic-NPI>` placeholders behind the Luhn-validity
-disclaimer at the top of the Expected Results block. The cross-
-file Python-companion FAIL flag and TechWriter follow-up note
-above stand. No further in-place rewrites; recipe sits at the same
-publication-ready quality bar as Recipes 3.1 through 3.5 pending
-TechWriter resolution of the 16 flagged TODOs and the Python
-companion code-review fixes.
-
-Iteration sign-off (TechEditor): repeat mechanical pass confirms
-em-dash count zero, prose en-dash count zero, header hierarchy
-intact, 16 TechWriter TODOs intact and well-formed, sample-data
-hygiene intact (synthetic provider names, `<synthetic-NPI>`
-placeholders, draft-date timestamp disclaimer). No prose edits
-applied this iteration; the substantive expert-review and
-code-review concerns are flagged as TODOs for TechWriter and the
-Python-companion FAIL state is the cross-file blocker. Recipe
-remains publication-ready as a standalone main file.
-
-Final iteration (TechEditor, 2026-05-21): added two new TODO
-markers to close out the remaining MEDIUM expert-review findings
-that did not yet have markers in place. Marker for S2 (PHI
-minimization on the EventBridge `CaseReady.triage` notification
-and per-investigator IAM scoping on the OpenSearch case index and
-case-state DynamoDB table) placed immediately after the Step 7
-`on_flag_event` pseudocode block where the notification fans out.
-Marker for S3 (architectural artifacts for subgroup-governance
-data access: where the demographic-and-attribute store lives, who
-has read access, how subgroup queries are audited via CloudTrail,
-how the QuickSight dashboard queries an aggregated subgroup-metrics
-table rather than the raw demographic-joined flag archive) placed
-immediately after the Fairness-bias-equity-monitoring bullet in
-Why This Isn't Production-Ready. Both markers carry the
-`Expert review SN (MEDIUM)` prefix that the follow-up generator
-matches and reference the recurring chapter-wide pattern (S2 is
-the seventh distinct PHI-minimization surface; S3 is the
-five-recipe chapter-wide subgroup-governance pattern). All eight
-expert-review MEDIUM findings (A1, A2, A3, A4, S1, S2, S3, S4)
-now have well-formed TODO markers in place. Re-ran mechanical
-checks: U+2014 em-dash count zero, U+2212 minus-sign count zero,
-U+2013 en-dash count 17 (all confined to ASCII-art block-diagrams
-inside fenced code blocks; zero prose en-dashes); 17 well-formed
-`TODO (TechWriter)` markers in prose. No further in-place
-rewrites; recipe is publication-ready as a standalone main file
-pending TechWriter resolution of the 17 flagged TODOs and the
-Python-companion code-review fixes (cross-file blocker stands).
--->
-
 # Recipe 3.6: Healthcare Fraud, Waste, and Abuse Detection ⭐
 
 **Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.002 to $0.02 per claim scored (mostly compute and graph traversal; full provider-level scoring runs weekly and dominates cost)
@@ -163,7 +24,7 @@ Most real cases are mixtures. A provider who started with waste (overordering la
 
 The pain here is different from every other recipe in this chapter, and the difference is worth naming:
 
-**The stakes are enormous.** FWA is estimated to cost the US healthcare system somewhere between three and ten percent of total spending, which at current volumes puts the annual loss in the hundreds of billions of dollars. The National Health Care Anti-Fraud Association estimates conservatively at three percent, roughly $100 billion per year. Government estimates run higher. <!-- TODO (TechWriter): confirm current NHCAA and CMS published estimates for FWA losses. Figures shift each year; verify recent publications before citing specific numbers. -->
+**The stakes are enormous.** FWA is estimated to cost the US healthcare system somewhere between three and ten percent of total spending, which at current volumes puts the annual loss in the hundreds of billions of dollars. The National Health Care Anti-Fraud Association estimates conservatively at three percent, roughly $100 billion per year. Government estimates run higher. 
 
 **The adversary is adaptive and organized.** Most of the money in FWA is in organized schemes, not individual bad actors. The people running these schemes study detection logic. They know what triggers flags, and they structure billing to stay below thresholds. They use multiple provider numbers, multiple corporate entities, multiple geographies. A static detection rule has a useful lifetime measured in months before the schemes adapt.
 
@@ -231,7 +92,7 @@ FWA detection pulls from a wider range of methods than any other recipe in this 
 
 **Graph analytics.** Probably the single most-differentiated technique in FWA detection. Construct a graph of providers, patients, facilities, claims, payments, and ownership entities. Compute graph features: community detection (who clusters with whom), betweenness and centrality (who's a hub), shortest paths (how closely connected are two entities), Jaccard similarity on referral patterns (whose referral graph overlaps suspiciously with whose). Communities with unusually tight referral concentration, billing-through-common-entities patterns, or shared-ownership fan-out are the classic collusive-network signatures. Most commercial SIU toolkits and most state Medicaid Fraud Control Units use graph analytics as a core capability, and it consistently finds cases that no per-claim or per-provider method catches.
 
-**Graph neural networks (GNNs).** The evolution of graph analytics toward learned representations. A GNN can learn node embeddings that incorporate the structural role of each node (provider, patient, facility) in the graph plus its features (specialty, location, billing patterns). Anomaly detection on GNN embeddings catches patterns that hand-crafted graph features miss. Still emerging in production FWA use, but the research literature is accelerating. <!-- TODO (TechWriter): as specific validated patterns for GNN-based FWA detection become published with operational results, expand with concrete references. -->
+**Graph neural networks (GNNs).** The evolution of graph analytics toward learned representations. A GNN can learn node embeddings that incorporate the structural role of each node (provider, patient, facility) in the graph plus its features (specialty, location, billing patterns). Anomaly detection on GNN embeddings catches patterns that hand-crafted graph features miss. Still emerging in production FWA use, but the research literature is accelerating. 
 
 **Peer-group and cohort modeling.** Define peer groups carefully (specialty, region, practice size, patient mix), compute per-peer-group baselines, then measure the target provider's deviation from the cohort baseline. Same as Recipe 3.3. In FWA specifically, peer-group definition gets more sophisticated because the schemes often operate within a specialty (all pain management, all toxicology labs, all DME suppliers); intra-specialty comparison is where the differentiation happens.
 
@@ -428,7 +289,6 @@ At a conceptual level, the FWA detection pipeline has to ingest heterogeneous da
 **Retraining and rule tuning.** On a quarterly (sometimes monthly) cadence. Review false-positive and true-positive rates by rule, by detector, by scheme type. Retire or re-threshold detectors with high noise. Retrain supervised classifiers on accumulated labels. Update rule libraries when coverage policies, CCI edits, or regulatory rules change. Review suppression rules for staleness.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter03.06-architecture). The Python example is linked from there.
 

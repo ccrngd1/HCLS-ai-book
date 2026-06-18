@@ -12,8 +12,6 @@ Now let's get specific. Here's how I'd build this on AWS, and why each service i
 
 **Amazon SageMaker for model training and inference.** SageMaker is AWS's managed machine learning platform, and it's the right home for this workload because it handles the unglamorous infrastructure (training compute, model artifacts, endpoint hosting) so you can focus on the model. For appointment forecasting specifically, SageMaker's [built-in DeepAR algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html) handles the multi-series case out of the box, and SageMaker's bring-your-own-container support lets you run Prophet or statsmodels just as easily for the single-series case. Amazon Forecast was the obvious choice here a few years ago, but AWS has [announced its end of availability](https://aws.amazon.com/blogs/machine-learning/transition-your-amazon-forecast-usage-to-amazon-sagemaker-canvas/), so new builds should target SageMaker directly.
 
-<!-- TODO (TechWriter): N1. Verify the Amazon Forecast deprecation status and link as of the publication date. The transition guidance link is current as of mid-2024; check that AWS has not moved or replaced this guidance. -->
-
 **Amazon S3 for historical data and forecast outputs.** Historical appointment data lands in S3 as the canonical training input, and forecast results land back in S3 as the canonical output. S3 with SSE-KMS encryption is the standard durable storage layer for ML pipelines. The S3 event notification system also gives you a clean trigger: new training data arrives, the retraining workflow fires automatically.
 
 **AWS Glue (or AWS Step Functions) for orchestration.** Forecast pipelines are not single-shot Lambda jobs. They run on a schedule, involve multiple steps (data extraction, feature engineering, model training, batch inference, output delivery), and need to handle failures gracefully. AWS Step Functions is the right tool for orchestrating this kind of multi-step workflow with explicit retry logic and visibility into each step. AWS Glue handles the data transformation pieces if your historical data needs ETL before training.
@@ -54,8 +52,6 @@ flowchart LR
 | **Sample Data** | Synthetic appointment volume data. The [M5 Forecasting Competition dataset on Kaggle](https://www.kaggle.com/competitions/m5-forecasting-accuracy/data) is a good public dataset for testing forecasting code, though it's retail not healthcare. For healthcare-shaped synthetic data, generate from a known process (trend + weekly seasonality + holiday effects + noise) so you can validate your pipeline against ground truth. Never use real patient appointment data in dev. |
 | **Cost Estimate** | SageMaker training (ml.m5.large, ~30 min/day): ~$0.07/day. SageMaker batch transform (~5 min/day): ~$0.01/day. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $50-$200/month for a single clinic, dominated by SageMaker compute and dependent on how much hyperparameter tuning you do. |
 
-<!-- TODO (TechWriter): V1. Verify SageMaker pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
-
 ### Ingredients
 
 | AWS Service | Role |
@@ -76,8 +72,6 @@ flowchart LR
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Official SageMaker examples including DeepAR notebooks for time-series forecasting
 > - [Amazon SageMaker DeepAR Forecasting](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html): Built-in algorithm documentation for DeepAR with example invocations
 > - [Transitioning Amazon Forecast to SageMaker Canvas](https://aws.amazon.com/blogs/machine-learning/transition-your-amazon-forecast-usage-to-amazon-sagemaker-canvas/): Migration guidance from the deprecated Amazon Forecast service to SageMaker Canvas
-
-<!-- TODO (TechWriter): N2. Verify all three reference implementation links are still live and up-to-date. The Amazon Forecast transition blog post URL is correct as of mid-2024 but may have moved. -->
 
 #### Walkthrough
 
@@ -197,8 +191,6 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and Prophet, check out the [Python Example](chapter12.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-<!-- TODO (TechWriter): N3. The Python companion file (chapter12.01-python-example.md) is referenced here but does not yet exist in this branch. Confirm it has been drafted before publishing this recipe. -->
-
 ### Expected Results
 
 **Sample output for a 14-day daily forecast:**
@@ -225,8 +217,6 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 | Forecast accuracy (90-day MAPE) | 12-20% for stable clinics |
 | Cost per clinic per month | $50-$200 (dominated by SageMaker compute) |
 | Forecast availability latency | Available by 8 AM after nightly run |
-
-<!-- TODO (TechWriter): A1. Accuracy benchmarks above are typical industry figures for healthcare appointment forecasting on stable clinics with 2+ years of clean history. Confirm these ranges against your reference data sources before publication. -->
 
 **Where it struggles:** Clinics with fewer than 18 months of clean historical data (annual seasonality cannot be learned). New providers or relocated clinics where the underlying volume distribution is changing rapidly. Specialty clinics with highly variable, low-volume appointment patterns (the noise floor dominates the signal). Holiday and post-holiday weeks where the model interpolates poorly without explicit holiday calendar features. Periods immediately following operational changes (new EHR, new scheduling rules, expanded panels) where history is no longer representative.
 
@@ -275,8 +265,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **AWS Solutions and Blogs:**
 - [Transitioning Amazon Forecast to SageMaker Canvas](https://aws.amazon.com/blogs/machine-learning/transition-your-amazon-forecast-usage-to-amazon-sagemaker-canvas/): Migration guidance for teams previously using Amazon Forecast
 
-<!-- TODO (TechWriter): N4. Audit all external links during final pre-publication pass. The Forecasting: Principles and Practice link is stable; AWS blog and docs links should be re-verified. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -286,7 +274,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (hourly, per-provider, no-show adjustment):** 8-12 weeks
 
 ---
-
 
 ---
 

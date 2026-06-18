@@ -140,7 +140,6 @@ GENE_SYNONYMS = {
 PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 PUBMED_API_KEY = None  # Set this to your NCBI API key for higher rate limits
 
-
 def fetch_new_articles(last_watermark: str, max_results: int = 100) -> list[dict]:
     """
     Query PubMed for articles published since the last watermark date.
@@ -223,7 +222,6 @@ def fetch_new_articles(last_watermark: str, max_results: int = 100) -> list[dict
 
     return articles
 
-
 def parse_pubmed_xml(xml_text: str) -> list[dict]:
     """
     Parse PubMed XML into structured article records.
@@ -261,7 +259,6 @@ def parse_pubmed_xml(xml_text: str) -> list[dict]:
         })
 
     return [a for a in articles if a["pmid"] and a["abstract"]]
-
 
 def extract_pub_date(article_elem) -> str:
     """Extract publication date from PubMed XML article element."""
@@ -431,7 +428,6 @@ VALID_PAIR_TYPES = {
     ("MEDICAL_CONDITION", "MEDICAL_CONDITION"),  # disease-disease comorbidity
 }
 
-
 def extract_relations(entity_mentions: list[dict]) -> list[dict]:
     """
     Classify relationships between entity pairs in the same sentence.
@@ -500,7 +496,6 @@ def extract_relations(entity_mentions: list[dict]) -> list[dict]:
 
     logger.info("Extracted %d relations from %d sentences", len(extracted_triples), len(entities_by_sentence))
     return extracted_triples
-
 
 def call_relation_extraction_model(
     sentence_text: str, entity_a: dict, entity_b: dict
@@ -629,7 +624,6 @@ def normalize_entities(triples: list[dict]) -> list[dict]:
     logger.info("Normalized %d of %d triples", len(normalized), len(triples))
     return normalized
 
-
 def normalize_single_entity(text: str, entity_type: str) -> dict | None:
     """
     Look up a single entity in the appropriate ontology dictionary.
@@ -705,7 +699,6 @@ def grade_evidence(normalized_triples: list[dict], article_metadata: dict) -> li
 
     return scored
 
-
 def classify_study_type(pub_types: list[str]) -> str:
     """
     Determine study type from PubMed publication type annotations.
@@ -730,7 +723,6 @@ def classify_study_type(pub_types: list[str]) -> str:
     if "review" in pub_types_lower:
         return "review"
     return "unknown"
-
 
 def detect_conflicts(scored_triples: list[dict], existing_edges: list[dict]) -> list[dict]:
     """
@@ -771,7 +763,6 @@ def detect_conflicts(scored_triples: list[dict], existing_edges: list[dict]) -> 
         triple["status"] = "READY"
 
     return scored_triples
-
 
 def send_to_review_queue(new_triple: dict, existing_edge: dict):
     """Send a conflicting triple to the SQS review queue for human adjudication."""
@@ -818,7 +809,6 @@ from gremlin_python.driver.serializer import GraphSONSerializersV2d0
 # This example uses the basic Gremlin client for clarity.
 neptune_gremlin_client = None
 
-
 def get_neptune_client():
     """Lazy-initialize the Neptune Gremlin client."""
     global neptune_gremlin_client
@@ -829,7 +819,6 @@ def get_neptune_client():
             message_serializer=GraphSONSerializersV2d0(),
         )
     return neptune_gremlin_client
-
 
 def insert_into_graph(scored_triples: list[dict]):
     """
@@ -889,7 +878,6 @@ def insert_into_graph(scored_triples: list[dict]):
 
     logger.info("Graph update complete: %d inserted, %d updated", inserted, updated)
 
-
 def upsert_node(client, node_id: str, label: str, node_type: str):
     """
     Create a node if it doesn't exist, or update its timestamp if it does.
@@ -923,7 +911,6 @@ def upsert_node(client, node_id: str, label: str, node_type: str):
         },
     )
 
-
 def find_existing_edge(client, subject_id: str, object_id: str, predicate: str, is_negated: bool) -> dict | None:
     """Check if an edge already exists between two nodes with the same predicate."""
     query = (
@@ -946,7 +933,6 @@ def find_existing_edge(client, subject_id: str, object_id: str, predicate: str, 
     if result:
         return result[0]
     return None
-
 
 def create_edge(client, triple: dict):
     """Create a new edge in Neptune with full provenance metadata."""
@@ -981,7 +967,6 @@ def create_edge(client, triple: dict):
             "now": now,
         },
     )
-
 
 def update_edge_evidence(client, existing_edge: dict, new_triple: dict):
     """Add new provenance to an existing edge and recalculate evidence score."""
@@ -1062,7 +1047,6 @@ def query_drug_relationships(drug_label: str, max_results: int = 10) -> list[dic
     ).all().result()
 
     return results
-
 
 def find_path_between_entities(entity_a_id: str, entity_b_id: str, max_hops: int = 3) -> list[dict]:
     """
@@ -1190,7 +1174,6 @@ def process_literature_batch(last_watermark: str, max_articles: int = 50) -> dic
     print(f"\n=== Pipeline complete ===")
     print(json.dumps(summary, indent=2))
     return summary
-
 
 # Example: run the pipeline
 if __name__ == "__main__":

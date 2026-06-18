@@ -254,7 +254,6 @@ def _to_decimal(value, precision="0.0001"):
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
 
-
 def _decimalize(obj):
     """Recursively convert floats to Decimals for DynamoDB write."""
     if isinstance(obj, float):
@@ -265,7 +264,6 @@ def _decimalize(obj):
         return [_decimalize(v) for v in obj]
     return obj
 
-
 def _undecimalize(obj):
     """Inverse of _decimalize for read-side conversion to Python-native types."""
     if isinstance(obj, Decimal):
@@ -275,7 +273,6 @@ def _undecimalize(obj):
     if isinstance(obj, list):
         return [_undecimalize(v) for v in obj]
     return obj
-
 
 def resolve_workforce_id(ehr_user_id, source_format):
     """Map EHR-internal user ID to enterprise identity.
@@ -292,7 +289,6 @@ def resolve_workforce_id(ehr_user_id, source_format):
     #   return response.get("Item", {}).get("workforce_id")
     return ehr_user_id
 
-
 def resolve_patient_id(ehr_patient_id, source_format):
     """Map EHR-internal patient ID to enterprise master patient identifier.
 
@@ -301,7 +297,6 @@ def resolve_patient_id(ehr_patient_id, source_format):
     teaching example assumes the EHR patient ID is the EMPI.
     """
     return ehr_patient_id
-
 
 def normalize_event_type(action_type):
     """Normalize source-specific action verbs to a canonical set."""
@@ -321,7 +316,6 @@ def normalize_event_type(action_type):
         "break_glass":   "break_glass",
     }
     return canonical.get(action_type.lower(), action_type.lower())
-
 
 def normalize_resource_type(resource):
     """Normalize source-specific resource labels to a canonical set."""
@@ -343,7 +337,6 @@ def normalize_resource_type(resource):
         "discharge_summary": "discharge_summary",
     }
     return canonical.get(resource.lower(), resource.lower())
-
 
 def on_ehr_audit_event(raw_event, source_format):
     """Receive an EHR audit event, normalize, and put on the event stream.
@@ -446,7 +439,6 @@ def is_off_hours(observed_at_iso, role):
     # Wraps midnight (e.g., 19 to 7).
     return not (hour >= start or hour < end)
 
-
 def is_off_shift(observed_at_iso, schedule):
     """Decide whether an access occurred while the user was off-shift."""
     if schedule is None:
@@ -459,7 +451,6 @@ def is_off_shift(observed_at_iso, schedule):
     start_dt = datetime.fromisoformat(shift_start.replace("Z", "+00:00"))
     end_dt   = datetime.fromisoformat(shift_end.replace("Z", "+00:00"))
     return not (start_dt <= obs_dt <= end_dt)
-
 
 def check_care_relationship(workforce_id, patient_id, as_of):
     """Look up documented care-relationship paths.
@@ -519,9 +510,7 @@ def check_care_relationship(workforce_id, patient_id, as_of):
         "strength_score":   best_strength,
     }
 
-
 _GRAPH = None
-
 
 def _global_graph():
     """Return the in-process relationship graph for the demo.
@@ -531,7 +520,6 @@ def _global_graph():
     detector path is runnable without provisioning a Neptune cluster.
     """
     return _GRAPH
-
 
 def geolocate_ip(ip_address):
     """Return a coarse geolocation label for an IP address.
@@ -547,7 +535,6 @@ def geolocate_ip(ip_address):
         return {"network": "corporate", "country": "us"}
     return {"network": "external", "country": "unknown"}
 
-
 def is_unusual_for_user(workforce_id, geo):
     """Return True if the geo label is unusual for this user's history.
 
@@ -556,7 +543,6 @@ def is_unusual_for_user(workforce_id, geo):
     that flags any non-corporate network as unusual.
     """
     return geo.get("network") != "corporate"
-
 
 def enrich_event(event):
     """Attach identity, schedule, care-team, and patient-flag enrichments."""
@@ -655,13 +641,11 @@ def compute_name_uniqueness(surname):
         return 0.0
     return SURNAME_UNIQUENESS.get(surname.lower(), SURNAME_UNIQUENESS["DEFAULT"])
 
-
 def zip_population(zip_code):
     """Return population for a ZIP code (or a default if not in the table)."""
     if not zip_code:
         return ZIP_POPULATION["DEFAULT"]
     return ZIP_POPULATION.get(zip_code, ZIP_POPULATION["DEFAULT"])
-
 
 def is_member_of_household(workforce_id, household_id):
     """Lookup whether a workforce member is in a household.
@@ -672,7 +656,6 @@ def is_member_of_household(workforce_id, household_id):
     documented but not exercised in the demo.
     """
     return False
-
 
 def severity_from_break_glass_reason(reason_text):
     """Infer severity from the documented break-glass reason text.
@@ -698,7 +681,6 @@ def severity_from_break_glass_reason(reason_text):
     if any(k in reason_lower for k in vague_keywords):
         return "high"
     return "medium"
-
 
 def run_rules_engine(event):
     """Evaluate the rule library against the enriched event.
@@ -900,7 +882,6 @@ def run_rules_engine(event):
 
     return flags
 
-
 def max_severity_confidence(flags):
     """Combine a flag list into a single rules-confidence score."""
     if not flags:
@@ -935,7 +916,6 @@ def derive_peer_group(role, department, shift_pattern):
     cases; this stub uses a simple concatenation.
     """
     return f"{role or 'unknown'}|{department or 'unknown'}|{shift_pattern or 'unknown'}"
-
 
 def aggregate_user_activity(workforce_id, window_hours, ending_at):
     """Aggregate a user's recent activity over a window.
@@ -995,7 +975,6 @@ def aggregate_user_activity(workforce_id, window_hours, ending_at):
         "weak_care_relationship_fraction": weak_care / len(in_window),
     }
 
-
 def get_user_baseline(workforce_id):
     """Load the per-user historical baseline from the user-state store.
 
@@ -1015,7 +994,6 @@ def get_user_baseline(workforce_id):
         "shift_pattern":     state.get("shift_pattern", "unknown"),
     }
 
-
 def get_peer_baseline(peer_group_id):
     """Load the peer-group baseline.
 
@@ -1031,7 +1009,6 @@ def get_peer_baseline(peer_group_id):
         "mean":  baseline.get("mean", {}),
         "std":   baseline.get("std", {}),
     }
-
 
 # Feature weights tune which deviations matter most. Export volume and
 # sensitive-patient fraction are weighted higher because they represent
@@ -1052,7 +1029,6 @@ FEATURE_WEIGHTS = {
     "weak_care_fraction_24_hour":       1.5,
 }
 
-
 def weighted_max_z(per_feature_z, weights):
     """Compute a weighted aggregate of feature z-scores.
 
@@ -1067,7 +1043,6 @@ def weighted_max_z(per_feature_z, weights):
         weighted.append(abs(z) * w)
     return max(weighted) if weighted else 0.0
 
-
 def days_since(timestamp_iso):
     """Compute days since an ISO-8601 timestamp."""
     if timestamp_iso is None:
@@ -1075,7 +1050,6 @@ def days_since(timestamp_iso):
     obs_dt = datetime.fromisoformat(timestamp_iso.replace("Z", "+00:00"))
     now_dt = datetime.now(timezone.utc)
     return (now_dt - obs_dt).total_seconds() / 86400.0
-
 
 def run_baseline_detector(event):
     """Compute per-user and peer-group deviation scores.
@@ -1198,7 +1172,6 @@ def query_neptune_for_paths(workforce_id, patient_id, max_hops=3):
         pass
     return paths
 
-
 def query_unit_overlap(workforce_id, patient_id, observed_at, lookback_days=7):
     """Check whether the patient was on a unit that the user covers.
 
@@ -1226,7 +1199,6 @@ def query_unit_overlap(workforce_id, patient_id, observed_at, lookback_days=7):
                 return True
     return False
 
-
 def get_user_recent_patient_set(workforce_id, hours=24):
     """Return the set of patients this user has accessed in the last N hours."""
     table = dynamodb.Table(USER_STATE_TABLE)
@@ -1240,7 +1212,6 @@ def get_user_recent_patient_set(workforce_id, hours=24):
         if start_dt <= e_dt <= end_dt:
             patients.add(e["patient_id"])
     return patients
-
 
 def compute_graph_cohesion(patient_set):
     """Return a 0..1 cohesion score for a set of patients.
@@ -1271,7 +1242,6 @@ def compute_graph_cohesion(patient_set):
         return 1.0
     return cohesive_pairs / total_pairs
 
-
 def check_family_link(workforce_id, patient_id):
     """Look up an HR-linked household connection between user and patient.
 
@@ -1283,10 +1253,8 @@ def check_family_link(workforce_id, patient_id):
     """
     return False
 
-
 CLUSTER_THRESHOLD = 8
 CLUSTER_COHESION_THRESHOLD = 0.3
-
 
 def run_graph_detector(event):
     """Evaluate the relationship-graph detector for a single event."""
@@ -1361,12 +1329,10 @@ def cohort_for_user(role, days_since_hire):
         return "clinical_workforce"
     return "DEFAULT"
 
-
 def cohort_weights_for(role, days_since_hire):
     """Return the detector weights for a user's cohort."""
     cohort = cohort_for_user(role, days_since_hire)
     return DEFAULT_DETECTOR_WEIGHTS.get(cohort, DEFAULT_DETECTOR_WEIGHTS["DEFAULT"])
-
 
 def apply_calibration(raw_score, calibrator, subgroup):
     """Apply a (subgroup-aware) calibration mapping.
@@ -1380,7 +1346,6 @@ def apply_calibration(raw_score, calibrator, subgroup):
         return raw_score
     return float(calibrator.predict(np.array([raw_score]))[0])
 
-
 def tier_from_score(score, role, days_since_hire):
     """Map a calibrated score to a privacy-office tier."""
     cohort = cohort_for_user(role, days_since_hire)
@@ -1392,7 +1357,6 @@ def tier_from_score(score, role, days_since_hire):
     if score >= thresholds["tier_3"]:
         return "tier_3"
     return "below_threshold"
-
 
 def composite_score(event, rules_flags, baseline_output, graph_output,
                     sequence_output, calibrator):
@@ -1441,12 +1405,10 @@ def composite_score(event, rules_flags, baseline_output, graph_output,
                                                     event.get("days_since_hire")),
     }
 
-
 def generate_score_id():
     """Generate a score identifier."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return f"SCORE-{today}-{uuid.uuid4().hex[:8]}"
-
 
 def score_via_sagemaker_endpoint(features, feature_order):
     """Invoke the deployed SageMaker endpoint for the composite anomaly model.
@@ -1500,7 +1462,6 @@ def find_existing_case(workforce_id, patient_id, within_window_days):
     items = response.get("Items", [])
     return _undecimalize(items[0]) if items else None
 
-
 def update_existing_case(existing_case, score_record):
     """Append a new score to an existing case and refresh evidence."""
     table = dynamodb.Table(CASE_STATE_TABLE)
@@ -1518,7 +1479,6 @@ def update_existing_case(existing_case, score_record):
             ":t": datetime.now(timezone.utc).isoformat(),
         },
     )
-
 
 def check_recent_dismissal(score_record):
     """Was this same pattern recently dismissed for this user?"""
@@ -1538,7 +1498,6 @@ def check_recent_dismissal(score_record):
                 return True
     return False
 
-
 def add_suppression_rule(workforce_id, patient_id, reason, valid_for_days):
     """Add a suppression rule so a recently-dismissed pattern doesn't re-flag."""
     table = dynamodb.Table(SUPPRESSION_RULES_TABLE)
@@ -1555,20 +1514,17 @@ def add_suppression_rule(workforce_id, patient_id, reason, valid_for_days):
     }
     table.put_item(Item=_decimalize(rule))
 
-
 def fetch_workforce_record(workforce_id):
     """Return the full workforce identity record for case display."""
     table = dynamodb.Table(WORKFORCE_IDENTITY_TABLE)
     response = table.get_item(Key={"workforce_id": workforce_id})
     return _undecimalize(response.get("Item")) or {}
 
-
 def fetch_patient_record(patient_id):
     """Return the full patient context record for case display."""
     table = dynamodb.Table(PATIENT_CONTEXT_TABLE)
     response = table.get_item(Key={"patient_id": patient_id})
     return _undecimalize(response.get("Item")) or {}
-
 
 def fetch_recent_user_activity(workforce_id, days):
     """Return a summary of the user's recent activity."""
@@ -1586,13 +1542,11 @@ def fetch_recent_user_activity(workforce_id, days):
         "off_hours_count":        sum(1 for e in recent if e.get("is_off_hours")),
     }
 
-
 def top_n_drivers(per_feature_z, n=5):
     """Return the top-N features by absolute z-score."""
     items = [(name, z) for name, z in per_feature_z.items() if z is not None]
     items.sort(key=lambda x: abs(x[1]), reverse=True)
     return [{"feature": name, "z_score": float(z)} for name, z in items[:n]]
-
 
 def build_case_narrative_prompt(evidence):
     """Build the Bedrock prompt for case-narrative generation.
@@ -1652,7 +1606,6 @@ def build_case_narrative_prompt(evidence):
         "No assertions of intent. No recommended employment actions."
     )
 
-
 def invoke_bedrock_narrative(evidence):
     """Generate the investigator-facing case narrative via Bedrock.
 
@@ -1685,7 +1638,6 @@ def invoke_bedrock_narrative(evidence):
             "This is decision support; investigator judgment governs."
         )
 
-
 def _emit_metric(metric_name, value, unit="Count"):
     """Emit a CloudWatch metric for operational monitoring."""
     try:
@@ -1701,7 +1653,6 @@ def _emit_metric(metric_name, value, unit="Count"):
     except Exception as e:
         logger.warning("metric emit failed",
                        extra={"metric": metric_name, "error": str(e)})
-
 
 def build_case(score_record, enriched_event):
     """Group, suppress, assemble evidence, and persist a case."""
@@ -1810,7 +1761,6 @@ VALID_OUTCOMES = {
     "escalated_to_law_enforcement",
 }
 
-
 def initiate_breach_review(case):
     """Start the HIPAA breach-notification workflow.
 
@@ -1830,7 +1780,6 @@ def initiate_breach_review(case):
         }, default=str),
         "EventBusName": CASE_BUS,
     }])
-
 
 def refer_to_hr(case):
     """Hand off a confirmed-violation case to HR for employment review.
@@ -1852,7 +1801,6 @@ def refer_to_hr(case):
         "EventBusName": CASE_BUS,
     }])
 
-
 def update_user_state_with_prior_violation(workforce_id):
     """Mark the user as having a prior confirmed violation.
 
@@ -1870,7 +1818,6 @@ def update_user_state_with_prior_violation(workforce_id):
             ":t": datetime.now(timezone.utc).isoformat(),
         },
     )
-
 
 def on_investigator_action(action):
     """Record an investigator's adjudication and feed the learning loop.
@@ -2010,7 +1957,6 @@ def build_demo_relationship_graph():
 
     return g
 
-
 def seed_demo_data():
     """Seed the workforce, patient, schedule, and user-state tables with
     a tiny synthetic dataset so the pipeline runs end-to-end.
@@ -2095,7 +2041,6 @@ def seed_demo_data():
             "prior_violation":       False,
         }))
 
-
 def append_to_user_state(workforce_id, enriched_event):
     """Append an enriched event to the per-user state record.
 
@@ -2127,7 +2072,6 @@ def append_to_user_state(workforce_id, enriched_event):
 
     state["updated_at"] = datetime.now(timezone.utc).isoformat()
     table.put_item(Item=_decimalize(state))
-
 
 def train_demo_model(num_synthetic_events=500, random_state=42):
     """Train a tiny in-process composite model on synthetic feature vectors.
@@ -2179,7 +2123,6 @@ def train_demo_model(num_synthetic_events=500, random_state=42):
     calibrator.fit(raw_probs, y)
 
     return model, calibrator, feature_order
-
 
 def run_access_anomaly_pipeline(audit_events, model, calibrator, feature_order,
                                  graph):

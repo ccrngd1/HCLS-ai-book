@@ -589,7 +589,6 @@ def find_ocr_confidence_for_entity(entity_text: str, handwritten_words: list) ->
     else:
         return 80.0  # Conservative default when no handwritten match found
 
-
 def composite_score_and_tier(vision_result: dict, handwritten_words: list) -> dict:
     """
     Compute a composite confidence score for each extracted entity and

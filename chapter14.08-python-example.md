@@ -176,7 +176,6 @@ def build_initial_fleet():
     ]
     return fleet
 
-
 def get_available_units(fleet, required_capability="BLS"):
     """
     Filter fleet to units that are available and meet the capability requirement.
@@ -221,7 +220,6 @@ def haversine_distance_km(lat1, lon1, lat2, lon2):
     )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
-
 
 def estimate_travel_time_seconds(origin_lat, origin_lon, dest_lat, dest_lon,
                                   emergency=True):
@@ -316,11 +314,9 @@ def compute_coverage_impact(unit, fleet, demand_zones):
     else:
         return 0.9  # no backup, critical gap if we send this unit
 
-
 def normalize_value(value, max_value):
     """Normalize a value to 0.0-1.0 range. Clamps at 1.0."""
     return min(value / max_value, 1.0)
-
 
 def score_candidates(call, fleet, demand_zones):
     """
@@ -436,7 +432,6 @@ def build_hospital_status():
     ]
     return hospitals
 
-
 def select_hospital(patient_needs, unit_location, hospitals):
     """
     Recommend the best destination hospital for a patient.
@@ -528,7 +523,6 @@ def build_demand_zones():
     }
     return zones
 
-
 def identify_coverage_gaps(fleet, demand_zones):
     """
     Find zones where no available unit can respond within the coverage threshold.
@@ -565,7 +559,6 @@ def identify_coverage_gaps(fleet, demand_zones):
             })
 
     return gaps
-
 
 def optimize_repositioning(fleet, demand_zones):
     """
@@ -819,7 +812,6 @@ def dispatch_ambulance(call):
 
     return decision
 
-
 def _infer_patient_needs(call):
     """
     Map call nature codes to hospital capability requirements.
@@ -840,7 +832,6 @@ def _infer_patient_needs(call):
         call["nature_code"],
         {"required_capabilities": [], "acuity_level": 3},
     )
-
 
 # --- Run the full example ---
 if __name__ == "__main__":

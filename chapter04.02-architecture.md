@@ -12,24 +12,17 @@
 
 **Amazon DynamoDB for content metadata and patient profile.** Two tables. One holds catalog metadata (content_id, title, language, reading_level, topic_tags, content_type, audience, status). One holds patient profile (patient_id, conditions, language, reading_level estimate, format preferences, engagement summary). Both are point-lookup workloads, both fit DynamoDB's strengths, and both are HIPAA-eligible with BAA. Use customer-managed KMS keys; the patient profile is PHI by definition, and the content metadata becomes PHI the moment it's joined to a patient ID.
 
-**Amazon OpenSearch Service for vector search.** OpenSearch is the workhorse for both keyword search and vector similarity search in this kind of pipeline. The k-NN plugin supports cosine and L2 similarity over dense vectors at production latencies. The index is small (a few thousand items, each with a few-hundred-dimensional embedding) so a single small cluster is plenty. OpenSearch Service is HIPAA-eligible. <!-- TODO: confirm current OpenSearch Service HIPAA eligibility entry on the AWS HIPAA Eligible Services Reference; the service has been on the list, but verify before publishing. -->
+**Amazon OpenSearch Service for vector search.** OpenSearch is the workhorse for both keyword search and vector similarity search in this kind of pipeline. The k-NN plugin supports cosine and L2 similarity over dense vectors at production latencies. The index is small (a few thousand items, each with a few-hundred-dimensional embedding) so a single small cluster is plenty. OpenSearch Service is HIPAA-eligible. 
 
-**Amazon Bedrock for embedding generation and (optional) content tailoring.** Bedrock hosts foundation models including embedding models (Amazon Titan Text Embeddings, Cohere Embed) for the content vectorization step, and large language models (Anthropic Claude, Meta Llama, Amazon Nova) for any content-tailoring summarization on the inference path. The embedding model runs once per content ingestion event; the LLM, if you use one, runs at most once per recommendation response. Bedrock is HIPAA-eligible with BAA. Confirm in your BAA acceptance and Bedrock service terms that customer prompts and completions are not used to train the underlying foundation models and are not retained beyond the request lifecycle. This is the standard Bedrock posture but should be verified per-model and documented for audit. <!-- TODO: confirm Bedrock service terms and per-model data-handling guarantees at the time of build; the eligible-model list and BAA coverage have been evolving. -->
+**Amazon Bedrock for embedding generation and (optional) content tailoring.** Bedrock hosts foundation models including embedding models (Amazon Titan Text Embeddings, Cohere Embed) for the content vectorization step, and large language models (Anthropic Claude, Meta Llama, Amazon Nova) for any content-tailoring summarization on the inference path. The embedding model runs once per content ingestion event; the LLM, if you use one, runs at most once per recommendation response. Bedrock is HIPAA-eligible with BAA. Confirm in your BAA acceptance and Bedrock service terms that customer prompts and completions are not used to train the underlying foundation models and are not retained beyond the request lifecycle. This is the standard Bedrock posture but should be verified per-model and documented for audit. 
 
 **AWS Lambda for the inference path and ingestion handlers.** Recommendation requests are short, stateless, and bursty (a portal page load triggers one). Lambda fits this naturally. The ingestion handler that processes new content events is also a fine Lambda workload. Set reserved concurrency on the inference Lambda to protect the patient-facing path from noisy-neighbor effects.
 
 **Amazon API Gateway for the recommendation endpoint.** The portal, the email-composer Lambda from Recipe 4.1, and the post-visit summary generator (Recipe 2.5) all need to call the recommender. API Gateway gives you a single authenticated endpoint, request throttling, and integration with WAF for basic protection. Pair with Lambda authorizers or IAM-signed requests for service-to-service auth.
 
-<!-- TODO (TechWriter): Expert review S2 / A9 / N13 (MEDIUM). Expand this paragraph (or add one alongside) covering three related authn/topology items the expert review flagged:
-     1. (S2) API Gateway has two distinct caller contexts here: public portal calls (need patient-session authn via Cognito or Lambda authorizer, with patient_id authorization enforced in the recommender Lambda so the request body's patient_id must match the resolved identity), and service-to-service calls (need IAM-signed SigV4 with a least-privileged execution role per caller). The recommender must validate that the caller is allowed to act on the requested patient_id; do not rely on the upstream service.
-     2. (N13) Public vs private API Gateway: portal callers reach a public regional REST API; service-to-service callers should reach a private REST API exposed via a VPC interface endpoint. Two API Gateway deployments fronting the same recommender Lambda is a clean pattern.
-     3. (A9) Per-patient throttling: WAF rate-limit on a header populated by the Lambda authorizer (resolved patient identifier). A starting point of 10 req/patient/min and 100 req/patient/hr protects shared backend quotas (Bedrock, OpenSearch) from a single misbehaving caller. -->
-
 **Amazon Kinesis Data Streams for engagement events.** Same engagement-event bus you stood up for Recipe 4.1, with new event types added (content_impression, content_click, content_completion, content_rating). One bus, multiple producers, multiple consumers. The reward-attribution Lambda picks up content-related events and persists them to a structured engagement table.
 
 **Amazon SageMaker for the re-ranker training and (optionally) hosting.** The re-ranker is a gradient-boosted ranking model (XGBoost-Ranker or LightGBM with `lambdarank` objective). SageMaker Training Jobs handle the periodic retraining; SageMaker Endpoints host the model for inference if you graduate beyond a Lambda-embedded scoring function. For a starter implementation, you can host the trained model as a Lambda layer and skip the endpoint entirely. The Lambda-layer approach hits a 250 MB ceiling once you add XGBoost or LightGBM with their numpy/scipy dependencies; plan to graduate to a SageMaker Endpoint when the layer approach starts to feel cramped, which often happens earlier than expected.
-
-<!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify the SageMaker training-job trigger mechanism (EventBridge schedule? Step Functions on a cron? CloudWatch metric threshold?) and the model-promotion path from training to inference (Lambda-layer publish + alias canary, or SageMaker endpoint variant weights). The architecture diagram currently shows "Periodic retrain" without an explicit trigger node, and there is no path shown for promoting a newly-trained ranker into the inference path. -->
 
 **AWS Glue / Amazon EMR / AWS Step Functions for the offline content ingestion pipeline.** The reading-level computation, embedding generation, and metadata indexing form a small DAG. Step Functions is the lowest-friction orchestrator for a pipeline of this size. Glue or EMR are overkill unless your catalog is much larger than typical or includes complex preprocessing.
 
@@ -80,14 +73,14 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon S3, Amazon DynamoDB, Amazon OpenSearch Service, Amazon Bedrock, AWS Lambda, Amazon API Gateway, Amazon Kinesis Data Streams, Amazon SageMaker, AWS Step Functions, AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem`, `dynamodb:PutItem` on specific tables; `s3:GetObject`/`s3:PutObject` on the content bucket; `bedrock:InvokeModel` on specific model ARNs (e.g., `arn:aws:bedrock:{region}::foundation-model/amazon.titan-embed-text-v2:0`); `aoss:APIAccessAll` or `es:ESHttpPost` scoped to the OpenSearch domain ARN; `kinesis:PutRecord` on the engagement stream. Never `*`. <!-- TODO: confirm exact IAM action names for OpenSearch Service vector search; classic OpenSearch uses `es:*` actions, OpenSearch Serverless uses `aoss:*`. The recipe assumes provisioned OpenSearch Service throughout; adjust if you choose Serverless. --> |
-| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: S3, DynamoDB, OpenSearch Service, Bedrock, Lambda, API Gateway, Kinesis, SageMaker, Step Functions are all on the HIPAA Eligible Services list. <!-- TODO: confirm Bedrock + the specific embedding and LLM models you select are eligible at the time of build. The eligible list and per-model BAA coverage have been evolving; verify before launch. --> |
+| **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem`, `dynamodb:PutItem` on specific tables; `s3:GetObject`/`s3:PutObject` on the content bucket; `bedrock:InvokeModel` on specific model ARNs (e.g., `arn:aws:bedrock:{region}::foundation-model/amazon.titan-embed-text-v2:0`); `aoss:APIAccessAll` or `es:ESHttpPost` scoped to the OpenSearch domain ARN; `kinesis:PutRecord` on the engagement stream. Never `*`.  |
+| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: S3, DynamoDB, OpenSearch Service, Bedrock, Lambda, API Gateway, Kinesis, SageMaker, Step Functions are all on the HIPAA Eligible Services list.  |
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with customer-managed KMS. OpenSearch: encryption at rest enabled, node-to-node encryption enabled, HTTPS-only access. Kinesis: server-side encryption. All Lambda log groups KMS-encrypted (recommender logs include patient context). |
 | **VPC** | Production: Lambdas in VPC, OpenSearch domain in VPC (not public), VPC endpoints for DynamoDB, S3 (gateway endpoint), Bedrock, Kinesis, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), STS, EventBridge (`events`). NAT Gateway only if calling external services that don't have VPC endpoints; restrict egress security groups. VPC Flow Logs enabled. Content ingestion may pull from an external CMS over the public internet (SaaS), a VPN/Direct Connect tunnel (on-prem), or a cross-account VPC endpoint (AWS-hosted); for SaaS pulls, restrict NAT egress to the CMS's published IP ranges, prefer Direct Connect with private routing for on-prem, and use VPC peering or PrivateLink for cross-account rather than internet egress. |
 | **CloudTrail** | Enabled with data events on the patient-profile table, recommendation-log table, and the content S3 bucket if any content is patient-specific. |
 | **Content Governance** | Process to mark content as deprecated, retired, or under review (so the recommender can exclude it); a defined cadence for clinical content team review (annual at minimum); language and reading-level metadata required at content ingestion (don't let untagged content into the index). |
-| **Sample Data** | A starter content catalog (a few dozen items in two languages with reading-level metadata) to seed the index, plus a synthetic patient population. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic FHIR patients with conditions and demographics suitable for testing. For sample education content suitable for development, [MedlinePlus](https://medlineplus.gov/) publishes patient-friendly content under a permissive license; verify license terms before redistribution. <!-- TODO: confirm current MedlinePlus content license and redistribution terms before recommending in print. --> |
-| **Cost Estimate** | At a 200,000-patient health system with 5,000 unique active users per month and 3-5 recommendations per session: Bedrock Titan Embeddings (one-time per content item, plus query embeddings): typically a few dollars per month at this scale. <!-- TODO: verify current Bedrock Titan embedding pricing per 1K input tokens. --> OpenSearch Service: a `t3.small.search` two-node domain runs in the $50-100/month range, scaling up with usage. DynamoDB on-demand at this scale: $20-50/month. Lambda + API Gateway: typically under $20/month. Optional Claude/Nova content tailoring per recommendation pushes per-recommendation cost up to a few cents; toggle off if you don't need it. Estimated total: $150-400/month range for a starter deployment, before any SageMaker hosting costs. <!-- TODO: replace with verified, current pricing once the implementing team can validate against the AWS Pricing Calculator. --> |
+| **Sample Data** | A starter content catalog (a few dozen items in two languages with reading-level metadata) to seed the index, plus a synthetic patient population. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic FHIR patients with conditions and demographics suitable for testing. For sample education content suitable for development, [MedlinePlus](https://medlineplus.gov/) publishes patient-friendly content under a permissive license; verify license terms before redistribution.  |
+| **Cost Estimate** | At a 200,000-patient health system with 5,000 unique active users per month and 3-5 recommendations per session: Bedrock Titan Embeddings (one-time per content item, plus query embeddings): typically a few dollars per month at this scale.  OpenSearch Service: a `t3.small.search` two-node domain runs in the $50-100/month range, scaling up with usage. DynamoDB on-demand at this scale: $20-50/month. Lambda + API Gateway: typically under $20/month. Optional Claude/Nova content tailoring per recommendation pushes per-recommendation cost up to a few cents; toggle off if you don't need it. Estimated total: $150-400/month range for a starter deployment, before any SageMaker hosting costs.  |
 
 ### Ingredients
 
@@ -106,13 +99,12 @@ flowchart LR
 | **Amazon CloudWatch** | Operational metrics, cohort-sliced coverage and engagement dashboards |
 | **AWS CloudTrail** | Audit logging for all PHI-related API calls |
 
-
 ### Code
 
 > **Reference implementations:** Useful aws-samples patterns for this recipe:
 > - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Demonstrates embedding generation with Titan and retrieval-augmented patterns. The vector-search labs are directly relevant to the candidate-generation step here.
 > - [`amazon-personalize-samples`](https://github.com/aws-samples/amazon-personalize-samples): Reference patterns for recommendation systems. If you graduate beyond the in-house re-ranker into a managed service, this is the path.
-> <!-- TODO: confirm current names and locations of these aws-samples repositories. The list of Bedrock-related aws-samples repos has been reorganizing. -->
+> 
 
 #### Walkthrough
 
@@ -468,7 +460,6 @@ FUNCTION process_engagement_event(event):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample recommendation response:**
@@ -537,8 +528,6 @@ FUNCTION process_engagement_event(event):
 | Coverage (% of catalog ever shown in 30 days) | 5-10% | 25-40% |
 | End-to-end recommendation latency (p95) | <100 ms | <200 ms (incl. embedding) |
 
-<!-- TODO: the CTR and completion-rate ranges are illustrative and have not been measured for this specific pipeline. Replace with measured results from your deployment, or with citations to published patient-education recommender deployments when available. -->
-
 **Where it struggles:**
 
 - **Brand-new patients with no engagement history.** The re-ranker has nothing to personalize with, so it falls back to candidate-generation order. That's fine, but expect the first few recommendations to feel generic. Consider a brief "tell us your preferences" onboarding to bootstrap explicit signals.
@@ -562,14 +551,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Recommendation diversity and exposure controls.** Without explicit diversity logic, the recommender will surface the most similar three items to the query. If those three are all variations of the same article (e.g., a primary article, its summary, and its FAQ), the patient sees redundancy. Production systems use Maximal Marginal Relevance (MMR), category diversification, or a position-based cap ("no more than 2 items from the same topic in top 5") to maintain breadth. This is a small extension but it materially affects perceived quality.
 
 **Content lifecycle hooks.** When content is deprecated, retired, or under review, the index needs to reflect that within minutes, not days. A recommendation log that surfaces a deprecated piece of content is a small operational embarrassment; surfacing content that has been clinically retracted (rare but real) is worse. Wire deprecation events through the same ingestion pipeline with high priority.
-
-<!-- TODO (TechWriter): Expert review A7 (MEDIUM). The architecture diagram shows the ingestion path writing to both DynamoDB content-metadata and OpenSearch, but does not show how deprecation events propagate. Either extend the Step Functions ingestion path to handle a deprecation parameter that updates DynamoDB.status and OpenSearch.status atomically, or add a separate deprecation-handler Lambda with its own EventBridge rule. Document the SLA (e.g., "deprecation propagation within 5 minutes of CMS event") and add a CloudWatch metric for DeprecationPropagationLatency. -->
-
-<!-- TODO (TechWriter): Expert review A6 (HIGH). Add a paragraph (or extend the existing operational gaps) covering DLQ coverage on all three Lambda paths in the architecture, none of which the diagram currently shows:
-       (a) API Gateway -> recommender Lambda: SQS DLQ on the function, or accept the synchronous-API tradeoff and pair structured logging with a CloudWatch 5xx alarm and a documented replay-from-logs runbook;
-       (b) Step Functions -> ingestion Lambdas: each task should `Catch` to an SQS failure queue keyed on content_id and failure reason, with a "failed-ingestion" replay process in operations;
-       (c) Kinesis -> attribution Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth.
-     The third one is the most insidious: an attribution Lambda silently dropping engagement events leaves the re-ranker training data incomplete with no observable symptom until a cohort dashboard regresses weeks later. Update the architecture diagram to show DLQs on all three paths. -->
 
 **Re-ranker labeling and training.** The pseudocode treats the re-ranker as either a hand-tuned scoring function or a learned model. In production, the leap from one to the other requires labeled training data: pairs of (patient context, candidate set, observed engagement) that get joined into a learning-to-rank dataset. Building that join correctly (positives are clicked or completed items; negatives are impressions that didn't get engagement; weights account for position bias) is its own small engineering project. Underinvest here and the learned ranker is worse than the hand-tuned one.
 
@@ -612,14 +593,10 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 - [`amazon-personalize-samples`](https://github.com/aws-samples/amazon-personalize-samples): Reference patterns for managed-service recommendation; useful if you graduate from a self-built re-ranker to Amazon Personalize
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost-based learning-to-rank notebooks (search for "learning to rank" or "lambdarank") for the eventual re-ranker training pipeline
 
-<!-- TODO: confirm the current names and locations of the aws-samples repositories above; aws-samples and aws-solutions-library-samples have been reorganizing, and several Bedrock-related repos have moved or merged. -->
-
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter AI/ML): browse for content-recommendation and search architectures
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "vector search," "learning to rank," and "patient engagement" for relevant deep-dives
 - [AWS Architecture Blog](https://aws.amazon.com/blogs/architecture/): search "recommendation system" for end-to-end reference architectures
-
-<!-- TODO: replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs. -->
 
 **External References (Conceptual):**
 - [Flesch-Kincaid readability tests, Wikipedia](https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests): primer on the most common reading-level metric
@@ -638,7 +615,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add learned ranker (LambdaMART), explicit preference capture, LLM-tailored snippets, provider co-recommendation, multi-modal content support | 6-9 months beyond production-ready |
 
 ---
-
 
 ---
 

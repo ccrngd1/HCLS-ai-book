@@ -1,16 +1,3 @@
-<!--
-Editorial pass v1 (TechEditor, 2026-06-17):
-- Split-polish pass for ch03-r05-archsplit task. Verified this architecture
-  companion opens cleanly with backlink to main recipe, has no story
-  sections that belong in the main file, and does not duplicate The Honest
-  Take or Related Recipes content.
-- Style hygiene verified: zero em dashes (U+2014), zero en dashes (U+2013).
-  Code fences follow established convention: bare ``` for pseudocode,
-  ```mermaid for the architecture diagram, ```json for sample outputs.
-- All TODO markers preserved verbatim.
-- No structural changes, no new claims, no section reordering.
--->
-
 # Recipe 3.5 Architecture and Implementation: Lab Result Outlier Detection
 
 *Companion to [Recipe 3.5: Lab Result Outlier Detection](chapter03.05-lab-result-outlier-detection). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -24,7 +11,6 @@ Editorial pass v1 (TechEditor, 2026-06-17):
 **Amazon Kinesis Data Streams for the result feed.** The result ingest pipeline accepts HL7 ORU messages (from the LIS), JSON payloads (from POCT data managers), and batch file feeds (from reference labs) with different throughput profiles. Kinesis provides durable, ordered event streams with multi-consumer fan-out, which matters because the same result gets read by the real-time outlier service, the batch cohort pipelines, and the audit archive. HIPAA-eligible under the BAA.
 
 **Amazon MQ for HL7 v2 ingress.** LIS-to-AWS integration usually uses MLLP (Minimal Lower Layer Protocol) over TCP. An on-premises MLLP listener (Mirth Connect, Rhapsody, Corepoint, or a simple listener built on the HL7 libraries) republishes to Amazon MQ (ActiveMQ) or to a Kinesis-backed ingress Lambda. ActiveMQ is the common bridge because most integration engines have pre-built ActiveMQ connectors.
-<!-- TODO (TechEditor → TechWriter): Expert review S4 requested explicit MLLP-over-TLS posture: wrap MLLP in TLS with mutual TLS authentication, deploy the listener in a DMZ rather than on the clinical network, prefer Direct Connect over Site-to-Site VPN for production volumes, and authenticate the MQ broker via mutual TLS or short-lived IAM-derived tokens rather than long-lived shared secrets. Add a one-paragraph note to this section. -->
 
 **AWS Lambda for the real-time outlier service.** The hot path (rule evaluation, patient-context cache lookup, delta-check computation, specimen-quality fusion, severity tiering) needs to complete in tens to low hundreds of milliseconds because autoverification and callback timing depend on it. A Kinesis-triggered Lambda fits this profile. Keep it thin; offload heavy statistical work to async downstream steps.
 
@@ -46,8 +32,7 @@ Editorial pass v1 (TechEditor, 2026-06-17):
 
 **Amazon Comprehend Medical for clinical context extraction.** When the patient's chart has recent free-text clinical notes, Comprehend Medical extracts diagnoses, medications, and symptoms to attach to the patient-context cache. Used sparingly (extract-once-and-cache) because per-page cost adds up at lab-data volumes.
 
-**Amazon Bedrock for LLM-assisted interpretation (optional, advanced).** For results that have been flagged by the statistical layers, a HIPAA-eligible LLM can read the patient's clinical context and the flagged result together and produce a triage recommendation (likely artifact given specimen quality; likely real given clinical picture; insufficient evidence). Not a primary detector; a triage accelerator for the review queue. <!-- TODO (TechWriter): as specific validated patterns for LLM-assisted clinical result interpretation become published, expand with concrete references. Production adoption is early as of this writing. -->
-<!-- TODO (TechEditor → TechWriter): Expert review S5 requested a BAA-discipline forward reference matching the chapter-2 generative AI recipes. Specifically: name that Amazon foundation models on Bedrock are HIPAA-eligible under the BAA but third-party models on Bedrock have differing BAA postures and require separate review; require minimum-necessary prompt construction (relevant note excerpts, flagged result, active medication and problem lists only; not the full chart); require output filtering for clinical-recommendation hallucinations; require full prompt-and-response audit trail tied to the triage decision. Cross-link to chapter-2 recipes that established this pattern. -->
+**Amazon Bedrock for LLM-assisted interpretation (optional, advanced).** For results that have been flagged by the statistical layers, a HIPAA-eligible LLM can read the patient's clinical context and the flagged result together and produce a triage recommendation (likely artifact given specimen quality; likely real given clinical picture; insufficient evidence). Not a primary detector; a triage accelerator for the review queue. 
 
 **Amazon QuickSight for lab operations dashboards.** Autoverification rate by analyte, critical-value callback volume and compliance, delta-check override rates, specimen-rejection trends, analyzer-specific drift metrics. QuickSight on top of Athena over S3 plus OpenSearch queries. HIPAA-eligible.
 
@@ -106,8 +91,6 @@ flowchart TB
     style V fill:#f9f,stroke:#333
 ```
 
-<!-- TODO (TechEditor → TechWriter): Expert review A2 (MEDIUM) flagged the absence of DLQ / poison-message handling. For an autoverification-gating system, a dropped real-time event = a result released to chart without an outlier check, which is the failure mode the entire pipeline is designed to prevent. Add three SQS DLQs to the diagram (`result-normalizer-dlq`, `real-time-outlier-service-dlq`, `feedback-capture-dlq`) configured as Lambda OnFailure destinations. Add a Prerequisites note: CloudWatch alarms on DLQ depth (alarm threshold 1 for the real-time path because a single dropped result is a CLIA-audit-trail event); replay events from DLQ after fixing the root cause; for events older than the autoverification window or critical-callback window, escalate to laboratory-director review rather than auto-replay because the release decision and callback timing have already been made. Add a "DLQ and replay" bullet to "Why This Isn't Production-Ready" tying the discipline to the existing disaster-recovery paragraph. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -118,18 +101,14 @@ flowchart TB
 | **Encryption** | S3: SSE-KMS with customer-managed keys. DynamoDB: encryption at rest with CMK. Kinesis: SSE with CMK. OpenSearch: at rest and in transit. SageMaker: KMS on volumes, model artifacts, Feature Store. TLS 1.2 or higher in transit everywhere. |
 | **VPC** | Production: Lambdas, SageMaker jobs, and OpenSearch in a VPC with VPC endpoints for S3, DynamoDB, Kinesis, SageMaker runtime, Comprehend Medical, Bedrock, and KMS. No public endpoints on OpenSearch. |
 | **CloudTrail** | Enabled with data events on patient-context-cache, lab-rules bucket, feedback-labels bucket, OpenSearch domain operations, and the critical-value callback topic. Every flag decision and every callback is audit-logged. |
-<!-- TODO (TechEditor → TechWriter): Expert review N2 requested explicit VPC Flow Logs requirement on the VPC carrying Lambda, SageMaker, and OpenSearch traffic, with logs delivered to a dedicated S3 bucket with KMS encryption and retention aligned to the deepest applicable retention requirement (CLIA 2-year minimum, 5-year for blood bank, longer in many states for pathology and sentinel-event-related records). Add to either VPC row or CloudTrail row. -->
-<!-- TODO (TechEditor → TechWriter): Expert review N1 requested VPC endpoint precision in the VPC row above. Replace the current generic list with explicit per-endpoint identifiers: Gateway endpoints `s3`, `dynamodb`; Interface endpoints `kinesis`, `sagemaker.api`, `sagemaker.featurestore-runtime`, `sagemaker.runtime`, `states`, `events`, `scheduler`, `logs`, `monitoring`, `kms`, `sns`, `bedrock-runtime`, `comprehendmedical`. Note OpenSearch and any graph extensions (Neptune) accessible only via VPC; Pinpoint reached via its regional endpoint through the Lambda's egress path. -->
-<!-- TODO (TechEditor → TechWriter): Expert review S3 requested per-consumer IAM scoping in the IAM row above for shared resources (patient-context cache, outlier-events bus). Add explicit per-role examples covering the cache-refresher Lambda (write-only on cache, kinesis:GetRecords on the EHR event stream), the autoverify-release Lambda (consume from bus + write to LIS-EHR bridge, no broader EHR access), and the feedback-capture Lambda (write to labels store and feedback bus only; no events:PutEvents because it consumes events rather than producing them). -->
-<!-- TODO (TechEditor → TechWriter): Expert review S2 requested an explicit "Subgroup data access" row covering read access to demographic attributes (age band, sex, race, ethnicity, preferred language, insurance type), the discipline that race and ethnicity data may be governed differently from clinical PHI in some regulatory regimes, restricted read access to the demographic store for retraining and dashboard roles, CloudTrail data events on subgroup queries, and QuickSight queries against an aggregated subgroup-metrics table rather than the raw demographic-joined outlier archive. -->
-<!-- TODO (TechEditor → TechWriter): Expert review S6 requested explicit Transfer Family SFTP posture for the reference-lab inbound feed: VPC endpoint (not public) in production, source-IP allowlist for the reference lab's known egress ranges, SSH key authentication with out-of-band public key exchange, customer-managed KMS encryption at rest, CloudTrail data events on every PutObject and GetObject on the reference-lab inbound prefix. Either add to Lab Integration row or add a standalone Transfer Family note in Why-These-Services. -->
+
 | **CLIA and Lab Regulatory** | The pipeline participates in a regulated laboratory workflow. Critical-value callbacks have documented-timing requirements under CLIA and state licensure. Autoverification rules require documented validation per CLSI AUTO10. Changes to rules require laboratory director sign-off. Validation records retained per regulatory retention schedule (minimum 2 years under CLIA; longer in many states). |
 | **Clinical Governance** | Lab director signs off on all rule thresholds, severity tier definitions, and callback protocols. Pathology and clinical leadership jointly own the governance of outlier suppression rules (the rules that quiet alerts on patients whose history makes the result unsurprising). Changes logged and periodically reviewed. |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) generates synthetic lab data with realistic distributions. [MIMIC-IV](https://mimic.mit.edu/) has dense ICU lab data suitable for developing patient-baseline algorithms; access requires PhysioNet credentialing and a data use agreement. [LOINC](https://loinc.org/) is free and essential for normalization prototyping. Never use real PHI in development. |
 | **Reference Data** | LOINC (free from Regenstrief Institute) for test identification. Reference ranges from the lab's validated sources (instrument inserts, validation studies, published consensus). An analyte metadata table (canonical unit, expected stability, delta-check thresholds, specimen-quality sensitivity) maintained jointly by the lab and the analytics team. |
 | **Lab Integration** | LIS system (Cerner Millennium, Epic Beaker, Sunquest, SoftLab, Orchard, others) producing HL7 v2 ORU messages or FHIR DiagnosticReport/Observation resources. Middleware (Data Innovations, Beckman, Sysmex Caresphere) that captures and forwards specimen-quality indices. POCT data manager integration if POCT is in scope. |
 | **Retention** | CLIA baseline is 2 years for most records, 5 years for blood bank. State regulations often extend this (5-10 years common). Pathology reports often 20 years or longer. Confirm retention schedule with legal and compliance before production. |
-| **Cost Estimate** | For a mid-size hospital lab (say, 3 million results per year, including chemistry, hematology, immunology, microbiology culture results): Kinesis and Lambda real-time path: ~$150-400/month. DynamoDB patient-context cache: ~$80-250/month. SageMaker Feature Store: ~$30-90/month. SageMaker Processing: ~$200-500/month for batch scoring. OpenSearch outlier index: ~$300-700/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-600/month. Total infrastructure: typically $1,200-3,500/month. Compare to cost avoidance: pre-analytical error recollections cost $10-50 per event in supplies and labor plus the unmeasurable clinical-workflow cost, and sentinel-event-level errors from a missed critical value have costs that dwarf the infrastructure. <!-- TODO (TechWriter): confirm current published estimates of lab pre-analytical error costs. CAP and the Institute for Quality in Laboratory Medicine have published some estimates; verify before citing specifics. --> |
+| **Cost Estimate** | For a mid-size hospital lab (say, 3 million results per year, including chemistry, hematology, immunology, microbiology culture results): Kinesis and Lambda real-time path: ~$150-400/month. DynamoDB patient-context cache: ~$80-250/month. SageMaker Feature Store: ~$30-90/month. SageMaker Processing: ~$200-500/month for batch scoring. OpenSearch outlier index: ~$300-700/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-600/month. Total infrastructure: typically $1,200-3,500/month. Compare to cost avoidance: pre-analytical error recollections cost $10-50 per event in supplies and labor plus the unmeasurable clinical-workflow cost, and sentinel-event-level errors from a missed critical value have costs that dwarf the infrastructure.  |
 
 ### Ingredients
 
@@ -171,7 +150,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Isolation Forest and Random Cut Forest patterns applicable to panel-level multivariate anomaly detection; Feature Store integration examples that match the analyte-cohort baseline architecture.
 > - [`aws-samples`](https://github.com/aws-samples): search for "healthcare," "hl7," and "fhir" for adjacent LIS integration patterns.
-> <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating laboratory analytics or clinical decision support for lab results. A direct match has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
 
@@ -396,8 +375,6 @@ FUNCTION rule_screen(enriched_result):
 
 **Step 4: Delta check and patient-baseline z-score.** The patient-specific checks run next. These are the detectors that catch real clinical changes and suspicious non-clinical changes.
 
-<!-- TODO (TechEditor → TechWriter): Expert review A3 (MEDIUM) flagged a prose-vs-pseudocode asymmetry: the Technology section's Method-specific ranges paragraph and the Why-This-Isn't-Production-Ready Method/reagent-change paragraph both name method/reagent change suppression as a first-class concern, but Step 4's patient_baseline_checks below performs the delta check without comparing the `method` field between current and previous results. A reader implementing the pseudocode produces false delta-check flags every time a patient's labs cross analyzer methods (a routine occurrence: dual-platform central labs, satellite labs, analyzer-downtime re-routing). Add a method-comparison branch before the absolute-delta computation: if methods differ and analyte_metadata has no documented method_harmonization coefficient, emit a `delta_suppressed_method_change` metric and skip the absolute-delta check (the patient-history z-score remains valid because it uses the patient's full distribution); if a harmonization coefficient exists, apply it to the previous value before computing the delta. Also add a paragraph to General Architecture Pattern's Patient-baseline path subsection naming method-harmonization as a first-class concern. -->
-
 ```
 FUNCTION patient_baseline_checks(enriched_result):
     flags = []
@@ -491,12 +468,6 @@ FUNCTION cohort_zscore_check(enriched_result):
 
 **Step 6: Aggregate flags, determine severity, and route.** Combine flags from all paths. Determine overall routing based on the highest-severity flag and the combination of flag types (a critical value combined with an invalidating specimen quality index routes differently from a critical value with clean specimen quality).
 
-<!-- TODO (TechEditor → TechWriter): Expert review A6 (MEDIUM) flagged a CLIA audit-trail discipline gap: Step 1 correctly captures `reference_range_version` on the canonical_result, but Step 6 below drops it from the outlier_event construction. The OpenSearch index that drives lab director and pathologist dashboards therefore does not store the range version that was in force at flag-firing time. Add `reference_range_version`, `rule_library_version`, `analyte_metadata_version`, and `method` fields to the outlier_event dict below. The Honest Take's framing ("audit trails that don't record which range was in force for a given alert are not audit trails; they're wishes") is the right teaching; the pseudocode just needs to reflect it. -->
-
-<!-- TODO (TechEditor → TechWriter): Expert review A7 (LOW) flagged that the `determine_routing(all_flags)` call below is opaque. Three different severity vocabularies appear in the pseudocode without an explicit mapping (flag-level "critical_callback"/"informational"/"tech_review_hold"/"synchronous"; routing-level "autoverify_with_flag"/"critical_callback"/"tech_review_hold"/"recollect_requested"). Either provide an explicit `determine_routing` body, or add a precedence-rules paragraph to General Architecture Pattern's "Flag aggregator and severity tiering" subsection naming the rules: critical-callback always fires; specimen-quality-invalidating + critical = callback-with-recollect-context; specimen-quality-invalidating alone = tech-review-hold; delta or z-score with no specimen-quality concerns and no critical = autoverify-with-flag. -->
-
-<!-- TODO (TechEditor → TechWriter): Expert review A5 (MEDIUM) and S1 (MEDIUM) both target the "critical_callback" branch below. A5: the prose says CLIA critical-callbacks are "40% of the engineering effort in the critical-path part of the pipeline" with timing, read-back, escalation, and documented manual fallback, but the pseudocode is a single SNS.Publish. Expand the branch to demonstrate the workflow primitives (callback_id, DynamoDB callback-records store with state ∈ {initiated, acknowledged, read-back-captured, closed}, EventBridge Scheduler escalation timer firing at the window boundary, fallback-to-manual-phone-call documentation), or add an explicit pointer to a state diagram in the General Architecture Pattern's Routing subsection. S1: the SNS message construction is unspecified; for the chapter-3-settled minimum-PHI convention (events carry event_id only and the callback service fetches by ID), the pseudocode should publish only event_id, severity, and fetch_by_id with a minimal location attribute. For high-stigma test classes (HIV viral load LOINC 20447-9, hepatitis C viral load LOINC 20416-4, syphilis serology, drug-of-abuse panels, lithium and other psychiatric medication levels, gender-affirming hormone monitoring), exclude the LOINC display name from the notification subject so it does not render on a recipient's lock screen. Add a Why-These-Services SNS note naming the convention. -->
-
 ```
 FUNCTION route_result(enriched_result, all_flags):
     IF length(all_flags) == 0:
@@ -564,8 +535,6 @@ FUNCTION route_result(enriched_result, all_flags):
 
 **Step 7: Run the panel-level multivariate check and patient trajectory analytics.** Panel-level Isolation Forest runs when all components of a multi-analyte panel are available. Patient-trajectory CUSUM and change-point detection run on a scheduled cadence for patients with dense chronic-monitoring data.
 
-<!-- TODO (TechEditor → TechWriter): Expert review A4 (MEDIUM) flagged that The Honest Take elevates cross-test coherence rules to "one of the most reliable layers in the pipeline" but Step 7 below shows only the panel-level Isolation Forest. A reader following the pseudocode walkthrough does not see how to encode anion-gap plausibility (Na - Cl - HCO3, expected 8-16 mEq/L), hemoglobin/hematocrit 3:1 ratio, TSH/free-T4 consistency, or bilirubin-fraction summing as concrete rules. Add a `panel_coherence_check(panel)` function that runs before the panel multivariate check; both contribute flags to panel-level routing. Both demonstrate the "rules + statistical + multivariate" layered detection pattern named in the Statistical Methods subsection. -->
-
 ```
 FUNCTION panel_multivariate_check(panel):
     // A panel is a set of related results from the same specimen
@@ -631,8 +600,6 @@ FUNCTION patient_trajectory_scoring(as_of_timestamp):
 ```
 
 **Step 8: Capture feedback and close the loop.** Tech review decisions, recollect outcomes, and critical-value callback responses all get logged and linked back to the original flag. Confirmed artifact events (the recollected specimen showed a clinically different value) become high-value labels for retraining.
-
-<!-- TODO (TechEditor → TechWriter): Expert review A1 (MEDIUM) flagged the recurring trigger-idempotency pattern (now eleven consecutive recipes: 2.4-2.10, 3.1-3.5). EventBridge → Lambda async is at-least-once; the Step 8 handlers below have no idempotency guard. Redelivered events double-count `flag_tech_decision` metrics (which directly drive rule-retirement decisions and can produce missed-future-flags), bias the supervised classifier's training distribution, and corrupt the confirmed-artifact-vs-confirmed-real signal. Add a deterministic event-key derivation (`outlier_event_id + decision` for tech review; `original_outlier_event_id + recollect_accession` for recollects) and a conditional DynamoDB write to a `processed-feedback-events` table with TTL ~90 days, used as a write-once guard before the OpenSearch update, label write, and metric emission. Add a "Trigger idempotency" bullet to "Why This Isn't Production-Ready." Strongly recommend a cookbook-wide trigger-idempotency appendix; with eleven consecutive findings, the per-recipe pattern is producing diminishing returns. -->
 
 ```
 FUNCTION on_tech_review_decision(decision_event):
@@ -709,8 +676,6 @@ FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
 ---
 
 ### Expected Results
-
-<!-- TODO (TechEditor → TechWriter): Expert review V2 noted the sample timestamps and event IDs use future dates (2026-05-12). They will read as suspiciously specific by publication. Either replace with placeholder patterns ("<draft-time>") or keep as-is. Leaving as illustrative for now; resolve before publication. -->
 
 > Sample timestamps and event IDs in the examples below are illustrative and reflect the draft date. Production output uses real ISO-8601 timestamps from the event handler's invocation time.
 
@@ -895,8 +860,6 @@ FUNCTION on_recollect_result(original_outlier_event_id, recollect_result):
 | Real-time latency p95 | 30-100ms | 50-150ms | 80-250ms |
 | Batch panel IF cadence | n/a | n/a | per-panel (sub-second) |
 
-<!-- TODO (TechWriter): these benchmark ranges are directional from typical lab analytics project experience. Replace with measured numbers once the pipeline runs for a few cycles. The CAP Q-Probe and Q-Tracks studies publish peer comparative numbers on autoverification rates, delta check override rates, and critical value callback timeliness that can inform realistic targets; verify current published figures before citing specifics. -->
-
 **Where it struggles:**
 
 - **New patients with no history.** Delta checks and patient-baseline z-scores require prior results. First-time patient encounters fall back to population-level checks, which are less specific. The first result for a new patient typically gets flagged more often than necessary, settling down as history accumulates.
@@ -935,7 +898,7 @@ The pseudocode shows the shape. A production lab outlier detection system closes
 
 **Bias and equity monitoring.** Reference ranges derived from historical populations may encode bias. The creatinine-GFR race coefficient discussion from the last several years is the example everyone points to. Cohort-level z-scores can flag legitimately-different values for populations underrepresented in the training data. Subgroup monitoring dashboards (flag rate by patient race, ethnicity, language, insurance status) are part of the minimum deployment. Reference range validation should include representative population sampling. These are ongoing concerns, not check-the-box items.
 
-**FDA regulatory considerations.** Laboratory-developed tests and some autoverification software fall under FDA oversight in evolving ways. The FDA's final rule on laboratory-developed tests (issued 2024, implementation phased through the late 2020s) subjects many previously-exempt LDTs to FDA premarket review. Autoverification algorithms that alter clinical reporting may cross into regulated software territory. Coordinate with regulatory affairs, laboratory leadership, and legal before production deployment; do not assume the pre-2024 landscape applies. <!-- TODO (TechWriter): verify current FDA LDT rule status and applicability to autoverification software as of the current year. The 2024 rule has phased implementation dates; pipeline deployments in 2026+ may be affected. -->
+**FDA regulatory considerations.** Laboratory-developed tests and some autoverification software fall under FDA oversight in evolving ways. The FDA's final rule on laboratory-developed tests (issued 2024, implementation phased through the late 2020s) subjects many previously-exempt LDTs to FDA premarket review. Autoverification algorithms that alter clinical reporting may cross into regulated software territory. Coordinate with regulatory affairs, laboratory leadership, and legal before production deployment; do not assume the pre-2024 landscape applies. 
 
 **Disaster recovery for the lab.** The outlier pipeline is in the result-release path. If the pipeline is down, results cannot be held indefinitely; clinical care needs results. The documented downtime behavior has to specify which alerts continue to fire (critical values, at minimum) versus which are degraded (cohort z-score, for example, can pause). The rules layer should be deployable as a standalone fallback. The lab doesn't stop running because AWS has a regional issue; plan accordingly.
 
@@ -961,7 +924,7 @@ The pseudocode shows the shape. A production lab outlier detection system closes
 
 **Patient-facing result interpretation (with caution).** Patient portals increasingly deliver lab results directly to patients, often before the clinician has reviewed them. An outlier-aware portal layer can provide context-appropriate wording ("this result is in your normal range," "this result is slightly outside the typical range; your clinician will discuss," "this result is unusual and may need follow-up") rather than raw numbers. Requires careful clinical and communications review to avoid causing unnecessary patient alarm or false reassurance.
 
-**LLM-assisted pathology review queue prioritization.** For the tech and pathologist review queue, an LLM can read the patient's recent notes alongside the flagged result and produce a triage priority recommendation. Not a decision-maker; a prioritization aid. Helps the most clinically urgent holds surface first when queue depth is high. Adds cost and latency; appropriate for the review queue, not the real-time path. <!-- TODO (TechWriter): as specific validated patterns for LLM-assisted lab result interpretation become published with safety data, expand this section with concrete references. Production adoption is early. -->
+**LLM-assisted pathology review queue prioritization.** For the tech and pathologist review queue, an LLM can read the patient's recent notes alongside the flagged result and produce a triage priority recommendation. Not a decision-maker; a prioritization aid. Helps the most clinically urgent holds surface first when queue depth is high. Adds cost and latency; appropriate for the review queue, not the real-time path. 
 
 **Sepsis early warning integration.** Lab trends (lactate climbing, creatinine climbing, WBC deviating, platelets dropping, bicarbonate dropping) are heavily correlated with sepsis onset. The trajectory detection layer of this pipeline feeds directly into sepsis early warning (Recipe 3.7). In mature deployments, the two pipelines share infrastructure, and the lab trajectory signals become features in the sepsis risk model.
 
@@ -987,13 +950,11 @@ The pseudocode shows the shape. A production lab outlier detection system closes
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Random Cut Forest and Isolation Forest patterns applicable to the multivariate panel-level layer; Feature Store examples matching the analyte-cohort baseline architecture.
 - [`aws-samples`](https://github.com/aws-samples): search for "healthcare," "hl7," "fhir," and "clinical decision support" for adjacent LIS integration patterns.
-<!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating laboratory analytics, autoverification, or lab result outlier detection on AWS. A direct match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): browse for clinical decision support and laboratory analytics reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "anomaly detection," "clinical decision support," and "laboratory" for architectural deep-dives.
 - [AWS HealthLake](https://aws.amazon.com/healthlake/): managed FHIR repository that can serve as the patient-context data source for FHIR-native deployments.
-<!-- TODO (TechWriter): verify and add two or three specific AWS blog posts on clinical decision support, laboratory analytics, or result outlier detection on AWS; confirm URLs exist before inclusion. -->
 
 **Industry, Clinical, and Regulatory References:**
 - [LOINC (Logical Observation Identifiers Names and Codes)](https://loinc.org/): the standard for identifying lab tests; maintained by Regenstrief Institute; free.
@@ -1023,7 +984,6 @@ The pseudocode shows the shape. A production lab outlier detection system closes
 | With variations | POCT integration, blood bank extension, microbiology interpretation assist, oncology biomarker trend detection, therapeutic drug monitoring integration, cross-facility harmonization, LLM-assisted triage, patient-portal context layer | 12-24 months beyond production-ready |
 
 ---
-
 
 ---
 

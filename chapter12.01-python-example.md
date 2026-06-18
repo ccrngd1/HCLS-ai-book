@@ -441,7 +441,6 @@ def _to_decimal(value) -> Decimal:
         return Decimal(str(value))
     return Decimal(str(value))
 
-
 def load_forecasts_to_dynamodb(
     forecast_records: list[dict],
     table_name: str = DYNAMODB_TABLE,
@@ -577,7 +576,6 @@ def run_forecast_pipeline(
                 mape, len(forecast_records))
 
     return result
-
 
 # Run the pipeline and print sample output.
 if __name__ == "__main__":

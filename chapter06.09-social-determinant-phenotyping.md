@@ -135,8 +135,6 @@ Unlike supervised learning, there's no ground truth for "correct" SDOH phenotype
 
 **Stage 1: NLP Extraction.** Process clinical notes through an SDOH-specific NLP pipeline. Extract mentions, classify assertions, resolve temporality. Output: per-patient, per-encounter SDOH mention records with domain, polarity, and timestamp.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add 2-3 sentences on error handling: failed extractions should go to a dead-letter queue, feature assembly should distinguish "no extractions found" from "extraction never attempted," and a monitoring alarm should fire when DLQ depth exceeds a threshold. Silent NLP failures create ambiguous gaps indistinguishable from legitimate absence of SDOH mentions. -->
-
 **Stage 2: Feature Assembly.** Combine NLP extractions, structured screening responses, and geocoded community indicators into a unified patient feature vector. Handle missingness explicitly (distinguish "screened negative" from "never screened"). Apply temporal weighting (recent signals matter more than old ones).
 
 **Stage 3: Clustering.** Apply an appropriate clustering algorithm to the assembled feature matrix. Determine optimal cluster count through a combination of statistical criteria (silhouette score, BIC for LCA) and clinical interpretability. Assign each patient a phenotype label and a membership probability.
@@ -146,7 +144,6 @@ Unlike supervised learning, there's no ground truth for "correct" SDOH phenotype
 **Stage 5: Intervention Matching.** Map phenotypes to recommended intervention strategies. The "housing instability + food insecurity" phenotype gets connected to housing navigators and food assistance programs. The "transportation barrier" phenotype gets connected to ride services and telehealth options. This is where the clustering becomes actionable.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter06.09-architecture). The Python example is linked from there.
 
@@ -163,8 +160,6 @@ The equity audit is not optional. I've seen SDOH phenotyping projects produce cl
 Staleness is a real operational problem. Social circumstances change. A phenotype assigned 18 months ago based on a note from a crisis period may not reflect a patient's current situation. Build re-evaluation triggers: new screening data, new social work notes, address changes, or simple time-based expiration.
 
 The intervention matching is where the value lives, and it's where most projects stall. Phenotyping without a clear "so what" is an academic exercise. Before you build the clustering, make sure you have community resources to connect patients to. A phenotype of "food insecurity" is only useful if you have a food assistance referral pathway ready.
-
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a recommendation for re-clustering cadence. Common pattern: weekly incremental assignment (new patients to existing centroids) with monthly full re-clustering and equity audit. Note that cadence should be driven by rate of new SDOH data accumulation, not calendar alone. -->
 
 ---
 

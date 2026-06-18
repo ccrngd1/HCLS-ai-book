@@ -259,7 +259,6 @@ def detect_section_header(note_text: str, entity_offset: int) -> str | None:
 
     return None
 
-
 def extract_context_windows(note_text: str, entities: list[dict]) -> list[dict]:
     """
     Build context windows around each entity for assertion classification.
@@ -437,7 +436,6 @@ def apply_assertion_rules(ctx: dict) -> dict | None:
     # Rules couldn't confidently classify. Pass to ML model.
     return None
 
-
 def classify_with_model(ctx: dict) -> dict:
     """
     Call the SageMaker-hosted assertion classifier for ambiguous cases.
@@ -494,7 +492,6 @@ def classify_with_model(ctx: dict) -> dict:
         "confidence": result["confidence"],
         "method": "ml_model",
     }
-
 
 def classify_assertions(entity_contexts: list[dict]) -> list[dict]:
     """
@@ -578,7 +575,6 @@ SECTION_PRIORITY = {
     "pmh": 2, "past medical history": 2,
     "fhx": 1, "family history": 1, "family hx": 1,
 }
-
 
 def resolve_assertion_conflicts(classified_entities: list[dict]) -> list[dict]:
     """
@@ -775,7 +771,6 @@ def classify_note_assertions(
     logger.info("Done. %d entities classified for note %s", summary["total_entities"], note_id)
     return summary
 
-
 # ---------- Demo with synthetic clinical data ----------
 
 if __name__ == "__main__":
@@ -846,7 +841,6 @@ In production, this pipeline is triggered when a clinical note is finalized in t
 
 ```python
 import os
-
 
 def lambda_handler(event: dict, context) -> dict:
     """

@@ -331,7 +331,6 @@ Extract every criterion explicitly. Do NOT combine criteria. Do NOT infer criter
         "policy_structure_notes": criteria_data.get("policy_structure_notes", ""),
     }
 
-
 def _parse_json_response(raw_text: str) -> dict:
     """
     Parse JSON from the model's response, stripping common markdown wrappers.
@@ -1146,7 +1145,6 @@ def process_pa_request(
         "unverified_claims": validation["unverified_claims"],
         "processing_time_ms": elapsed_ms,
     }
-
 
 # --- Example usage ---
 if __name__ == "__main__":

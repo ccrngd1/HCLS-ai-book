@@ -1,133 +1,3 @@
-<!--
-TechEditor pass (2026-05-10): minor edits for clarity and consistency.
-  - Clarified the HealthScribe vs Transcribe Medical sentence in Setup.
-  - Added a TODO flag for TechCodeReviewer on the HealthLake FHIR resource
-    creation pattern in Step 8. The boto3 `healthlake` client does not
-    expose a `create_resource` method (the datastore FHIR endpoint is an
-    HTTPS API that requires SigV4-signed requests, typically via the
-    `requests` library or an FHIR client), so the current snippet always
-    raises AttributeError. The `except (ClientError, AttributeError)`
-    block hides this but the code is misleading as written.
-  - No structural or content rewrites. Voice, order, and technical claims
-    preserved as drafted.
-
-TechEditor pass (2026-05-10, iteration 2): additional mechanics pass.
-  - Fixed bold-scope inconsistency on the "Equity" entry in the Gap
-    section. Previously had two sentences in bold ("**Equity. The failure
-    modes are worst for patients who are hardest to serve.**"), which
-    broke the pattern used by every other entry in that section (single
-    declarative sentence bolded, supporting prose unbolded). Replaced
-    with a colon-joined single bold sentence to match the surrounding
-    pattern.
-  - No other changes. All TODO markers from the prior pass preserved.
-
-TechEditor pass (2026-05-11, iteration 3): code-fence consistency pass.
-  - Normalized the Step 5 (`render_institutional_note`) code block from
-    four-backtick fences (````python ... ````) to three-backtick fences
-    (```python ... ```) to match the other nine Python code blocks in
-    the file. The defensive four-backtick wrapping was unnecessary: no
-    line inside the block begins with three backticks at column 0
-    (the string literals containing "```" in `_parse_json_response` are
-    indented and do not terminate a fenced block).
-  - No content changes. No structural rewrites. All TODO markers from
-    prior passes preserved.
-
-TechEditor pass (2026-05-11, iteration 4): verification-only pass.
-  - Ran the full editorial checklist against the current file:
-      * Em dashes (U+2014) and en dashes (U+2013): zero matches.
-      * Smart quotes (U+2018/U+2019/U+201C/U+201D) and horizontal
-        ellipsis: zero matches.
-      * Trailing whitespace outside fenced code blocks: zero.
-      * Double spaces inside prose outside fenced code blocks: zero.
-      * Non-breaking spaces and tabs: zero.
-      * Header hierarchy: 1 H1 (title), 15 H2 sections, no skipped
-        levels, no H3+ usage (consistent with the chapter02.07
-        companion).
-      * Code fences: 14 matched 3-backtick pairs, all with language
-        tags (`python` or `bash`).
-      * Markdown links: one internal cookbook reference at the footer,
-        no fabricated external URLs. The `http://loinc.org` string is
-        a FHIR canonical URI inside a `system` field, not a clickable
-        link.
-      * Each of the 10 Step sections is followed by an italicized
-        `*The pseudocode calls this ...*` intro paragraph.
-      * Bold/backtick balance: clean (the two unbalanced-bold matches
-        reported by a balance scan are inside this editor log, quoting
-        the prior iteration-2 fix; not in rendered prose).
-      * No documentation-voice anti-patterns ("this example
-        demonstrates", "leverage", "seamlessly", "unlock", "empower",
-        "we are excited", "we need to talk about", "it is important
-        to").
-      * Common-typo scan (teh, thier, recieve, occured, seperate,
-        accross, neccessary, etc.): zero hits.
-      * Duplicate-word scan ("the the", "a a", "is is", "of of",
-        "to to", "and and"): zero hits.
-  - No content edits applied this pass. All TODO markers from prior
-    passes preserved (the Line-131 model-ID reminder and the Line-1458
-    HealthLake `create_resource` TODO for TechCodeReviewer/TechWriter
-    on the boto3 `healthlake` client).
-  - Structural order, section boundaries, technical claims, and voice
-    preserved exactly as in iteration 3. File is editorially
-    publication-ready from this persona's scope; the remaining
-    outstanding item is the TechCodeReviewer follow-up on the
-    HealthLake SigV4+HTTPS integration pattern that the Step 8 code
-    sketch currently papers over.
-
-TechEditor pass (2026-05-12, iteration 5): re-verification only, zero edits.
-  - Re-ran the full character-level and mechanics checklist on the
-    current file state. All prior results reconfirmed:
-      * Em dashes (U+2014) and en dashes (U+2013): zero.
-      * Smart quotes, horizontal ellipsis, non-breaking spaces, tabs:
-        zero.
-      * Trailing whitespace in prose: zero.
-      * Double spaces inside prose: zero.
-      * Common-typo and duplicate-word scans: the only hits are
-        inside this editor log itself, where prior passes enumerated
-        the patterns being scanned for; zero hits in rendered prose.
-      * H1 in rendered prose: 1 (the title). H2: 15 step and
-        top-level sections. H3: none, consistent with 2.06/2.07
-        companions.
-      * Code fences: 14 matched three-backtick pairs, all with
-        language tags (`python` or `bash`).
-      * Markdown links in prose: one, the footer cross-reference to
-        the main recipe. Footer format matches 2.05/2.06/2.07
-        companions.
-      * Voice anti-pattern scan: all matches live inside the prior
-        iteration-4 log (which literally lists the anti-patterns it
-        scanned for); zero in rendered prose.
-  - Cross-checked the Python companion's Bedrock model ID at line 172
-    (`anthropic.claude-3-5-sonnet-20241022-v2:0`). This is the
-    fully-versioned form and matches the style used in the 2.06 and
-    2.07 companions. (Note: the main recipe's TechExpertReviewer
-    flagged an inconsistency in the MAIN recipe's pseudocode, which
-    uses a non-versioned placeholder; the Python companion here is
-    not affected and remains correct.)
-  - Noted line-number drift in the older editor logs: iteration 4
-    referenced "Line-131 model-ID reminder" and "Line-1458 HealthLake
-    TODO". As subsequent iteration logs have accumulated in this
-    comment block, those items have drifted to line 172 and line
-    1499 respectively. The TODO text at each location is
-    self-identifying and the line-number references in the older
-    logs are cosmetic-only; no rewrite of prior logs (respecting the
-    "preserve prior editor notes" mandate).
-  - Outstanding items from prior passes remain unchanged:
-      * Line-172 Python comment `TODO: verify the exact model IDs
-        available in your region and account.` This is a developer
-        reminder inside code comments (not a publication-readiness
-        issue; the reader is a developer who is expected to verify
-        model IDs before deploying).
-      * Line-1499 `TODO (TechCodeReviewer / TechWriter)` on the
-        HealthLake `create_resource` sketch. This continues to be
-        the correct disposition: the Python example is honest that
-        the boto3 `healthlake` client does not expose
-        `create_resource` and that the real integration is SigV4-
-        signed HTTPS. The follow-up belongs to TechCodeReviewer or
-        TechWriter, not TechEditor.
-  - Structural order, section boundaries, technical claims, and
-    voice preserved exactly as in iteration 4. No prose or code
-    changes applied. File remains editorially publication-ready.
--->
-
 # Recipe 2.8: Python Implementation Example
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.8. It shows one way you could translate the ambient-clinical-documentation concepts into working Python using AWS HealthScribe, Amazon Bedrock, Amazon Comprehend Medical, AWS HealthLake, S3, DynamoDB, and Step Functions. It is not production-ready. There is no exam-room audio device integration, no real-time streaming via Kinesis Video Streams, no EHR-embedded clinician UI, no Step Functions orchestration wired up end-to-end (we call the steps sequentially for clarity), no real two-party-consent workflow, no jurisdiction-aware policy engine, and no case-review or quality-evaluation program. Think of it as a sketchpad: useful for understanding the shape of the pipeline, not something you'd deploy on Monday morning.
@@ -327,7 +197,6 @@ def _now_iso() -> str:
     """UTC ISO timestamp for audit fields."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     """
     Truncate a string to max_bytes when encoded as utf-8.
@@ -341,7 +210,6 @@ def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     if len(encoded) <= max_bytes:
         return text
     return encoded[:max_bytes].decode("utf-8", errors="ignore")
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -363,7 +231,6 @@ def _parse_json_response(raw_text: str) -> dict:
         logger.warning("Failed to parse JSON response; returning empty dict")
         return {}
 
-
 def _to_decimal_safe(value):
     """
     Convert a float to Decimal for DynamoDB. Going through str avoids the
@@ -379,7 +246,6 @@ def _to_decimal_safe(value):
     if isinstance(value, list):
         return [_to_decimal_safe(v) for v in value]
     return value
-
 
 def _select_note_template(encounter_type: str, specialty: str) -> str:
     """
@@ -729,7 +595,6 @@ def fetch_healthscribe_output(session_id: str, job_name: str) -> dict:
     # longer than a few minutes for ambulatory audio.
     return {"status": "POLL_TIMEOUT"}
 
-
 def _read_s3_json_by_uri(s3_uri: str) -> dict:
     """
     Read a JSON object from an s3:// URI. HealthScribe outputs are JSON.
@@ -906,7 +771,6 @@ def extract_transcript_entities(transcript_json: dict) -> dict:
         "icd10_codes": icd10_codes,
         "transcript_truncated_for_entity_extraction": truncated,
     }
-
 
 def _extract_symptom_phrases(patient_text_parts: list) -> list:
     """
@@ -1267,7 +1131,6 @@ def validate_note(
         "required_empty": required_empty,
     }
 
-
 def _build_validation_hint(
     unverified: list, missing_must_include: list, required_empty: list,
 ) -> str:
@@ -1374,7 +1237,6 @@ def present_for_review(
         "draft_note_s3_key": draft_key,
     }
 
-
 def capture_clinician_signoff(
     session_id: str,
     edited_sections: dict,
@@ -1455,7 +1317,6 @@ def capture_clinician_signoff(
         "signed_note_s3_key": signed_key,
         "edit_distance": edit_distance,
     }
-
 
 def _normalized_edit_distance(draft_sections: dict, signed_sections: dict) -> float:
     """
@@ -1618,7 +1479,6 @@ def write_to_ehr(session_id: str) -> dict:
     logger.info("Session %s written to EHR (FHIR id=%s)", session_id, fhir_id)
     return {"status": "WRITTEN", "fhir_id": fhir_id}
 
-
 def _loinc_code_for_encounter(encounter_type: str) -> dict:
     """Map encounter types to LOINC note-type codes. Expand for your institution."""
     mapping = {
@@ -1633,7 +1493,6 @@ def _loinc_code_for_encounter(encounter_type: str) -> dict:
         },
     }
     return mapping.get(encounter_type, mapping["ambulatory"])
-
 
 def _render_note_as_markdown(sections: dict) -> str:
     """Render note sections as markdown for the DocumentReference attachment."""
@@ -1983,7 +1842,6 @@ def run_ambient_documentation_pipeline(request: dict) -> dict:
         "ehr_write_status": ehr_result.get("status"),
         "processing_time_ms": elapsed_ms,
     }
-
 
 # --- Example usage ---
 if __name__ == "__main__":

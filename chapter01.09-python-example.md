@@ -48,7 +48,6 @@ from botocore.config import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 # ---
 # AWS clients
 # ---
@@ -68,7 +67,6 @@ dynamo   = boto3.resource("dynamodb", region_name=REGION, config=_retry_config)
 sqs      = boto3.client("sqs", region_name=REGION, config=_retry_config)
 sns      = boto3.client("sns", region_name=REGION, config=_retry_config)
 
-
 # ---
 # Model IDs
 # ---
@@ -84,7 +82,6 @@ sns      = boto3.client("sns", region_name=REGION, config=_retry_config)
 # purposes if a compliance review requires explaining a specific validation decision.
 SONNET_MODEL_ID   = "us.anthropic.claude-sonnet-4-6-v1"   # HIPAA consistency check
 NOVA_PRO_MODEL_ID = "us.amazon.nova-pro-v1:0"             # Request classification
-
 
 # ---
 # Pipeline configuration (environment variables in Lambda)
@@ -120,7 +117,6 @@ FULFILLMENT_QUEUES = {
 # Your compliance team should validate this threshold before production.
 SIGNATURE_CONFIDENCE_THRESHOLD = 70.0
 
-
 # ---
 # HIPAA required element definitions
 # ---
@@ -141,7 +137,6 @@ REQUIRED_ELEMENTS = {
         "Expiration date or event (45 CFR § 164.508(c)(1)(v))"
     ),
 }
-
 
 # ---
 # Field map: canonical name -> label variants seen on real request forms
@@ -194,7 +189,6 @@ REQUEST_FIELD_MAP = {
         "npi", "national provider identifier", "provider npi",
     ],
 }
-
 
 # ---
 # LLM system prompts
@@ -319,7 +313,6 @@ def _get_kv_text(block: dict, block_map: dict) -> str:
                     return " ".join(words)
     return ""
 
-
 def parse_and_normalize_fields(kv_blocks: list, block_map: dict) -> dict:
     """
     Extract raw key-value pairs from Textract output and normalize
@@ -424,7 +417,6 @@ def _parse_date_string(value: str):
         return dateutil_parser.parse(value, fuzzy=False).date()
     except (ValueError, OverflowError):
         return None
-
 
 def validate_elements_rule_based(normalized_fields: dict, signatures: list) -> dict:
     """
@@ -538,7 +530,6 @@ def _sanitize_for_prompt(text: str) -> str:
     # Authorization text can be long; preserve up to 4000 chars for coherence analysis.
     return cleaned[:4000].strip()
 
-
 def _safe_parse_json(text: str, fallback: dict) -> dict:
     """
     Parse JSON from LLM response. Return fallback dict on failure.
@@ -556,7 +547,6 @@ def _safe_parse_json(text: str, fallback: dict) -> dict:
             # LLM output may contain PHI echoed from the authorization text.
         )
         return fallback
-
 
 def _call_bedrock_with_retry(
     model_id: str,
@@ -623,14 +613,12 @@ def _call_bedrock_with_retry(
         )
         return fallback, True
 
-
 # [EDITOR: _call_bedrock_with_retry() is new in v2. The v1 had _safe_parse_json()
 # which handled parse failure gracefully but did not retry. Prior reviews of
 # recipes 1.4, 1.5, and 1.6 all flagged "LLM output retry on parse failure"
 # as a P1/P2 gap: the prose described the pattern but the code didn't implement it.
 # This helper centralizes the retry logic for both the validation and classification
 # steps so neither function duplicates it.]
-
 
 def check_authorization_consistency_llm(
     normalized_fields: dict,
@@ -772,7 +760,6 @@ Describe structural and logical issues only."""
         "review_recommended": review_recommended,
     }
 
-
 def _validate_no_phi_in_concerns(concerns: list) -> list:
     """
     Defense-in-depth check: scan LLM concern descriptions for patterns that
@@ -905,7 +892,6 @@ def _to_decimal(value) -> Decimal:
         return Decimal(str(value))
     return Decimal("0")
 
-
 def _floats_to_decimal(obj):
     """
     Recursively convert all floats in a nested dict/list structure to Decimal.
@@ -921,14 +907,12 @@ def _floats_to_decimal(obj):
         return [_floats_to_decimal(item) for item in obj]
     return obj
 
-
 def _determine_status(rule_validation: dict, llm_consistency: dict) -> str:
     if not rule_validation["passed"]:
         return "deficient"
     if llm_consistency["review_recommended"]:
         return "pending_llm_review"
     return "routed"
-
 
 def assemble_and_route(
     document_key: str,
@@ -1291,7 +1275,6 @@ def process_records_request(bucket: str, document_key: str) -> dict:
     logger.info("  Done. Status: %s", record["status"])
     return record
 
-
 # [EDITOR: Replaced all print() calls with logger.info() in process_records_request().
 # The v1 used print() which goes to stdout and then to CloudWatch Logs in Lambda,
 # same as logger, but print() bypasses the logging level configuration and doesn't
@@ -1299,7 +1282,6 @@ def process_records_request(bucket: str, document_key: str) -> dict:
 # document keys and metadata counts, not patient data), but logger is the correct
 # pattern for Lambda. The corresponding Gap item ("Replace print() with structured
 # JSON logging") has been removed from Gap to Production below since it's addressed.]
-
 
 # Lambda entry point
 def lambda_handler(event, context):

@@ -532,7 +532,6 @@ The pseudocode and architecture above demonstrate the two-stage extraction patte
 
 --- 
 
-
 ---
 
 *← [Main Recipe 1.3](chapter01.03-lab-requisition-extraction) · [Python Example](chapter01.03-python-example) · [Chapter Preface](chapter01-preface)*

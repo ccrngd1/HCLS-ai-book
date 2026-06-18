@@ -427,7 +427,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """
     Recursively convert Decimals back to floats / ints for JSON
@@ -443,11 +442,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format. Used everywhere."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -470,7 +467,6 @@ def _parse_json_response(raw_text: str) -> dict:
             "Failed to parse JSON from model; returning empty")
         return {}
 
-
 def _redact_pii_for_logging(text: str) -> str:
     """
     Light redaction for log lines. Strips digits-heavy patterns
@@ -481,7 +477,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -501,7 +496,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -618,7 +612,6 @@ def receive_message(channel: str,
         attach_greeting=attach_greeting,
         language=language)
 
-
 def _get_or_create_session(channel: str,
                             channel_session_id: str,
                             language: str) -> dict:
@@ -690,7 +683,6 @@ def _get_or_create_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """
     Append a turn record to the conversation-metadata table. Each
@@ -711,7 +703,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
         # and gets the full transcript at conversation close.
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 4) -> list:
     """
@@ -798,7 +789,6 @@ def screen_input(session_id: str,
 
     return {"action": "proceed"}
 
-
 def _detect_crisis(text: str, language: str) -> dict:
     """
     Keyword-based crisis detection. Production layers a small LLM
@@ -820,7 +810,6 @@ def _detect_crisis(text: str, language: str) -> dict:
         "matched_phrase": None,
     }
 
-
 def _detect_injection(text: str) -> dict:
     """
     Pattern-based prompt-injection detection. Production pairs this
@@ -832,7 +821,6 @@ def _detect_injection(text: str) -> dict:
         if re.search(pattern, lowered):
             return {"detected": True, "pattern": pattern}
     return {"detected": False, "pattern": None}
-
 
 def _detect_phi(text: str) -> dict:
     """
@@ -849,7 +837,6 @@ def _detect_phi(text: str) -> dict:
         "detected":   len(matched) > 0,
         "categories": matched,
     }
-
 
 def _handle_screening_action(session_id: str,
                               channel: str,
@@ -953,7 +940,6 @@ def _handle_screening_action(session_id: str,
     # Should never happen given the action enumeration above.
     raise ValueError(f"Unknown screening action: {action}")
 
-
 def _update_session_flag(session_id: str,
                           flag_name: str,
                           value) -> None:
@@ -993,7 +979,6 @@ def _update_session_flag(session_id: str,
             "Failed to set %s on session %s: %s",
             flag_name, session_id, exc)
 
-
 def _flag_turn_for_redaction(session_id: str,
                               phi_categories: list) -> None:
     """
@@ -1006,7 +991,6 @@ def _flag_turn_for_redaction(session_id: str,
         phi_categories)
     # In the real implementation, write a redaction marker into
     # the metadata table for the most recent user turn.
-
 
 def _build_chat_reply(session_id: str,
                        response_text: str,
@@ -1121,7 +1105,6 @@ def _handle_in_scope_message(session_id: str,
         category=classification["category"],
         attach_greeting=attach_greeting,
         language=language)
-
 
 def classify_scope(session_id: str,
                     user_message: str,
@@ -1356,7 +1339,6 @@ def retrieve_chunks(session_id: str,
 
     return {"chunks": relevant, "no_relevant_results": False}
 
-
 def _chunk_id_from_result(result: dict) -> str:
     """
     Derive a stable chunk identifier from a retrieve response.
@@ -1370,13 +1352,11 @@ def _chunk_id_from_result(result: dict) -> str:
     chunk_idx = metadata.get("chunk_index", "0")
     return f"{uri}#{chunk_idx}"
 
-
 def _source_uri_from_result(result: dict) -> str:
     """Extract the source S3 URI from a retrieve result."""
     return (result.get("location", {})
                   .get("s3Location", {})
                   .get("uri", ""))
-
 
 def _source_title_from_result(result: dict) -> str:
     """
@@ -1391,7 +1371,6 @@ def _source_title_from_result(result: dict) -> str:
     if uri:
         return uri.rsplit("/", 1)[-1]
     return "Source"
-
 
 def _last_updated_from_result(result: dict) -> Optional[str]:
     """Extract a last-updated timestamp from chunk metadata."""
@@ -1564,7 +1543,6 @@ def generate_grounded_response(session_id: str,
         "audit_stamp":     audit_stamp,
     }
 
-
 def _build_system_prompt(language: str) -> str:
     """
     Build the system prompt for response generation. In production
@@ -1698,7 +1676,6 @@ def screen_output(session_id: str,
         "violations":     [],
     }
 
-
 def _check_response_scope(response_text: str) -> list:
     """
     Backstop keyword scope check on generated output. Looks for
@@ -1740,7 +1717,6 @@ def _check_response_scope(response_text: str) -> list:
             violations.append("off_topic")
             break
     return violations
-
 
 def _check_grounding(response_text: str,
                       cited_chunk_ids: list,
@@ -1787,7 +1763,6 @@ def _check_grounding(response_text: str,
         "unsupported": unsupported,
     }
 
-
 def _tokenize(text: str) -> set:
     """Lowercase tokens, alpha only, length >= 3."""
     return {
@@ -1795,12 +1770,10 @@ def _tokenize(text: str) -> set:
         for w in re.findall(r"\b[a-zA-Z]{3,}\b", text)
     }
 
-
 def _split_sentences(text: str) -> list:
     """Naive sentence splitter; good enough for short chat replies."""
     parts = re.split(r"(?<=[.!?])\s+", text.strip())
     return [p for p in parts if p]
-
 
 def _render_with_citations(response_text: str,
                             cited_chunk_ids: list,
@@ -2100,7 +2073,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """
     Apply redaction rules to a turn before it is streamed to the
@@ -2181,7 +2153,6 @@ class MockTable:
             items = items[:Limit]
         return {"Items": items}
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -2194,7 +2165,6 @@ class MockDynamoDBResource:
 
     def Table(self, name):
         return self._tables[name]
-
 
 class MockBedrockRuntime:
     """
@@ -2301,7 +2271,6 @@ class MockBedrockRuntime:
             def read(self): return self._data
         return {"body": _Body(json.dumps(body_payload).encode())}
 
-
 class MockKnowledgeBase:
     """
     Stand-in for bedrock-agent-runtime.retrieve. Returns canned
@@ -2352,13 +2321,11 @@ class MockKnowledgeBase:
             }]}
         return {"retrievalResults": []}
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -2366,13 +2333,11 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of
 # the file calls them transparently. Comment these reassignments
@@ -2383,7 +2348,6 @@ bedrock_agent_runtime = MockKnowledgeBase()
 eventbridge_client    = MockEventBus()
 firehose_client       = MockFirehose()
 cloudwatch_client     = MockCloudWatch()
-
 
 def run_demo():
     """
@@ -2502,7 +2466,6 @@ def run_demo():
           f"{len(firehose_client.records)}")
     print(f"CloudWatch metrics emitted:  "
           f"{len(cloudwatch_client.metrics)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

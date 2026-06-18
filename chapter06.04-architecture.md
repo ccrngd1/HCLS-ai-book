@@ -399,21 +399,13 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
 
 ## Why This Isn't Production-Ready
 
-<!-- TODO (TechWriter): Expert review ARCH-1 (MEDIUM). Add brief note on failure handling: Step Functions orchestration with per-step error handling, DLQ (SQS) for patients that fail any step, and retry logic for transient failures. Silent pipeline failures mean patients miss tier assignments and potentially miss interventions. -->
-
-<!-- TODO (TechWriter): Expert review SEC-4 (MEDIUM). Add recommendation for an append-only audit log of tier assignments (patient_id, previous_tier, new_tier, run_date, model_version, pipeline_execution_id) stored in S3 (immutable, versioned bucket) for clinical governance review when tier changes trigger care plan modifications. -->
-
 **Refresh orchestration.** The pseudocode runs once. Production needs a scheduled pipeline (monthly or quarterly) with monitoring for data freshness, job failures, and tier distribution drift. If your source data feed is delayed, the pipeline should wait rather than run on stale data.
-
-<!-- TODO (TechWriter): Expert review ARCH-2 (MEDIUM). Add brief orchestration sketch: EventBridge cron trigger + Step Functions workflow that verifies source data freshness, runs pipeline, compares new vs previous assignments, emits tier-change events to SNS, and updates a CloudWatch metric for stale assignments. -->
 
 **Tier migration tracking.** When a patient moves from Tier 1 to Tier 2 between runs, that's a clinical event that should trigger a care management alert. The pseudocode doesn't track changes between runs or generate notifications.
 
 **Multi-disease coordination.** A patient might be in the "severe" tier for diabetes and the "mild" tier for COPD. Care management needs a unified view across disease-specific stratifications. That coordination layer is not addressed here.
 
 **Model versioning.** When you change the feature set or weights, all tier assignments change. You need versioning so downstream systems know which model version produced which assignments, and so you can compare performance across versions.
-
-<!-- TODO (TechWriter): Expert review ARCH-4 (MEDIUM). Add note on SageMaker Feature Store for versioning and sharing the patient feature matrix across models. Each run should record the feature set version (hash of FEATURE_SET config) alongside tier assignments for reproducibility and audit. -->
 
 ---
 
@@ -456,7 +448,6 @@ FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_m
 | With variations (multi-disease, trajectory, explainable boundaries) | 16-20 weeks |
 
 ---
-
 
 ---
 

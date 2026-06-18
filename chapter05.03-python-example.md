@@ -161,18 +161,15 @@ SHELTER_KEYWORDS = ["shelter", "rescue mission", "transitional housing"]
 NURSING_HOME_KEYWORDS = ["nursing home", "skilled nursing", "snf",
                           "long term care", "assisted living"]
 
-
 def _to_decimal(value) -> Decimal:
     """Coerce numeric input into Decimal for DynamoDB."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
@@ -181,14 +178,12 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_form(*parts) -> str:
     """Join address parts into a canonical lowercase whitespace-collapsed form for hashing."""
     joined = " ".join(str(p or "").strip() for p in parts)
     joined = _strip_diacritics(joined).lower()
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
-
 
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
@@ -383,18 +378,15 @@ class MockAddressValidator:
             "usps_reference_release": self.USPS_REFERENCE_RELEASE,
         }
 
-
 # Module-level mock validator. In production, replace with the
 # vendor SDK constructed from credentials in Secrets Manager.
 vendor_sdk = MockAddressValidator()
-
 
 # --- In-memory standardization cache ---
 # Production uses DynamoDB or ElastiCache so the cache survives
 # Lambda cold starts and is shared across invocations. The
 # in-memory dict here is fine for the single-process demo.
 _STANDARDIZATION_CACHE: dict = {}
-
 
 def check_standardization_cache(raw_input_hash: str):
     entry = _STANDARDIZATION_CACHE.get(raw_input_hash)
@@ -405,7 +397,6 @@ def check_standardization_cache(raw_input_hash: str):
         del _STANDARDIZATION_CACHE[raw_input_hash]
         return None
     return entry["standardized"]
-
 
 def write_to_standardization_cache(raw_input_hash: str, standardized: dict):
     _STANDARDIZATION_CACHE[raw_input_hash] = {
@@ -439,7 +430,6 @@ def _archive_raw_to_s3(raw: dict) -> None:
             "raw archive write failed (demo mode is fine to ignore)",
             extra={"key": key, "error": str(exc)},
         )
-
 
 def ingest_address_record(source_event: dict) -> dict:
     """
@@ -486,7 +476,6 @@ def _classify_vendor_response(vr: dict) -> str:
         return "NOT_VALIDATED"
     return "INVALID"
 
-
 def _build_canonical_hash(delivery_line_1: str, secondary_number: Optional[str],
                             last_line: str) -> str:
     """
@@ -515,7 +504,6 @@ def _build_canonical_hash(delivery_line_1: str, secondary_number: Optional[str],
     """
     canon = _canonical_form(delivery_line_1, secondary_number, last_line)
     return _sha256(canon)
-
 
 def standardize_address(raw: dict) -> dict:
     """
@@ -623,7 +611,6 @@ def _serialize_for_dynamodb(obj):
         return Decimal(str(obj))
     return obj
 
-
 def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> None:
     try:
         cloudwatch_client.put_metric_data(
@@ -641,7 +628,6 @@ def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> Non
         logger.warning("metric emit failed",
                         extra={"metric": metric_name, "error": str(exc)})
 
-
 def _write_audit(record: dict, partition: str) -> None:
     today = datetime.now(timezone.utc).strftime("%Y/%m/%d")
     key = f"audit/{partition}/{today}/{uuid.uuid4()}.json"
@@ -655,7 +641,6 @@ def _write_audit(record: dict, partition: str) -> None:
     except Exception as exc:
         logger.warning("audit write failed (demo mode is fine to ignore)",
                         extra={"partition": partition, "error": str(exc)})
-
 
 def persist_standardized_record(patient_id: str, raw: dict,
                                   standardized: dict) -> dict:
@@ -787,7 +772,6 @@ def _patient_privacy_flags(patient_id: str) -> dict:
         "reason": None,
     })
 
-
 def _patient_demographics(patient_id: str) -> dict:
     """
     Look up demographic fields used by the corroborating-evidence
@@ -796,7 +780,6 @@ def _patient_demographics(patient_id: str) -> dict:
     the demo uses a small hard-coded dict.
     """
     return PATIENT_DEMOGRAPHICS.get(patient_id, {})
-
 
 def classify_building_type(standardized: dict, co_located_records: list) -> str:
     """
@@ -852,7 +835,6 @@ def classify_building_type(standardized: dict, co_located_records: list) -> str:
 
     return "unknown"
 
-
 def _last_name_overlap(records: list) -> float:
     """Fraction of records sharing the most-common last name."""
     last_names = [
@@ -868,7 +850,6 @@ def _last_name_overlap(records: list) -> float:
     max_share = max(counts.values()) / len(last_names)
     return max_share
 
-
 def _subscriber_overlap(records: list) -> bool:
     """Whether any two records share an insurance subscriber id."""
     subs = [
@@ -877,7 +858,6 @@ def _subscriber_overlap(records: list) -> bool:
     ]
     subs = [s for s in subs if s]
     return len(subs) >= 2 and len(set(subs)) < len(subs)
-
 
 def _age_pattern_consistent(records: list) -> bool:
     """Coarse age-pattern consistency check (parent-child gap)."""
@@ -891,7 +871,6 @@ def _age_pattern_consistent(records: list) -> bool:
     # If there is at least one adult-child gap (>=18 years between
     # the youngest and an older age), call the pattern consistent.
     return any((ages[-1] - a) >= 18 for a in ages)
-
 
 def _assign_confidence(building_type: str, last_name_share: float,
                         subscriber_overlap: bool,
@@ -929,7 +908,6 @@ def _assign_confidence(building_type: str, last_name_share: float,
         return "MEDIUM"
     return "CO_LOCATED"
 
-
 def _enumerate_evidence(building_type: str, last_name_share: float,
                           subscriber_overlap: bool,
                           age_consistent: bool,
@@ -946,11 +924,9 @@ def _enumerate_evidence(building_type: str, last_name_share: float,
         evidence.append("age_pattern_consistent")
     return evidence
 
-
 def _derive_household_id(canonical_hash: str) -> str:
     """Stable household_id derived from the canonical hash so re-runs are idempotent."""
     return f"hh-{canonical_hash[:12]}"
-
 
 def _query_records_at_canonical(canonical_hash: str) -> list:
     """Pull all patient records sharing this canonical hash via the GSI."""
@@ -967,7 +943,6 @@ def _query_records_at_canonical(canonical_hash: str) -> list:
                      extra={"canonical_hash": canonical_hash[:12], "error": str(exc)})
         return [r for r in _IN_MEMORY_ADDRESS_REGISTRY.values()
                 if r.get("canonical_hash") == canonical_hash]
-
 
 def infer_household_for_address(canonical_hash: str) -> dict:
     """
@@ -1171,7 +1146,6 @@ def _classify_drift(previous: dict, current: dict) -> str:
         return "building_type_changed"
     return "other_change"
 
-
 def monthly_usps_refresh() -> dict:
     """
     Re-standardize the entire address population against the
@@ -1245,7 +1219,6 @@ def monthly_usps_refresh() -> dict:
         "drift_count": drift_count,
         "affected_canonicals": len(affected_canonicals),
     }
-
 
 def simulate_ncoa_processing(movers: list) -> dict:
     """
@@ -1339,7 +1312,6 @@ The pipeline assembles the five steps into a single callable function. In produc
 # household inference.
 _IN_MEMORY_ADDRESS_REGISTRY: dict = {}
 
-
 def run_standardize_pipeline_for_patient(source_event: dict) -> dict:
     """
     End-to-end standardize + persist + household-infer pipeline
@@ -1381,7 +1353,6 @@ def run_standardize_pipeline_for_patient(source_event: dict) -> dict:
         "canonical_hash":     standardized.get("canonical_hash"),
         "household_summary":  household_summary,
     }
-
 
 # --- Synthetic patient data for the demo ---
 
@@ -1434,7 +1405,6 @@ PATIENT_PRIVACY_FLAGS = {
     },
 }
 
-
 SYNTHETIC_SOURCE_EVENTS = [
     # Patel family at 1421 Elm St Apt 3B (single household).
     {"patient_id": "patient-internal-00874", "address_role": "physical",
@@ -1479,7 +1449,6 @@ SYNTHETIC_SOURCE_EVENTS = [
       "address_line_1": "1421 elm stret apt 3b", "city": "anytown",
       "state": "ST", "postal_code": "12345", "source_system": "registration"},
 ]
-
 
 def run_demo():
     """
@@ -1541,7 +1510,6 @@ def run_demo():
     print(f"  refresh: processed={refresh_summary['processed']} "
           f"drift_count={refresh_summary['drift_count']} "
           f"affected_canonicals={refresh_summary['affected_canonicals']}")
-
 
 if __name__ == "__main__":
     run_demo()

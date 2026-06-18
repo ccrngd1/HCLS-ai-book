@@ -177,18 +177,15 @@ HIGH_VALUE_DATA_AT_MED_CONFIDENCE = {
     "advance_directives",
 }
 
-
 def _to_decimal(value) -> Decimal:
     """Coerce numeric input into Decimal for DynamoDB."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
@@ -197,7 +194,6 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_form(*parts) -> str:
     """Join parts into a canonical lowercase whitespace-collapsed form."""
     joined = " ".join(str(p or "").strip() for p in parts)
@@ -205,10 +201,8 @@ def _canonical_form(*parts) -> str:
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes 5.1 - 5.4."""
@@ -219,7 +213,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> None:
     try:
@@ -323,7 +316,6 @@ SYNTHETIC_CROSS_ORG_MPI = {
 # lookup, with DynamoDB as the system-of-record.
 _BLOCKING_INDEX: dict = {}
 
-
 def _build_blocking_index_if_needed():
     if _BLOCKING_INDEX:
         return
@@ -370,7 +362,6 @@ def _build_blocking_index_if_needed():
                 _BLOCKING_INDEX.setdefault(
                     ("ln_soundex_yob", f"{prior_ln_soundex}#{yob}"), []
                 ).append(pid)
-
 
 # --- Mock consent registry ---
 # Keyed on (patient_local_id, requesting_org_id, purpose_of_use).
@@ -492,11 +483,9 @@ class MockConsentRegistry:
                           else "not_permitted",
         }
 
-
 class ConsentRegistryUnavailable(Exception):
     """Raised when the consent registry cannot be reached. Triggers fail-closed."""
     pass
-
 
 # --- Mock sensitivity filter ---
 # Production reads a versioned policy table and applies category-
@@ -556,7 +545,6 @@ class MockSensitivityFilter:
     @classmethod
     def current_version(cls):
         return cls.POLICY_VERSION
-
 
 # --- Mock partner organization (for outbound queries) ---
 class MockPartnerOrg:
@@ -634,7 +622,6 @@ class MockPartnerOrg:
             "software_version": self.SOFTWARE_VERSION,
         }
 
-
 # Module-level singletons. In production replace with real
 # clients constructed from credentials in Secrets Manager.
 consent_registry = MockConsentRegistry()
@@ -644,7 +631,6 @@ partner_orgs = {
     "partner-org-urgent-care": MockPartnerOrg("partner-org-urgent-care"),
 }
 
-
 # --- In-memory ElastiCache stand-in for blocking-index lookups ---
 # The blocking index above is the pre-warmed lookup table.
 # Production uses ElastiCache with TLS in transit and KMS at rest.
@@ -652,7 +638,6 @@ partner_orgs = {
 # --- In-memory audit-log registry stand-in for DynamoDB ---
 # Append-only. Each entry keyed on (query_id, event_seq).
 _IN_MEMORY_AUDIT_LOG: dict = {}
-
 
 def _archive_raw_to_s3(payload: dict, partition: str,
                          query_id: str = None) -> None:
@@ -698,7 +683,6 @@ def _verify_requester(inbound: dict) -> dict:
         "credential_id":  inbound.get("credential_id", "mock-cred-01"),
     }
 
-
 def _is_purpose_permitted(principal: dict, purpose_of_use: str) -> bool:
     """
     Verify the asserted purpose-of-use against the participation
@@ -718,7 +702,6 @@ def _is_purpose_permitted(principal: dict, purpose_of_use: str) -> bool:
     if purpose_of_use == "research":
         return principal["org_id"] == "partner-org-academic-mc"
     return False
-
 
 def ingest_query(inbound: dict) -> dict:
     """
@@ -824,7 +807,6 @@ def _normalize_name(name: str) -> str:
         return ""
     return _strip_diacritics(name).upper().strip()
 
-
 def _normalize_dob(dob: str) -> dict:
     """Return structured DOB with precision flag."""
     if not dob:
@@ -840,7 +822,6 @@ def _normalize_dob(dob: str) -> dict:
                 "is_present": True}
     return {"value": "", "precision": "invalid", "is_present": False}
 
-
 def _normalize_phone(phone: str) -> Optional[str]:
     if not phone:
         return None
@@ -850,7 +831,6 @@ def _normalize_phone(phone: str) -> Optional[str]:
     if len(digits) == 11 and digits[0] == "1":
         return f"+{digits}"
     return None
-
 
 def _hyphenation_alternates(last_name: str) -> list:
     """Generate alternates for hyphenated last names: maiden, married, joined."""
@@ -862,14 +842,12 @@ def _hyphenation_alternates(last_name: str) -> list:
         alts.append(" ".join(parts))
     return list(set(alts))
 
-
 def _soundex_stub(s: str) -> str:
     """Coarse Soundex stand-in. Production uses a real Soundex / Double-Metaphone library."""
     if not s:
         return ""
     s = s.upper()
     return (s[0] + re.sub(r"[AEIOUYHW]", "", s[1:]))[:4]
-
 
 def _nickname_alternates(first_name: str) -> list:
     """Coarse nickname expansion. Production uses a curated dictionary."""
@@ -883,7 +861,6 @@ def _nickname_alternates(first_name: str) -> list:
         "LIZ":  ["ELIZABETH", "BETH", "BETTY"],
     }
     return [fn] + nick_table.get(fn, [])
-
 
 def normalize_query(query: dict) -> dict:
     """
@@ -1006,7 +983,6 @@ def _jaro_winkler(a: str, b: str) -> float:
             break
     return jaro + (prefix * 0.1 * (1 - jaro))
 
-
 def _nickname_aware_first_name_score(query_fn: str, query_alts: list,
                                        candidate_fn: str) -> Decimal:
     """First-name match with nickname expansion."""
@@ -1020,7 +996,6 @@ def _nickname_aware_first_name_score(query_fn: str, query_alts: list,
         return Decimal("0.95")
     # Fall through to similarity.
     return _to_decimal(_jaro_winkler(query_fn, candidate_upper))
-
 
 def _cross_org_last_name_score(query_ln: str, query_alts: list,
                                   candidate_ln: str,
@@ -1045,7 +1020,6 @@ def _cross_org_last_name_score(query_ln: str, query_alts: list,
     # Fall through to similarity.
     return _to_decimal(_jaro_winkler(query_ln, candidate_upper))
 
-
 def _dob_match_grade(query_dob: dict, candidate_dob: str) -> Decimal:
     """Grade DOB match: exact / year-month / year / mismatch."""
     if not query_dob["is_present"] or not candidate_dob:
@@ -1062,12 +1036,10 @@ def _dob_match_grade(query_dob: dict, candidate_dob: str) -> Decimal:
         return Decimal("0.4")
     return Decimal("0.0")
 
-
 def _sex_match(q: str, c: str) -> Decimal:
     if not q or not c:
         return Decimal("0.5")
     return Decimal("1.0") if q.upper() == c.upper() else Decimal("0.0")
-
 
 def _address_similarity(query_addr: dict, candidate_addr: dict,
                           candidate_prior_addrs: list) -> Decimal:
@@ -1117,7 +1089,6 @@ def _address_similarity(query_addr: dict, candidate_addr: dict,
 
     return max(primary_score, best_prior_score)
 
-
 def _phone_match(q: Optional[str], candidate_history: list) -> Decimal:
     if not q or not candidate_history:
         return Decimal("0.5")
@@ -1131,7 +1102,6 @@ def _phone_match(q: Optional[str], candidate_history: list) -> Decimal:
             return Decimal("0.8")
     return Decimal("0.0")
 
-
 def _ssn_match(q_full: Optional[str], q_last4: Optional[str],
                  c_full: Optional[str], c_last4: Optional[str]) -> Decimal:
     if q_full and c_full:
@@ -1142,20 +1112,17 @@ def _ssn_match(q_full: Optional[str], q_last4: Optional[str],
         return Decimal("0.7") if q_last4 == c_last4 else Decimal("0.0")
     return Decimal("0.5")
 
-
 def _prior_cross_org_id_match(q_id: Optional[str],
                                   c_id: Optional[str]) -> Decimal:
     if not q_id or not c_id:
         return Decimal("0.5")
     return Decimal("1.0") if q_id == c_id else Decimal("0.0")
 
-
 def _composite_score(features: dict) -> Decimal:
     """Weighted sum of feature scores, normalized to [0, 1]."""
     total_weight = sum(SCORE_WEIGHTS.values())
     weighted = sum(SCORE_WEIGHTS[k] * features[k] for k in SCORE_WEIGHTS)
     return weighted / total_weight
-
 
 def evaluate_match(query: dict) -> dict:
     """
@@ -1510,7 +1477,6 @@ def _build_response_payload(query: dict) -> dict:
 
     return {"match_status": match["status"]}
 
-
 def release_and_audit(query: dict) -> dict:
     """
     Build the response payload, write the audit record (append-
@@ -1774,7 +1740,6 @@ def run_pipeline(inbound: dict) -> dict:
         "response_payload": query["response_payload"],
     }
 
-
 def fan_out_to_partners(search_payload: dict,
                           partner_org_ids: list) -> list:
     """
@@ -1809,7 +1774,6 @@ def fan_out_to_partners(search_payload: dict,
                 "error":       str(exc),
             })
     return aggregated
-
 
 def run_demo():
     """
@@ -2052,7 +2016,6 @@ def run_demo():
     })
     print(f"  source={name_change['source']} "
           f"actions={name_change['actions']}")
-
 
 if __name__ == "__main__":
     run_demo()

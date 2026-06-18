@@ -53,10 +53,6 @@ flowchart TD
 | **Sample Data** | Synthetic patient and provider data. Never use real PHI in development. |
 | **Cost Estimate** | SageMaker Processing: ~$0.50-2 per batch run (ml.m5.large, under 1 min). Lambda + DynamoDB + S3: negligible for typical volumes. Monthly total: $30-150 depending on frequency. |
 
-<!-- TODO (TechWriter): Expert review S2 (HIGH). Expand the Prerequisites table or add a paragraph specifying that the DynamoDB assignments table must use KMS CMK encryption because the rationale field and patient_complexity field contain PHI-adjacent data. Also specify that IAM access to the assignments table should be restricted to the panel management team's roles. -->
-
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add a note that the review dashboard requires authentication (Cognito or enterprise SSO) with role-based access scoped to the user's department/practice. -->
-
 ### Ingredients
 
 | AWS Service | Role |
@@ -255,8 +251,6 @@ For a typical batch of 7 patients assigned across 4 providers (3 accepting):
 - Infeasible problems (more patients than total available capacity) require graceful handling, not crashes
 - Highly constrained problems (many closed panels, strict language requirements) may produce suboptimal assignments because feasibility dominates optimality
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. Cover gaps like: no retry logic, no dead-letter handling for failed EHR write-backs, no incremental cache invalidation strategy, no automated weight-tuning feedback loop. -->
-
 ---
 
 ## Variations and Extensions
@@ -306,7 +300,6 @@ Add a hard constraint that patients can only be assigned to providers who are in
 ---
 
 [← Recipe 14.1: Appointment Slot Optimization](chapter14.01-appointment-slot-optimization) · [Chapter 14 Index](chapter14-preface) · [Recipe 14.3: Inventory Reorder Optimization →](chapter14.03-inventory-reorder-optimization)
-
 
 ---
 

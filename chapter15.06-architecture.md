@@ -51,10 +51,6 @@ flowchart TB
     style I fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling and circuit breaker pattern to the inference path. Specify behavior when SageMaker endpoint is unavailable or DynamoDB read fails (return explicit "no recommendation available, use standard protocol" rather than failing silently). Add CloudWatch alarms on Lambda error rates and endpoint 5xx responses. -->
-
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms. -->
-
 ## Prerequisites
 
 | Requirement | Details |
@@ -67,12 +63,6 @@ flowchart TB
 | **CloudTrail** | Enabled: log all SageMaker and DynamoDB API calls for audit trail |
 | **Historical Data** | Minimum 5,000-10,000 ICU stays with hourly glucose measurements, insulin administration records, nutrition data, and outcome labels. De-identified for development; BAA-covered for production. |
 | **Cost Estimate** | Training: ~$50-200 per training run (ml.g4dn.xlarge spot instances, 4-8 hours). Inference endpoint: ~$100/month (ml.m5.large). DynamoDB and Lambda: negligible at clinical volumes. |
-
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace the flat IAM permission list with role-separated guidance. Separate into at least 4 roles: (1) State Constructor Lambda with scoped DynamoDB and SageMaker InvokeEndpoint access, (2) Safety Constraint Lambda with read-only patient state and write to recommendation store, (3) Training Pipeline role with S3 and SageMaker training permissions, (4) Monitoring role with CloudWatch access. Add resource ARN constraints to all permissions. -->
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add latency budget note: target end-to-end < 3 seconds. State construction ~50-200ms, SageMaker inference ~50-200ms, safety constraints ~10ms. Recommend provisioned concurrency on Lambda and minimum instance count of 1 on SageMaker endpoint. -->
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment. -->
 
 ## Ingredients
 
@@ -327,8 +317,6 @@ FUNCTION apply_safety_constraints(recommended_dose, patient_state, constraints):
 
 **Step 6: Clinical decision support interface.** The RL policy is deployed as a recommendation system, not an autonomous controller. The clinician sees the recommendation, the reasoning behind it, and can accept, modify, or override. Every interaction is logged for ongoing evaluation. This is critical: the system learns from clinician overrides (they indicate where the policy disagrees with expert judgment) and the outcomes of both followed and overridden recommendations provide ongoing validation data.
 
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance. -->
-
 ```pseudocode
 FUNCTION generate_recommendation(patient_id, new_glucose_reading):
     // Called when a new glucose measurement is entered for an ICU patient.
@@ -430,8 +418,6 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
 **Model drift.** Clinical practice changes over time (new protocols, new medications, different patient populations). A policy trained on 2020-2023 data may not be optimal for 2026 patients. You need ongoing monitoring and periodic retraining.
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note about de-identification requirements for production data feeding back into retraining. Clarify pseudonymization requirements for episode logs, IRB coverage for retraining pipeline, and PHI status of temporal glucose patterns (re-identification risk persists even after pseudonymization). -->
-
 ---
 
 ## Variations and Extensions
@@ -481,7 +467,6 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
 | [← 15.5: Ventilator Weaning Protocols](chapter15.05-ventilator-weaning-protocols) | [Chapter 15 Index](chapter15-preface) | [15.7: Chronic Disease Treatment Personalization →](chapter15.07-chronic-disease-treatment-personalization) |
 |:---|:---:|---:|
-
 
 ---
 

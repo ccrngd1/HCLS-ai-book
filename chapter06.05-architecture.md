@@ -10,8 +10,6 @@
 
 **Amazon SageMaker for clustering and case-mix modeling.** SageMaker provides the ML infrastructure for both the case-mix adjustment models (regression) and the clustering algorithms. SageMaker Processing jobs handle the feature engineering and adjustment calculations at scale. The built-in K-Means algorithm works for straightforward segmentation; for GMM or hierarchical approaches, bring your own scikit-learn container. SageMaker also provides model versioning and experiment tracking, which matters when you're iterating on feature sets and adjustment methodologies.
 
-<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add note that patient-level PHI is loaded into SageMaker Processing ephemeral storage during case-mix model training. Apply minimum panel size filter (30-50 patients) before model training, not just before clustering, to prevent small-panel features from encoding individual patient characteristics. -->
-
 **Amazon Redshift for data aggregation.** Provider profiling requires joining claims, encounters, orders, prescriptions, and outcomes data across millions of records, then aggregating to the provider level. Redshift handles this analytical workload efficiently. The columnar storage is well-suited to the wide, aggregation-heavy queries that provider profiling demands.
 
 For quarterly batch workloads, consider Redshift Serverless (pay-per-query) instead of a provisioned cluster. A quarterly aggregation run processing 10M claims records might consume 30-60 RPU-hours (~$11-22 per run). If your organization already has a provisioned Redshift cluster for other analytics workloads, use it. If this pipeline is the only Redshift consumer, Serverless or even Athena over S3 Parquet files may be more cost-effective for the aggregation step.
@@ -25,8 +23,6 @@ For quarterly batch workloads, consider Redshift Serverless (pay-per-query) inst
 QuickSight requires a VPC connection to reach Redshift in a private subnet: configure a network interface in the same private subnet as Redshift, with the Redshift security group allowing inbound on port 5439 from the QuickSight network interface's security group. QuickSight Enterprise edition is required for VPC connectivity.
 
 Dashboards should prominently display the analysis period ("Based on data from April 2025 through March 2026, refreshed quarterly"). Include a "last updated" timestamp on every dashboard page and send email notifications to providers when new results are available.
-
-<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add tiered access control section: (1) Individual providers see only their own report. (2) Medical directors see specialty-level dashboards with individual provider identifiers (requires peer review privilege coverage in most states). (3) Analytics team sees de-identified data for model development. (4) For specialties with fewer than 5 providers in a cluster, suppress individual-level comparisons to prevent re-identification. Implement QuickSight row-level security with a permissions dataset mapping user identity to allowed provider_ids. Consult legal counsel on peer review privilege before exposing individually identified provider performance data. -->
 
 **AWS Step Functions for pipeline orchestration.** The quarterly analysis run involves multiple sequential and parallel steps: data extraction, aggregation, adjustment, clustering, validation, and report generation. Step Functions coordinates this workflow with error handling, retry logic, and audit logging.
 
@@ -67,8 +63,6 @@ flowchart TD
 | **CloudTrail** | Enabled for all service API calls. Provider profiling data is sensitive; full audit trail required. |
 | **Data Sources** | Claims data warehouse, EHR encounter/order data, provider roster with specialty assignments, quality measure results |
 | **Cost Estimate** | Redshift Serverless: ~$11-22/quarterly run (30-60 RPU-hours). SageMaker Processing: ~$0.05/hour (ml.m5.large) for quarterly runs. S3 + Glue: negligible. QuickSight: $18/user/month (Enterprise). Total for 500-provider system: ~$200-400/quarter for compute, plus QuickSight licensing. |
-
-<!-- TODO (TechWriter): Expert review SEC-2 (HIGH). Expand IAM permissions with explicit resource ARN examples showing least-privilege scoping. Show sagemaker:CreateTrainingJob with condition key sagemaker:VpcSecurityGroupIds restricting to PHI security group. Show redshift:GetClusterCredentials restricted to specific database user with schema-level grants only on provider profiling tables. -->
 
 ### Ingredients
 
@@ -428,8 +422,6 @@ FUNCTION generate_reports(assignments, profiles, provider_metrics):
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library: Healthcare](https://aws.amazon.com/solutions/?solutions-all.sort-by=item.additionalFields.sortDate&solutions-all.sort-order=desc&awsf.content-type=*all&awsf.methodology=*all&awsf.tech-category=*all&awsf.industries=industry%23healthcare): Deployable healthcare solutions including analytics architectures
 - [AWS for Health: Analytics](https://aws.amazon.com/health/solutions/analytics/): Healthcare analytics reference architectures and customer stories
-
-<!-- TODO (TechWriter): Verify all URLs above are current and accessible -->
 
 ---
 

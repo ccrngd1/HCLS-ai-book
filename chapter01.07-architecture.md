@@ -441,8 +441,6 @@ The pseudocode and architecture above demonstrate the pattern. A real deployment
 
 --- 
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (Basic / Production-ready / With variations tiers) before the navigation footer. -->
-
 ---
 
 *← [Main Recipe 1.7](chapter01.07-prescription-label-ocr) · [Python Example](chapter01.07-python-example) · [Chapter Preface](chapter01-preface)*

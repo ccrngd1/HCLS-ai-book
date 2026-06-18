@@ -128,7 +128,6 @@ flowchart TB
 | **AWS KMS** | Encryption key management for corpus, queries, answers, and logs |
 | **Amazon CloudWatch + CloudTrail** | Latency, error rates, validation pass rate, citation accuracy, HIPAA audit logs |
 
-
 ### Code
 
 #### Walkthrough
@@ -739,14 +738,9 @@ FUNCTION archive_and_log(query_id, rendered, chunks_used, generation_trace):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample output for the methotrexate-and-anastrozole question from the opening vignette:**
-
-<!-- Note: all citations below are illustrative. Do not treat the specific papers,
-     authors, journals, or findings as real. A production system grounds every
-     claim in actual retrieved chunks from a real corpus. -->
 
 ```json
 {
@@ -942,7 +936,6 @@ Shipping clinical RAG is a year-long effort done right. Here is the list of conc
 | **With variations** | 44-60 weeks | Patient-specific question answering. Systematic-review drafting support. Guideline-change monitoring. Multi-agent decomposition for complex questions. Fine-tuned medical embedder and re-ranker. Integration into order entry and EHR workflows. Institution-wide rollout with change management and clinician training. Ongoing evaluation program with versioned benchmarks. |
 
 ---
-
 
 ---
 

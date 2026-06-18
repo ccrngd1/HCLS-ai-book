@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon SageMaker for the model training and serving stack.** Three model families per program: the per-program response (uplift) model, the per-program enrollment-likelihood model, and the per-program engagement-prediction model (predicting whether an enrolled patient will engage). With four to seven programs in the portfolio, the model count multiplies; SageMaker Pipelines (or Step Functions orchestration over SageMaker training jobs) handles the per-program retraining cadence. Inference uses Batch Transform on a weekly or monthly cadence aligned with enrollment cycles; same cost reasoning as 4.4, 4.5, 4.6 (batch is dramatically cheaper than idle real-time endpoints, and enrollment decisions don't run in real-time). SageMaker is HIPAA-eligible under BAA. <!-- TODO: confirm SageMaker Batch Transform's current HIPAA eligibility and the appropriate instance types for the model sizes implied here. -->
+**Amazon SageMaker for the model training and serving stack.** Three model families per program: the per-program response (uplift) model, the per-program enrollment-likelihood model, and the per-program engagement-prediction model (predicting whether an enrolled patient will engage). With four to seven programs in the portfolio, the model count multiplies; SageMaker Pipelines (or Step Functions orchestration over SageMaker training jobs) handles the per-program retraining cadence. Inference uses Batch Transform on a weekly or monthly cadence aligned with enrollment cycles; same cost reasoning as 4.4, 4.5, 4.6 (batch is dramatically cheaper than idle real-time endpoints, and enrollment decisions don't run in real-time). SageMaker is HIPAA-eligible under BAA. 
 
 **Amazon SageMaker Feature Store for per-patient and per-(patient, program) features.** Patient-level features (clinical risk, engagement history, demographics, SDOH proxies) reused from earlier recipes. Per-(patient, program) features specific to this recipe: prior enrollment in the program, prior engagement during enrollment, prior disenrollment reason, time since last enrollment, cross-program coordination state. The offline store powers daily/weekly batch enrichment; the online store supports the lower-latency lookups used during outreach when a care manager pulls up a patient and the system surfaces the current recommendation context.
 
@@ -34,17 +34,17 @@
 
 4. **Disenrollment-decision rationale.** When the deterministic policy recommends disenrollment, an LLM-generated rationale lists the engagement-history evidence, the policy-rule that triggered the recommendation, and any countervailing factors. The clinical lead reviews the rationale and makes the actual disenrollment call. The LLM is decision support for a human, not autonomous disenrollment.
 
-Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. <!-- TODO: confirm current Bedrock service terms and the eligible-model list at the time of build. -->
+Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. 
 
 **AWS Lambda for per-stage glue logic.** The eligibility evaluator dispatcher, the response-model invocation orchestrator, the priority synthesizer, the multi-stage allocation runner, the briefing-generation orchestrator, the state-machine worker, the engagement-scoring worker, the retention-trigger worker, the cross-program-transition recommender, and the post-graduation observation worker all run as Lambdas.
 
 **Amazon Connect (or contracted outreach platform) for care-manager telephonic outreach.** Care management programs are predominantly telephonic and televisit. Plans with in-house care management teams often build on Amazon Connect; plans with vendor care management use the vendor's queue and a structured-event integration. The AWS-specific piece is HIPAA-eligible call recording, the contact-flow-to-engagement-event integration, and the per-care-manager work-queue routing that respects language, condition, and program-specialization match.
 
-**Amazon SES for member-facing email and Pinpoint (or contracted vendor) for SMS.** Same as prior chapters; both under BAA. <!-- TODO: confirm SES HIPAA eligibility and BAA scope at the time of build; verify Pinpoint SMS eligibility. -->
+**Amazon SES for member-facing email and Pinpoint (or contracted vendor) for SMS.** Same as prior chapters; both under BAA. 
 
 **Amazon QuickSight for operations dashboards.** Per-program enrollment funnels (eligible -> recommended -> outreach -> consented -> enrolled -> engaged -> graduated). Per-cohort equity dashboards. Per-care-manager workload and outcome dashboards. Per-program ROI dashboards (cost-versus-value, with cohort breakdowns). Outcome-evaluation dashboards (per-program propensity-matched difference-in-differences, with cohort stratification). QuickSight on Athena, with row-level security for cohort-specific filters.
 
-**AWS HealthLake (optional, for FHIR-based clinical data integration).** When the program needs fine-grained clinical data (problem list, observations, encounters, medications) for the response model and the program-fit score, HealthLake provides FHIR-native storage with built-in normalization. The lighter pattern is direct FHIR-to-S3 integration; HealthLake is the heavier pattern for plans operating across multiple EHR vendors. <!-- TODO: confirm AWS HealthLake's current pricing and HIPAA eligibility at the time of build. -->
+**AWS HealthLake (optional, for FHIR-based clinical data integration).** When the program needs fine-grained clinical data (problem list, observations, encounters, medications) for the response model and the program-fit score, HealthLake provides FHIR-native storage with built-in normalization. The lighter pattern is direct FHIR-to-S3 integration; HealthLake is the heavier pattern for plans operating across multiple EHR vendors. 
 
 **AWS KMS, CloudTrail, CloudWatch.** Same PHI infrastructure pattern as prior recipes. Customer-managed keys, CloudTrail data events on PHI tables, CloudWatch alarms on batch-run failures, eligibility-volume drift, enrollment-pipeline backups, and cohort-metric drift.
 
@@ -137,20 +137,19 @@ flowchart LR
     style L1 fill:#f9f,stroke:#333
 ```
 
-
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker (Training, Batch Transform, Feature Store, Pipelines), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon Connect, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon QuickSight, AWS HealthLake (optional), AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` / `DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially `patient-program-state`, `engagement-state`, `outreach-state`); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to enrollment, eligibility, evaluation, and briefing buckets; `kinesis:PutRecord` on the cm-engagement-stream; `connect:*` scoped to the care-management contact flow; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities. Never `*`. <!-- TODO: pair these actions with one or two scoped Resource ARN examples. Same chapter-wide pattern flagged in 4.1 through 4.6 reviews. --> |
-| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker, DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, Connect, SES, Pinpoint, KMS, HealthLake. <!-- TODO: confirm Bedrock + selected models, Pinpoint, Connect, and HealthLake eligibility at the time of build. --> |
+| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` / `DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially `patient-program-state`, `engagement-state`, `outreach-state`); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to enrollment, eligibility, evaluation, and briefing buckets; `kinesis:PutRecord` on the cm-engagement-stream; `connect:*` scoped to the care-management contact flow; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities. Never `*`.  |
+| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker, DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, Connect, SES, Pinpoint, KMS, HealthLake.  |
 | **Encryption** | DynamoDB: customer-managed KMS at rest (especially `patient-program-state`, `engagement-state`, and `enrollment-briefings`; the per-(patient, program) state plus engagement scoring is highly inferential PHI). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker training, Batch Transform, and Feature Store: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. Briefing text stored in DynamoDB is PHI; the briefing contains diagnoses, social context, and clinical-trajectory framing. |
 | **VPC** | Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Glue, Athena, STS, SES, Pinpoint, Connect, HealthLake. NAT Gateway only for external services without VPC endpoints; restrict egress with security groups. EHR FHIR feeds typically arrive via PrivateLink, Direct Connect, or SFTP-over-VPN. Care management system integrations vary by vendor; PrivateLink or VPN preferred. VPC Flow Logs enabled. |
 | **CloudTrail** | Enabled with data events on the `patient-program-state`, `program-registry`, `enrollment-briefings`, `outreach-state`, `engagement-state`, `recommendation-log`, and `patient-profile` tables. Data events on the S3 buckets containing source feeds, eligibility outputs, evaluation cohorts, and briefing outputs. |
 | **Equity Governance** | Document priority synthesis weights, the multi-stage allocation policy, the equity floors per program, the per-cohort enrollment-rate parity targets, and the disenrollment-decision policy before launch. Cross-functional review committee (medical director, program leadership, equity lead, data science, operations, member-experience lead, legal/compliance) signs off on the policy and reviews quarterly. Disenrollment-for-cause decisions go through committee review on a monthly cadence; individual cases that affect protected populations get heightened review. The Obermeyer-style failure mode is the canonical concern; instrumentation and governance are how you avoid it. |
 | **Sample Data** | A starter set of synthetic patients with realistic risk profiles, condition mixes, prior-year utilization, and SDOH features (Synthea provides good baseline data; augment with synthesized engagement and enrollment-history fields). A small program registry (3-5 programs covering disease-specific, complex-care, transitional, and polypharmacy archetypes). Synthetic engagement and outcome labels to support uplift-model training scaffolding. Synthetic care-management-system events. |
-| **Cost Estimate** | At a 250,000-member health plan with ~18,000 eligible patients, ~5 programs, and ~1,400 active enrollment slots: SageMaker Batch Transform (3 model families × 5 programs, weekly): roughly $250-500/month at modest instance sizes. SageMaker Feature Store offline store: $100-200/month. SageMaker training (monthly retrain of 15 model artifacts): $200-400/month. DynamoDB on-demand: $300-700/month (the per-(patient, program) state and engagement-state tables are the largest). Lambda + Step Functions: $100-250/month. Bedrock for enrollment briefings (~1,400 active per month plus outreach attempts), patient-message tailoring (~2,000/month), engagement summaries (~5,000/month), disenrollment rationales (~200/month), Haiku-class: $1,500-3,500/month. SES + Pinpoint SMS: $50-150/month. Connect for in-house care management team (15-30 FTE depending on caseload): $1,500-4,500/month plus telephony. S3 + Glue + Athena: $400-800/month. QuickSight: $50/user/month authors plus reader fees. HealthLake (if used): $500-2,500/month. Estimated infrastructure total: $5,000-12,000/month for a regional plan, before staff time, telephony, and outsourced care management contracts (which dwarf the AWS line items). <!-- TODO: replace with verified, current pricing once the implementing team validates against the AWS Pricing Calculator. --> |
+| **Cost Estimate** | At a 250,000-member health plan with ~18,000 eligible patients, ~5 programs, and ~1,400 active enrollment slots: SageMaker Batch Transform (3 model families × 5 programs, weekly): roughly $250-500/month at modest instance sizes. SageMaker Feature Store offline store: $100-200/month. SageMaker training (monthly retrain of 15 model artifacts): $200-400/month. DynamoDB on-demand: $300-700/month (the per-(patient, program) state and engagement-state tables are the largest). Lambda + Step Functions: $100-250/month. Bedrock for enrollment briefings (~1,400 active per month plus outreach attempts), patient-message tailoring (~2,000/month), engagement summaries (~5,000/month), disenrollment rationales (~200/month), Haiku-class: $1,500-3,500/month. SES + Pinpoint SMS: $50-150/month. Connect for in-house care management team (15-30 FTE depending on caseload): $1,500-4,500/month plus telephony. S3 + Glue + Athena: $400-800/month. QuickSight: $50/user/month authors plus reader fees. HealthLake (if used): $500-2,500/month. Estimated infrastructure total: $5,000-12,000/month for a regional plan, before staff time, telephony, and outsourced care management contracts (which dwarf the AWS line items).  |
 
 ### Ingredients
 
@@ -185,7 +184,7 @@ flowchart LR
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost and SageMaker Pipelines notebooks that mirror per-program model training and inference patterns.
 > - [`amazon-sagemaker-feature-store-end-to-end-workshop`](https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop): End-to-end Feature Store usage that maps onto the per-(patient, program) feature pipeline.
 > - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Demonstrates structured-output prompting applicable to enrollment briefings, engagement summaries, and disenrollment-decision rationales.
-> <!-- TODO: confirm the current names and locations of these aws-samples repos. -->
+> 
 
 #### Walkthrough
 
@@ -425,7 +424,6 @@ FUNCTION enrich_eligible_candidates(eligibility_records, run_date):
     RETURN read_enriched_candidates(eligible, run_date)
 ```
 
-
 **Step 3: Multi-stage enrollment allocation with capacity, equity, and operational-feasibility constraints.** The orchestrator runs in stages so program semantics are respected: time-sensitive transitional-care first, disease-specific high-fit second, complex-care third, parallel add-ons fourth. Within each stage, allocation is greedy-by-priority subject to capacity and equity constraints. Skip the multi-stage structure and you produce allocations that ignore the most important property of care management: that programs are designed for specific theories of change.
 
 ```
@@ -547,7 +545,6 @@ FUNCTION allocate_enrollments(enriched_candidates, run_date, policy):
     DynamoDB.BatchWriteItem("recommendation-log", allocated)
     RETURN allocated
 
-
 FUNCTION allocate_stage(candidates_sorted, capacity_remaining,
                          equity_remaining, patient_primary_assigned,
                          patient_add_on_count, policy, stage_name):
@@ -649,18 +646,7 @@ FUNCTION dispatch_outreach(allocated_recommendations, run_date):
             //   suggested_outreach_window, confidence_notes }
 
         validate_briefing(briefing_parsed, observed_context = briefing_context)
-            // <!-- TODO (TechWriter): Specify validate_briefing's
-            // four-layer structure: (1) schema and length, (2) every
-            // referenced clinical fact must appear in observed_context
-            // (the LLM cannot hallucinate diagnoses or events), (3)
-            // prohibited content (PHI not in source, prescriber names
-            // other than the patient's, suggestions that override the
-            // deterministic program assignment), (4) required notes
-            // ("subject to clinical judgment", briefing is advisory,
-            // patient consent required for enrollment). Failure
-            // handling: replace with templated fallback that lists
-            // the structured context without LLM narration; log for
-            // prompt-engineering review. -->
+            // 
 
         DynamoDB.PutItem("enrollment-briefings", {
             briefing_id:        build_briefing_id(row, run_date),
@@ -710,7 +696,6 @@ FUNCTION dispatch_outreach(allocated_recommendations, run_date):
             timestamp:     current UTC timestamp
         })
 
-
 FUNCTION record_outreach_attempt(outreach_id, attempt_result):
     // attempt_result is one of:
     //   { result: "consented", consent_form_id, baseline_assessment_id }
@@ -718,28 +703,7 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
     //   { result: "unreachable", attempt_count, next_attempt_scheduled }
     //   { result: "deferred", reason, defer_until }
     //
-    // <!-- TODO (TechWriter): Expert Review HIGH A1 (chapter-wide
-    // pattern propagated unresolved through 4.4-4.7). Add a counter
-    // decrement on the patient-profile attribute
-    // cm_outreach_recent_30d_count for the terminal-unreachable,
-    // declined, and deferred outcomes; otherwise the 4.7-specific
-    // outreach budget accumulates phantom counter consumption that
-    // silences the patient from future enrollment outreach for 30
-    // days when the original outreach never reached the patient.
-    // The pathology disproportionately affects cohorts with flaky
-    // channels (transient housing, prepaid phones with intermittent
-    // service, language-mismatch with assigned care manager) which
-    // correlate with the cohorts the equity floors are trying to
-    // protect. Coordinate the implementation with the parallel 4.4,
-    // 4.5, 4.6 fixes; the chapter editor should land all four
-    // together. The Python companion's record_outreach_attempt
-    // unreachable-terminal branch already attempts the decrement but
-    // currently fails (Code Review ERROR 2: missing :zero placeholder
-    // and ExpressionAttributeNames=None); fix both at once. Also add
-    // a stale-pending sweep Lambda (hourly): for outreach-state rows
-    // where state == "queued" or state == "outreach_in_progress" and
-    // created_at > 7 days ago with no engagement-event activity, mark
-    // state = "stale_no_activity" and decrement the counter. -->
+    // 
     outreach = DynamoDB.GetItem("outreach-state", outreach_id)
     outreach.attempts.append({
         attempt_at:  current UTC timestamp,
@@ -824,7 +788,6 @@ FUNCTION record_outreach_attempt(outreach_id, attempt_result):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter04.07-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 **Step 5: Track in-program engagement and trigger retention when engagement declines.** Once a patient is enrolled, the engagement scorer runs against the program-specific engagement profile. Below threshold, the retention worker activates. Skip the engagement tracking and you discover at month three that the patient stopped engaging at month one and the program slot has been wasted.
 
 ```
@@ -891,7 +854,6 @@ FUNCTION score_engagement(patient_id, program_id, run_date):
         })
         trigger_retention(patient_id, program_id, decline_pattern)
 
-
 FUNCTION trigger_retention(patient_id, program_id, decline_pattern):
     // Retention strategies are program-specific and decline-pattern-specific.
     BRANCH on decline_pattern:
@@ -933,41 +895,13 @@ FUNCTION trigger_retention(patient_id, program_id, decline_pattern):
             // disengagement.
             schedule_continuity_recovery(patient_id, program_id)
 
-
 FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
     // Disenrollment decisions are run on a separate cadence (typically
     // weekly) for at-risk patients whose retention attempts have not
     // succeeded. The decision is decision-supported, not autonomous;
     // a human (clinical lead, program manager) makes the actual call.
     //
-    // <!-- TODO (TechWriter): Expert Review HIGH A2. The
-    // data_quality_flag is computed in Step 1, persisted to
-    // patient-program-state, and named in Where It Struggles as a
-    // signal that "downstream consumers (specifically the
-    // disenrollment evaluator) should gate harder when quality is
-    // low." The pseudocode below does not gate. For
-    // cross_provider_fragmentation and multi_source_disagreement
-    // patients, the engagement profile may appear worse than it
-    // actually is because the patient is engaging through encounters
-    // the recommender's data feed does not see; a
-    // disenroll_for_no_engagement recommendation against fragmented
-    // data has civil-rights implications when it concentrates in
-    // protected cohorts (mobile populations, recent plan-changers,
-    // patients seen across multiple practices). Add a
-    // verify_engagement_first action that runs before
-    // disenroll_for_no_engagement when state.data_quality_flag is in
-    // {"cross_provider_fragmentation", "multi_source_disagreement"}.
-    // Mirror the gating language at five additional sites: Step 2
-    // response enrichment (widen uplift CI on non-complete cases),
-    // Step 3 orchestrator (route fragmented-data patients through
-    // verification-first allocation), Step 4 briefing
-    // (data_quality_caveat in confidence_notes), Step 5 engagement
-    // scoring (widen CI on the score; require multi-source
-    // consistency for is_at_risk = true), and Step 6 cross-program
-    // transition recommender (flag the recommendation with
-    // data_quality_caveat). Same chapter-wide pattern as 4.5
-    // Finding A2 and 4.6 Finding A2; the chapter editor should land
-    // all three together. -->
+    // 
     state = DynamoDB.GetItem("patient-program-state",
                               key = (patient_id, program_id))
     engagement = DynamoDB.GetItem("engagement-state",
@@ -1025,11 +959,7 @@ FUNCTION evaluate_disenrollment(patient_id, program_id, run_date):
             //   policy_rule, suggested_human_review_questions }
 
         validate_rationale(rationale_parsed, observed_context = rationale_context)
-            // <!-- TODO (TechWriter): Specify validate_rationale layers
-            // mirroring the chapter-wide validator pattern. Failures
-            // fall back to a templated rationale that lists the
-            // policy-rule trigger and the engagement-history evidence
-            // without LLM narration. -->
+            // 
 
         DynamoDB.PutItem("disenrollment-decisions", {
             decision_id:           new UUID,
@@ -1160,7 +1090,6 @@ FUNCTION process_disenrollment_decision(decision_id, human_decision):
             resolved_at:          current UTC timestamp
         })
 
-
 FUNCTION post_graduation_observation(run_date):
     // Daily sweep of recently graduated patients within their
     // observation window. Watch for relapse signals (admission,
@@ -1201,7 +1130,6 @@ FUNCTION post_graduation_observation(run_date):
                 relapse_signals:   relapse_signals,
                 timestamp:         current UTC timestamp
             })
-
 
 FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, context):
     // Evaluate the patient's current eligibility and uplift across all
@@ -1298,8 +1226,6 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
 ```
 
 **Sample care manager enrollment briefing:**
-
-<!-- TODO (TechWriter): the briefing's social-context details (Medicare donut hole, grandchildren-care responsibilities, no home scale, Spanish-preferred written materials) are additive context not present in the opening vignette of Linda. Either fold the corresponding details into the vignette so the briefing reads as a faithful synthesis, or add a one-line note in The Problem section that the briefing in Expected Results includes care-management-relevant context surfaced from the patient profile beyond what the vignette establishes. Editor renamed Mr. Garcia to Linda for continuity (per expert review V2); the social-context reconciliation is the remaining piece. -->
 
 ```json
 {
@@ -1400,8 +1326,6 @@ FUNCTION recommend_cross_program_transitions(patient_id, prior_program_id, conte
 | Disenrollment-for-no-engagement rate | 15-25% | 6-12% |
 | Cross-program transition recommendation acceptance rate | n/a | 60-80% |
 
-<!-- TODO: the benchmarks above are illustrative ranges informed by published care management and HEDIS-program literature; replace with measured results from your deployment. Be wary of vendor-published numbers that report "X% reduction in admissions" without matched-control comparison and without confidence intervals. -->
-
 **Where it struggles:**
 
 - **Patients with sparse historical data.** A patient newly attributed to the practice or recently joined the plan has minimal prior engagement, prior enrollment, or prior outcome data. Cold-start cohort defaults are essential, and the recommender should weight patient-specific predictions less heavily for these patients until enough history accumulates. The `data_quality_flag` exposes this; downstream consumers (specifically the disenrollment evaluator) should gate harder when quality is low.
@@ -1424,75 +1348,21 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Causal-inference rigor for response models.** Most plans have observational data only (selection-biased enrollment history). Training response models on observational data without causal-inference tooling (propensity matching at minimum, doubly-robust estimation when feasible, randomized evaluation cohorts when possible) produces uplift estimates that are systematically biased toward the patient profiles that historically got selected for enrollment. The downstream effect is a recommender that recommends what the historical selection process recommended, with extra steps. Plan for a data science investment in causal inference: skills, tooling (EconML, DoWhy, causaldata), and the operational willingness to randomize a fraction of enrollment slots for unbiased evaluation. Without this, the program drifts toward serving the cohorts the historical bias served.
 
-<!-- TODO (TechWriter): Specify the SageMaker training-job trigger mechanism and model-promotion path for the response, enrollment-likelihood, and engagement-prediction models. With 3 model families × 5 programs = 15 model artifacts, the model registry and promotion automation matter more here than in earlier recipes. Mirror the EventBridge-trigger plus SageMaker-Model-Registry-with-canary-run pattern flagged in 4.4 through 4.6. -->
-
 **Multi-source state-machine reconciliation.** The patient's program state lives in multiple systems: the recommender's `patient-program-state` table, the care management vendor's case-management system, the EHR's care-plan view, and the patient's portal. Drift across these is a chronic operational pain. Plan for tight integration with the case-management system (event-driven sync, not periodic batch reconciliation), explicit conflict-resolution rules when sources disagree, and periodic full-reconciliation runs that flag drift for human review.
 
 **Outreach attempt management with humane defaults.** The pseudocode handles outreach-attempt counting and terminal-unreachable transitions, but a production system needs more nuance: rest periods between attempts, time-of-day modeling per patient, opt-out registry integration, suppression after specific patient signals (missed appointment plus declined first outreach is a stronger signal than two unanswered calls), and integration with TCPA and state telephone-consumer-protection rules. The outreach worker is the most patient-facing component; treat it accordingly.
 
 **Patient consent, HIPAA authorization, and program-specific consent forms.** Care management enrollment requires multiple consent artifacts: HIPAA authorization for data sharing across program staff, program-specific informed consent describing what the patient is enrolling into, and (for some programs) consent for data sharing with external entities (community resources, social-work referrals). The consent capture and storage flow needs to be tightly designed and tightly audited; consent-form-version mismatches and missing consent are compliance issues that produce disenrollment-and-restart cycles.
 
-<!-- TODO (TechWriter): Replace the string-concatenation tracking_id, briefing_id, decision_id with opaque, non-reversible identifiers (UUID or HMAC-SHA256 over the composite with a per-environment secret). Plain-text patient_ids embedded in identifiers carried in care-manager queues, EHR inboxes, and engagement events are PHI leakage. Mirror the language flagged in 4.4, 4.5, 4.6. Update Expected Results sample identifiers accordingly. -->
-
 **Cross-recipe orchestration with Recipes 4.4, 4.5, and 4.6.** A patient who's a candidate for adherence intervention (4.5), care-gap closure (4.6), wellness program (4.4), and care management (4.7) gets too many touches if each recipe orchestrates independently. The shared `outreach_recent_total_30d_count` on the patient-profile table is the foundation; the cross-recipe coordination policy that decides which recipe wins when caps would be exceeded needs to be explicit, version-controlled, and committee-reviewed. For 4.7 specifically, care management enrollment outreach should typically *not* be capped against routine engagement messages from 4.4-4.6 because the enrollment conversation is a distinct, infrequent interaction; document the exception in the cross-recipe policy.
-
-<!-- TODO (TechWriter): Add a paragraph specifying the cross-recipe priority arbitration for 4.7 specifically. Default proposal: 4.7 enrollment outreach has a separate contact budget from 4.4-4.6 routine outreach, with a hard cap on combined contacts within a rolling 30 days. The enrollment conversation is the highest-priority interaction in chapter 4 and should not be routinely deferred for adherence reminders. Document the cross-recipe arbitration in shared chapter-level config. -->
 
 **Disenrollment governance and review.** Disenrollment-for-cause decisions have member-experience implications and may have civil-rights implications if they concentrate in protected populations. Build a monthly disenrollment-review cadence: a cross-functional committee reviews the prior month's disenrollment-for-cause cases, with cohort breakdowns, looking for patterns that suggest the policy is mis-targeting, the retention attempts are inadequate, or the program structure is unfit for some cohorts. Build the review cadence into the policy from day one, not as an afterthought.
 
-<!-- TODO (TechWriter): Expert Review HIGH A3 (uniquely 4.7-specific).
-The disenrollment-decisions and cross-program-transitions queues both
-hold rows with human_review_pending: true and no SLA, no escalation,
-no default action. Three pathologies follow: (a) patient remains
-enrolled indefinitely while the disenrollment recommendation sits
-unreviewed, consuming a slot another patient could use; (b) patient
-is silently disenrolled when stale review eventually happens against
-out-of-date engagement and clinical-event data; (c) clinical leads
-with high case-load triage easy cases first, so complex cases (which
-correlate with the cohorts the equity floors protect) sit longer in
-the pending queue, producing disparate review-latency that the
-disenrollment-rate equity dashboard does not catch. Add SLA-and-
-escalation specification with per-action defaults that err toward
-retention rather than disenrollment: 7-day review SLA for
-disenroll_for_no_engagement (auto-defer 7 more days then
-auto-default to extend_for_review with current data); 14-day review
-SLA for disenroll_did_not_complete (auto-default to
-graduate_with_partial_credit); 72-hour review SLA for
-transition_to_higher_acuity (clinical-urgency driven; escalate to
-medical director on miss); 14-day SLA for graduation transitions
-(auto-expire); 7-day SLA for relapse transitions (escalate to
-program manager on miss). Per-cohort review-latency monitoring goes
-into the equity instrumentation alongside per-cohort disenrollment-
-rate metrics; disparities in review latency are fairness signals
-just like disparities in eventual outcome. Specify in the
-architecture pattern; add the sweep_pending_decisions Lambda to
-the pseudocode as a daily run. -->
-
 **Equity floor design.** The equity floors implemented in Step 3 reserve capacity for cohorts with documented enrollment-rate disparities. Designing the floors well requires baseline cohort data (which you don't have until operating for some time), explicit policy on which disparities trigger floors, and willingness to revisit floors quarterly. The Obermeyer failure mode is the canonical concern: a recommender trained on historical data with under-represented cohorts will systematically under-enroll those cohorts unless the design explicitly compensates. Equity floors are one mechanism; cohort-aware retraining with reweighting is another; cohort-stratified outcome evaluation is the validation.
-
-<!-- TODO (TechWriter): Add a paragraph on the SDOH-cohort PHI boundary. Cohort labels like "transportation_barrier" and "low_food_security" are PHI-equivalent and should follow the minimum-necessary principle. Engagement events should carry only the cohort axes the equity dashboard actually consumes, with narrower IAM scope than for general engagement data. Mirror the language flagged in 4.4 through 4.6. -->
 
 **Privacy in program state and enrollment briefings.** The `patient-program-state` table joins (patient_id, program_id, state, uplift_score, priority_components) and is highly inferential. A row indicating "patient recommended for high-risk complex-care program" is more sensitive than a row indicating "patient eligible for wellness program." Apply tighter controls to program state for stigmatized or high-sensitivity programs (behavioral health, substance use, palliative care, HIV-related): narrower IAM read scopes, optional separate-table partitioning, additional CloudTrail data event capture, and a documented minimum-necessary access policy. Enrollment briefings stored in DynamoDB are PHI; the briefing text contains diagnoses, social context, and trajectory framing. Treat them with the same encryption, IAM, and audit posture as clinical notes.
 
 **Idempotency and retry semantics.** Same pattern as 4.4 through 4.6. Each stage's outputs are addressed by deterministic keys (run_date, program_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.
-
-<!-- TODO (TechWriter): Code Review ERROR 1 (chapter-wide pattern in
-the Python companion files for 4.6 and 4.7). The pseudocode
-state_history.append(...) semantics are correct, but the
-straightforward DynamoDB translation is *not* "ADD state_history
-:history_event" because the ADD action only supports Number and Set
-data types, not List. The correct UpdateExpression is
-"SET state_history = list_append(if_not_exists(state_history, :empty),
-:history_event)" with :empty defined as []. Update the Python
-companion (chapter04.07-python-example.md) for all ten state-
-transition update_item call sites; propagate the same fix to 4.6's
-Python example. Add a one-line note here in the recipe's
-Idempotency paragraph (or in a dedicated DynamoDB-gotchas paragraph)
-warning readers who copy the pseudocode pattern that the literal
-"append to history list" idiom requires the list_append +
-if_not_exists pattern, not ADD. -->
-
-<!-- TODO (TechWriter): Specify DLQ coverage on all Lambda paths in the architecture. (a) Step Functions to Lambda pipeline: Catch on each Lambda task pointing to an SQS failure queue keyed on (run_date, stage, failure_reason); (b) Kinesis to state-machine-worker Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth; (c) Batch Transform job failures: SageMaker doesn't surface failures via DLQ; wire the Step Functions Catch to handle TransformJob failed states explicitly. A silently-dropped state-transition event is operationally damaging in this recipe (a missed program_at_risk event delays retention; a missed program_enrolled event leaves the engagement scorer unarmed), so DLQ coverage matters substantively. Mirror the language from 4.4 through 4.6. -->
 
 **Cost-per-enrollment and cost-per-prevented-event tracking.** The cost numbers in the prerequisites table are infrastructure only. Production reporting needs end-to-end cost (infrastructure + care-manager loaded hours + telephony + program-specific costs like Bluetooth scales for HF or pharmacist time for polypharmacy) divided by confirmed prevented events attributable to the program (above the matched-control baseline). That number compared to the value of prevented events (avoided admission cost, avoided ED visit cost, plan-quality-bonus value) determines whether the program returns its budget. The data engineering to track this end-to-end with attribution is its own project and is essential for program-level decisions about expansion or contraction.
 
@@ -1500,7 +1370,7 @@ if_not_exists pattern, not ADD. -->
 
 **Patient-friendly enrollment visibility.** Patients should be able to see their own program enrollment status, upcoming activities, and progress in the patient portal, with explanations they can understand. "Your heart-failure care management program" is more useful than "HF-CMP-2026-v2." Patient-facing summaries are a separate UX project, with content review by health-literacy specialists, but the program state machine in this recipe is the source data. Plan for the patient-facing layer as a parallel deliverable.
 
-**Care-manager workload modeling.** Care managers don't have uniform capacity: a complex-care manager handling 50 patients with multi-system disease has different bandwidth than a transitional-care nurse running 20 active 30-day episodes. The work-queue routing in Step 4 needs to model per-care-manager realistic loaded hours, not just headcount. Without this, the routing produces care-manager burnout, attrition, and a slow-moving operations problem that undermines the entire program. <!-- TODO: cite published care-management caseload-and-burnout literature; the ratios vary by acuity but the patterns are consistent. -->
+**Care-manager workload modeling.** Care managers don't have uniform capacity: a complex-care manager handling 50 patients with multi-system disease has different bandwidth than a transitional-care nurse running 20 active 30-day episodes. The work-queue routing in Step 4 needs to model per-care-manager realistic loaded hours, not just headcount. Without this, the routing produces care-manager burnout, attrition, and a slow-moving operations problem that undermines the entire program. 
 
 **Member-experience and PROMs measurement.** Beyond clinical outcomes, care management programs should measure member experience (CG-CAHPS for the care management interaction specifically; not the overall plan CAHPS) and patient-reported outcome measures (PROMs) where available. Member experience is often the leading indicator that diverges from clinical outcome metrics; a program that improves admissions but produces low member experience is sustainable for a quarter and politically untenable thereafter.
 
@@ -1520,7 +1390,7 @@ if_not_exists pattern, not ADD. -->
 
 **Care-team coordination across provider organizations.** A patient who is enrolled in a plan-run heart-failure program but also followed by an ACO-run primary-care medical home and a specialty-cardiology practice is being managed by three different teams with three different views. Cross-organization care-coordination layers (often vendor-supplied or built on FHIR-based shared care plans) become the integration substrate; the recommender's program-state events flow into the shared care plan rather than living in isolation.
 
-**Predictive disenrollment-prevention.** Beyond the at-risk threshold, a per-patient model can predict the probability of disengagement over the next 14 days, surfacing patients for retention attention before the threshold crosses. This is a separate model family with the engagement-decline event as the prediction target; trained on enrollment cohorts, validated against held-out enrollments. <!-- TODO: cite published literature on predictive disenrollment-prevention; the patterns are documented in some plan publications but the evidence base is mixed. -->
+**Predictive disenrollment-prevention.** Beyond the at-risk threshold, a per-patient model can predict the probability of disengagement over the next 14 days, surfacing patients for retention attention before the threshold crosses. This is a separate model family with the engagement-decline event as the prediction target; trained on enrollment cohorts, validated against held-out enrollments. 
 
 **Cross-recipe orchestration with Recipes 4.4, 4.5, 4.6.** A patient who's a candidate for adherence intervention (4.5), care management (4.7), care-gap closure (4.6), and a wellness program (4.4) gets too many independent recommendations if each recipe orchestrates alone. Cross-recipe orchestration: shared contact-frequency budget (Chapter 4-wide), shared priority arbitration when caps would be exceeded, per-patient orchestration that picks the right recipe for the right moment. For 4.7 specifically, care management enrollment outreach typically should not be capped against routine engagement messages because the enrollment conversation is a distinct, infrequent interaction; document the exception in the cross-recipe policy.
 
@@ -1559,25 +1429,21 @@ if_not_exists pattern, not ADD. -->
 - [`amazon-sagemaker-feature-store-end-to-end-workshop`](https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop): End-to-end Feature Store usage that maps to the per-(patient, program) feature pipeline
 - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Hands-on labs covering structured-output prompting that informs enrollment briefings, engagement summaries, and disenrollment-decision rationales
 
-<!-- TODO: confirm the current names and locations of the aws-samples repos above; aws-samples and aws-solutions-library-samples have been reorganizing. -->
-
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter AI/ML and Healthcare): browse for healthcare personalization and population-health reference architectures
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "SageMaker Pipelines," "Feature Store," and "uplift modeling" for relevant deep-dives
 - [AWS for Industries Blog](https://aws.amazon.com/blogs/industries/) (Healthcare and Life Sciences): search "care management," "population health," and "value-based care" for end-to-end customer architectures
-
-<!-- TODO: replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs. -->
 
 **External References (Conceptual and Methodological):**
 - [`econml`](https://github.com/py-why/EconML): Microsoft Research's library for heterogeneous treatment effect estimation, the workhorse for per-(patient, program) uplift modeling
 - [`DoWhy`](https://github.com/py-why/dowhy): causal-inference framework for structuring assumptions and running sensitivity analysis
 - [`causaldata`](https://github.com/NickCH-K/causaldata): example datasets for causal-inference workflows useful in scaffolding response-model training pipelines
 - [Obermeyer et al. 2019, Dissecting Racial Bias in an Algorithm Used to Manage the Health of Populations](https://www.science.org/doi/10.1126/science.aax2342): the canonical cautionary tale for response-modeling failures in care management; required reading
-- [CMS Chronic Care Management (CCM) Services](https://www.cms.gov/medicare/medicare-fee-for-service-payment/physicianfeesched/chronic-care-management): Medicare fee-for-service CCM billing structure, including the 99490, 99491, 99437, 99439 CPT codes and documentation requirements <!-- TODO: confirm current CMS landing page; CMS reorganizes URLs frequently. -->
-- [CMS Transitional Care Management (TCM) Services](https://www.cms.gov/files/document/mln908628-transitional-care-management-services.pdf): TCM CPT codes 99495 / 99496 and documentation requirements <!-- TODO: confirm the current published-document URL at the time of build. -->
+- [CMS Chronic Care Management (CCM) Services](https://www.cms.gov/medicare/medicare-fee-for-service-payment/physicianfeesched/chronic-care-management): Medicare fee-for-service CCM billing structure, including the 99490, 99491, 99437, 99439 CPT codes and documentation requirements 
+- [CMS Transitional Care Management (TCM) Services](https://www.cms.gov/files/document/mln908628-transitional-care-management-services.pdf): TCM CPT codes 99495 / 99496 and documentation requirements 
 - [NCQA Care Management Standards](https://www.ncqa.org/): NCQA's care-management accreditation standards, applicable for plans pursuing accreditation
 - [Synthea](https://github.com/synthetichealth/synthea): synthetic patient data generator including realistic conditions, encounters, and procedures useful for non-PHI development of care management pipelines
-- [Care Continuum Alliance Care Management Outcomes Standards](https://www.populationhealthalliance.org/): the population-health-alliance care-management outcome standards <!-- TODO: confirm the current URL at the time of build; the alliance has rebranded multiple times. -->
+- [Care Continuum Alliance Care Management Outcomes Standards](https://www.populationhealthalliance.org/): the population-health-alliance care-management outcome standards 
 
 ---
 
@@ -1590,7 +1456,6 @@ if_not_exists pattern, not ADD. -->
 | With variations | Add real-time post-discharge enrollment, hospital-at-home integration, behavioral-health pathway, SDOH-focused programs, randomized-evaluation cohort, predictive disenrollment-prevention, member-incentive integration, cost-aware uplift optimization, provider-performance feedback | 10-16 months beyond production-ready |
 
 ---
-
 
 ---
 

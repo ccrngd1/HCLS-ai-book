@@ -24,7 +24,7 @@
 
 **Amazon SageMaker for model training and hosting.** Supervised classifiers (XGBoost), unsupervised detectors (Isolation Forest via SageMaker Processing), and custom GNN training via Neptune ML all run on SageMaker. Feature Store holds the feature vectors with point-in-time correctness for reproducibility. SageMaker Clarify produces bias reports on the supervised models and explanation artifacts for individual predictions.
 
-**Amazon Comprehend Medical plus Amazon Bedrock for documentation review.** When medical records are attached to a case, Comprehend Medical extracts structured entities (diagnoses, medications, procedures) for rule-based medical-necessity checks. Bedrock (Claude, Llama, or other HIPAA-eligible LLMs) handles the harder tasks: summarizing records, assessing whether documentation supports a billed code, detecting documentation cloning patterns, and generating plain-language narrative summaries for investigators. Always as a productivity tool, never as a decision-maker, and always with human review attached. <!-- TODO (TechWriter): confirm the set of HIPAA-eligible Bedrock foundation models as of the current year. Model availability under the AWS BAA has been expanding; verify before recommending a specific model. -->
+**Amazon Comprehend Medical plus Amazon Bedrock for documentation review.** When medical records are attached to a case, Comprehend Medical extracts structured entities (diagnoses, medications, procedures) for rule-based medical-necessity checks. Bedrock (Claude, Llama, or other HIPAA-eligible LLMs) handles the harder tasks: summarizing records, assessing whether documentation supports a billed code, detecting documentation cloning patterns, and generating plain-language narrative summaries for investigators. Always as a productivity tool, never as a decision-maker, and always with human review attached. 
 
 **Amazon Step Functions for orchestration.** Batch feature computation, graph refresh, cohort baseline regeneration, model retraining, and scheduled rule evaluation are multi-step workflows. State machines give retry, error handling, and visibility.
 
@@ -134,13 +134,13 @@ flowchart TB
 | **Encryption** | Customer-managed KMS keys on every PHI-bearing store: S3, DynamoDB, Neptune, OpenSearch, SageMaker (volumes, model artifacts, Feature Store), MSK. Kinesis SSE with CMK. TLS 1.2 or higher in transit everywhere. |
 | **VPC** | Production deployment in a VPC with VPC endpoints for S3, DynamoDB, KMS, SageMaker runtime, Bedrock, Comprehend Medical, and Neptune. Neptune is always in a VPC (no public endpoint). OpenSearch in VPC with fine-grained access control. Lambdas that access PHI stores run in the VPC. |
 | **CloudTrail and Data Events** | Enabled with data events on every PHI-bearing store and on the case management DynamoDB and OpenSearch resources. Every investigator read and write is logged. Logs are stored in a separate account under Organizations SCPs that prevent deletion, because these logs may be subpoenaed. |
-| **Legal Privilege Architecture** | If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture. <!-- TODO (TechWriter): per expert review (S4), expand this row to name the specific infrastructure primitives that operationalize the privilege boundary so an architect has something concrete to bring to the GC conversation: separate AWS account in an OU administered by GC; separate VPC with no peering to general analytics; separate customer-managed KMS keys whose key policies exclude analytics-engineer roles; distinct CloudTrail trail to a GC-controlled S3 bucket; distinct OpenSearch domain and DynamoDB tables for case data with `PRIVILEGED` data-classification tags; SCP-level prevention of S3 cross-account access from the privileged environment. --> |
+| **Legal Privilege Architecture** | If the SIU operates under legal privilege, the case management data may need to be in an account or VPC isolated from general analytics, with access controlled by legal counsel. Coordinate with the general counsel's office before designing the architecture.  |
 | **Regulatory Referral Workflows** | Documented workflows for CMS fraud reporting (42 CFR 422.504(h) for Medicare Advantage, 42 CFR 438.608 for Medicaid MCOs). OIG hotline referrals. State Medicaid Fraud Control Unit referrals. SIU-to-DOJ workflows for False Claims Act cases. Infrastructure must support documented, auditable handoffs including data packages that meet the receiving agency's specifications. |
 | **Clinical Governance** | Clinical reviewers (typically RNs, MDs with coding credentials) are part of the case team for medical-necessity cases. Their work (medical records review, documentation assessment) must be integrated into the case management workflow. |
 | **Sample Data** | [CMS Synthetic Public Use Files (SynPUF)](https://www.cms.gov/data-research/statistics-trends-and-reports/medicare-claims-synthetic-public-use-files) provide synthetic Medicare claims for development and testing. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic patient and provider data. [CMS Open Payments](https://openpaymentsdata.cms.gov/) is public Sunshine Act data. [OIG LEIE](https://oig.hhs.gov/exclusions/) is public exclusion data. [SAM.gov](https://sam.gov/) is public federal exclusion data. Never use real PHI in development. |
 | **External Data Subscriptions** | Some state business filing APIs and property record sources have commercial data providers (LexisNexis, Thomson Reuters CLEAR, others). Medical fraud analytics vendors (SAS Fraud Framework, Optum Impact Intelligence, others) sometimes provide enriched feeds. Factor these into operational cost. |
 | **Retention** | Investigation records retained per the most conservative applicable schedule. FCA statute-of-limitations considerations can extend this to ten years or longer. Criminal case records may be retained indefinitely under specific programs. Consult legal before setting lifecycle policies on these buckets. |
-| **Cost Estimate** | For a mid-size regional payer (say, 1 million members, 30 million claims per year): S3 data lake: ~$500-1,500/month at multi-year retention. Glue and EMR for ETL and feature computation: ~$800-3,000/month. Neptune for the graph (tens of millions of nodes, hundreds of millions of edges): ~$2,000-6,000/month. OpenSearch case index: ~$500-1,500/month. SageMaker training and hosting: ~$500-2,000/month. Bedrock and Comprehend Medical for documentation review: usage-dependent, typically $300-1,500/month. DynamoDB for case state: ~$100-400/month. Total infrastructure: typically $5,000-16,000/month. Compare to typical FWA recoveries: mature SIU programs recover multiples of program cost annually, often 5x to 15x. The infrastructure cost is a small fraction of investigator staffing cost and a smaller fraction of recoveries. <!-- TODO (TechWriter): verify current published industry benchmarks for SIU ROI. NHCAA and the Healthcare Fraud Prevention Partnership have published figures; confirm current values before citing specifics. --> |
+| **Cost Estimate** | For a mid-size regional payer (say, 1 million members, 30 million claims per year): S3 data lake: ~$500-1,500/month at multi-year retention. Glue and EMR for ETL and feature computation: ~$800-3,000/month. Neptune for the graph (tens of millions of nodes, hundreds of millions of edges): ~$2,000-6,000/month. OpenSearch case index: ~$500-1,500/month. SageMaker training and hosting: ~$500-2,000/month. Bedrock and Comprehend Medical for documentation review: usage-dependent, typically $300-1,500/month. DynamoDB for case state: ~$100-400/month. Total infrastructure: typically $5,000-16,000/month. Compare to typical FWA recoveries: mature SIU programs recover multiples of program cost annually, often 5x to 15x. The infrastructure cost is a small fraction of investigator staffing cost and a smaller fraction of recoveries.  |
 
 ### Ingredients
 
@@ -182,7 +182,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`graph-notebook`](https://github.com/aws/graph-notebook): Neptune notebooks, Gremlin traversal patterns, and examples for graph analytics including community detection.
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Isolation Forest and XGBoost examples applicable to the statistical and supervised layers; Feature Store examples for the per-entity feature architecture.
-> <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating healthcare fraud detection, graph-based anti-fraud, or payment integrity analytics on AWS. A direct match has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
 
@@ -312,21 +312,6 @@ FUNCTION resolve_providers(claims_batch, external_provider_data):
 ```
 
 **Step 3: Build and refresh the relationship graph.** The graph loader takes the resolved entities and the claim activity and produces the nodes and edges in Neptune. Refreshes are incremental (upsert changed relationships) to avoid full rebuilds.
-
-<!-- TODO (TechWriter): per expert review (S1), the pseudocode below
-upserts patient nodes (correctly hashed) and rendered/billed/referred
-edges, but does not upsert claim vertices despite the prose's node-type
-taxonomy listing claims as a node type, and the `billed` edge currently
-goes "organization -> hashed-patient" while the comment promises
-"organization -> claim". The high-value graph queries the recipe
-describes ("find all claims for which provider X is the rendering
-provider"; community detection over provider-and-organization
-collusive networks rather than patient-centered subgraphs) require
-claim vertices and explicit `rendered_on_claim`, `billed_for_claim`,
-and `for_patient` edge types. Update Step 3 to upsert Claim vertices
-and to separate the three edge types, and update Step 6 to be explicit
-about which node types and edge types participate in the
-community-detection projection. -->
 
 ```pseudocode
 FUNCTION refresh_graph(since_timestamp):
@@ -732,26 +717,6 @@ FUNCTION run_graph_analytics():
 
 **Step 7: Aggregate evidence and build the case bundle.** Flags from all layers combine into per-entity case bundles with ranked evidence, estimated dollar impact, and graph context.
 
-<!-- TODO (TechWriter): per expert review (A1), the EventBridge -> Lambda
-async path is at-least-once and the pseudocode below has no idempotency
-guard. Redelivered flag events double-count flags on the case (which
-double the combined dollar impact and distort the priority score) and
-re-publish triage events. Add a deterministic event key
-(`flag.flag_id + flag.detector_source`) and a conditional DynamoDB write
-to a `processed-flag-events` table before the case-flag append, the
-subgraph fetch, and the triage-event publish. Same pattern recurring
-across Recipes 2.4-2.10 and 3.1-3.5; strong candidate for a cookbook-wide
-trigger-idempotency appendix. -->
-
-<!-- TODO (TechWriter): per expert review (A4), every flag should carry
-a `reference_versions` envelope (rule library version, CCI table version,
-MUE table version, LEIE/SAM extract date, death-master extract date,
-coverage-policy versions, graph-snapshot ID, supervised-model version,
-peer-baseline snapshot) preserved through evidence aggregation and
-included in any regulatory-referral package. State MFCU asking "why was
-this flag fired in November when the LEIE record was added in June?"
-requires the LEIE-extract date in the evidence trail. -->
-
 ```pseudocode
 FUNCTION on_flag_event(flag):
     // Determine the target entity (provider, organization, community, or patient).
@@ -797,33 +762,6 @@ FUNCTION on_flag_event(flag):
             detail      = { case_id: case.id, priority_score: case.priority_score }
         )
 ```
-
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). The CaseReady.triage
-EventBridge event correctly carries a minimal payload (case_id +
-priority_score), but the OpenSearch index of the case carries the full
-evidence_bundle (representative_claims, peer_comparison, subgraph,
-prior_flags_on_entity, prior_case_outcomes_on_entity, dollar_impact,
-legal_basis_flags, documentation_attached) and the case-state DynamoDB
-upsert carries the full case. State explicitly that PHI does not
-transit through EventBridge and that subscribers must fetch by case_id
-through their own IAM-scoped read paths into OpenSearch and DynamoDB.
-Add per-investigator-assignment IAM scope on case state and the
-fwa-cases OpenSearch index (case_id IN assigned_cases for the
-investigator's role; supervisor and compliance roles override with
-higher-granularity CloudTrail data-event audit; analyst roles read
-low-detail case summaries but require case-assignment for full
-evidence-bundle access; clinical-reviewer roles read-only on cases
-routed for clinical review). OpenSearch fine-grained access control
-rules should evaluate against case-assignment claims; case documents
-indexed with a `case_assignments` field that the access-control rules
-query. Notification channels (email, Teams, Slack) carry case_id and
-routing tier only; entity name and dollar impact stay out of the
-notification subject because they are operationally sensitive and may
-be visible on lock screens. Recurring chapter-wide PHI-minimization
-pattern; the FWA-specific concern is that flag content (post-mortem
-billing dates, ownership-cascade corporate officers, exclusion-violation
-provider details) is itself sensitive in ways that go beyond per-patient
-PHI. Strong candidate for a cookbook-wide PHI-minimization appendix. -->
 
 **Step 8: Documentation review assistance.** When an investigator escalates a case that requires medical records, the documentation-assist service coordinates Comprehend Medical entity extraction and LLM-based review.
 
@@ -898,19 +836,6 @@ FUNCTION assist_documentation_review(case_id, medical_records_uri):
 
 **Step 9: Capture outcomes and feed the retraining loop.** Case outcomes structurally feed back into label stores. Retraining runs quarterly (or more often for rule tuning).
 
-<!-- TODO (TechWriter): per expert review (A3), the ten outcome states
-below are terminal-state-only. The recipe's "Why This Isn't Production-
-Ready" section correctly identifies provider appeals and due-process
-workflows as a core production concern, but the pseudocode here has no
-appeal-stage state, no immutable evidence-as-of-decision snapshot in
-`case.evidence_history`, no appeal-outcome taxonomy (appeal_upheld /
-appeal_overturned / appeal_modified / appeal_withdrawn), and no
-feedback path from appeal-overturned outcomes to the supervised
-classifier as confirmed false positives. Either add the appeal state
-machine to Step 9, or add an explicit cross-link to the Provider
-appeals and due-process workflows bullet in "Why This Isn't Production-
-Ready" so a reader following the pseudocode does not miss the gap. -->
-
 ```pseudocode
 FUNCTION on_case_outcome(case_id, outcome_event):
     // outcome_event: { case_id, investigator_id, outcome_type, confirmed_loss,
@@ -974,15 +899,6 @@ FUNCTION on_case_outcome(case_id, outcome_event):
 ---
 
 ### Expected Results
-
-<!-- Sample alerts below are illustrative. Provider names are explicitly
-fictional and any resemblance to real entities is coincidental. NPIs and
-EINs in the samples are placeholders and are not Luhn-validated against
-the CMS NPPES specification (NPI = 10 digits with a Luhn check using the
-"80840" prefix); production output carries Luhn-validated NPIs from
-NPPES. Timestamps reflect the draft date and are illustrative;
-production output uses real ISO-8601 timestamps from the detector
-invocation. -->
 
 **Sample rule-based flag (exclusion violation):**
 
@@ -1151,8 +1067,6 @@ invocation. -->
 | Provider-level batch cadence | weekly | weekly | weekly | weekly |
 | Graph refresh cadence | daily | daily | daily | daily |
 
-<!-- TODO (TechWriter): benchmark ranges are directional from typical payment integrity project experience. NHCAA and the Healthcare Fraud Prevention Partnership publish benchmark ranges for SIU operations. Industry conferences (AHIMA, HFPP, SIU/SIIA) publish operational statistics. Replace with measured numbers once the pipeline runs a few cycles with labeled outcomes. -->
-
 **Where it struggles:**
 
 - **New schemes with no precedent.** Supervised models learn from past cases. New scheme archetypes that haven't been seen before are invisible to the supervised layer until they produce labeled examples. Unsupervised and graph layers help here, but new schemes are precisely where the adversaries are working.
@@ -1194,47 +1108,9 @@ The pseudocode shows the shape. A production FWA detection pipeline closes sever
 
 **Fairness, bias, and equity monitoring.** Detection rates by specialty, by geography, by patient demographics, by provider race/ethnicity when identifiable, by practice setting (safety net, rural, FQHC). If the system disproportionately flags providers serving specific patient populations, the implications are significant. Fairness monitoring must be continuous, not a one-time audit. Mitigations include case-mix adjustment, subgroup performance review, and threshold-tuning review specifically for equity.
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). The framing-level
-treatment above is correct; the architectural artifacts that make
-subgroup monitoring binding are not specified. Add a Subgroup-Data-
-Access row to the Prerequisites table or expand this paragraph with
-the infrastructure primitives: subgroup performance and detection-rate
-monitoring requires read access to provider attributes (race, ethnicity
-when identifiable, geography, practice setting) and patient demographic
-attributes (age band, sex, race, ethnicity, insurance type, language)
-that may be governed differently from clinical PHI under some state
-laws (state laws often restrict secondary use of race/ethnicity data
-more tightly than HIPAA restricts PHI per se); restrict read access on
-the demographic-and-attribute stores to the retraining job role and
-the fairness-monitoring dashboard role; CloudTrail data events on every
-subgroup query; the QuickSight dashboard backed by Athena queries an
-aggregated subgroup-metrics table (flag rate by specialty by geography
-by practice setting; case-disposition rates by patient demographic;
-overpayment-recovery rates by provider attribute), not the raw
-demographic-joined flag archive, so that dashboard-user access does
-not require row-level read on the subgroup attributes. Case-mix
-adjustment requires patient-level demographic data joined to provider
-attribution; this join occurs in a controlled environment with output
-limited to aggregated metrics. Five-recipe chapter-wide pattern (3.2,
-3.3, 3.4, 3.5, 3.6); strong candidate for a cookbook-wide
-subgroup-governance appendix. -->
-
 **Change management for rule releases.** New rules can silently shift the flag distribution, generate a flood of false positives, or miss a scheme that shifted the week before. Rule changes go through testing (against historical data), staged rollout (shadow mode before production), and explicit sign-off from program leadership. Treating rule updates like code deploys (pull requests, review, staged rollout) is appropriate.
 
 **Disaster recovery and continuity.** The FWA pipeline is not in the payment-gating hot path for most architectures (payment integrity usually runs alongside or after adjudication, not inline). But the detection workload itself is essential; a quarter without FWA detection is a quarter of undetected schemes. Plan for multi-region failover or at least cross-region backup of the case management state.
-
-<!-- TODO (TechWriter): per expert review (A2), add a DLQ / poison-message
-discipline for the four critical Lambdas in the pipeline (stream-
-normalizer, rules-engine, evidence-aggregator, outcome-capture). Each
-Lambda's `OnFailure` destination should point to a dedicated SQS DLQ;
-CloudWatch alarms on DLQ depth alert the on-call SIU-engineering team;
-for the stream-normalizer-dlq specifically, alarm threshold should be
-1 because a single dropped claim is a claim that escaped scoring.
-Replay events from DLQ after fixing the root cause; for events older
-than the regulatory-referral compliance window, escalate to compliance-
-team review rather than auto-replay because the timing-of-detection is
-itself part of the compliance posture under 42 CFR 422.504(h) and 42
-CFR 438.608. -->
 
 **Cross-border and international dimensions.** Some schemes involve offshore entities, international money flows, or providers practicing across jurisdictions. These add complexity (data-sharing restrictions, currency normalization, international sanctions lists) that domestic-focused architectures may not anticipate. Consult with legal and international compliance before handling these cases.
 
@@ -1262,7 +1138,7 @@ CFR 438.608. -->
 
 **Explainable case generation with narrative templates.** Investigators working through a high-volume queue benefit from pre-generated case narratives: "Provider X at Clinic Y in Region Z shows the following patterns: (1) ... (2) ... (3) ...; peer group mean for comparable dimensions is ...; dollar exposure is ...; suggested next steps are ...; historical cases on this entity are ...". A narrative-generation layer that produces these summaries automatically (using template-based NLG or LLM generation) compresses investigator triage time from hours to minutes.
 
-**Federated learning across payers (advanced).** Instead of Clean Rooms joins, federated learning where multiple payers train a shared fraud-detection model without sharing raw data. Technically challenging and governance-heavy. Emerging technology in 2025-2026 with limited production footprint. Worth watching for organizations with multi-payer data-sharing relationships. <!-- TODO (TechWriter): confirm current production adoption of federated learning in healthcare payer contexts. Evidence is limited as of writing. -->
+**Federated learning across payers (advanced).** Instead of Clean Rooms joins, federated learning where multiple payers train a shared fraud-detection model without sharing raw data. Technically challenging and governance-heavy. Emerging technology in 2025-2026 with limited production footprint. Worth watching for organizations with multi-payer data-sharing relationships. 
 
 **Provider-facing transparency and education.** Rather than pure enforcement, some mature programs feed back anomaly detection results to providers through transparent provider-facing dashboards: "your modifier 59 rate is in the 98th percentile of your peer group; here's what that means; here are resources for compliant billing practices." Provider education resolves many cases before they become investigations and reduces the operational burden on the SIU. Requires careful communications design (providers react poorly to being told they look suspicious).
 
@@ -1292,13 +1168,11 @@ CFR 438.608. -->
 - [`graph-notebook`](https://github.com/aws/graph-notebook): Jupyter-based graph exploration notebooks for Neptune including Gremlin and SPARQL patterns applicable to the relationship graph.
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost examples, Isolation Forest patterns, Feature Store examples, and SageMaker Clarify examples applicable to the statistical and supervised layers.
 - [`aws-samples`](https://github.com/aws-samples): search for "graph," "fraud," "anomaly," and "healthcare" for adjacent patterns.
-<!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating healthcare fraud detection, insurance fraud detection, or graph-based anomaly detection on AWS. Candidate repos exist in adjacent domains (banking fraud, insurance fraud) but a direct healthcare match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Financial Services and Healthcare): fraud detection reference architectures from adjacent domains often translate to healthcare FWA.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "fraud detection," "graph neural networks," and "healthcare" for architectural deep-dives.
 - [AWS Fraud Detector](https://aws.amazon.com/fraud-detector/): managed fraud detection service; general-purpose but can be used for claim-level scoring as one component. Worth evaluating for teams without ML engineering capacity.
-<!-- TODO (TechWriter): verify and add two or three specific AWS blog posts on graph-based fraud detection, payer fraud detection, or related topics on AWS; confirm URLs exist before inclusion. -->
 
 **Industry, Clinical, and Regulatory References:**
 - [National Health Care Anti-Fraud Association (NHCAA)](https://www.nhcaa.org/): industry association for healthcare anti-fraud professionals; publishes guidance, training, and industry loss estimates.
@@ -1336,7 +1210,6 @@ CFR 438.608. -->
 | With variations | Pharmacy specialization, home health / hospice specialization, DME specialization, behavioral health specialization, real-time pre-payment integration, Clean Rooms cross-payer intelligence, federated learning, member-facing fraud detection, provider-facing transparency dashboards | 18-36 months beyond production-ready |
 
 ---
-
 
 ---
 

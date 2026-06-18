@@ -290,8 +290,6 @@ FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decis
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 **Multi-disease retinal screening.** The same fundus image that shows diabetic retinopathy can also reveal glaucoma (optic disc changes), age-related macular degeneration (drusen, geographic atrophy), and hypertensive retinopathy. Multi-task models that screen for multiple conditions simultaneously increase the value of each captured image. The architecture is identical; you add output heads to the classification model and additional decision logic branches.
@@ -313,7 +311,7 @@ FUNCTION store_and_act(patient_id, image_key, quality_result, predictions, decis
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
 
 **Clinical and Regulatory References:**
-<!-- TODO (TechWriter): Expert review V1 (MEDIUM). Verify and fill all six URLs below before publication. Remove entries where URLs cannot be confirmed. -->
+
 - TODO: Verify current FDA guidance document URL for AI/ML-based Software as a Medical Device (SaMD)
 - TODO: Verify URL for IDx-DR (Digital Diagnostics) FDA De Novo clearance summary
 - TODO: Verify URL for AAO Diabetic Retinopathy Preferred Practice Pattern

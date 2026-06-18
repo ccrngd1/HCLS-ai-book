@@ -103,10 +103,7 @@ The feedback loop: track 30-day outcomes for all scored patients. Compare predic
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.05-architecture). The Python example is linked from there.
-
-<!-- TODO (TechWriter): Expected Results section lives here but RECIPE-GUIDE places it in the architecture companion. Left in place during split polish; consider relocating in a future pass. -->
 
 ## Expected Results
 

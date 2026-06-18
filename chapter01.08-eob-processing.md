@@ -216,7 +216,6 @@ Any cloud provider, any extraction engine fits this pattern. The schema mapping 
 
 **Where it struggles:** EOBs with merged table cells in summary sections (common in COB layouts where a multi-payer breakdown appears in a non-standard format). EOBs where line item data appears in paragraph form rather than a table (a small number of payers do this for single-service claims). Multi-page tables where page breaks split a row across pages. And any EOB that has been photocopied more than once: scan quality degradation compounds, and by the third generation you're fighting image noise as much as document structure.
 
-
 The Bedrock mapping path also has a failure mode the static profile system doesn't: if the LLM maps a column to the wrong canonical field, the error is harder to detect without financial validation catching it. A static profile is wrong in a predictable, consistent way. An LLM mapping can be wrong in an unpredictable way on any given document. For high-stakes EOBs (large claim amounts, COB workflows), the determinism of a validated static profile is a real advantage. Use Bedrock for the long tail; use static profiles where you have volume and validated samples.
 
 ---

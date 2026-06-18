@@ -301,10 +301,7 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
 - [Automating Paper-to-Electronic Healthcare Claims Processing with AWS](https://aws.amazon.com/blogs/storage/automating-paper-to-electronic-healthcare-claims-processing-with-aws): End-to-end architecture for digitizing paper healthcare claims
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations). Also, "### Code" heading should be "### Pseudocode Walkthrough" per RECIPE-GUIDE spec. -->
-
 --- 
-
 
 ---
 

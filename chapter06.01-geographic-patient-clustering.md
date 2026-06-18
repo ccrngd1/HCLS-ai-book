@@ -106,8 +106,6 @@ The geocoding quality issue surprised me more than I expected. In one project, 2
 
 One more thing: don't forget that clusters change. Run this quarterly, not once. Patient populations shift, new developments open, employers relocate. A cluster analysis from January that drives a facility decision in December is working with stale data. For ongoing operations, maintain a change-data-capture feed from your EHR. Track address changes by comparing the current extract against the previous run's input. Only geocode new or changed addresses. This reduces geocoding costs from ~$100/run to ~$5-10/run for typical monthly patient churn (2-5% address changes).
 
-<!-- TODO (TechWriter): Expert review ARCH-2 (MEDIUM). Consider expanding the incremental processing paragraph above into a more detailed architectural pattern showing how to identify new/changed addresses and merge incremental geocoding results with existing data. -->
-
 ---
 
 ## Related Recipes
@@ -116,7 +114,5 @@ One more thing: don't forget that clusters change. Run this quarterly, not once.
 - **Recipe 6.2 (Utilization Pattern Segmentation):** Segments patients by behavior; combine with geographic clusters for "where do high-utilizers live?" analysis
 - **Recipe 7.1 (Readmission Risk Scoring):** Risk scores can enrich geographic clusters to identify high-risk neighborhoods
 - **Recipe 14.3 (Facility Location Optimization):** Uses cluster output as input for mathematical optimization of facility placement
-
-<!-- TODO (TechWriter): Main recipe is missing Tags and Navigation footer sections per RECIPE-GUIDE. Tags are currently only on the architecture companion. Add them here. -->
 
 ---

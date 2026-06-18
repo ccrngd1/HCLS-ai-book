@@ -751,7 +751,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of _to_decimal for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -764,16 +763,13 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
-
 def _now() -> datetime:
     """Current UTC datetime."""
     return datetime.now(timezone.utc)
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -781,7 +777,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -803,7 +798,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
 
-
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
     """Emit a CloudWatch metric. Best-effort; never blocks."""
@@ -823,7 +817,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -854,7 +847,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """
@@ -922,7 +914,6 @@ class MockTable:
     def update_item(self, Key, **kwargs):
         # Demo: pretend the update succeeded.
         return {}
-
 
 class MockBedrockRuntime:
     """
@@ -1053,7 +1044,6 @@ class MockBedrockRuntime:
             "tool_calls": [],
         }
 
-
 class MockEHR:
     """Stands in for the FHIR-native chart-context store."""
 
@@ -1072,7 +1062,6 @@ class MockEHR:
 
     def get_safety_plan(self, patient_id):
         return self.safety_plans.get(patient_id)
-
 
 class MockTherapeuticContentLibrary:
     """Stands in for the therapeutic-content Knowledge Base."""
@@ -1096,7 +1085,6 @@ class MockTherapeuticContentLibrary:
             results.append(item)
         return results
 
-
 class MockClinicianQueue:
     """Stands in for Amazon Connect licensed-clinician queue."""
 
@@ -1113,7 +1101,6 @@ class MockClinicianQueue:
         }
         self.handoffs.append(record)
         return record
-
 
 class MockMandatoryReportingPathway:
     """Stands in for state-specific mandatory-reporter routing."""
@@ -1133,7 +1120,6 @@ class MockMandatoryReportingPathway:
             "routed_at": _now_iso(),
         })
 
-
 class MockCareTeamWorkflow:
     """Stands in for the care-team alert and digest delivery."""
 
@@ -1147,7 +1133,6 @@ class MockCareTeamWorkflow:
     def deliver_digest(self, digest):
         self.digests.append(digest)
 
-
 class MockEventBus:
     """Stands in for EventBridge."""
 
@@ -1159,7 +1144,6 @@ class MockEventBus:
             self.events.append(entry)
         return {"FailedEntryCount": 0}
 
-
 class MockPinpoint:
     """Stands in for Pinpoint message dispatch."""
 
@@ -1169,7 +1153,6 @@ class MockPinpoint:
     def send_messages(self, **kwargs):
         self.messages.append(kwargs)
         return {"MessageResponse": {"Result": {}}}
-
 
 class MockDecisionJournal:
     """Stands in for the S3 support-decision-record archive."""
@@ -1187,7 +1170,6 @@ class MockDecisionJournal:
         }
         return {}
 
-
 class MockCloudWatch:
     """Stands in for CloudWatch metrics."""
 
@@ -1200,7 +1182,6 @@ class MockCloudWatch:
                 "namespace": Namespace,
                 **record,
             })
-
 
 # Module-level mock instances. The demo wires the helpers
 # above to use these.
@@ -1236,10 +1217,8 @@ mock_tables = {
         CONSENT_RECORD_TABLE, "patient_id"),
 }
 
-
 def _mock_dynamodb_table(name):
     return mock_tables[name]
-
 
 # Replace boto3 dynamodb.Table with the mock for the demo.
 dynamodb.Table = _mock_dynamodb_table
@@ -1397,7 +1376,6 @@ def enroll_patient(*,
         "consent_id":  consent_record["consent_id"],
     }
 
-
 def _check_eligibility(*, patient_id,
                          target_population_segment):
     """
@@ -1446,7 +1424,6 @@ def _check_eligibility(*, patient_id,
         }
 
     return {"eligible": True}
-
 
 def _state_specific_consent_provisions(state_of_residence):
     """
@@ -1575,7 +1552,6 @@ def receive_message(*,
             disclosure["disclosure_detected"],
     }
 
-
 def _get_or_create_session(state_table, channel,
                             channel_session_id, auth_context):
     """Resolve or create a support conversation session."""
@@ -1600,7 +1576,6 @@ def _get_or_create_session(state_table, channel,
     state_table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _screen_input(session_id, user_message):
     """
     Input safety screening. Mental-health-specific injection
@@ -1617,7 +1592,6 @@ def _screen_input(session_id, user_message):
         return {"action": "block",
                 "reason": "message_too_long"}
     return {"action": "pass"}
-
 
 def _crisis_screen(*, user_message, recent_turns):
     """
@@ -1661,7 +1635,6 @@ def _crisis_screen(*, user_message, recent_turns):
 
     return {"crisis_detected": False}
 
-
 def _sensitive_disclosure_screen(user_message):
     """
     Detect sensitive disclosures that route to specific
@@ -1683,7 +1656,6 @@ def _sensitive_disclosure_screen(user_message):
                         config["mandatory_reporting"],
                 }
     return {"disclosure_detected": False}
-
 
 def _load_longitudinal_context(*, patient_id, session_id):
     """
@@ -1722,7 +1694,6 @@ def _load_longitudinal_context(*, patient_id, session_id):
         "recent_conversation":     recent_conversation,
     }
 
-
 def _recent_turns_for_session(session_id, k=8):
     """Return the last k turns from this session."""
     metadata_table = dynamodb.Table(
@@ -1737,7 +1708,6 @@ def _recent_turns_for_session(session_id, k=8):
             out.append(record)
     return out[-k:]
 
-
 def _recent_symptom_tracking(patient_id, days=30):
     """Return recent symptom-tracking entries for context."""
     table = dynamodb.Table(SYMPTOM_TRACKING_TABLE)
@@ -1751,7 +1721,6 @@ def _recent_symptom_tracking(patient_id, days=30):
             if ts >= cutoff.isoformat():
                 out.append(record)
     return out
-
 
 def _recent_conversation_for_context(patient_id, days=90,
                                        max_turns=40):
@@ -1770,7 +1739,6 @@ def _recent_conversation_for_context(patient_id, days=90,
                 continue
             out.append(record)
     return out[-max_turns:]
-
 
 def _requires_disclosure_refresh(session, session_id):
     """
@@ -1792,7 +1760,6 @@ def _requires_disclosure_refresh(session, session_id):
         return True
     return False
 
-
 def _deliver_disclosure_refresh(*, session_id,
                                   longitudinal_context):
     """
@@ -1812,12 +1779,10 @@ def _deliver_disclosure_refresh(*, session_id,
         "timestamp":  _now_iso(),
     }))
 
-
 def _mark_disclosure_refresh_delivered(state_table, session):
     """Update the session state to record the refresh."""
     session["last_disclosure_refresh_at"] = _now_iso()
     state_table.put_item(Item=_to_decimal(session))
-
 
 def _record_sensitive_disclosure(*, session_id, patient_id,
                                    disclosure,
@@ -1885,7 +1850,6 @@ def _record_sensitive_disclosure(*, session_id, patient_id,
 
     _put_metric("SensitiveDisclosureRecorded", 1, {
         "Category": disclosure["category"]})
-
 
 def _handle_block(session_id, screening):
     """Default response when input screening blocks the message."""
@@ -2057,7 +2021,6 @@ def handle_crisis_pathway(*,
         "citations":           [],
     }
 
-
 def _select_anchor_response(urgency):
     """Select the validated anchor template for the urgency."""
     return {
@@ -2065,7 +2028,6 @@ def _select_anchor_response(urgency):
         "acute_crisis":       CRISIS_ANCHOR_ACUTE,
         "sub_acute":          CRISIS_ANCHOR_SUB_ACUTE,
     }.get(urgency, CRISIS_ANCHOR_ACUTE)
-
 
 def _initiate_warm_handoff(*,
                             session_id,
@@ -2133,7 +2095,6 @@ def _initiate_warm_handoff(*,
 
     return handoff_payload
 
-
 def _surface_safety_plan_steps(*,
                                   session_id,
                                   safety_plan,
@@ -2171,7 +2132,6 @@ def _surface_safety_plan_steps(*,
 
     return relevant_steps
 
-
 def _format_safety_plan_for_chat(steps):
     """Render the safety-plan steps as chat-friendly text."""
     if not steps:
@@ -2182,7 +2142,6 @@ def _format_safety_plan_for_chat(steps):
         lines.append(f"- {step['label'].replace('_', ' ')}: "
                      f"{step['content']}")
     return "\n".join(lines)
-
 
 def _consent_permits_care_team_sharing(consent_record):
     """
@@ -2286,7 +2245,6 @@ def handle_conversation(*,
         "tool_calls":     agent_response.get("tool_calls", []),
         "longitudinal_context": longitudinal_context,
     }
-
 
 def compose_support_system_prompt(*,
                                      bot_persona_name,
@@ -2521,7 +2479,6 @@ def screen_support_output(*,
         "tool_calls":   tool_calls,
     }
 
-
 def _detect_support_scope_violation(response_text):
     """
     Detect attempts at therapy, diagnosis, medication
@@ -2586,7 +2543,6 @@ def _detect_support_scope_violation(response_text):
 
     return None
 
-
 def _detect_companion_pattern(*, response_text,
                                   recent_responses):
     """
@@ -2619,7 +2575,6 @@ def _detect_companion_pattern(*, response_text,
         }
 
     return {"violation_detected": False}
-
 
 def _verify_support_citations(*, response_text, citations):
     """
@@ -2669,7 +2624,6 @@ def _verify_support_citations(*, response_text, citations):
 
     return {"has_ungrounded_assertions": False}
 
-
 def _verify_crisis_pathway_honor(*, response_text,
                                      tool_calls):
     """
@@ -2706,7 +2660,6 @@ def _verify_crisis_pathway_honor(*, response_text,
             }
 
     return {"compliant": True}
-
 
 def _recent_bot_responses_for_session(session_id, k=5):
     """Return the last k bot responses for this session."""
@@ -2849,11 +2802,9 @@ def persist_support_artifacts(*,
         "decisions_recorded": decisions_recorded,
     }
 
-
 def _summarize_tool_calls(tool_calls):
     """Lightweight tool-call summary for the conversation log."""
     return [{"tool": tc["tool"]} for tc in tool_calls]
-
 
 def _extract_support_decisions(response_payload,
                                   longitudinal_context):
@@ -2905,7 +2856,6 @@ def _extract_support_decisions(response_payload,
             })
 
     return decisions
-
 
 def _process_tool_call_side_effects(*,
                                        session_id,
@@ -2998,7 +2948,6 @@ def deliver_care_team_alerts():
 
     return {"delivered_count": delivered_count}
 
-
 def compose_weekly_digest(patient_id, window_days=7):
     """
     Build a weekly digest for the care team. Production
@@ -3090,7 +3039,6 @@ def compose_weekly_digest(patient_id, window_days=7):
 
     return digest
 
-
 def queue_outcome_correlation(*,
                                 patient_id,
                                 window_start_days_ago=30):
@@ -3113,7 +3061,6 @@ def queue_outcome_correlation(*,
     # jointly held by behavioral-health clinical
     # leadership, data science, and operations.
     pass  # demo: outcome-correlation queue elided
-
 
 def run_outcome_correlation_pipeline():
     """
@@ -3366,7 +3313,6 @@ def run_demo():
           f"{len(mock_care_team.digests)}")
     print(f"S3 objects (general + sensitive):  "
           f"{len(s3_client.objects)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

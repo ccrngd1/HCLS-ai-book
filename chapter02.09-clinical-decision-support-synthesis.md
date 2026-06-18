@@ -1,37 +1,3 @@
-<!--
-Editor pass v2 (TechEditor, 2026-06-17):
-- Transition-seam fix: removed AWS-specific "DynamoDB status and S3 archive
-  prefix" from the General Architecture Pattern section (vendor-agnostic);
-  replaced with vendor-neutral "separate status tracking and archive path."
-  The architecture companion retains the AWS-specific detail.
-
-Editor pass v1 (TechEditor, 2026-05-15):
-- A1 (HIGH): Architecture diagram updated with bounded retry edge and a
-  Human Review Queue terminal node (does not flow to delivery). Post-generation
-  validation prose bullet in General Architecture Pattern expanded to name
-  the non-delivery path. New orchestration gate added between Step 9 and
-  Step 10 distinguishing VALIDATED from VALIDATION_EXHAUSTED_ROUTED_TO_REVIEW.
-  Coordinated with Python companion code-review Finding 1.
-- S1 (MEDIUM): PHI minimization note added between Step 2 and Step 5; bullet
-  added to "Why This Isn't Production-Ready."
-- S2 (MEDIUM): Input-side prompt-attack filter prerequisite added to the
-  Step 8 Guardrails comment block.
-- A2 (MEDIUM): Deterministic event-key idempotency note added to Step 1;
-  bullet added to "Why This Isn't Production-Ready."
-- A3 (MEDIUM): Literal Bedrock model IDs in pseudocode replaced with
-  placeholder constants (SMALL_MODEL_ID, EMBEDDING_MODEL_ID,
-  SYNTHESIS_MODEL_ID) with family-name comments, matching Recipe 2.10's
-  chapter template.
-- S3 (LOW): Grounding threshold (>= 0.85) named in Step 8 Guardrails block
-  and in Why These Services paragraph.
-- A4 (LOW): Cost-estimate ceiling clarified for complex multi-scenario
-  syntheses with validator retry.
-- N1, N2, N3 (LOW): VPC interface-endpoint list now includes execute-api
-  (conditional, private API Gateway), CloudWatch (monitoring), and rds-data
-  (conditional, Aurora Data API path).
-- V3 (LOW): Markdown links added to same-chapter Related Recipes entries.
--->
-
 # Recipe 2.9: Clinical Decision Support Synthesis
 
 **Complexity:** Complex · **Phase:** MVP → Production · **Estimated Cost:** ~$0.15-$1.20 per synthesized recommendation (typical); approaching $2.00 for complex multi-scenario syntheses with validator retry
@@ -155,7 +121,7 @@ Concretely, for the architecture you're building:
 - The UI has to invite clinician judgment, not bypass it. Single-click acceptance with the reasoning hidden is a regulatory risk.
 - Documentation of how the system was built, validated, and updated needs to be comprehensive enough to produce for FDA on request. If your posture is "we're exempt," you should be able to demonstrate that posture on demand.
 
-Interpretations of the rule are still evolving. Generative AI in CDS is new enough that FDA has not issued generative-AI-specific guidance as of this writing. <!-- TODO (TechWriter): verify current status of FDA generative-AI CDS guidance as of writing; check for recent updates to the September 2022 CDS guidance. --> The conservative posture, and the one most legal teams are recommending, is: build for exemption, but build as though you might have to defend the exemption in a regulatory conversation. That means rigorous documentation, explicit source traceability, and clinician-facing UIs that foreground reasoning.
+Interpretations of the rule are still evolving. Generative AI in CDS is new enough that FDA has not issued generative-AI-specific guidance as of this writing.  The conservative posture, and the one most legal teams are recommending, is: build for exemption, but build as though you might have to defend the exemption in a regulatory conversation. That means rigorous documentation, explicit source traceability, and clinician-facing UIs that foreground reasoning.
 
 This is a sufficiently big topic that it has its own recipe-adjacent considerations. For a deeper treatment, FDA's guidance document is reasonably readable ([linked below](#additional-resources)). Get your regulatory affairs team involved from day one. Do not build the thing and then ask whether it's a medical device.
 
@@ -313,9 +279,9 @@ Final thought. Clinical decision support synthesis is one of the genuinely high-
 - **[Recipe 2.7: Literature Search and Evidence Synthesis](chapter02.07-literature-search-evidence-synthesis):** Descriptive sibling of this recipe. 2.7 describes evidence; 2.9 synthesizes patient-specific recommendations. The retrieval infrastructure overlaps substantially; the regulatory posture and the generation prompt differ.
 - **[Recipe 2.8: Ambient Clinical Documentation](chapter02.08-ambient-clinical-documentation):** Produces the patient context that a CDS system can then reason over. Ambient documentation and CDS are complementary; both live inside the encounter workflow.
 - **[Recipe 2.10: Multi-Modal Clinical Reasoning](chapter02.10-multi-modal-clinical-reasoning):** Extends CDS into multi-modal inputs (imaging findings, ECG, pathology). The CDS synthesis pipeline here is the reasoning layer that a multi-modal system feeds into.
-- **Recipe 5.x (Entity Resolution / Record Linkage):** Accurate patient record linkage is a prerequisite for pulling a complete patient context. If patient records are split across systems, the CDS synthesis is working with an incomplete picture. <!-- TODO (TechWriter): update to specific recipe number once Chapter 5 is drafted. -->
-- **Recipe 13.x (Knowledge Graphs / Ontology):** Knowledge-graph representations of drug-drug relationships, disease-drug contraindications, and guideline-recommendation-condition links can augment the retrieval layer. Hybrid graph-plus-vector retrieval is a promising direction for CDS. <!-- TODO (TechWriter): update to specific recipe number once Chapter 13 is drafted. -->
-- **Recipe 7.x (Predictive Analytics / Risk Scoring):** Risk scores (sepsis early-warning, readmission risk, fall risk) can be inputs to a CDS synthesis. "This patient's sepsis risk score is elevated; consider the following empiric workup." The score triggers the synthesis and becomes part of the context. <!-- TODO (TechWriter): update to specific recipe number once Chapter 7 is drafted. -->
+- **Recipe 5.x (Entity Resolution / Record Linkage):** Accurate patient record linkage is a prerequisite for pulling a complete patient context. If patient records are split across systems, the CDS synthesis is working with an incomplete picture. 
+- **Recipe 13.x (Knowledge Graphs / Ontology):** Knowledge-graph representations of drug-drug relationships, disease-drug contraindications, and guideline-recommendation-condition links can augment the retrieval layer. Hybrid graph-plus-vector retrieval is a promising direction for CDS. 
+- **Recipe 7.x (Predictive Analytics / Risk Scoring):** Risk scores (sepsis early-warning, readmission risk, fall risk) can be inputs to a CDS synthesis. "This patient's sepsis risk score is elevated; consider the following empiric workup." The score triggers the synthesis and becomes part of the context. 
 
 ---
 

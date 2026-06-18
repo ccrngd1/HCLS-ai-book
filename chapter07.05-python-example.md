@@ -272,7 +272,6 @@ from sklearn.metrics import roc_auc_score, brier_score_loss
 from sklearn.calibration import calibration_curve
 import json
 
-
 def train_readmission_model(df: pd.DataFrame) -> tuple:
     """
     Train a gradient boosted tree model for 30-day readmission prediction.
@@ -392,7 +391,6 @@ def platt_scale(raw_probability: float, a: float = CALIBRATION_A, b: float = CAL
     logit = a * raw_probability + b
     calibrated = 1.0 / (1.0 + np.exp(-logit))
     return float(np.clip(calibrated, 0.001, 0.999))
-
 
 def fit_platt_scaling(model, X_cal: pd.DataFrame, y_cal: pd.Series) -> dict:
     """
@@ -526,7 +524,6 @@ def score_patient(model, feature_vector: dict, feature_columns: list) -> dict:
 CHF_CODES = ["I50", "I50.1", "I50.2", "I50.9", "I11.0", "I13.0", "I13.2"]
 COPD_CODES = ["J44", "J44.0", "J44.1", "J44.9"]
 
-
 def route_interventions(score_result: dict, feature_vector: dict) -> list:
     """
     Determine which post-discharge interventions a patient should receive
@@ -596,7 +593,6 @@ import boto3
 from botocore.config import Config
 
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
-
 
 def store_risk_score(
     score_result: dict,
@@ -844,7 +840,6 @@ def run_scoring_pipeline(model, feature_columns: list, discharges: pd.DataFrame)
         print(f"\n  Scoring AUC: {auc:.4f}")
 
     return results_df
-
 
 # ─── Run the full pipeline ──────────────────────────────────────────────────
 if __name__ == "__main__":

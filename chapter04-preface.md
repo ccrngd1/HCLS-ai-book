@@ -67,7 +67,7 @@ Retail cold start is annoying. New user, no history, you show them popular items
 
 ### Fairness Is Not Optional
 
-If your recommender gives some patient populations fewer or worse recommendations, you have built a system that widens healthcare disparities. That's not a theoretical concern. There's well-documented history of healthcare algorithms (risk stratification scores, for one notable and widely-cited example) being found to systematically underpredict need for some patient populations, not because the algorithms were "biased" in some abstract sense, but because they were trained on proxies (like healthcare spending) that encoded existing disparities in access to care. <!-- TODO: verify reference; this pattern is most famously documented in Obermeyer et al. 2019 (Science), "Dissecting racial bias in an algorithm used to manage the health of populations." -->
+If your recommender gives some patient populations fewer or worse recommendations, you have built a system that widens healthcare disparities. That's not a theoretical concern. There's well-documented history of healthcare algorithms (risk stratification scores, for one notable and widely-cited example) being found to systematically underpredict need for some patient populations, not because the algorithms were "biased" in some abstract sense, but because they were trained on proxies (like healthcare spending) that encoded existing disparities in access to care. 
 
 Every complex recipe in this chapter includes a fairness consideration: which populations might be underserved, what proxies are in the feature set, and how subgroup performance is monitored. You do not get to skip this section. "We'll add fairness checks later" is how you end up on the front page of the newspaper.
 

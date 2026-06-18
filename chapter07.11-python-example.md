@@ -570,7 +570,6 @@ def explain_prediction(model, X_test, feature_names: list, claim_index: int = 0)
         "top_factors": explanations,
     }
 
-
 def _feature_to_narrative(feature_name: str, shap_value: float, feature_value) -> str:
     """
     Map a SHAP feature contribution to a human-readable explanation.
@@ -737,7 +736,6 @@ def deploy_realtime_endpoint(model_artifact_s3: str) -> str:
     logger.info("Endpoint '%s' creating. Wait for InService status.", endpoint_name)
     return endpoint_name
 
-
 def score_claim_realtime(endpoint_name: str, claim_features: dict) -> dict:
     """
     Score a single claim against the real-time endpoint.
@@ -772,7 +770,6 @@ def score_claim_realtime(endpoint_name: str, claim_features: dict) -> dict:
         "denial_probability": round(denial_probability, 4),
         "risk_tier": _classify_risk(denial_probability),
     }
-
 
 def _classify_risk(probability: float) -> str:
     """Map probability to operational risk tier."""
@@ -933,7 +930,6 @@ def run_full_pipeline():
     print(f"  High-risk (>{HIGH_RISK_THRESHOLD:.0%}): {(y_pred_proba > HIGH_RISK_THRESHOLD).sum()}")
     print("\n  For SageMaker deployment, use train_on_sagemaker() and deploy_realtime_endpoint().")
     print("  For nightly batch scoring, use run_batch_scoring().")
-
 
 if __name__ == "__main__":
     run_full_pipeline()

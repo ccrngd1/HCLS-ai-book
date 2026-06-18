@@ -80,8 +80,6 @@ flowchart LR
 | **Sample Data** | Public surveillance datasets are abundant. CDC's [FluView](https://www.cdc.gov/flu/weekly/index.htm), [WHO FluNet](https://www.who.int/tools/flunet), and the [COVID-19 Forecast Hub historical data](https://github.com/cdcepi/Flusight-forecast-data) (the project moved between organizations during the pandemic; verify current URL during implementation) provide multi-year time series suitable for development and back-testing. State-level reporting often makes aggregate data publicly available with a brief lag. Synthetic data generators based on SEIR simulations are useful for testing the ingestion pipeline against known ground truth. Never use real individual-level case-line-list data in dev. |
 | **Cost Estimate** | Surveillance ingestion (Kinesis or MSK, plus S3): ~$200-$600/month depending on volume. Glue ETL (daily harmonization): ~$150-$400/month. SageMaker training (weekly retrains across model families): ~$300-$800/month. SageMaker inference (daily forecast runs): ~$200-$600/month. Aurora PostgreSQL: ~$200-$500/month. DynamoDB: ~$50-$200/month. QuickSight, CloudFront, S3 hosting: ~$100-$300/month. Lambda, Step Functions, EventBridge, KMS, CloudWatch, audit: ~$200-$500/month. Total: ~$1,200-$5,000/month per regional surveillance workload depending on geography count, signal count, and ensemble size. |
 
-<!-- TODO (TechWriter): V1. Verify SageMaker, Aurora, and Kinesis pricing assumptions against the AWS pricing calculator before publication. AWS pricing changes; the figures above are typical ranges as of recipe authoring. -->
-
 ### Ingredients
 
 | AWS Service | Role |
@@ -100,7 +98,6 @@ flowchart LR
 | **AWS KMS** | Manages customer-managed CMKs per data class (raw surveillance, harmonized, forecasts, calibration, public exports) |
 | **Amazon CloudWatch and AWS X-Ray** | Logs, metrics, alarms for pipeline health, ingestion completeness, model convergence diagnostics, and calibration drift |
 
-
 ### Code
 
 > **Reference implementations:** The following AWS sample resources demonstrate the patterns used in this recipe:
@@ -108,8 +105,6 @@ flowchart LR
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Official SageMaker examples including custom inference container patterns and probabilistic model deployment
 > - [AWS Step Functions Workflow Studio](https://docs.aws.amazon.com/step-functions/latest/dg/workflow-studio.html): For visually composing the forecast pipeline including Distributed Map fan-out
 > - [AWS Glue Studio](https://docs.aws.amazon.com/glue/latest/dg/edit-jobs-chapter.html): For authoring the harmonization ETL jobs
-
-<!-- TODO (TechWriter): N1. Verify all reference implementation links are still live during the pre-publication audit. -->
 
 #### Walkthrough
 
@@ -393,7 +388,6 @@ FUNCTION validate_and_surface(ensemble_forecast, observed_outcomes_for_past_hori
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, PyMC for the Bayesian compartmental layer, statsmodels for the statistical ensemble member, and Prophet for an additional baseline, check out the [Python Example](chapter12.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample ensemble forecast payload for a state-level respiratory virus run:**
@@ -475,8 +469,6 @@ FUNCTION validate_and_surface(ensemble_forecast, observed_outcomes_for_past_hori
 | Calibration on backtest (95% interval coverage at horizon 4) | 88-94% |
 | Cost per regional surveillance workload per month | $1,200-$5,000 |
 
-<!-- TODO (TechWriter): A1. Performance benchmarks above are typical figures for production state-level respiratory virus forecasting systems running weekly cycles. Confirm against your reference data sources before publication. -->
-
 **Where it struggles:** Novel pathogens with insufficient historical data for prior elicitation (the compartmental model parameters are too uncertain, and statistical models have nothing to learn from). Surveillance signals with high reporting irregularity (state-level data quality varies widely by jurisdiction; some states have multi-week reporting gaps that break the time series). Sub-state geographies with low case counts (county-level forecasts are unstable when weekly counts are in single digits). Periods immediately following major behavior change (a school closure, a holiday, a public guidance shift) where the model assumes continuity and gets blindsided. Outbreaks driven by network structure rather than population-level dynamics (an outbreak in a long-term care facility, an outbreak in a religious community). Periods of varying test availability where the lab signal becomes a measure of testing rather than transmission. Regimes where the ensemble's models all agree confidently but for the wrong reason (a structural mis-specification shared across the ensemble, which is the failure mode that makes COVID-19 era forecasters humble).
 
 ---
@@ -506,7 +498,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 **Regulatory framing.** Public health forecasting that informs policy decisions sits in a different regulatory context than clinical decision support, but it has its own expectations: open-data conformance to public records laws, transparency requirements around models that inform government decisions, and the implicit social contract that forecasts published under government authority are consistent with documented methodology. The "explanation_text" and "assumption_disclosure" fields in the example payload exist because this regulatory and political context demands them. Build the system that way from the start and the political conversation is a discussion. Build it the other way and the political conversation is a redesign.
 
 **Idempotency and rerun safety.** The forecast pipeline must be safe to repeat. Harmonization is deterministic given the same input data state. Nowcasting is reproducible given a fixed random seed and the same input panel. Forecast generation is reproducible (or, for stochastic models, has reproducibility through fixed seeding). Ensemble combination is deterministic. DynamoDB writes are idempotent on (run_id, geography, target, horizon). Without these properties, a pipeline rerun produces drift that is impossible to debug, and reproducibility fails.
-
 
 ---
 
@@ -545,8 +536,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): SageMaker examples including custom container patterns useful for hosting compartmental and Bayesian models
 - [`aws-samples` GitHub Organization](https://github.com/aws-samples): Search for time-series forecasting and surveillance-related samples
 
-<!-- TODO (TechWriter): R1. Search aws-samples and aws-solutions-library-samples for current epidemiology, surveillance, or population-health forecasting samples and add 1-2 specific repositories to this section before publication. -->
-
 **External Resources:**
 - [CDC FluSight Forecasting](https://www.cdc.gov/flu-forecasting/about/index.html): Federal coordination layer for collaborative flu forecasting in the US, including the public forecast hub
 - [CDC Center for Forecasting and Outbreak Analytics](https://www.cdc.gov/forecast-outbreak-analytics/index.html): The CFA program coordinates infectious-disease forecasting across pathogens and partners
@@ -564,8 +553,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 - [AWS Solutions Library (Healthcare and Life Sciences)](https://aws.amazon.com/solutions/): Filter by Healthcare and AI/ML for reference architectures
 - [AWS Public Sector Blog](https://aws.amazon.com/blogs/publicsector/): Search for public health analytics and surveillance-related posts
 - [AWS Machine Learning Blog (Healthcare tag)](https://aws.amazon.com/blogs/machine-learning/category/industries/healthcare/): Search for forecasting and surveillance posts
-
-<!-- TODO (TechWriter): N3. Audit all external links during the final pre-publication pass. CDC FluSight, CFA, Reich Lab, Delphi, PyMC, Stan, Prophet, POLYMOD, WHO FluNet, NWSS, and the Bracher WIS publication are stable. AWS doc and blog links should be re-verified. The COVID-19 Forecast Hub repository moved between organizations during the pandemic; confirm current location. -->
 
 ---
 

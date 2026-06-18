@@ -310,7 +310,6 @@ def assemble_patient_features(
 ```python
 import gower
 
-
 def prepare_feature_matrix(patient_features_list: list[dict]) -> tuple[pd.DataFrame, list[str]]:
     """
     Convert a list of patient feature dicts into a DataFrame suitable
@@ -343,7 +342,6 @@ def prepare_feature_matrix(patient_features_list: list[dict]) -> tuple[pd.DataFr
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     return df, patient_ids
-
 
 def cluster_patients(
     feature_df: pd.DataFrame,
@@ -524,7 +522,6 @@ def characterize_phenotypes(
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def store_phenotype_assignment(
     patient_id: str,
     phenotype: dict,
@@ -580,7 +577,6 @@ Here's the full pipeline assembled with synthetic data so you can see the end-to
 
 ```python
 import random
-
 
 def generate_synthetic_patients(n_patients: int = 200) -> tuple[list, list, dict]:
     """
@@ -711,7 +707,6 @@ def generate_synthetic_patients(n_patients: int = 200) -> tuple[list, list, dict
 
     return patient_features, [f["patient_id"] for f in patient_features], demographics
 
-
 def run_phenotyping_pipeline():
     """
     Execute the full SDOH phenotyping pipeline on synthetic data.
@@ -800,7 +795,6 @@ def run_phenotyping_pipeline():
     print(f"\n{json.dumps(assignment, indent=2, default=str)}")
 
     return phenotypes
-
 
 if __name__ == "__main__":
     phenotypes = run_phenotyping_pipeline()

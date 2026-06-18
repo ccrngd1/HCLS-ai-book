@@ -339,7 +339,6 @@ def execute_cypher(query: str, parameters: dict = None, use_writer: bool = True)
     response.raise_for_status()
     return response.json()
 
-
 def validate_pathway(pathway_def: dict) -> list:
     """
     Validate a pathway definition before loading it into Neptune.
@@ -381,7 +380,6 @@ def validate_pathway(pathway_def: dict) -> list:
             )
 
     return errors
-
 
 def load_pathway_to_neptune(pathway_def: dict) -> dict:
     """
@@ -480,7 +478,6 @@ def load_pathway_to_neptune(pathway_def: dict) -> dict:
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 patient_state_table = dynamodb.Table(PATIENT_STATE_TABLE)
 
-
 def get_start_node_id(pathway_id: str, pathway_version: int) -> str:
     """
     Query Neptune for the start node of a specific pathway version.
@@ -500,7 +497,6 @@ def get_start_node_id(pathway_id: str, pathway_version: int) -> str:
         raise ValueError(f"No start node found for {pathway_id} v{pathway_version}")
 
     return rows[0]["start_id"]
-
 
 def initialize_patient_on_pathway(patient_id: str, pathway_id: str,
                                    pathway_version: int) -> dict:
@@ -573,7 +569,6 @@ def get_outgoing_edges(node_id: str) -> list:
     result = execute_cypher(query, {"node_id": node_id}, use_writer=False)
     return result.get("results", [])
 
-
 def get_patient_clinical_data(patient_id: str) -> dict:
     """
     Fetch current clinical data for a patient.
@@ -608,7 +603,6 @@ def get_patient_clinical_data(patient_id: str) -> dict:
         "diagnoses": ["J18.9"],  # Community-acquired pneumonia, unspecified organism
     }
 
-
 def compare_values(actual, operator: str, threshold) -> bool:
     """
     Apply a comparison operator between an actual value and a threshold.
@@ -642,7 +636,6 @@ def compare_values(actual, operator: str, threshold) -> bool:
         return actual_num != threshold_num
 
     return False
-
 
 def evaluate_conditions(conditions: list, patient_id: str,
                         node_entry_time: str) -> bool:
@@ -726,7 +719,6 @@ def evaluate_conditions(conditions: list, patient_id: str,
 
     return True
 
-
 def advance_patient_state(patient_id: str, pathway_id: str,
                           completed_node_id: str, next_node_id: str) -> None:
     """
@@ -786,7 +778,6 @@ def advance_patient_state(patient_id: str, pathway_id: str,
         "Advanced patient %s on %s: %s -> %s",
         patient_id, pathway_id, completed_node_id, next_node_id
     )
-
 
 def on_clinical_event(event: dict) -> list:
     """
@@ -1079,7 +1070,6 @@ def demo_full_pipeline():
     # Print final recommendation as JSON for inspection.
     print("\n=== CDS Recommendation Output ===")
     print(json.dumps(recs, indent=2, default=str))
-
 
 if __name__ == "__main__":
     demo_full_pipeline()

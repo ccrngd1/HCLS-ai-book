@@ -278,8 +278,6 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content listing the gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 **Multi-language support.** Many patient populations communicate in languages other than English. Add a language detection step before generation and include language-specific instructions in the system prompt. Most foundation models handle Spanish, Mandarin, Vietnamese, and other common languages well. Validate tone and medical terminology accuracy with native-speaking clinical staff before deploying.
@@ -313,8 +311,6 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 **AWS Solutions and Blogs:**
 - [Generative AI on AWS](https://aws.amazon.com/generative-ai/): Overview of AWS generative AI services and healthcare use cases
 
-<!-- closed: V2: No verified Bedrock Guardrails blog URL found. The existing AWS documentation links (Bedrock Guardrails User Guide) adequately cover the topic. Removed rather than shipping a fabricated or mismatched URL. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -326,7 +322,6 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 | **With variations** | 10-12 weeks | Multi-language, smart routing, feedback loop, A/B testing on prompts, analytics on approval rates |
 
 ---
-
 
 ---
 

@@ -324,8 +324,6 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 
 ---
 
-<!-- TODO (TechWriter): "Why This Isn't Production-Ready" section is missing per RECIPE-GUIDE. Add between Expected Results and Variations. -->
-
 ## Variations and Extensions
 
 **Teledermatology integration.** Instead of just prioritizing a queue, embed the triage system into a store-and-forward teledermatology workflow. The patient submits photos through a portal, the AI triages, and the dermatologist reviews asynchronously with the AI's assessment as context (not as a binding recommendation). This extends access to patients in dermatology deserts without requiring synchronous video visits. For store-and-forward workflows where immediate response isn't required, consider SageMaker Async Inference. It handles burst loads without maintaining always-on GPU instances and costs significantly less for intermittent workloads.
@@ -374,7 +372,6 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 
 | [← 9.3: Wound Photography Measurement](chapter09.03-wound-photography-measurement) | [Chapter 9 Index](chapter09-preface) | [9.5: Chest X-Ray Triage →](chapter09.05-chest-xray-triage) |
 |:---|:---:|---:|
-
 
 ---
 

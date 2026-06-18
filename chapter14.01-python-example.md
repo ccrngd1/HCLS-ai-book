@@ -139,7 +139,6 @@ NOSHOW_RATES = {
 ```python
 import pulp
 
-
 def optimize_template() -> dict:
     """
     Formulate and solve the appointment slot optimization problem.
@@ -281,7 +280,6 @@ def optimize_template() -> dict:
 
 ```python
 
-
 def build_schedule_from_template(template: dict, rng: np.random.Generator) -> list:
     """
     Generate a day's schedule from the optimized template.
@@ -351,7 +349,6 @@ def build_schedule_from_template(template: dict, rng: np.random.Generator) -> li
     slots.sort(key=lambda s: s["scheduled_time"])
     return slots
 
-
 def simulate_single_day(template: dict, rng: np.random.Generator) -> dict:
     """
     Simulate one clinic day using the proposed template.
@@ -420,7 +417,6 @@ def simulate_single_day(template: dict, rng: np.random.Generator) -> dict:
         "overtime_minutes": overtime,
         "idle_minutes": idle_time,
     }
-
 
 def run_simulation(template: dict, num_replications: int = 1000, seed: int = 42) -> dict:
     """
@@ -493,7 +489,6 @@ def create_baseline_template() -> dict:
         "overbooking": {str(h): 0 for h in NOSHOW_RATES.keys()},
     }
 
-
 def compare_templates(baseline: dict, proposed: dict) -> dict:
     """
     Run simulation on both templates and compute the improvement.
@@ -546,7 +541,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 TABLE_NAME = "template-store"
 
-
 def convert_floats_to_decimal(obj):
     """
     Recursively convert floats to Decimal for DynamoDB compatibility.
@@ -562,7 +556,6 @@ def convert_floats_to_decimal(obj):
     elif isinstance(obj, list):
         return [convert_floats_to_decimal(item) for item in obj]
     return obj
-
 
 def store_proposed_template(
     provider_id: str,
@@ -670,7 +663,6 @@ def run_optimization_pipeline(provider_id: str = "DR-MARTINEZ-FM") -> dict:
         "template": proposed_template,
         "comparison": comparison,
     }
-
 
 # Run the pipeline
 if __name__ == "__main__":

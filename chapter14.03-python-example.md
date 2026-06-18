@@ -701,7 +701,6 @@ def run_optimization_pipeline() -> dict:
 
     return result
 
-
 if __name__ == "__main__":
     result = run_optimization_pipeline()
 

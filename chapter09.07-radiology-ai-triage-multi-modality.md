@@ -116,6 +116,4 @@ The thing that surprised me most: radiologists actually like these systems when 
 - **Recipe 14.3 (Radiology Worklist Optimization):** Complementary recipe covering non-AI worklist optimization (scheduling, load balancing)
 - **Recipe 12.10 (Physiological Waveform Analysis):** Similar real-time inference pattern applied to continuous monitoring data
 
-<!-- TODO (TechWriter): Main recipe is missing Tags section and navigation footer per RECIPE-GUIDE. Tags currently live only in the architecture companion. Add them here. -->
-
 ---

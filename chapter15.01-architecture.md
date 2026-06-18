@@ -47,8 +47,6 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Expand on the DLQ pattern: failed reward calculation events go to SQS for reprocessing. Systematic reward calculation failures (e.g., EHR API down for hours) should pause online learning to avoid training on biased reward signals. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -383,7 +381,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this in
 | **With variations (per-patient, multi-objective, alert bundling)** | 9-12 months |
 
 ---
-
 
 ---
 

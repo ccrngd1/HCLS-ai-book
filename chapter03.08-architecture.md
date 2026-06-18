@@ -14,7 +14,7 @@
 
 **Amazon DynamoDB for the patient state store.** Single-digit-millisecond reads on the current patient snapshot. Each enrolled patient is a record with current monitoring tier, recent values, engagement metrics, and intervention history pointers. DynamoDB streams trigger feature recomputation when state changes.
 
-**Amazon Timestream for the trajectory history store.** Patient-reported weights, blood pressures, glucoses, and symptom scores are time-series data. Timestream's purpose-built storage and query model fit naturally. Magnetic-tier retention covers the multi-week baseline window cost-effectively. <!-- TODO (TechWriter): verify the current HIPAA eligibility status of Amazon Timestream and the BAA coverage; some deployments may use DynamoDB or S3 with Athena instead. -->
+**Amazon Timestream for the trajectory history store.** Patient-reported weights, blood pressures, glucoses, and symptom scores are time-series data. Timestream's purpose-built storage and query model fit naturally. Magnetic-tier retention covers the multi-week baseline window cost-effectively. 
 
 **AWS HealthLake for the longitudinal patient record.** When the program needs FHIR-formatted patient records integrated with the wider health-system data, HealthLake provides storage, query, and integration. For programs with established FHIR infrastructure, HealthLake is a strong fit.
 
@@ -22,7 +22,7 @@
 
 **Amazon SageMaker Model Monitor.** Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching the gradual drift in patient population, intervention pattern, and device firmware that affects post-discharge programs.
 
-**Amazon Bedrock for explanation narratives and outreach script suggestions.** SHAP values surface the technical drivers; Bedrock-hosted LLMs convert them and the patient context into care-manager-facing narratives ("This patient's weight has trended up 2.4 lbs over the last 3 days. They responded to symptom check-ins through Friday but not Saturday or Sunday. Their last care management contact was Wednesday. Suggested outreach: confirm weight trend, ask about diuretic adherence, ask about diet over the weekend, consider same-day clinic add-on.") Always with human review; the LLM is producing decision support, not decisions. <!-- TODO (TechWriter): confirm the set of HIPAA-eligible Bedrock foundation models as of the current year. -->
+**Amazon Bedrock for explanation narratives and outreach script suggestions.** SHAP values surface the technical drivers; Bedrock-hosted LLMs convert them and the patient context into care-manager-facing narratives ("This patient's weight has trended up 2.4 lbs over the last 3 days. They responded to symptom check-ins through Friday but not Saturday or Sunday. Their last care management contact was Wednesday. Suggested outreach: confirm weight trend, ask about diuretic adherence, ask about diet over the weekend, consider same-day clinic add-on.") Always with human review; the LLM is producing decision support, not decisions. 
 
 **Amazon Comprehend Medical for free-text feature extraction.** Care management notes contain substantial signal in free text. Comprehend Medical extracts conditions, symptoms, medications, and concerns. Optional but useful when the care management interaction feed is text-rich.
 
@@ -201,49 +201,9 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Time-series modeling, XGBoost on tabular features, Feature Store with online and offline stores, Model Monitor configurations, Clarify SHAP examples.
 > - [`aws-samples`](https://github.com/aws-samples): search for "FHIR," "HealthLake," "remote patient monitoring," and "care management" for healthcare-specific integration patterns.
-> <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating remote patient monitoring, post-discharge anomaly detection, or care management automation on AWS. Adjacent examples exist (real-time scoring, healthcare ML pipelines); a direct match has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
-
-<!-- Editor note: the expert reviewer flagged several prose-vs-pseudocode asymmetries that need follow-up before the next pass. None block PASS, but each is a place where the prose makes a discipline claim that the canonical pseudocode walkthrough below does not architecturally enforce. Address by adding short architectural primitives in the relevant Steps and a one-line note in the General Architecture Pattern subsections; do not rewrite the prose. Per-finding TODOs follow. -->
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Cold-start uniform-high-touch in the first 72 hours regardless of model output. The Honest Take is unusually direct about this; Step 7's worklist construction does not enforce it. Add a cold-start-routing primitive in Step 7 that promotes cold-start patients with elevated discharge-time risk to at-least-tier_2 regardless of composite score; surface cold-start status in the worklist row; add a paragraph to the General Architecture Pattern's Worklist Builder subsection. -->
-
-<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Engagement-decay first-class worklist pathway. The prose treats engagement decay as a first-class signal warranting dedicated outreach; Step 4 routes it through the composite-score pathway only. Add an engagement-decay-specific worklist pathway in Step 7 that surfaces disengaged patients (no_data_in_first_72_hours, stopped_pro_check_ins, stopped_rpm_uploads, previously_engaged_now_silent) at tier_2 or higher regardless of composite score; surface engagement-decay flag in worklist row. -->
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Randomized-rollout / target-trial-emulation primitive for causal evaluation. The Honest Take recommends randomized rollouts; pseudocode shows no `evaluation_track` field on the patient-state record and no track-aware filtering in the worklist build. Add `evaluation_track` attribute set at enrollment with stratified random assignment; worklist construction filters to `evaluation_track == "program"`; outcome-capture tracks both tracks; training-labels archive stratifies labels by track. -->
-
-<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Outcome-event and intervention-event idempotency at the EventBridge-driven capture Lambdas (recurring chapter-wide pattern; thirteenth consecutive recipe). Derive deterministic event keys (`outcome_event.event_id + outcome_event.type` for outcomes; `action_event.event_id` for interventions); conditional DynamoDB write to `processed-outcome-events` and `processed-intervention-events` tables before downstream operations. Strongly recommend a cookbook-wide trigger-idempotency appendix. -->
-
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). DLQ / poison-message handling for the device-ingest, ehr-event-ingest, cm-event-ingest, enrollment-handler, event-normalizer, feature-engine, worklist-builder, intervention-capture, outcome-capture, and event-driven-rescore Lambdas. Add SQS DLQs with `OnFailure` destinations on each Lambda; CloudWatch alarms on DLQ depth with alarm threshold 1 for device-ingest, event-normalizer, outcome-capture (single-event sensitivity); replay older than the post-discharge prediction window escalates to care-management-governance-committee review. -->
-
-<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Reference-data versioning propagation. Step 7's worklist row construction should explicitly carry the audit_trail block (feature_snapshot_id, scoring_record_id, model_version, calibration_version, cohort_thresholds_version) into both the DynamoDB worklist-state write and the OpenSearch worklist-audit index. -->
-
-<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Multi-cohort architecture. The Why-This-Isn't-Production-Ready bullet says "designing for multi-cohort from the start is easier than retrofitting"; the pseudocode shows a single composite-scoring pathway with cohort indicator features. Update the Scoring Service paragraph in General Architecture Pattern and Steps 4 and 7 to dispatch to per-cohort endpoints, calibrators, threshold sets, and worklists. -->
-
-<!-- TODO (TechWriter): Expert review A8 (LOW). Suppression-rule expiry. Step 7 reads suppression state but no scheduled job walks the program-hold registry for expired entries; ADT-event-driven hold-review trigger also missing. Add a daily scheduled job that walks the program-hold registry for expired holds and a care-transition trigger via ADT events. -->
-
-<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Worklist row PHI minimization. The EventBridge worklist-bus carries the full narrative (a multi-sentence clinical paragraph naming the patient's deterioration phenotype, recent values, post-acute-event context, and clinical-recommendation-shaped outreach steps) to three subscribers (care-management UI back end, pharmacist review list back end, provider escalation list back end). This is the eighth distinct PHI-minimization-inside-the-BAA surface across the cookbook (Chapter 2: serialized prompt context; Recipes 3.1, 3.3, 3.4, 3.5, 3.6, 3.7: various). Update Step 7 so the per-row event carries only worklist_id, row_id, patient_id, tier, and assigned_care_team; subscribers fetch the full row from the worklist-state DynamoDB table or the OpenSearch worklist-audit index through an authenticated path. Add per-consumer scope to the Prerequisites IAM row: pharmacist role can read rows whose suggested intervention includes medication-related items only; provider escalation role can read rows where tier == tier_1 AND escalation_to_provider is non-null only; care-manager UI role can read rows for the care-team-assigned patient set only. -->
-
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Subgroup data governance for fairness monitoring. The "Calibration, Subgroup Performance, and the Equity Question" subsection has the most comprehensive subgroup taxonomy in the chapter (age band, sex, race and ethnicity, language, insurance status, neighborhood SES via ADI/SVI, dual-eligibility status, primary diagnosis, discharge disposition; plus SDOH attributes through PRAPARE / AHC HRSN / Z-codes). Add architectural artifacts to Prerequisites: restrict read access to the demographic-and-attribute store including SDOH attributes (which may be governed differently from clinical PHI under state law); CloudTrail data events on subgroup queries; QuickSight against an aggregated subgroup-metrics table (alert rate by subgroup, calibration ECE by subgroup, intervention rate by subgroup, change in 30-day readmission rate per subgroup attributable to the program), not the raw demographic-joined worklist archive. -->
-
-<!-- TODO (TechWriter): Expert review S3 (LOW). Per-consumer IAM scoping for shared resources (patient-state, scoring-history, worklist-state, intervention-history DynamoDB tables; OpenSearch worklist-audit and intervention-audit indexes). -->
-
-<!-- TODO (TechWriter): Expert review S4 (LOW). RPM device webhook signature-verification posture: per-vendor protocol variation (HMAC-SHA256, mutual TLS, OAuth 2.0, JWT validation), rotation cadence, replay protection via timestamp validation, IP allowlisting at the API Gateway resource policy where the vendor publishes a source-IP range. -->
-
-<!-- TODO (TechWriter): Expert review S5 (LOW). Bedrock LLM-explanation BAA-discipline forward reference to Chapter 2's settled patterns; minimum-necessary prompt construction; output filtering for clinical-recommendation hallucinations vs. outreach-suggestion language; full prompt-and-response audit trail tied to worklist row ID. -->
-
-<!-- TODO (TechWriter): Expert review S6 (LOW). Comprehend Medical care-management-note PHI handling: synchronous DetectEntitiesV2 with minimum-necessary excerpt, derived-feature-flag-only persistence (do not store full Comprehend Medical entity payload alongside feature flags), CloudTrail data events on DetectEntitiesV2 calls. -->
-
-<!-- TODO (TechWriter): Expert review S7 (LOW). Patient-facing SMS/IVR vendor BAA + TCPA discipline: pre-approved templates by content category (PHI-bearing vs de-identified), patient-consent capture as a structured event in the patient-state record, opt-out revocation handled immediately, audit trail in worklist-audit and intervention-audit indexes for TCPA defense. -->
-
-<!-- TODO (TechWriter): Expert review N1 (LOW). VPC endpoint precision: name CloudWatch monitoring (`PutMetricData`) separately from CloudWatch Logs; EventBridge events bus separately from EventBridge Scheduler; SageMaker api / runtime / featurestore-runtime; SNS, Athena, Glue, AppSync, Timestream (write and query), HealthLake, Secrets Manager, bedrock-runtime, comprehendmedical. -->
-
-<!-- TODO (TechWriter): Expert review N2 (LOW). VPC Flow Logs explicitly required (network-level audit complements API-level audit, supports both clinical-safety-review documentation and RPM CPT code billing-defense documentation). -->
-
-<!-- TODO (TechWriter): Expert review N3 (LOW). HealthLake networking and access-control posture (KMS, VPC endpoint, SMART-on-FHIR scope discipline, bulk export to S3 with KMS). -->
-
-<!-- TODO (TechWriter): Expert review N4 (LOW). HIE/claims feed network path (per-source security: MLLPS, FHIR R4 with mutual TLS or SMART-on-FHIR, C-CDA over Direct Trust, EDI 837 over SFTP, near-real-time claims APIs; Direct Connect for HIE-side gateway bridging; per-source trading-partner agreement and audit trail). -->
 
 **Step 1: Enroll the patient at discharge.** The discharge event triggers enrollment into the monitoring program. The discharge-time risk score (computed by a separate model, often the Chapter 7 readmission risk model) sets the initial monitoring tier. The condition cohort drives which trajectory metrics will be tracked.
 
@@ -903,10 +863,6 @@ FUNCTION on_outcome_event(outcome_event):
 
 ### Expected Results
 
-<!-- TODO (TechWriter): Expert review V1 (LOW). Sample timestamps and identifiers below (e.g., WL-2026-05-14, SCORE-2026-05-14-039218, INT-2026-05-14-008811, 2026-05-14T10:24:00Z) reflect the draft date and will read as backdated as the book ages. Either replace with placeholder patterns or keep with this disclaimer. Production output uses real ISO-8601 timestamps from the worklist-builder invocation time and UUID-style IDs from the scoring service. -->
-
-<!-- TODO (TechWriter): Expert review V4 (LOW). The expert reviewer flagged the sample narrative phrase "a diuretic adjustment per standing orders" as sitting at the constraint boundary between "suggest outreach focus" and "prescribe treatment." Some clinical-governance committees prefer narratives that stop at outreach-focus suggestions and let the protocol-and-clinician chain handle the titration decision. Consider tightening to "connect with the cardiology transitions clinic for same-day clinical assessment per local heart-failure protocol" or similar. The exact phrasing is a clinical-governance decision; the LLM constraints are tuned per institution. -->
-
 **Sample worklist row (high-tier, day 4 post-discharge, heart failure cohort):**
 
 ```json
@@ -1032,8 +988,6 @@ FUNCTION on_outcome_event(outcome_event):
 | Subgroup AUROC range across protected categories | ±0.04-0.08 | ±0.04-0.07 | ±0.03-0.06 | ±0.03-0.06 | ±0.04-0.08 |
 | End-to-end latency (event ingest to worklist update) | n/a | <30 minutes for daily run; <15 minutes for event-driven rescoring | same | same | same |
 
-<!-- TODO (TechWriter): Expert review V2 (LOW). Benchmark ranges are directional from typical published readmission model performance and post-discharge program performance. Specific figures vary substantially by population, outcome definition, intervention model, and data sources available. The published literature on LACE, LACE+, HOSPITAL, the Epic readmission model, and various commercial models reports AUROC in the 0.6-0.75 range for all-cause 30-day readmission; programs that add post-discharge data and intervention capture report higher values. Replace with measured numbers from local validation before clinical deployment. -->
-
 **Where it struggles:**
 
 - **Cold-start patients.** Patients in their first 1-3 post-discharge days have minimal trajectory data; the model relies on discharge-time features and cohort priors. Performance is materially worse during this window. Many programs accept this and rely on uniform high-touch outreach for high-risk discharges in the first 72 hours.
@@ -1066,7 +1020,7 @@ The pseudocode shows the shape. A production post-discharge program closes sever
 
 **Equity audit framework.** Same operational checklist as Recipe 3.7, with extra attention to digital-engagement bias. Subgroup performance monitoring across age bands, sex, race and ethnicity (where structurally captured), language, insurance status, neighborhood-level SES (Area Deprivation Index, social vulnerability index), and dual-eligibility status. The mitigation strategy must be picked deliberately because the wrong mitigation can amplify existing disparities. Consider explicitly weighting prioritization toward higher-social-vulnerability patients to counter both data and outcome biases; this is a policy decision that should be made consciously and documented.
 
-**HIE and claims integration is a regional problem.** The TEFCA framework and CommonWell and Carequality interoperability networks are improving the situation, but it's still the case that regional HIE coverage varies enormously, and many programs have to build region-specific integrations. For ACO/risk-bearing arrangements, near-real-time claims feeds from CMS and commercial payers are available but require contract-specific data-sharing agreements. <!-- TODO (TechWriter): verify the current state of TEFCA implementation, CommonWell-Carequality unification, and the practical availability of near-real-time HIE feeds nationally. -->
+**HIE and claims integration is a regional problem.** The TEFCA framework and CommonWell and Carequality interoperability networks are improving the situation, but it's still the case that regional HIE coverage varies enormously, and many programs have to build region-specific integrations. For ACO/risk-bearing arrangements, near-real-time claims feeds from CMS and commercial payers are available but require contract-specific data-sharing agreements. 
 
 **Care management workflow tool integration.** Salesforce Health Cloud, Epic Healthy Planet, Innovaccer, Lumeris, ZeOmega Jiva, Lightbeam, and various custom-built tools are the typical landing places for the worklist. Each has its own API patterns, data models, and configuration constraints. Plan for substantial integration engineering. Some programs choose to build a thin care-manager-facing UI directly on AppSync rather than integrate with an existing CMS platform; this is reasonable when the existing platform can't accommodate the data model but is its own significant build.
 
@@ -1110,7 +1064,7 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 
 **LLM-enhanced post-discharge documentation.** Care management notes, transitions summaries, hand-off documents for primary care. LLMs draft from structured data; clinicians review and edit. Reduces documentation burden significantly when integrated well.
 
-**Conversational AI patient check-ins.** SMS or IVR-based check-ins delivered by an LLM-driven conversational agent rather than fixed scripts. Higher response rates and richer data; more guardrail engineering required (the agent must not give medical advice). Emerging in 2026; deployment is rare but growing. <!-- TODO (TechWriter): cite specific LLM-driven patient communication studies and vendors when the literature stabilizes. -->
+**Conversational AI patient check-ins.** SMS or IVR-based check-ins delivered by an LLM-driven conversational agent rather than fixed scripts. Higher response rates and richer data; more guardrail engineering required (the agent must not give medical advice). Emerging in 2026; deployment is rare but growing. 
 
 **Federated learning across hospitals.** Joint training on multi-site data without raw data sharing. Addresses single-site population limitations and supports model generalization. Technically and governance-heavy; emerging in academic consortia.
 
@@ -1146,13 +1100,11 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Time-series modeling, XGBoost on tabular features, Feature Store examples, Model Monitor, and Clarify SHAP examples that apply to the scoring layer.
 - [`aws-samples`](https://github.com/aws-samples): search for "FHIR," "HealthLake," "remote patient monitoring," "care management," and "real-time scoring" for adjacent integration patterns.
-<!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating remote patient monitoring, post-discharge anomaly detection, transitions of care, or care management automation on AWS. Adjacent examples exist; a direct match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): healthcare ML reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "readmission," "remote patient monitoring," "care management," and "transitions of care" for architectural deep-dives.
 - [AWS Industries Blog (Healthcare)](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): healthcare-specific AWS architectures and customer stories including post-discharge programs.
-<!-- TODO (TechWriter): verify and add specific AWS blog posts on remote patient monitoring, readmission reduction, or care management automation on AWS; confirm URLs exist before inclusion. -->
 
 **Clinical and Research References:**
 - [CMS Hospital Readmissions Reduction Program (HRRP)](https://www.cms.gov/Medicare/Medicare-Fee-for-Service-Payment/AcuteInpatientPPS/Readmissions-Reduction-Program): the regulatory framework that drove much of the readmission-reduction investment in the United States.
@@ -1163,7 +1115,7 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 - [BOOST (Better Outcomes for Older adults through Safe Transitions)](https://www.hospitalmedicine.org/clinical-topics/care-transitions/): SHM's transitions-of-care toolkit.
 - [LACE Index for Readmission Risk](https://en.wikipedia.org/wiki/LACE_index): a widely-used discharge-time readmission risk score.
 - [HOSPITAL Score for Readmission Risk](https://pubmed.ncbi.nlm.nih.gov/24166084/): another well-validated discharge-time readmission risk score.
-<!-- TODO (TechWriter): verify the LACE and HOSPITAL canonical citations and update if better URL anchors exist. -->
+
 - [MIMIC-IV Clinical Database (PhysioNet)](https://physionet.org/content/mimiciv/): research dataset including discharge events and readmission labels.
 - [Synthea](https://github.com/synthetichealth/synthea): synthetic patient data generator including discharge and readmission events.
 
@@ -1181,15 +1133,7 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 - [Social Vulnerability Index (CDC)](https://www.atsdr.cdc.gov/placeandhealth/svi/index.html): another neighborhood-level proxy capturing multiple SDOH dimensions.
 
 **Academic Literature (Conceptual Foundations):**
-<!-- TODO (TechWriter): Add specific peer-reviewed citations for:
-  - LACE index development and validation: van Walraven C, et al.
-  - HOSPITAL score: Donzé J, et al.
-  - Coleman CTI: Coleman EA, et al. (2006). The Care Transitions Intervention. Arch Intern Med.
-  - Naylor TCM: Naylor MD, et al.
-  - Project RED: Jack BW, et al. (2009). A reengineered hospital discharge program. Ann Intern Med.
-  - Telemonitoring trials in heart failure: Inglis SC, et al. (Cochrane); various RCTs.
-  - HRRP impact studies: Wadhera RK, et al.
-  Verify exact citations and DOIs before publication. -->
+
 - [SHAP (SHapley Additive exPlanations)](https://github.com/shap/shap): per-prediction explanation library.
 - [Statistical Process Control (Wikipedia)](https://en.wikipedia.org/wiki/Statistical_process_control): CUSUM, EWMA, and control chart background for trajectory monitoring.
 
@@ -1204,7 +1148,6 @@ The variations are listed in roughly the order most programs add them. Heart-fai
 | With variations | Additional cohorts (post-op, diabetes, COPD, behavioral health), HIE integration for external readmissions, claims feed integration for ACO contexts, LLM-driven outreach script generation, conversational AI patient check-ins, time-series LSTM or transformer model, federated learning across multiple sites, RPM device program with patient enrollment and logistics, formal HRSN/SDOH screening integration, closed-loop interventions for specific narrow scenarios, pediatric or maternal specializations | 18-36 months beyond production-ready |
 
 ---
-
 
 ---
 

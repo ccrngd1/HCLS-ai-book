@@ -256,8 +256,8 @@ A final thought: this is one of the highest-value clinical AI categories, bar no
 - **Recipe 2.6 (Clinical Note Summarization):** Once notes accumulate in the chart, summarization over them is the next-shift or next-provider problem. Ambient documentation feeds the corpus that summarization consumes.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Ambient documentation is on the "documentation assistant" side of the line; decision support synthesis is on the "clinical recommendations" side. The same transcript-plus-EHR input can drive both, but the regulatory and liability postures diverge significantly.
 - **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Adds lab trends, imaging, and structured history to the reasoning substrate. Ambient documentation produces one input (the encounter narrative) into multi-modal reasoning.
-- **Chapter 10 (Speech / Voice AI):** The speech recognition and diarization building blocks referenced throughout this recipe are covered in depth in Chapter 10. <!-- TODO (TechWriter): update to specific recipe number once Chapter 10 is drafted. -->
-- **Chapter 11 (Conversational AI / Virtual Assistants):** Different conversational pattern (clinician-to-AI rather than clinician-to-patient), but the ASR and note-generation infrastructure overlaps. <!-- TODO (TechWriter): update to specific recipe number once Chapter 11 is drafted. -->
+- **Chapter 10 (Speech / Voice AI):** The speech recognition and diarization building blocks referenced throughout this recipe are covered in depth in Chapter 10. 
+- **Chapter 11 (Conversational AI / Virtual Assistants):** Different conversational pattern (clinician-to-AI rather than clinician-to-patient), but the ASR and note-generation infrastructure overlaps. 
 
 ---
 

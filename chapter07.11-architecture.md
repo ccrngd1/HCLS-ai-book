@@ -506,8 +506,6 @@ FUNCTION generate_worklists(predictions_table):
 
 ---
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Should cover gaps a production deployment must close (model governance, A/B testing framework, integration testing with billing system, DR/failover for the scoring endpoint, etc.). -->
-
 ## Variations and Extensions
 
 **Payer-specific model ensemble.** Instead of one model for all payers, train separate models for each major payer (your top 5-10 payers by volume). Each payer has different denial patterns, different rules, and different features that matter. A UnitedHealthcare model might weight PA status heavily while a Medicare model might weight diagnosis specificity. Ensemble the payer-specific models with a generic model for low-volume payers. This typically adds 3-5 points of AUC over a single global model.
@@ -551,7 +549,6 @@ FUNCTION generate_worklists(predictions_table):
 | **With variations** (payer-specific ensemble, multi-class denial reason, appeal success prediction) | 24-32 weeks |
 
 ---
-
 
 ---
 

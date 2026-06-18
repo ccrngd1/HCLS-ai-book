@@ -62,10 +62,6 @@ The methodological foundations are solid: fitted Q-iteration, conservative Q-lea
 
 So how do you validate a policy you can't test on patients? Three approaches, none perfect: importance-weighted evaluation (estimate what would have happened using historical data), simulation with PK/PD models (build a fake patient and test on them), and expert review (show oncologists the recommendations and ask "would you do this?"). None is as convincing as a randomized trial, and randomized trials of RL-based dosing are only beginning to be proposed.
 
-<!-- TODO (TechWriter): Expert review A3 (LOW). CQL's conservatism partially mitigates confounding by staying close to historical behavior, but does not eliminate it. Consider adding a note about propensity-weighted trajectories or doubly-robust estimators for stronger causal claims. -->
-
-<!-- TODO (TechWriter): Verify current status of any prospective RL dosing trials (check clinicaltrials.gov) -->
-
 ### The MDP Formulation
 
 For chemotherapy dose optimization, the Markov Decision Process (MDP) looks like this:

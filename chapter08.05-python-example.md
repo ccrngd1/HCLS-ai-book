@@ -101,7 +101,6 @@ RESOLUTION_MARKERS = [
 ```python
 import re
 
-
 def detect_sections(note_text: str) -> list[dict]:
     """
     Split a clinical note into sections based on header patterns.
@@ -167,7 +166,6 @@ def detect_sections(note_text: str) -> list[dict]:
         })
 
     return sections
-
 
 def classify_section_header(header_lower: str) -> str:
     """
@@ -310,7 +308,6 @@ def classify_assertions(problems: list[dict]) -> list[dict]:
 
     return classified
 
-
 def _section_to_assertion(section_category: str) -> str:
     """Map section category to default assertion status."""
     mapping = {
@@ -321,7 +318,6 @@ def _section_to_assertion(section_category: str) -> str:
         "UNKNOWN": "PRESENT"  # conservative default: assume active
     }
     return mapping.get(section_category, "PRESENT")
-
 
 def _has_resolution_markers(text: str) -> bool:
     """Check if the problem text contains language suggesting resolution."""
@@ -377,7 +373,6 @@ def normalize_problems(classified_problems: list[dict]) -> list[dict]:
 
     return normalized
 
-
 def _infer_icd10(text: str) -> list[dict]:
     """
     Call InferICD10CM and return top 3 candidates.
@@ -404,7 +399,6 @@ def _infer_icd10(text: str) -> list[dict]:
         }
         for c in concepts[:3]
     ]
-
 
 def _infer_snomed(text: str) -> list[dict]:
     """
@@ -507,7 +501,6 @@ def reconcile_problems(
     )
     return recommendations
 
-
 def _get_current_problem_list(patient_id: str) -> list[dict]:
     """
     Query DynamoDB for the patient's active problems.
@@ -534,7 +527,6 @@ def _get_current_problem_list(patient_id: str) -> list[dict]:
 
 ```python
 import uuid
-
 
 def store_results(
     patient_id: str,
@@ -592,7 +584,6 @@ def store_results(
         logger.info("Stored %d recommendations to DynamoDB", len(recommendations))
 
     return results_record
-
 
 def _serialize_problems(problems: list[dict]) -> list[dict]:
     """
@@ -674,7 +665,6 @@ def process_note_for_problems(
         len(recommendations)
     )
     return result
-
 
 # --- Example usage with synthetic data ---
 

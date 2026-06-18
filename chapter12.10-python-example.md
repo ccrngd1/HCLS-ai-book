@@ -293,7 +293,6 @@ def apply_bandpass_filter(samples, low_hz, high_hz, sample_rate):
 
     return smoothed
 
-
 def apply_notch_filter(samples, notch_freq, sample_rate):
     """
     Simplified notch filter that attenuates a specific frequency.
@@ -326,7 +325,6 @@ def apply_notch_filter(samples, notch_freq, sample_rate):
         for i in range(n)
     ]
     return filtered
-
 
 def compute_signal_quality_index(samples, waveform_type, sample_rate):
     """
@@ -383,7 +381,6 @@ def compute_signal_quality_index(samples, waveform_type, sample_rate):
     sqi = (amp_score + flatline_score + noise_score + sat_score) / 4.0
     return round(min(1.0, max(0.0, sqi)), 3)
 
-
 def segment_into_windows(samples, window_size, overlap):
     """
     Split a sample array into fixed-length overlapping windows.
@@ -405,7 +402,6 @@ def segment_into_windows(samples, window_size, overlap):
     for start in range(0, len(samples) - window_size + 1, step):
         windows.append(samples[start:start + window_size])
     return windows
-
 
 def preprocess_waveform(raw_record):
     """
@@ -554,7 +550,6 @@ Raw model outputs are not clinical alerts. This step applies persistence thresho
 _alert_cooldowns = {}       # {(patient_id, classification): expiry_datetime}
 _detection_history = defaultdict(list)  # {patient_id: [recent classifications]}
 
-
 def load_patient_context(patient_id):
     """
     Load patient-specific context for alert suppression.
@@ -580,7 +575,6 @@ def load_patient_context(patient_id):
         {"known_conditions": [], "has_pacemaker": False},
     )
 
-
 def is_in_cooldown(patient_id, classification):
     """Check if this patient/condition pair is in cooldown."""
     key = (patient_id, classification)
@@ -591,14 +585,12 @@ def is_in_cooldown(patient_id, classification):
             del _alert_cooldowns[key]
     return False
 
-
 def set_cooldown(patient_id, classification):
     """Set cooldown after generating an alert."""
     minutes = COOLDOWN_MINUTES.get(classification, 15)
     key = (patient_id, classification)
     _alert_cooldowns[key] = (
         datetime.now(timezone.utc) + timedelta(minutes=minutes))
-
 
 def count_consecutive(results, classification, min_confidence):
     """
@@ -616,7 +608,6 @@ def count_consecutive(results, classification, min_confidence):
         else:
             break
     return count
-
 
 def apply_alert_logic(classification_results, sns=None):
     """
@@ -863,7 +854,6 @@ def run_pipeline(raw_record, classifier=None, sns=None, timestream=None,
         "records_stored": records_stored,
     }
 
-
 # ─────────────────────────────────────────────────────────────────────
 # MOCK INFRASTRUCTURE AND SYNTHETIC DATA
 # ─────────────────────────────────────────────────────────────────────
@@ -877,7 +867,6 @@ class MockKinesisStream:
         self.records.append(kwargs)
         return {"ShardId": "shard-0", "SequenceNumber": str(len(self.records))}
 
-
 class MockS3:
     """Captures put_object calls without a real S3 bucket."""
     def __init__(self):
@@ -886,7 +875,6 @@ class MockS3:
     def put_object(self, **kwargs):
         self.objects[kwargs["Key"]] = kwargs["Body"]
         return {"ETag": f"\"{uuid.uuid4().hex}\""}
-
 
 class MockSNS:
     """Captures publish calls without a real SNS topic."""
@@ -897,7 +885,6 @@ class MockSNS:
         self.messages.append(kwargs)
         return {"MessageId": str(uuid.uuid4())}
 
-
 class MockTimestream:
     """Captures write_records calls without a real Timestream DB."""
     def __init__(self):
@@ -906,7 +893,6 @@ class MockTimestream:
     def write_records(self, **kwargs):
         self.records.extend(kwargs.get("Records", []))
         return {"RecordsIngested": {"Total": len(kwargs.get("Records", []))}}
-
 
 def generate_synthetic_ecg(duration_seconds, sample_rate, scenario="normal"):
     """
@@ -1008,7 +994,6 @@ def generate_synthetic_ecg(duration_seconds, sample_rate, scenario="normal"):
 
     return samples
 
-
 def mock_ecg_classifier(window, waveform_type):
     """
     Mock classifier that returns plausible classifications based
@@ -1051,7 +1036,6 @@ def mock_ecg_classifier(window, waveform_type):
         "classification": "normal_sinus_rhythm",
         "confidence": 0.90 + random.uniform(0, 0.08),
     }
-
 
 # ─────────────────────────────────────────────────────────────────────
 # DEMO EXECUTION
@@ -1141,7 +1125,6 @@ def run_demo():
     print(f"\n{'='*60}")
     print("  Pipeline demo complete.")
     print(f"{'='*60}\n")
-
 
 if __name__ == "__main__":
     run_demo()

@@ -319,8 +319,6 @@ FUNCTION hybrid_decision(claim, primary_score, novelty_result):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.12-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Add error handling pattern for hybrid decision engine: retry with exponential backoff for transient failures from OpenSearch/SageMaker, graceful degradation (fall back to primary-only scoring if similarity layer is unavailable), SQS dead-letter queue for claims that fail all retries, and CloudWatch alarm on DLQ depth. -->
-
 ### Expected Results
 
 Sample hybrid decision output:
@@ -369,8 +367,6 @@ Sample hybrid decision output:
 - Very high cardinality interactions (specific procedure + specific payer + specific modifier combination) where even with 500K claims, the neighborhood is sparse.
 - Embedding drift: as your claim population shifts (new procedure codes, new patient demographics), old embeddings become less representative. Requires periodic re-embedding and re-indexing.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" H2 section between Expected Results and Variations. Add a brief section covering: no automated embedding-drift detection, no circuit-breaker for OpenSearch outages, no A/B framework for kNN-vs-primary model allocation, no automated threshold recalibration. -->
-
 ---
 
 ## Variations and Extensions
@@ -405,8 +401,6 @@ Use a fast approximate search (HNSW) to retrieve 100 candidates, then re-rank th
 - Amazon OpenSearch Service Security: https://docs.aws.amazon.com/opensearch-service/latest/developerguide/security.html
 - AWS KMS Developer Guide: https://docs.aws.amazon.com/kms/latest/developerguide/overview.html
 
-<!-- TODO: Verify AWS sample repos for OpenSearch k-NN healthcare patterns -->
-
 ---
 
 ## Estimated Implementation Time
@@ -418,7 +412,6 @@ Use a fast approximate search (HNSW) to retrieve 100 candidates, then re-rank th
 | **With variations** | 14-18 weeks | Payer-filtered search, temporal decay, re-ranking, denial clustering pipeline, provider portal integration |
 
 ---
-
 
 ---
 

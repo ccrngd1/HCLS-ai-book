@@ -221,7 +221,6 @@ FUNCTION detect_boundary_at_page_pair(page_n, page_n_plus_1, model_id):
 
     RETURN result
 
-
 FUNCTION detect_all_boundaries(pages, boundary_model_id):
     // Walk the page stream in order, testing each consecutive pair.
     // Result: list of { start_page, end_page, boundary_signals, confidence }
@@ -361,7 +360,6 @@ FUNCTION classify_segment_with_llm(segment, all_pages, classification_model_id):
         boundary_signals: segment.boundary_signals
     }
 
-
 FUNCTION classify_all_segments(segments, all_pages, classification_model_id):
     classified = empty list
     FOR each segment in segments:
@@ -443,7 +441,6 @@ FUNCTION extract_clinical_document(segment, all_pages, clinical_model_id):
         icd10_flagged:   icd10_flagged,
         confidence:      llm_extraction.confidence * 100
     }
-
 
 // EOB extraction uses Textract table parsing, not the LLM.
 // See the original Recipe 1.5 pseudocode for the full EOB column mapping
@@ -539,7 +536,6 @@ FUNCTION match_clinical_document_to_claim_lines(
     result        = parse JSON from response_text
 
     RETURN result.line_assessments
-
 
 FUNCTION match_all_documents_to_claim_lines(
     classified_segments, extraction_results, claim_id, clinical_model_id
@@ -710,7 +706,6 @@ FUNCTION assemble_claims_attachment_record(
     record.all_icd10_codes = list of values in seen_icd10_codes, sorted by confidence desc
 
     RETURN record
-
 
 FUNCTION store_attachment_record(record):
     // Write to DynamoDB. Partition key: claim_id. Sort key: attachment_key.
@@ -961,8 +956,6 @@ The LLM-powered architecture and pseudocode above get you to a working claims at
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Generative AI approaches for complex or ambiguous healthcare document extraction
 
 --- 
-
-<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations) before navigation. Add this section. -->
 
 ---
 

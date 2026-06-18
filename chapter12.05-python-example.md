@@ -277,7 +277,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -331,7 +330,6 @@ class MockHealthLake:
             and e.get("admit_ts") <= as_of_ts
         ]
 
-
 class MockS3:
     """In-memory stand-in for an S3 bucket."""
 
@@ -355,7 +353,6 @@ class MockS3:
             def read(self):
                 return self._b
         return {"Body": _StreamingBody(body)}
-
 
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
@@ -396,7 +393,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge."""
 
@@ -407,7 +403,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch."""
@@ -422,7 +417,6 @@ class MockCloudWatch:
                 "Unit":  m.get("Unit", "None"),
                 "Time":  datetime.now(timezone.utc).isoformat(),
             })
-
 
 def generate_synthetic_inputs(now_dt, seed=SYNTHETIC_RANDOM_SEED):
     """Generate synthetic inputs for the census pipeline.
@@ -643,7 +637,6 @@ def snapshot_current_state(snapshot_ts, healthlake, s3, bucket):
         len({r["current_unit"] for r in state_records}))
     return state_records
 
-
 def current_census_by_unit(state_records):
     """Count occupants per unit at snapshot time."""
     by_unit = defaultdict(int)
@@ -694,7 +687,6 @@ class PoissonInflowModel:
             if p <= l:
                 return k - 1
 
-
 class MultinomialUnitAssigner:
     """Pedagogical multinomial unit-assignment classifier.
 
@@ -717,7 +709,6 @@ class MultinomialUnitAssigner:
         units = list(probs.keys())
         weights = [probs[u] for u in units]
         return rng.choices(units, weights=weights, k=1)[0]
-
 
 def forecast_inflows(snapshot_ts, horizon_hours, n_samples,
                      or_schedule, transfer_queue, ed_board,
@@ -914,7 +905,6 @@ class ExponentialSurvivalModel:
             survival *= (1.0 - p_discharge_this_hour)
         return per_hour, survival
 
-
 def forecast_outflows(state_records, snapshot_ts, horizon_hours,
                        n_samples, survival_model, unit_codes,
                        s3, bucket, run_id,
@@ -995,7 +985,6 @@ def _percentile(values, pct):
     frac = k - lo
     return sorted_vals[lo] * (1 - frac) + sorted_vals[hi] * frac
 
-
 def _distribute_overflow(census, source_unit, overflow_count,
                          unit_index, unit_codes, capacities,
                          overflow_rules):
@@ -1023,7 +1012,6 @@ def _distribute_overflow(census, source_unit, overflow_count,
         if remaining <= 0:
             return 0
     return remaining
-
 
 def compose_census(state_records, inflow_samples, outflow_samples,
                    unit_codes, snapshot_ts, horizon_hours,
@@ -1403,7 +1391,6 @@ def run_census_forecast_pipeline(table, event_bus, cloudwatch,
 
     return forecast_records, delivery
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1461,7 +1448,6 @@ def run_demo():
           f"{ {u: f'{v*100:.1f}%' for u, v in delivery['per_unit_max_utilization'].items()} }")
 
     return forecast_records, delivery
-
 
 if __name__ == "__main__":
     run_demo()

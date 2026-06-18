@@ -200,7 +200,6 @@ def parse_umls_concepts(mrconso_path: str) -> list[dict]:
                 len(concepts), len(TARGET_TERMINOLOGIES))
     return concepts
 
-
 def parse_umls_relationships(mrrel_path: str, valid_cuis: set) -> list[dict]:
     """
     Parse UMLS MRREL.RRF to extract relationships between concepts.
@@ -287,7 +286,6 @@ def generate_node_id(terminology: str, code: str) -> str:
     raw = f"{terminology}:{code}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
-
 def generate_edge_id(from_id: str, to_id: str, rel_type: str) -> str:
     """
     Generate a deterministic edge ID from source, target, and relationship type.
@@ -295,7 +293,6 @@ def generate_edge_id(from_id: str, to_id: str, rel_type: str) -> str:
     """
     raw = f"{from_id}->{to_id}:{rel_type}"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
-
 
 def build_node_csv(concepts: list[dict], version: str) -> str:
     """
@@ -331,7 +328,6 @@ def build_node_csv(concepts: list[dict], version: str) -> str:
         ])
 
     return output.getvalue()
-
 
 def build_edge_csv(concepts: list[dict], relationships: list[dict]) -> str:
     """
@@ -429,7 +425,6 @@ def build_edge_csv(concepts: list[dict], relationships: list[dict]) -> str:
     logger.info("Built %d edges (cross-terminology + explicit relationships)", edge_count)
     return output.getvalue()
 
-
 def upload_load_files_to_s3(node_csv: str, edge_csv: str, version: str) -> dict:
     """
     Upload the Neptune bulk load CSV files to S3.
@@ -483,7 +478,6 @@ NEPTUNE_LOAD_ROLE_ARN = os.environ.get(
     "arn:aws:iam::123456789012:role/NeptuneLoadFromS3"
 )
 
-
 def get_neptune_auth():
     """
     Create SigV4 auth for Neptune HTTP requests.
@@ -500,7 +494,6 @@ def get_neptune_auth():
         "neptune-db",
         session_token=credentials.token,
     )
-
 
 def start_bulk_load(s3_uri: str, load_type: str = "nodes") -> str:
     """
@@ -537,7 +530,6 @@ def start_bulk_load(s3_uri: str, load_type: str = "nodes") -> str:
     logger.info("Started Neptune bulk load: %s (source: %s)", load_id, s3_uri)
     return load_id
 
-
 def check_load_status(load_id: str) -> dict:
     """
     Poll the Neptune bulk loader for completion status.
@@ -572,7 +564,6 @@ redis_client = redis.Redis(
     decode_responses=True,
     ssl=True,  # ElastiCache encryption in transit
 )
-
 
 def normalize_concept(
     code: str,
@@ -621,7 +612,6 @@ def normalize_concept(
         redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(result))
 
     return result
-
 
 def query_neptune_for_mappings(
     code: str,
@@ -944,7 +934,6 @@ def run_terminology_ingestion(
         "s3_paths": s3_paths,
     }
 
-
 def demo_normalization():
     """
     Demonstrate the normalization service with common healthcare concepts.
@@ -976,7 +965,6 @@ def demo_normalization():
     ]
     batch_results = batch_normalize(claims_codes, ["SNOMEDCT_US"])
     print(f"  Normalized {len(batch_results)} concepts")
-
 
 if __name__ == "__main__":
     # To run the ingestion pipeline (requires UMLS files downloaded locally):

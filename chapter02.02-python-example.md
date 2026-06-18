@@ -411,8 +411,6 @@ def simplify_segment(segment: dict, must_preserve: list[dict], reading_level: in
 
 *The pseudocode calls this `validate_output(simplified_segment, must_preserve, target_grade)`. This is the automated quality gate. Two checks: did the reading level actually come down, and did every must-preserve entity survive? Both are deterministic, fast, and run without another LLM call. Segments that fail get flagged for review.*
 
-<!-- TODO (TechWriter): Main recipe pseudocode shows `validate_output(simplified_segment, original_segment, must_preserve, target_grade)` with an `original_segment` parameter that isn't referenced in the pseudocode body. The Python companion drops it. Either add the unused parameter for strict pseudocode parity, or drop it from the main recipe to match this implementation. -->
-
 ```python
 def calculate_flesch_kincaid_grade(text: str) -> float:
     """
@@ -427,7 +425,6 @@ def calculate_flesch_kincaid_grade(text: str) -> float:
     if len(text.split()) < 10:
         return 0.0
     return textstat.flesch_kincaid_grade(text)
-
 
 def validate_output(simplified_segment: dict, must_preserve: list[dict], target_grade: int = TARGET_GRADE) -> dict:
     """
@@ -686,7 +683,6 @@ def simplify_clinical_document(document_id: str, clinical_text: str, target_grad
     )
     return record
 
-
 # Example: simplify a cardiac discharge summary.
 if __name__ == "__main__":
     sample_clinical_text = (
@@ -745,8 +741,6 @@ This example works. Point it at a real Bedrock endpoint with a configured guardr
 **IAM least-privilege.** The Lambda role should have exactly: `bedrock:InvokeModel` scoped to your model ARN, `bedrock:ApplyGuardrail` scoped to your guardrail ARN, `comprehendmedical:DetectEntitiesV2`, and `dynamodb:PutItem` scoped to the table ARN. Not `bedrock:*`. Not `dynamodb:*`.
 
 **VPC and encryption.** In production, the Lambda runs in a VPC with private subnets. VPC endpoints for Bedrock, Comprehend Medical, DynamoDB, CloudWatch Logs, and KMS keep all traffic on the AWS backbone. Use KMS customer-managed keys with rotation enabled for the DynamoDB table and CloudWatch Logs. Clinical text is PHI and should never traverse the public internet.
-
-<!-- TODO (TechWriter): The expert review of the main recipe flagged KMS VPC endpoint as missing. Added here for parity. Confirm that the main recipe's Prerequisites table VPC row includes KMS as well, since both documents should give the same production guidance. -->
 
 **Idempotency.** If the same document event fires twice (common with at-least-once delivery), you don't want duplicate simplifications. Add a `ConditionExpression` on the `put_item` call that checks for document_id non-existence, or use the cache_key lookup as a dedupe layer.
 

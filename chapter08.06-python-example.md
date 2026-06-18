@@ -260,7 +260,6 @@ def detect_sections(note_text: str) -> list[dict]:
 
     return sections
 
-
 def segment_into_sentences(text: str) -> list[str]:
     """
     Split text into sentences using simple heuristics.
@@ -289,7 +288,6 @@ def segment_into_sentences(text: str) -> list[str]:
         expanded.extend([p.strip() for p in parts if p.strip()])
 
     return expanded
-
 
 def segment_note(note_text: str) -> list[dict]:
     """
@@ -414,7 +412,6 @@ def is_within_negation(sentence_text: str, note_text: str, negation_spans: list)
 
     return False
 
-
 def classify_sdoh_sentences(
     segmented_sentences: list[dict],
     negation_spans: list,
@@ -494,7 +491,6 @@ def classify_sdoh_sentences(
         })
 
     return findings
-
 
 def determine_assertion(sentence_text: str) -> str:
     """
@@ -746,7 +742,6 @@ def process_note_for_sdoh(
 
     logger.info("Done. Found %d SDOH findings.", len(normalized))
     return result
-
 
 # --- Example execution with synthetic data ---
 

@@ -70,8 +70,6 @@ There are several approaches to this:
 
 The honest answer: perfectly separating disease progression from treatment effects requires randomized trial data or very careful causal inference methodology. Most production systems take the pragmatic approach of conditioning on current treatment and being transparent about that assumption.
 
-<!-- TODO (TechWriter): Expert review A-5 (MEDIUM). Add a paragraph addressing the eGFR race coefficient issue (2021 CKD-EPI race-free equation) and recommend stratified model evaluation by race, sex, and age group. Reference the NKF/ASN Task Force recommendation. This is both a fairness concern and a data quality concern. -->
-
 ### Uncertainty Quantification
 
 This is non-negotiable for clinical use. A point prediction of "eGFR will be 38 in two years" is less useful (and potentially dangerous) than "eGFR will likely be between 32 and 44 in two years, with 80% confidence." Clinicians need to understand the range of possible futures, not just the most likely one.
@@ -103,7 +101,6 @@ The uncertainty should grow with prediction horizon. If your model is equally co
 **Clinical Integration.** Surface predictions where clinicians make decisions. This means integration with the EHR workflow, not a standalone dashboard that nobody checks. Include explanations of what's driving the prediction (which factors are accelerating or decelerating progression) and clear communication of uncertainty. Provide actionable thresholds: "if progression continues at this rate, the patient will reach Stage 4 within 18 months, suggesting nephrology referral now."
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.08-architecture). The Python example is linked from there.
 

@@ -283,7 +283,6 @@ def create_synthetic_volume(modality: str, shape: tuple = (128, 128, 64)) -> tup
 
     return volume, affine
 
-
 def preprocess_volume(volume: np.ndarray, affine: np.ndarray,
                       modality: str, target_spacing: list[float]) -> tuple:
     """
@@ -358,7 +357,6 @@ def preprocess_volume(volume: np.ndarray, affine: np.ndarray,
                current_spacing, target_spacing, volume.shape, volume_resampled.shape)
 
     return volume_resampled, new_affine
-
 
 def upload_preprocessed_volume(volume: np.ndarray, job_id: str,
                                 role: str) -> str:
@@ -528,7 +526,6 @@ def compute_rigid_registration(fixed: np.ndarray, moving: np.ndarray) -> dict:
         "registration_type": "rigid",
     }
 
-
 def compute_deformable_registration_via_sagemaker(
     fixed: np.ndarray, moving: np.ndarray, job_id: str
 ) -> dict:
@@ -616,7 +613,6 @@ def compute_deformable_registration_via_sagemaker(
         "mutual_information": final_mi,
         "registration_type": "deformable",
     }
-
 
 def apply_deformation_field(volume: np.ndarray,
                             deformation_field: np.ndarray) -> np.ndarray:
@@ -768,7 +764,6 @@ def validate_registration_quality(
                "PASSED" if passed else "FAILED", mi_score, dice)
 
     return passed, quality_report
-
 
 def compute_jacobian_determinant(deformation_field: np.ndarray) -> np.ndarray:
     """
@@ -922,7 +917,6 @@ def generate_fusion_output(
     logger.info("  Fusion output generated for job %s", job_id)
     return output
 
-
 def generate_checkerboard_slice(fixed_slice: np.ndarray,
                                  moving_slice: np.ndarray,
                                  tile_size: int = 16) -> np.ndarray:
@@ -957,7 +951,6 @@ def generate_checkerboard_slice(fixed_slice: np.ndarray,
                 result[i:i_end, j:j_end] = moving_slice[i:i_end, j:j_end]
 
     return result
-
 
 def generate_color_overlay_slice(fixed_slice: np.ndarray,
                                   moving_slice: np.ndarray,
@@ -1109,7 +1102,6 @@ def run_fusion_pipeline(
     logger.info("=" * 60)
 
     return output
-
 
 # --- Run the demonstration ---
 if __name__ == "__main__":

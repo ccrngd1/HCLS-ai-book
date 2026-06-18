@@ -88,7 +88,6 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 def validate_image_quality(image_bytes: bytes) -> dict:
     """
     Check whether a lesion photo meets minimum quality requirements.
@@ -239,7 +238,6 @@ BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 
-
 def classify_lesion(preprocessed_payload: bytes) -> dict:
     """
     Invoke the SageMaker endpoint to classify a preprocessed lesion image.
@@ -349,7 +347,6 @@ from decimal import Decimal
 dynamodb = boto3.resource("dynamodb")
 sns_client = boto3.client("sns", config=BOTO3_RETRY_CONFIG)
 
-
 def store_and_notify(patient_id: str, image_key: str, triage_result: dict) -> dict:
     """
     Write the triage record to DynamoDB and send notifications for urgent cases.
@@ -423,7 +420,6 @@ def store_and_notify(patient_id: str, image_key: str, triage_result: dict) -> di
 
 ```python
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
-
 
 def upload_image(image_bytes: bytes, patient_id: str, filename: str) -> str:
     """
@@ -530,7 +526,6 @@ def triage_lesion(image_bytes: bytes, patient_id: str, filename: str) -> dict:
         "model_confidence": float(record["model_confidence"]),
         "all_scores": {k: float(v) for k, v in record["all_scores"].items()},
     }
-
 
 # Example usage with a local test image.
 if __name__ == "__main__":

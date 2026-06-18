@@ -296,8 +296,6 @@ Input: "The doctor was very thorough and explained everything clearly. But I wai
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add production gap analysis here. -->
-
 ## Variations and Extensions
 
 **Trend alerting with statistical significance.** Instead of alerting on any negative feedback, implement a rolling baseline per department/aspect and alert only when current sentiment deviates more than 2 standard deviations from the 90-day average. This filters noise and surfaces genuine shifts. Use a simple CUSUM (cumulative sum) control chart, which is well-suited to detecting small, sustained changes that point-based thresholds miss.
@@ -337,7 +335,6 @@ Input: "The doctor was very thorough and explained everything clearly. But I wai
 | **With variations** | 8-12 weeks | Multilingual support, competitive benchmarking, statistical trend detection, executive reporting |
 
 ---
-
 
 ---
 

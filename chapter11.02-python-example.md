@@ -516,7 +516,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of `_to_decimal` for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -529,11 +528,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -556,7 +553,6 @@ def _parse_json_response(raw_text: str) -> dict:
             "Failed to parse JSON from model; returning empty")
         return {}
 
-
 def _redact_pii_for_logging(text: str) -> str:
     """
     Light redaction for log lines. The audit pipeline gets the
@@ -566,7 +562,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -584,7 +579,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -605,7 +599,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -635,7 +628,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """
@@ -741,7 +733,6 @@ def receive_message(channel: str,
         attach_greeting=attach_greeting,
         language=language)
 
-
 def _get_or_create_session(channel: str,
                             channel_session_id: str,
                             auth_context: dict,
@@ -811,7 +802,6 @@ def _get_or_create_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """Append a turn record to the conversation-metadata table."""
     table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
@@ -825,7 +815,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
     except Exception as exc:
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 4) -> list:
     """Return the most recent k turns for context."""
@@ -844,7 +833,6 @@ def _recent_turns(session_id: str, k: int = 4) -> list:
         return []
     items = [_from_decimal(i) for i in response.get("Items", [])]
     return list(reversed(items))
-
 
 def _screen_input(session_id: str,
                    user_message: str,
@@ -889,7 +877,6 @@ def _screen_input(session_id: str,
         }
 
     return {"action": "proceed"}
-
 
 def _handle_screening_action(session_id: str,
                               channel: str,
@@ -962,7 +949,6 @@ def _handle_screening_action(session_id: str,
 
     raise ValueError(f"Unknown screening action: {action}")
 
-
 def _update_session_flag(session_id: str,
                           flag_name: str,
                           value) -> None:
@@ -990,7 +976,6 @@ def _update_session_flag(session_id: str,
             "Failed to set %s on session %s: %s",
             flag_name, session_id, exc)
 
-
 def _resolve_session_key(session_id: str) -> Optional[str]:
     """
     Resolve a session_id to the session_key partition key. In
@@ -1017,7 +1002,6 @@ def _resolve_session_key(session_id: str) -> Optional[str]:
             "session_key resolution failed for %s: %s",
             session_id, exc)
     return None
-
 
 def _build_chat_reply(session_id: str,
                        response_text: str,
@@ -1141,7 +1125,6 @@ def _handle_in_scope_message(session_id: str,
             "appointment?"),
         attach_greeting=attach_greeting,
         disposition="clarification_requested")
-
 
 def _classify_scheduling_intent(session_id: str,
                                  user_message: str,
@@ -1427,7 +1410,6 @@ def _route_to_scheduling_flow(session_id: str,
         verified_just_now=True,
         patient_first_name=lookup_result.get("first_name"))
 
-
 def _required_assurance_for(intent: str, ctx: dict) -> str:
     """
     Look up the required assurance level for (intent, ctx) using
@@ -1438,7 +1420,6 @@ def _required_assurance_for(intent: str, ctx: dict) -> str:
         if predicate(ctx):
             return level
     return "basic"
-
 
 def _collect_identifiers_from_message(user_message: str,
                                         recent_turns: list) -> dict:
@@ -1542,7 +1523,6 @@ def _continue_after_identity(session_id: str,
         response_text=OUT_OF_SCOPE_HANDOFFS["out_of_scope"],
         attach_greeting=attach_greeting,
         disposition="handoff_offered")
-
 
 def _search_for_slots(session_id: str,
                        channel: str,
@@ -1723,7 +1703,6 @@ def _search_for_slots(session_id: str,
         attach_greeting=attach_greeting,
         disposition="slots_offered")
 
-
 def _map_reason_to_visit_type(reason: str,
                                 specialty_hint: Optional[str]
                                 ) -> dict:
@@ -1768,7 +1747,6 @@ def _map_reason_to_visit_type(reason: str,
         "top_candidates":  [vt for vt, _ in scores[:3]],
     }
 
-
 def _session_patient_id(session_id: str) -> Optional[str]:
     """Read verified_patient_id from the session state row."""
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
@@ -1780,7 +1758,6 @@ def _session_patient_id(session_id: str) -> Optional[str]:
     if not item:
         return None
     return item.get("verified_patient_id")
-
 
 def _render_candidates(candidates: list,
                         verified_just_now: bool,
@@ -1804,7 +1781,6 @@ def _render_candidates(candidates: list,
         for c in candidates:
             lines.append(f"- {_format_slot_text(c)}")
     return "\n".join(lines)
-
 
 def _format_slot_text(slot: dict) -> str:
     """Format a slot for plain-English presentation."""
@@ -1890,7 +1866,6 @@ def handle_slot_response(session_id: str,
             patient_first_name=None),
         attach_greeting=False,
         disposition="slots_offered")
-
 
 def _place_hold_and_confirm(session_id: str,
                               channel: str,
@@ -1986,7 +1961,6 @@ def _place_hold_and_confirm(session_id: str,
         attach_greeting=False,
         disposition="awaiting_confirmation")
 
-
 def _classify_slot_response(user_message: str,
                               candidates: list) -> dict:
     """
@@ -2042,7 +2016,6 @@ def _classify_slot_response(user_message: str,
 
     return {"action": "unknown"}
 
-
 def _apply_refinement(current: dict, refinement: dict) -> dict:
     """Apply a refinement to the current search parameters."""
     refined = dict(current)
@@ -2061,7 +2034,6 @@ def _apply_refinement(current: dict, refinement: dict) -> dict:
         refined["modality"] = refinement["modality"]
     return refined
 
-
 def _build_confirmation_prompt(slot: dict) -> str:
     """Restate the proposed appointment and ask for confirmation."""
     visit_type = slot.get("visit_type")
@@ -2074,7 +2046,6 @@ def _build_confirmation_prompt(slot: dict) -> str:
         f"you'll want to arrive about 10 minutes early "
         f"for check-in. Want me to book it?"
     )
-
 
 def _session_state(session_id: str) -> dict:
     """Read the session-state row keyed by session_id."""
@@ -2253,7 +2224,6 @@ def handle_confirmation_response(session_id: str,
         attach_greeting=False,
         disposition="booked")
 
-
 def _classify_confirmation_response(user_message: str) -> str:
     """Return one of: 'confirm', 'decline', 'modify', 'unclear'."""
     lowered = user_message.lower().strip()
@@ -2270,7 +2240,6 @@ def _classify_confirmation_response(user_message: str) -> str:
            for cue in decline_cues):
         return "decline"
     return "unclear"
-
 
 def _write_booking_journal(record: dict) -> None:
     """
@@ -2440,7 +2409,6 @@ def _handle_reschedule_or_cancel(session_id: str,
         attach_greeting=attach_greeting,
         disposition="generic_failure")
 
-
 def _execute_cancel(session_id: str,
                      channel: str,
                      appointment: dict,
@@ -2512,7 +2480,6 @@ def _execute_cancel(session_id: str,
         attach_greeting=False,
         disposition="canceled")
 
-
 def _execute_reschedule(session_id: str,
                           channel: str,
                           appointment: dict,
@@ -2543,7 +2510,6 @@ def _execute_reschedule(session_id: str,
         language=language,
         verified_just_now=False,
         patient_first_name=None)
-
 
 def _check_appointment(session_id: str,
                         channel: str,
@@ -2794,7 +2760,6 @@ def screen_output(session_id: str, response_text: str) -> dict:
         "violations":     [],
     }
 
-
 def _check_response_scope(response_text: str) -> list:
     """
     Backstop keyword scope check on generated output. Catches
@@ -2814,7 +2779,6 @@ def _check_response_scope(response_text: str) -> list:
             violations.append("clinical_question")
             break
     return violations
-
 
 def _extract_booking_claims(response_text: str) -> list:
     """
@@ -2848,7 +2812,6 @@ def _extract_booking_claims(response_text: str) -> list:
         claims.append({"type": "general_booking_claim"})
     return claims
 
-
 def _tool_call_ledger_for_session(session_id: str) -> list:
     """Pull the tool-call ledger entries for the session."""
     table = dynamodb.Table(TOOL_CALL_LEDGER_TABLE)
@@ -2864,7 +2827,6 @@ def _tool_call_ledger_for_session(session_id: str) -> list:
             "Tool-call ledger query failed for %s: %s",
             session_id, exc)
         return []
-
 
 def _find_supporting_book_call(claim: dict,
                                   ledger: list) -> Optional[dict]:
@@ -3057,7 +3019,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """Apply redaction rules before streaming to the audit archive."""
     redacted = dict(turn)
@@ -3084,7 +3045,6 @@ def patient_lookup_tool(name: Optional[str],
         date_of_birth=date_of_birth,
         confirmation_factor=confirmation_factor)
 
-
 def slot_search_tool(patient_id: Optional[str],
                      provider_hint: Optional[str],
                      visit_type: str,
@@ -3097,7 +3057,6 @@ def slot_search_tool(patient_id: Optional[str],
         visit_type=visit_type,
         time_window=time_window,
         insurance_plan=insurance_plan)
-
 
 def slot_hold_tool(slot_id: str,
                    patient_id: Optional[str],
@@ -3115,7 +3074,6 @@ def slot_hold_tool(slot_id: str,
         patient_id=patient_id,
         ttl_seconds=ttl_seconds)
 
-
 def slot_book_tool(hold_id: str,
                    slot_id: str,
                    patient_id: Optional[str],
@@ -3127,14 +3085,12 @@ def slot_book_tool(hold_id: str,
         patient_id=patient_id,
         notes=notes)
 
-
 def slot_cancel_tool(appointment_id: str,
                      patient_id: Optional[str]) -> dict:
     """Cancel an existing appointment."""
     return scheduling_system.slot_cancel(
         appointment_id=appointment_id,
         patient_id=patient_id)
-
 
 def appointment_lookup_tool(patient_id: Optional[str],
                               descriptor: str) -> dict:
@@ -3211,7 +3167,6 @@ class MockTable:
                 return key
         return None
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -3228,7 +3183,6 @@ class MockDynamoDBResource:
 
     def Table(self, name):
         return self._tables[name]
-
 
 class MockBedrockRuntime:
     """Canned classifier responses keyed by user message content."""
@@ -3332,7 +3286,6 @@ class MockBedrockRuntime:
             def read(self): return self._data
         return {"body": _Body(
             json.dumps(body_payload).encode())}
-
 
 class MockSchedulingSystem:
     """Stand-in for the institution's scheduling system."""
@@ -3504,13 +3457,11 @@ class MockSchedulingSystem:
             "matches":     matched,
         }
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -3518,20 +3469,17 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockS3:
     def __init__(self): self.objects = {}
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"VersionId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of the
 # file calls them transparently. Comment these out to run against
@@ -3544,7 +3492,6 @@ firehose_client       = MockFirehose()
 s3_client             = MockS3()
 cloudwatch_client     = MockCloudWatch()
 scheduling_system     = MockSchedulingSystem()
-
 
 def run_demo():
     """
@@ -3700,7 +3647,6 @@ def run_demo():
     print(f"CloudWatch metrics emitted:      "
           f"{len(cloudwatch_client.metrics)}")
 
-
 def _dispatch_followup(channel: str,
                         channel_session_id: str,
                         user_message: str) -> dict:
@@ -3767,7 +3713,6 @@ def _dispatch_followup(channel: str,
         user_message=user_message,
         auth_context=item.get(
             "auth_context", {"authenticated": False}))
-
 
 if __name__ == "__main__":
     logging.basicConfig(

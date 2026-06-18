@@ -411,7 +411,6 @@ def evaluate_structured_criterion(patient: dict, criterion: dict, reference_date
     # Fallback for unrecognized fields
     return {"status": "UNCERTAIN", "confidence": 0.0, "evidence": f"Cannot evaluate field '{field}'"}
 
-
 def structured_prescreen(patients: list, criteria: list, reference_date: datetime) -> list:
     """
     Apply all structured criteria to the patient population.
@@ -504,7 +503,6 @@ def call_comprehend_medical(text: str) -> list:
 
     return entities
 
-
 def evaluate_nlp_criterion(criterion: dict, notes: list) -> dict:
     """
     Evaluate a single NLP-based criterion against a patient's clinical notes.
@@ -565,7 +563,6 @@ def evaluate_nlp_criterion(criterion: dict, notes: list) -> dict:
         }
 
     return {"status": "UNCERTAIN", "confidence": 0.4, "evidence": "Ambiguous NLP results"}
-
 
 def nlp_deep_screen(candidates: list, criteria: list) -> list:
     """
@@ -802,7 +799,6 @@ def run_trial_matching_pipeline(trial_criteria: dict, patients: list) -> list:
 
     logger.info("=== Pipeline Complete ===")
     return scored
-
 
 # Run the pipeline against synthetic data
 if __name__ == "__main__":

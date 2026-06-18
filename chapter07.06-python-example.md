@@ -167,7 +167,6 @@ def generate_synthetic_score_history(
 ```python
 from sklearn.linear_model import LinearRegression
 
-
 def compute_slope(scores: list, months: list) -> float:
     """
     Fit a linear regression to score vs. time and return the slope.
@@ -187,7 +186,6 @@ def compute_slope(scores: list, months: list) -> float:
     y = np.array(scores)
     model = LinearRegression().fit(X, y)
     return float(model.coef_[0])
-
 
 def compute_trajectories(score_history: pd.DataFrame) -> pd.DataFrame:
     """
@@ -400,7 +398,6 @@ from botocore.config import Config
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def store_risk_state(flagged_patients: pd.DataFrame) -> int:
     """
     Write rising risk flags to DynamoDB for real-time care management access.
@@ -445,7 +442,6 @@ def store_risk_state(flagged_patients: pd.DataFrame) -> int:
 
 ```python
 eventbridge = boto3.client("events", config=BOTO3_RETRY_CONFIG)
-
 
 def emit_rising_risk_alerts(
     flagged_patients: pd.DataFrame,
@@ -621,7 +617,6 @@ def run_rising_risk_pipeline(
         print(json.dumps(summary["sample_flagged_patient"], indent=2, default=str))
 
     return summary
-
 
 # Run the pipeline
 if __name__ == "__main__":

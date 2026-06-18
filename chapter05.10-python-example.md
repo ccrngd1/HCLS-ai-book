@@ -358,14 +358,12 @@ def _to_decimal(value) -> Decimal:
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local
     time. Cross-source audit reconstruction joins logs from
     multiple feeds whose timestamps are in different time
     zones; UTC is the only sane lingua franca."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for canonicalization.
@@ -378,7 +376,6 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_name(*parts) -> str:
     """Normalize a name to canonical lowercase whitespace-
     collapsed form. Production handles per-tradition rules
@@ -389,7 +386,6 @@ def _canonical_name(*parts) -> str:
     joined = re.sub(r"[^\w\s'-]", " ", joined)
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
-
 
 def _normalize_address(address: str) -> str:
     """Light USPS-style standardization. Production uses a real
@@ -409,7 +405,6 @@ def _normalize_address(address: str) -> str:
         s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
     return _canonical_name(s)
 
-
 def _parse_iso_date(s: str) -> Optional[datetime]:
     """Parse an ISO 8601 date or date-time. Returns None on
     failure. Production carries explicit per-source date
@@ -425,7 +420,6 @@ def _parse_iso_date(s: str) -> Optional[datetime]:
     except (ValueError, TypeError):
         return None
 
-
 def _days_between(date_a: str, date_b: str) -> Optional[int]:
     """Days between two ISO date strings. Returns None if either
     cannot be parsed."""
@@ -434,7 +428,6 @@ def _days_between(date_a: str, date_b: str) -> Optional[int]:
     if a is None or b is None:
         return None
     return abs((a - b).days)
-
 
 def _jaro_winkler(s1: str, s2: str) -> Decimal:
     """Jaro-Winkler approximate string similarity. Production
@@ -492,10 +485,8 @@ def _jaro_winkler(s1: str, s2: str) -> Decimal:
             break
     return jaro + Decimal(prefix) * Decimal("0.1") * (Decimal(1) - jaro)
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes
@@ -509,7 +500,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _summarize_event_for_audit(normalized_event: dict) -> dict:
     """Audit-friendly summary of a death-event payload. Records
@@ -530,7 +520,6 @@ def _summarize_event_for_audit(normalized_event: dict) -> dict:
         "feature_count":     len(features_present),
         "payload_hash":      _sha256(canonical)[:16],
     }
-
 
 def _emit_metric(metric_name: str, value: float,
                   dimensions: dict = None) -> None:
@@ -557,7 +546,6 @@ def _emit_metric(metric_name: str, value: float,
                         extra={"metric": metric_name,
                                 "error": str(exc)})
 
-
 def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      key_id: str = None) -> None:
     """Best-effort archive to S3 with KMS encryption. Failures
@@ -576,7 +564,6 @@ def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      extra={"bucket": bucket, "key": key,
                               "error": str(exc)})
 
-
 def _audit_log(event: dict) -> None:
     """Write an audit-event-log row. In production this is a
     DynamoDB PutItem on the audit-event-log table with full
@@ -591,7 +578,6 @@ def _audit_log(event: dict) -> None:
     _archive_to_s3(enriched, AUDIT_ARCHIVE_BUCKET,
                      f"audit-events/{enriched['event_type']}",
                      key_id=enriched["audit_event_id"])
-
 
 def _summarize_for_audit(identity: dict) -> dict:
     """Identity summary for audit logs. Captures the role and
@@ -731,7 +717,6 @@ SYNTHETIC_LOCAL_MPI_RECORDS = [
     },
 ]
 
-
 class MockLocalMPI:
     """Stand-in for Aurora PostgreSQL holding the institution's
     canonical patient identity records. Production has indexes
@@ -769,7 +754,6 @@ class MockLocalMPI:
             raise KeyError(f"record {record_id} not found")
         self._records[record_id].update(updates)
 
-
 # --- Mock downstream operational systems ---
 class MockDownstreamSystem:
     """Stand-in for an operational system that consumes the
@@ -790,13 +774,11 @@ class MockDownstreamSystem:
     def get_actions(self) -> list:
         return list(self.actions)
 
-
 # --- In-memory stores standing in for DynamoDB tables ---
 _DEATH_EVENT_LOG: dict = {}
 _VERIFICATION_QUEUE: list = []
 _CASCADE_ACK_STORE: list = []
 _DUAL_CONTROL_APPROVALS: dict = {}
-
 
 # --- Module-level singletons for the demo ---
 local_mpi = MockLocalMPI(SYNTHETIC_LOCAL_MPI_RECORDS)
@@ -911,7 +893,6 @@ def ingest_death_event_from_source(
     match_death_event_against_mpi(event_id)
 
     return event_id
-
 
 def _normalize_to_common_schema(
         source_id: str,
@@ -1099,7 +1080,6 @@ def match_death_event_against_mpi(event_id: str) -> None:
             "source_id":  source_id,
         })
 
-
 def _compute_per_feature_similarities(query: dict,
                                           mpi_record: dict) -> dict:
     """Per-feature similarity scoring."""
@@ -1135,7 +1115,6 @@ def _compute_per_feature_similarities(query: dict,
         else Decimal("0.0"))
     return s
 
-
 def _combine_with_fellegi_sunter(per_feature: dict,
                                       weights: dict) -> Decimal:
     """Weighted-sum combination across features. Production
@@ -1149,7 +1128,6 @@ def _combine_with_fellegi_sunter(per_feature: dict,
         total += w
     return weighted / total if total > 0 else Decimal("0")
 
-
 def _classify_confidence_tier(match_score: Decimal,
                                   tolerance: dict) -> str:
     if match_score >= tolerance["high_confidence_threshold"]:
@@ -1157,7 +1135,6 @@ def _classify_confidence_tier(match_score: Decimal,
     if match_score >= tolerance["candidate_acceptance_threshold"]:
         return MEDIUM_CONFIDENCE
     return LOW_CONFIDENCE
-
 
 def handle_hidden_duplicate_revelation(
         event_id: str, duplicate_ids: list) -> str:
@@ -1329,7 +1306,6 @@ def reconcile_multi_source_death_events(
     apply_death_status_to_mpi(
         event_id, matched_record_id, consolidated_view)
 
-
 def _query_prior_events_for_record(matched_record_id: str,
                                           exclude_event_id: str = None
                                           ) -> list:
@@ -1343,7 +1319,6 @@ def _query_prior_events_for_record(matched_record_id: str,
         and e.get("resolution_status") in (
             RES_APPLIED, RES_RECEIVED)
     ]
-
 
 def _compute_consolidated_dates(all_events: list) -> dict:
     """Apply the per-use-case date-of-death selection policy."""
@@ -1413,7 +1388,6 @@ def _compute_consolidated_dates(all_events: list) -> dict:
         "date_of_death_conflict_flagged": conflict_flagged,
         "per_source_dates":           per_source_dates,
     }
-
 
 def _summarize_dates(consolidated_dates: dict) -> dict:
     return {
@@ -1612,7 +1586,6 @@ def propagate_to_downstream_systems(
 
     return _summarize_cascade_completeness(event_id)
 
-
 def cascade_appointment_cancellation(
         event_id: str, matched_record_id: str,
         date_of_death: str) -> None:
@@ -1664,7 +1637,6 @@ def cascade_appointment_cancellation(
     })
     _emit_metric("AppointmentsCancelled",
                   float(len(future_appointments)))
-
 
 def cascade_active_prescription_review(
         event_id: str, matched_record_id: str,
@@ -1724,7 +1696,6 @@ def cascade_active_prescription_review(
         "flagged":    flagged_count,
     })
 
-
 def cascade_communication_path_switch(
         event_id: str, matched_record_id: str,
         date_of_death: str) -> None:
@@ -1759,7 +1730,6 @@ def cascade_communication_path_switch(
         "event_id":   event_id,
         "matched_record_id": matched_record_id,
     })
-
 
 def cascade_billing_episode_closure(
         event_id: str, matched_record_id: str,
@@ -1796,7 +1766,6 @@ def cascade_billing_episode_closure(
         "open_episodes_closed": len(open_episodes),
     })
 
-
 def cascade_portal_access_handler(
         event_id: str, matched_record_id: str,
         date_of_death: str) -> None:
@@ -1819,7 +1788,6 @@ def cascade_portal_access_handler(
         "completed_at":     _now_iso(),
     })
 
-
 def cascade_care_management_panel_removal(
         event_id: str, matched_record_id: str,
         date_of_death: str) -> None:
@@ -1837,7 +1805,6 @@ def cascade_care_management_panel_removal(
         "cascade_consumer": "care-management",
         "completed_at":     _now_iso(),
     })
-
 
 def cascade_analytics_platform_handler(
         event_id: str, matched_record_id: str,
@@ -1860,7 +1827,6 @@ def cascade_analytics_platform_handler(
         "cascade_consumer": "analytics-platform",
         "completed_at":     _now_iso(),
     })
-
 
 def cascade_cross_recipe_signal(
         recipe_number: str, event_id: str,
@@ -1885,7 +1851,6 @@ def cascade_cross_recipe_signal(
         "cascade_consumer": consumer_id,
         "completed_at":     _now_iso(),
     })
-
 
 def _summarize_cascade_completeness(event_id: str) -> dict:
     """Compute the cross-system-propagation-completeness for
@@ -1946,7 +1911,6 @@ def queue_dual_control_approval(
         "approvals_collected": len(approvers),
     })
 
-
 def _verify_dual_control_approval(
         event_id: str, action_type: str) -> bool:
     """Two operators from non-overlapping organizational units
@@ -1960,7 +1924,6 @@ def _verify_dual_control_approval(
         for a in approvers}
     return len(org_units) >= 2
 
-
 def _validate_verifier_authorization(verifier_identity: dict,
                                           action_type: str) -> bool:
     """The verifier role is institutionally-named and
@@ -1971,7 +1934,6 @@ def _validate_verifier_authorization(verifier_identity: dict,
         return False
     roles = verifier_identity.get("roles") or []
     return "deceased_patient_resolution_verifier" in roles
-
 
 def execute_premature_death_report_reversal(
         event_id: str, matched_record_id: str,
@@ -2082,7 +2044,6 @@ def execute_premature_death_report_reversal(
     })
     _emit_metric("DeathEventReversed", 1.0,
                   dimensions={"Reason": reversal_reason})
-
 
 def propagate_reversal_to_downstream_systems(
         event_id: str, matched_record_id: str) -> None:
@@ -2412,7 +2373,6 @@ def run_demo():
         if a.get("action") == "reverse_deceased_status"
         and a.get("event_id") == incorrect_event_id)
     print(f"  cascade reversal actions: {reversal_actions}")
-
 
 if __name__ == "__main__":
     run_demo()

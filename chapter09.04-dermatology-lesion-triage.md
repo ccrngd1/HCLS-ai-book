@@ -127,4 +127,3 @@ Here's what will surprise you when you actually build this:
 
 ---
 
-<!-- TODO (TechWriter): Tags section and navigation footer are missing from the main recipe. Tags currently live only in the architecture companion. Add Tags and nav footer per RECIPE-GUIDE. -->

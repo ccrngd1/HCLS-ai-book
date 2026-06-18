@@ -274,7 +274,6 @@ def get_text_from_block(block: dict, block_map: dict) -> str:
 
     return text.strip()
 
-
 def parse_key_value_pairs(textract_response: dict) -> dict:
     """
     Walk the Textract response and extract matched label-value pairs.
@@ -538,7 +537,6 @@ def validate_ndc(ndc_raw: str) -> dict:
             "error": "NDC format not recognized (expected 10-11 digits)",
         }
 
-
 def compute_refill_metrics(refills_remaining_str: str, days_supply_str: str) -> dict:
     """
     Compute medication coverage metrics from the refills and days supply fields.
@@ -605,7 +603,6 @@ dynamodb = boto3.resource("dynamodb")
 
 # Replace this with your actual DynamoDB table name.
 TABLE_NAME = "medication-records"
-
 
 def store_medication_record(
     image_key: str,
@@ -818,7 +815,6 @@ def process_label(bucket: str, key: str) -> dict:
     print(f"Done. needs_review={result['needs_review']}, "
           f"flagged_fields={len(result['flagged_fields'])}")
     return result
-
 
 # Example: run the pipeline against a test image.
 if __name__ == "__main__":

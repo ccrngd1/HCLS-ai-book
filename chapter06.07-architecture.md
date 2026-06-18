@@ -464,7 +464,6 @@ FUNCTION generate_worklist(trial_id, top_n=50):
 
 ---
 
-
 ---
 
 *← [Main Recipe 6.7](chapter06.07-clinical-trial-patient-matching) · [Python Example](chapter06.07-python-example) · [Chapter Preface](chapter06-preface)*

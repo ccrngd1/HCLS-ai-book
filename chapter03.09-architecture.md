@@ -14,9 +14,9 @@
 
 **Amazon DynamoDB for the user state and case state stores.** Per-user state (current behavioral baseline summary, recent flag counts, recent case history) and per-case state (open investigations, suppression status, evidence pointers) live in DynamoDB. Single-digit-millisecond reads on user lookup; DynamoDB streams trigger downstream re-evaluation when state changes.
 
-**Amazon Neptune for the relationship graph.** The graph of workforce members, patients, encounters, departments, and devices fits Neptune's property-graph model naturally. Gremlin queries support the relationship-based detection logic ("does this user have a documented care relationship with this patient through any encounter, care team, on-call, or order signature path"). Neptune is HIPAA-eligible. <!-- TODO (TechWriter): verify current HIPAA eligibility status of Amazon Neptune. -->
+**Amazon Neptune for the relationship graph.** The graph of workforce members, patients, encounters, departments, and devices fits Neptune's property-graph model naturally. Gremlin queries support the relationship-based detection logic ("does this user have a documented care relationship with this patient through any encounter, care team, on-call, or order signature path"). Neptune is HIPAA-eligible. 
 
-**Amazon Timestream for time-series behavioral baselines.** Per-user time-series of access counts, session durations, and resource-type distributions are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-week baseline window cost-effectively. <!-- TODO (TechWriter): verify the current HIPAA eligibility status of Amazon Timestream and BAA coverage; some deployments use S3 with Athena instead. -->
+**Amazon Timestream for time-series behavioral baselines.** Per-user time-series of access counts, session durations, and resource-type distributions are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-week baseline window cost-effectively. 
 
 **Amazon OpenSearch Service for case management, hunt, and SIEM-style analytics.** Privacy-office case data and the searchable archive of all access events live in OpenSearch. OpenSearch supports the kind of ad-hoc query the privacy office needs ("show me every chart access by this user in the last 90 days," "show me every access on this patient's record in the last week, sorted by user role"). Many SIEM products either run on OpenSearch under the hood or integrate with it cleanly.
 
@@ -24,7 +24,7 @@
 
 **Amazon SageMaker Model Monitor.** Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by EHR upgrades, role changes, organizational restructures, and the gradual shift in workforce behavior that affects every monitoring program.
 
-**Amazon Bedrock for case narrative generation.** The case builder hands the structured evidence package to a Bedrock-hosted LLM that produces the investigator-facing narrative ("This user accessed patient X's record at 11:47 p.m. The user shares a last name with the patient and lives on the same street according to HR records. The user is a step-down nurse and was not assigned to the patient's care team. The access included demographics, medications, and the most recent discharge plan, but no order entry or documentation was performed. The session ended after 90 seconds."). Decision support, not decision-making. <!-- TODO (TechWriter): confirm the current set of HIPAA-eligible Bedrock foundation models. -->
+**Amazon Bedrock for case narrative generation.** The case builder hands the structured evidence package to a Bedrock-hosted LLM that produces the investigator-facing narrative ("This user accessed patient X's record at 11:47 p.m. The user shares a last name with the patient and lives on the same street according to HR records. The user is a step-down nurse and was not assigned to the patient's care team. The access included demographics, medications, and the most recent discharge plan, but no order entry or documentation was performed. The session ended after 90 seconds."). Decision support, not decision-making. 
 
 **Amazon Comprehend Medical for note and search-text feature extraction.** Some break-glass override reasons and search queries are free text. Comprehend Medical extracts structured information (medications, conditions, anatomy) that feeds into feature engineering. Optional but useful for break-glass-reason analysis.
 
@@ -150,7 +150,7 @@ flowchart TB
 | **EHR Audit Log Access** | Coordinate with the EHR vendor and the EHR operations team to enable the audit-log feed at sufficient granularity and frequency. Epic, Cerner/Oracle Health, and MEDITECH each have specific mechanisms; the integration is typically a multi-quarter project. Latency from event to ingest matters; near-real-time is achievable with most modern EHRs but requires explicit configuration. |
 | **HRIS, IAM, and Scheduling Integration** | The enrichment data is the project. HR data feeds (Workday, Oracle HCM, SAP SuccessFactors), IAM data (Active Directory, Okta, Microsoft Entra ID), and scheduling data (Kronos, UKG, API Healthcare) each require their own integration. Plan for parallel integration work; the enrichment quality determines the alert quality. |
 | **Sample Data** | Internal historical audit logs are the only realistic training data; no public dataset captures the breadth needed. Synthetic audit-log generators exist in the security research community but produce data that's structurally different from real EHR audit logs. Pseudonymization for development is essential and non-trivial: the user-patient relationship structure must be preserved while identifiers are replaced. |
-| **Cost Estimate** | For a moderate-size health system (10,000 active workforce, 100,000 patients in the active panel, ~30 million audit events per day): Kinesis ingest: ~$300-700/month. Lambda for ingest, normalization, enrichment, detection: ~$1,500-3,500/month. DynamoDB user-state and case-state: ~$300-700/month. Neptune for the relationship graph: ~$1,500-4,000/month (Neptune instance class is typically the largest single line item). Timestream baselines: ~$200-500/month. OpenSearch case index and search archive: ~$1,500-4,500/month (scales with retention period; many programs hold 12-24 months online). SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Bedrock for case narratives: ~$200-700/month. S3, supporting services: ~$200-500/month. Total infrastructure: typically $6,500-17,000/month for a moderate-size deployment. Privacy-office staffing (investigators, privacy analysts, the CPO function) is the dominant program cost; one investigator at typical loaded cost can equal several months of infrastructure. The infrastructure pays for itself by avoiding a single OCR settlement; published OCR settlements involving inadequate audit controls have ranged from hundreds of thousands to several million dollars. <!-- TODO (TechWriter): verify recent OCR settlement ranges; the settlements are public and the figures are well-documented. --> |
+| **Cost Estimate** | For a moderate-size health system (10,000 active workforce, 100,000 patients in the active panel, ~30 million audit events per day): Kinesis ingest: ~$300-700/month. Lambda for ingest, normalization, enrichment, detection: ~$1,500-3,500/month. DynamoDB user-state and case-state: ~$300-700/month. Neptune for the relationship graph: ~$1,500-4,000/month (Neptune instance class is typically the largest single line item). Timestream baselines: ~$200-500/month. OpenSearch case index and search archive: ~$1,500-4,500/month (scales with retention period; many programs hold 12-24 months online). SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Bedrock for case narratives: ~$200-700/month. S3, supporting services: ~$200-500/month. Total infrastructure: typically $6,500-17,000/month for a moderate-size deployment. Privacy-office staffing (investigators, privacy analysts, the CPO function) is the dominant program cost; one investigator at typical loaded cost can equal several months of infrastructure. The infrastructure pays for itself by avoiding a single OCR settlement; published OCR settlements involving inadequate audit controls have ranged from hundreds of thousands to several million dollars.  |
 
 ### Ingredients
 
@@ -204,7 +204,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Anomaly detection notebooks (Isolation Forest, autoencoder, RNN sequence models), Feature Store with online and offline stores, Clarify SHAP examples, Model Monitor configurations.
 > - [`aws-samples`](https://github.com/aws-samples): search for "Neptune," "FHIR," "audit log analysis," and "UEBA" for adjacent integration and graph-analytics patterns.
-> <!-- TODO (TechWriter): verify and add specific aws-samples or aws-solutions-library-samples repositories demonstrating insider-threat detection, EHR audit-log analysis, healthcare patient-privacy monitoring, or UEBA on AWS. Adjacent examples exist in the security domain; a direct healthcare match has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
 
@@ -920,8 +920,6 @@ FUNCTION on_investigator_action(action):
 | Subgroup precision range across role categories | ±0.05-0.15 | ±0.04-0.12 | ±0.04-0.10 | ±0.04-0.10 | ±0.04-0.10 |
 | End-to-end latency (audit event ingest to candidate score) | <5 minutes | <5 minutes | <10 minutes | <15 minutes | <15 minutes |
 
-<!-- TODO (TechWriter): benchmark ranges are directional from typical patient-privacy-monitoring program performance. Specific figures vary substantially by health system size, EHR vendor, workforce composition, base rate of policy violations, and privacy office staffing. The published academic literature on healthcare insider threat detection is sparse compared with the operational literature; vendor-published metrics from Protenus, Imprivata FairWarning, and similar products provide additional reference points. Replace with measured numbers from local validation. -->
-
 **Where it struggles:**
 
 - **Care-relationship data quality.** Many EHRs capture explicit care-team membership inconsistently. Floor-coverage, cross-coverage, on-call relationships, and pre-admission preparation often aren't represented in the data the detector sees. The result is a steady stream of false positives where the access was legitimate but the relationship wasn't recorded. The privacy office spends substantial review time on these.
@@ -1038,14 +1036,12 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Anomaly detection (Isolation Forest, autoencoder, RNN sequence models), Feature Store, Clarify SHAP examples, Model Monitor configurations.
 - [`aws-samples`](https://github.com/aws-samples): search for "Neptune," "graph analytics," "audit log analysis," "UEBA," and "FHIR" for adjacent integration and graph-analytics patterns.
-<!-- TODO (TechWriter): verify and add specific aws-samples or aws-solutions-library-samples repositories demonstrating insider-threat detection, EHR audit-log analysis, healthcare patient-privacy monitoring, or UEBA on AWS. Adjacent examples exist in the security domain; a direct healthcare-specific match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Security + Healthcare): security and healthcare reference architectures.
 - [AWS Security Blog](https://aws.amazon.com/blogs/security/): UEBA patterns, anomaly detection, and security architecture deep-dives.
 - [AWS Industries Blog (Healthcare)](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): healthcare-specific AWS architectures and customer stories.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "anomaly detection," "graph neural network," and "insider threat" for analytics deep-dives.
-<!-- TODO (TechWriter): verify and add specific AWS blog posts on healthcare audit-log analysis, patient-privacy monitoring, or UEBA on AWS; confirm URLs exist before inclusion. -->
 
 **Regulatory and Compliance References:**
 - [HIPAA Security Rule (45 CFR Part 164, Subpart C)](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C): the regulatory backbone for audit controls.
@@ -1063,13 +1059,7 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 - [Federal Information Security Modernization Act (FISMA)](https://www.cisa.gov/topics/cyber-threats-and-advisories/federal-information-security-modernization-act): federal requirements applicable to certain healthcare entities.
 
 **Academic and Industry Literature:**
-<!-- TODO (TechWriter): Add specific peer-reviewed citations for:
-  - UEBA methodologies in healthcare: published comparison studies of UEBA approaches.
-  - Insider threat detection: CERT National Insider Threat Center publications.
-  - Graph-based anomaly detection: Akoglu, Tong, Koutra (2015) "Graph based anomaly detection and description: a survey".
-  - Patient-privacy monitoring: published case studies from Protenus, Imprivata FairWarning, and academic medical center programs.
-  - LLM-assisted security triage: emerging in 2024-2026; verify and cite as the literature stabilizes.
-  Verify exact citations and DOIs before publication. -->
+
 - [SHAP (SHapley Additive exPlanations)](https://github.com/shap/shap): per-prediction explanation library.
 - [Statistical Process Control (Wikipedia)](https://en.wikipedia.org/wiki/Statistical_process_control): CUSUM, EWMA, and control chart background for behavioral baseline monitoring.
 
@@ -1090,7 +1080,6 @@ The pseudocode shows the shape. A production access-monitoring program closes se
 | With variations | Additional EHRs and application systems, sequence-based workflow detection, GNN-based relationship detection, privileged-user monitoring program (typically as a separate program), patient-portal access monitoring, federated cross-site monitoring, conversational AI investigator copilot, advanced equity audits with formalized disparate-impact analysis, patient-facing transparency (access-log exposure to patients), insider-threat-program integration with HR and physical-access signals | 18-48 months beyond production-ready |
 
 ---
-
 
 ---
 

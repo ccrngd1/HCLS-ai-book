@@ -312,7 +312,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -332,7 +331,6 @@ def _to_decimal(value):
         return Decimal(value)
     raise TypeError(f"Cannot convert {type(value).__name__} to Decimal")
 
-
 def _epi_week_to_str(d):
     """Render a date as an epi-week string YYYY-Www.
 
@@ -342,7 +340,6 @@ def _epi_week_to_str(d):
     """
     iso_year, iso_week, _ = d.isocalendar()
     return f"{iso_year}-w{iso_week:02d}"
-
 
 def _normal_cdf(z):
     """Standard normal CDF via the error function."""
@@ -384,7 +381,6 @@ class MockS3:
                 return self._b
         return {"Body": _StreamingBody(body)}
 
-
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
 
@@ -419,7 +415,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockRegistry:
     """In-memory stand-in for the Aurora PostgreSQL forecast registry.
 
@@ -447,7 +442,6 @@ class MockRegistry:
         recs.sort(key=lambda r: r["evaluated_at_ts"], reverse=True)
         return recs[:lookback_weeks]
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge."""
 
@@ -458,7 +452,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch."""
@@ -631,7 +624,6 @@ def harmonize_lab_pcr_record(record, jurisdiction):
         "specimen_dt":     record["specimen_collected_dt"],
     }
 
-
 def harmonize_ed_syndromic_record(record):
     """Convert ED syndromic to fraction of total visits per week."""
     fraction = (record["respiratory_visits"]
@@ -646,7 +638,6 @@ def harmonize_ed_syndromic_record(record):
         "encounter_dt":    record["encounter_dt"],
     }
 
-
 def harmonize_wastewater_record(record):
     """Wastewater is already in log10 copies; pass through with QC."""
     return {
@@ -657,7 +648,6 @@ def harmonize_wastewater_record(record):
         "sample_count":    record["sample_count"],
         "sample_dt":       record["sample_collected_dt"],
     }
-
 
 def harmonize_hospitalization_record(record, jurisdiction):
     """Convert hospitalization counts to per 100k per week."""
@@ -671,7 +661,6 @@ def harmonize_hospitalization_record(record, jurisdiction):
         "raw_count":       record["admission_count"],
         "admission_dt":    record["admission_dt"],
     }
-
 
 def harmonize_surveillance(raw_records_by_feed, jurisdiction, s3,
                             harmonized_bucket):
@@ -708,7 +697,6 @@ def harmonize_surveillance(raw_records_by_feed, jurisdiction, s3,
     logger.info("Harmonized %d feeds for jurisdiction %s",
                 len(harmonized), jurisdiction["fips"])
     return harmonized
-
 
 def build_signal_panel(harmonized, weeks_to_include=None):
     """Stack harmonized feeds into a panel keyed by epi-week.
@@ -901,7 +889,6 @@ class BayesianStateSpaceNowcaster:
         self.fitted = True
         return nowcast_state
 
-
 def run_nowcast(harmonized, panel, jurisdiction, s3, nowcast_bucket,
                 run_id):
     """Step 2: Run the nowcasting layer.
@@ -1079,7 +1066,6 @@ class SEIRCompartmentalModel:
             "generated_at_ts":      datetime.now(timezone.utc).isoformat(),
         }
 
-
 class StatisticalARIMABaseline:
     """Simplified ARIMA(p,d,q)-style statistical baseline.
 
@@ -1185,7 +1171,6 @@ class StatisticalARIMABaseline:
             "num_trajectories":     num_samples,
             "generated_at_ts":      datetime.now(timezone.utc).isoformat(),
         }
-
 
 def run_per_model_forecasts(nowcast_state, panel, jurisdiction, s3,
                               per_model_bucket, run_id):
@@ -1321,7 +1306,6 @@ class EnsembleCombiner:
             "generated_at_ts":     datetime.now(timezone.utc).isoformat(),
         }
 
-
 def run_ensemble(per_model_forecasts, registry, jurisdiction, s3,
                   ensemble_bucket, run_id):
     """Step 4: Run the ensemble combiner."""
@@ -1431,7 +1415,6 @@ def compute_holdout_calibration(per_model_forecasts, panel,
         }
     return coverage_summary
 
-
 def detect_calibration_drift(coverage_summary):
     """Flag models that have drifted out of calibration."""
     alarms = []
@@ -1455,7 +1438,6 @@ def detect_calibration_drift(coverage_summary):
                 "description":  "80% credible interval coverage below floor",
             })
     return alarms
-
 
 def compose_scenario_forecasts(seir_model, nowcast_state, scenarios):
     """Run the SEIR model under each scenario's contact modifier."""
@@ -1492,7 +1474,6 @@ def compose_scenario_forecasts(seir_model, nowcast_state, scenarios):
             "assumption_disclosure": scenario["assumption_disclosure"],
         })
     return scenario_outputs
-
 
 def deliver_forecast(ensemble_artifact, scenario_outputs, coverage_summary,
                       drift_alarms, jurisdiction, run_id, table, registry,
@@ -1752,7 +1733,6 @@ def run_epidemic_forecast_pipeline(table, registry, event_bus, cloudwatch, s3,
         "drift_alarms":       drift_alarms,
     }
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1818,7 +1798,6 @@ def run_demo():
         print(json.dumps(summary, indent=2))
 
     return result
-
 
 if __name__ == "__main__":
     run_demo()

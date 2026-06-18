@@ -198,18 +198,15 @@ LINE_ITEM_DATE_TOLERANCE_HOURS = 26
 # wide enough to catch them.
 LINKAGE_WINDOW_DAYS = 180
 
-
 def _to_decimal(value) -> Decimal:
     """Coerce numeric input into Decimal for DynamoDB."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
@@ -218,7 +215,6 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_form(*parts) -> str:
     """Join parts into a canonical lowercase whitespace-collapsed form."""
     joined = " ".join(str(p or "").strip() for p in parts)
@@ -226,10 +222,8 @@ def _canonical_form(*parts) -> str:
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes 5.1 - 5.5."""
@@ -240,7 +234,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> None:
     try:
@@ -305,7 +298,6 @@ SYNTHETIC_XREF = {
     },
 }
 
-
 # --- In-memory local MPI for fallback patient matching ---
 # In production this is the MPI from recipe 5.1; here a tiny
 # stand-in so the demo can show the probabilistic-fallback path.
@@ -331,7 +323,6 @@ SYNTHETIC_LOCAL_MPI = {
         "cohort_bucket": "A",
     },
 }
-
 
 # --- Synthetic clinical encounters (output of EHR extract) ---
 # Keyed on encounter_id. Each encounter has an attending NPI,
@@ -431,7 +422,6 @@ SYNTHETIC_CLINICAL_ENCOUNTERS = {
         "discharge_disposition":    "home",
     },
 }
-
 
 # --- Synthetic claims (already parsed; production parses from
 # X12 837/835, FHIR EOB, NCPDP, or payer-specific files) ---
@@ -745,7 +735,6 @@ SYNTHETIC_CLAIMS = [
     },
 ]
 
-
 # --- Mock vocabulary map ---
 # Production wraps the institution's terminology server (UMLS,
 # OHDSI Athena, or commercial). The mock includes a small CPT-to-
@@ -795,10 +784,8 @@ class MockVocabularyMap:
     def versions_used(self) -> dict:
         return dict(VOCABULARY_VERSIONS)
 
-
 # Module-level singletons for the demo.
 vocabulary_map = MockVocabularyMap()
-
 
 # --- In-memory linkage system-of-record (DynamoDB stand-in) ---
 # Keyed on encounter_cluster_id. Each item is the latest version
@@ -807,14 +794,12 @@ vocabulary_map = MockVocabularyMap()
 _IN_MEMORY_LINKAGE_TABLE: dict = {}
 _IN_MEMORY_OUTBOX: list = []
 
-
 # --- In-memory invalidation index ---
 # Keyed on (source_record_type, source_record_id) -> list of
 # affected cluster_ids. Production writes this to DynamoDB so
 # event-driven invalidation can find the affected linkages with a
 # single point lookup.
 _IN_MEMORY_INVALIDATION_INDEX: dict = {}
-
 
 def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      key_id: str = None) -> None:
@@ -866,7 +851,6 @@ def _normalize_encounter_class(claim_type: str,
         "11": "outpatient",
     }
     return pos_mapping.get(place_of_service or "", "outpatient")
-
 
 def normalize_claims_and_clinical(claims_input: list,
                                      clinical_input: dict) -> dict:
@@ -994,7 +978,6 @@ def _xref_lookup(payer_id: str, member_id: str,
         return None
     return entry
 
-
 def link_patient(claim: dict) -> dict:
     """
     Resolve the claim's payer-side member identity to the
@@ -1058,7 +1041,6 @@ def _parse_date(d: str) -> datetime:
     """Parse YYYY-MM-DD into a datetime at midnight UTC."""
     return datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
-
 def _date_overlap_with_buffer(a_start: str, a_end: str,
                                  b_start: str, b_end: str,
                                  buffer_days: int) -> bool:
@@ -1069,13 +1051,11 @@ def _date_overlap_with_buffer(a_start: str, a_end: str,
     b_e = _parse_date(b_end)
     return not (a_e < b_s or b_e < a_s)
 
-
 def _generate_cluster_id(local_patient_id: str, encounter_class: str,
                             anchor_date: str) -> str:
     """Deterministic cluster ID. Production uses a UUID with the
     same fields hashed in for idempotency on re-runs."""
     return f"ec-{anchor_date}-{local_patient_id[-10:]}-{encounter_class}-{uuid.uuid4().hex[:6]}"
-
 
 def _infer_role(claim: dict, cluster: dict) -> str:
     """Tag the claim's role within the cluster."""
@@ -1093,7 +1073,6 @@ def _infer_role(claim: dict, cluster: dict) -> str:
     if claim["claim_type"] == "pharmacy":
         return "pharmacy"
     return "ancillary"
-
 
 def cluster_claims_by_encounter(patient_resolved_claims: list) -> list:
     """
@@ -1244,7 +1223,6 @@ def _date_alignment_score(cluster_start: str, cluster_end: str,
         return Decimal("1.0")
     return _to_decimal(max(0.0, min(1.0, overlap_days / union_days)))
 
-
 def _provider_alignment_score(cluster_claims: list, attending_npi: str,
                                  consulting_npis: list) -> Decimal:
     """Score whether the cluster's rendering NPIs match the EHR
@@ -1267,7 +1245,6 @@ def _provider_alignment_score(cluster_claims: list, attending_npi: str,
         return Decimal("0.7")
     return Decimal("0.0")
 
-
 def _class_compatibility_score(cluster_class: str, ehr_class: str) -> Decimal:
     """Encounter-class compatibility: exact match = 1.0; known
     related pair = 0.7; unrelated = 0.0."""
@@ -1284,7 +1261,6 @@ def _class_compatibility_score(cluster_class: str, ehr_class: str) -> Decimal:
     if (cluster_class, ehr_class) in related_pairs:
         return Decimal("0.7")
     return Decimal("0.0")
-
 
 def _diagnosis_concordance_score(cluster_dx: list, ehr_dx: list) -> Decimal:
     """Soft signal: scored as Jaccard overlap with hierarchy-
@@ -1309,7 +1285,6 @@ def _diagnosis_concordance_score(cluster_dx: list, ehr_dx: list) -> Decimal:
         return _to_decimal(0.4 * (len(hier_overlap) / max(1, len(union))))
     return Decimal("0.1")
 
-
 def _procedure_concordance_score(cluster_claims: list,
                                     ehr_procedures: list) -> Decimal:
     """Score CPT-mapped vs internal-procedure overlap."""
@@ -1328,7 +1303,6 @@ def _procedure_concordance_score(cluster_claims: list,
     union = cluster_internal_codes | ehr_internal_codes
     return _to_decimal(len(overlap) / len(union))
 
-
 def _drg_concordance_score(cluster_drg: Optional[str],
                               ehr_drg: Optional[str]) -> Decimal:
     """DRG concordance only applies if both are present."""
@@ -1336,13 +1310,11 @@ def _drg_concordance_score(cluster_drg: Optional[str],
         return Decimal("0.5")
     return Decimal("1.0") if cluster_drg == ehr_drg else Decimal("0.0")
 
-
 def _composite_encounter_score(features: dict) -> Decimal:
     total = sum(ENCOUNTER_SCORE_WEIGHTS.values())
     weighted = sum(ENCOUNTER_SCORE_WEIGHTS[k] * features[k]
                      for k in ENCOUNTER_SCORE_WEIGHTS)
     return weighted / total
-
 
 def link_encounter(cluster: dict,
                       clinical_encounters_for_patient: list) -> dict:
@@ -1495,7 +1467,6 @@ def _date_within_tolerance_hours(claim_service_date: str,
     delta = abs((et - cs).total_seconds()) / 3600.0
     return delta <= tolerance_hours
 
-
 def _pick_best_clinical_event_candidate(candidates: list,
                                             line_item: dict) -> dict:
     """Pick the closest-in-time event when several match the
@@ -1508,7 +1479,6 @@ def _pick_best_clinical_event_candidate(candidates: list,
             ev["event_timestamp"].replace("Z", "+00:00"))
         return abs((et - cs).total_seconds())
     return min(candidates, key=_delta)
-
 
 def attribute_care_events(linked_cluster: dict,
                               clinical_encounter: Optional[dict]) -> dict:
@@ -1769,7 +1739,6 @@ def persist_and_emit(linkage_decision: dict,
                                 "EncounterClass": cluster["encounter_class"]})
     return linkage_record
 
-
 def invalidate_on_event(event: dict) -> dict:
     """
     Re-evaluate linkages affected by an invalidation event.
@@ -1908,7 +1877,6 @@ def run_pipeline(claims_input: list, clinical_input: dict) -> list:
 
     return persisted
 
-
 def run_demo():
     """
     Run the full pipeline against the synthetic claims and
@@ -2027,7 +1995,6 @@ def run_demo():
         "new_version": "imap-v9",
     })
     print(f"  source={inv4['source']:<28} actions={inv4['actions']}")
-
 
 if __name__ == "__main__":
     run_demo()

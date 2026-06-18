@@ -119,7 +119,6 @@ Your matching system needs explicit temporal logic: what's the acceptable recenc
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter06.07-architecture). The Python example is linked from there.
 
 ## The Honest Take

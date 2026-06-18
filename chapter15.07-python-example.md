@@ -291,7 +291,6 @@ def normalize_feature(value: float, feature_def: dict) -> float:
         return 0.5
     return (clipped - min_val) / (max_val - min_val)
 
-
 def construct_state_vector(patient_data: dict) -> np.ndarray:
     """
     Build a normalized state vector from patient's current clinical state.
@@ -317,7 +316,6 @@ def construct_state_vector(patient_data: dict) -> np.ndarray:
             logger.warning("Missing feature '%s', using midpoint imputation", name)
 
     return state
-
 
 def compute_individualized_target(patient_data: dict) -> float:
     """
@@ -743,7 +741,6 @@ def train_bcq_policy(
         "bcq_threshold": bcq_threshold,
     }
 
-
 def _state_to_index(state_vector: np.ndarray, n_bins: int) -> int:
     """
     Discretize state to table index using key features:
@@ -870,7 +867,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 state_table = dynamodb.Table(DYNAMODB_TABLE)
 
-
 def fetch_patient_state(patient_id: str) -> dict:
     """
     Retrieve the patient's longitudinal diabetes state from DynamoDB.
@@ -887,7 +883,6 @@ def fetch_patient_state(patient_id: str) -> dict:
     item = response["Item"]
     # Convert Decimal to float for numpy
     return {k: float(v) if isinstance(v, Decimal) else v for k, v in item.items()}
-
 
 def get_policy_recommendation(state_vector: np.ndarray, policy: dict) -> dict:
     """
@@ -1050,7 +1045,6 @@ def generate_treatment_recommendation(
     print(f"{'='*60}\n")
 
     return recommendation
-
 
 # --- Example usage ---
 if __name__ == "__main__":

@@ -208,7 +208,6 @@ Let's walk through each stage conceptually.
 
 **Log for audit and feedback.** Log the question, the retrieved chunks, the generated answer, the validation result, and the final rendered output. Capture clinician feedback (helpful, unhelpful, inaccurate, escalated) and feed it into retrieval and prompt iteration.
 
-
 ---
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter02.07-architecture). The Python example is linked from there.
@@ -252,8 +251,8 @@ Final thought: this is one of the highest-leverage applications of medical AI I'
 - **Recipe 2.6 (Clinical Note Summarization):** Grounded generation over an in-chart corpus. The retrieval layer is smaller and more focused, but the generation patterns are similar.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Sits on a continuum with 2.7. Decision support adds patient-specific reasoning and moves toward recommendations; literature search stays descriptive. The regulatory and liability posture differs; the retrieval and synthesis architecture overlap substantially.
 - **Recipe 2.10 (Multi-Modal Clinical Reasoning):** Extends decision support into multi-modal inputs. The literature RAG pipeline from this recipe can serve as the evidence layer for a multi-modal reasoning system.
-- **Recipe 13.x (Knowledge Graphs):** Knowledge-graph representations of medical entities and relationships can augment RAG retrieval: graph-based retrieval finds papers connected by entity relationships, not just semantic similarity. Hybrid graph-plus-vector retrieval is a promising direction for medical RAG. <!-- TODO (TechWriter): update to specific recipe number once Chapter 13 is drafted (candidate: clinical ontology / disease-drug graph recipe). -->
-- **Recipe 8.x (Biomedical NER):** Traditional NER pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure. <!-- TODO (TechWriter): update to specific recipe number once Chapter 8 is drafted. -->
+- **Recipe 13.x (Knowledge Graphs):** Knowledge-graph representations of medical entities and relationships can augment RAG retrieval: graph-based retrieval finds papers connected by entity relationships, not just semantic similarity. Hybrid graph-plus-vector retrieval is a promising direction for medical RAG. 
+- **Recipe 8.x (Biomedical NER):** Traditional NER pipelines produce the entity extraction that drives retrieval filters in this recipe. The two pipelines share infrastructure. 
 
 ---
 

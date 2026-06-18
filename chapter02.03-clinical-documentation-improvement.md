@@ -1,37 +1,3 @@
-<!--
-Editorial pass (TechEditor, 2026-05-11):
-- Tightened Prerequisites: scoped IAM permissions to resource ARNs, promoted DynamoDB encryption to customer-managed KMS key, split the Bedrock VPC endpoint into its two real endpoints (bedrock-runtime and bedrock-agent-runtime), and added a Lambda Runtime row with an explicit timeout floor (expert review H2-HIGH Lambda timeout, M2 IAM scoping, M3 DynamoDB CMK, M9 bedrock-agent-runtime endpoint).
-- Softened one hyperbolic word in the "Why LLMs Work Here" discussion (dramatically -> substantially) to match the engineer-explaining voice used elsewhere in the recipe (voice review L11).
-- Preserved the TechWriter TODO on Recipe 7.3 cross-reference. Note: a pass through categories/07-predictive-analytics.md finds no "DRG Prediction" recipe in the current plan (7.3 is currently "Patient Churn / Disenrollment Prediction"); the closest clinically related neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). Flagging for the book-wide cross-reference sweep.
-- Flagged remaining structural items as TODOs for TechWriter (see inline comments): PHI minimization guidance in Why This Isn't Production-Ready (H1), DLQ / reliable ingestion note (H3), idempotency on repeat events (M4), knowledge base retrieval caching and batching (M1), suggestion retention / secure deletion policy (L1), and EHR network connectivity sentence (L2). Per persona rules, structural additions that introduce new architectural content are left for the TechWriter rather than rewritten here.
-- Verified: zero em dashes (U+2014 full-file scan), header hierarchy (H1 title, H2 major, H3 subsection, H4 Walkthrough) matches chapter01 and chapter02.01/02.02, RECIPE-GUIDE section order intact, vendor balance holds at ~70/30 (AWS names first appear at "The AWS Implementation"), all external URLs well-formed, no documentation-voice or LinkedIn-influencer anti-patterns present.
-
-Editorial pass 2 (TechEditor, 2026-05-11):
-- Corrected pass-1 changelog to say "Why LLMs Work Here" (the actual location of the `dramatically -> substantially` swap) rather than "Variations," and expanded the Recipe 7.3 note with the current title from categories/07-predictive-analytics.md so the downstream cross-reference sweep has the context it needs.
-- Re-verified: zero em dashes (U+2014), zero triple-blank-line gaps in prose, header hierarchy unchanged from pass 1, pseudocode fences all tagged, Mermaid block intact, all sample ICD-10-CM codes (J18.9, J15.1, J15.6, J13, I50.9, I50.23) valid in the current code set, Related Recipes numbers match the current chapter 2 plan (2.1, 2.4, 2.6).
-- Confirmed the five TODOs flagged in pass 1 are still the right handoff to TechWriter: each introduces new architectural prose (PHI redaction via Comprehend Medical, SQS/DLQ in the ingestion path, idempotency composite key, knowledge-base caching, retention policy, EHR connectivity) rather than in-place edits, which is the boundary persona rules draw between editor and writer. No rewrites performed.
-
-Editorial pass 3 (TechEditor, 2026-05-11):
-- Moved the visible "TODO: verify recipe number." text in the Recipe 7.3 bullet of Related Recipes into an HTML comment, matching the convention already used in chapter02.02 (Recipe 8.1 bullet). The TODO itself is preserved, including the pass-1 note that the current chapter 7 plan has 7.3 as "Patient Churn / Disenrollment Prediction" rather than "DRG Prediction." Persona rule on preserving TODO markers is honored; change is pure formatting/convention alignment so the TODO no longer appears in rendered output.
-- Final checklist sweep against both reviews. No remaining fixable issues at the editing layer.
-- Verified: zero em dashes (U+2014 full-file scan), zero en dashes, no hype markers (leverage, seamless, delve, empower, revolutionize, game-changer, cutting-edge, robust, unlock), no doubled-word typos, header hierarchy (H1 title / H2 major / H3 subsection / H4 Walkthrough) stable, all 10 external URLs in Additional Resources well-formed on their documented AWS / CMS / AHIMA domains, vendor balance holds at approximately 70/30 (AWS service names first appear in "The AWS Implementation").
-- RECIPE-GUIDE section order verified: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Walkthrough), Expected Results, Why This Isn't Production-Ready, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
-- TODOs preserved verbatim for TechWriter: (H1) PHI minimization before LLM calls via Comprehend Medical DetectPHI, (H3) SQS/DLQ on the S3-to-Lambda ingestion path, (M4) idempotency composite key, (M1) knowledge-base retrieval caching and batching, (L1) suggestion retention / secure deletion policy, (L2) EHR network connectivity note on the EHR integration paragraph, and the Recipe 7.3 cross-reference handoff (now in HTML-comment form). Per persona instructions, these six structural items are left for the TechWriter rather than rewritten here because each introduces new architectural prose rather than an in-place correction.
-
-Editorial pass 4 (TechEditor, 2026-05-11):
-- Fixed a broken internal navigation link at the bottom of the file. The "Next" link previously pointed to `chapter02.04-prior-authorization-letter-generation`, but the actual filename in the repository is `chapter02.04-prior-auth-letter-generation.md` (verified against repo directory listing and confirmed consistent with the back-link convention used by chapter02.02 and chapter02.01). The link display text ("Recipe 2.4 - Prior Authorization Letter Generation") is unchanged; only the URL slug was corrected. Pure in-place fix, no structural change, no new content. Passes 1-3 all missed this because file-level grep for "prior-auth" was never run against the nav footer.
-- Re-verified against chapter 1 reference files that bare-fenced pseudocode blocks (triple backticks with no language tag) match the established book convention; chapter01.02 uses the same style. No change required.
-- Re-verified: zero em dashes, zero en dashes, no hype markers, all nine external URLs in Additional Resources well-formed, all internal links now point to real filenames, header hierarchy intact, RECIPE-GUIDE section order intact, vendor balance approximately 70/30, all six TechWriter TODOs preserved.
-- No remaining fixable issues at the editing layer. Handing back to the pipeline.
-
-Editorial pass 5 (TechEditor, 2026-06-17):
-- Post-split polish. File was mechanically split from a combined recipe into main (story/concepts) and architecture companion (AWS implementation/pseudocode).
-- Verified: General Architecture Pattern contains no AWS service references; The Honest Take contains no dangling references to AWS content now in the companion; architecture callout is correctly placed at the end of General Architecture Pattern.
-- Fixed bare code fence on the pipeline flow diagram (added `text` language tag).
-- RECIPE-GUIDE compliance for post-split main recipe confirmed: The Problem, The Technology, General Architecture Pattern (with callout), The Honest Take, Related Recipes, Tags, Navigation. All present and in order.
-- Zero em dashes, zero en dashes, no hype markers, all TODOs preserved.
--->
-
 # Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions
 
 **Complexity:** Simple-Medium · **Phase:** MVP · **Estimated Cost:** ~$0.02-0.08 per note
@@ -145,7 +111,7 @@ One more thing: the financial ROI on CDI is easy to measure (compare DRG weights
 - **Recipe 2.1 (Patient Message Response Drafting):** Shares the Bedrock inference pattern but for a different text generation use case
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Uses similar clinical element extraction but generates outbound letters rather than internal queries
 - **Recipe 2.6 (Clinical Note Summarization):** Complementary capability; summarization helps CDI specialists review notes faster
-- **Recipe 7.3 (DRG Prediction):** Predicts DRG assignment, which CDI suggestions aim to improve through better documentation <!-- TODO: Verify recipe number and title against final chapter 7 index. Editorial pass 1 noted that categories/07-predictive-analytics.md currently lists 7.3 as "Patient Churn / Disenrollment Prediction"; closest clinical neighbors are 7.5 (30-Day Readmission) and 7.7 (Length of Stay). -->
+- **Recipe 7.3 (DRG Prediction):** Predicts DRG assignment, which CDI suggestions aim to improve through better documentation 
 
 ---
 

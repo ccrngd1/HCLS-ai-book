@@ -148,7 +148,6 @@ flowchart TB
 | **AWS KMS** | Encryption key management with distinct keys for PHI-containing stores |
 | **Amazon CloudWatch + CloudTrail** | Operational metrics, HIPAA audit logs, regulatory evidence trail |
 
-
 ### Code
 
 #### Walkthrough
@@ -1027,15 +1026,9 @@ FUNCTION archive_and_log(synthesis_id, rendered, trace, clinician_id, patient_id
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.09-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample output for the 2 AM sepsis case from the opening vignette:**
-
-<!-- Note: the specific sources, recommendations, dose values, and guideline quotes below
-     are illustrative. Do not treat them as production-ready clinical guidance. A real
-     deployment grounds every claim in actual retrieved content from a real, current
-     authoritative corpus. -->
 
 ```json
 {
@@ -1290,7 +1283,7 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 **Research and Benchmarks:**
 - [MedQA](https://github.com/jind11/MedQA): Question-answer pairs from medical licensing exams
 - [MedCalc-Bench](https://github.com/ncbi-nlp/MedCalc-Bench): Benchmark for medical calculation accuracy
-- [HealthBench](https://openai.com/index/healthbench/): OpenAI benchmark for healthcare-relevant LLM evaluations <!-- TODO (TechWriter): verify current status and URL of HealthBench; check that benchmark is still active. -->
+- [HealthBench](https://openai.com/index/healthbench/): OpenAI benchmark for healthcare-relevant LLM evaluations 
 
 ---
 
@@ -1303,7 +1296,6 @@ Shipping clinical decision support that synthesizes recommendations is a multi-y
 | **With variations** | 60-90 weeks | Multiple scenario modules across specialties. Guideline-change monitoring and population-health triggering. Prior-auth and formulary integration. Second-opinion and multi-agent deliberation. Patient-facing explanations. Integration with order sets and protocol improvement. Full post-market surveillance instrumentation. Specialty-specific prompt and retrieval tuning. Ongoing clinical evaluation program with versioned benchmarks. |
 
 ---
-
 
 ---
 

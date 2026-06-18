@@ -397,7 +397,6 @@ FUNCTION store_and_notify(provider_id, proposed_template, simulation_current, si
 
 ---
 
-
 ---
 
 *← [Main Recipe 14.1](chapter14.01-appointment-slot-optimization) · [Python Example](chapter14.01-python-example) · [Chapter Preface](chapter14-preface)*

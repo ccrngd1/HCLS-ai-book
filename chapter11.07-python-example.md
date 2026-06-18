@@ -634,7 +634,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of _to_decimal for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -647,16 +646,13 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
-
 def _now() -> datetime:
     """Current UTC datetime."""
     return datetime.now(timezone.utc)
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -664,7 +660,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -686,7 +681,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
 
-
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
     """Emit a CloudWatch metric. Best-effort; never blocks."""
@@ -706,7 +700,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -735,7 +728,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields before ledger storage."""
@@ -791,7 +783,6 @@ class MockTable:
     def update_item(self, Key, **kwargs):
         # Demo: pretend the update succeeded.
         return {}
-
 
 class MockBedrockRuntime:
     """
@@ -970,7 +961,6 @@ class MockBedrockRuntime:
             "tool_calls": [],
         }
 
-
 class MockEHR:
     """Stands in for the FHIR-native chart-context store."""
 
@@ -986,7 +976,6 @@ class MockEHR:
     def get_active_care_plan(self, patient_id):
         return self.charts.get(patient_id, {}).get(
             "active_care_plan")
-
 
 class MockBiometricVendor:
     """
@@ -1017,7 +1006,6 @@ class MockBiometricVendor:
                 out.append(r)
         return out
 
-
 class MockKnowledgeBase:
     """Stands in for Bedrock Knowledge Bases retrieval."""
 
@@ -1042,7 +1030,6 @@ class MockKnowledgeBase:
             })
         return results
 
-
 class MockCareTeamWorkflow:
     """Stands in for the care-team alert and digest delivery."""
 
@@ -1055,7 +1042,6 @@ class MockCareTeamWorkflow:
 
     def deliver_digest(self, digest):
         self.digests.append(digest)
-
 
 class MockPharmacy:
     """Stands in for the pharmacy adherence data source."""
@@ -1075,7 +1061,6 @@ class MockPharmacy:
         return [f for f in self.fills[patient_id]
                 if window_start <= f["fill_date"] <= window_end]
 
-
 class MockTriagePathway:
     """Stands in for the recipe 11.6 triage workflow."""
 
@@ -1085,7 +1070,6 @@ class MockTriagePathway:
     def receive(self, payload):
         self.handoffs.append(payload)
 
-
 class MockMentalHealthPathway:
     """Stands in for the recipe 11.8 mental-health workflow."""
 
@@ -1094,7 +1078,6 @@ class MockMentalHealthPathway:
 
     def receive(self, payload):
         self.handoffs.append(payload)
-
 
 class MockEventBus:
     """Stands in for EventBridge."""
@@ -1107,7 +1090,6 @@ class MockEventBus:
             self.events.append(entry)
         return {"FailedEntryCount": 0}
 
-
 class MockPinpoint:
     """Stands in for Pinpoint message dispatch."""
 
@@ -1118,7 +1100,6 @@ class MockPinpoint:
         self.messages.append(kwargs)
         return {"MessageResponse": {"Result": {}}}
 
-
 class MockDecisionJournal:
     """Stands in for the S3 decision-record archive."""
 
@@ -1128,7 +1109,6 @@ class MockDecisionJournal:
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[Key] = Body
         return {}
-
 
 class MockCloudWatch:
     """Stands in for CloudWatch metrics."""
@@ -1142,7 +1122,6 @@ class MockCloudWatch:
                 "namespace": Namespace,
                 **record,
             })
-
 
 # Module-level mock instances. The demo wires the helpers
 # above to use these.
@@ -1181,10 +1160,8 @@ mock_tables = {
         OUTCOME_CORRELATION_TABLE, "patient_id"),
 }
 
-
 def _mock_dynamodb_table(name):
     return mock_tables[name]
-
 
 # Replace boto3 dynamodb.Table with the mock for the demo.
 dynamodb.Table = _mock_dynamodb_table
@@ -1346,7 +1323,6 @@ def enroll_patient(*,
         "care_plan_id": care_plan_id,
     }
 
-
 def _initialize_behavior_change_stages(care_plan, chart):
     """
     Initialize per-goal behavior-change-stage estimates from
@@ -1364,7 +1340,6 @@ def _initialize_behavior_change_stages(care_plan, chart):
             "updated_at": _now_iso(),
         }
     return stages
-
 
 def _extract_outcome_baseline(chart, care_plan):
     """
@@ -1500,7 +1475,6 @@ def biometric_data_received(*,
 
     return {"action": "biometric_data_processed"}
 
-
 def _validate_biometric_reading(device_type, reading,
                                  patient_id):
     """
@@ -1535,7 +1509,6 @@ def _validate_biometric_reading(device_type, reading,
             return {"valid": False,
                     "reason": "non_numeric_weight"}
     return {"valid": True}
-
 
 def _evaluate_single_reading(reading, thresholds, device_type):
     """
@@ -1584,7 +1557,6 @@ def _evaluate_single_reading(reading, thresholds, device_type):
             }
     return None
 
-
 def _evaluate_trend(recent_readings, thresholds, device_type):
     """
     Trend threshold evaluation. Computes the windowed average
@@ -1614,7 +1586,6 @@ def _evaluate_trend(recent_readings, thresholds, device_type):
                 "readings_count": len(values),
             }
     return None
-
 
 def _read_active_care_plan(patient_id):
     """Look up the active care plan for the patient."""
@@ -1680,7 +1651,6 @@ def schedule_engagement(*,
 
     return {"action": "scheduled",
             "engagement_id": engagement_id}
-
 
 def deliver_scheduled_engagement(scheduled_engagement):
     """
@@ -1817,7 +1787,6 @@ def deliver_scheduled_engagement(scheduled_engagement):
             "engagement_id":
                 scheduled_engagement["engagement_id"]}
 
-
 def _enforce_engagement_policy(scheduled_engagement,
                                 longitudinal):
     """
@@ -1871,7 +1840,6 @@ def _enforce_engagement_policy(scheduled_engagement,
     # passes (rolling-window analytics elided).
     return {"action": "deliver"}
 
-
 def _next_non_quiet_window(prefs):
     """Find the next time outside the patient's quiet hours."""
     quiet_end = int(prefs.get(
@@ -1884,7 +1852,6 @@ def _next_non_quiet_window(prefs):
                 QUIET_HOURS_START_DEFAULT_LOCAL)):
         target = target + timedelta(hours=1)
     return target
-
 
 def _summarize_recent_biometric(patient_id, context):
     """Summarize recent biometric data for engagement context."""
@@ -1905,7 +1872,6 @@ def _summarize_recent_biometric(patient_id, context):
         }
     return {"avg": None, "count": len(readings)}
 
-
 def _screen_engagement_output(message, care_plan,
                                 longitudinal):
     """
@@ -1918,7 +1884,6 @@ def _screen_engagement_output(message, care_plan,
     # Demo: pass-through. Production runs the same screening
     # pipeline as the conversation-handler output screening.
     return {"action": "deliver"}
-
 
 def _deliver_via_channel(*, patient_id, channel, message,
                           engagement_id):
@@ -2072,7 +2037,6 @@ def receive_message(*,
         user_message=user_message,
         longitudinal_context=longitudinal_context)
 
-
 def _get_or_create_session(state_table, channel,
                             channel_session_id, auth_context):
     """Resolve or create a coaching conversation session."""
@@ -2094,13 +2058,11 @@ def _get_or_create_session(state_table, channel,
     state_table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _read_longitudinal_store(patient_id):
     """Load the longitudinal store for the patient."""
     table = dynamodb.Table(LONGITUDINAL_STORE_TABLE)
     record = table.get_item(Key={"patient_id": patient_id})
     return record.get("Item", {})
-
 
 def _screen_input(session_id, user_message):
     """
@@ -2117,7 +2079,6 @@ def _screen_input(session_id, user_message):
         return {"action": "block",
                 "reason": "message_too_long"}
     return {"action": "pass"}
-
 
 def _emergency_screen(user_message, active_conditions):
     """
@@ -2141,7 +2102,6 @@ def _emergency_screen(user_message, active_conditions):
                 }
     return {"emergency_detected": False}
 
-
 def _sensitive_disclosure_screen(user_message):
     """Detect sensitive disclosures that route to specific paths."""
     msg_lower = user_message.lower()
@@ -2154,7 +2114,6 @@ def _sensitive_disclosure_screen(user_message):
                     "route": config["route"],
                 }
     return {"disclosure_detected": False}
-
 
 def _handle_emergency_routing(session_id, patient_id,
                                 emergency):
@@ -2191,7 +2150,6 @@ def _handle_emergency_routing(session_id, patient_id,
         "citations":   [],
     }
 
-
 def _handle_sensitive_disclosure(session_id, patient_id,
                                    disclosure):
     """
@@ -2227,7 +2185,6 @@ def _handle_sensitive_disclosure(session_id, patient_id,
         "disclosure_category": disclosure["category"],
     })
 
-
 def _handle_block(session_id, screening):
     """Default response when input screening blocks the message."""
     return {
@@ -2238,7 +2195,6 @@ def _handle_block(session_id, screening):
         "citations": [],
     }
 
-
 def _recent_biometric_for_context(patient_id, days=30):
     """Recent biometric data for conversation context."""
     cutoff = _now() - timedelta(days=days)
@@ -2248,7 +2204,6 @@ def _recent_biometric_for_context(patient_id, days=30):
         if ts >= cutoff:
             out.append(r)
     return out
-
 
 def _recent_conversation_for_context(patient_id, days=90,
                                        max_turns=50):
@@ -2267,11 +2222,9 @@ def _recent_conversation_for_context(patient_id, days=90,
             out.append(record)
     return out[-max_turns:]
 
-
 def _read_long_term_summary(patient_id):
     """Long-term summary refreshed periodically."""
     return {"summary": "stable on current regimen"}
-
 
 def _open_followups_for_patient(patient_id):
     """Open follow-up items for the patient."""
@@ -2390,7 +2343,6 @@ def handle_conversation(*,
         "longitudinal_context": longitudinal_context,
     }
 
-
 def compose_coaching_system_prompt(*,
                                      coach_persona_name,
                                      active_care_plan,
@@ -2463,7 +2415,6 @@ def compose_coaching_system_prompt(*,
         f"patient's care team deployed; you are not a "
         f"clinician. Be honest about that when relevant.")
 
-
 def _evaluate_behavior_change_signals(*, user_message,
                                         recent_conversation,
                                         current_stages):
@@ -2509,7 +2460,6 @@ def _evaluate_behavior_change_signals(*, user_message,
                 }
 
     return {"update_warranted": False}
-
 
 def _update_behavior_change_stage(*, patient_id, goal_id,
                                     new_stage, evidence):
@@ -2643,7 +2593,6 @@ def screen_coach_output(*,
         "tool_calls":   tool_calls,
     }
 
-
 def _detect_coaching_scope_violations(response_text):
     """
     Detect attempts at diagnosis, off-care-plan treatment
@@ -2675,7 +2624,6 @@ def _detect_coaching_scope_violations(response_text):
                     "matched": pattern}
 
     return None
-
 
 def _verify_coaching_citations(response_text, citations,
                                  care_plan):
@@ -2709,7 +2657,6 @@ def _verify_coaching_citations(response_text, citations,
 
     return {"has_ungrounded_assertions": False}
 
-
 def _verify_stage_appropriate_tone(response_text,
                                      stages_per_goal):
     """
@@ -2734,7 +2681,6 @@ def _verify_stage_appropriate_tone(response_text,
                             "prescriptive_in_pre_contemplation"}
 
     return {"appropriate": True}
-
 
 def _check_care_plan_deviation(response_text, care_plan):
     """
@@ -2881,11 +2827,9 @@ def persist_coaching_artifacts(*,
         "decisions_recorded": decisions_recorded,
     }
 
-
 def _summarize_tool_calls(tool_calls):
     """Lightweight tool-call summary for the conversation log."""
     return [{"tool": tc["tool"]} for tc in tool_calls]
-
 
 def _extract_coaching_decisions(response_payload,
                                   longitudinal_context):
@@ -2932,7 +2876,6 @@ def _extract_coaching_decisions(response_payload,
 
     return decisions
 
-
 def _extract_longitudinal_updates(response_payload,
                                     longitudinal_context):
     """
@@ -2954,7 +2897,6 @@ def _extract_longitudinal_updates(response_payload,
             })
 
     return updates
-
 
 def propose_escalation(*, patient_id, trigger_reason,
                         trigger_event, care_plan_reference):
@@ -3018,7 +2960,6 @@ def deliver_care_team_alerts():
             })
             delivered.append(record["alert_id"])
     return {"delivered_count": len(delivered)}
-
 
 def compose_weekly_digest(patient_id, window_days=7):
     """
@@ -3134,7 +3075,6 @@ def compose_weekly_digest(patient_id, window_days=7):
 
     return digest
 
-
 def queue_outcome_correlation(*, patient_id,
                                   window_start_days_ago=7):
     """
@@ -3156,7 +3096,6 @@ def queue_outcome_correlation(*, patient_id,
         "queued_at":    _now_iso(),
         "status":       "pending",
     }))
-
 
 def run_outcome_correlation_pipeline():
     """
@@ -3403,7 +3342,6 @@ def run_demo():
           f"{sum(len(v) for v in mock_tables[TOOL_CALL_LEDGER_TABLE].items.values())}")
     print(f"Coaching-decision records:     "
           f"{sum(len(v) for v in mock_tables[DECISION_RECORD_TABLE].items.values())}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

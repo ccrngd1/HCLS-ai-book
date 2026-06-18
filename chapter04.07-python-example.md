@@ -533,11 +533,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string for run_date."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -560,7 +558,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -571,7 +568,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -594,7 +590,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -604,7 +599,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _make_briefing_id(patient_id: str, program_id: str, run_date: str) -> str:
     """
@@ -621,16 +615,13 @@ def _make_briefing_id(patient_id: str, program_id: str, run_date: str) -> str:
     """
     return f"brief-{run_date}-{patient_id}-{program_id}"
 
-
 def _make_outreach_id() -> str:
     """Opaque outreach identifier."""
     return f"outreach-{uuid.uuid4().hex[:16]}"
 
-
 def _make_decision_id() -> str:
     """Opaque disenrollment-decision identifier."""
     return f"decision-{uuid.uuid4().hex[:16]}"
-
 
 def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> None:
     """Poll Athena until the query reaches a terminal state."""
@@ -647,7 +638,6 @@ def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> Non
             raise TimeoutError(f"Athena query {execution_id} timed out")
         time.sleep(2)
 
-
 def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
     """Poll a Batch Transform job until it reaches a terminal state."""
     start = time.time()
@@ -662,7 +652,6 @@ def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
         if time.time() - start > timeout_seconds:
             raise TimeoutError(f"Transform job {job_name} timed out")
         time.sleep(15)
-
 
 def _redact_identifiers(items: list) -> list:
     """
@@ -681,7 +670,6 @@ def _redact_identifiers(items: list) -> list:
         redacted.append(copy)
     return redacted
 
-
 def _cohort_features_from_profile(patient: dict) -> dict:
     """Pull cohort features from the patient profile."""
     return {
@@ -691,7 +679,6 @@ def _cohort_features_from_profile(patient: dict) -> dict:
         "sdoh_cohort":                 patient.get("sdoh_cohort"),
         "age_band":                    patient.get("age_band"),
     }
-
 
 def _applicable_floor_cohorts(cohort_features: dict,
                                 floor_definitions: dict) -> list:
@@ -864,7 +851,6 @@ def evaluate_program_eligibility(patients: list, run_date: str) -> list:
     )
     return transitions
 
-
 def _load_active_programs(run_date: str) -> list:
     """
     Load every active program version from the registry. The registry
@@ -888,7 +874,6 @@ def _load_active_programs(run_date: str) -> list:
     # Offline demo path: fall back to the synthetic registry.
     return [p for p in SAMPLE_PROGRAM_REGISTRY
             if p["effective_start"] <= run_date <= p["effective_end"]]
-
 
 def _evaluate_denominator(patients: list, program: dict, run_date: str) -> list:
     """
@@ -931,7 +916,6 @@ def _evaluate_denominator(patients: list, program: dict, run_date: str) -> list:
 
         eligible.append(patient["patient_id"])
     return eligible
-
 
 def _evaluate_inclusion(denominator: list, patients: list,
                           program: dict, run_date: str) -> list:
@@ -1020,7 +1004,6 @@ def _evaluate_inclusion(denominator: list, patients: list,
 
     return passing
 
-
 def _evaluate_exclusions(denominator: list, patients: list,
                           program: dict, run_date: str) -> set:
     """
@@ -1051,7 +1034,6 @@ def _evaluate_exclusions(denominator: list, patients: list,
 
     return excluded
 
-
 def _lookup_exclusion_reason(patient_id: str, program: dict,
                                excluded: set) -> str:
     """
@@ -1060,7 +1042,6 @@ def _lookup_exclusion_reason(patient_id: str, program: dict,
     captures the specific exclusion code or rule that triggered.
     """
     return "exclusion_criteria_met"
-
 
 def _read_previous_state(state_table, patient_id: str,
                            program_id: str) -> dict:
@@ -1073,7 +1054,6 @@ def _read_previous_state(state_table, patient_id: str,
     except Exception:
         return {}
 
-
 def _compute_eligibility_transition(previous: dict, new_eligibility: str) -> str:
     """Determine the state-history event label for an eligibility change."""
     prev_eligibility = previous.get("eligibility")
@@ -1082,7 +1062,6 @@ def _compute_eligibility_transition(previous: dict, new_eligibility: str) -> str
     if prev_eligibility == new_eligibility:
         return "unchanged"
     return f"transitioned_{prev_eligibility}_to_{new_eligibility}"
-
 
 def _newly_eligible(inclusion_passing: list, excluded: set,
                       program: dict, run_date: str, state_table) -> list:
@@ -1102,7 +1081,6 @@ def _newly_eligible(inclusion_passing: list, excluded: set,
             newly.append(patient_id)
     return newly
 
-
 def _assess_source_completeness(patient_id: str, program: dict) -> str:
     """
     Tag the (patient, program) record with a data-quality flag that
@@ -1120,7 +1098,6 @@ def _assess_source_completeness(patient_id: str, program: dict) -> str:
     if history_count < 10:
         return "sparse_history"
     return "complete"
-
 
 # Demo state populated by the runner at the bottom of this file.
 _DEMO_FRAGMENTATION_FLAGS: dict = {}
@@ -1276,7 +1253,6 @@ def enrich_eligible_candidates(run_date: str, patients: dict,
     )
     return enriched
 
-
 def _scan_eligible_candidates(state_table) -> list:
     """
     Production: Query a (state, last_evaluation_date) GSI rather than
@@ -1293,7 +1269,6 @@ def _scan_eligible_candidates(state_table) -> list:
     except Exception as exc:
         logger.warning("Scan of patient-program-state failed: %s", exc)
     return candidates
-
 
 def _score_uplift(patient: dict, program: dict) -> dict:
     """
@@ -1386,7 +1361,6 @@ def _score_uplift(patient: dict, program: dict) -> dict:
         "ci_high":        min(0.50, point + ci_half_width),
     }
 
-
 def _score_enrollment_likelihood(patient: dict, program: dict) -> float:
     """
     Rule-based enrollment-likelihood scoring. Production: per-program
@@ -1427,7 +1401,6 @@ def _score_enrollment_likelihood(patient: dict, program: dict) -> float:
 
     return max(0.05, min(0.95, base + quartile_adj + sdoh_adj))
 
-
 def _score_engagement_prediction(patient: dict, program: dict) -> float:
     """
     Rule-based engagement-prediction scoring. Production: per-program
@@ -1449,7 +1422,6 @@ def _score_engagement_prediction(patient: dict, program: dict) -> float:
         quartile, 0.0,
     )
     return max(0.05, min(0.95, base + quartile_adj))
-
 
 def _compute_program_fit(patient: dict, program: dict, run_date: str) -> float:
     """
@@ -1728,7 +1700,6 @@ def allocate_enrollments(enriched_candidates: list, run_date: str,
     logger.info("Allocated %d enrollments across stages", len(allocated))
     return allocated
 
-
 def _allocate_stage(candidates_sorted: list, stage_name: str,
                      capacity_remaining: dict, equity_remaining: dict,
                      patient_primary_assigned: dict,
@@ -1805,11 +1776,9 @@ def _allocate_stage(candidates_sorted: list, stage_name: str,
 
     return stage_allocated
 
-
 def _count_active_enrollments(program_id: str) -> int:
     """Production: query a (program_id, state) GSI; the demo returns 0."""
     return 0
-
 
 def _scan_active_primary_enrollments(state_table, program_lookup: dict) -> list:
     """
@@ -1818,7 +1787,6 @@ def _scan_active_primary_enrollments(state_table, program_lookup: dict) -> list:
     """
     return []
 
-
 def _operational_feasible(candidate: dict, program: dict) -> bool:
     """
     Operational-feasibility check beyond the language/geography
@@ -1826,7 +1794,6 @@ def _operational_feasible(candidate: dict, program: dict) -> bool:
     staffing-capacity checks; the demo returns True.
     """
     return True
-
 
 def _reason_string(candidate: dict, used_floor: str | None,
                     stage_name: str) -> str:
@@ -2023,7 +1990,6 @@ def dispatch_outreach(allocated_recommendations: list, run_date: str,
     logger.info("Dispatched %d outreach records", len(dispatched))
     return dispatched
 
-
 def _build_briefing_context(patient: dict, program: dict, row: dict) -> dict:
     """
     Build the structured de-identified context the LLM and the
@@ -2044,7 +2010,6 @@ def _build_briefing_context(patient: dict, program: dict, row: dict) -> dict:
         "allocation_reason":       row["allocation_reason"],
     }
 
-
 def _summarize_patient_for_briefing(patient: dict) -> dict:
     """
     Compact patient summary at the level of "70s, HF + DM, recent
@@ -2064,7 +2029,6 @@ def _summarize_patient_for_briefing(patient: dict) -> dict:
         "preferred_language":   patient.get("preferred_language", "en"),
     }
 
-
 def _a1c_band(a1c) -> str:
     if a1c is None:
         return "unknown"
@@ -2074,14 +2038,12 @@ def _a1c_band(a1c) -> str:
         return "moderately_controlled"
     return "elevated"
 
-
 def _lookup_barriers(patient: dict) -> list:
     """
     Pull barrier flags from the patient profile. Production: query
     the barrier classifier from Recipe 4.5.
     """
     return patient.get("barrier_flags", [])
-
 
 def _lookup_recent_events(patient: dict, days: int) -> list:
     """
@@ -2090,7 +2052,6 @@ def _lookup_recent_events(patient: dict, days: int) -> list:
     """
     return patient.get("recent_clinical_events", [])[:5]
 
-
 def _route_to_care_manager(row: dict, program: dict) -> dict:
     """
     Route to a care manager from the program-specific pool. Production
@@ -2098,7 +2059,6 @@ def _route_to_care_manager(row: dict, program: dict) -> dict:
     per-care-manager workload. The example returns a stub.
     """
     return {"cm_id": f"cm-stub-{program['program_id'][:6]}"}
-
 
 def _bedrock_enrollment_briefing(context: dict) -> dict:
     """
@@ -2154,7 +2114,6 @@ programs.
     if not match:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
-
 
 def _validate_briefing(briefing: dict, observed_context: dict) -> bool:
     """
@@ -2216,7 +2175,6 @@ def _validate_briefing(briefing: dict, observed_context: dict) -> bool:
 
     return True
 
-
 def _templated_briefing_fallback(context: dict, row: dict) -> dict:
     """
     Deterministic fallback when LLM generation fails or the validator
@@ -2243,7 +2201,6 @@ def _templated_briefing_fallback(context: dict, row: dict) -> dict:
                                         "or validator rejected output. Care manager "
                                         "should read chart context before outreach.",
     }
-
 
 def record_outreach_attempt(outreach_id: str, attempt_result: dict,
                               run_date: str) -> None:
@@ -2452,7 +2409,6 @@ def record_outreach_attempt(outreach_id: str, attempt_result: dict,
             "Failed to publish program_outreach_attempted event: %s", exc,
         )
 
-
 def _lookup_target_duration(program_id: str) -> int:
     """Look up program target duration from the registry."""
     for p in SAMPLE_PROGRAM_REGISTRY:
@@ -2573,7 +2529,6 @@ def score_engagement(patient_id: str, program_id: str, run_date: str,
 
     return record
 
-
 def _build_engagement_profile(patient_id: str, program_id: str,
                                 run_date: str) -> dict:
     """
@@ -2590,7 +2545,6 @@ def _build_engagement_profile(patient_id: str, program_id: str,
         "education_modules_completed":   0,
         "recent_clinical_events":        [],
     })
-
 
 def _engagement_scoring_function(profile: dict, program_id: str) -> float:
     """
@@ -2633,7 +2587,6 @@ def _engagement_scoring_function(profile: dict, program_id: str) -> float:
              + weights[2] * module_component)
     return max(0.0, min(1.0, score))
 
-
 def _classify_decline(profile: dict) -> str:
     """
     Classify the decline pattern when engagement is below threshold.
@@ -2665,7 +2618,6 @@ def _classify_decline(profile: dict) -> str:
         return "gradual_drop_off"
 
     return "modality_mismatch"
-
 
 def trigger_retention(patient_id: str, program_id: str,
                        decline_pattern: str | None) -> None:
@@ -2714,7 +2666,6 @@ def trigger_retention(patient_id: str, program_id: str,
             "Failed to publish retention event for %s/%s: %s",
             patient_id, program_id, exc,
         )
-
 
 # Demo state populated by the runner.
 _DEMO_ENGAGEMENT_PROFILES: dict = {}
@@ -2873,7 +2824,6 @@ def evaluate_disenrollment(patient_id: str, program_id: str,
         "rationale":          rationale_parsed,
     }
 
-
 def process_disenrollment_decision(decision_id: str,
                                       human_decision: dict,
                                       program_lookup: dict) -> None:
@@ -3012,7 +2962,6 @@ def process_disenrollment_decision(decision_id: str,
             "Failed to mark decision %s resolved: %s", decision_id, exc,
         )
 
-
 def _persist_disenrollment(patient_id: str, program_id: str,
                             decision_id: str, new_state: str,
                             reason: str,
@@ -3050,7 +2999,6 @@ def _persist_disenrollment(patient_id: str, program_id: str,
             "Failed to persist disenrollment for %s/%s: %s",
             patient_id, program_id, exc,
         )
-
 
 def recommend_cross_program_transitions(patient_id: str,
                                           prior_program_id: str,
@@ -3118,7 +3066,6 @@ def recommend_cross_program_transitions(patient_id: str,
         )
 
     return record
-
 
 def post_graduation_observation(run_date: str) -> list:
     """
@@ -3204,14 +3151,12 @@ def post_graduation_observation(run_date: str) -> list:
     )
     return relapses
 
-
 def _last_engagement_date(engagement_record: dict) -> str | None:
     """Pull the most recent engagement-date from the engagement profile."""
     profile = engagement_record.get("engagement_profile", {}) or {}
     if profile.get("completed_contacts", 0) > 0:
         return engagement_record.get("last_scored_at")
     return None
-
 
 def _count_failed_retention_attempts(patient_id: str,
                                        program_id: str) -> int:
@@ -3221,14 +3166,12 @@ def _count_failed_retention_attempts(patient_id: str,
     """
     return _DEMO_FAILED_RETENTION_COUNTS.get((patient_id, program_id), 0)
 
-
 def _goals_substantially_met(patient_id: str, program_id: str) -> bool:
     """
     Program-specific goal-completion check. Production: query the
     case-management system for completed care-plan goals.
     """
     return _DEMO_GOALS_MET.get((patient_id, program_id), False)
-
 
 def _clinical_deterioration_detected(patient_id: str,
                                        program_id: str) -> bool:
@@ -3238,7 +3181,6 @@ def _clinical_deterioration_detected(patient_id: str,
     clinical events; the demo reads from a synthetic dict.
     """
     return _DEMO_DETERIORATION.get((patient_id, program_id), False)
-
 
 def _describe_triggering_rule(recommended_action: str,
                                 engagement_record: dict,
@@ -3268,12 +3210,10 @@ def _describe_triggering_rule(recommended_action: str,
         )
     return "no_rule_described"
 
-
 def _detect_relapse_signals(patient_id: str, program_id: str,
                              graduated_at: str) -> list:
     """Detect relapse signals from the engagement-event store and clinical feeds."""
     return _DEMO_RELAPSE_SIGNALS.get((patient_id, program_id), [])
-
 
 def _bedrock_disenrollment_rationale(context: dict) -> dict:
     """Generate a structured disenrollment-decision rationale via Bedrock."""
@@ -3319,7 +3259,6 @@ not autonomous; the human makes the actual call.
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_rationale(rationale: dict) -> bool:
     """Shape and length validator for the disenrollment rationale."""
     required = {"headline", "evidence_summary", "countervailing_factors",
@@ -3341,7 +3280,6 @@ def _validate_rationale(rationale: dict) -> bool:
         return False
     return True
 
-
 def _templated_rationale_fallback(context: dict) -> dict:
     """Templated fallback rationale when LLM generation or validation fails."""
     return {
@@ -3354,7 +3292,6 @@ def _templated_rationale_fallback(context: dict) -> dict:
             "Are there structural barriers the retention attempts did not address?",
         ],
     }
-
 
 # Demo state populated by the runner.
 _DEMO_FAILED_RETENTION_COUNTS: dict = {}
@@ -3435,7 +3372,6 @@ def run_weekly_enrollment_cycle(
         "dispatched":       dispatched,
         "allocated":        allocated,
     }
-
 
 # --- Demo runner ---
 if __name__ == "__main__":
@@ -3749,9 +3685,9 @@ if __name__ == "__main__":
 
 Run this end-to-end against a curated program registry, populated claims/EHR/lab/pharmacy/discharge feeds, trained SageMaker response/likelihood/engagement models, working case-management-system integration, configured outreach channels, and a Connect-integrated care-manager workflow, and you'll see the pattern: per-(patient, program) state machine maintained correctly, response (uplift) and per-program engagement scored, multi-stage allocation respecting capacity and equity, briefings and outreach dispatched, in-program engagement tracked with retention triggers, disenrollment decisions decision-supported with cross-program transitions and post-graduation observation. The distance between this and a real health-plan deployment is significant. Here's where it lives.
 
-**Program-registry curation as an ongoing program.** The registry is the source of truth for what each program is, who it's for, and what its capacity is. New programs launch, old programs sunset, capacities flex with staffing every quarter, contractual obligations evolve, and clinical evidence shifts what each program does. Plan for at least 0.25 to 0.5 FTE of program-leadership and clinical-informatics time on registry maintenance ongoing, with structured change management: proposed change, capacity model, impact analysis on prior-version cohort, version bump, parallel evaluation, then promotion. <!-- TODO: confirm the typical NCQA care management accreditation review cadence and the CMS care-management billing-code update cadence at the time of build. -->
+**Program-registry curation as an ongoing program.** The registry is the source of truth for what each program is, who it's for, and what its capacity is. New programs launch, old programs sunset, capacities flex with staffing every quarter, contractual obligations evolve, and clinical evidence shifts what each program does. Plan for at least 0.25 to 0.5 FTE of program-leadership and clinical-informatics time on registry maintenance ongoing, with structured change management: proposed change, capacity model, impact analysis on prior-version cohort, version bump, parallel evaluation, then promotion. 
 
-**Causal-inference rigor for response (uplift) models.** Most plans have observational enrollment data with strong selection bias (clinician referral, prior engagement, geographic accessibility). Training response models on observational data without causal-inference tooling produces uplift estimates biased toward the cohorts the historical selection process favored. The downstream effect is a recommender that recommends what the historical bias recommended, with extra steps. Plan for a data science investment in causal inference: skills, tooling (EconML's DML, DR-Learner, Causal Forest, plus DoWhy), and operational willingness to randomize a fraction of enrollment slots for unbiased reference. Without this, the program drifts toward serving the cohorts the historical bias served. The Obermeyer 2019 finding is the canonical cautionary tale; design for it. <!-- TODO: cite the EconML and DoWhy current versions and the appropriate CATE estimator for each program family. -->
+**Causal-inference rigor for response (uplift) models.** Most plans have observational enrollment data with strong selection bias (clinician referral, prior engagement, geographic accessibility). Training response models on observational data without causal-inference tooling produces uplift estimates biased toward the cohorts the historical selection process favored. The downstream effect is a recommender that recommends what the historical bias recommended, with extra steps. Plan for a data science investment in causal inference: skills, tooling (EconML's DML, DR-Learner, Causal Forest, plus DoWhy), and operational willingness to randomize a fraction of enrollment slots for unbiased reference. Without this, the program drifts toward serving the cohorts the historical bias served. The Obermeyer 2019 finding is the canonical cautionary tale; design for it. 
 
 **Multi-source data ingestion.** The example queries from synthetic in-memory dicts. Production ingests from at least seven distinct source types: claims (EDI 837), EHR (FHIR API or batch flat-file export per EHR vendor), lab feeds (HL7 v2 ORU or FHIR Observation), pharmacy data (NCPDP feeds and immunization administration), discharge feeds (ADT messages from inpatient systems, often vendor-mediated), risk-stratification scores (commercial vendor or in-house model), and care-management-system events (vendor APIs or vendor-pushed events). Plan 12 to 20 weeks of ingestion engineering before the first eligibility-evaluation run, plus an ongoing source-feed health dashboard and explicit outage handling per source.
 
@@ -3779,7 +3715,7 @@ Run this end-to-end against a curated program registry, populated claims/EHR/lab
 
 **Equity floor design and Obermeyer-style failure-mode prevention.** The equity floors in this example reserve fixed capacity per cohort. Designing the floors well requires baseline cohort enrollment data (which you don't have until operating for some time), explicit policy on which disparities trigger floors versus other interventions (cohort-aware retraining, cohort-stratified outcome evaluation, retention-strategy adjustments), and willingness to revisit floors quarterly. The Obermeyer scenario is the canonical concern: a recommender trained on observational data with under-represented cohorts will systematically under-enroll those cohorts unless the design explicitly compensates. Equity floors are one mechanism; cohort-aware retraining with reweighting is another; cohort-stratified outcome evaluation is the validation. Don't try to design the perfect equity floor on day one; design the right operating cadence for adjusting them. Plan a quarterly cross-functional committee review of equity metrics with explicit action ownership.
 
-**Cross-recipe orchestration with Recipes 4.4, 4.5, 4.6.** A patient who's a candidate for adherence intervention (4.5), care-gap closure (4.6), wellness program (4.4), and care management (4.7) gets too many touches if each recipe orchestrates independently. The example uses a CM-specific contact budget (`cm_outreach_recent_30d_count`) separate from the routine 4.4-4.6 engagement budget; this is the documented exception. Production needs an explicit cross-recipe priority-arbitration policy, version-controlled and committee-reviewed, that documents: (1) care management enrollment outreach gets a separate budget from routine 4.4-4.6 outreach, with a hard cap on combined contacts in 30 days; (2) cross-recipe priority arbitration when caps would be exceeded; (3) the rule that the enrollment conversation is the highest-priority interaction in chapter 4 and should not routinely be deferred for adherence reminders. <!-- TODO: cross-reference the cross-recipe shared config object once it exists; mirror language from 4.4-4.6 reviews. -->
+**Cross-recipe orchestration with Recipes 4.4, 4.5, 4.6.** A patient who's a candidate for adherence intervention (4.5), care-gap closure (4.6), wellness program (4.4), and care management (4.7) gets too many touches if each recipe orchestrates independently. The example uses a CM-specific contact budget (`cm_outreach_recent_30d_count`) separate from the routine 4.4-4.6 engagement budget; this is the documented exception. Production needs an explicit cross-recipe priority-arbitration policy, version-controlled and committee-reviewed, that documents: (1) care management enrollment outreach gets a separate budget from routine 4.4-4.6 outreach, with a hard cap on combined contacts in 30 days; (2) cross-recipe priority arbitration when caps would be exceeded; (3) the rule that the enrollment conversation is the highest-priority interaction in chapter 4 and should not routinely be deferred for adherence reminders. 
 
 **Outreach attempt management.** The example handles outreach-attempt counting and terminal-unreachable transitions. Production needs more nuance: rest periods between attempts, time-of-day modeling per patient, opt-out registry integration, suppression after specific patient signals (declined first outreach plus missed appointment is a stronger signal than two unanswered calls), TCPA and state telephone-consumer-protection rules, and integration with the case-management system's contact-history view. The outreach worker is the most patient-facing component; treat it accordingly.
 
@@ -3791,7 +3727,7 @@ Run this end-to-end against a curated program registry, populated claims/EHR/lab
 
 **Cost-per-enrollment and cost-per-prevented-event tracking.** The cost numbers in the main recipe's Prerequisites table are infrastructure only. Production reporting needs end-to-end cost (infrastructure + care-manager loaded hours + telephony + vendor invoices + program-specific costs like Bluetooth scales for HF or pharmacist time for polypharmacy) divided by confirmed prevented events attributable to the program (above the matched-control baseline). That number compared to the value of prevented events (avoided admission cost, avoided ED visit cost, plan-quality-bonus value) determines whether the program returns its budget. The data engineering to track this end-to-end with attribution is its own project and is essential for program-level decisions about expansion or contraction.
 
-**Annual and contractual reporting requirements.** CMS Medicare Advantage care management activities have specific reporting requirements (CCM and PCM CPT code documentation, care plan structure, time-tracking for billable activities). State Medicaid programs often have their own care management reporting structures. Value-based contracts have their own. Build the reporting layer into the system from the beginning; retrofitting reporting onto a system that wasn't designed for it is painful and produces compliance gaps. <!-- TODO: confirm current CMS CCM and PCM CPT code definitions and TCM CPT codes 99495/99496 documentation requirements at the time of build. -->
+**Annual and contractual reporting requirements.** CMS Medicare Advantage care management activities have specific reporting requirements (CCM and PCM CPT code documentation, care plan structure, time-tracking for billable activities). State Medicaid programs often have their own care management reporting structures. Value-based contracts have their own. Build the reporting layer into the system from the beginning; retrofitting reporting onto a system that wasn't designed for it is painful and produces compliance gaps. 
 
 **Care-manager workload modeling.** Care managers don't have uniform capacity: a complex-care manager handling 50 patients with multi-system disease has different bandwidth than a transitional-care nurse running 20 active 30-day episodes. The work-queue routing in Step 4 needs to model per-care-manager realistic loaded hours, not just headcount. Without this, the routing produces care-manager burnout, attrition, and a slow-moving operations problem that undermines the entire program.
 

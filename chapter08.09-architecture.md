@@ -40,8 +40,6 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling paths to architecture: SQS DLQ for failed notes, Step Functions retry config (MaxAttempts=3, exponential backoff for Comprehend throttling), CloudWatch alarm on DLQ depth > 10. Show error paths in diagram. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -54,10 +52,7 @@ flowchart TD
 | **CloudTrail** | Enabled: log all Comprehend Medical API calls for HIPAA audit |
 | **Training Data** | Temporal relation annotated clinical corpus (minimum 500-1000 annotated documents). See THYME corpus licensing for research use. Production systems need institution-specific annotations. |
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add training corpus access control guidance: separate S3 bucket from inference pipeline, bucket policy restricts access to ML training roles only, S3 access logging enabled, versioning enabled for annotation provenance. -->
 | **Cost Estimate** | Comprehend Medical: ~$0.01 per 100 characters. Custom Classification: ~$0.0005 per request. At ~50 candidate pairs per note: ~$0.03 per note total. |
-
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add data retention/lifecycle policy row to Prerequisites: DynamoDB TTL configured per institutional records retention policy (typically 7-10 years adult, longer for minors). Neptune graph data lifecycle managed via scheduled deletion jobs. S3 lifecycle policy for processed clinical notes. -->
 
 ### Ingredients
 
@@ -177,8 +172,6 @@ FUNCTION generate_candidate_pairs(events, temporal_expressions, sentences):
 
     RETURN candidates
 ```
-
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a fifth heuristic for section-anchored pairs: events in different sections that share a temporal expression or are both anchored to the same clinical episode (same admission, same procedure). This captures cross-section relationships like HPI events linked to Hospital Course events in discharge summaries. -->
 
 **Step 4: Classify temporal relationships.** For each candidate pair, extract a context window and classify the temporal relationship. The context window includes: the text of both entities, the sentence(s) containing them, the section header, and any temporal signal words between them. The classifier predicts one of: BEFORE, AFTER, OVERLAP, CONTAINS, or NONE. Confidence scores determine which relations are included in the final graph (low-confidence relations are excluded or marked as uncertain).
 
@@ -410,8 +403,6 @@ FUNCTION generate_timeline(temporal_graph, doc_time):
 
 ## Why This Isn't Production-Ready
 
-<!-- TODO (TechWriter): This section is required by RECIPE-GUIDE but was not present after the split. Add 3-5 bullet points covering gaps a production deployment must close (e.g., model retraining cadence, annotation pipeline, cross-document linking, human-in-the-loop review workflows, institution-specific temporal pattern tuning). -->
-
 ---
 
 ## Variations and Extensions
@@ -454,7 +445,6 @@ FUNCTION generate_timeline(temporal_graph, doc_time):
 | With variations (cross-document, real-time, population mining) | 16-22 weeks |
 
 ---
-
 
 ---
 

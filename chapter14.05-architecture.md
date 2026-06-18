@@ -197,8 +197,6 @@ FUNCTION build_optimization_model(service_profiles, room_config, policy_weights)
 
 **Step 3: Run the solver.** The model file goes to a compute environment with a MIP solver installed. For hospital-scale problems (15-30 services, 10-25 rooms, 10-14 blocks per room), commercial solvers like Gurobi typically find a near-optimal solution in 2-15 minutes. Open-source alternatives (HiGHS, CBC) may take 10-60 minutes for the same problem. The solver returns the optimal assignment matrix plus metadata about solution quality (optimality gap, solve time). If the gap is larger than acceptable (say, > 5%), you either need to give the solver more time or tighten your formulation.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add granular solver outcome handling: distinguish infeasible model (relax constraints), suboptimal-but-acceptable solution (gap 5-15%, flag for review but proceed), no feasible solution found (alert ops, don't auto-replace current schedule), and solver crash. Current pseudocode only raises a generic error on failure. -->
-
 ```pseudocode
 FUNCTION run_solver(model_file_path, time_limit_seconds):
     // Submit the solver job to AWS Batch.
@@ -338,8 +336,6 @@ FUNCTION handle_block_release(room, block, releasing_service):
     RETURN winner
 ```
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add schedule approval access control model: API Gateway endpoint for approval actions authenticated via Cognito/IAM with role-based access (surgical governance committee only). DynamoDB should store schedule state transitions (proposed, under_review, approved, active) with approver identity and timestamp. CloudTrail captures approval events. The approval path should be a first-class architectural element given the politically sensitive nature of schedule changes. -->
-
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and an open-source solver, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ## Expected Results
@@ -400,8 +396,6 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
 ---
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE. Should appear before Variations and Extensions. Content needed: gaps a production deployment must close (approval workflows, EHR integration, surgeon-level decomposition, seasonal re-training, etc.). -->
-
 ## Variations and Extensions
 
 **Multi-site optimization.** Health systems with multiple surgical facilities can optimize across sites: route high-complexity cases to the facility with specialized equipment while distributing routine cases to maximize overall system utilization. This multiplies the problem size but the formulation is structurally the same.
@@ -427,10 +421,9 @@ FUNCTION handle_block_release(room, block, releasing_service):
 - [PuLP: Python LP/MIP Modeler](https://coin-or.github.io/pulp/) (Python interface to multiple solvers including CBC and HiGHS)
 
 **AWS Sample Repos:**
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Find and verify relevant aws-samples repos for optimization/scheduling patterns. RECIPE-GUIDE requires 3-5 sample repos per recipe; currently zero verified. Check amazon-sagemaker-examples for forecasting patterns, OR-Tools or optimization examples in AWS contexts, Batch job submission patterns. -->
 
 **Operations Research in Healthcare:**
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link for INFORMS Healthcare journal or "Operations Research for Health Care" publication. -->
+
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Operations/Scheduling for reference architectures)
 
 ---
@@ -444,7 +437,6 @@ FUNCTION handle_block_release(room, block, releasing_service):
 | **With variations** (multi-site, surgeon-level, rolling horizon) | 30-40 weeks |
 
 ---
-
 
 ---
 

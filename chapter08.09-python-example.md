@@ -221,7 +221,6 @@ def parse_doc_time(authored_datetime_str):
         authored_datetime_str = authored_datetime_str[:-1] + "+00:00"
     return datetime.datetime.fromisoformat(authored_datetime_str)
 
-
 def segment_sections(note_text):
     """
     Split a clinical note into sections based on header patterns.
@@ -276,7 +275,6 @@ def segment_sections(note_text):
 
     return sections
 
-
 def split_sentences(text):
     """
     Split clinical text into sentences.
@@ -295,7 +293,6 @@ def split_sentences(text):
         sub_sents = [s.strip() for s in sent.split("\n") if s.strip()]
         expanded.extend(sub_sents)
     return expanded
-
 
 def preprocess_note(note_text, document_metadata):
     """
@@ -376,7 +373,6 @@ def detect_events_with_comprehend(note_text):
     logger.info("Detected %d clinical events via Comprehend Medical", len(events))
     return events
 
-
 def recognize_temporal_expressions(note_text, doc_time):
     """
     Rule-based temporal expression recognition for clinical text.
@@ -415,7 +411,6 @@ def recognize_temporal_expressions(note_text, doc_time):
 
     logger.info("Recognized %d temporal expressions", len(temporal_exprs))
     return temporal_exprs
-
 
 def normalize_temporal_expression(match, pattern_type, doc_time, full_text):
     """
@@ -496,7 +491,6 @@ def normalize_temporal_expression(match, pattern_type, doc_time, full_text):
 
     return None  # Could not normalize
 
-
 def find_surgery_date_in_context(note_text, doc_time):
     """
     Search the note for an explicit surgery date to anchor POD references.
@@ -514,7 +508,6 @@ def find_surgery_date_in_context(note_text, doc_time):
         return datetime.datetime(year, month_num, day, tzinfo=timezone.utc)
     return None
 
-
 def find_admission_date_in_context(note_text, doc_time):
     """
     Search the note for an explicit admission date to anchor HD references.
@@ -531,7 +524,6 @@ def find_admission_date_in_context(note_text, doc_time):
         month_num = datetime.datetime.strptime(month_name, "%B").month
         return datetime.datetime(year, month_num, day, tzinfo=timezone.utc)
     return None
-
 
 def detect_temporal_entities(preprocessed_note):
     """
@@ -575,7 +567,6 @@ def find_sentence_index(offset, sentences, full_text):
         current_pos = sent_end
     return -1
 
-
 def find_temporal_signal_between(entity_a, entity_b, full_text):
     """
     Check if there's a temporal signal word between two entities.
@@ -595,7 +586,6 @@ def find_temporal_signal_between(entity_a, entity_b, full_text):
             return {"signal": signal, "implied_relation": relation}
 
     return None
-
 
 def generate_candidate_pairs(entities, sentences, full_text):
     """
@@ -713,7 +703,6 @@ def build_context_window(entity_a, entity_b, full_text, window_chars=300):
 
     return "".join(marked)
 
-
 def classify_with_sagemaker(formatted_input):
     """
     Call the SageMaker endpoint to classify the temporal relation between two entities.
@@ -737,7 +726,6 @@ def classify_with_sagemaker(formatted_input):
     result = json.loads(response["Body"].read().decode("utf-8"))
     # Expected response: {"label": "BEFORE", "confidence": 0.87}
     return result
-
 
 def classify_with_rules(entity_a, entity_b, full_text):
     """
@@ -784,7 +772,6 @@ def classify_with_rules(entity_a, entity_b, full_text):
                 pass
 
     return None  # No rule applies; defer to ML model.
-
 
 def classify_relations(candidate_pairs, full_text, sections):
     """
@@ -903,7 +890,6 @@ def build_temporal_graph(classified_relations, events, temporal_expressions):
         "edges": edges,
         "removed_for_consistency": removed_edges,
     }
-
 
 def detect_and_resolve_cycles(edges):
     """
@@ -1105,7 +1091,6 @@ def store_timeline(timeline_result):
     logger.info("Stored timeline for %s / %s", item["patient_id"], item["document_id"])
     return item
 
-
 def convert_floats_to_decimal(obj):
     """
     Recursively convert float values to Decimal for DynamoDB.
@@ -1180,7 +1165,6 @@ def extract_temporal_relationships(note_text, document_metadata):
 
     logger.info("Done. %d events on timeline.", timeline["event_count"])
     return timeline
-
 
 # Example: run the pipeline against the synthetic note.
 if __name__ == "__main__":

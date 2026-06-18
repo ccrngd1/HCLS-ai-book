@@ -82,7 +82,6 @@ NUM_ACTIONS = len(TIME_SLOTS)  # 28
 ```python
 import numpy as np
 
-
 class LinUCBAgent:
     """
     Linear Upper Confidence Bound agent for contextual bandits.
@@ -185,7 +184,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 PATIENT_TABLE_NAME = "notification-patient-context"
 
-
 def build_context_features(patient_record: dict, message: dict) -> np.ndarray:
     """
     Assemble the feature vector from patient data and message metadata.
@@ -252,7 +250,6 @@ def build_context_features(patient_record: dict, message: dict) -> np.ndarray:
 
     return features
 
-
 def get_patient_context(patient_id: str) -> dict:
     """
     Fetch the patient's engagement context from DynamoDB.
@@ -305,7 +302,6 @@ def is_in_quiet_hours(slot_minutes: int) -> bool:
     if slot_minutes < QUIET_HOURS_END:
         return True
     return False
-
 
 def apply_safety_constraints(
     ranked_actions: list[tuple[int, float]],
@@ -436,7 +432,6 @@ def compute_reward(event_type: str) -> float:
     reward = REWARD_MAP.get(event_type, 0.0)
     return reward
 
-
 def update_agent_with_outcome(
     agent: LinUCBAgent,
     decision_record: dict,
@@ -525,7 +520,6 @@ Here's the full pipeline assembled into a simulation that demonstrates the learn
 import json
 import random
 
-
 def simulate_patient_engagement(slot_minutes: int, patient_prefs: dict) -> str:
     """
     Simulate whether a patient engages with a message sent at a given time.
@@ -560,7 +554,6 @@ def simulate_patient_engagement(slot_minutes: int, patient_prefs: dict) -> str:
         return "link_clicked"
     else:
         return "ignored"
-
 
 def run_notification_timing_simulation():
     """
@@ -685,7 +678,6 @@ def run_notification_timing_simulation():
 
     print("\nPatient's actual preferred hours: 6pm-8pm")
     print("(The agent should converge toward these evening slots.)")
-
 
 # Run the simulation.
 if __name__ == "__main__":

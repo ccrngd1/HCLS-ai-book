@@ -211,7 +211,6 @@ def _to_decimal(value, precision="0.001"):
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
 
-
 def _redact_for_logs(canonical_event):
     """Produce a log-safe structural summary of a clinical event.
 
@@ -227,7 +226,6 @@ def _redact_for_logs(canonical_event):
         "source_system": canonical_event.get("source_system"),
     }
 
-
 def _convert_temperature_to_celsius(value, units):
     """Vitals normalization helper. Temperatures travel in either Celsius or
     Fahrenheit depending on the source system; the canonical store is Celsius.
@@ -239,7 +237,6 @@ def _convert_temperature_to_celsius(value, units):
     if units in ("[degF]", "F", "fahrenheit", "Fahrenheit"):
         return (float(value) - 32.0) * 5.0 / 9.0
     raise ValueError(f"unrecognized temperature units: {units}")
-
 
 def normalize_clinical_event(raw_event):
     """Convert a raw EHR-integration-layer event into the canonical shape used
@@ -446,7 +443,6 @@ def _decimalize(obj):
         return [_decimalize(v) for v in obj]
     return obj
 
-
 def _undecimalize(obj):
     """Inverse of _decimalize for read-side conversion to Python-native types."""
     if isinstance(obj, Decimal):
@@ -457,7 +453,6 @@ def _undecimalize(obj):
         return [_undecimalize(v) for v in obj]
     return obj
 
-
 def _filter_recent_meds(med_list, hours):
     """Keep only medications administered within the last `hours` window.
 
@@ -467,7 +462,6 @@ def _filter_recent_meds(med_list, hours):
     """
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     return [m for m in med_list if m.get("administered_at", "") >= cutoff]
-
 
 def _create_initial_patient_state(adt_event):
     """Initialize a patient-state record from an admit ADT event.
@@ -499,7 +493,6 @@ def _create_initial_patient_state(adt_event):
         "discharge_at":          None,
         "updated_at":            datetime.now(timezone.utc).isoformat(),
     }
-
 
 def update_patient_state(canonical_event):
     """Update the patient-state record for the encounter in the event.
@@ -656,7 +649,6 @@ def should_rescore_on_state_change(new_state, old_state):
 
     return False
 
-
 def on_state_change(stream_record, scoring_handler):
     """DynamoDB Streams handler for event-driven scoring triggers.
 
@@ -683,7 +675,6 @@ def on_state_change(stream_record, scoring_handler):
             trigger="event_driven",
         )
 
-
 def on_periodic_tick(scoring_handler):
     """Scheduled scoring trigger.
 
@@ -709,7 +700,6 @@ def on_periodic_tick(scoring_handler):
                 encounter_id=item["encounter_id"],
                 trigger="periodic",
             )
-
 
 def invoke_scoring_orchestrator(patient_id, encounter_id, trigger):
     """Publish a scoring request to EventBridge.
@@ -758,7 +748,6 @@ def _compute_slope(timestamped_values):
     # Simple closed-form OLS slope.
     return float(np.cov(t, y, ddof=0)[0, 1] / t.var())
 
-
 def _query_vital_history(patient_id, encounter_id, vital_key, hours_back, as_of):
     """Query Timestream for a vital's history within the lookback window."""
     as_of_dt = datetime.fromisoformat(as_of.replace("Z", "+00:00"))
@@ -787,7 +776,6 @@ def _query_vital_history(patient_id, encounter_id, vital_key, hours_back, as_of)
             "t_hours":     (observed_dt - as_of_dt).total_seconds() / 3600.0,
         })
     return series
-
 
 def compute_features(patient_id, encounter_id, as_of):
     """Compute the model's input feature vector.
@@ -1023,7 +1011,6 @@ def _feature_vector_to_array(features, feature_order):
             row.append(0.0)   # string features encoded upstream in production
     return np.array([row], dtype=float)
 
-
 def score_via_sagemaker_endpoint(features, feature_order):
     """Invoke the deployed SageMaker endpoint with a feature vector.
 
@@ -1043,7 +1030,6 @@ def score_via_sagemaker_endpoint(features, feature_order):
     raw_score = float(body.split(",")[0])
     return raw_score
 
-
 def score_via_local_model(features, feature_order, local_model):
     """Score against a tiny in-process model, for the teaching example.
 
@@ -1059,7 +1045,6 @@ def score_via_local_model(features, feature_order, local_model):
     raw_anomaly = -float(local_model.decision_function(X)[0])
     return float(1.0 / (1.0 + math.exp(-raw_anomaly)))
 
-
 def apply_calibration(raw_score, calibrator):
     """Apply post-hoc calibration to the raw model output.
 
@@ -1071,7 +1056,6 @@ def apply_calibration(raw_score, calibrator):
     if calibrator is None:
         return raw_score
     return float(calibrator.predict(np.array([raw_score]))[0])
-
 
 def map_to_tier(calibrated_probability, unit_type):
     """Map a calibrated probability to a tier using unit-stratified thresholds.
@@ -1087,7 +1071,6 @@ def map_to_tier(calibrated_probability, unit_type):
     if calibrated_probability >= thresholds["low"]:
         return "low"
     return "below_threshold"
-
 
 def score_patient(patient_id, encounter_id, features, feature_order,
                   trigger, model, calibrator):
@@ -1160,7 +1143,6 @@ def score_patient(patient_id, encounter_id, features, feature_order,
     _emit_metric(f"Tier_{tier}", 1)
     return score_record
 
-
 def _emit_metric(metric_name, value, unit="Count"):
     """Emit a CloudWatch metric for operational monitoring."""
     try:
@@ -1221,7 +1203,6 @@ def compute_top_drivers(features, feature_order, model, top_n=7):
     contributions.sort(key=lambda c: abs(c["contribution"]), reverse=True)
     return contributions[:top_n]
 
-
 # Human-readable feature descriptions for the explanation layer. In
 # production this is loaded from a versioned reference table maintained
 # alongside the feature catalog so a feature rename does not silently
@@ -1248,7 +1229,6 @@ FEATURE_DESCRIPTIONS = {
     "has_active_vasopressor":       "patient on active vasopressor",
 }
 
-
 def humanize_driver(driver):
     """Build a clinical-meaning string for a single driver."""
     description = FEATURE_DESCRIPTIONS.get(driver["feature"], driver["feature"])
@@ -1258,7 +1238,6 @@ def humanize_driver(driver):
     else:
         value_str = str(value)
     return f"{description} ({value_str})"
-
 
 def build_explanation(score_record, features, feature_order, model):
     """Assemble structured drivers plus a Bedrock-generated narrative."""
@@ -1318,7 +1297,6 @@ def build_explanation(score_record, features, feature_order, model):
         "explanation_version":   "shap_proxy_plus_bedrock_v1",
     }
     return explanation
-
 
 def invoke_bedrock_narrative(score_record, structured, features):
     """Generate a clinician-readable narrative via Bedrock.
@@ -1445,7 +1423,6 @@ def check_suppression_rules(patient_id, encounter_id):
 
     return {"suppressed": False}
 
-
 def get_last_alert_for_patient(patient_id):
     """Look up the most recent alert for the patient (for delta detection
     and re-page interval enforcement).
@@ -1460,7 +1437,6 @@ def get_last_alert_for_patient(patient_id):
     items = response.get("Items", [])
     return _undecimalize(items[0]) if items else None
 
-
 def get_last_score(patient_id, exclude_score_id=None):
     """Look up the second-most-recent score for delta computation."""
     table = dynamodb.Table(SCORING_HISTORY_TABLE)
@@ -1474,7 +1450,6 @@ def get_last_score(patient_id, exclude_score_id=None):
         if exclude_score_id is None or item.get("score_id") != exclude_score_id:
             return item
     return None
-
 
 def route_alert(score_record, explanation):
     """Apply tier routing, suppression, delta detection, and channel fan-out.
@@ -1575,7 +1550,6 @@ def route_alert(score_record, explanation):
 
     return alert
 
-
 def send_pager_notification(alert):
     """Send pager-tier notification via SNS.
 
@@ -1594,7 +1568,6 @@ def send_pager_notification(alert):
         Subject=f"[{alert['tier'].upper()}] Deterioration: {alert['patient_id']}",
         Message=summary,
     )
-
 
 def publish_to_dashboard(alert):
     """Publish to the charge-nurse dashboard event channel.
@@ -1616,7 +1589,6 @@ def publish_to_dashboard(alert):
         }, default=str),
         "EventBusName": DETERIORATION_SCORING_BUS,
     }])
-
 
 def publish_to_ehr_banner(alert):
     """Publish to the EHR-banner integration.
@@ -1727,7 +1699,6 @@ def on_clinician_acknowledgment(alert_id, clinician_id, disposition,
         }])
 
     return updated
-
 
 def on_clinical_outcome(patient_id, encounter_id, outcome_event):
     """Record a downstream clinical outcome and link it to recent alerts.
@@ -1908,7 +1879,6 @@ def train_demo_model(num_synthetic_patients=400, random_state=42):
     calibrator.fit(raw_probs, y)
 
     return model, calibrator, feature_order
-
 
 def run_deterioration_pipeline(raw_events, model, calibrator, feature_order):
     """End-to-end deterioration pipeline against a batch of raw events.

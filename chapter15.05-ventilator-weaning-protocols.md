@@ -114,7 +114,6 @@ None of these are perfect. They all have assumptions that may not hold. The hone
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.05-architecture). The Python example is linked from there.
 
 ## The Honest Take
@@ -127,10 +126,6 @@ The state representation is another hidden challenge. I described a clean state 
 
 The reward function is where clinical judgment meets engineering, and it's surprisingly contentious. Is a patient who gets extubated at 72 hours and reintubated at 74 hours worse off than a patient who stays on the vent until 120 hours and extubates successfully? Most clinicians would say yes (reintubation is traumatic and risky), but how much worse? The reward weights encode clinical values, and reasonable clinicians disagree on those values.
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback strategy: shadow traffic via SageMaker production variants, agreement rate monitoring between old/new models, defined rollback trigger (e.g., clinician override rate exceeds 50% for 48 hours). -->
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add operational monitoring guidance: feature distribution monitoring against training data stats, safety filter override rate tracking, clinician agreement rate over time as proxy for recommendation quality. Alert when features drift beyond 2 standard deviations for sustained periods. -->
-
 What I'd do differently if starting over: I'd spend 80% of my time on data quality and state representation, and 20% on the RL algorithm. The algorithm choice matters less than the quality of the state signal and the reward definition. I'd also start with a much simpler action space (binary: "ready for SBT" vs. "not ready") before attempting the full multi-action formulation.
 
 ---
@@ -141,7 +136,5 @@ What I'd do differently if starting over: I'd spend 80% of my time on data quali
 - **Recipe 15.6 (Glucose Control in ICU):** Another sequential ICU decision problem with continuous action spaces and tight safety constraints.
 - **Recipe 12.10 (Physiological Waveform Analysis):** Provides the real-time physiological data processing that feeds into the state constructor for this recipe.
 - **Recipe 7.9 (Mortality Risk Scoring, ICU):** The risk scores from this recipe could serve as features in the RL state representation.
-
-<!-- TODO (TechWriter): Add Tags section and Navigation footer per RECIPE-GUIDE. -->
 
 ---

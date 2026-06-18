@@ -65,9 +65,7 @@ Here's the honest list of things that will humble you when you first build this:
 
 The good news: for standard, well-photographed printed cards, modern systems achieve 95-99% field accuracy. That's good enough for most healthcare workflows when paired with a confidence score and a human review queue for the uncertain cases.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. "General Architecture Pattern" should be H2, not H3 under "The Technology." Currently nested as a subsection. -->
-
-### The General Architecture Pattern
+## The General Architecture Pattern
 
 At a conceptual level, the pipeline looks like this:
 

@@ -1,0 +1,12 @@
+# Open TODOs — chapter10-preface
+
+> Auto-extracted 2026-06-18 (8 items).
+
+- **L9** — TODO: verify; ambient clinical documentation has been one of the fastest-growing healthcare AI product categories since 2023, with vendors like DAX, Suki, Abridge, Ambience, and others; specific vendor counts and adoption figures shift quarterly
+- **L27** — TODO: verify specific voice biomarker validation status; voice-based screening for Parkinson's, depression, and respiratory conditions has substantial published research, but FDA-cleared diagnostic claims are limited; commonly cited efforts include studies from MIT, Mayo, Sonde Health, Canary Speech, and others
+- **L45** — TODO: verify specific accuracy gaps; multiple peer-reviewed studies have shown medical-domain ASR error rates substantially higher on clinical terminology than on general speech, but specific numbers vary by study and dataset
+- **L49** — TODO: verify; multiple peer-reviewed studies (notably Koenecke et al. 2020, PNAS, "Racial disparities in automated speech recognition") have documented substantial accuracy gaps across demographic groups for major commercial ASR systems
+- **L63** — TODO: verify; the United States has a patchwork of state recording-consent laws, with approximately 12 states requiring all-party consent and the rest one-party consent, but specific lists change and federal HIPAA rules layer on additional clinical-recording requirements
+- **L75** — TODO: verify; voice biomarker products making diagnostic or screening claims for specific conditions generally fall under FDA Software-as-a-Medical-Device frameworks, but the precise categorization depends on the specific claim, intended use, and risk classification
+- **L79** — TODO: verify; the Illinois Biometric Information Privacy Act and similar state laws in Texas, Washington, and others impose specific consent and disclosure requirements for biometric identifiers, with voiceprints sometimes explicitly included
+- **L163** — TODO: verify; state-by-state recording consent laws and HIPAA-specific requirements for clinical recordings vary; current authoritative sources include Reporters Committee for Freedom of the Press state-law tracker and AMA guidance on patient recording

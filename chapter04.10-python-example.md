@@ -478,7 +478,6 @@ def generate_synthetic_trajectories(n_patients: int = 200,
 
     return trajectories
 
-
 def _softmax(x: np.ndarray) -> np.ndarray:
     """Numerically stable softmax used by the synthetic generator."""
     x = x - x.max()
@@ -497,11 +496,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -536,7 +533,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -546,7 +542,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -569,7 +564,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -579,7 +573,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _safe_get_item(table, key: dict) -> dict:
     """
@@ -596,7 +589,6 @@ def _safe_get_item(table, key: dict) -> dict:
                         getattr(table, "name", "table"), exc)
         return {}
 
-
 def _make_recommendation_id() -> str:
     """
     Opaque recommendation identifier.
@@ -610,14 +602,11 @@ def _make_recommendation_id() -> str:
     """
     return f"rec-{uuid.uuid4().hex[:16]}"
 
-
 def _make_trajectory_id() -> str:
     return f"traj-{uuid.uuid4().hex[:16]}"
 
-
 def _make_alert_id() -> str:
     return f"alert-{uuid.uuid4().hex[:16]}"
-
 
 def _make_anonymized_traj_id(idx: int) -> str:
     """
@@ -627,7 +616,6 @@ def _make_anonymized_traj_id(idx: int) -> str:
     surfaced to clinicians without re-identification risk.
     """
     return f"anonymized_{idx:03d}"
-
 
 def _redact_for_llm(payload: dict) -> dict:
     """
@@ -643,7 +631,6 @@ def _redact_for_llm(payload: dict) -> dict:
         _strip_field(redacted, field)
     return redacted
 
-
 def _strip_field(obj, field: str) -> None:
     """Recursively remove a field from a nested dict/list structure."""
     if isinstance(obj, dict):
@@ -654,14 +641,12 @@ def _strip_field(obj, field: str) -> None:
         for v in obj:
             _strip_field(v, field)
 
-
 def _band_int(value: int, thresholds: list) -> str:
     """Coarse banding for metric dimensions."""
     for t in thresholds:
         if value < t:
             return f"under_{t}"
     return f"{thresholds[-1]}_plus"
-
 
 def _action_id_to_idx(action_id: str) -> int:
     """Map an action_id string to its index in the regime's action catalog."""
@@ -939,7 +924,6 @@ def estimate_behavior_policy(trajectories: list, regime: dict) -> dict:
 
     return behavior_policy
 
-
 def _compute_ece(model, X: np.ndarray, y: np.ndarray,
                    n_bins: int = 10) -> float:
     """
@@ -1092,7 +1076,6 @@ def train_regime(trajectories: list,
         "protocol":   protocol,
     }
 
-
 def _train_q_learning_backward(trajectories: list,
                                   regime: dict) -> tuple:
     """
@@ -1166,13 +1149,11 @@ def _train_q_learning_backward(trajectories: list,
     }
     return q_models, metadata
 
-
 def _action_one_hot(action_idx: int, n_actions: int) -> np.ndarray:
     """One-hot encode an action for the Q regression input."""
     v = np.zeros(n_actions, dtype=float)
     v[action_idx] = 1.0
     return v
-
 
 def _q_policy(q_models: list, state: np.ndarray, regime: dict) -> dict:
     """
@@ -1371,7 +1352,6 @@ def run_ope(candidate_regimes: list,
 
     return ope_results
 
-
 def _filter_to_cohort(trajectories: list, axis: str,
                          value: str) -> list:
     """Return only trajectories whose first step matches the cohort axis value."""
@@ -1382,7 +1362,6 @@ def _filter_to_cohort(trajectories: list, axis: str,
         if steps[0]["cohort_features"].get(axis) == value:
             out.append(steps)
     return out
-
 
 def _doubly_robust_ope(trajectories: list, target_policy,
                           behavior_model, q_models: list, regime: dict,
@@ -1435,7 +1414,6 @@ def _doubly_robust_ope(trajectories: list, target_policy,
     lo, hi = np.quantile(boot, [0.025, 0.975])
     return point, lo, hi
 
-
 def _self_normalized_is(trajectories: list, target_policy,
                             behavior_model, regime: dict,
                             bootstrap_iterations: int = OPE_BOOTSTRAP_ITERATIONS
@@ -1487,7 +1465,6 @@ def _self_normalized_is(trajectories: list, target_policy,
     lo, hi = np.quantile(boot, [0.025, 0.975])
     return point, lo, hi
 
-
 def _fitted_q_evaluation(trajectories: list, target_policy,
                             q_models: list, regime: dict,
                             bootstrap_iterations: int = OPE_BOOTSTRAP_ITERATIONS
@@ -1521,7 +1498,6 @@ def _fitted_q_evaluation(trajectories: list, target_policy,
     lo, hi = np.quantile(boot, [0.025, 0.975])
     return point, lo, hi
 
-
 def _method_agreement_score(values: list) -> float:
     """
     Simple agreement signal across point estimates. 1.0 = perfect
@@ -1533,7 +1509,6 @@ def _method_agreement_score(values: list) -> float:
     arr = np.array(values)
     spread = float(arr.max() - arr.min())
     return float(max(0.0, 1.0 - spread / max(abs(arr.mean()), 1e-3)))
-
 
 def _sensitivity_e_value(point_estimate: float,
                             ci_low: float) -> dict:
@@ -1706,7 +1681,6 @@ def serve_recommendation(patient_id: str,
                                   event_type="recommendation_generated")
     return record
 
-
 def _evaluate_eligibility(patient_state: dict,
                               patient_profile: dict,
                               regime: dict) -> dict:
@@ -1737,7 +1711,6 @@ def _evaluate_eligibility(patient_state: dict,
         "predicate_evaluations": predicate_results,
         "failing_predicate":    failing,
     }
-
 
 def _ood_check(state: np.ndarray, ood_index, behavior_policy: dict
                   ) -> dict:
@@ -1777,7 +1750,6 @@ def _ood_check(state: np.ndarray, ood_index, behavior_policy: dict
         },
     }
 
-
 def build_ood_index(trajectories: list, regime: dict) -> NearestNeighbors:
     """
     Build the k-NN index over the training trajectories' state
@@ -1797,7 +1769,6 @@ def build_ood_index(trajectories: list, regime: dict) -> NearestNeighbors:
     index = NearestNeighbors(n_neighbors=20, algorithm="auto")
     index.fit(X)
     return index
-
 
 def _retrieve_similar_trajectories(state: np.ndarray, ood_index,
                                        trajectories: list, k: int = 5
@@ -1846,7 +1817,6 @@ def _retrieve_similar_trajectories(state: np.ndarray, ood_index,
         })
     return similar
 
-
 def _lookup_guideline_references(regime: dict, action_id: str) -> list:
     """
     Return a small set of guideline references relevant to the
@@ -1876,7 +1846,6 @@ def _lookup_guideline_references(regime: dict, action_id: str) -> list:
         ]
     return []
 
-
 def _run_contraindication_checks(patient_state: dict,
                                      action_id: str) -> dict:
     """
@@ -1898,7 +1867,6 @@ def _run_contraindication_checks(patient_state: dict,
         "renal_dosing":  f"dapagliflozin_appropriate_at_egfr_{int(egfr)}"
             if "sglt2" in action_id else "n/a",
     }
-
 
 def _persist_recommendation(record: dict) -> None:
     """Persist the recommendation to DynamoDB and S3 archive."""
@@ -1924,7 +1892,6 @@ def _persist_recommendation(record: dict) -> None:
             "Failed to archive recommendation %s: %s",
             record["recommendation_id"], exc,
         )
-
 
 def _emit_recommendation_event(record: dict, regime: dict,
                                   event_type: str) -> None:
@@ -2009,7 +1976,6 @@ def _generate_clinician_narrative(record: dict, regime: dict) -> dict:
         "validator_layers_passed":  layers_passed,
     }
 
-
 def _bedrock_invoke_clinician_narrative(record: dict, regime: dict,
                                             validator_feedback=None,
                                             strict_mode: bool = False) -> dict:
@@ -2093,7 +2059,6 @@ Return ONLY valid JSON (no prose, no code fences) with this shape:
     if not match:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
-
 
 def _validate_clinician_narrative(parsed: dict, record: dict,
                                        regime: dict) -> dict:
@@ -2197,7 +2162,6 @@ def _validate_clinician_narrative(parsed: dict, record: dict,
         "layers_passed": layers_passed,
     }
 
-
 def _flatten_narrative_text(parsed) -> str:
     """Concatenate string-valued fields into one flat text."""
     parts = []
@@ -2213,7 +2177,6 @@ def _flatten_narrative_text(parsed) -> str:
     walk(parsed)
     return " ".join(parts)
 
-
 def _is_safe_keyword(token: str) -> bool:
     """Allow-list for tokens that look like ids but are safe."""
     safe = {
@@ -2223,7 +2186,6 @@ def _is_safe_keyword(token: str) -> bool:
         "polypharmacy_count", "race_ethnicity", "age_band",
     }
     return token in safe
-
 
 def _templated_clinician_narrative(record: dict, regime: dict) -> dict:
     """
@@ -2376,7 +2338,6 @@ def record_action_taken(recommendation_id: str,
     # demo simplification with explicit production-pattern
     # reference.
     return update
-
 
 def run_surveillance(regime_id: str, surveillance_window: dict,
                         ope_baseline: dict) -> list:

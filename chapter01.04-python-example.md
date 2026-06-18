@@ -464,7 +464,6 @@ def classify_page(
             "reasoning": f"Classification failed: {str(e)}",
         }
 
-
 def classify_all_pages(
     pages: dict[int, dict],
     model_id: str = CLASSIFICATION_MODEL_ID,
@@ -556,7 +555,6 @@ def parse_key_value_pairs(blocks: list[dict], block_map: dict) -> list[dict]:
 
     return kvs
 
-
 def normalize_cover_fields(raw_kvs: list[dict]) -> tuple[dict, list[str]]:
     """
     Map raw key-value pairs to canonical field names using PA_COVER_FIELD_MAP.
@@ -593,7 +591,6 @@ def normalize_cover_fields(raw_kvs: list[dict]) -> tuple[dict, list[str]]:
     # Flatten to {field: value} for the assembled record
     result = {k: v["value"] for k, v in normalized.items()}
     return result, flagged
-
 
 def extract_cover_sheet(page_data: dict, block_map: dict, _model_id: str) -> dict:
     """
@@ -672,7 +669,6 @@ def infer_icd10_codes(
             flagged.append(entry)
 
     return accepted, flagged
-
 
 def extract_clinical_page(
     page_data: dict,
@@ -842,7 +838,6 @@ def normalize_lab_columns(headers: list[str]) -> dict[int, str]:
                 break
     return mapping
 
-
 def parse_tables_from_blocks(
     blocks: list[dict],
     block_map: dict
@@ -892,7 +887,6 @@ def parse_tables_from_blocks(
         tables.append(grid)
 
     return tables
-
 
 def extract_lab_page(
     page_data: dict,
@@ -958,7 +952,6 @@ EXTRACTION_ROUTER = {
     "lab_results": extract_lab_page,
     "other": None,  # Pass-through; raw text only
 }
-
 
 def route_and_extract(
     page_num: int,

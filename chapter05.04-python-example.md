@@ -157,18 +157,15 @@ BATCH_TIMEOUT_MS    = 20000
 REALTIME_MAX_RETRIES = 1
 BATCH_MAX_RETRIES    = 3
 
-
 def _to_decimal(value) -> Decimal:
     """Coerce numeric input into Decimal for DynamoDB."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
@@ -177,7 +174,6 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_form(*parts) -> str:
     """Join parts into a canonical lowercase whitespace-collapsed form."""
     joined = " ".join(str(p or "").strip() for p in parts)
@@ -185,10 +181,8 @@ def _canonical_form(*parts) -> str:
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes 5.1, 5.2, 5.3."""
@@ -199,7 +193,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> None:
     try:
@@ -279,7 +272,6 @@ SYNTHETIC_PAYER_CONFIG = {
     },
 }
 
-
 def _get_payer_config(payer_id: str) -> dict:
     """
     Read the per-payer config. Production reads from DynamoDB; the
@@ -305,7 +297,6 @@ def _get_payer_config(payer_id: str) -> dict:
         "supports_primary_key_match": True,
         "supports_search_match":      True,
     }
-
 
 class MockClearinghouse:
     """
@@ -547,12 +538,10 @@ class MockClearinghouse:
             "software_version": self.SOFTWARE_VERSION,
         }
 
-
 # Module-level mock clearinghouse. In production, replace with
 # the clearinghouse SDK constructed from credentials in
 # Secrets Manager.
 clearinghouse_sdk = MockClearinghouse()
-
 
 # --- In-memory cache stand-in for ElastiCache Redis ---
 # Keyed on (patient_id, payer_id, service_date). Holds the
@@ -560,7 +549,6 @@ clearinghouse_sdk = MockClearinghouse()
 # Production replaces this with ElastiCache; the dict here
 # survives only as long as the Python process.
 _REDIS_CACHE: dict = {}
-
 
 def cache_get(patient_id: str, payer_id: str, service_date: str):
     key = f"{patient_id}#{payer_id}#{service_date}"
@@ -572,7 +560,6 @@ def cache_get(patient_id: str, payer_id: str, service_date: str):
         return None
     return entry["item"]
 
-
 def cache_set(patient_id: str, payer_id: str, service_date: str,
                 item: dict, ttl_seconds: int) -> None:
     key = f"{patient_id}#{payer_id}#{service_date}"
@@ -581,11 +568,9 @@ def cache_set(patient_id: str, payer_id: str, service_date: str,
         "expires_at": datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds),
     }
 
-
 def cache_delete(patient_id: str, payer_id: str, service_date: str) -> None:
     key = f"{patient_id}#{payer_id}#{service_date}"
     _REDIS_CACHE.pop(key, None)
-
 
 # --- In-memory eligibility-match registry stand-in for DynamoDB ---
 # Keyed on (patient_id, payer_id, service_date). The demo
@@ -619,7 +604,6 @@ def _archive_raw_to_s3(payload: dict, partition: str) -> None:
         logger.info("archive write skipped (demo mode is fine to ignore)",
                      extra={"key": key, "error": str(exc)})
 
-
 def _derive_priority(trigger_event: dict) -> str:
     """Derive priority from the trigger reason if not explicitly set."""
     reason = trigger_event.get("reason", "")
@@ -630,7 +614,6 @@ def _derive_priority(trigger_event: dict) -> str:
     if reason == "scheduled_prewarm":
         return "standard"
     return "standard"
-
 
 def ingest_eligibility_trigger(trigger_event: dict) -> dict:
     """
@@ -724,7 +707,6 @@ def _format_name(name: str, name_format: str, suffix: Optional[str] = None) -> s
         return f"{name.upper()} {suffix.upper()}"
     return name.upper()
 
-
 def _format_date(value: str, fmt: str) -> str:
     """Apply the payer's date-format rule. Input expected ISO-like."""
     if not value:
@@ -736,7 +718,6 @@ def _format_date(value: str, fmt: str) -> str:
         return f"{digits[:4]}-{digits[4:6]}-{digits[6:8]}"
     return digits
 
-
 def _format_member_id(member_id: Optional[str], fmt: str) -> Optional[str]:
     """Apply the payer's member-ID-format rule."""
     if not member_id:
@@ -744,7 +725,6 @@ def _format_member_id(member_id: Optional[str], fmt: str) -> Optional[str]:
     if fmt == "no_dashes":
         return member_id.replace("-", "")
     return member_id
-
 
 def _select_member_id(coverage_history: list,
                         provided_member_id: Optional[str],
@@ -766,14 +746,12 @@ def _select_member_id(coverage_history: list,
         return most_recent.get("member_id")
     return None
 
-
 def _filter_service_types(requested: list, supported: list) -> list:
     """Strip unsupported service-type codes; substitute the closest supported."""
     out = [c for c in requested if c in supported]
     if not out:
         out = ["30"] if "30" in supported else (supported[:1] or ["30"])
     return out
-
 
 def normalize_inquiry(inquiry: dict, patient_record: dict,
                        coverage_history: list,
@@ -988,12 +966,10 @@ def _jaro_winkler(a: str, b: str) -> float:
             break
     return jaro + (prefix * 0.1 * (1 - jaro))
 
-
 def _name_similarity(query: str, candidate: str) -> Decimal:
     """Wrapper around Jaro-Winkler that returns Decimal in [0, 1]."""
     return _to_decimal(_jaro_winkler((query or "").upper(),
                                        (candidate or "").upper()))
-
 
 def _dob_match(query_dob: str, candidate_dob: str) -> Decimal:
     """Grade DOB match: exact / year-month / year / mismatch."""
@@ -1009,13 +985,11 @@ def _dob_match(query_dob: str, candidate_dob: str) -> Decimal:
         return Decimal("0.4")
     return Decimal("0.0")
 
-
 def _sex_match(q: str, c: str) -> Decimal:
     """Sex match: exact, unknown-on-either-side neutral, mismatch."""
     if not q or not c:
         return Decimal("0.5")
     return Decimal("1.0") if q.upper() == c.upper() else Decimal("0.0")
-
 
 def _address_similarity(query_addr: dict, candidate_addr: dict) -> Decimal:
     """Coarse address similarity: ZIP match + street similarity."""
@@ -1029,14 +1003,12 @@ def _address_similarity(query_addr: dict, candidate_addr: dict) -> Decimal:
     street_sim = _to_decimal(_jaro_winkler(q_street, c_street))
     return (zip_match * Decimal("0.5")) + (street_sim * Decimal("0.5"))
 
-
 def _ssn_match(q: Optional[str], c_last4: Optional[str]) -> Decimal:
     """SSN match comparing the candidate's last-4 against ours."""
     if not q or not c_last4:
         return Decimal("0.5")  # neutral when one side is missing
     q_last4 = re.sub(r"[^0-9]", "", q)[-4:]
     return Decimal("1.0") if q_last4 == c_last4 else Decimal("0.0")
-
 
 def _member_id_match(query_member_id: Optional[str],
                        candidate_member_id: str,
@@ -1064,13 +1036,11 @@ def _member_id_match(query_member_id: Optional[str],
             return Decimal("0.6")
     return Decimal("0.0")
 
-
 def _composite_score(features: dict) -> Decimal:
     """Weighted sum of feature scores, normalized to [0, 1]."""
     total_weight = sum(SCORE_WEIGHTS.values())
     weighted = sum(SCORE_WEIGHTS[k] * features[k] for k in SCORE_WEIGHTS)
     return weighted / total_weight
-
 
 def _interpret_not_found(parsed: dict, inquiry: dict) -> str:
     """Best-effort interpretation of why the payer said not-found."""
@@ -1084,7 +1054,6 @@ def _interpret_not_found(parsed: dict, inquiry: dict) -> str:
     if "75" in aaa_codes:
         return "wrong_dob"
     return "indeterminate"
-
 
 def evaluate_response(inquiry: dict, patient_record: dict,
                        coverage_history: list) -> dict:
@@ -1219,7 +1188,6 @@ def evaluate_response(inquiry: dict, patient_record: dict,
                                 "CohortBucket": cohort_bucket})
     return outcome
 
-
 def _characterize_uncertainty(features: dict) -> str:
     """Human-readable hint about why a match landed in the review band."""
     if features["dob"] < Decimal("0.7"):
@@ -1248,7 +1216,6 @@ def _derive_cache_ttl(service_date: str) -> int:
     today = datetime.now(timezone.utc).date()
     return (CACHE_TTL_PAST_SECONDS if sd < today
               else CACHE_TTL_FUTURE_SECONDS)
-
 
 def persist_and_propagate(inquiry: dict, match_outcome: dict) -> dict:
     """
@@ -1606,7 +1573,6 @@ COVERAGE_HISTORY = {
     ],
 }
 
-
 def run_pipeline(trigger_event: dict,
                   provided_member_id: Optional[str] = None) -> dict:
     """
@@ -1667,7 +1633,6 @@ def run_pipeline(trigger_event: dict,
         "review_reason":      match_outcome.get("review_reason"),
         "source":             "pipeline",
     }
-
 
 def run_demo():
     """
@@ -1796,7 +1761,6 @@ def run_demo():
                    else str(rconf) if rconf else "n/a")
     print(f"  re-run: status={refreshed['status']:<18} "
           f"conf={rconf_str:<6} via={refreshed['source']}")
-
 
 if __name__ == "__main__":
     run_demo()

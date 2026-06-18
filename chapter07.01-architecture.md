@@ -213,8 +213,6 @@ FUNCTION score_upcoming_appointments(model_path, features_path):
 
 **Step 4: Store predictions.** Write each prediction to DynamoDB so downstream systems can look them up quickly. The primary key is the appointment ID; a secondary index on scheduled date enables range queries like "all high-risk appointments for tomorrow." Each record includes the probability, the model version (for auditability), and a timestamp. This step bridges the ML pipeline and the operational systems. Without it, predictions exist only as a file in S3 that nothing can easily query.
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add conditional write guidance to prevent overwriting predictions already acted upon. Use condition expression `attribute_not_exists(acted_at)` or append a pipeline_run_id for audit consistency between predictions and actions. -->
-
 ```pseudocode
 FUNCTION store_predictions(predictions):
     // Write each prediction to DynamoDB for fast downstream access.
@@ -283,8 +281,6 @@ FUNCTION run_action_engine(target_date):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add Step 6: Ground truth collection and model monitoring. Needs a nightly Lambda that joins predictions with actual outcomes after the appointment date, computes rolling AUC, publishes to CloudWatch, and triggers retraining when AUC drops below threshold (e.g., 0.72). Add feedback loop to architecture diagram from scheduling system back to training pipeline. -->
-
 ### Expected Results
 
 **Sample prediction output:**
@@ -329,8 +325,6 @@ FUNCTION run_action_engine(target_date):
 - Seasonal shifts (holiday weeks, school breaks) that don't appear in the training window.
 - Practice changes (new provider, new location, new hours) that invalidate historical patterns.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close (monitoring, ground truth collection, fairness auditing, etc.). -->
-
 ---
 
 ## Variations and Extensions
@@ -361,8 +355,6 @@ FUNCTION run_action_engine(target_date):
 - [Machine Learning Best Practices in Healthcare and Life Sciences (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/ml-best-practices-healthcare-life-sciences/ml-best-practices-healthcare-life-sciences.html)
 - [Predictive Analytics with Amazon SageMaker (AWS Blog)](https://aws.amazon.com/blogs/machine-learning/tag/predictive-analytics/)
 
-<!-- TODO (TechWriter): Verify all URLs above are current and accessible before publication. Check aws-healthcare-lifescience-ai-ml repo still exists on GitHub. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -380,7 +372,6 @@ FUNCTION run_action_engine(target_date):
 ---
 
 | [← Chapter 7 Index](chapter07-preface) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |
-
 
 ---
 

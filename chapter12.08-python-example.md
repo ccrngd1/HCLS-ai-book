@@ -166,7 +166,6 @@ ENDPOINT_DEFINITION = {
 
 ---
 
-
 ```python
 # --- Disease Cohort Definition (ADPKD) ---
 # In production this is a versioned, clinician-reviewed config
@@ -303,7 +302,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -323,14 +321,12 @@ def _to_decimal(value):
         return Decimal(value)
     raise TypeError(f"Cannot convert {type(value).__name__} to Decimal")
 
-
 def _normal_cdf(z):
     """Standard normal CDF using the error function approximation."""
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
 ```
 
 ---
-
 
 ## Mocks and Synthetic Data
 
@@ -388,7 +384,6 @@ class MockHealthLake:
                 ids.add(ref[len("Patient/"):])
         return sorted(ids)
 
-
 class MockS3:
     """In-memory stand-in for an S3 bucket.
 
@@ -416,7 +411,6 @@ class MockS3:
             def read(self):
                 return self._b
         return {"Body": _StreamingBody(body)}
-
 
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
@@ -453,7 +447,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge."""
 
@@ -464,7 +457,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch."""
@@ -479,7 +471,6 @@ class MockCloudWatch:
                 "Unit":  m.get("Unit", "None"),
                 "Time":  datetime.now(timezone.utc).isoformat(),
             })
-
 
 def generate_synthetic_adpkd_cohort(
         patient_count=SYNTHETIC_PATIENT_COUNT,
@@ -548,7 +539,6 @@ def generate_synthetic_adpkd_cohort(
         })
 
     return patients
-
 
 def populate_synthetic_healthlake(patients, healthlake, seed=SYNTHETIC_RANDOM_SEED):
     """Populate the MockHealthLake with synthetic FHIR resources.
@@ -658,7 +648,6 @@ def populate_synthetic_healthlake(patients, healthlake, seed=SYNTHETIC_RANDOM_SE
 
 ---
 
-
 ## Step 1: Define the Disease Cohort
 
 The pipeline starts by walking the longitudinal store and qualifying patients into the disease cohort. The qualification combines inclusion ICD-10 codes, exclusion codes, and minimum-history thresholds so that downstream trajectory analysis is meaningful. The cohort definition is itself a clinical artifact that must be reviewed by a disease specialist and versioned as code; the function below treats it as a single config dict so the demo is self-contained, but production stores it externally.
@@ -671,7 +660,6 @@ def _months_between(d1, d2):
     if isinstance(d2, str):
         d2 = date.fromisoformat(d2[:10])
     return (d2.year - d1.year) * 12 + (d2.month - d1.month)
-
 
 def define_disease_cohort(disease_definition, healthlake, s3, bucket):
     """Step 1: Identify patients who qualify for the disease cohort.
@@ -769,7 +757,6 @@ def define_disease_cohort(disease_definition, healthlake, s3, bucket):
 
 ---
 
-
 ## Step 2: Harmonize the Longitudinal Trajectory Data
 
 For each cohort patient, the harmonization step reads the longitudinal observations, maps each to a canonical LOINC code with canonical UCUM units, anchors time to the disease-specific time-zero (earliest inclusion ICD-10 entry for ADPKD), tags acute-versus-chronic encounter context, and assembles the treatment timeline aligned to the same time frame. The output is a clean per-patient dictionary that the trajectory model can train on directly.
@@ -790,7 +777,6 @@ def _convert_units(value, from_unit, to_unit, loinc_code):
     if from_unit == to_unit:
         return float(value)
     return None
-
 
 def harmonize_patient_trajectory(cohort_member, healthlake, s3,
                                   harmonized_bucket,
@@ -902,7 +888,6 @@ def harmonize_patient_trajectory(cohort_member, healthlake, s3,
 
     return harmonized
 
-
 def harmonize_cohort(cohort, healthlake, s3, harmonized_bucket,
                      disease_definition):
     """Run harmonization across every cohort member."""
@@ -919,7 +904,6 @@ def harmonize_cohort(cohort, healthlake, s3, harmonized_bucket,
 ```
 
 ---
-
 
 ## Step 3: Train the Disease-Specific Trajectory Model
 
@@ -1160,7 +1144,6 @@ class BayesianHierarchicalMixedEffects:
             "holdout_count": total,
         }
 
-
 def train_trajectory_model(harmonized_cohort, disease_definition,
                             s3, model_artifact_bucket):
     """Step 3: Train the per-disease trajectory model.
@@ -1208,7 +1191,6 @@ def train_trajectory_model(harmonized_cohort, disease_definition,
 
 ---
 
-
 ## Step 4: Per-Patient Trajectory Inference
 
 For each patient in the cohort, the pipeline produces a fitted trajectory through the observed history and a forward forecast under "current treatment continued." The forecast carries credible intervals at every horizon point; uncertainty is the product, not a footnote. The same step computes the time-to-endpoint distribution by Monte Carlo sampling from the forecast posterior.
@@ -1223,7 +1205,6 @@ def _build_forecast_grid(from_months, horizon_months, step_months):
         grid.append(round(cursor, 2))
         cursor += step_months
     return grid
-
 
 def _forecast_at_time(model, params, treatments, m_target,
                       treatment_override=None):
@@ -1260,7 +1241,6 @@ def _forecast_at_time(model, params, treatments, m_target,
                         + model.hyper["observation_noise_sd"] ** 2
                         + tx_var_contrib)
     return pred_mean, pred_sd
-
 
 def infer_patient_trajectory(patient, model, endpoint_definition,
                               forecast_horizon_months=DEFAULT_FORECAST_HORIZON_MONTHS,
@@ -1389,7 +1369,6 @@ def infer_patient_trajectory(patient, model, endpoint_definition,
         "inferred_at_ts":          datetime.now(timezone.utc).isoformat(),
     }
 
-
 def infer_all_trajectories(harmonized_cohort, model,
                             endpoint_definition, s3,
                             forecast_bucket):
@@ -1409,7 +1388,6 @@ def infer_all_trajectories(harmonized_cohort, model,
 ```
 
 ---
-
 
 ## Step 5: Evaluate Counterfactual Treatment Scenarios
 
@@ -1443,7 +1421,6 @@ def _apply_treatment_change(base_timeline, change, anchor_months):
     new_timeline.sort(key=lambda t: t["start_months_from_zero"])
     return new_timeline
 
-
 def _compose_assumption_disclosure(scenario, model):
     """Plain-language disclosure of what the forecast assumes."""
     base = (
@@ -1464,7 +1441,6 @@ def _compose_assumption_disclosure(scenario, model):
             f"trial-derived credible interval; the forecast propagates "
             f"that uncertainty.")
     return base
-
 
 def _compose_explanation_text(patient_id, forecast, time_to_endpoint,
                                 scenario_name):
@@ -1505,7 +1481,6 @@ def _compose_explanation_text(patient_id, forecast, time_to_endpoint,
             f"posterior draws reach the eGFR-under-15 threshold; the "
             f"median time to that endpoint is beyond the modeled horizon.")
     return " ".join(parts)
-
 
 def evaluate_counterfactual_scenarios(patient, baseline_inference, model,
                                         scenarios, endpoint_definition,
@@ -1623,7 +1598,6 @@ def evaluate_counterfactual_scenarios(patient, baseline_inference, model,
         "generated_at_ts":           datetime.now(timezone.utc).isoformat(),
     }
 
-
 def deliver_trajectory_payloads(payloads, table, event_bus, cloudwatch,
                                   s3, counterfactual_bucket, run_id):
     """Persist per-patient counterfactual payloads.
@@ -1725,7 +1699,6 @@ def deliver_trajectory_payloads(payloads, table, event_bus, cloudwatch,
 ```
 
 ---
-
 
 ## Full Pipeline
 
@@ -1845,7 +1818,6 @@ def run_trajectory_pipeline(table, event_bus, cloudwatch, healthlake, s3,
         "counterfactual_payloads":  counterfactual_payloads,
     }
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1892,7 +1864,6 @@ def run_demo():
         print(json.dumps(sample_item, default=_decimalify, indent=2))
 
     return result
-
 
 if __name__ == "__main__":
     run_demo()

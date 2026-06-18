@@ -107,7 +107,6 @@ What it doesn't do, and this has to be stated clearly, is remove the need for ca
 
 **Consultant silo-ing.** A consulting service's perspective is treated as gospel or as irrelevant, rather than as one opinion in a thread. Mitigation: represent consults as attributed recommendations, not as unattributed facts ("Cardiology recommended X on day 4" rather than "X is recommended").
 
-<!-- TODO (TechWriter): V3 (LOW). "Comprehend Medical" is a vendor name in a vendor-agnostic section. Consider replacing with "clinical NLP services with negation detection" or similar. -->
 **Negation errors.** Already covered. Hardest failure mode to catch automatically. Mitigation: negation-aware extraction (Comprehend Medical and similar tools handle this reasonably); explicit preservation of negating language in the structured representation.
 
 **Over-confident language.** The model smooths "possible pulmonary embolism, CT scheduled" into "pulmonary embolism diagnosed." Mitigation: preserve clinical uncertainty language in the extraction step and instruct the generator not to strengthen it.

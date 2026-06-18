@@ -14,8 +14,6 @@
 
 **AWS Lambda for orchestration and clustering logic.** The geocoding and clustering steps are batch workloads that run periodically (weekly or monthly refresh). Lambda handles the orchestration: trigger the geocoding batch, run the clustering algorithm, write results. For datasets under ~500,000 points, the clustering algorithm itself runs comfortably within Lambda's memory and timeout limits.
 
-<!-- TODO (TechWriter): Expert review ARCH-1 (MEDIUM). Add note recommending Step Functions Map state for orchestrating geocoding batches over 50K addresses to avoid Lambda timeout risk. -->
-
 **Amazon SageMaker for large-scale clustering.** If your patient population exceeds what Lambda can handle in memory (roughly 500K+ points with enrichment data), SageMaker provides managed compute for running scikit-learn or custom clustering jobs. SageMaker Processing Jobs give you ephemeral compute that spins up, runs the algorithm, writes results to S3, and shuts down. For datasets exceeding 500K points or requiring GPU-accelerated HDBSCAN, replace the clustering Lambda with a SageMaker Processing Job. The job reads from the same S3 geocoded/ prefix, runs the same algorithm, and writes to the same cluster-results/ prefix. The only difference is compute: SageMaker provides instances with more memory and optional GPU. Use the `sklearn` container or bring your own.
 
 **Amazon QuickSight for visualization.** QuickSight supports geospatial visualizations (point maps, filled maps, heat maps) and connects directly to S3 or Athena. For the "show me where the clusters are" question that executives ask, QuickSight delivers without requiring a custom mapping application.
@@ -264,8 +262,6 @@ FUNCTION enrich_clusters(clustered_records, num_clusters):
 
 Table design: the `patient-clusters` table uses `patient_id` (string, opaque identifier) as the partition key. The `cluster-metadata` table uses `cluster_id` (number) as the partition key. No sort keys needed for point lookups. If you need "list all patients in cluster X," add a GSI on `cluster_id` to the patient-clusters table, but be aware this enables bulk enumeration of patient locations by cluster.
 
-<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add S3 lifecycle policy recommendation: retain current and previous snapshot, expire older snapshots after 6-12 months. Each snapshot contains PHI; minimizing retained copies reduces exposure surface. -->
-
 ```pseudocode
 FUNCTION store_results(clustered_records, cluster_metadata):
     // Write per-patient assignments to DynamoDB for fast point lookups.
@@ -340,8 +336,6 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 - Apartment complexes and nursing homes create artificial density spikes. 500 patients at one address looks like a cluster core but represents a single building, not a neighborhood.
 - Seasonal populations (snowbirds, college students) shift dramatically between summer and winter. A single snapshot misses this.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add one covering gaps like lack of automated parameter tuning, missing drive-time validation, no CI/CD pipeline, and absence of data drift monitoring. -->
-
 ---
 
 ## Variations and Extensions
@@ -391,7 +385,6 @@ FUNCTION store_results(clustered_records, cluster_metadata):
 
 | [← Chapter 6 Index](chapter06-preface) | [Chapter 6 Index](chapter06-preface) | [Recipe 6.2 →](chapter06.02-utilization-pattern-segmentation) |
 |:---|:---:|---:|
-
 
 ---
 

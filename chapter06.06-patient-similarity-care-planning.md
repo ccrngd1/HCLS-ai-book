@@ -1,10 +1,3 @@
-<!-- EDITED: TechEditor post-split polish 2026-06-17. Verified transition seams after
-     mechanical split: General Architecture and The Honest Take contain zero AWS references,
-     architecture callout correctly placed between General Architecture and The Honest Take,
-     architecture companion opens with clean backlink. Added missing Tags section and
-     navigation footer per RECIPE-GUIDE. Zero em/en dashes confirmed. All code blocks tagged.
-     Deferred TODOs (A1, S1) remain in architecture companion for TechWriter. -->
-
 # Recipe 6.6: Patient Similarity for Care Planning
 
 **Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.15-$0.40 per similarity query (depending on cohort size and feature count)
@@ -113,7 +106,6 @@ These approaches are more powerful but require more data, more compute, and more
 **Care Plan Recommendations.** Present the aggregated outcomes to the care manager in a format that supports decision-making. Not "do this." Rather: "Among 15 patients similar to yours, 11 achieved A1C < 7 within 6 months. 9 of those were on metformin plus a GLP-1 agonist. 3 had hypoglycemic events in the first month." The care manager decides. The system informs.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter06.06-architecture). The Python example is linked from there.
 

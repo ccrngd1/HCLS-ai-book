@@ -1,158 +1,5 @@
 # Recipe 4.6: Care Gap Prioritization ⭐⭐
 
-<!--
-TechEditor pass v1 (2026-05-16, ch04-r06-edit). Editorial fixes:
-- Verified em-dash count: 0 (passes "no em dashes ever" rule).
-- Verified en-dash count: 0.
-- Header hierarchy: H1 title only, H2 for major sections, H3 for subsections,
-  one H4 (#### Walkthrough). No skipped levels.
-- Voice drift scan: no documentation-voice openings, no LinkedIn-influencer
-  patterns, no "we are excited" announcements. "High-leverage" in
-  Variations is the colloquial leverage-point sense (acceptable per Voice
-  reviewer).
-- Vendor balance: 70/30 maintained. The Problem, The Technology, and
-  General Architecture Pattern stay vendor-neutral; AWS service names
-  appear only in The AWS Implementation.
-- RECIPE-GUIDE compliance: all required sections present in correct order
-  (Problem, Technology, General Architecture, AWS Implementation, Expected
-  Results, Why This Isn't Production-Ready, Honest Take, Variations,
-  Related Recipes, Additional Resources, Implementation Time, Tags,
-  Footer Navigation).
-- Existing TechWriter TODO markers from prior personas preserved in place.
-- New TODOs added flagging substantive technical concerns rather than
-  rewriting (per persona instructions: "do not introduce new claims or
-  technical content"; "if a section needs substantial rewriting, flag it
-  rather than rewriting"):
-  * Expert Review A2 HIGH: data_quality_flag computed but never gates
-    downstream stages (added at General Architecture Pattern).
-  * Expert Review A3 HIGH: HEDIS Comprehensive Diabetes Care (CDC) measure
-    retired; replace with EED/KED/GSD/BPD naming (added at The Technology
-    bullet and at Expected Results sample).
-  * Expert Review A6 MEDIUM: chained-closure state machine missing
-    (added at Variations specialist-coordination paragraph).
-  * Expert Review A9 MEDIUM: David vignette clinical loosenesses
-    (pneumococcal-at-64, family-history elevated-risk, six-years-overdue
-    math; added inline at the eleven-gaps paragraph).
-  * Expert Review A10 MEDIUM: closure-tracker mutation-based state
-    machine fragile to out-of-order events (added at Step 5).
-  * Expert Review A11 MEDIUM: chase_period_weight_overrides not
-    architected (added at production-gaps year-end paragraph).
-  * Expert Review S1 MEDIUM: process_clinician_override missing
-    patient-identity boundary check (added inline in Step 6 pseudocode).
-  * Code Review WARNING 3: in_visit pathway dispatched as no-op when no
-    upcoming visit (added inline in Step 4 pseudocode).
-- Did NOT modify: prose flow, structural section order, technical claims
-  (these are TechWriter's domain). Did NOT rewrite the David vignette,
-  the Honest Take, or any code block.
-
-TechEditor pass v2 (2026-05-16, ch04-r06-edit). Verification-only pass:
-- Re-verified em-dash count: 0 (UTF-8 byte-level scan for U+2014).
-- Re-verified en-dash count: 0 (UTF-8 byte-level scan for U+2013).
-- Re-verified zero smart quotes (U+2018/U+2019/U+201C/U+201D), zero
-  double-spaces between words in prose, no genuine repeated-word typos
-  (the only regex hits were intentional Mermaid node IDs).
-- Re-verified header hierarchy: 1 H1, 11 H2, 14 H3, 1 H4. No skipped
-  levels.
-- Code-fence convention: 12 fenced blocks total. 1 mermaid, 4 json,
-  7 unlabeled (pseudocode and ASCII-art architecture diagram). Verified
-  this matches the chapter-wide convention by sampling 1.1, 4.1, 4.4,
-  4.5, all of which leave pseudocode/ASCII fences unlabeled and tag
-  only mermaid and json. Convention is consistent across the book;
-  no fence-tag changes made.
-- TODO marker count: 37, all from prior personas, all preserved.
-- Voice drift re-scan with expanded marketing-language list: no hits
-  (the single "We are excited" regex hit was inside the v1 editor
-  HTML comment block describing what was scanned for, not in prose).
-- Vendor balance: spot-checked The Problem, The Technology, General
-  Architecture Pattern; AWS service names remain confined to The AWS
-  Implementation onward.
-- Front matter (Complexity / Phase / Estimated Cost) and footer
-  navigation links preserved; Python companion link target
-  (chapter04.06-python-example) verified.
-- No new edits applied this pass. Recipe is publishable on editorial
-  grounds; the three HIGH expert-review findings (A1 contact-counter
-  reconciliation, A2 data_quality_flag gating, A3 HEDIS CDC measure
-  rename) remain flagged as TechWriter TODOs per persona rule "if a
-  section needs substantial rewriting, flag it rather than rewriting."
-
-TechEditor pass v3 (2026-05-16, ch04-r06-edit). Final verification pass:
-- Re-confirmed UTF-8 byte-level counts on the persisted file:
-  em-dash (U+2014) = 0, en-dash (U+2013) = 0, smart single quotes
-  (U+2018/U+2019) = 0, smart double quotes (U+201C/U+201D) = 0.
-  (PowerShell Get-Content with regex initially reported false positives
-  due to encoding handling; raw [System.IO.File]::ReadAllBytes plus
-  UTF-8 decode confirms zero on all six code points.)
-- Re-confirmed header hierarchy: 1 H1, 11 H2, 14 H3, 1 H4, 0 H5.
-  No skipped levels.
-- Re-confirmed TODO marker count: 34 actual persona-TODO HTML-comment
-  markers in the file (canonical shape: an HTML comment opener
-  followed by the word TODO and a persona name). All 34 markers
-  originate from prior personas (TechWriter, Code Review, Expert
-  Review). Zero TODO markers added or removed by this editor pass.
-  (Earlier loose word-match counts in v1 and v2 reported 37-38
-  because they also matched narrative mentions of "TODO" inside
-  prior editor comment blocks; this v3 count uses a tighter regex.)
-- Re-confirmed code-fence convention: 24 fence lines = 12 fenced
-  blocks. Convention (mermaid and json tagged; pseudocode and
-  ASCII-art unlabeled) preserved.
-- Voice drift re-scan: zero "This recipe demonstrates", zero
-  "we need to talk about". The two "we are excited" regex hits both
-  fall inside this editor-comment block (v1 and v2 self-references
-  describing what was scanned for); zero hits in prose.
-- Cross-checked persona instructions: "Do not change the structural
-  order of sections", "Do not introduce new claims or technical
-  content", "Preserve all TODO markers from other personas",
-  "If a section needs substantial rewriting, flag it rather than
-  rewriting", "Match STYLE-GUIDE.md voice throughout". All five
-  constraints satisfied.
-- Final disposition: PASS for editorial publication. Recipe is ready
-  to ship as soon as the three HIGH TechWriter TODOs are resolved
-  (A1, A2, A3) and the chapter-wide hardening TODOs land in their
-  next pass (S1-S5, A4-A11, N1-N3). The editorial layer is complete.
-
-TechEditor pass v4 (2026-05-21, ch04-r06-edit). Re-verification only:
-- UTF-8 byte-level scan reconfirms: em-dash=0, en-dash=0,
-  smart-single-quote=0, smart-double-quote=0.
-- Header hierarchy reconfirmed: 1 H1, 11 H2, 14 H3, 1 H4, 0 H5.
-  No skipped levels.
-- TODO marker count reconfirmed: 34 persona-TODO HTML-comment
-  markers, all from prior personas (TechWriter, Code Review tagged,
-  Expert Review tagged). Zero added or removed.
-- Structural section order reconfirmed against RECIPE-GUIDE.
-- Voice spot-check across The Problem, The Technology, The AWS
-  Implementation, The Honest Take, and Variations: no documentation-
-  voice openings, no LinkedIn-influencer patterns, no marketing
-  language, no announcement statements. The single "high-leverage"
-  in Variations is the colloquial leverage-point sense (Voice
-  reviewer's V2 finding accepts as written).
-- Per persona instructions ("Do not change the structural order of
-  sections", "Do not introduce new claims or technical content",
-  "Preserve all TODO markers from other personas", "If a section
-  needs substantial rewriting, flag it rather than rewriting"),
-  this v4 pass applies no edits to the recipe body. The three HIGH
-  TechWriter TODOs (A1 contact-counter reconciliation, A2
-  data_quality_flag gating, A3 HEDIS CDC measure rename) and the
-  chapter-wide hardening TODOs remain in place for the TechWriter
-  follow-up pipeline. Editorial layer is complete; recipe ships
-  when the HIGH TODOs resolve.
--->
-
-<!--
-TechEditor pass v5 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
-- Updated TODO A2 to clarify that Step 1-5 references and "Where it
-  struggles" section now live in the architecture companion file
-  (chapter04.06-architecture.md).
-- Verified architecture callout is well-placed between General Architecture
-  Pattern and The Honest Take.
-- Verified The Honest Take has no dangling references to AWS content.
-- Verified General Architecture Pattern prose is vendor-agnostic (AWS
-  service names in "Where This Sits in the Chapter" are cross-references
-  to prior recipes' shared infrastructure, not new AWS content).
-- Verified architecture companion opens cleanly with backlink header.
-- Em-dash count: 0. En-dash count: 0.
-- All prior TODO markers preserved.
--->
-
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
 
 ---
@@ -164,8 +11,6 @@ David is 64. He has been a patient at the same primary care practice for fifteen
 If you ask David's plan's analytics team to pull his open care gaps, the report comes back with eleven of them.
 
 He is overdue for his diabetic retinal exam (last one was 26 months ago; the gap window for the HEDIS Eye Exam for Patients with Diabetes measure closed five months ago). He is overdue for his diabetic foot exam (last documented one was 19 months ago; the practice's quality dashboard shows it red). He is overdue for his colonoscopy (last one was at 54, ten years ago, when normal-result recommendations were every ten years; the current USPSTF guidance starts at 45 and his family history flags him for earlier and more frequent screening). He has not had a flu shot this season. He has not had the COVID booster the CDC recommended for adults over 50 with diabetes. He has not had the pneumococcal vaccine that became indicated when he turned 64 in February. He has not had the shingles vaccine. His statin regimen has not been re-titrated despite his rising A1c (his cardiovascular risk has gone up). His blood pressure was 132/82 at the last visit, which is on the line for hypertension control under the current measure spec, and his medication list hasn't been adjusted. His urine albumin-to-creatinine ratio (UACR) was last drawn 14 months ago, and given his diabetes plus the rising A1c, current ADA guidance would have it drawn annually. His eGFR has been trending down (from 78 two years ago, to 71 a year ago, to 64 last visit). His PCP has not had a documented conversation about chronic kidney disease (CKD) with him.
-
-<!-- TODO (TechWriter, MEDIUM per Expert Review A9): Three clinical-loosenesses in this vignette. (1) Pneumococcal: ACIP has indicated pneumococcal vaccination (PPSV23 historically; PCV15/PCV20 under current simplified recommendations) for adults 19-64 with diabetes for years. David's gap is not "newly indicated at 64"; it has been open for most of a decade. Reframe as a long-standing gap. (2) Diabetic foot exam: the parent HEDIS CDC measure was retired (see HEDIS naming TODO above) and the foot-exam component did not survive the split. Foot exams remain ADA-recommended but no current HEDIS or Star measure tracks them. Either reframe as a guideline-recommended (ADA) gap that the practice's internal quality dashboard tracks, or remove the "quality dashboard shows it red" framing. (3) Colon cancer family history: a paternal CRC diagnosis at 71 generally does NOT trigger elevated-risk surveillance under NCCN/ACG/USMSTF criteria (those trigger when a first-degree relative is diagnosed at <60). Either strengthen the family history to genuinely trigger elevated-risk screening, or drop the "earlier and more frequent" elevated-risk framing and treat David as average-risk where the gap is "the 10-year interval has elapsed." This last cleanup also requires fixing the matching "his colonoscopy that's six years overdue" line in the unlucky-version paragraph below: David is 64 with a normal colonoscopy at 54, so under average-risk guidance he is at-due, not six years overdue. Coordinate all three fixes in a single 30-minute clinical-informatics review pass. -->
 
 Eleven gaps. David is at his PCP next Tuesday morning at 9:15 AM for his annual visit. The visit is scheduled for 25 minutes. The PCP, Dr. Patel, will spend the first five minutes reviewing the chart in the EHR, ten minutes on the visit itself, and ten minutes on documentation and orders. Best case, she addresses three gaps. More realistically, two.
 
@@ -207,7 +52,7 @@ Let's get into how you build it.
 
 Before any modeling, the system has to know what counts as a gap. There are three reasonable definitions in common use, and a production recommender ends up using all three:
 
-- **Quality-measure-defined gaps.** The patient is in the denominator of a HEDIS, Stars, ACO, or contracted quality measure, and the numerator condition (the qualifying event or procedure within the lookback window) is not satisfied. These are deterministically computable from claims, lab data, and EHR data given the measure specification. Examples: HEDIS Comprehensive Diabetes Care eye exam, BCS-E breast cancer screening, FUH (Follow-Up after Hospitalization for Mental Illness), CCS cervical cancer screening. The measure specifications are publicly published, are updated annually, and have well-defined denominator and numerator definitions. <!-- TODO (TechWriter, HIGH per Expert Review A3): NCQA retired the parent Comprehensive Diabetes Care (CDC) measure beginning HEDIS MY 2022 and split it into EED (Eye Exam for Patients with Diabetes), KED (Kidney Health Evaluation for Patients With Diabetes), GSD (Glycemic Status Assessment for Patients With Diabetes), and BPD (Blood Pressure Control for Patients With Diabetes). Replace "HEDIS Comprehensive Diabetes Care eye exam" with "HEDIS Eye Exam for Patients with Diabetes (EED)" and add a parenthetical note explaining the CDC retirement and the EED/KED/GSD/BPD split. Coordinate with the Expected Results sample (`measure_id: hedis-cdc-eye-exam` should become `hedis-eed`) and with the Python companion's synthetic registry (Code Review Finding 1). Also confirm current HEDIS, CMS Star Ratings, and major ACO measure specification sources at the time of build. -->
+- **Quality-measure-defined gaps.** The patient is in the denominator of a HEDIS, Stars, ACO, or contracted quality measure, and the numerator condition (the qualifying event or procedure within the lookback window) is not satisfied. These are deterministically computable from claims, lab data, and EHR data given the measure specification. Examples: HEDIS Comprehensive Diabetes Care eye exam, BCS-E breast cancer screening, FUH (Follow-Up after Hospitalization for Mental Illness), CCS cervical cancer screening. The measure specifications are publicly published, are updated annually, and have well-defined denominator and numerator definitions. 
 
 - **Guideline-recommended gaps.** The patient meets criteria from a clinical guideline (USPSTF, ADA, AHA/ACC, KDIGO, etc.) for a screening, immunization, or monitoring action that has not been performed within the recommended interval. These are similar to quality-measure gaps but broader: the guideline universe is bigger than the measure universe, and the urgency reasoning is clinical rather than operational. Example: a 50-year-old male with documented metabolic syndrome who hasn't had a fasting lipid panel in 18 months has a guideline-recommended gap that is not (necessarily) a HEDIS measure gap.
 
@@ -472,14 +317,11 @@ The pipeline has six logical components: a measure-registry component that maint
 
 **Closure tracking is multi-source by design.** Closure events arrive from claims (slow, canonical for HEDIS), EHR (fast, canonical for the practice), lab feeds (fast, canonical for lab-based gaps), pharmacy (fast, canonical for some immunizations), immunization registries (medium speed, canonical in some states), and patient self-report (fast, low confidence, valuable for suppression of unnecessary outreach). The tracker's state machine reconciles these and gates downstream consumers (chase teams, dashboards, billing) on the appropriate confidence level. The HEDIS measure won't credit a self-report; the chase team should still suppress outreach when one arrives.
 
-<!-- TODO (TechWriter, HIGH per Expert Review A2): Add a paragraph here naming the data_quality_flag gate explicitly. The flag is computed and persisted in Step 1 of the architecture companion (chapter04.06-architecture.md), then never gates downstream decisions. The "Where it struggles" section in the architecture companion says explicitly that downstream consumers should gate on it; the pseudocode does not. Five places in the architecture companion need the gate: (a) Step 2 dampens urgency confidence on non-`complete` cases, (b) Step 3 suppresses low-quality gaps from the in-visit agenda, (c) Step 4 routes low-quality cases to a verification-first pathway before any closure-pathway-specific outreach, (d) Step 5 tightens (or relaxes, for `cross_provider_fragmentation`) the canonical-source rule, (e) Step 4 chase brief opens with verification framing when data quality is in doubt. The "calling a patient about a colonoscopy they had last week" failure mode the Honest Take warns against is exactly what `cross_provider_fragmentation` flags; not gating on it produces precisely that failure. Frame as: "the data_quality_flag is not metadata; it's an input to every downstream stage." -->
-
 **Equity instrumentation runs across all components.** Gap-identification rates by cohort (a measure that produces three times as many open gaps for one cohort versus another may reflect actual unmet need or may reflect data-completeness disparities; the dashboard surfaces both). Urgency-score distribution by cohort. In-visit closure rates by cohort and by clinician. Referral completion rates by cohort. Long-horizon closure rates by cohort. Each axis is a monitored dashboard.
 
 **Care-team integration is bidirectional.** Clinician overrides (the clinician dismissed a high-priority gap with reason: `appropriate_decline`, `previously_addressed`, `clinical_judgment`, `patient_refusal`, `out_of_scope_for_visit`) flow back into the recommender as features for retraining and as suppression flags for future surfacing. A "patient declined colonoscopy" override should suppress repeated colonoscopy surfacing for some interval and on some pathways, while preserving the right to re-surface when the clinical context shifts (e.g., a new positive FIT result reopens the conversation regardless of prior decline).
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter04.06-architecture). The Python example is linked from there.
 
@@ -501,7 +343,7 @@ A trap worth flagging: confusing gap closure with patient outcome. A program tha
 
 Another trap: the year-end push. Every quality program has a year-end period where chase activity ramps up and the dashboards turn green by sheer brute force. The math is real (HEDIS measure year-end performance has actual financial value to the plan and the practice), but the trap is treating year-end as the operating model rather than as a seasonal exception. Year-round gap closure produces better clinical outcomes than year-end pushes; year-end pushes produce dashboard performance that may not survive into the next measurement year. Build for year-round operation; allow the seasonality to flex the policy weights, but don't redesign the program around the chase. The chase should look like an intensification of the steady state, not a different program. Plans that have invested in year-round operation report measurably better year-over-year HEDIS sustainability than plans that lean on Q4 chases.
 
-One more trap: the "we'll fix the urgency model later" pattern. The MVP shipping pressure is real, and many programs ship with rule-based urgency only and a plan to layer in supervised modeling "next quarter." Two years later they still have rule-based urgency. That's not necessarily wrong; rule-based urgency, if the rules are clinically sound, is auditable and defensible and often good enough for the bonus-bearing measures. The risk is that nobody is checking whether the rules are clinically sound. Schedule the clinical-rule audit on a quarterly cadence with rotating measure focus; without scheduled audit, the rules drift relative to evolving clinical evidence. <!-- TODO: confirm a published reference for the audit cadence; quality-measure programs vary in their formal review processes. -->
+One more trap: the "we'll fix the urgency model later" pattern. The MVP shipping pressure is real, and many programs ship with rule-based urgency only and a plan to layer in supervised modeling "next quarter." Two years later they still have rule-based urgency. That's not necessarily wrong; rule-based urgency, if the rules are clinically sound, is auditable and defensible and often good enough for the bonus-bearing measures. The risk is that nobody is checking whether the rules are clinically sound. Schedule the clinical-rule audit on a quarterly cadence with rotating measure focus; without scheduled audit, the rules drift relative to evolving clinical evidence. 
 
 Last point, because it's specific to this use case: care gaps are not the same as care needs, and the recommender should not pretend they are. A patient with no open care gaps in the registry can still have urgent unmet care needs that the registry doesn't capture (a recently-onset symptom that hasn't been worked up; a deteriorating clinical trajectory that hasn't crossed any threshold; a social problem that no measure tracks). A patient with eleven open care gaps can be in fine clinical shape (the gaps are operational artifacts, not clinical urgencies). The recommender's job is to triage what's in the registry and surface it well, not to claim it's seeing the whole patient. The PCP sees the whole patient. The recommender helps with one slice of the visit's preventive-and-quality work. Don't let the dashboard stand in for the clinician's judgment, and don't let the empty dashboard reassure you that everything is fine. The dashboard is the dashboard. The patient is the patient. They are not the same thing.
 

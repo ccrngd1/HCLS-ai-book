@@ -40,8 +40,6 @@ flowchart TD
     style D fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add DLQ/error handling for Kinesis-to-Lambda path. Configure SQS dead-letter queue with bisect-on-error, CloudWatch alarm on DLQ depth, and staleness flagging when state updates exceed 15 minutes. This is a patient safety concern: silent data loss means stale state feeding recommendations. -->
-
 ## Prerequisites
 
 | Requirement | Details |
@@ -327,8 +325,6 @@ FUNCTION track_outcome(patient_id, episode_id):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add "Why This Isn't Production-Ready" section between Expected Results and Variations per the recipe structure guide. -->
-
 ## Variations and Extensions
 
 **Multi-objective optimization.** Instead of a single reward, optimize for multiple objectives simultaneously: minimize time on vent, minimize reintubation risk, minimize sedation exposure. Use constrained RL or multi-objective RL to find policies on the Pareto frontier, letting clinicians choose their preferred tradeoff.
@@ -349,7 +345,6 @@ FUNCTION track_outcome(patient_id, episode_id):
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Key Research Papers:**
-<!-- TODO (TechWriter): Expert review V2 (LOW). Verify and add full citations for: Komorowski et al. 2018 "The Artificial Intelligence Clinician" (Nature Medicine); Prasad et al. 2017 on RL for mechanical ventilation weaning; Kumar et al. 2020 Conservative Q-Learning. All are real papers but need verified DOI links. -->
 
 **Public Datasets:**
 - [MIMIC-III Clinical Database](https://physionet.org/content/mimiciii/) (PhysioNet, requires credentialed access)
@@ -373,7 +368,6 @@ FUNCTION track_outcome(patient_id, episode_id):
 ---
 
 | [← 15.4: Sepsis Treatment Optimization](chapter15.04-sepsis-treatment-optimization) | [Chapter 15 Index](chapter15-preface) | [15.6: Glucose Control in ICU →](chapter15.06-glucose-control-icu) |
-
 
 ---
 

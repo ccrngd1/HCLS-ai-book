@@ -144,7 +144,6 @@ The key architectural insight: separate the real-time dispatch decision (latency
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter14.08-architecture). The Python example is linked from there.
 
 ## The Honest Take

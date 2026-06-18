@@ -162,7 +162,6 @@ CPT_CROSSWALK = {
     # Example shape only: {"OLD_CODE": "CURRENT_CODE"}.
 }
 
-
 def _to_decimal(value) -> Decimal:
     """
     Coerce numeric input into Decimal for DynamoDB and for downstream math.
@@ -262,7 +261,6 @@ def normalize_claim(raw_claim: dict) -> dict:
 
     return normalized
 
-
 def _normalize_date(value) -> str:
     """
     Accept a datetime, date, or one of several common string formats and
@@ -294,11 +292,9 @@ def _normalize_date(value) -> str:
             continue
     raise ValueError(f"Unrecognized date format: {text!r}")
 
-
 def _strip_empty(values: list) -> list:
     """Filter out empty/None entries from a list of codes."""
     return [v.strip().upper() for v in values if v and str(v).strip()]
-
 
 def _sha256_of_parts(parts: list) -> str:
     """
@@ -307,7 +303,6 @@ def _sha256_of_parts(parts: list) -> str:
     """
     joined = "|".join(parts)
     return hashlib.sha256(joined.encode("utf-8")).hexdigest()
-
 
 def persist_normalized_claim(normalized: dict) -> None:
     """
@@ -472,7 +467,6 @@ def score_pair(incoming: dict, candidate: dict) -> dict:
         "components": {k: v.quantize(Decimal("0.0001")) for k, v in components.items()},
     }
 
-
 def _field_similarity(field_name: str, a, b) -> Decimal:
     """
     Per-field similarity. The function picks a comparison appropriate to
@@ -554,7 +548,6 @@ def _field_similarity(field_name: str, a, b) -> Decimal:
     # Unknown field: be conservative.
     return Decimal("0.0")
 
-
 def _levenshtein(a: str, b: str) -> int:
     """
     Classic Levenshtein edit distance. For teaching purposes the naive
@@ -582,7 +575,6 @@ def _levenshtein(a: str, b: str) -> int:
             ))
         previous = current
     return previous[-1]
-
 
 def _jaccard(a, b) -> Decimal:
     """
@@ -612,7 +604,6 @@ Two notes. First, the "suspension record" is the artifact the adjudication syste
 # Top-N candidates attached to each review-queue message. More than five
 # tends to clutter the examiner's view; fewer loses useful context.
 REVIEW_CANDIDATE_LIMIT = 5
-
 
 def route_claim(incoming: dict, scored_pairs: list, match_type: str) -> dict:
     """
@@ -699,7 +690,6 @@ def route_claim(incoming: dict, scored_pairs: list, match_type: str) -> dict:
         "top_score": top_score,
     }
 
-
 def _write_suspension_record(incoming: dict, top: dict, match_type: str) -> None:
     """
     Persist the auto-suspend decision to DynamoDB. The adjudication system's
@@ -723,7 +713,6 @@ def _write_suspension_record(incoming: dict, top: dict, match_type: str) -> None
         "scorer_version":    SCORER_VERSION,
     }
     table.put_item(Item=record)
-
 
 def _emit_metric(metric_name: str, value: int) -> None:
     """
@@ -776,7 +765,6 @@ VALID_REASONING_CODES = {
     "uncl_insufficient_data",
     "uncl_escalate_to_sme",
 }
-
 
 def on_examiner_verdict(event: dict) -> None:
     """
@@ -850,7 +838,6 @@ def on_examiner_verdict(event: dict) -> None:
         },
     )
 
-
 def _validate_verdict_event(event: dict) -> None:
     """
     Minimal validation. A malformed event should fail fast here rather
@@ -923,7 +910,6 @@ def detect_duplicates(raw_claim: dict) -> dict:
         "scored_pairs":     scored_pairs,
         "decision":         decision,
     }
-
 
 # --- Example usage ---
 #

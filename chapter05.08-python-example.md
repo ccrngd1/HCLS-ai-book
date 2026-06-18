@@ -274,11 +274,9 @@ def _to_decimal(value) -> Decimal:
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for cross-participant
@@ -291,7 +289,6 @@ def _strip_diacritics(s: str) -> str:
         return ""
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
-
 
 def _canonical_name(*parts) -> str:
     """Normalize a name to canonical lowercase whitespace-collapsed
@@ -306,7 +303,6 @@ def _canonical_name(*parts) -> str:
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
 
-
 def _produce_n_grams(value: str, n: int = 2,
                        include_markers: bool = True) -> list:
     """Tokenize a string into n-grams. Underscores serve as
@@ -320,14 +316,12 @@ def _produce_n_grams(value: str, n: int = 2,
         value = "_" + value + "_"
     return [value[i:i + n] for i in range(len(value) - n + 1)]
 
-
 def _compute_per_feature_size(parameterization: dict,
                                 feature_name: str) -> int:
     """Look up the feature's bit allocation from the protocol
     parameterization."""
     return parameterization["per_feature_bit_allocation"].get(
         feature_name, 0)
-
 
 def _hmac_sha_256(key: bytes, message: bytes) -> bytes:
     """HMAC-SHA-256 keyed hash. The salt is the HMAC key; varying
@@ -336,7 +330,6 @@ def _hmac_sha_256(key: bytes, message: bytes) -> bytes:
     plaintext never leaves the hardware-security-module; the
     demo uses a simple hmac.new() for readability."""
     return hmac.new(key, message, hashlib.sha256).digest()
-
 
 def _hash_to_bit_position(salt: bytes, k_index: int, n_gram: str,
                               modulus: int) -> int:
@@ -352,28 +345,23 @@ def _hash_to_bit_position(salt: bytes, k_index: int, n_gram: str,
     # Take first 8 bytes as a 64-bit integer; mod into the bit array.
     return int.from_bytes(h[:8], "big") % modulus
 
-
 def _bit_array(size: int) -> bytearray:
     """Initialize an empty bit array of the given size in bits."""
     return bytearray((size + 7) // 8)
-
 
 def _set_bit(bits: bytearray, position: int) -> None:
     """Set the bit at the given position in the bit array."""
     bits[position // 8] |= (1 << (position % 8))
 
-
 def _is_bit_set(bits: bytearray, position: int) -> bool:
     """Test whether the bit at the given position is set."""
     return bool(bits[position // 8] & (1 << (position % 8)))
-
 
 def _count_set_bits(bits: bytearray) -> int:
     """Population count over the bit array. Used for the
     Sørensen-Dice denominator and for balanced-encoding
     diagnostics."""
     return sum(bin(b).count("1") for b in bits)
-
 
 def _bitwise_and_count(bits_a: bytearray, bits_b: bytearray) -> int:
     """Count of bits set in the bitwise AND of two filters; the
@@ -388,7 +376,6 @@ def _bitwise_and_count(bits_a: bytearray, bits_b: bytearray) -> int:
             "should have been validated at exchange time.")
     return sum(bin(a & b).count("1") for a, b in zip(bits_a, bits_b))
 
-
 def _sorensen_dice_coefficient(bits_a: bytearray,
                                   bits_b: bytearray) -> Decimal:
     """Sørensen-Dice over two Bloom filters: 2 * |A AND B| /
@@ -402,10 +389,8 @@ def _sorensen_dice_coefficient(bits_a: bytearray,
     intersection = _bitwise_and_count(bits_a, bits_b)
     return Decimal("2") * Decimal(intersection) / Decimal(set_a + set_b)
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes
@@ -423,7 +408,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _emit_metric(metric_name: str, value: float,
                   dimensions: dict = None) -> None:
@@ -446,7 +430,6 @@ def _emit_metric(metric_name: str, value: float,
     except Exception as exc:
         logger.warning("metric emit failed",
                         extra={"metric": metric_name, "error": str(exc)})
-
 
 def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      key_id: str = None) -> None:
@@ -550,7 +533,6 @@ class MockSaltCustody:
     def get_access_log(self) -> list:
         return list(self._access_log)
 
-
 # --- Mock protocol parameterization store ---
 class MockProtocolParameterizationStore:
     """Stand-in for the versioned configuration store. Production
@@ -576,7 +558,6 @@ class MockProtocolParameterizationStore:
         """A new parameterization version goes through governance
         approval before publish. The demo just stores it."""
         self._configs[version] = dict(parameterization)
-
 
 # --- Mock participant data sources ---
 # Each participant's source data is a list of records with
@@ -799,7 +780,6 @@ SYNTHETIC_PARTICIPANT_B_RECORDS = [
     },
 ]
 
-
 # --- Mock consent and jurisdictional-overlay store ---
 class MockConsentStore:
     """Stand-in for the institutional consent-management workflow.
@@ -831,7 +811,6 @@ class MockConsentStore:
         consumer's possession."""
         self._withdrawals[source_record_id] = _now_iso()
 
-
 class MockJurisdictionalOverlays:
     """Stand-in for the institutional policy-overlay store.
     Real deployments encode state law (post-Dobbs reproductive-
@@ -854,7 +833,6 @@ class MockJurisdictionalOverlays:
                 },
             })
         return overlays
-
 
 # --- Module-level singletons for the demo ---
 salt_custody                 = MockSaltCustody()
@@ -905,7 +883,6 @@ def _normalize_address(address: str) -> str:
         s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
     return _canonical_name(s)
 
-
 def _normalize_phone(phone: str) -> str:
     """Strip non-digit characters and (for the demo) keep the
     last 10 digits. Production handles country codes, extensions,
@@ -914,7 +891,6 @@ def _normalize_phone(phone: str) -> str:
         return ""
     digits = re.sub(r"\D", "", phone)
     return digits[-10:] if len(digits) >= 10 else digits
-
 
 def _compute_cohort_axis_hashes(record: dict,
                                   cohort_axes: list,
@@ -936,7 +912,6 @@ def _compute_cohort_axis_hashes(record: dict,
                             f"{axis}:{value}".encode("utf-8"))
         hashes[f"{axis}_hash"] = h.hex()[:16]
     return hashes
-
 
 def standardize_and_prepare(source_record_batch: list,
                               participant_id: str,
@@ -1061,7 +1036,6 @@ def _encode_per_feature_bloom_filter(value: str,
 
     return feature_filter
 
-
 def _combine_per_feature_filters(per_feature_filters: dict,
                                       parameterization: dict) -> bytearray:
     """Combine the per-feature filters into the record-level
@@ -1088,7 +1062,6 @@ def _combine_per_feature_filters(per_feature_filters: dict,
                 _set_bit(clk, cursor + i)
         cursor += feature_size
     return clk
-
 
 def encode_record(prepared_record: dict,
                      parameterization_version: str,
@@ -1167,7 +1140,6 @@ def encode_record(prepared_record: dict,
     }
 
     return encoded_record_envelope
-
 
 def encode_batch(prepared_records: list,
                    parameterization_version: str,
@@ -1293,7 +1265,6 @@ def exchange_encoded_records(encoded_record_envelopes: list,
 
     return transport_metadata
 
-
 # In-memory exchange surface. Production replaces with cross-
 # account S3 buckets behind PrivateLink endpoints.
 _IN_MEMORY_EXCHANGE_BUCKET: dict = {}
@@ -1316,7 +1287,6 @@ def _candidate_pairs(encoded_records_a: list,
     return [(a, b) for a in encoded_records_a
                     for b in encoded_records_b]
 
-
 def _per_feature_bloom_filter_from_envelope(envelope: dict,
                                                   feature_name: str
                                                   ) -> bytearray:
@@ -1326,7 +1296,6 @@ def _per_feature_bloom_filter_from_envelope(envelope: dict,
     keeps them on the envelope."""
     raw = envelope["per_feature_filters"].get(feature_name)
     return bytearray(raw) if raw else bytearray(0)
-
 
 def _compute_per_feature_similarities(envelope_a: dict,
                                           envelope_b: dict,
@@ -1351,7 +1320,6 @@ def _compute_per_feature_similarities(envelope_a: dict,
                 filter_a, filter_b)
     return similarities
 
-
 def _combine_with_fellegi_sunter(per_feature_similarities: dict,
                                       feature_weights: dict) -> Decimal:
     """Weighted sum across per-feature similarities. The
@@ -1368,7 +1336,6 @@ def _combine_with_fellegi_sunter(per_feature_similarities: dict,
     if total_weight == 0:
         return Decimal("0")
     return weighted_sum / total_weight
-
 
 def match_encoded_records(encoded_records_a: list,
                               encoded_records_b: list,
@@ -1479,7 +1446,6 @@ def _filter_by_consent(match_results: list, purpose: str) -> list:
             filtered.append(match_result)
     return filtered
 
-
 def _build_per_record_match_flags(matches: list,
                                        target_consumer: str) -> dict:
     """Per-record disclosure form: each consumer receives the
@@ -1526,7 +1492,6 @@ def _build_per_record_match_flags(matches: list,
         }
     return {"matches": [], "note": "unknown target consumer"}
 
-
 def _build_intersection_count(matches: list) -> dict:
     """Intersection-count disclosure form: only the size of the
     intersection (no per-record detail). Used when the protocol
@@ -1555,7 +1520,6 @@ def _build_intersection_count(matches: list) -> dict:
                     / Decimal(max(len(set(m["encoded_record_b_id"]
                                             for m in matches)), 1))),
     }
-
 
 def _build_k_anonymous_aggregate(matches: list,
                                       k_parameter: int,
@@ -1595,7 +1559,6 @@ def _build_k_anonymous_aggregate(matches: list,
         "suppression_threshold":  suppression_threshold,
         "cohort_aggregates":      aggregates,
     }
-
 
 def disclose_linkage_results(match_results: list,
                                   cycle_id: str,
@@ -1875,7 +1838,6 @@ def initialize_cycle(cycle_id: str,
     _IN_MEMORY_EXCHANGE_BUCKET.setdefault(cycle_id, {})
     return cycle_metadata
 
-
 def run_cycle(cycle_id: str,
                 participant_a_records: list,
                 participant_b_records: list,
@@ -1929,7 +1891,6 @@ def run_cycle(cycle_id: str,
         "match_results":      match_results,
         "disclosure_envelope": disclosure_envelope,
     }
-
 
 def run_demo():
     """Run three representative linkage cycles covering the
@@ -2127,7 +2088,6 @@ def run_demo():
     })
     print(f"  source={inv_6['source']:<35} "
           f"actions={inv_6['actions']}")
-
 
 if __name__ == "__main__":
     run_demo()

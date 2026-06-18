@@ -259,7 +259,6 @@ A handful of utilities used across steps. Pulled together here so each step's lo
 # _get_opensearch_client() call.
 _opensearch_client: OpenSearch | None = None
 
-
 def _get_opensearch_client() -> OpenSearch:
     """
     Build (or reuse) an IAM-authenticated OpenSearch client.
@@ -292,7 +291,6 @@ def _get_opensearch_client() -> OpenSearch:
     )
     return _opensearch_client
 
-
 def _embed_text(text: str) -> list:
     """
     Embed a string using the configured embedding model.
@@ -312,7 +310,6 @@ def _embed_text(text: str) -> list:
     )
     payload = json.loads(response["body"].read())
     return payload["embedding"]
-
 
 def _ensure_index_exists(client: OpenSearch) -> None:
     """
@@ -375,7 +372,6 @@ def _ensure_index_exists(client: OpenSearch) -> None:
     client.indices.create(index=OPENSEARCH_INDEX, body=index_body)
     logger.info("Created OpenSearch index %s", OPENSEARCH_INDEX)
 
-
 def _haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Great-circle distance between two (lat, lon) points in miles.
@@ -390,7 +386,6 @@ def _haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> floa
     dlon = lon2r - lon1r
     a = math.sin(dlat / 2) ** 2 + math.cos(lat1r) * math.cos(lat2r) * math.sin(dlon / 2) ** 2
     return 2 * R_miles * math.asin(math.sqrt(a))
-
 
 def _geocode_address(address_text: str) -> dict | None:
     """
@@ -420,7 +415,6 @@ def _geocode_address(address_text: str) -> dict | None:
     # Location Service returns [lon, lat] (GeoJSON convention).
     return {"lon": point[0], "lat": point[1]}
 
-
 def _compute_freshness_penalty(last_verified_iso: str | None) -> float:
     """
     Map a verification timestamp to a freshness penalty in [0, 1].
@@ -446,7 +440,6 @@ def _compute_freshness_penalty(last_verified_iso: str | None) -> float:
     span = FRESHNESS_STALE_DAYS - FRESHNESS_FRESH_DAYS
     progress = (age_days - FRESHNESS_FRESH_DAYS) / span
     return FRESHNESS_PENALTY_AGING + progress * (FRESHNESS_PENALTY_STALE - FRESHNESS_PENALTY_AGING)
-
 
 def _build_profile_text(record: dict) -> str:
     """
@@ -757,7 +750,6 @@ def parse_query(query_string: str, patient_locale: str = "en") -> dict:
     # tighter guarantees; the prompt below illustrates the shape.
     return _llm_parse_query(query_string, patient_locale)
 
-
 def _empty_intent() -> dict:
     return {
         "intent_type":      "unknown",
@@ -768,7 +760,6 @@ def _empty_intent() -> dict:
         "free_text_residual": "",
     }
 
-
 def _empty_filters() -> dict:
     return {
         "language":             None,
@@ -776,7 +767,6 @@ def _empty_filters() -> dict:
         "accepts_new_patients": None,
         "telehealth":           None,
     }
-
 
 def _extract_simple_filters(text: str) -> dict:
     """
@@ -813,7 +803,6 @@ def _extract_simple_filters(text: str) -> dict:
     if "telehealth" in text_lower or "virtual" in text_lower or "online" in text_lower:
         filters["telehealth"] = True
     return filters
-
 
 def _llm_parse_query(query_string: str, patient_locale: str) -> dict:
     """
@@ -912,14 +901,12 @@ Return ONLY valid JSON with this shape:
         "free_text_residual":  parsed.get("free_text_residual", query_string) or query_string,
     }
 
-
 def _to_bool_or_none(v) -> bool | None:
     if v is True or v == "true":
         return True
     if v is False or v == "false":
         return False
     return None
-
 
 def _intent_from_residual(query_string: str) -> dict:
     """Fallback: treat the whole query as free-text residual."""
@@ -1424,7 +1411,6 @@ def fairness_rerank(sorted_rows: list) -> list:
     sorted_rows.sort(key=lambda r: r["relevance_score"], reverse=True)
     return sorted_rows
 
-
 def _batch_get_exposure(provider_ids: list) -> dict:
     """
     Batch lookup of rolling exposure aggregates.
@@ -1455,7 +1441,6 @@ def _batch_get_exposure(provider_ids: list) -> dict:
             # dashboard should alarm if this is happening at meaningful rates.
             continue
     return out
-
 
 def _specialty_overlap(row_a: dict, row_b: dict) -> float:
     """
@@ -1619,7 +1604,6 @@ def assemble_and_log(
         "results":        results,
     }
 
-
 def _render_explanation(
     structured: dict,
     row: dict,
@@ -1654,7 +1638,6 @@ def _render_explanation(
     if row.get("is_safety_net_provider"):
         parts.append("federally qualified health center")
     return ". ".join(p[0].upper() + p[1:] if p else "" for p in parts) + "."
-
 
 def _language_name(code: str) -> str:
     """Map ISO 639-1 codes to display names for the explanation."""
@@ -1876,7 +1859,6 @@ def process_engagement_event(event: dict) -> None:
         event_type, patient_id, provider_id, search_id, position_in_results,
     )
 
-
 def _position_propensity(position: int) -> float:
     """
     Position-based propensity model (a click model with a single
@@ -1892,7 +1874,6 @@ def _position_propensity(position: int) -> float:
         6: 0.27, 7: 0.23, 8: 0.20, 9: 0.18, 10: 0.16,
     }
     return propensities.get(position, 0.10)
-
 
 def _event_to_reward(event_type: str) -> float:
     """
@@ -1911,13 +1892,11 @@ def _event_to_reward(event_type: str) -> float:
         "directory_complaint_filed": -5.0,
     }.get(event_type, 0.0)
 
-
 def _position_band(position: int) -> str:
     if position <= 3:  return "top_3"
     if position <= 5:  return "top_5"
     if position <= 10: return "top_10"
     return "below_10"
-
 
 def _safe_specialty_for_metric(provider_id: str) -> str:
     """
@@ -2082,7 +2061,6 @@ def search_providers(
     response["processing_time_ms"] = elapsed_ms
     print(f"  search_id={response['search_id']} ({elapsed_ms} ms)")
     return response
-
 
 # --- Demo runner ---
 if __name__ == "__main__":

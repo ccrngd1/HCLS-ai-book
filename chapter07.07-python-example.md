@@ -316,7 +316,6 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score
 
-
 def train_los_model(training_df: pd.DataFrame) -> tuple:
     """
     Train an XGBoost regressor to predict remaining length of stay.
@@ -479,7 +478,6 @@ def predict_remaining_los(model, patient_features: dict) -> dict:
 
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
-
 
 def store_prediction(encounter_id: str, unit: str, bed: str, prediction: dict) -> dict:
     """
@@ -704,7 +702,6 @@ def run_full_pipeline():
         "sample_prediction": prediction,
         "monitoring_metrics": monitoring,
     }
-
 
 if __name__ == "__main__":
     results = run_full_pipeline()

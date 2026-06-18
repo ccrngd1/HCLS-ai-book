@@ -262,7 +262,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -290,13 +289,11 @@ def _to_decimal(value):
         return Decimal(value)
     raise TypeError(f"Cannot convert {type(value).__name__} to Decimal")
 
-
 def _iso_date(d):
     """Format a date or datetime as an ISO date string."""
     if isinstance(d, datetime):
         return d.date().isoformat()
     return d.isoformat()
-
 
 def _week_of_year_iso(d):
     """Return the ISO week-of-year integer for a date."""
@@ -340,7 +337,6 @@ class MockS3:
                 return self._b
         return {"Body": _StreamingBody(body)}
 
-
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
 
@@ -380,7 +376,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge.
 
@@ -396,7 +391,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch.
@@ -417,7 +411,6 @@ class MockCloudWatch:
                 "Unit":  m.get("Unit", "None"),
                 "Time":  datetime.now(timezone.utc).isoformat(),
             })
-
 
 def _draw_payment_lag(payer_id, rng):
     """Sample a payment-lag-in-days for a single claim from a payer-shaped distribution.
@@ -448,7 +441,6 @@ def _draw_payment_lag(payer_id, rng):
         # Very long right tail
         return max(7, int(math.exp(rng.gauss(math.log(60), 0.55))))
     return max(1, int(rng.gauss(30, 10)))
-
 
 def generate_synthetic_remittance_history(
         history_days=SYNTHETIC_HISTORICAL_DAYS,
@@ -600,7 +592,6 @@ def generate_synthetic_remittance_history(
         cursor += timedelta(days=1)
 
     return records
-
 
 def generate_synthetic_open_ar(
         records, n_open=SYNTHETIC_OPEN_AR_COUNT, seed=SYNTHETIC_RANDOM_SEED + 1):
@@ -833,7 +824,6 @@ class KaplanMeierEstimator:
                 return None
         return None
 
-
 def fit_payer_payment_curves(harmonized, as_of_dt=None,
                              history_lookback_days=DEFAULT_HISTORY_LOOKBACK_DAYS):
     """Step 2: Fit one Kaplan-Meier curve per payer.
@@ -992,11 +982,9 @@ def simulate_claim_payment(claim, curve, payer_catalog,
     amt = (claim.get("expected_allowed_amount") or 0.0) * rng.uniform(0.92, 1.0)
     return (pay_date, round(amt, 2))
 
-
 def _seasonality_factor(week_of_year):
     """Return the multiplicative seasonality factor for a week."""
     return SEASONALITY_BY_WEEK_OF_YEAR.get(week_of_year, 1.0)
-
 
 def _ar_aging_bucket(submitted_date_str, as_of_dt):
     """Return the AR aging bucket label for a claim."""
@@ -1006,7 +994,6 @@ def _ar_aging_bucket(submitted_date_str, as_of_dt):
         if lo <= age_days <= hi:
             return label
     return AR_AGING_BUCKETS[-1][0]
-
 
 def simulate_cash_flow(open_ar, payer_curves, payer_catalog,
                        horizon_weeks=DEFAULT_HORIZON_WEEKS,
@@ -1071,20 +1058,6 @@ def simulate_cash_flow(open_ar, payer_curves, payer_catalog,
 ```
 
 ---
-
-<!-- TODO (TechWriter): Expert review / Code review W2 (WARNING). The Step 4
-section header below ("Aggregate to Per-Week Cash Flow Forecasts") does not
-match what the file's preamble promises Step 4 does ("apply seasonality,
-denial-and-appeal cycle adjustments, and patient-responsibility tail
-modeling"). Seasonality is actually applied in Step 3 (inside
-`simulate_cash_flow`), denial-and-appeal is applied in Step 3 (inside
-`simulate_claim_payment`), and patient-responsibility tail modeling is not
-implemented at all. Fix the preamble paragraph at the top of this file
-(near "the code maps to the five pseudocode steps") so Step 3 = "simulate
-per-claim payments with seasonality and denial-and-appeal sub-process
-applied per sample" and Step 4 = "aggregate sample-wise to per-week,
-per-payer percentiles," with patient-responsibility tail modeling moved to
-Gap to Production. -->
 
 ## Step 4: Aggregate to Per-Week Cash Flow Forecasts
 
@@ -1430,7 +1403,6 @@ def run_cash_flow_pipeline(table, event_bus, cloudwatch, s3, as_of_dt=None):
 
     return forecasts, aging_block
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1480,7 +1452,6 @@ def run_demo():
     print(f"\n=== DynamoDB writes: {table.write_count} ===")
 
     return forecasts
-
 
 if __name__ == "__main__":
     run_demo()

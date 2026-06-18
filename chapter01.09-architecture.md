@@ -572,7 +572,6 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
              " concern(s) for " + document_key + ". Routing to review queue."
         RETURN record
 
-
     // Both checks passed. Route to fulfillment.
     queue_url = FULFILLMENT_QUEUES.get(classification.request_type, FULFILLMENT_QUEUES["general"])
     send to SQS queue at queue_url:
@@ -775,8 +774,6 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 - [Guidance for Intelligent Document Processing on AWS](https://aws.amazon.com/solutions/guidance/intelligent-document-processing-on-aws): Reference architecture for classifying, extracting, and enriching documents at scale. Covers routing and storage patterns used in this recipe.
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Extends forms extraction with generative AI for complex healthcare fields. The hybrid Textract-plus-LLM pattern here mirrors this recipe's approach.
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end healthcare document processing with routing and compliance patterns.
-
-<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section at the end of architecture companions. Add one. -->
 
 ---
 

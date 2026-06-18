@@ -641,7 +641,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of `_to_decimal` for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -654,11 +653,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -666,7 +663,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -685,7 +681,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -706,7 +701,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -731,7 +725,6 @@ def _audit_tool_call(session_id: str,
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
 
-
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields before ledger storage."""
     redacted = dict(arguments)
@@ -743,7 +736,6 @@ def _redact_tool_args(arguments: dict) -> dict:
         if key in sensitive_keys:
             redacted[key] = "[REDACTED]"
     return redacted
-
 
 def _resolve_session_key(session_id: str) -> Optional[str]:
     """Resolve a session_id to its session_key partition key."""
@@ -767,7 +759,6 @@ def _resolve_session_key(session_id: str) -> Optional[str]:
             session_id, exc)
     return None
 
-
 def _session_state(session_id: str) -> dict:
     """Read the session-state row keyed by session_id."""
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
@@ -776,7 +767,6 @@ def _session_state(session_id: str) -> dict:
         return {}
     response = table.get_item(Key={"session_key": session_key})
     return _from_decimal(response.get("Item", {}))
-
 
 def _update_session_field(session_id: str,
                             field_name: str,
@@ -797,7 +787,6 @@ def _update_session_field(session_id: str,
             "Failed to set %s on session %s: %s",
             field_name, session_id, exc)
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """Append a turn record to the conversation-metadata table."""
     table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
@@ -811,7 +800,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
     except Exception as exc:
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 6) -> list:
     """Return the most recent k turns for context."""
@@ -832,7 +820,6 @@ def _recent_turns(session_id: str, k: int = 6) -> list:
               for i in response.get("Items", [])]
     return list(reversed(items))
 
-
 def _build_chat_reply(session_id: str,
                        response_text: str,
                        attach_greeting: bool,
@@ -852,11 +839,9 @@ def _build_chat_reply(session_id: str,
         "handoff_target":  handoff_target,
     }
 
-
 def _care_level_acuity(care_level: str) -> int:
     """Return the acuity rank for a care-level identifier."""
     return CARE_LEVEL_ACUITY.get(care_level, 0)
-
 
 def _highest_acuity(care_levels: list) -> str:
     """Return the highest-acuity care level from the list."""
@@ -969,7 +954,6 @@ def receive_message(channel: str,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
 
-
 def _get_or_create_session(channel: str,
                              channel_session_id: str,
                              auth_context: dict,
@@ -1041,7 +1025,6 @@ def _get_or_create_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _screen_input(session_id: str,
                    user_message: str,
                    language: str) -> dict:
@@ -1076,7 +1059,6 @@ def _screen_input(session_id: str,
         }
 
     return {"action": "proceed"}
-
 
 def _emergency_screen(session_id: str,
                         user_message: str,
@@ -1140,7 +1122,6 @@ def _emergency_screen(session_id: str,
 
     return {"emergency_detected": False}
 
-
 def _handle_screening_action(session_id: str,
                                channel: str,
                                screening_result: dict,
@@ -1182,7 +1163,6 @@ def _handle_screening_action(session_id: str,
             disposition="continued")
 
     raise ValueError(f"Unknown screening action: {action}")
-
 
 def _handle_emergency_routing(session_id: str,
                                 channel: str,
@@ -1299,7 +1279,6 @@ def _handle_triage_message(session_id: str,
         user_message=user_message,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
-
 
 def _load_chart_context(session_id: str) -> dict:
     """Load demographics, problems, medications, allergies."""
@@ -1525,7 +1504,6 @@ def _identify_and_select_protocol(session_id: str,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
 
-
 def _route_out_of_scope(session_id: str,
                           channel: str,
                           reason: str,
@@ -1632,7 +1610,6 @@ def _ask_next_protocol_question(session_id: str,
         attach_greeting=attach_initial_greeting,
         disposition="awaiting_protocol_answer")
 
-
 def _next_unanswered_question(protocol: dict,
                                   answer_set: dict
                                   ) -> Optional[dict]:
@@ -1641,7 +1618,6 @@ def _next_unanswered_question(protocol: dict,
         if question["id"] not in answer_set:
             return question
     return None
-
 
 def _identify_and_select_protocol_or_continue(
         session_id: str,
@@ -1727,7 +1703,6 @@ def _identify_and_select_protocol_or_continue(
         attach_initial_greeting=False,
         language=language)
 
-
 def _parse_protocol_answer(question: dict,
                               patient_response: str) -> dict:
     """
@@ -1806,7 +1781,6 @@ def _parse_protocol_answer(question: dict,
             features["age_or_temp"] = int(m.group(1))
 
     return {"value": features, "confidence": Decimal("0.85")}
-
 
 def _route_to_nurse_line(session_id: str,
                             channel: str,
@@ -1999,7 +1973,6 @@ def _compute_rules_and_recommend(session_id: str,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
 
-
 def _resolve_rule_inputs(rule_id: str,
                             answer_set: dict,
                             chart_context: dict) -> dict:
@@ -2060,7 +2033,6 @@ def _resolve_rule_inputs(rule_id: str,
         }
     return {}
 
-
 def _apply_special_population_upgrades(
         base_care_level: str,
         special_population_flags: list,
@@ -2109,7 +2081,6 @@ def _apply_special_population_upgrades(
                             "immunosuppressed_with_fever")
 
     return final_care_level, upgrades_applied
-
 
 def _compose_rationale(protocol: dict,
                           protocol_recommendation: str,
@@ -2246,7 +2217,6 @@ def _deliver_recommendation(session_id: str,
         disposition="recommendation_delivered",
         citations=citations)
 
-
 def _render_recommendation_text(care_level: str,
                                     rationale: str,
                                     upgrades_applied: list,
@@ -2343,7 +2313,6 @@ def _render_recommendation_text(care_level: str,
 
     return "\n\n".join(parts)
 
-
 def _build_recommendation_citations(session: dict) -> list:
     """Build the citation list for the audit trail."""
     citations = [{
@@ -2362,7 +2331,6 @@ def _build_recommendation_citations(session: dict) -> list:
             "risk_stratum":  r.get("risk_stratum"),
         })
     return citations
-
 
 def _screen_output(session_id: str,
                     response: dict,
@@ -2436,7 +2404,6 @@ def _screen_output(session_id: str,
         "response_text":  response_text,
         "citations":      citations,
     }
-
 
 def _detect_triage_scope_violation(text: str
                                        ) -> Optional[str]:
@@ -2557,7 +2524,6 @@ def _persist_decision_record(session_id: str,
                 1 if citations else 0,
                 {"protocol_id": protocol_id or "unknown"})
 
-
 def _redact_protocol_answers(answer_set: dict) -> dict:
     """Redact free-text raw fields from protocol answers."""
     redacted = {}
@@ -2570,7 +2536,6 @@ def _redact_protocol_answers(answer_set: dict) -> dict:
         else:
             redacted[q_id] = value
     return redacted
-
 
 def _write_decision_journal(record: dict) -> None:
     """Write a durable decision-record journal entry to S3."""
@@ -2590,7 +2555,6 @@ def _write_decision_journal(record: dict) -> None:
         logger.error(
             "Decision-journal write failed for %s: %s",
             record.get("decision_id"), exc)
-
 
 def _queue_outcome_correlation(record: dict) -> None:
     """Queue the decision for 72-hour outcome correlation."""
@@ -2781,7 +2745,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """Apply redaction rules before streaming to the audit archive."""
     redacted = dict(turn)
@@ -2804,7 +2767,6 @@ def chart_context_lookup_tool(patient_id: str,
     """Pull demographics, problems, medications, allergies."""
     return ehr_system.chart_context_lookup(
         patient_id=patient_id, scope=scope)
-
 
 def intent_classify_tool(user_message: str,
                             recent_turns: list,
@@ -2855,7 +2817,6 @@ def intent_classify_tool(user_message: str,
              "secondary": [],
              "confidence": 0.40}
 
-
 def protocol_select_tool(primary_symptom: str,
                             secondary_symptoms: list,
                             pediatric_vs_adult: str,
@@ -2902,7 +2863,6 @@ def protocol_select_tool(primary_symptom: str,
         "referral_target": "nurse_line",
     }
 
-
 def clinical_rule_compute_tool(rule_id: str,
                                   inputs: dict) -> dict:
     """
@@ -2942,7 +2902,6 @@ def clinical_rule_compute_tool(rule_id: str,
         "recommendation": None,
     }
 
-
 def nurse_line_escalate_tool(session_id: str,
                                   patient_id: Optional[str],
                                   reason: str,
@@ -2955,13 +2914,11 @@ def nurse_line_escalate_tool(session_id: str,
         reason=reason,
         conversation_summary=conversation_summary)
 
-
 def telehealth_book_tool(patient_id: str,
                               context: dict) -> dict:
     """Book a telehealth visit with the conversation context."""
     return telehealth_scheduler.book(
         patient_id=patient_id, context=context)
-
 
 def urgent_care_locate_tool(patient_zip: str) -> dict:
     """Surface the nearest in-network urgent care."""
@@ -3058,7 +3015,6 @@ class MockTable:
                 return key
         return None
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -3085,17 +3041,14 @@ class MockDynamoDBResource:
     def Table(self, name):
         return self._tables[name]
 
-
 class MockBedrockRuntime:
     """Stub. Demo's flow does not invoke Bedrock directly."""
     def invoke_model(self, **kwargs):
         return {"body": _StubBody(b"{}")}
 
-
 class _StubBody:
     def __init__(self, data): self._data = data
     def read(self): return self._data
-
 
 class MockEHR:
     """Stand-in for the EHR chart-context lookup."""
@@ -3165,7 +3118,6 @@ class MockEHR:
     def chart_context_lookup(self, patient_id, scope):
         return self.patients.get(patient_id, {})
 
-
 class MockNurseLine:
     """Stand-in for the nurse-line escalation system."""
     def __init__(self):
@@ -3185,7 +3137,6 @@ class MockNurseLine:
         return {"outcome":  "queued",
                  "ticket_id": ticket["ticket_id"]}
 
-
 class MockTelehealthScheduler:
     """Stand-in for telehealth scheduling."""
     def book(self, patient_id, context):
@@ -3193,7 +3144,6 @@ class MockTelehealthScheduler:
             "outcome":     "queued",
             "booking_id":  f"tele-{uuid.uuid4()}",
         }
-
 
 class MockUrgentCareDirectory:
     """Stand-in for urgent-care lookup."""
@@ -3204,13 +3154,11 @@ class MockUrgentCareDirectory:
             "wait_minutes": 25,
         }
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -3218,20 +3166,17 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockS3:
     def __init__(self): self.objects = {}
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"VersionId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of
 # the file calls them transparently. Comment these out to run
@@ -3246,7 +3191,6 @@ ehr_system            = MockEHR()
 nurse_line_system     = MockNurseLine()
 telehealth_scheduler  = MockTelehealthScheduler()
 urgent_care_directory = MockUrgentCareDirectory()
-
 
 def receive_message_continued(channel, channel_session_id,
                                   user_message, auth_context,
@@ -3319,7 +3263,6 @@ def receive_message_continued(channel, channel_session_id,
         user_message=user_message,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
-
 
 def run_demo():
     """
@@ -3505,7 +3448,6 @@ def run_demo():
           f"{len(cloudwatch_client.metrics)}")
     print(f"Nurse-line tickets queued:     "
           f"{len(nurse_line_system.tickets)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

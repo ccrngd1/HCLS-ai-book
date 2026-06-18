@@ -18,8 +18,6 @@
 
 **Amazon DynamoDB for evidence accumulation.** As per-document extraction results come in, they accumulate in DynamoDB keyed by patient ID and criterion. DynamoDB's fast writes and flexible schema handle the heterogeneous evidence payloads (medication attributes vs. lab values vs. diagnosis assertions all look different). The aggregation step queries by patient to pull all evidence for classification.
 
-<!-- TODO (TechWriter): Expert review SEC-2 (MEDIUM). Add data retention/TTL policy guidance for DynamoDB evidence store. Research data governance requires defined retention schedules; intermediate NLP artifacts should have shorter retention than final classifications. -->
-
 **Amazon SageMaker for custom model hosting (optional).** If your phenotype requires extraction capabilities beyond what Comprehend Medical provides natively (e.g., a custom classifier for "treatment resistance" assertions, or a domain-specific entity type not in Comprehend Medical's ontology), SageMaker hosts the custom model behind an endpoint that Lambda calls as part of the pipeline.
 
 ### Architecture Diagram
@@ -151,8 +149,6 @@ flowchart TD
 
 **Step 2: Process each clinical note through entity extraction.** For every note in the patient's record, send it through Comprehend Medical to pull out medical entities with their assertions, attributes, and normalized codes. The key insight here is that you're not processing the note generically: you're processing it with your phenotype criteria in mind. Not every entity in the note matters. A phenotype for depression doesn't care about the patient's knee replacement (usually). But you extract everything at the document level because filtering happens in the next step, and you don't want to re-process notes if you add criteria later. Think of this as building an evidence index for the patient's record.
 
-<!-- TODO (TechWriter): Expert review ARC-4 (MEDIUM). Add chunking logic for notes exceeding Comprehend Medical's 20,000-character limit. Split at sentence boundaries before 18,000 chars, process chunks independently, merge and deduplicate results. -->
-
 ```pseudocode
 FUNCTION process_note(patient_id, note_id, note_text, note_metadata):
     // Send the clinical note to Comprehend Medical for entity extraction.
@@ -265,7 +261,6 @@ FUNCTION evaluate_against_criteria(extraction_result, phenotype_definition):
     
     RETURN evidence_items
 
-
 FUNCTION filter_entities(entities, target_categories, target_terms, required_assertion, exclude_sections):
     // Match entities based on category, terminology, assertion, and section
     matched = empty list
@@ -294,8 +289,6 @@ FUNCTION filter_entities(entities, target_categories, target_terms, required_ass
 ```
 
 **Step 4: Aggregate evidence across all notes for each patient.** A single note rarely provides enough evidence to classify a patient. This step pulls together all the evidence accumulated across the patient's entire note corpus and organizes it by criterion. For criterion C2 (treatment failures), it counts distinct medications with failure assertions. For criterion C1 (MDD diagnosis), it counts the number of positive mentions across different encounters. The aggregation logic is criterion-specific because different criteria have different evidence thresholds.
-
-<!-- TODO (TechWriter): Expert review ARC-5 (MEDIUM). Add temporal conflict resolution when positive and negative evidence exist for same criterion. Most recent note takes priority for current-status phenotypes; any-positive suffices for ever-had phenotypes. Document which interpretation the phenotype uses. -->
 
 ```pseudocode
 FUNCTION aggregate_patient_evidence(patient_id, phenotype_definition):
@@ -469,8 +462,6 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
 - Historical note scans with OCR artifacts that degrade NLP accuracy
 - Phenotypes that require negation of a negation ("patient no longer denies suicidal ideation")
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add "Why This Isn't Production-Ready" section between Expected Results and Variations. Cover gaps like: no drift detection for phenotype accuracy over time, no automated re-validation when NLP model versions change, lack of clinician-in-the-loop adjudication workflow, and missing cross-institution portability testing. -->
-
 ---
 
 ## Variations and Extensions
@@ -514,7 +505,6 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
 | **With variations** | 6-9 months | Multi-site federation, active learning refinement loop, LLM augmentation, phenotype library with version management |
 
 ---
-
 
 ---
 

@@ -14,13 +14,9 @@
 
 **Amazon DynamoDB for the patient context store.** Per-patient feature vectors need sub-millisecond reads at decision time. DynamoDB's key-value access pattern is ideal: look up patient ID, get their feature vector, pass it to the model. TTL on engagement history entries keeps the table from growing unbounded.
 
-<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add guidance on PHI behavioral profiling: (1) Scope DynamoDB read access to the timing engine Lambda role only via IAM resource conditions. (2) Define explicit TTL of 90-180 days on engagement history items. (3) Note that behavioral engagement profiles derived from health communications may constitute PHI under HIPAA and should be included in the facility's Notice of Privacy Practices. (4) Implement a patient profile deletion endpoint for right-of-access requests. -->
-
 **AWS Lambda for orchestration.** The timing decision is a stateless function: read message from queue, fetch patient context, call Personalize for a recommendation, schedule the delivery. Lambda's event-driven model fits perfectly. A scheduled Lambda also handles the "check for messages whose delivery window has arrived" pattern. Lambda security groups should restrict outbound traffic to VPC endpoints only (no internet egress). All AWS service calls in this architecture can be routed through VPC endpoints, eliminating the need for internet access entirely.
 
 **Amazon EventBridge Scheduler for timed delivery.** Once the model selects a send time, EventBridge Scheduler fires at that exact time to trigger the actual delivery. One-time schedules (not recurring) for each message. This replaces the need for a custom scheduler or cron-based polling.
-
-<!-- TODO (TechWriter): Expert review ARCH-2 (HIGH). Address EventBridge Scheduler silent failure mode: (1) Add a time validation check ensuring the selected slot is in the future with a minimum 2-minute buffer; if not, send immediately. (2) SQS message deletion should happen after schedule creation confirmation, not after the timing decision. Use SQS visibility timeout extension during processing and only delete after CreateSchedule returns success. (3) Add a DLQ on the SQS queue for messages that fail scheduling after retries. -->
 
 **Amazon Pinpoint for multi-channel delivery.** Pinpoint handles the actual send across SMS, push notification, and email. It also provides delivery and engagement tracking (opens, clicks) that feed back into the reward signal. Note: Pinpoint engagement event delivery to Kinesis is a service-side integration. Pinpoint writes to the Kinesis stream using an IAM role you configure, from the AWS service network. This does not traverse your VPC.
 
@@ -353,8 +349,6 @@ FUNCTION handle_engagement_timeout(message_id):
 **AWS Sample Repos:**
 - [`amazon-personalize-samples`](https://github.com/aws-samples/amazon-personalize-samples): End-to-end examples of Personalize campaigns including real-time recommendations and event tracking
 
-<!-- TODO: Verify if there are healthcare-specific Personalize or Pinpoint sample repos on aws-samples -->
-
 **AWS Solutions and Blogs:**
 - [Maintaining Personalized Experiences with Machine Learning (AWS Solutions)](https://aws.amazon.com/solutions/implementations/maintaining-personalized-experiences-with-machine-learning/): Deployable solution for real-time personalization pipelines
 - [Amazon Personalize Pricing](https://aws.amazon.com/personalize/pricing/)
@@ -371,7 +365,6 @@ FUNCTION handle_engagement_timeout(message_id):
 | **With variations** | 10-12 weeks | Multi-channel joint optimization, content personalization integration, cold-start clustering, fatigue modeling, predictive send-ahead. |
 
 ---
-
 
 ---
 

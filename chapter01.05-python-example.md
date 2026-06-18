@@ -312,7 +312,6 @@ def detect_boundary_at_page_pair(
 
     return result
 
-
 def detect_all_boundaries(
     pages: dict[int, dict],
     bedrock_client,
@@ -460,7 +459,6 @@ def classify_segment(
 
     return classified
 
-
 def classify_all_segments(
     segments: list[dict],
     pages: dict[int, dict],
@@ -607,7 +605,6 @@ EOB_SERVICE_LINE_COLUMNS = {
                                'deductible + coinsurance']
 }
 
-
 def extract_financial_document(
     segment: dict,
     pages: dict[int, dict],
@@ -665,7 +662,6 @@ def extract_financial_document(
         'confidence':    90.0 if service_lines else 40.0
     }
 
-
 def _reconstruct_table(table_block: dict, block_map: dict) -> list[list[str]]:
     """
     Reconstruct a Textract TABLE block into a list-of-lists.
@@ -709,7 +705,6 @@ def _reconstruct_table(table_block: dict, block_map: dict) -> list[list[str]]:
         rows.append(row)
 
     return rows
-
 
 def _normalize_columns(headers: list[str], column_map: dict) -> dict[int, str]:
     """Map header position indices to canonical column names."""
@@ -802,7 +797,6 @@ def match_document_to_claim_lines(
         print(f"  WARNING: Could not parse claim matching response for "
               f"segment {extraction['start_page']}-{extraction['end_page']}")
         return []
-
 
 def match_all_documents_to_claim_lines(
     classified_segments: list[dict],
@@ -930,7 +924,6 @@ def _to_decimal(value) -> Decimal:
         return [_to_decimal(item) for item in value]
     else:
         return value  # str, bool, None, Decimal already: pass through unchanged
-
 
 def assemble_claims_attachment_record(
     attachment_key: str,

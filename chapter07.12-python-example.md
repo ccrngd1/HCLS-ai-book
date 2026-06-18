@@ -189,7 +189,6 @@ def generate_claims_history(n_claims: int = NUM_HISTORICAL_CLAIMS,
     )
     return df
 
-
 def generate_novel_claims(n_claims: int = NUM_NOVEL_CLAIMS,
                           seed: int = 99) -> pd.DataFrame:
     """
@@ -252,7 +251,6 @@ NUMERIC_FEATURES = ["claim_amount", "patient_age", "num_modifiers",
                     "has_modifier_25", "has_modifier_59",
                     "pa_required", "pa_on_file"]
 
-
 def build_embedding_pipeline() -> ColumnTransformer:
     """
     Build a sklearn ColumnTransformer that encodes claims into fixed-length
@@ -277,7 +275,6 @@ def build_embedding_pipeline() -> ColumnTransformer:
         remainder="drop"
     )
     return preprocessor
-
 
 def compute_embeddings(df: pd.DataFrame, preprocessor: ColumnTransformer,
                        fit: bool = False) -> np.ndarray:
@@ -336,7 +333,6 @@ def build_knn_index(history_embeddings: np.ndarray,
     logger.info("Built kNN index over %d vectors", history_embeddings.shape[0])
     return knn
 
-
 def retrieve_neighbors(knn_index: NearestNeighbors,
                        query_embedding: np.ndarray,
                        history_df: pd.DataFrame,
@@ -368,7 +364,6 @@ def retrieve_neighbors(knn_index: NearestNeighbors,
         })
 
     return neighbors
-
 
 def compute_knn_prediction(neighbors: list,
                            k_vote: int = K_VOTE) -> dict:
@@ -598,7 +593,6 @@ from botocore.config import Config
 # with exponential backoff and jitter.
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 
-
 def get_opensearch_client():
     """
     Create a boto3 client for OpenSearch HTTP operations.
@@ -622,7 +616,6 @@ def get_opensearch_client():
     # For this example, we show the index/query JSON structures.
     session = boto3.Session()
     return session.client("opensearch", config=BOTO3_RETRY_CONFIG)
-
 
 def create_knn_index_mapping() -> dict:
     """
@@ -673,7 +666,6 @@ def create_knn_index_mapping() -> dict:
         }
     }
 
-
 def bulk_index_embeddings(embeddings: np.ndarray,
                           claims_df: pd.DataFrame,
                           index_name: str = OPENSEARCH_INDEX) -> None:
@@ -722,7 +714,6 @@ def bulk_index_embeddings(embeddings: np.ndarray,
     print(f"  [OpenSearch] Embedding dimension: {embeddings.shape[1]}")
     print(f"  [OpenSearch] Index: {index_name}")
 
-
 def query_opensearch_knn(query_vector: np.ndarray,
                          k: int = K_NEIGHBORS,
                          index_name: str = OPENSEARCH_INDEX) -> dict:
@@ -770,7 +761,6 @@ def query_opensearch_knn(query_vector: np.ndarray,
 
     # Return the query structure for inspection
     return query_body
-
 
 def query_opensearch_knn_with_payer_filter(query_vector: np.ndarray,
                                            payer_id: str,
@@ -847,7 +837,6 @@ def simulate_primary_model_score(claim: pd.Series, rng=None) -> float:
     # Add noise to simulate model uncertainty
     score = np.clip(base + rng.normal(0, 0.1), 0.05, 0.95)
     return float(score)
-
 
 def score_claim_hybrid(claim: pd.Series,
                        claim_embedding: np.ndarray,
@@ -1069,7 +1058,6 @@ def run_full_pipeline():
     print(f"    - Case-based explanation (show me similar resolved claims)")
     print(f"    - Cold-start handling (new payer with no training history)")
     print(f"    - Operational routing (which denial archetype is this?)")
-
 
 if __name__ == "__main__":
     run_full_pipeline()

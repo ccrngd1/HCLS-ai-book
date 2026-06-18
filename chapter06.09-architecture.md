@@ -131,8 +131,6 @@ FUNCTION extract_sdoh_from_note(note_text, patient_id, encounter_date):
 
 **Step 2: Feature assembly.** This step combines three data sources into a single patient feature vector: NLP extractions from notes, structured screening responses, and community-level indicators linked via geocoding. The challenge is handling missingness honestly. A patient with no NLP mentions might have no social needs, or might simply have sparse documentation. A patient with no screening data wasn't necessarily screened negative; they may never have been asked. The feature vector must encode these distinctions because they affect clustering behavior. Treating "never screened" as "no needs" would systematically undercount SDOH burden in populations with less documentation.
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add guidance on geocoding PHI: recommend geocoding at zip+4 level (not full street address) when census-tract precision suffices for ADI/SVI lookup; call Location Service via VPC endpoint; cache geocode results in the feature store to avoid repeated address transmission; include geocoding calls in application-level audit logging. -->
-
 ```pseudocode
 FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
     features = empty map
@@ -296,10 +294,6 @@ FUNCTION characterize_phenotypes(feature_matrix, cluster_labels, patient_demogra
 
 **Step 5: Store phenotype assignments.** Write each patient's phenotype assignment to the real-time lookup store. Include the assignment date, confidence (membership probability if using soft clustering), and a staleness indicator. Phenotypes decay: a patient's social circumstances change, and an assignment from 18 months ago may no longer reflect reality. Downstream systems should check the assignment date and trigger re-evaluation if it's stale.
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note that feature_snapshot is derived PHI subject to the same retention and access controls as source data. Consider recommending an S3 URI reference in DynamoDB rather than the full snapshot, to reduce PHI surface in the real-time lookup store. -->
-
-<!-- TODO (TechWriter): Expert review S4 (MEDIUM). Add requirement for application-level audit logging at the care management integration point: each phenotype lookup should log requesting user/system, patient_id, timestamp, and phenotype returned (HIPAA accounting-of-disclosures control). -->
-
 ```pseudocode
 STALENESS_THRESHOLD_DAYS = 180  // re-evaluate phenotype if older than 6 months
 
@@ -409,8 +403,6 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 - Community-level indicators are proxies; they don't capture individual circumstances within a neighborhood
 - Temporal dynamics: a patient's phenotype can change faster than the re-clustering cadence
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. The "Where it struggles" bullets above cover some of this, but the section should be explicit per template. -->
-
 ---
 
 ## Variations and Extensions
@@ -460,7 +452,6 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 | **With variations** | 6-9 months | Longitudinal trajectory tracking, real-time assignment, federated learning across sites, outcome-validated phenotypes |
 
 ---
-
 
 ---
 

@@ -16,13 +16,9 @@
 
 **Amazon DynamoDB for patient state storage.** Each patient's rolling baseline, current trajectory metrics, and alert history need to live in a low-latency store that can handle high write throughput. DynamoDB's single-digit millisecond reads and writes make it suitable for the stateful computations that reference and update patient state on every new reading. TTL support automatically ages out data for discharged patients.
 
-<!-- TODO (TechWriter): Expert review M6 (MEDIUM). Add ADT event listener description: on discharge, immediately delete patient state (don't rely on TTL); on admission, initialize fresh state with baseline_stable=false; on transfer, preserve state but update unit context for alert routing. -->
-
 **Amazon Timestream for historical trajectory storage.** The full history of vital sign readings and computed trajectory metrics goes into a time series database optimized for temporal queries. Timestream handles the time-based retention tiers (hot data for recent trajectories, cold data for research and retrospective analysis) and supports the temporal query patterns (give me this patient's heart rate slope over the last 12 hours) natively.
 
 **Amazon SNS for alert routing.** When trajectory analysis produces an alert, it needs to reach the right person through the right channel. SNS handles fan-out to multiple subscribers: pager, EHR notification, nursing station dashboard, charge nurse summary. Topic-based routing allows different alert severities to reach different endpoints. All subscription endpoints (pager API, dashboard webhook, EHR integration) must be covered under your organization's BAA chain. An alert containing vital signs and patient identifiers is PHI regardless of the delivery channel.
-
-<!-- TODO (TechWriter): Expert review M7 (MEDIUM). Add note: if alert delivery targets external endpoints (pager vendor API), configure a NAT gateway in a controlled subnet with outbound security group rules limited to vendor IP ranges. Prefer VPC-internal integrations (PrivateLink) to avoid PHI egress to the public internet. -->
 
 **Amazon CloudWatch for system health monitoring.** You're building a clinical safety system. You need to know immediately if the pipeline falls behind, if Lambda errors spike, if Kinesis is throttling, or if alert delivery latency exceeds acceptable bounds. CloudWatch alarms on processing latency, error rates, and alert delivery confirmation close the operational monitoring loop.
 
@@ -63,8 +59,6 @@ flowchart TD
 ```
 
 The routing decision is implicit in the data source: continuous monitor feeds (sub-second frequency) route to the Flink application; EHR-documented assessments (multi-hour frequency) route to Lambda. A patient transferred to the ICU starts producing continuous data immediately, and the Flink path activates without manual intervention. Both paths write to the same patient state store, so trajectory history is preserved across transitions.
-
-<!-- TODO (TechWriter): Expert review H2 (HIGH). Add dead-letter queue (SQS) on both Lambda functions and a side-output on the Flink application for failed events. Add CloudWatch alarms on DLQ depth > 0. In a clinical safety system, a silently dropped reading is a patient safety risk. Add brief prose and update the architecture diagram to include DLQ. -->
 
 ### Prerequisites
 
@@ -488,8 +482,6 @@ In production, pager notifications typically contain location identifiers (room/
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (e.g., clinical validation study, alarm committee approval, EHR integration certification). Do not duplicate content already in The Honest Take. -->
-
 ## Variations and Extensions
 
 **Integration with early warning scores.** Rather than replacing NEWS/MEWS, augment them. Compute the trajectory of the composite score itself. A NEWS score that went from 2 to 3 to 4 to 5 over four assessments has a trajectory that's more informative than the current score of 5 alone. Overlay trajectory features onto the existing EWS framework rather than asking clinical teams to adopt an entirely new scoring paradigm.
@@ -530,7 +522,6 @@ In production, pager notifications typically contain location identifiers (room/
 | **With variations** (continuous monitoring, medication-aware suppression, retrospective research platform) | 8-12 months |
 
 ---
-
 
 ---
 

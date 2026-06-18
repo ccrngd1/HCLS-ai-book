@@ -1,27 +1,3 @@
-<!--
-TechEditor pass v7 (2026-06-17):
-- Post-split polish. This file was extracted from the monolithic Recipe 3.2 to
-  serve as the architecture companion per RECIPE-GUIDE three-file structure. This
-  pass verifies that the companion opens cleanly and reads as a standalone
-  implementation reference.
-- Confirmed: backlink header references the main recipe correctly and sets
-  context for a reader arriving directly.
-- Confirmed: sections present per RECIPE-GUIDE architecture companion spec:
-  Why These Services, Architecture Diagram, Prerequisites, Ingredients,
-  Code (Pseudocode Walkthrough), Expected Results, Why This Isn't Production-Ready,
-  Variations and Extensions, Additional Resources, Estimated Implementation Time,
-  Navigation footer.
-- Confirmed: 0 em dashes (U+2014), 0 en dashes (U+2013). All code fences tagged
-  (1 mermaid, 2 json, 2 pseudocode, 3 text). Header hierarchy: 1 H1, 5 H2,
-  5 H3, 1 H4. No skipped levels.
-- Confirmed: Python companion callout present after the pseudocode walkthrough.
-- TODO inventory: 4 HTML-comment TODOs (no-show reduction citation, benchmark
-  ranges, transportation intervention citation, aws-samples repo verification),
-  plus 1 provider-level dashboard suggestion. All owned by TechWriter. The
-  remaining TechWriter findings (A1-A6, S1-S4, N1-N2, V1-V3) from the expert
-  and code reviews apply to content in this file; markers are inline where the
-  fixes would land.
--->
 # Recipe 3.2 Architecture and Implementation: Patient No-Show Pattern Detection
 
 *Companion to [Recipe 3.2: Patient No-Show Pattern Detection](chapter03.02-patient-no-show-pattern-detection). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -115,7 +91,7 @@ flowchart TB
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) generates synthetic appointment and patient data suitable for development. CMS publishes appointment-adjacent datasets but nothing that directly substitutes for your own scheduling data. Never use real PHI in development. |
 | **Retention** | HIPAA baseline is 6 years for records containing PHI. Appointment and outcome records generally fall under that retention. Configure S3 lifecycle policies and DynamoDB point-in-time recovery accordingly. |
 | **Fairness Monitoring Data** | The subgroup dashboard requires access to protected-characteristic data (race, ethnicity, preferred language, insurance type). Coordinate with the health equity team on what data is captured, how it's joined to the model outputs for monitoring, and who has access to the dashboard. Architectural requirements: (1) demographic attributes live in a dedicated S3 prefix or Glue table separate from the prediction archive; (2) read access to the demographic store is restricted to the SageMaker training job role and the QuickSight dashboard role only (no broad analyst access to row-level demographics); (3) CloudTrail data events are enabled on the demographic store so every subgroup query is auditable; (4) QuickSight queries run against an aggregated `subgroup-metrics` table (pre-joined at the cohort level during retraining) rather than the raw demographic-joined prediction archive, so dashboard users never see individual patient demographic attributes; (5) the training job role gets `s3:GetObject` and `glue:GetTable` scoped to the demographic-joined view, not to the underlying patient-level demographic store. Race/ethnicity data has different governance from PHI in some regulatory regimes; treat it as a separately governed data asset with its own access-control boundary. |
-| **Cost Estimate** | Per 100,000 appointments scored: SageMaker Batch Transform (spin up, score, shut down): ~$5-15 depending on model size and instance type. DynamoDB reads + writes (baselines, queues, intervention log): ~$2-5. Glue feature assembly: ~$3-10. Feature Store online reads: ~$5. Pinpoint outreach (varies wildly by channel mix): $0.01-0.04 per outreach. For a 500,000-appointment-per-month organization with interventions on the top 10%: all-in model infrastructure ~$100-300/month fixed plus $500-2000/month variable on outreach, offset against the recovered revenue from reduced no-shows. No-show reduction of 2-5 percentage points on a 20% baseline is a realistic target and easily pays for the infrastructure. <!-- TODO: verify current published ranges for no-show reduction from targeted intervention programs; 2-5 percentage points is directionally accurate but confirm against a recent published case study. --> |
+| **Cost Estimate** | Per 100,000 appointments scored: SageMaker Batch Transform (spin up, score, shut down): ~$5-15 depending on model size and instance type. DynamoDB reads + writes (baselines, queues, intervention log): ~$2-5. Glue feature assembly: ~$3-10. Feature Store online reads: ~$5. Pinpoint outreach (varies wildly by channel mix): $0.01-0.04 per outreach. For a 500,000-appointment-per-month organization with interventions on the top 10%: all-in model infrastructure ~$100-300/month fixed plus $500-2000/month variable on outreach, offset against the recovered revenue from reduced no-shows. No-show reduction of 2-5 percentage points on a 20% baseline is a realistic target and easily pays for the infrastructure.  |
 
 ### Ingredients
 
@@ -153,7 +129,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Binary classification patterns with SageMaker built-in XGBoost, including Feature Store integration and Batch Transform inference workflows.
 > - [`aws-samples`](https://github.com/aws-samples): Search for "appointment," "no-show," and "healthcare personalization" for adjacent patterns.
-> <!-- TODO: verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates appointment no-show prediction or similar patient-engagement risk modeling. As of this writing a direct match has not been confirmed. -->
+> 
 
 #### Walkthrough
 
@@ -474,7 +450,6 @@ FUNCTION on_appointment_outcome(event):
         intervened: "yes" if length(interventions) > 0 else "no"
     })
 
-
 FUNCTION create_baseline_with_prior(patient_id):
     // Initialize a new patient baseline using the population-derived Beta prior.
     // This gives every patient a reasonable starting estimate (the population
@@ -490,7 +465,6 @@ FUNCTION create_baseline_with_prior(patient_id):
         intervened_observation_count: 0,
         last_updated_at: NOW()
     }
-
 
 FUNCTION retrain_monthly():
     // Triggered by an EventBridge Scheduler rule.
@@ -610,8 +584,6 @@ That second example is the one that's hard to surface without the anomaly framin
 | Subgroup AUC spread (p95 subgroup minus p5) | 0.05-0.10 | 0.08-0.15 | 0.08-0.15 |
 | Scoring latency per appointment (batch mode) | < 10 ms | 20-50 ms | 50-100 ms |
 
-<!-- TODO: these benchmark ranges are directional and drawn from typical published ranges for no-show prediction projects. Replace with measured numbers once deployed, or cite specific case studies if available. -->
-
 **Where it struggles:**
 
 - **First-time patients.** No engagement history, no provider-pair history, no rolling baseline. Cold-start predictions rely almost entirely on demographic and appointment features, which are weaker signals. Mitigation: cohort-level priors (for patients you have no history on, use the rate for similar-cohort patients) until two or three appointments of personal history exist.
@@ -651,8 +623,6 @@ The pseudocode above covers the pattern. A production deployment closes several 
 
 **Dead letter queues and poison-message handling.** Configure an `OnFailure` SQS dead letter queue for each async Lambda in the pipeline: `outcome-joiner-dlq`, `routing-lambda-dlq`, and `deviation-calc-dlq`. Lambda's default async retry behavior is two retries then drop, which silently loses events. A lost outcome event is a lost label, and the retraining pipeline will run a month later on a training set missing some of the highest-signal outcome data (the appointments that produced processing errors are often the edge cases that matter most for model calibration). Set a CloudWatch alarm on each DLQ's `ApproximateNumberOfMessagesVisible` metric, alerting when depth exceeds zero. Build an explicit replay procedure: pull messages from the DLQ, inspect the failure reason, fix the underlying issue, and resubmit. This ties directly to the label-retention discipline described above: your labels are only as complete as your event-processing pipeline is reliable.
 
-<!-- TODO (TechWriter): consider adding a note about provider-level no-show patterns. If the model consistently shows high risk for one specific provider's panel, the issue may not be the patients, it may be scheduling practices (always booking new patients into early morning slots, for example). Provider-level dashboards are a useful companion to the patient-level model. -->
-
 ---
 
 ## Variations and Extensions
@@ -661,7 +631,7 @@ The pseudocode above covers the pattern. A production deployment closes several 
 
 **Patient-self-reschedule prompting.** Pair the high-risk flag with an automated self-serve reschedule option in the patient portal or the reminder message itself. "Can't make it? Tap here to see available slots in the next two weeks." Converts some would-be no-shows into kept (rescheduled) appointments without requiring staff outreach. The analytics question becomes "what fraction of high-risk appointments the patient reschedules themselves when offered," which is a separately trackable outcome alongside the showed-or-no-show label.
 
-**Transportation-specific intervention routing.** If care management has transportation-assistance capacity, route a sub-stream of the intervention queue specifically to them rather than to generic outreach. Feature engineering to flag "transportation is the likely barrier" (long distance to clinic, no prior provider relationship, first-time patient, low-income ZIP code, late no-show history) improves the targeting. Several health systems have reported that transportation interventions produce disproportionately large reductions in the specific subset of no-shows they address, though the numbers vary widely by market. <!-- TODO: verify a specific citation for transportation intervention effectiveness from a published health services research study; the claim is directionally accurate but worth citing. -->
+**Transportation-specific intervention routing.** If care management has transportation-assistance capacity, route a sub-stream of the intervention queue specifically to them rather than to generic outreach. Feature engineering to flag "transportation is the likely barrier" (long distance to clinic, no prior provider relationship, first-time patient, low-income ZIP code, late no-show history) improves the targeting. Several health systems have reported that transportation interventions produce disproportionately large reductions in the specific subset of no-shows they address, though the numbers vary widely by market. 
 
 **Group-scheduling optimization.** Instead of (or in addition to) predicting individual no-shows, predict the expected number of shows per slot grid and adjust scheduling to that expectation. If the model says tomorrow's 2 p.m. slots have a 78% expected show rate across all providers, the scheduling team can double-book one of them without double-booking them all. This is a different architectural pattern (optimization rather than anomaly detection) and belongs more properly in Chapter 14, but it consumes the same predictions this recipe produces.
 
@@ -689,12 +659,10 @@ The pseudocode above covers the pattern. A production deployment closes several 
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Binary classification patterns with SageMaker, including Feature Store integration, Batch Transform, and Model Monitor workflows directly applicable to this recipe.
 - [`aws-samples`](https://github.com/aws-samples): Search for "patient engagement," "appointment," and "healthcare personalization" for adjacent patterns.
 - [`amazon-sagemaker-clarify`](https://github.com/aws/amazon-sagemaker-examples/tree/main/sagemaker_processing/fairness_and_explainability): SageMaker Clarify examples that demonstrate subgroup bias evaluation and SHAP-based explainability, both of which apply to the fairness monitoring required for this recipe.
-<!-- TODO: verify and add a specific aws-solutions-library-samples or aws-samples repo that demonstrates a healthcare patient-risk modeling pattern end-to-end. As of this writing a direct match has not been confirmed. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): browse for patient engagement and care management reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "no-show," "patient engagement," and "SageMaker Feature Store" for deep-dives relevant to this pipeline.
-<!-- TODO: verify and add two or three specific AWS blog posts on patient engagement, no-show prediction, or appointment risk modeling architectures; confirm URLs exist before inclusion. -->
 
 **Industry and Academic References:**
 - [Agency for Healthcare Research and Quality (AHRQ) No-Show Reduction Resources](https://www.ahrq.gov/): AHRQ publishes reviews and toolkits on no-show reduction programs; useful operational context alongside the technical pipeline.
@@ -716,7 +684,6 @@ The pseudocode above covers the pattern. A production deployment closes several 
 | With variations | Real-time scoring at booking, self-serve reschedule prompting, transportation-specific routing, cross-clinic learning, bandit-based intervention selection | 4-8 months beyond production-ready |
 
 ---
-
 
 ---
 

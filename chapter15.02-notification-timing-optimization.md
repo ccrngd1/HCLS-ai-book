@@ -105,8 +105,6 @@ The offline training process:
 
 The key challenge with offline learning is coverage. If you've never sent messages at 10pm, you have zero data about 10pm engagement. The offline model can't learn about time slots it's never observed. This is why you need some online exploration after deployment, even if the initial policy is trained offline.
 
-<!-- TODO (TechWriter): Expert review ARCH-1 (HIGH). Add offline policy evaluation (OPE) subsection here: cover doubly-robust estimation for deterministic historical policies, coverage limitations, confidence intervals, and deployment gates (only deploy if OPE estimate exceeds baseline by a statistically significant margin). -->
-
 ### Safety Constraints for Healthcare Notifications
 
 Even though notification timing is low-stakes compared to clinical RL, there are real constraints:
@@ -151,7 +149,6 @@ The key architectural insight: the timing decision is decoupled from message gen
 **Multi-message coordination:** If a patient has multiple pending messages, the timing engine must serialize decisions for the same patient. Without coordination, parallel processing can schedule three messages to the same "optimal" slot, defeating the frequency cap. Implement a per-patient scheduling lock or deduplication check at schedule creation time: before creating a new schedule, verify no other schedule exists for this patient within a 2-hour window.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.02-architecture). The Python example is linked from there.
 

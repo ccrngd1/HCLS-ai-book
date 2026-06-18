@@ -424,11 +424,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string for run_date."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -451,7 +449,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -461,7 +458,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -484,7 +480,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -494,7 +489,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _make_scoring_run_id(patient_id: str, run_date: str) -> str:
     """
@@ -510,21 +504,17 @@ def _make_scoring_run_id(patient_id: str, run_date: str) -> str:
     """
     return f"score-{run_date}-{patient_id}-{uuid.uuid4().hex[:8]}"
 
-
 def _make_briefing_id() -> str:
     """Opaque briefing identifier."""
     return f"brief-{uuid.uuid4().hex[:16]}"
-
 
 def _make_decision_id() -> str:
     """Opaque decision identifier."""
     return f"decision-{uuid.uuid4().hex[:16]}"
 
-
 def _make_cohort_id(pair_id: str, protocol_version: str, run_date: str) -> str:
     """Cohort identifier joining cohort archive to model artifacts."""
     return f"cohort-{pair_id}-{protocol_version}-{run_date}"
-
 
 def _wait_for_athena_query(execution_id: str,
                               timeout_seconds: int = 300) -> None:
@@ -545,7 +535,6 @@ def _wait_for_athena_query(execution_id: str,
             raise TimeoutError(f"Athena query {execution_id} timed out")
         time.sleep(2)
 
-
 def _redact_identifiers(items: list) -> list:
     """
     Strip patient/clinician identifiers from a list of records before
@@ -563,7 +552,6 @@ def _redact_identifiers(items: list) -> list:
         redacted.append(copy)
     return redacted
 
-
 def _cohort_features_from_profile(patient: dict) -> dict:
     """Pull cohort features for fairness instrumentation from the profile."""
     return {
@@ -574,14 +562,12 @@ def _cohort_features_from_profile(patient: dict) -> dict:
         "age_band":                 patient.get("age_band", "unknown"),
     }
 
-
 def _lookup_pair(pair_id: str, pair_catalog: list) -> dict:
     """Return the pair spec for a given pair_id, or {} if not found."""
     for pair in pair_catalog:
         if pair["pair_id"] == pair_id:
             return pair
     return {}
-
 
 def _lookup_treatment(treatment_id: str, treatment_catalog: list) -> dict:
     """Return the treatment spec for a given treatment_id, or {}."""
@@ -746,14 +732,12 @@ def construct_cohort(pair: dict, run_date: str,
     )
     return metadata
 
-
 def _athena_candidate_query(protocol: dict, run_date: str) -> list:
     """
     Production: Athena query on the data lake using the protocol's
     eligibility predicates. Demo: return the synthetic cohort.
     """
     return _DEMO_CANDIDATE_COHORT
-
 
 def _athena_washout_query(candidates: list, protocol: dict,
                             run_date: str) -> list:
@@ -764,7 +748,6 @@ def _athena_washout_query(candidates: list, protocol: dict,
     pre-filtered.
     """
     return candidates
-
 
 def _assign_arm(eligible: list, exposure_definition: str, arm: str) -> list:
     """
@@ -781,7 +764,6 @@ def _assign_arm(eligible: list, exposure_definition: str, arm: str) -> list:
                 "treatment_arm": arm,
             })
     return out
-
 
 def _compute_outcome(member: dict, outcome_def: dict,
                       protocol: dict) -> dict:
@@ -808,7 +790,6 @@ def _compute_outcome(member: dict, outcome_def: dict,
         "censored":      raw.get("censored", False),
         "censor_reason": raw.get("censor_reason"),
     }
-
 
 # Synthetic candidate cohort populated by the runner at the bottom
 # of this file. In production this comes from Athena.
@@ -959,7 +940,6 @@ def train_pair_models(cohort_metadata: dict, run_date: str) -> dict:
         "propensity_overlap":   overlap,
     }
 
-
 def _simulate_training_job(algorithm: str, cohort_id: str, target: str,
                               family: str, run_date: str,
                               pair_id: str) -> str:
@@ -978,7 +958,6 @@ def _simulate_training_job(algorithm: str, cohort_id: str, target: str,
         algorithm, job_name, target,
     )
     return pseudo_arn
-
 
 def _assess_propensity_overlap(propensity_model_arn: str,
                                   cohort_metadata: dict) -> dict:
@@ -1157,7 +1136,6 @@ def evaluate_and_gate_pair_models(pair_id: str, run_date: str) -> dict:
         "task_id": task_id,
     }
 
-
 def process_governance_decision(task_id: str, human_decision: dict) -> None:
     """
     Process a committee-reviewed governance decision. On approval,
@@ -1252,7 +1230,6 @@ def process_governance_decision(task_id: str, human_decision: dict) -> None:
     except Exception:
         pass
 
-
 def _compute_calibration(estimator_name: str, pair: dict,
                             run_date: str) -> dict:
     """
@@ -1272,7 +1249,6 @@ def _compute_calibration(estimator_name: str, pair: dict,
         "calibration_warning": slope < CALIBRATION_SLOPE_LOW
                                 or slope > CALIBRATION_SLOPE_HIGH,
     }
-
 
 def _compute_calibration_subset(pair_id: str, axis: str,
                                   cohort_value: str,
@@ -1296,7 +1272,6 @@ def _compute_calibration_subset(pair_id: str, axis: str,
                                 or base["calibration_slope"] > CALIBRATION_SLOPE_HIGH,
     }
 
-
 def _compute_estimator_agreement(pair_id: str) -> dict:
     """
     Per-patient agreement among ensemble members. Production:
@@ -1309,7 +1284,6 @@ def _compute_estimator_agreement(pair_id: str) -> dict:
         "percent_high_disagreement":    0.14,
         "agreement_score_summary":      "moderate",
     })
-
 
 def _classify_overall_evaluation(calibration_results: dict,
                                     fairness_results: dict,
@@ -1336,7 +1310,6 @@ def _classify_overall_evaluation(calibration_results: dict,
     if cal_warnings >= 2 or fairness_warnings >= 2:
         return "red"
     return "yellow"
-
 
 # Demo state populated by the runner.
 _DEMO_COHORT_VALUES: dict = {}
@@ -1525,14 +1498,12 @@ def score_patient(patient_id: str, request_context: dict,
 
     return result
 
-
 def _featurestore_get_patient(patient_id: str, patients: dict) -> dict:
     """
     Production: SageMaker Feature Store online-store GetRecord call
     for the patient. Demo: read from the synthetic patients dict.
     """
     return patients.get(patient_id, {})
-
 
 def _meets_pair_eligibility(patient_features: dict, pair: dict,
                               request_context: dict) -> bool:
@@ -1555,7 +1526,6 @@ def _meets_pair_eligibility(patient_features: dict, pair: dict,
             return False
     return True
 
-
 def _has_contraindication(patient_features: dict, pair: dict) -> bool:
     """
     Demo contraindication check. Production: a richer rules engine
@@ -1574,7 +1544,6 @@ def _has_contraindication(patient_features: dict, pair: dict) -> bool:
         if "active_diabetic_ketoacidosis_history" in contras:
             return True
     return False
-
 
 def _invoke_cate_endpoint(endpoint: str, patient_features: dict,
                             pair_id: str) -> dict:
@@ -1618,7 +1587,6 @@ def _invoke_cate_endpoint(endpoint: str, patient_features: dict,
         "ci_high":         point + ci_half,
     }
 
-
 def _combine_ensemble_estimates(estimator_outputs: dict) -> dict:
     """
     Combine per-estimator estimates into ensemble uncertainty. The
@@ -1651,7 +1619,6 @@ def _combine_ensemble_estimates(estimator_outputs: dict) -> dict:
         "disagreement_flag":          normalized_spread > DISAGREEMENT_THRESHOLD,
     }
 
-
 def _retrieve_similar_patient_summary(patient_features: dict,
                                           pair_id: str) -> dict:
     """
@@ -1675,7 +1642,6 @@ def _retrieve_similar_patient_summary(patient_features: dict,
         "training_data_recency":  base.get(
             "training_data_recency", "2023-01-01_to_2025-12-31"),
     }
-
 
 def _compute_ood_flag(patient_features: dict, pair_id: str,
                         cohort_summary: dict) -> dict:
@@ -1710,7 +1676,6 @@ def _compute_ood_flag(patient_features: dict, pair_id: str,
         "reasons":  reasons,
     }
 
-
 def _apply_sensitivity_bounds(ensemble: dict, pair_id: str) -> dict:
     """
     Apply pre-computed sensitivity-analysis bounds to widen the
@@ -1731,7 +1696,6 @@ def _apply_sensitivity_bounds(ensemble: dict, pair_id: str) -> dict:
         "ci_high":        point + widened,
     }
 
-
 def _persist_scoring_result(result: dict) -> None:
     """Persist the scoring result to DynamoDB for the briefing layer."""
     table = dynamodb.Table(SCORING_RESULTS_TABLE)
@@ -1743,7 +1707,6 @@ def _persist_scoring_result(result: dict) -> None:
             result.get("scoring_run_id"), exc,
         )
 
-
 def _severity_band(severity: float) -> str:
     """Coarse OOD severity band for metric dimensions."""
     if severity >= OOD_SEVERITY_SUPPRESS_THRESHOLD:
@@ -1751,7 +1714,6 @@ def _severity_band(severity: float) -> str:
     if severity >= OOD_SEVERITY_WARNING_THRESHOLD:
         return "warn"
     return "normal"
-
 
 # Demo state populated by the runner.
 _DEMO_COHORT_SUMMARIES: dict = {}
@@ -1886,7 +1848,6 @@ def generate_briefing(scoring_run_id: str, patients: dict,
 
     return briefing_record
 
-
 def _build_briefing_context(scoring: dict, patients: dict,
                               treatment_catalog: list) -> dict:
     """
@@ -1912,7 +1873,6 @@ def _build_briefing_context(scoring: dict, patients: dict,
             for p in scoring.get("pair_results", [])),
         "request_context":    scoring.get("request_context", {}),
     }
-
 
 def _summarize_patient_for_briefing(patient: dict) -> dict:
     """
@@ -1942,7 +1902,6 @@ def _summarize_patient_for_briefing(patient: dict) -> dict:
         "preferred_language":   patient.get("preferred_language", "en"),
     }
 
-
 def _a1c_band(a1c) -> str:
     if a1c is None:
         return "unknown"
@@ -1953,7 +1912,6 @@ def _a1c_band(a1c) -> str:
     if a1c < 9.0:
         return "elevated"
     return "very_elevated"
-
 
 def _egfr_band(egfr) -> str:
     if egfr is None:
@@ -1968,7 +1926,6 @@ def _egfr_band(egfr) -> str:
         return "moderate"
     return "severe"
 
-
 def _bmi_band(bmi) -> str:
     if bmi is None:
         return "unknown"
@@ -1982,7 +1939,6 @@ def _bmi_band(bmi) -> str:
         return "obesity_class_2"
     return "obesity_class_3"
 
-
 def _calcium_band(score) -> str:
     if score is None:
         return "not_measured"
@@ -1993,7 +1949,6 @@ def _calcium_band(score) -> str:
     if score < 400:
         return "moderate"
     return "high"
-
 
 def _bedrock_comparison_briefing(context: dict,
                                     strict_mode: bool = False) -> dict:
@@ -2069,7 +2024,6 @@ Return ONLY valid JSON (no prose, no code fences) with this shape:
     if not match:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
-
 
 def _validate_briefing(briefing: dict, observed_context: dict) -> dict:
     """
@@ -2182,7 +2136,6 @@ def _validate_briefing(briefing: dict, observed_context: dict) -> dict:
         "feedback": issues,
     }
 
-
 def _templated_briefing_fallback(context: dict) -> dict:
     """
     Deterministic fallback briefing when LLM generation or the
@@ -2244,7 +2197,6 @@ def _templated_briefing_fallback(context: dict) -> dict:
         "fallback_reason": "templated_briefing_used",
     }
 
-
 def _no_eligible_briefing(scoring: dict) -> dict:
     """Templated 'no eligible pairs' briefing."""
     return {
@@ -2272,7 +2224,6 @@ def _no_eligible_briefing(scoring: dict) -> dict:
         "validator_status": True,
     }
 
-
 def _scoring_run_patient(scoring_run_id: str) -> str:
     """Extract the patient_id from a scoring_run_id (demo-only helper)."""
     parts = scoring_run_id.split("-")
@@ -2280,7 +2231,6 @@ def _scoring_run_patient(scoring_run_id: str) -> str:
     if len(parts) >= 4:
         return "-".join(parts[2:-1])
     return ""
-
 
 def _scan_scoring_result(scoring_run_id: str) -> dict:
     """Demo-only fallback: scan for a scoring_run_id."""
@@ -2396,7 +2346,6 @@ def record_decision(scoring_run_id: str, decision_payload: dict,
 
     return decision
 
-
 def match_outcome(decision_id: str, run_date: str,
                     patients: dict, pair_catalog: list) -> dict:
     """
@@ -2501,7 +2450,6 @@ def match_outcome(decision_id: str, run_date: str,
         pass
 
     return record
-
 
 def run_calibration_drift_detection(run_date: str,
                                         pair_catalog: list) -> list:
@@ -2639,7 +2587,6 @@ def run_calibration_drift_detection(run_date: str,
 
     return alerts
 
-
 def _compute_agreement(chosen_treatment_id: str,
                           pair_results: list) -> bool:
     """
@@ -2662,7 +2609,6 @@ def _compute_agreement(chosen_treatment_id: str,
     best = min(valid, key=lambda p: p["point_estimate"])
     return chosen_treatment_id == best.get("treatment_id")
 
-
 def _find_pair_for_treatment(treatment_id: str, pair_catalog: list,
                                 predictions: list) -> dict:
     """
@@ -2680,7 +2626,6 @@ def _find_pair_for_treatment(treatment_id: str, pair_catalog: list,
             return catalog_pair
     return {}
 
-
 def _find_prediction_for_treatment(predictions: list,
                                        treatment_id: str) -> dict:
     """Find the prediction entry for the chosen treatment."""
@@ -2688,7 +2633,6 @@ def _find_prediction_for_treatment(predictions: list,
         if pred.get("treatment_id") == treatment_id:
             return pred
     return {}
-
 
 def _compute_actual_outcome(patient_id: str, outcome_id: str,
                                 decision_date: str, run_date: str) -> dict:
@@ -2704,7 +2648,6 @@ def _compute_actual_outcome(patient_id: str, outcome_id: str,
         (patient_id, outcome_id),
         {"observed": False, "censor_reason": "no_observation_window_yet"},
     )
-
 
 def _compute_calibration_from_pairs(pairs: list) -> dict:
     """
@@ -2734,7 +2677,6 @@ def _compute_calibration_from_pairs(pairs: list) -> dict:
         "calibration_intercept": round(mean_a - slope * mean_p, 4),
         "n_pairs":               len(pairs),
     }
-
 
 # Demo state populated by the runner.
 _DEMO_ACTUAL_OUTCOMES: dict = {}

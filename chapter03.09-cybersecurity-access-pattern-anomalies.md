@@ -1,413 +1,3 @@
-<!--
-<!--
-Editor pass v6 (TechEditor, 2026-05-21):
-  - No body changes. Independent verification pass on top of v5.
-        Re-confirmed every editor-scope mechanical and voice
-        checkpoint; the recipe remains at publication-ready quality
-        for editor-scope items.
-  - Mechanical re-verification under UTF-8 decoding (System.Text.
-        Encoding.UTF8 against the file bytes; PowerShell default-
-        codepage decoding produces a false en-dash count on the
-        architecture-diagram box-drawing lines, so prior pass-level
-        verifications also need explicit UTF-8 to match):
-      * 0 em dashes (U+2014).
-      * 0 en dashes (U+2013).
-      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
-        sections), 12 H3 (subsections), 1 H4, 0 H5; no skipped
-        levels.
-      * 24 fence markers = 12 balanced fenced code blocks (mermaid
-        block tagged, JSON sample cases tagged, pseudocode and
-        architecture-text blocks intentionally untagged per Chapter
-        1 convention).
-      * "FairWarning" capitalization: 18 hits (all body-text plus
-        v1, v2, v3, v4, v5 editor-comment self-references); 1
-        "FAIRWarning" hit at line 4 inside this v6-and-prior comment
-        block documenting the v5 fix narrative; 0 body-text
-        "FAIRWarning" capitalization drift.
-      * "IdP" capitalization: 17 body-text hits, all consistent;
-        4 all-caps "IDP" hits, all inside editor-comment blocks
-        (this v6 block plus v3, v4, v5 self-references documenting
-        the v2 fix narrative); 0 body-text capitalization drift.
-      * 38 regex matches for "TODO": 16 inline body TODOs + the
-        carry-over consolidated TODOs in the v1 comment block + the
-        v3, v4, v5, v6 comment-block self-references describing the
-        TODO inventory. The 27 actual TODO markers (16 in body + 11
-        carry-over in v1 block) are preserved verbatim; the
-        remaining hits are editor-comment self-references and not
-        real TODOs.
-      * No common dittography ("the the", "of of", "is is", etc.)
-        in body text.
-      * No trailing-whitespace lines.
-  - Voice and structure re-verification:
-      * No documentation-voice ("This recipe demonstrates...") in
-        body.
-      * No announcement statements ("We are excited to...").
-      * No LinkedIn-influencer tone ("AWS architects, we need to
-        talk about...").
-      * No feature-list formatting (bullet lists of capabilities
-        without context).
-      * Cross-references intact: The Honest Take to Implementation-
-        Time Tier table Basic tier (v1 V5 fix); Variations and
-        Extensions PAM integration extension to The Honest Take's
-        "Privileged users are a different program" lesson (v1 V6
-        fix); performance-benchmark caveat tightened (v1 V2 fix);
-        sample case narrative tightened (v1 V4 fix).
-      * 70/30 vendor balance preserved: AWS service names confined
-        to The AWS Implementation, Architecture Diagram,
-        Prerequisites, Ingredients, Code walkthrough,
-        Why-This-Isn't-Production-Ready, Variations and Extensions,
-        and Additional Resources.
-      * All hyperlinks in Additional Resources point to plausible
-        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
-        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
-        imprivata.com, microsoft.com, splunk.com) domains; no
-        fabricated GitHub URLs.
-  - Open items remain TechWriter follow-ups (exceed editor scope
-        per persona instructions "Do not introduce new claims or
-        technical content" and "If a section needs substantial
-        rewriting, flag it rather than rewriting"): the 9 MEDIUM
-        and 14 LOW expert-review findings plus the 3 Python
-        WARNINGs from code review remain catalogued in the v1
-        comment block below. The MEDIUM cluster (A1 idempotency,
-        A2 DLQs, A3 privileged-user separate program, A4
-        service-account inventory, A5 new-user ramp-up cold-start,
-        A6 care-relationship suppression-rule schema-and-workflow,
-        A7 reference-data versioning propagation, S1 case payload
-        PHI/workforce-PII minimization, S2 subgroup data
-        governance) requires architectural and prose additions
-        outside editor mandate.
-
-Editor pass v5 (TechEditor, 2026-05-15):
-  - Mechanics: corrected "FAIRWarning-style monitoring" to
-        "FairWarning-style monitoring" in the Vocabulary You Need
-        opening sentence for case consistency with the seven other
-        "FairWarning" references in the recipe (Imprivata FairWarning
-        in The Technology PPM paragraph, FairWarning in the AWS API
-        Gateway / AppSync paragraph, Imprivata FairWarning in the
-        performance-benchmark TODO, Imprivata FairWarning in the
-        Vendor-tool considerations paragraph in Why-This-Isn't-
-        Production-Ready, and Imprivata FairWarning in the Additional
-        Resources operational vendor link). The original product name
-        is "FairWarning" (capital F, capital W; not all-caps "FAIR").
-  - Re-verified mechanically under UTF-8 decoding:
-      * 0 em dashes (U+2014).
-      * 0 en dashes (U+2013).
-      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
-        sections), 12 H3 (subsections), 1 H4, 0 H5; no skipped
-        levels.
-      * 24 fence markers = 12 balanced fenced code blocks (mermaid
-        block tagged, JSON sample cases tagged, pseudocode and
-        architecture-text blocks intentionally untagged per Chapter
-        1 convention).
-      * No common dittography ("the the", "of of", "is is", "and
-        and", "to to") in body text. The 3 in-comment matches are
-        editor self-references in the v3 and v4 verification blocks
-        listing what was checked, not body content.
-      * 16 lowercase "IdP" hits in body, consistent. The 3 all-caps
-        "IDP" hits are all inside this comment block and the v3 and
-        v4 comment blocks documenting the v2 capitalization fix; no
-        body-text capitalization drift.
-      * No trailing-whitespace lines.
-      * Vendor name capitalization consistent: MEDITECH (branded
-        all-caps), Workday, Okta, Active Directory, Microsoft Entra
-        ID, Cerner / Oracle Health, Epic, Allscripts, athenahealth,
-        eClinicalWorks, Kronos, UKG, Protenus, Imprivata
-        FairWarning, MaizeAnalytics, Iatric Patient Privacy
-        Monitor, Splunk, Microsoft Sentinel, Chronicle, IBM QRadar,
-        CyberArk, BeyondTrust, HashiCorp Boundary all consistent
-        with their canonical brand forms.
-      * "vs." with period is the established cookbook style across
-        Chapters 1, 2, and 3 (verified in chapters 01.01, 01.05,
-        01.06, 01.10, 02.03, 02.04, 03.01, 03.03, 03.04, 03.05,
-        03.07, 03.08); the single in-prose "vs." in this recipe's
-        performance-benchmark caveat header is consistent with that
-        style.
-  - Voice and structure re-verification:
-      * No documentation-voice ("This recipe demonstrates...") in
-        body.
-      * No announcement statements ("We are excited to...").
-      * No LinkedIn-influencer tone ("AWS architects, we need to
-        talk about...").
-      * No feature-list formatting (bullet lists of capabilities
-        without context).
-      * Cross-references intact: The Honest Take to Implementation-
-        Time Tier table Basic tier (v1 V5 fix); Variations and
-        Extensions PAM integration extension to The Honest Take's
-        "Privileged users are a different program" lesson (v1 V6
-        fix); performance-benchmark caveat tightened (v1 V2 fix);
-        sample case narrative tightened (v1 V4 fix).
-      * 70/30 vendor balance preserved: AWS service names confined
-        to The AWS Implementation, Architecture Diagram,
-        Prerequisites, Ingredients, Code walkthrough,
-        Why-This-Isn't-Production-Ready, Variations and Extensions,
-        and Additional Resources.
-      * All hyperlinks in Additional Resources point to plausible
-        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
-        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
-        imprivata.com, microsoft.com, splunk.com) domains; no
-        fabricated GitHub URLs.
-  - Open items remain TechWriter follow-ups (exceed editor scope
-        per persona instructions "Do not introduce new claims or
-        technical content" and "If a section needs substantial
-        rewriting, flag it rather than rewriting"): the 9 MEDIUM
-        and 14 LOW expert-review findings plus the 3 Python
-        WARNINGs from code review remain catalogued in the v1
-        comment block below. The MEDIUM cluster (A1 idempotency,
-        A2 DLQs, A3 privileged-user separate program, A4
-        service-account inventory, A5 new-user ramp-up cold-start,
-        A6 care-relationship suppression-rule schema-and-workflow,
-        A7 reference-data versioning propagation, S1 case payload
-        PHI/workforce-PII minimization, S2 subgroup data
-        governance) requires architectural and prose additions
-        outside editor mandate.
-
-Editor pass v4 (TechEditor, 2026-05-15):
-  - No body changes. Independent verification pass on top of v3.
-        Re-confirmed every editor-scope mechanical and voice
-        checkpoint; the recipe remains at publication-ready quality
-        for editor-scope items.
-  - Mechanical re-verification under UTF-8 decoding:
-      * 0 em dashes (U+2014).
-      * 0 en dashes (U+2013).
-      * Header hierarchy: 1 H1 (recipe title), 11 H2 (major
-        sections), 12 H3 (subsections), 1 H4 (the Vocabulary You
-        Need / Detection Pattern Catalog tier of nested headers
-        under The Technology), 0 H5; no skipped levels.
-      * 24 fence markers = 12 balanced fenced code blocks (one
-        mermaid block tagged, JSON sample cases tagged, pseudocode
-        and architecture-text blocks intentionally untagged per
-        Chapter 1 convention).
-      * 28 regex matches for "TODO (TechWriter": 16 inline body
-        TODOs + 11 carry-over consolidated TODOs in the v1 comment
-        block + 1 meta-reference at line 7 inside the v3 comment
-        text itself ("27 TODO (TechWriter, ...)" appears in narrative
-        prose describing the count). The 27 actual TODO markers are
-        preserved verbatim; the 28th regex hit is the v3 comment
-        block's own self-reference and not a real TODO.
-      * "IdP" capitalization consistent in body (14 mixed-case "IdP"
-        hits); the only "IDP" all-caps hits are 2, both inside this
-        editor comment block (one in the v3 description quoting the
-        prior v2 fix narrative, one in the v2 description of that
-        same fix). No body-text capitalization drift.
-      * No common dittography ("the the", "of of", "is is", etc.).
-      * No trailing-whitespace lines.
-  - Voice and structure re-verification:
-      * No documentation-voice ("This recipe demonstrates...") in
-        body.
-      * No announcement statements ("We are excited to...").
-      * No LinkedIn-influencer tone ("AWS architects, we need to
-        talk about...").
-      * Cross-reference from The Honest Take to the Implementation
-        Time table's Basic tier (v1 V5 fix) intact at line 1454.
-      * Cross-reference from the Variations and Extensions PAM
-        integration extension to The Honest Take's "Privileged
-        users are a different program" lesson (v1 V6 fix) intact
-        at line 1492.
-      * Performance-benchmark header tightened in v1 to call out
-        population, workforce composition, base rate, EHR vendor,
-        privacy-office staffing, and program maturity dependence
-        (v1 V2 fix) intact at line 1376.
-      * 70/30 vendor balance preserved: AWS service names confined
-        to The AWS Implementation, Architecture Diagram,
-        Prerequisites, Ingredients, Code walkthrough,
-        Why-This-Isn't-Production-Ready, Variations and Extensions,
-        and Additional Resources.
-      * All hyperlinks in Additional Resources point to plausible
-        AWS, regulatory (ecfr.gov, hhs.gov, csrc.nist.gov, cisa.gov,
-        hitrustalliance.net, 405d.hhs.gov), and vendor (protenus.com,
-        imprivata.com, microsoft.com, splunk.com) domains; no
-        fabricated GitHub URLs.
-  - Open items remain TechWriter follow-ups (exceed editor scope
-        per persona instructions "Do not introduce new claims or
-        technical content" and "If a section needs substantial
-        rewriting, flag it rather than rewriting"): the 9 MEDIUM
-        and 14 LOW expert-review findings plus the 3 Python
-        WARNINGs from code review remain catalogued in the v1
-        comment block below. The MEDIUM cluster (A1 idempotency,
-        A2 DLQs, A3 privileged-user separate program, A4
-        service-account inventory, A5 new-user ramp-up cold-start,
-        A6 care-relationship suppression-rule schema-and-workflow,
-        A7 reference-data versioning propagation, S1 case payload
-        PHI/workforce-PII minimization, S2 subgroup data
-        governance) requires architectural and prose additions
-        outside editor mandate.
-
-Editor pass v3 (TechEditor, 2026-05-15):
-  - No body changes. Verification pass only; the v1 and v2 passes
-        addressed every editor-scope finding from the expert review
-        (LOW V2, V4, V5, V6) and the IdP capitalization mechanics fix.
-  - Re-verified mechanically: 0 em dashes (U+2014) and 0 en dashes
-        (U+2013) under UTF-8 decoding; 27 TODO (TechWriter, ...)
-        markers preserved (16 in body + 11 carry-over in v1 comment
-        block); header hierarchy clean (1 H1, 11 H2, 12 H3, 1 H4, no
-        skipped levels); 24 fence markers = 12 balanced fenced code
-        blocks; "IdP" capitalization consistent throughout body text
-        (the single "IDP" hit is in this comment block documenting
-        the v2 fix, not in body content); all hyperlinks in Additional
-        Resources point to plausible AWS, regulatory (ecfr.gov,
-        hhs.gov, csrc.nist.gov, cisa.gov, hitrustalliance.net,
-        405d.hhs.gov), and vendor (protenus.com, imprivata.com,
-        microsoft.com, splunk.com) domains; no fabricated GitHub URLs;
-        70/30 vendor balance preserved (conceptual sections vendor-
-        neutral, AWS service names confined to The AWS Implementation,
-        Architecture Diagram, Prerequisites, Ingredients, Code
-        walkthrough, Why-This-Isn't-Production-Ready, Variations and
-        Extensions, and Additional Resources).
-  - Open items remain TechWriter follow-ups (exceed editor scope per
-        persona instructions "Do not introduce new claims or technical
-        content"): the 9 MEDIUM and 14 LOW expert-review findings plus
-        the 3 Python WARNINGs from code review are catalogued in this
-        comment block below. Recipe is at publication-ready quality
-        for the editor-scope items.
-
-Editor pass v2 (TechEditor, 2026-05-15):
-  - Mechanics: corrected "IDP service-account credentials" to
-        "IdP service-account credentials" in the AWS Secrets Manager
-        paragraph under Why These Services for case consistency with
-        the nine other "IdP" references in the recipe (capitalization
-        is the standard identity-provider abbreviation used elsewhere).
-  - Re-verified: zero em dashes (U+2014) and zero en dashes (U+2013)
-        under UTF-8 decoding; 27 TODO markers preserved (16 original
-        TechWriter TODOs in body + 11 carry-over follow-up flags in
-        the v1 comment block consolidating MEDIUM expert-review and
-        WARNING code-review findings; see below).
-  - Header hierarchy verified: 1 H1, 11 H2, 12 H3, 1 H4; no skipped
-        levels.
-  - All 24 fenced code blocks balanced; mermaid block tagged; JSON
-        sample cases tagged; pseudocode and architecture-text blocks
-        intentionally untagged (matches Chapter 1 convention).
-  - All hyperlinks in Additional Resources are well-formed and point
-        to plausible AWS documentation, regulatory (ecfr.gov, hhs.gov,
-        csrc.nist.gov, cisa.gov), and vendor domains; no fabricated
-        GitHub URLs.
-  - 70/30 vendor balance: AWS service names confined to The AWS
-        Implementation, Architecture Diagram, Prerequisites,
-        Ingredients, the Code walkthrough, Why-This-Isn't-Production-
-        Ready, Variations and Extensions, and Additional Resources;
-        The Problem, The Technology, and General Architecture Pattern
-        remain vendor-neutral.
-
-Editor pass v1 (TechEditor, 2026-05-15):
-  - V2: tightened the performance-benchmark inline caveat to call out
-        population, workforce composition, base rate, EHR vendor,
-        privacy-office staffing, and program maturity dependence
-        (per expert-review LOW finding V2).
-  - V4: tightened the sample case narrative's closing sentence to land
-        as pattern description rather than tier-routing recommendation
-        (per expert-review LOW finding V4).
-  - V5: added a one-line cross-reference between The Honest Take's
-        "build the program first" lesson and the Estimated Implementation
-        Time table's Basic tier (per expert-review LOW finding V5).
-  - V6: added a one-line cross-reference between the Variations and
-        Extensions "PAM integration" extension and The Honest Take's
-        "Privileged users are a different program" lesson (per
-        expert-review LOW finding V6).
-  - Verified zero em dashes (U+2014) and zero en dashes (U+2013) under
-        UTF-8 decoding.
-  - All sixteen pre-existing TechWriter TODOs preserved verbatim.
-
-Open architectural concerns flagged for TechWriter follow-up
-(consolidated from expert review chapter03.09-expert-review.md;
-verdict was PASS with 0 CRITICAL, 0 HIGH, 9 MEDIUM, 14 LOW;
-none require structural rewrites of completed sections, but the
-pseudocode and General Architecture Pattern sections need targeted
-additions that exceed editor scope):
-
-  TODO (TechWriter, MEDIUM A1): Outcome-event and case-grouping
-    idempotency. Step 7 build_case and Step 8 on_investigator_action
-    are EventBridge-driven and at-least-once; redelivered events
-    produce duplicate cases and double-initiate the breach-notification
-    clock. Add a deterministic-event-key + conditional-write guard
-    pattern. Same recurring pattern as Recipes 2.4-2.10 and 3.1-3.8;
-    cookbook-wide trigger-idempotency appendix recommended.
-
-  TODO (TechWriter, MEDIUM A2): No DLQ / poison-message handling
-    for the fourteen Lambdas in the pipeline. Add SQS DLQs with
-    OnFailure destinations; CloudWatch alarms on DLQ depth with
-    threshold 1 for ehr-audit-ingest, event-normalizer, enrichment,
-    case-builder, outcome-capture (single-event sensitivity).
-
-  TODO (TechWriter, MEDIUM A3): Privileged-user separate program.
-    The Honest Take's "Privileged users are a different program. I
-    cannot stress this enough" lesson and the Why-This-Isn't-Production-
-    Ready bullet are explicit, but the pseudocode shows a single
-    composite-scoring pathway. Update General Architecture Pattern
-    and AWS Implementation to name privileged-user separation as a
-    first-class architectural concern: separate detection pipeline,
-    separate case queue staffed by infrastructure-security analysts,
-    PAM-integrated session recording, per-population scoring service
-    dispatch.
-
-  TODO (TechWriter, MEDIUM A4): Account-class enrichment and
-    service-account inventory. Why-This-Isn't-Production-Ready names
-    inventory as a precondition. Add account_class enrichment
-    attribute to The Technology's Identity-Patient-and-Workforce-
-    Enrichment subsection (human_clinical, human_administrative,
-    human_privileged, service_integration, service_analytics,
-    service_clinical_decision_support, shared_kiosk, unknown);
-    detection logic dispatches by class.
-
-  TODO (TechWriter, MEDIUM A5): New-user ramp-up cold-start
-    architectural primitive. Update Step 4 to dispatch to new-user-
-    specific peer cohorts when baseline_age_days < MIN_BASELINE_DAYS;
-    update Step 6 to apply new-user-specific calibration and tier
-    thresholds with explicit governance acknowledgment of the higher
-    false-positive tolerance.
-
-  TODO (TechWriter, MEDIUM A6): Care-relationship suppression-rule
-    schema and expiry-and-review workflow. Surface the structured
-    schema (workforce_id, pattern_class, pattern_scope,
-    pattern_scope_value, valid_from, valid_until, dismissal_case_id,
-    investigator_id, dismissal_rationale_text); scheduled job that
-    walks the registry for soon-to-expire rules; care-transition
-    triggers re-evaluate applicable rules.
-
-  TODO (TechWriter, MEDIUM A7): Reference-data versioning
-    propagation. Update Step 7 build_case to construct an explicit
-    evidence_pointers block on the case object (feature_snapshot_id,
-    triggering_event_ids, model_version, calibration_version,
-    cohort_thresholds_version) and propagate into DynamoDB case-state
-    and OpenSearch case-index.
-
-  TODO (TechWriter, LOW A8): Self-monitoring of the monitoring
-    system. Add a paragraph to General Architecture Pattern naming
-    CloudTrail data events on case-state, OpenSearch case-index, and
-    Neptune relationship-graph forwarded back to the audit-event
-    stream as a self_audit source-system class.
-
-  TODO (TechWriter, MEDIUM S1): Case payload PHI and workforce-PII
-    minimization for the three subscriber back ends (privacy-office
-    UI, SIEM connector, OpenSearch case-index). Update Step 7 to
-    publish only case_id, workforce_id, patient_id, tier, and
-    composite_score through the case-bus; consuming back ends fetch
-    full case by case_id through authenticated paths with appropriate
-    IAM scope. SIEM connector role can read only cases where
-    case-class includes credential_compromise or lateral_movement.
-
-  TODO (TechWriter, MEDIUM S2): Subgroup data governance for
-    workforce-equity monitoring. Add a Subgroup data access row to
-    Prerequisites; restrict read access to the workforce-demographic-
-    and-attribute store under EEOC/Title VII implementation, state
-    employment-discrimination statutes, and collective-bargaining
-    agreements; CloudTrail data events on subgroup queries; QuickSight
-    against an aggregated subgroup-metrics table.
-
-  TODO (TechWriter, three Python WARNINGs from code review): The
-    Python companion has three correctness gaps that should be fixed
-    in chapter03.09-python-example.md before publication:
-    (1) find_existing_case uses scan with Limit=10 + FilterExpression
-        which silently misses an existing open case, producing
-        duplicate cases for the same workforce-patient pair;
-    (2) is_off_hours role-key mismatch renders the billing_analyst
-        and database_administrator dictionary entries unreachable;
-    (3) aggregate_user_activity.never_seen_before_fraction is always
-        zero because append_to_user_state adds the current patient_id
-        to known_patients before the aggregator runs.
-
-  See reviews/chapter03.09-expert-review.md and
-  reviews/chapter03.09-code-review.md for the full feedback.
--->
-
 # Recipe 3.9: Cybersecurity / Access Pattern Anomalies ⭐
 
 **Complexity:** Complex · **Phase:** Production (with privacy office and infosec governance) · **Estimated Cost:** ~$0.0001 to $0.001 per audit event scored (mostly ingest, enrichment, and storage; full user-graph rescoring runs nightly and dominates compute)
@@ -448,11 +38,11 @@ The reason this problem lands at the complex end of the chapter, despite being a
 
 **The output isn't an alert; it's an investigation.** Same lesson as Recipes 3.6, 3.7, and 3.8. The detection is the small part. The investigation is the work product. Privacy office investigators need: the user's HR record, the patient's encounter history, the user's care assignments, the user's recent activity, the patient's relationships (employee status, family relationships, neighborhood, divorce records when relevant, public-figure status), and a way to document the investigation outcome so the system can learn. The pipeline that ends with "here's a scored list of users" is producing maybe 30% of the value.
 
-**Workforce monitoring has its own legal and labor considerations.** Monitoring employee behavior crosses several legal frameworks (HIPAA, ECPA, state-specific employee privacy statutes), labor frameworks (NLRB protected concerted activity, union collective bargaining agreements), and organizational ones (transparency to staff, due process when an investigation is initiated). The monitoring system should be deployed under a written acceptable-use and monitoring policy that the workforce has been notified of. The legal posture differs substantially across jurisdictions, especially for state employees, unionized environments, and remote workers in different states. <!-- TODO (TechWriter): verify the current state of NLRB guidance on workforce monitoring and any recent state-level employee privacy statutes (Illinois, California, New York have notable ones). -->
+**Workforce monitoring has its own legal and labor considerations.** Monitoring employee behavior crosses several legal frameworks (HIPAA, ECPA, state-specific employee privacy statutes), labor frameworks (NLRB protected concerted activity, union collective bargaining agreements), and organizational ones (transparency to staff, due process when an investigation is initiated). The monitoring system should be deployed under a written acceptable-use and monitoring policy that the workforce has been notified of. The legal posture differs substantially across jurisdictions, especially for state employees, unionized environments, and remote workers in different states. 
 
-**The breach notification clock is real.** HIPAA breach notification rules require notification within 60 days of discovery; some states have shorter windows (California's 15-business-day rule for medical information breaches, for example). Once an investigation confirms unauthorized access, the clock starts. A detection system that finds breaches late produces breaches that get reported late, which produces additional regulatory exposure. Speed of detection is part of the operational metric, not just an engineering nice-to-have. <!-- TODO (TechWriter): verify current state breach notification timelines; California specifically has tighter requirements than HIPAA. -->
+**The breach notification clock is real.** HIPAA breach notification rules require notification within 60 days of discovery; some states have shorter windows (California's 15-business-day rule for medical information breaches, for example). Once an investigation confirms unauthorized access, the clock starts. A detection system that finds breaches late produces breaches that get reported late, which produces additional regulatory exposure. Speed of detection is part of the operational metric, not just an engineering nice-to-have. 
 
-**HIPAA Security Rule audit controls are mandatory but underspecified.** The HIPAA Security Rule (45 CFR 164.312) requires covered entities to "implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use electronic protected health information." It does not specify what to look at, how often, or what the response should be. OCR has issued guidance and enforcement actions that effectively define the floor (you must do something; "we collect logs but never look at them" is not a defense), but the ceiling is whatever you choose to do. <!-- TODO (TechWriter): cite specific OCR enforcement actions where inadequate audit controls were a contributing factor; the published settlements include several examples. -->
+**HIPAA Security Rule audit controls are mandatory but underspecified.** The HIPAA Security Rule (45 CFR 164.312) requires covered entities to "implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use electronic protected health information." It does not specify what to look at, how often, or what the response should be. OCR has issued guidance and enforcement actions that effectively define the floor (you must do something; "we collect logs but never look at them" is not a defense), but the ceiling is whatever you choose to do. 
 
 What you actually want to build is a continuously running pipeline that consumes EHR audit logs (and ideally application access logs from related systems: PACS, lab systems, billing platforms, communication tools), enriches every event with identity context (the user's role, department, manager, current assignments), patient context (encounter history, care team relationships, sensitivity flags), and behavioral baselines (this user's normal pattern), produces user-level and access-cluster-level risk scores on a streaming and batch basis, and routes the highest-risk cases to a privacy-office investigation workflow with the supporting evidence pre-assembled. Underneath sits a relationship graph of users, patients, encounters, and devices because the most interesting patterns live in the relationships, not in any single event. Around it sits the integration with the SIEM (most security teams expect access anomalies to flow into the same case management system as the rest of the security operations work), the privacy office case management system (which is often separate from the SIEM), and the HR and identity systems that provide the enrichment data.
 
@@ -536,13 +126,13 @@ The technique palette spans rules-based detection through unsupervised behaviora
 
 **Graph-based detection.** Construct the graph of workforce members, patients, encounters, devices, and applications. Compute graph features: how connected is this user to this patient through legitimate care relationships, how unusual is this user's access pattern within their team, what's the reachability between the user's documented panel and the accessed patient. Graph methods are essential for catching the patterns that rules-and-baselines methods miss: relationship-based access (the user accessed someone they have an off-system relationship with), team-level anomalies (a team's collective access pattern shifted), and credential-compromise patterns (the user accessed a set of patients that don't share any care-team or workflow connection).
 
-**Graph neural networks (GNNs).** The learned-representation evolution of graph features. A GNN trained on the heterogeneous graph (users, patients, encounters, departments, applications) learns embeddings that incorporate role, structural position, and behavioral features. Anomaly detection on the embeddings catches patterns that hand-crafted graph features miss. Still emerging in production privacy monitoring; promising in research. <!-- TODO (TechWriter): verify the current state-of-the-art for GNN-based insider threat or healthcare access anomaly detection; the literature is evolving. -->
+**Graph neural networks (GNNs).** The learned-representation evolution of graph features. A GNN trained on the heterogeneous graph (users, patients, encounters, departments, applications) learns embeddings that incorporate role, structural position, and behavioral features. Anomaly detection on the embeddings catches patterns that hand-crafted graph features miss. Still emerging in production privacy monitoring; promising in research. 
 
 **Autoencoders on access vectors.** Train an autoencoder on the feature vector of legitimate access events; flag events with high reconstruction error. Works well on high-dimensional event representations. Suffers from the standard autoencoder concerns: needs a reasonably clean training set, needs care to prevent the model from learning to reconstruct anomalies.
 
 **Supervised classification on labeled cases.** When the privacy office has accumulated enough confirmed-violation labels, supervised models can re-rank candidates from unsupervised detectors. The label problem is severe: confirmed violations are rare, the labeling latency is long, dismissed candidates (which are the majority) are noisy negatives, and the labels reflect what the privacy office found, not what was actually present (selection bias). Supervised approaches are useful as re-rankers, not as primary detectors.
 
-**LLM-assisted triage.** Given an alert payload (the access events, the user context, the patient context, the care relationship status), an LLM can produce a plain-language assessment of whether the access pattern looks more like a workflow or a curiosity-snooping pattern, with reasoning. Investigators report substantial time savings on the per-case review, and the LLM's analysis often surfaces context the investigator might have missed (the patient was discussed in a recent staff meeting, for instance). Always with human review; the LLM produces decision support, not decisions. <!-- TODO (TechWriter): verify specific published work on LLM-assisted patient-privacy-monitoring triage; the use case is emerging and the literature is sparse. -->
+**LLM-assisted triage.** Given an alert payload (the access events, the user context, the patient context, the care relationship status), an LLM can produce a plain-language assessment of whether the access pattern looks more like a workflow or a curiosity-snooping pattern, with reasoning. Investigators report substantial time savings on the per-case review, and the LLM's analysis often surfaces context the investigator might have missed (the patient was discussed in a recent staff meeting, for instance). Always with human review; the LLM produces decision support, not decisions. 
 
 **Feedback-driven threshold tuning.** Same operational rule as the rest of the chapter. The privacy office's adjudications (true positive, false positive, inconclusive) flow back into threshold tuning, peer-group refinement, and (where labels are sufficient) supervised re-ranker training. Without feedback, the system decays.
 
@@ -582,7 +172,7 @@ The monitoring system has a uniquely sensitive stakeholder dynamic. The workforc
 
 **Workforce communication and transparency.** The acceptable-use policy should disclose that monitoring exists. The investigation policy should describe the process when an investigation is initiated. The appeals process should exist and be documented. Workforce members who have been investigated and cleared should be informed of the outcome. The legal posture varies by jurisdiction, but the operational ethic is consistency and process.
 
-**Union considerations.** In unionized environments, monitoring policies are subject to collective bargaining and may have specific notification, due-process, and appeals requirements. The system implementation should reflect the bargained terms. <!-- TODO (TechWriter): note that specific union and labor-law considerations vary substantially; this is meant as a flag, not a comprehensive treatment. -->
+**Union considerations.** In unionized environments, monitoring policies are subject to collective bargaining and may have specific notification, due-process, and appeals requirements. The system implementation should reflect the bargained terms. 
 
 **Appeals and remediation.** When a workforce member is wrongly flagged or wrongly investigated, there should be a path to clear the record and (when appropriate) update the model so the same false positive doesn't recur. The feedback loop matters; a one-way system that never corrects mistakes erodes trust.
 
@@ -705,7 +295,6 @@ At a conceptual level, the access pattern anomaly detection pipeline ingests aud
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter03.09-architecture). The Python example is linked from there.
 
 ## The Honest Take
@@ -736,7 +325,7 @@ Mature programs make the false-positive rate a leading indicator. A rising false
 
 The thing I'd do differently: I'd start narrower than I usually have. A program that begins with rules-only detection (same-name, VIP, self-access, break-glass, off-hours) on a single high-priority category (employee snooping, for example), with manual review by a defined privacy office team, will produce meaningful outcomes within a quarter. From that base, behavioral baselines for the same category, then graph features for relationship-based patterns, then sequence models, then LLM-assisted triage, each in sequence with measured impact. Programs that try to deploy the full multi-detector composite system on day one usually end up with a system that's too noisy to use and too complex to tune. Pilot, validate, scale.
 
-The financial story has changed in the last few years. OCR enforcement has grown more visible and the fines have grown larger. The largest published settlements involving inadequate audit controls are now in the multi-million-dollar range. The cost of a single confirmed breach (notification costs, credit monitoring, legal fees, potential settlement, reputation damage, regulatory action) easily exceeds the cost of running an active monitoring program. The financial argument used to be "we should do this because it's the right thing to do." It's increasingly "we should do this because the alternative is more expensive." Both motivations are valid. The change is that the latter is now defensible at the CFO level. <!-- TODO (TechWriter): verify recent OCR settlement amounts; published examples include settlements in the multi-million-dollar range, with specific figures available in OCR's resolution-agreement archive. -->
+The financial story has changed in the last few years. OCR enforcement has grown more visible and the fines have grown larger. The largest published settlements involving inadequate audit controls are now in the multi-million-dollar range. The cost of a single confirmed breach (notification costs, credit monitoring, legal fees, potential settlement, reputation damage, regulatory action) easily exceeds the cost of running an active monitoring program. The financial argument used to be "we should do this because it's the right thing to do." It's increasingly "we should do this because the alternative is more expensive." Both motivations are valid. The change is that the latter is now defensible at the CFO level. 
 
 Patients matter most, even when they're invisible in the operational workflow. The workforce members are the ones being monitored. The privacy office and infosec teams are the ones running the program. The leaders are the ones reading the reports. The patients whose privacy is being protected are mostly invisible to the operational machinery. They show up only when something goes wrong (they call to complain, they get notified of a breach, they file a suit). The program's purpose is to protect them. The operational ethic should reflect that, even when the day-to-day work doesn't bring them into the room.
 

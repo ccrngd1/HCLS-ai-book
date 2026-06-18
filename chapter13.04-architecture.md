@@ -504,8 +504,6 @@ Sample interaction check response:
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance (MEDIUM). Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 ### Variation 1: Pharmacogenomic-Aware Interaction Checking
@@ -563,7 +561,6 @@ Integrate your institution's formulary to provide alternative drug suggestions w
 | **With variations** | 16-22 weeks | Pharmacogenomic awareness. Drug-food/supplement interactions. Formulary-aware alternative suggestions. Custom institutional override rules. Analytics dashboard for alert metrics. |
 
 ---
-
 
 ---
 

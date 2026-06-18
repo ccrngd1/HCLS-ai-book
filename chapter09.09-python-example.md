@@ -140,7 +140,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 mediaconvert_client = boto3.client("mediaconvert", config=BOTO3_RETRY_CONFIG)
 stepfunctions_client = boto3.client("stepfunctions", config=BOTO3_RETRY_CONFIG)
 
-
 def ingest_video(video_s3_key: str, metadata: dict) -> str:
     """
     Register a surgical video that has landed in S3 and trigger the analysis pipeline.
@@ -259,7 +258,6 @@ def create_frame_extraction_job(procedure_id: str, video_s3_key: str) -> str:
 
     return job_id
 
-
 def filter_valid_frames(procedure_id: str) -> list:
     """
     After frame extraction, filter out non-informative frames.
@@ -329,7 +327,6 @@ def filter_valid_frames(procedure_id: str) -> list:
 ```python
 import time
 
-
 def launch_feature_extraction(procedure_id: str, valid_frames: list) -> str:
     """
     Launch a SageMaker Batch Transform job to extract features from all frames.
@@ -390,7 +387,6 @@ def launch_feature_extraction(procedure_id: str, valid_frames: list) -> str:
     )
 
     return transform_job_name
-
 
 def wait_for_transform_job(job_name: str, poll_interval: int = 30) -> str:
     """
@@ -589,7 +585,6 @@ def median_filter_1d(signal: np.ndarray, window: int) -> np.ndarray:
 
     return result
 
-
 def enforce_min_phase_duration(phases: np.ndarray, min_frames: int) -> np.ndarray:
     """
     Merge short phase segments into their longer neighbors.
@@ -631,7 +626,6 @@ def enforce_min_phase_duration(phases: np.ndarray, min_frames: int) -> np.ndarra
                 result[seg_start:seg_end] = result[seg_end]
 
     return result
-
 
 def post_process_predictions(raw_predictions: dict) -> dict:
     """
@@ -755,7 +749,6 @@ def post_process_predictions(raw_predictions: dict) -> dict:
 import requests
 from requests_aws4auth import AWS4Auth
 
-
 def store_results_dynamodb(procedure_id: str, metadata: dict, analysis: dict) -> None:
     """
     Write the full procedure analysis to DynamoDB.
@@ -798,7 +791,6 @@ def store_results_dynamodb(procedure_id: str, metadata: dict, analysis: dict) ->
 
     table.put_item(Item=record)
     logger.info("Stored analysis for procedure %s in DynamoDB", procedure_id)
-
 
 def index_results_opensearch(procedure_id: str, metadata: dict, analysis: dict) -> None:
     """
@@ -970,7 +962,6 @@ def analyze_surgical_video(video_s3_key: str, metadata: dict) -> dict:
         "procedure_id": procedure_id,
         "analysis": analysis,
     }
-
 
 # Example: run the pipeline against a simulated surgical video.
 if __name__ == "__main__":

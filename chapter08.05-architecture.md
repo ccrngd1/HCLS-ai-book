@@ -20,8 +20,6 @@
 
 ### Architecture Diagram
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS DLQ for Lambda invocation failures and a CloudWatch alarm on DLQ depth. Show in diagram and mention in "Why These Services." -->
-
 ```mermaid
 flowchart LR
     A[Clinical Note Source\nHL7/EHR/ADT] -->|Store| B[S3 Bucket\nnotes-inbox/]
@@ -119,8 +117,6 @@ FUNCTION detect_sections(note_text):
 ```
 
 **Step 2: Extract clinical problems.** Send each relevant section to the NER service for entity extraction. We're specifically looking for entities of category MEDICAL_CONDITION, which covers diagnoses, symptoms, signs, and disease mentions. The service returns each entity with its text span, confidence score, and traits (like NEGATION or SIGN vs. DIAGNOSIS). We filter to MEDICAL_CONDITION entities and carry forward the section context from Step 1 so we know where each problem was found. Skip this step and you have no raw material for the rest of the pipeline.
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add note that Comprehend Medical DetectEntitiesV2 has a 20,000-character limit per request. Sections exceeding this need chunking at sentence boundaries with offset correction. Discharge summaries and operative notes can exceed this. -->
 
 ```pseudocode
 FUNCTION extract_problems(sections):
@@ -234,8 +230,6 @@ FUNCTION normalize_problems(classified_problems):
 
 **Step 5: Reconcile against existing problem list.** This is where extraction becomes actionable. We compare the extracted active problems against the patient's current problem list in the database. The output is a reconciliation report: new problems to consider adding, existing problems that might be resolved, and existing problems that could use specificity updates. This is always a recommendation, never an automatic update, because problem list maintenance is a clinical act that requires physician review. Skip this step and you have a nice extraction pipeline that produces results nobody acts on.
 
-<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Reconciliation uses only top-1 SNOMED code for matching. Should check all top-3 candidates or use SNOMED hierarchy-aware deduplication to avoid false ADD_CANDIDATE recommendations for problems already on the list under a different code. -->
-
 ```pseudocode
 FUNCTION reconcile_problems(patient_id, extracted_problems, note_id):
     // Fetch the patient's current problem list from the database.
@@ -292,8 +286,6 @@ FUNCTION reconcile_problems(patient_id, extracted_problems, note_id):
 ```
 
 **Step 6: Store results and generate reconciliation report.** Write the full extraction results to S3 for audit and reprocessing. Write reconciliation recommendations to DynamoDB where clinician review workflows can surface them. Every recommendation includes its source note, confidence score, and rationale so reviewers have enough context to accept or reject it without re-reading the entire note.
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about idempotent reprocessing: recommendation_id should be deterministic (note_id + snomed_code + type) with a conditional write to prevent duplicates on reprocessing. -->
 
 ```pseudocode
 FUNCTION store_results(patient_id, extracted_problems, recommendations, note_id):
@@ -403,8 +395,6 @@ FUNCTION store_results(patient_id, extracted_problems, recommendations, note_id)
 - Specialty-specific shorthand (orthopedic notes are particularly terse)
 - Combination/compound conditions: "diabetes with nephropathy and retinopathy" is one problem or three?
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section here (between Expected Results and Variations). Should cover gaps like: no clinician review UI, no feedback loop to improve assertion accuracy, no multi-note aggregation, no handling of conflicting assertions across notes, no SNOMED hierarchy-aware deduplication. -->
-
 ---
 
 ## Variations and Extensions
@@ -446,7 +436,6 @@ FUNCTION store_results(patient_id, extracted_problems, recommendations, note_id)
 | **With variations** (multi-note longitudinal, specialty-adapted, FHIR integration) | 12-16 weeks |
 
 ---
-
 
 ---
 

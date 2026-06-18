@@ -96,7 +96,6 @@ rekognition_client = boto3.client("rekognition", config=BOTO3_RETRY_CONFIG)
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb")
 
-
 def validate_verification_image(bucket: str, key: str) -> dict:
     """
     Check that the verification image contains exactly one face with
@@ -267,7 +266,6 @@ def enroll_patient_face(patient_id: str, bucket: str, key: str) -> dict:
         "patient_id": patient_id,
         "confidence": face_record["Face"]["Confidence"],
     }
-
 
 def search_patient_by_face(bucket: str, key: str) -> dict:
     """
@@ -479,7 +477,6 @@ def verify_patient(patient_id: str, verification_bucket: str,
         "patient_id": patient_id,
         "audit": audit,
     }
-
 
 # Example: verify a patient at check-in
 if __name__ == "__main__":

@@ -247,7 +247,6 @@ def preprocess_for_model(
 
     return preprocessed.astype(np.float32)
 
-
 def _preprocess_volume(
     volume: np.ndarray,
     model_config: dict,
@@ -322,7 +321,6 @@ def _preprocess_volume(
     result = np.transpose(resized, (1, 2, 0))
 
     return result
-
 
 def _preprocess_2d(image: np.ndarray, model_config: dict) -> np.ndarray:
     """
@@ -539,7 +537,6 @@ def store_triage_result(
 
     return record
 
-
 def _send_critical_alert(
     study_uid: str,
     study_metadata: dict,
@@ -672,7 +669,6 @@ def triage_study(study_uid: str, study_metadata: dict, pixel_data: np.ndarray,
     )
 
     return result
-
 
 # ----- Example: Simulate a triage run with synthetic data -----
 

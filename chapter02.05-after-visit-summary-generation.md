@@ -6,23 +6,15 @@
 
 ## The Problem
 
-<!-- TODO (EXPERT REVIEW - CRITICAL, Finding S2): The anticoagulation vignette below
-     is written for warfarin (greens interact, INR draw at 3 days) but the Sample Output
-     in "Expected Results" shows apixaban 5 mg with a CBC/kidney check at 3 days.
-     These clinical pictures are incompatible. Pick one drug and use it consistently
-     across the Problem narrative and the Sample Output. The reviewer recommends
-     keeping warfarin here (the specific details are strong teaching) and switching
-     the Sample Output to match. See reviews/chapter02.05-expert-review.md Finding S2. -->
-
 A 68-year-old patient with new-onset atrial fibrillation walks out of the cardiology office with a folded piece of paper. On it: the boilerplate "After-Visit Summary" the EHR auto-generated. The top half is the patient's demographic banner and the practice's phone number. The bottom half is a list of their active medications (unchanged since 2019), a generic statement that says "Continue current medications as prescribed," and a single line that reads "Follow up as needed."
 
 What actually happened in that visit: the cardiologist started anticoagulation. She explained that the patient has a 1-in-20 risk of stroke per year without it, that the medication requires careful attention to diet (greens interact), that they need a lab draw in three days to check clotting, that they should call 911 immediately if they notice unusual bleeding or a sudden headache, and that they need to return in two weeks. None of that is on the paper.
 
-Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly. <!-- TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated) --> The average American adult reads at roughly an 8th-grade level. <!-- TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing. --> The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
+Research on health literacy is consistent and depressing. Patients forget 40-80% of what their provider tells them within minutes of leaving the visit, and of what they do remember, roughly half is remembered incorrectly.  The average American adult reads at roughly an 8th-grade level.  The average after-visit summary is written at a 10th-to-12th-grade level. That mismatch alone (before you get to any of the clinical nuance) means a large fraction of patients can't fully decode the document they're handed.
 
 For the patient with atrial fibrillation, the consequences of that gap are concrete. They don't go for the INR draw because the paper didn't mention it. They continue their usual salad-heavy diet because nobody wrote down the dietary interaction. They show up to the follow-up appointment confused about why they're on a new medication, or they no-show because "follow up as needed" felt optional. Six weeks later they're in the ER with a bleed that could have been caught earlier, or a clot that could have been prevented. Their chart documents everything the physician did correctly. The communication layer is where it fell apart.
 
-Hospital discharge summaries are an even sharper version of the same problem. A patient discharged after a three-day hospitalization for heart failure leaves with five new medications, a new diagnosis, a restricted diet, a home scale and weight log instructions, and follow-up appointments with three different specialists. They're also on narcotics from the hospital stay, exhausted, and often half-listening to the discharge nurse who is running through a checklist. Readmission rates for heart failure hover around 20-25% within 30 days <!-- TODO: verify current CMS readmission statistics -->, and a meaningful chunk of those readmissions trace back to communication failures: didn't know the warning signs, didn't understand the medication, didn't realize the follow-up appointment was important.
+Hospital discharge summaries are an even sharper version of the same problem. A patient discharged after a three-day hospitalization for heart failure leaves with five new medications, a new diagnosis, a restricted diet, a home scale and weight log instructions, and follow-up appointments with three different specialists. They're also on narcotics from the hospital stay, exhausted, and often half-listening to the discharge nurse who is running through a checklist. Readmission rates for heart failure hover around 20-25% within 30 days , and a meaningful chunk of those readmissions trace back to communication failures: didn't know the warning signs, didn't understand the medication, didn't realize the follow-up appointment was important.
 
 The frustrating thing is that the source material exists. The physician wrote a detailed note. The medication changes are in the EHR. The orders and referrals are captured. The follow-up plan was discussed. Every piece of information the patient needs is somewhere in the chart. The problem is that nobody has time to synthesize it into something the patient can actually read and act on.
 
@@ -199,7 +191,7 @@ There's a bigger opportunity hiding in this use case, too. The AVS is the visibl
 - **Recipe 2.4 (Prior Authorization Letter Generation):** Same grounded-generation architecture, different audience. The structural patterns (structured extraction, prompt grounding, claim validation) are nearly identical. If you've built the PA pipeline, the AVS pipeline is largely a rebuild with a different target audience.
 - **Recipe 2.6 (Clinical Note Summarization):** Summarization for clinicians rather than patients. The architectural patterns overlap but the audience-specific prompting differs substantially.
 - **Recipe 2.8 (Ambient Clinical Documentation):** When ambient documentation is generating the clinical note, the note structure is often cleaner and more recent, which improves downstream AVS generation quality.
-- **Recipe 11.x (Conversational AI):** A conversational follow-up agent (teach-back, reminder confirmation, question-answering) pairs well with the AVS. The AVS delivers content; the conversational layer helps the patient engage with it. <!-- TODO: verify recipe number once Chapter 11 is drafted -->
+- **Recipe 11.x (Conversational AI):** A conversational follow-up agent (teach-back, reminder confirmation, question-answering) pairs well with the AVS. The AVS delivers content; the conversational layer helps the patient engage with it. 
 
 ---
 

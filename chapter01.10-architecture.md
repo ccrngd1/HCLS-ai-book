@@ -187,7 +187,6 @@ FUNCTION generate_migration_manifest(s3_prefix: string, output_key: string):
 
     RETURN count(manifest_rows), "manifests/" + output_key
 
-
 FUNCTION submit_batch_migration_job(manifest_key: string, job_count: int) -> string:
     // AWS Batch array jobs: N copies of the same job definition, each with a
     // unique array index used to select a row from the manifest.
@@ -268,7 +267,6 @@ FUNCTION preprocess_chart(chart_pdf_key: string) -> tuple[string, dict]:
 
     RETURN processed_key, quality_report
 
-
 FUNCTION is_blank_page(img, white_threshold: float) -> bool:
     grayscale = convert_to_grayscale(img)
     white_pixels = count of pixels with brightness > 240
@@ -307,7 +305,6 @@ FUNCTION start_textract_ocr(processed_chart_key: string, chart_id: string) -> st
     )
 
     RETURN job_id
-
 
 FUNCTION retrieve_ocr_results(job_id: string, chart_id: string) -> string:
     all_blocks = retrieve_all_textract_blocks_paginated(job_id)
@@ -404,7 +401,6 @@ Extraction tier guidance:
 Return ONLY valid JSON. No explanation. No markdown.
 """
 
-
 FUNCTION generate_classification_batch_jsonl(chart_id: string,
                                               page_quality: dict) -> string:
     requests = empty list
@@ -455,7 +451,6 @@ FUNCTION generate_classification_batch_jsonl(chart_id: string,
     write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
     RETURN jsonl_key
 
-
 FUNCTION submit_classification_batch_job(jsonl_keys: list) -> string:
     // Submit one batch inference job covering all charts in the current wave.
     // Aggregating many charts into one job is more efficient than one job per chart.
@@ -495,7 +490,6 @@ After classification results arrive, the routing Lambda reads the results JSONL 
 ```pseudocode
 CONFIDENCE_TO_VISION_PATH = 0.65   // below this, route to vision regardless of classification tier
 CONFIDENCE_TO_OPUS       = 0.45    // below this, escalate to Tier 4 Opus
-
 
 FUNCTION process_classification_results(results_s3_prefix: string) -> dict:
     // Load and parse results JSONL
@@ -591,7 +585,6 @@ Return a JSON object:
 Return ONLY valid JSON.
 """
 
-
 FUNCTION generate_extraction_tier2_jsonl(tier2_pages: list) -> string:
     requests = empty list
 
@@ -628,7 +621,6 @@ FUNCTION generate_extraction_tier2_jsonl(tier2_pages: list) -> string:
     jsonl_key = "batch-input/extract-tier2-" + batch_id + ".jsonl"
     write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
     RETURN jsonl_key
-
 
 FUNCTION generate_extraction_vision_jsonl(vision_pages: list, model_tier: int) -> string:
     // For Tier 3 (Sonnet) and Tier 4 (Opus) pages requiring vision.
@@ -824,7 +816,6 @@ Generate a JSON array of FHIR R4 resources. Include:
 Return ONLY a valid JSON array of FHIR resources.
 """
 
-
 FUNCTION generate_fhir_mapping_jsonl(chart_id: string,
                                       member_id: string,
                                       validated_extractions: dict) -> string:
@@ -866,7 +857,6 @@ FUNCTION generate_fhir_mapping_jsonl(chart_id: string,
     write_lines_to_s3(bucket="batch-inference", key=jsonl_key, lines=requests)
     RETURN jsonl_key
 
-
 // generate_fallback_document_reference: called in assemble_fhir_bundle when FHIR
 // output is malformed or unparseable. Produces a minimal valid DocumentReference so
 // the chart always contributes at least one FHIR resource rather than being dropped.
@@ -903,7 +893,6 @@ FUNCTION generate_fallback_document_reference(chart_id: string,
     // is visible in the operations dashboard:
     //   emit_cloudwatch_metric("fhir_mapping_fallback", 1)
     // A fallback rate above 1-2% on a wave warrants investigation.
-
 
 FUNCTION assemble_fhir_bundle(chart_id: string,
                                member_id: string,
@@ -979,7 +968,6 @@ FUNCTION write_fhir_bundle_to_s3(chart_id: string,
     )
 
     RETURN bundle_key
-
 
 FUNCTION submit_healthlake_import_batch(datastore_id: string, batch_size: int = 2000):
     ready_charts = query_dynamodb(
@@ -1063,7 +1051,6 @@ LIFECYCLE_POLICY = {
         Expiration: { Days: 3653 }   // 10 years
     }]
 }
-
 
 FUNCTION mark_chart_archived(chart_id: string, s3_key: string):
     // Tag the S3 object to trigger the lifecycle rule
@@ -1272,7 +1259,6 @@ The pseudocode captures the core logic. A production chart migration program req
 - [Amazon Bedrock Batch Inference for Large-Scale Document Processing](https://aws.amazon.com/blogs/machine-learning/): Search the ML blog for recent batch inference deep dives covering JSONL format, cost optimization, and throughput benchmarks
 
 --- 
-
 
 ---
 

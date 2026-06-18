@@ -133,7 +133,6 @@ EDGE_TYPES = {
 ```python
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 
-
 def run_opencypher_query(query: str, parameters: dict = None, use_writer: bool = False) -> dict:
     """
     Execute an openCypher query against Neptune and return the response.
@@ -159,7 +158,6 @@ def run_opencypher_query(query: str, parameters: dict = None, use_writer: bool =
     response = requests.post(url, data=payload)
     response.raise_for_status()
     return response.json()
-
 
 def ingest_rxnorm_concepts(bucket: str, key: str) -> int:
     """
@@ -243,7 +241,6 @@ def ingest_rxnorm_concepts(bucket: str, key: str) -> int:
     logger.info(f"RxNorm ingestion complete. {nodes_loaded} nodes loaded.")
     return nodes_loaded
 
-
 def ingest_rxnorm_relationships(bucket: str, key: str) -> int:
     """
     Parse RxNorm RXNREL.RRF and load drug-to-drug relationships into Neptune.
@@ -320,7 +317,6 @@ def ingest_rxnorm_relationships(bucket: str, key: str) -> int:
 
 ```python
 import xml.etree.ElementTree as ET
-
 
 def ingest_drugbank_mechanisms(bucket: str, key: str) -> int:
     """
@@ -414,7 +410,6 @@ def ingest_drugbank_mechanisms(bucket: str, key: str) -> int:
 
     logger.info(f"DrugBank mechanisms loaded. {edges_loaded} edges.")
     return edges_loaded
-
 
 def _load_protein_relationship(rxcui: str, protein_elem, protein_type: str, ns: dict) -> int:
     """
@@ -510,7 +505,6 @@ def _load_protein_relationship(rxcui: str, protein_elem, protein_type: str, ns: 
 
 ```python
 comprehend_medical_client = boto3.client("comprehendmedical", region_name=AWS_REGION)
-
 
 def extract_fda_label_interactions(bucket: str, key: str) -> int:
     """
@@ -611,7 +605,6 @@ def extract_fda_label_interactions(bucket: str, key: str) -> int:
     logger.info(f"  Loaded {edges_loaded} interaction edges from {subject_name} label.")
     return edges_loaded
 
-
 def _extract_section_text(section_elem, ns: dict) -> str:
     """
     Recursively extract all text content from an SPL section element.
@@ -624,7 +617,6 @@ def _extract_section_text(section_elem, ns: dict) -> str:
         if elem.tail:
             texts.append(elem.tail.strip())
     return " ".join(t for t in texts if t)
-
 
 def _extract_medications_from_text(text: str) -> list[dict]:
     """
@@ -677,7 +669,6 @@ def _extract_medications_from_text(text: str) -> list[dict]:
             })
 
     return medications
-
 
 def _infer_rxnorm_cui(medication_text: str) -> str | None:
     """
@@ -819,7 +810,6 @@ def check_interactions(medication_list: list[dict], patient_context: dict = None
         "total_significant": len(significant),
     }
 
-
 def _check_direct_interactions(rxcui_a: str, rxcui_b: str) -> list[dict]:
     """
     Query Neptune for direct INTERACTS_WITH edges between two drugs.
@@ -855,7 +845,6 @@ def _check_direct_interactions(rxcui_a: str, rxcui_b: str) -> list[dict]:
 
     return results
 
-
 def _get_drug_targets(rxcui: str) -> list[dict]:
     """
     Get all enzyme and transporter relationships for a drug.
@@ -885,7 +874,6 @@ def _get_drug_targets(rxcui: str) -> list[dict]:
         })
 
     return targets
-
 
 def _check_mechanism_interactions(
     med_a: dict, med_b: dict,
@@ -988,7 +976,6 @@ def _check_mechanism_interactions(
 
     return interactions
 
-
 def _infer_severity_from_strength(inhibition_strength: str) -> str:
     """Map inhibition strength to a severity estimate for inferred interactions."""
     strength_to_severity = {
@@ -998,7 +985,6 @@ def _infer_severity_from_strength(inhibition_strength: str) -> str:
         "unknown": "Moderate",  # Conservative default
     }
     return strength_to_severity.get(inhibition_strength, "Moderate")
-
 
 def _calculate_significance_score(interaction: dict, patient_context: dict) -> float:
     """
@@ -1040,7 +1026,6 @@ def _calculate_significance_score(interaction: dict, patient_context: dict) -> f
 
     # Cap at 1.0.
     return min(score, 1.0)
-
 
 def _generate_recommendation(interaction: dict) -> str:
     """
@@ -1084,7 +1069,6 @@ def _generate_recommendation(interaction: dict) -> str:
 
 ```python
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
-
 
 def serve_interaction_check(request: dict) -> dict:
     """
@@ -1175,7 +1159,6 @@ def serve_interaction_check(request: dict) -> dict:
     result["cache_hit"] = False
     return result
 
-
 def invalidate_cache():
     """
     Flush the interaction cache. Call this after loading new source data
@@ -1246,7 +1229,6 @@ def run_ingestion_pipeline():
     print("\n" + "=" * 60)
     print("INGESTION COMPLETE")
     print("=" * 60)
-
 
 def run_interaction_check_demo():
     """
@@ -1320,7 +1302,6 @@ def run_interaction_check_demo():
             drug_a = interaction.get("drug_a", {}).get("name", "?")
             drug_b = interaction.get("drug_b", {}).get("name", "?")
             print(f"  - {drug_a} + {drug_b}: score={interaction.get('score', 0):.2f}")
-
 
 if __name__ == "__main__":
     # Uncomment the pipeline you want to run:

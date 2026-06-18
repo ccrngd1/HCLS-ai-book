@@ -12,21 +12,15 @@
 
 **Amazon S3 for data lake storage.** The preprocessed EHR trajectories, trained model artifacts, evaluation results, and audit logs all live in S3. Versioning tracks which dataset version produced which policy. Lifecycle policies manage the retention of intermediate artifacts.
 
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add model versioning and rollback strategy: use SageMaker Model Registry with approval workflows, run OPE comparison of new vs. deployed policy, implement canary deployment pattern with automatic rollback on degraded safety constraint or clinician override rates. -->
-
 **AWS Glue for ETL and cohort construction.** Extracting sepsis cohorts from raw EHR data involves complex SQL-like transformations: joining diagnosis tables with lab results, vital signs, and medication administration records; applying Sepsis-3 criteria; constructing time-aligned trajectories. Glue handles this at scale without provisioning Spark clusters manually.
 
 **Amazon DynamoDB for policy serving.** Once a policy is validated and approved for clinical decision support, the state-to-action mapping needs to be served with low latency. For discrete state spaces, DynamoDB provides single-digit-millisecond lookups. For neural network policies, SageMaker endpoints handle inference.
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Clarify that this recipe's code uses continuous states with a neural Q-network (SageMaker endpoint). DynamoDB is the alternative for discretized state spaces (750 k-means clusters). Recommend choosing one approach and noting the tradeoff. -->
 
 **Amazon SageMaker Endpoints for real-time inference.** If the policy uses a neural network (continuous state space), a SageMaker real-time endpoint serves predictions. The clinician-facing system sends the current patient state, the endpoint returns the recommended action with confidence information.
 
 **AWS Step Functions for pipeline orchestration.** The full pipeline (data extraction, preprocessing, training, evaluation, model registration) is a multi-step workflow with dependencies. Step Functions coordinates the sequence, handles retries, and provides visibility into pipeline state.
 
 **Amazon CloudWatch for monitoring and alerting.** Track model inference latency, prediction distribution drift (are we seeing patient states outside the training distribution?), and system health. Alert on anomalies that might indicate the model is being queried with out-of-distribution inputs.
-
-<!-- TODO (TechWriter): Expert review A2 (HIGH). Add concrete distribution shift detection mechanism: compute training-time state mean/covariance, use Mahalanobis distance at inference to flag OOD states, suppress low-confidence recommendations, track OOD percentage in CloudWatch with alarms for rising rates. -->
 
 ### Architecture Diagram
 
@@ -58,11 +52,11 @@ flowchart TD
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Step Functions, Amazon CloudWatch |
 | **IAM Permissions** | `sagemaker:CreateTrainingJob`, `sagemaker:CreateEndpoint`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `states:StartExecution` |
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Replace flat IAM permission list with role-separated guidance: separate roles per pipeline stage (Glue ETL, SageMaker training, inference endpoint, Step Functions orchestration) with resource-scoped ARN constraints. -->
+
 | **BAA** | AWS BAA signed (required: patient physiological data is PHI) |
 | **Encryption** | S3: SSE-KMS for all trajectory data and model artifacts; DynamoDB: encryption at rest; SageMaker: KMS-encrypted training volumes and endpoints; all API calls over TLS |
 | **VPC** | Production: SageMaker in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs. No public internet access for training jobs processing PHI. |
-<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Expand VPC endpoint list to include SageMaker API, SageMaker Runtime, and KMS interface endpoints. Without these, private subnet deployment requires NAT Gateway (egress point for PHI) or fails entirely. Note per-AZ-hour cost (~$7.20/month per endpoint per AZ). -->
+
 | **CloudTrail** | Enabled: log all SageMaker, S3, and Glue API calls for audit trail |
 | **Data Requirements** | Minimum 10,000-20,000 sepsis episodes with complete trajectory data (vitals q4h, labs, medication administration records). MIMIC-III/IV for research; institutional EHR data for production. |
 | **IRB Approval** | Required before accessing patient data for model development. This is research, not routine operations. |
@@ -85,8 +79,6 @@ flowchart TD
 #### Walkthrough
 
 **Step 1: Cohort extraction and trajectory construction.** The first step pulls sepsis patients from the EHR and constructs the trajectory dataset that the RL algorithm will learn from.
-
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note on de-identification: training data should be de-identified per HIPAA Safe Harbor or used under Limited Data Set with DUA. Patient IDs replaced with pseudonymous identifiers. Model artifact trained on de-identified data is not itself PHI, but trajectory dataset is. -->
 
 This involves identifying patients meeting Sepsis-3 criteria (suspected infection plus acute organ dysfunction, operationalized as a SOFA score increase of 2 or more points), extracting their time-series data at regular intervals, and formatting it into (state, action, reward, next_state) tuples. The time alignment matters: vitals might be recorded every 15 minutes, labs every 6 hours, and medications at irregular intervals. Everything gets aligned to a consistent time grid (typically 4-hour windows). Skip this step or do it sloppily, and your RL agent learns from noise rather than signal.
 
@@ -300,8 +292,6 @@ FUNCTION apply_safety_constraints(state, candidate_actions):
     RETURN safe_actions
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add monitoring/alerting for safety constraint trigger rates. If any constraint fires on >20% of recommendations in a 24-hour window, alert clinical informatics. Publish constraint trigger rates to CloudWatch as custom metrics with alarms. -->
-
 **Step 5: Off-policy evaluation.** Before anyone even thinks about showing this to a clinician, you need to estimate how well the learned policy would have performed compared to what actually happened. This is off-policy evaluation (OPE), and it's the hardest part of the entire pipeline. You're asking: "If we had followed this policy instead of what the clinicians did, would patients have done better?" You can't know for certain without actually deploying it (which you won't do without extensive validation). OPE gives you an estimate with uncertainty bounds. Use multiple methods and be honest about the limitations.
 
 ```pseudocode
@@ -374,8 +364,6 @@ FUNCTION serve_recommendation(patient_state, policy_endpoint):
 
     RETURN recommendation
 ```
-
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify tamper-evident audit storage: S3 Object Lock (compliance mode) or CloudWatch Logs with resource policy preventing deletion. Consider separate audit account with cross-account write-only access. -->
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
@@ -450,8 +438,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 
 ## Variations and Extensions
 
-<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add a variation on reward function experimentation: parameterize reward, train multiple policies in parallel, use SageMaker Experiments to track reward-to-policy mapping, compare via OPE pipeline. -->
-
 **Multi-agent formulation.** Instead of a single policy for all sepsis patients, train separate policies for different sepsis subtypes (pulmonary, abdominal, urinary source) or severity strata. Patients with different infection sources may have different optimal treatment trajectories. This requires larger datasets but can improve policy quality for each subgroup.
 
 **Incorporating antibiotic timing.** The standard formulation focuses on fluids and vasopressors. Extending the action space to include antibiotic timing decisions (early broad-spectrum vs. waiting for cultures) adds clinical relevance but increases the action space complexity. Each hour of antibiotic delay in sepsis is associated with increased mortality, making this a high-value extension.
@@ -496,7 +482,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this as
 | **With regulatory pathway** (FDA submission, prospective validation, clinical deployment) | 2-4 years |
 
 ---
-
 
 ---
 

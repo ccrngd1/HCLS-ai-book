@@ -1,355 +1,3 @@
-<!--
-Editor pass (TechEditor, 2026-05-15):
-- Mechanical hygiene verified: U+2014 em-dash count 0 in prose; U+2013
-  en-dash count 0 in prose (any U+2013 hits are inside the ASCII-art
-  pipeline diagram inside a fenced code block). Documentation-voice and
-  announcement anti-pattern grep ("we are excited", "this recipe
-  demonstrates", "in this recipe we will", "AWS architects, we"): zero
-  matches in prose.
-- Header hierarchy verified: one H1 (the title); H2 for major sections
-  (Problem / Technology / General Architecture Pattern / AWS
-  Implementation / Why This Isn't Production-Ready / Honest Take /
-  Variations and Extensions / Related Recipes / Additional Resources /
-  Implementation Time / Tags); structured H3 subsections under
-  Technology and AWS Implementation; one H4 (Walkthrough) under Code; no
-  skipped levels. Matches chapter01 and chapter03.01-3.06 patterns.
-- RECIPE-GUIDE compliance verified: Problem -> Technology -> General
-  Architecture Pattern -> AWS Implementation (Why These Services,
-  Architecture Diagram, Prerequisites, Ingredients, Code, Expected
-  Results) -> Why This Isn't Production-Ready -> The Honest Take ->
-  Variations and Extensions -> Related Recipes -> Additional Resources
-  -> Implementation Time -> Tags -> Navigation. All required sections
-  present in correct order.
-- Vendor balance verified: conceptual sections (The Problem, The
-  Technology, General Architecture Pattern) are vendor-neutral; AWS
-  service names enter at the AWS Implementation section and stay there.
-  ~70/30 split intact.
-- Editorial fixes applied in place:
-  * V2 (expert review): moved the performance-benchmarks population /
-    outcome-definition / window-dependence caveat from an HTML-comment
-    TODO into a visible inline paragraph above the table so deployment
-    teams reading the table know the numbers are not portable. The
-    citation TODO (Wong et al., Romero-Brufau et al., Churpek et al.,
-    Smith et al.) is preserved as a separate forward-placeholder for
-    TechWriter to resolve before publication.
-  * V4 (expert review): tightened the sample alert payload narrative.
-    The original "consideration of empiric antibiotic timing per local
-    sepsis protocol" sat at the constraint boundary between "suggest
-    evaluation steps" and "recommend specific treatments"; replaced
-    with "and assessment per local sepsis protocol" which lands further
-    from the treatment-recommendation boundary and aligns with the
-    Bedrock-prompt constraint stated in Step 6 ("never recommend
-    specific treatments").
-  * V5 (expert review): added a one-sentence cross-reference in the
-    first paragraph of The Honest Take so the "build the workflow
-    first" lesson explicitly ties to the Implementation-Time Basic tier
-    (the NEWS2-engine-and-workflow-only deployment in 4-6 months that
-    embeds exactly that discipline).
-- Substantive technical findings from the expert review surfaced as
-  TechWriter TODO markers in place rather than rewritten by editor:
-  A1 (outcome-event idempotency at the outcome-capture and ack-capture
-  Lambdas; recurring chapter pattern); A2 (DLQ posture for the five
-  critical Lambdas with single-event sensitivity for the
-  event-normalizer and scoring-orchestrator paths); A3 (treatment-
-  leakage and feature-cutoff discipline in Step 4's compute_features;
-  prose names this as the fundamental modeling concern but pseudocode
-  does not enforce it); A4 (cold-start detection and routing primitive
-  at Step 4 and Step 5; prose names the failure mode but pseudocode
-  does not architecturally support fall-back to population priors or
-  NEWS2); A5 (suppression-rule expiry-enforcement primitive and
-  care-transition trigger; Step 7 reads suppression_until but no
-  scheduled job walks the registry); A6 (reference-data versioning
-  propagation from score record into alert payload and OpenSearch alert
-  audit index; sample alert payload audit_trail block is implicit but
-  pseudocode does not show construction); S1 (alert payload PHI
-  minimization for pager / Vocera / TigerConnect channels at Step 7;
-  the explanation narrative is itself the PHI-carrying field); S2
-  (subgroup data governance architectural artifacts; recipe correctly
-  identifies the subgroup taxonomy and metrics but the access-control,
-  audit, and aggregated-view discipline that operationalizes the
-  framing is unspecified).
-- Preserved all existing TODO markers from earlier personas (twelve
-  forward-placeholder TODOs covering NEWS2/MEWS published operational
-  performance characteristics; current FDA CDS guidance; specific
-  peer-reviewed evaluations including Wong et al. on EDI and
-  Romero-Brufau et al. and Churpek et al. on eCART; the Wong et al.
-  JAMA Internal Medicine specific citation; Amazon Timestream
-  HIPAA-eligibility verification; HIPAA-eligible Bedrock foundation
-  models list; aws-samples deterioration-prediction repository
-  confirmation; published fairness-in-clinical-deterioration-models
-  literature; performance-benchmark citations; academic-literature
-  citations including Singer et al. Sepsis-3 and Escobar et al.
-  Kaiser AAM; AWS blog posts on clinical deterioration). Total
-  inventory after this pass: 20 well-formed `<!-- TODO (TechWriter)`
-  markers (twelve preserved from earlier personas plus eight new
-  TODOs flagging expert-review architectural findings A1, A2, A3, A4,
-  A5, A6, S1, S2 for TechWriter follow-up).
-- Cross-file flag for TechWriter (publication coordination, not a
-  TechEditor fix): companion `chapter03.07-python-example.md` is in
-  the PASS state from code review (`reviews/chapter03.07-code-review.md`,
-  2026-05-14). Two WARNINGs require TechWriter follow-up before
-  publication: (1) `update_patient_state` uses a non-atomic get-then-put
-  that under realistic Kinesis fan-out can lose concurrent writes for
-  the same encounter; the immediately adjacent `score_patient` function
-  demonstrates the right `UpdateExpression` plus `ConditionExpression`
-  pattern; (2) `build_explanation` queries scoring history with default
-  eventually-consistent reads while assuming `items[0]` is the
-  just-written score, which can produce wrong `score_change_from_last`
-  values that propagate into the Bedrock narrative; the immediately
-  adjacent `route_alert` function uses the correct
-  `get_last_score(exclude_score_id=...)` helper. Both fixes are
-  localized. Eleven Python-companion NOTEs (unused imports, missing
-  logger handler, PHI-policy contradiction in suppression log, three
-  feature-engineering gaps relative to pseudocode, Timestream f-string
-  query interpolation, S3 put_object missing SSEKMSKeyId paralleling
-  chapter-3-recurring pattern, EventBridge put_events response
-  unchecked, SageMaker CSV column-0 assumption, hardcoded
-  two-generations-old Bedrock model ID, undocumented Feature Store
-  all-strings convention, "DEFAULT" unit-type sentinel leaking into
-  the data plane) are TechWriter-side editorial polish on the Python
-  companion. The TechEditor persona is not the right pass for those
-  Python fixes; TechWriter should run the code-review checklist
-  against `chapter03.07-python-example.md` before this recipe goes to
-  publication.
-- No structural changes; no new technical claims; no rewrites of any
-  section. All finding-level architectural fixes from the expert
-  review (A1-A7, S1-S6, N1-N3) are flagged as TODO markers for
-  TechWriter follow-up rather than rewritten by editor.
-
-Follow-up editor pass (TechEditor, 2026-05-15, second iteration):
-- Verified prior pass holds: U+2014 em-dash count 0 in prose
-  reconfirmed; U+2013 en-dash count outside fenced code blocks 0
-  reconfirmed; documentation-voice and announcement-anti-pattern grep
-  ("this recipe demonstrates", "we are excited", "in this recipe we
-  will", "AWS architects, we") returns zero matches in prose.
-- Header hierarchy reconfirmed: one H1, H2 for major sections, H3
-  subsections under Technology and AWS Implementation, one H4
-  (Walkthrough), no skipped levels.
-- RECIPE-GUIDE compliance reconfirmed: section ordering matches the
-  prior-pass inventory; all required sections present.
-- Vendor balance reconfirmed: 70/30 split intact; conceptual sections
-  vendor-neutral; AWS service names confined to AWS Implementation.
-- TODO inventory reconfirmed: 20 well-formed `<!-- TODO (TechWriter)`
-  markers from the prior pass preserved verbatim.
-- One additional TODO added in this pass: V1 (expert review finding,
-  future-dated timestamps in the two sample payloads under Expected
-  Results) is now flagged inline so TechWriter can either replace the
-  timestamps with placeholder patterns or add a visible-to-reader
-  caveat tying them to the opening 3:14 a.m. sepsis vignette before
-  publication. Updated TODO inventory after this pass: 21 TODOs.
-- No other structural or content changes in this iteration. Prior-pass
-  inline edits (V2 performance-benchmarks visible caveat above the
-  table; V4 sample-narrative tightening from "consideration of empiric
-  antibiotic timing per local sepsis protocol" to "and assessment per
-  local sepsis protocol"; V5 cross-reference between The Honest Take
-  first lesson and the Implementation-Time Basic tier) are unchanged.
-- All MEDIUM expert-review findings (A1 outcome-event idempotency, A2
-  DLQ posture for the five critical Lambdas, A3 treatment-leakage and
-  feature-cutoff discipline, A4 cold-start detection and routing
-  primitive, A5 suppression-rule expiry-enforcement and care-transition
-  trigger, A6 reference-data versioning propagation, S1 alert payload
-  PHI minimization for pager / Vocera / TigerConnect channels, S2
-  subgroup data governance architectural artifacts) remain flagged as
-  TODO markers for TechWriter follow-up.
-- Companion `chapter03.07-python-example.md` follow-up status
-  unchanged: PASS state from code review; two WARNINGs (non-atomic
-  `update_patient_state` get-then-put; eventually-consistent
-  `build_explanation` prior-score query) plus eleven NOTEs remain
-  TechWriter-side polish before publication. The TechEditor persona is
-  not the right pass for those Python-companion fixes.
-
-Follow-up editor pass (TechEditor, 2026-05-15, third iteration):
-- Re-verified style hygiene with explicit UTF-8 read: U+2014 em-dash
-  count 0 (prose and code blocks combined); U+2013 en-dash count 0
-  (prose and code blocks combined). Documentation-voice and
-  announcement-anti-pattern grep ("this recipe demonstrates", "we are
-  excited", "in this recipe we will", "AWS architects, we", "let's
-  dive", "let's explore", "delve into", "leverage") returns zero
-  matches in prose; the only hits are inside this editor-comment block
-  itself referencing the anti-pattern grep, which is expected.
-- Re-verified header hierarchy: one H1 (the title), 11 H2 sections
-  (The Problem / The Technology / General Architecture Pattern / The
-  AWS Implementation / Why This Isn't Production-Ready / The Honest
-  Take / Variations and Extensions / Related Recipes / Additional
-  Resources / Estimated Implementation Time / Tags), 16 H3
-  subsections (8 under The Technology, 7 under The AWS Implementation,
-  1 under Code), one H4 (Walkthrough). No skipped levels.
-- Re-verified fenced-code-block consistency: 12 paired fences total
-  (one ASCII pipeline diagram, one Mermaid block tagged `mermaid`, two
-  JSON blocks tagged `json`, eight pseudocode blocks bare; bare
-  pseudocode fences match the chapter-1 reference convention from
-  chapters 1.01-1.10).
-- Re-verified RECIPE-GUIDE compliance and vendor balance: section
-  ordering matches the prior-pass inventory; conceptual sections (The
-  Problem, The Technology, General Architecture Pattern) remain
-  vendor-neutral; AWS service names are confined to The AWS
-  Implementation, Why This Isn't Production-Ready, and Additional
-  Resources sections; ~70/30 split intact.
-- Mechanical service-name-capitalization fix applied in place: the
-  Why-These-Services Amazon-DynamoDB paragraph (line 447) had a
-  lowercase-s "DynamoDB streams" reference; corrected to "DynamoDB
-  Streams" (the proper AWS service name) for consistency with the
-  three other uses in the file (architecture diagram edge label, Step
-  3 walkthrough prose, Step 3 pseudocode comment). One-character fix;
-  no semantic change.
-- Spell check: no typos detected in prose. Duplicate-word check: no
-  consecutive duplicate words detected.
-- Link verification: every URL in the Additional Resources section is
-  a plausible, well-formed canonical URL. AWS documentation URLs
-  follow the `docs.aws.amazon.com/{service}/latest/{guide-type}/`
-  pattern; clinical-and-research references resolve to authoritative
-  sources (RCP London for NEWS2, SCCM for Surviving Sepsis,
-  PhysioNet for MIMIC-IV and eICU, GitHub for Synthea, FDA for CDS
-  and SaMD guidance). No fabricated URLs.
-- Sample-narrative tightening from V4 (prior pass) verified intact:
-  the closing of the sample alert payload narrative reads "and
-  assessment per local sepsis protocol" rather than the original
-  "consideration of empiric antibiotic timing per local sepsis
-  protocol".
-- TODO inventory reconfirmed: 21 well-formed `<!-- TODO (TechWriter)`
-  markers from prior passes preserved verbatim. No new TODOs added in
-  this iteration.
-- All MEDIUM expert-review findings (A1 outcome-event idempotency, A2
-  DLQ posture for the five critical Lambdas, A3 treatment-leakage and
-  feature-cutoff discipline, A4 cold-start detection and routing
-  primitive, A5 suppression-rule expiry-enforcement and care-transition
-  trigger, A6 reference-data versioning propagation, S1 alert payload
-  PHI minimization for pager / Vocera / TigerConnect channels, S2
-  subgroup data governance architectural artifacts) remain flagged as
-  TODO markers for TechWriter follow-up.
-- Companion `chapter03.07-python-example.md` follow-up status
-  unchanged from prior passes: PASS state from code review; two
-  WARNINGs and eleven NOTEs remain TechWriter-side polish before
-  publication. The TechEditor persona is not the right pass for those
-  Python-companion fixes.
-- No structural changes; no new technical claims; no rewrites of any
-  section.
-
-Follow-up editor pass (TechEditor, 2026-05-15, fourth iteration):
-- Re-verified style hygiene: U+2014 em-dash count 0 (prose and code
-  blocks combined); U+2013 en-dash count 0. Documentation-voice and
-  announcement-anti-pattern grep ("this recipe demonstrates", "we are
-  excited", "in this recipe we will", "AWS architects, we", "let's
-  dive", "let's explore", "delve into", "leverage") returns zero
-  matches in prose. Header hierarchy reconfirmed (one H1, 11 H2s, 16
-  H3s, one H4, no skipped levels). RECIPE-GUIDE compliance and 70/30
-  vendor balance reconfirmed.
-- Mechanical table-formatting fix applied in place: the Performance
-  Benchmarks table's "Scoring throughput (patients per minute, peak)"
-  row carried only three cells against a six-column header (Metric /
-  NEWS2 baseline / LR / GBT / LSTM / Ensemble), which would render
-  with two trailing empty cells in published markdown. Repeated the
-  "infrastructure-dependent; budget for 2x peak load" content across
-  the four model-variant columns so the row balances cleanly to six
-  cells. Tightened "depends on infrastructure" to "infrastructure-
-  dependent" for compactness. Substantively unchanged: the row still
-  conveys that throughput is infrastructure-bound rather than model-
-  bound across all ML model choices.
-- TODO inventory reconfirmed: 21 well-formed `<!-- TODO (TechWriter)`
-  markers from prior passes preserved verbatim. No new TODOs added in
-  this iteration.
-- All MEDIUM expert-review findings (A1, A2, A3, A4, A5, A6, S1, S2)
-  remain flagged as TODO markers for TechWriter follow-up. All LOW
-  expert-review findings (A7, S3, S4, S5, S6, N1, N2, N3, V1, V2, V3,
-  V4, V5) status unchanged from prior passes (V2, V4, V5 inline edits
-  from prior iterations; V1 inline TODO from prior iteration; V3 set
-  remains as forward-placeholder TODOs for TechWriter).
-- Companion `chapter03.07-python-example.md` follow-up status
-  unchanged from prior passes: PASS state from code review; two
-  WARNINGs and eleven NOTEs remain TechWriter-side polish before
-  publication. The TechEditor persona is not the right pass for those
-  Python-companion fixes.
-- No structural changes; no new technical claims; no rewrites of any
-  section. The four-iteration editor cycle on this file is now at the
-  point of diminishing returns; subsequent iterations should defer to
-  the TechWriter pass that resolves the MEDIUM findings (A1-A6, S1,
-  S2) and the LOW citation/verification findings (V3 set) before
-  publication.
-
-Follow-up editor pass (TechEditor, 2026-05-15, fifth iteration, hold
-the line):
-- Re-verified mechanical hygiene with explicit UTF-8 byte-level read
-  separated by editor-comment block vs prose. Prose: U+2014 em-dash
-  count 0; U+2013 en-dash count 0; documentation-voice and
-  announcement-anti-pattern grep ("this recipe demonstrates", "we are
-  excited", "let's dive", "delve into", "leverage" verb form) returns
-  zero matches in prose. The single "leverage" hit in the file is the
-  noun-as-adjective form ("highest-leverage cookbook-wide editorial
-  investment") inside an HTML-comment TODO referring to editorial
-  priority, not the documentation-voice verb form.
-- Re-verified header hierarchy: one H1 (the title), 11 H2 sections,
-  16 H3 subsections, one H4 (Walkthrough). No skipped levels.
-- Re-verified TODO inventory: 21 well-formed `<!-- TODO (TechWriter)`
-  markers in prose, matching prior-iteration count exactly. No drift.
-- Re-verified RECIPE-GUIDE compliance against `RECIPE-GUIDE.md`: Part
-  1 (vendor-agnostic) covers The Problem, The Technology with eight
-  conceptual subsections, General Architecture Pattern. Part 2 (AWS-
-  specific) covers Why These Services, Architecture Diagram (Mermaid),
-  Prerequisites table, Ingredients table, Code with Walkthrough, the
-  Python-companion callout, Expected Results with sample payloads and
-  Performance Benchmarks table and Where-It-Struggles list. Closing
-  sections cover Why This Isn't Production-Ready, The Honest Take,
-  Variations and Extensions, Related Recipes, Additional Resources,
-  Estimated Implementation Time tiered table, Tags, and Navigation
-  footer. All present in the prescribed order.
-- Re-verified STYLE-GUIDE.md voice: 70/30 vendor balance preserved
-  (conceptual sections vendor-neutral; AWS service names confined to
-  Why These Services, Architecture Diagram, Prerequisites, Ingredients,
-  Code AWS Implementation, and Additional Resources); engineer-
-  explaining-to-engineer voice maintained throughout (the 3:14 a.m.
-  vignette, "the math is intentionally blunt", "the model is the
-  smaller half", "lives are saved sometimes"); no marketing language;
-  no announcement statements; no LinkedIn-tone hooks.
-- All MEDIUM expert-review findings (A1, A2, A3, A4, A5, A6, S1, S2)
-  remain flagged as TODO markers for TechWriter follow-up. All LOW
-  findings status unchanged from prior passes.
-- Companion `chapter03.07-python-example.md` follow-up status
-  unchanged from prior passes: PASS state from code review; two
-  WARNINGs (non-atomic `update_patient_state`; eventually-consistent
-  `build_explanation` prior-score query) and eleven NOTEs remain
-  TechWriter-side polish.
-- No edits in this iteration. Five-iteration editor cycle holds the
-  line; the file is now editor-stable. Subsequent iterations on this
-  recipe should be TechWriter passes that resolve the MEDIUM findings
-  and the LOW citation/verification TODOs before publication.
-
-Follow-up editor pass (TechEditor, 2026-05-21, sixth iteration,
-verification-only):
-- Verified style hygiene: U+2014 em-dash count 0 across the whole
-  file; U+2013 en-dash count 0 across the whole file (verified via
-  scripted UTF-8 read with regex match counts).
-- Verified TODO inventory: 21 well-formed `<!-- TODO (TechWriter)`
-  markers in prose. Total grep count of 26 includes 5 self-references
-  inside this editor-comment block referencing the anti-pattern grep
-  itself; prose count holds at 21, matching prior-iteration baseline.
-  No drift.
-- Verified header hierarchy, RECIPE-GUIDE compliance, and 70/30
-  vendor balance unchanged from prior passes.
-- Verified prior-pass inline edits (V2 visible-to-reader caveat above
-  the Performance Benchmarks table; V4 sample-narrative tightening
-  from "consideration of empiric antibiotic timing per local sepsis
-  protocol" to "and assessment per local sepsis protocol"; V5
-  cross-reference between The Honest Take's first lesson and the
-  Implementation-Time Basic tier; the fourth-iteration table-row
-  rebalance for "Scoring throughput (patients per minute, peak)") all
-  intact verbatim.
-- Verified prior-pass TODO additions (V1 future-dated timestamps;
-  A1 outcome-event idempotency; A2 DLQ posture; A3 treatment-leakage
-  and feature-cutoff; A4 cold-start; A5 suppression expiry; A6
-  reference-data versioning; S1 alert payload PHI minimization; S2
-  subgroup data governance) all intact at their original locations.
-- No content edits applied in this iteration. The file remains
-  editor-stable. The MEDIUM expert-review findings (A1, A2, A3, A4,
-  A5, A6, S1, S2) and the LOW citation/verification findings (V1, V3
-  set) are the publication-blocking items, and they belong to the
-  TechWriter persona, not the TechEditor persona.
-- Companion `chapter03.07-python-example.md` follow-up status
-  unchanged: code review PASSed with two WARNINGs (non-atomic
-  `update_patient_state`; eventually-consistent `build_explanation`
-  prior-score query) and eleven NOTEs that remain TechWriter-side
-  polish before publication.
--->
-
 # Recipe 3.7: Patient Deterioration Early Warning ⭐
 
 **Complexity:** Complex · **Phase:** Production (with clinical governance) · **Estimated Cost:** ~$0.0008 to $0.005 per patient-hour scored (mostly compute and feature joins; vendor models often run as separate licensed costs)
@@ -366,7 +14,7 @@ Now look at the data trail before the daughter pressed the button. Vitals at 11 
 
 That's patient deterioration early warning. Not "is this patient critically ill right now?" The hospital's existing critical value rules and rapid response triggers handle the obvious. The harder question is: which patients on the floor right now are showing the early signs of deterioration, hours before they hit any single alarm threshold, so the team can intervene before the call button gets pressed at 1:40 a.m.?
 
-The clinical literature has been making this point for thirty years. Most in-hospital deterioration events (cardiac arrests, ICU transfers, unplanned intubations, unexpected deaths) are preceded by hours of physiologic warning signs that get missed in routine charting. Track-and-trigger systems, originally developed in the UK in the 1990s, encode some of this insight as scoring tools (NEWS, NEWS2, MEWS, PEWS for pediatrics, qSOFA for sepsis screening). They work better than nothing. They miss a lot, and they fire often on patients who don't deteriorate. <!-- TODO (TechWriter): verify and cite specific operational performance characteristics for NEWS2 and MEWS in published validation studies; figures vary by population and care setting. -->
+The clinical literature has been making this point for thirty years. Most in-hospital deterioration events (cardiac arrests, ICU transfers, unplanned intubations, unexpected deaths) are preceded by hours of physiologic warning signs that get missed in routine charting. Track-and-trigger systems, originally developed in the UK in the 1990s, encode some of this insight as scoring tools (NEWS, NEWS2, MEWS, PEWS for pediatrics, qSOFA for sepsis screening). They work better than nothing. They miss a lot, and they fire often on patients who don't deteriorate. 
 
 The reason the problem is hard, and the reason it lands at the complex end of this chapter, comes down to a few intertwined pressures.
 
@@ -380,7 +28,7 @@ The reason the problem is hard, and the reason it lands at the complex end of th
 
 **Workflow integration is the actual product.** A score number in a chart that nobody looks at is worse than no score: you now have documentation that the deterioration was predictable. The output of the model has to flow into pager systems, clinical communication platforms, the rapid response team workflow, the charge nurse's situational awareness display, and the bedside nurse's task list. Each of those integrations has its own protocols, its own latency tolerances, and its own failure modes. The pipeline is half the system; the workflow is the other half.
 
-**Regulatory and legal exposure is real.** Clinical decision support that influences treatment decisions can fall under FDA medical device regulation as Software as a Medical Device (SaMD) depending on the autonomy level and the clinical scenario. The 21st Century Cures Act and the FDA's CDS guidance carve out specific exemptions, but the boundaries are non-obvious and have shifted over the last few years. Hospital clinical governance committees, biomedical engineering, and risk management all have a stake in the deployment. <!-- TODO (TechWriter): verify the current FDA guidance on Clinical Decision Support and SaMD as applies to deterioration prediction; the 2022 CDS guidance is the latest substantive update at time of writing, but track for revisions. -->
+**Regulatory and legal exposure is real.** Clinical decision support that influences treatment decisions can fall under FDA medical device regulation as Software as a Medical Device (SaMD) depending on the autonomy level and the clinical scenario. The 21st Century Cures Act and the FDA's CDS guidance carve out specific exemptions, but the boundaries are non-obvious and have shifted over the last few years. Hospital clinical governance committees, biomedical engineering, and risk management all have a stake in the deployment. 
 
 **Bias and equity are first-order concerns.** Deterioration models trained on historical data can encode care disparities (patients who got more attention got more vitals charted, which produced richer feature vectors, which produced better predictions for them). They can encode population-level differences in baseline vitals (heart rate, blood pressure distributions vary across demographics). They can fail silently on subgroups whose deterioration phenotypes are under-represented in training data. Subgroup performance monitoring is not optional and not a one-time validation exercise; it's continuous operational work.
 
@@ -418,13 +66,13 @@ Machine learning approaches to deterioration prediction generally do three thing
 
 **Multivariate fusion.** Combine vitals, labs, medications, demographics, and clinical context into a single risk score. Track-and-trigger systems can do this only by stapling multiple separate scores together; ML models can learn the interactions natively.
 
-What ML does not magically do is replace the underlying clinical reasoning or the operational integration challenges. A model that's marginally better on retrospective AUROC than NEWS2 still has to fire alerts that humans act on, in a workflow that doesn't already overwhelm them, with explanations they trust. The vendor literature talks a lot about model performance and not enough about the workflow problem; the published peer-reviewed literature is more honest about it. <!-- TODO (TechWriter): cite specific peer-reviewed evaluations of EWS-style ML systems including the well-known external validation studies; key examples include Wong et al. on Epic Deterioration Index, Romero-Brufau et al. on machine learning EWS performance, and the ongoing work on the eCART score. Verify exact citations and outcomes before publication. -->
+What ML does not magically do is replace the underlying clinical reasoning or the operational integration challenges. A model that's marginally better on retrospective AUROC than NEWS2 still has to fire alerts that humans act on, in a workflow that doesn't already overwhelm them, with explanations they trust. The vendor literature talks a lot about model performance and not enough about the workflow problem; the published peer-reviewed literature is more honest about it. 
 
 ### The Two Big Vendor Models, And Why You Should Know Their Reputations
 
 Two ML-based deterioration models have meaningful market presence, and any hospital deployment is happening in their shadow. A first-time builder should know what they are and what's been published about them, because procurement conversations and clinical governance reviews will reference them.
 
-**Epic's Deterioration Index (EDI).** Built into Epic, runs natively in the EHR, scores admitted patients periodically. Originally rolled out around 2017-2018, used by many hospital systems, and the subject of substantial published validation work. The 2021 University of Michigan study (Wong et al.) found EDI's performance during COVID-19 was meaningfully worse than vendor-reported figures, particularly on subgroups. Epic has updated the model since. The takeaway from the literature is that vendor-reported performance often doesn't match local-population performance, and that local validation is essential. <!-- TODO (TechWriter): confirm the specific Wong et al. 2021 JAMA Internal Medicine citation and the most recent published external validation results for EDI. -->
+**Epic's Deterioration Index (EDI).** Built into Epic, runs natively in the EHR, scores admitted patients periodically. Originally rolled out around 2017-2018, used by many hospital systems, and the subject of substantial published validation work. The 2021 University of Michigan study (Wong et al.) found EDI's performance during COVID-19 was meaningfully worse than vendor-reported figures, particularly on subgroups. Epic has updated the model since. The takeaway from the literature is that vendor-reported performance often doesn't match local-population performance, and that local validation is essential. 
 
 **eCART (Electronic Cardiac Arrest Risk Triage).** Originally developed at the University of Chicago, commercialized through AgileMD. Strong published validation literature, often outperforms NEWS2 in head-to-head studies. Used at a number of academic medical centers. Available as either a vendor service or, in some configurations, a deployable model.
 
@@ -524,9 +172,7 @@ Calibration plots, Brier score, and reliability diagrams should be reported alon
 
 Every production deterioration model must monitor performance across clinically meaningful subgroups: age bands, sex, race and ethnicity (where structurally captured), insurance status (a useful proxy for SES), unit, service line, primary diagnosis, time of day, day of week. Models that perform well overall but worse on specific subgroups produce harm patterns that map onto existing care disparities.
 
-Mitigations include subgroup-stratified threshold tuning, subgroup-specific recalibration, fairness-aware training (adversarial debiasing, reweighing), and ongoing audit cycles that flag subgroups whose performance has drifted out of acceptable bounds. The mitigation strategy must be picked deliberately because the wrong mitigation can degrade overall performance without improving the subgroup that motivated it. <!-- TODO (TechWriter): cite the published literature on fairness in clinical deterioration models and Epic Deterioration Index subgroup performance critiques. The Wong et al. analyses are central. -->
-
-<!-- TODO (TechWriter): expert review finding S2 (subgroup data governance architectural artifacts). The framing-level treatment of subgroup monitoring above is the strongest in any chapter-3 recipe. The architectural backstop that makes subgroup monitoring binding rather than aspirational is missing: where the demographic-and-attribute store lives, who has read access, how it joins to alert events and acknowledgment records, what the audit trail for subgroup queries looks like, what IAM scope the QuickSight dashboard role and the retraining job role need on demographic data, and how the dashboard avoids exposing row-level demographic data to viewers. Race and ethnicity data has different governance from PHI per se in some regulatory regimes (state laws often restrict secondary use). Add a "Subgroup data access" row to Prerequisites: restrict read access on the demographic-and-attribute store to the retraining-job role and the fairness-monitoring dashboard role; CloudTrail data events on subgroup queries; QuickSight against an aggregated subgroup-metrics table (alert rate by age band by unit type, calibration ECE by sex, time-to-acknowledge by service line) rather than the raw demographic-joined alert archive. Six chapter-3 recipes deep on this finding shape; second-highest-leverage cookbook-wide editorial investment alongside the trigger-idempotency appendix. -->
+Mitigations include subgroup-stratified threshold tuning, subgroup-specific recalibration, fairness-aware training (adversarial debiasing, reweighing), and ongoing audit cycles that flag subgroups whose performance has drifted out of acceptable bounds. The mitigation strategy must be picked deliberately because the wrong mitigation can degrade overall performance without improving the subgroup that motivated it. 
 
 ### Alert Fatigue Is a Design Constraint
 
@@ -626,7 +272,6 @@ At a conceptual level, the deterioration early warning pipeline ingests vitals, 
 **Retraining and threshold review.** Quarterly (sometimes more often) retraining cadence. Use accumulated outcome labels. Compare candidate model against current production model on held-out data. Subgroup performance comparison. Calibration check. Shadow deployment for a defined period before promotion. Threshold review independent of retraining: the operational thresholds may need adjustment even when the model itself doesn't change, because alert volume targets shift as care patterns shift.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter03.07-architecture). The Python example is linked from there.
 

@@ -285,7 +285,6 @@ FUNCTION profile_segments(features, labels):
 
     RETURN profiles
 
-
 FUNCTION assign_name_heuristic(profile):
     // Simple rule-based naming based on dominant characteristics.
     // In practice, a clinician reviews and overrides these.
@@ -432,8 +431,6 @@ FUNCTION store_assignments(features, labels, profiles):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering production gaps (monitoring, drift detection, retraining triggers, integration testing). -->
-
 ## Variations and Extensions
 
 **Temporal trajectory clustering.** Instead of clustering on a single snapshot of 12-month utilization, cluster on the *trajectory* (how utilization changed over time). This finds "rising risk" patients (previously healthy, now escalating) vs. "recovering" patients (previously high-utilizer, now stabilizing). Requires time-series features or sequence clustering methods (like DTW + hierarchical clustering). More complex but clinically powerful because it distinguishes patients heading in different directions.
@@ -473,7 +470,6 @@ FUNCTION store_assignments(features, labels, profiles):
 | **With variations** (temporal trajectories, real-time scoring endpoint, segment-specific models) | 8-12 weeks |
 
 ---
-
 
 ---
 

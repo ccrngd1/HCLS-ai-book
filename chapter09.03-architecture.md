@@ -327,8 +327,6 @@ Sample output from a successful wound measurement:
 - **Heavily exudative wounds.** Exudate pooling on the wound surface can obscure tissue boundaries and confuse segmentation models.
 - **Dark skin tones with limited training data.** If your training dataset underrepresents darker skin tones, segmentation accuracy will be worse for those patients. This is a known and serious equity concern.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a standalone "Why This Isn't Production-Ready" section between Expected Results and Variations. "Where It Struggles" partially covers this but should be renamed or a new section added listing production gaps (model monitoring, retraining pipeline, multi-region failover, etc.). -->
-
 ---
 
 ## Variations and Extensions
@@ -380,7 +378,6 @@ Combine area measurements with tissue classification to suggest wound stage (for
 | With variations (tissue classification + 3D) | 16-22 weeks | Tissue composition analysis, depth measurement, automated staging suggestions, predictive healing models. |
 
 ---
-
 
 ---
 

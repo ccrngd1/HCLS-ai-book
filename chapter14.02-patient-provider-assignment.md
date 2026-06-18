@@ -80,12 +80,7 @@ Both modes must use the same scoring function and respect the same constraints. 
 
 **EHR Write-back.** After approval, update the EHR's panel attribution. This is typically an HL7 FHIR CareTeam resource update or a proprietary API call. Handle failures gracefully. A failed write-back should not leave your assignment table and the EHR out of sync.
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a subsection or paragraph explaining how batch and incremental assignment modes coexist architecturally. The incremental case (single new patient, needs PCP immediately) uses a simplified greedy approach with the same scoring function. Discuss latency requirements (seconds vs. minutes) and how both modes share constraint/scoring logic. -->
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add a "Fairness and Bias" subsection (in Honest Take or Variations). At minimum: log all assignments with patient demographics, run periodic statistical tests (chi-square on distributions by race/ethnicity/language), alert if any provider's panel demographics deviate significantly from the practice's overall patient demographics. -->
-
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter14.02-architecture). The Python example is linked from there.
 

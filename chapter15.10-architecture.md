@@ -70,9 +70,6 @@ flowchart TB
 | Sample Data | Synthetic hospital operational data for development. Real ADT feeds for calibration (data governance approval needed, and it takes longer than you think). |
 | Cost Estimate | Training: ~$500-2,000 per training run (GPU instances for 8-24 hours). Inference: ~$50-200/month (Lambda invocations every 15-30 min). Data storage: ~$100-500/month. |
 
-<!-- TODO (TechWriter): Expert review S1 (MEDIUM). IAM permissions list is incomplete. Add: kms:Decrypt and kms:GenerateDataKey (scoped to CMK ARN), kinesis:DescribeStream and kinesis:GetShardIterator, cloudwatch:PutMetricData, logs:CreateLogGroup and logs:PutLogEvents, sagemaker:DescribeTrainingJob, and API Gateway permissions. Note that all permissions should use resource-level ARN restrictions. -->
-<!-- TODO (TechWriter): Expert review N1 (MEDIUM). VPC endpoint list is incomplete. Add endpoints for Kinesis Streams, Step Functions, CloudWatch, CloudWatch Logs, and API Gateway (or specify private API). Note that NAT Gateway is acceptable as fallback but VPC endpoints preferred for PHI workloads. -->
-
 ### Ingredients
 
 | AWS Service | Role in This Recipe |
@@ -87,8 +84,6 @@ flowchart TB
 | Amazon CloudWatch | Monitoring model performance and operational metrics |
 
 ---
-
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance gap. The architecture companion is missing "Pseudocode Walkthrough," "Expected Results," and "Why This Isn't Production-Ready" sections. These currently live in the main recipe file. A future pass should move them here per the three-file structure in RECIPE-GUIDE.md. -->
 
 ## Variations and Extensions
 
@@ -119,14 +114,7 @@ Rather than reacting to current state, use forecasting models (see Chapter 12 re
 
 ### Research and Background
 
-<!-- TODO (TechWriter): Verify and link specific papers on offline RL for resource allocation -->
-<!-- TODO (TechWriter): Verify and link hospital simulation modeling references (discrete-event simulation in healthcare) -->
-<!-- TODO (TechWriter): Verify and link Constrained MDP references (CPO, Lagrangian methods) -->
-
 ### Healthcare Operations Context
-
-<!-- TODO (TechWriter): Verify AHA or similar source for ED boarding cost statistics -->
-<!-- TODO (TechWriter): Verify AHRQ resources on hospital capacity management -->
 
 ---
 

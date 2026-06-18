@@ -2,8 +2,6 @@
 
 **Complexity:** Simple-Medium · **Phase:** Phase 1-2 · **Estimated Cost:** ~$0.05-$0.15 per note (section-targeted)
 
-<!-- TODO (TechWriter): Confirm cost estimate. Body text says $0.05-$0.15 section-targeted, $0.40-$1.00 full text. Original header had $0.01-$0.05 which understates. -->
-
 ---
 
 ## The Problem

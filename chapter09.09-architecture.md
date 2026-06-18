@@ -12,13 +12,9 @@
 
 **AWS Elemental MediaConvert for video preprocessing.** Before ML analysis, you need to transcode surgical video into a consistent format, extract frames at your target sample rate, and optionally generate lower-resolution proxy copies for faster processing. MediaConvert handles format normalization and frame extraction as a managed service, avoiding the need to run FFmpeg on EC2 instances. MediaConvert accesses S3 via AWS-internal endpoints over TLS; data does not traverse the public internet. For organizations requiring all PHI processing within a VPC boundary, an alternative is running FFmpeg on a VPC-hosted EC2 instance or ECS task, at the cost of managing the compute infrastructure yourself.
 
-<!-- TODO (TechWriter): Expert review S1 (CRITICAL). Add PHI de-identification guidance for surgical video preprocessing: strip audio tracks (not needed for visual analysis but contain dense PHI), address pre-incision footage containing patient faces, sanitize video file metadata/headers, note OR monitor overlay detection for patient demographics displayed in-frame. -->
-
 **Amazon SageMaker for model training and batch inference.** Surgical video models require GPU compute for both training and inference. SageMaker provides managed training jobs with spot instance support (critical for the multi-day training runs these models require) and batch transform for processing video backlogs. For the feature extraction backbone, SageMaker's built-in support for PyTorch and distributed training across multiple GPUs is essential.
 
 **AWS Step Functions for pipeline orchestration.** The video analysis pipeline has multiple stages with dependencies, error handling requirements, and variable execution times. A single procedure might take 15-60 minutes to process depending on length. Step Functions manages the state machine: trigger on video upload, run preprocessing, launch inference, handle failures with retries, and write results.
-
-<!-- TODO (TechWriter): Expert review S5 (HIGH). Address SageMaker Batch Transform cold start (5-15 min provisioning overhead). Recommend batching strategies for medium volume (5-20 procedures/day) and real-time endpoints for high volume (>20/day). Adjust cost estimate to account for amortized cold start. -->
 
 **Amazon DynamoDB for the structured index.** Phase timelines, instrument logs, and event flags are time-series data with procedure-level access patterns. DynamoDB's flexible schema handles the varying output structures across procedure types, and its query performance supports the interactive visualization use case.
 
@@ -61,8 +57,6 @@ flowchart TD
 | **GPU Instances** | SageMaker training: ml.p3.2xlarge or ml.g5.2xlarge minimum. Batch inference: ml.g5.xlarge. Budget for multi-day training runs. |
 | **Sample Data** | Public surgical video datasets: Cholec80 (80 cholecystectomy videos with phase annotations), m2cai16 (tool and phase annotations), CholecSeg8k (semantic segmentation). These are research datasets. Real patient video requires IRB approval and proper de-identification. |
 | **Cost Estimate** | Processing: ~$2.50-$8.00 per procedure (MediaConvert + SageMaker inference). Training: ~$500-$2,000 per model training run (multi-day GPU). Storage: ~$1-2/month per procedure (S3 Intelligent-Tiering). OpenSearch: ~$200-500/month for a small domain. |
-
-<!-- TODO (TechWriter): Expert review S3 (HIGH). Expand IAM permissions into role-based groupings (Step Functions execution role, Lambda execution role, SageMaker execution role) with resource ARN scoping guidance rather than a flat list. -->
 
 ### Ingredients
 
@@ -117,8 +111,6 @@ FUNCTION ingest_video(video_file, metadata):
 
     RETURN procedure_id
 ```
-
-<!-- TODO (TechWriter): Expert review A5 (HIGH). Add failure handling guidance: Step Functions catch-all state writing to a DLQ (SQS), CloudWatch alarm on DLQ depth, and a scheduled Lambda scanning for procedures stuck in "ingested" or "processing" status beyond a threshold for automatic retry. -->
 
 **Step 2: Frame extraction and preprocessing.** Raw surgical video at 30 fps contains far more temporal redundancy than the analysis models need. Phase transitions happen over seconds, not frames. This step extracts frames at a configurable sample rate (typically 1 fps for phase recognition, up to 5 fps for instrument detection), resizes them to the model's expected input resolution, and filters out non-informative frames (black frames from camera disconnection, completely obscured frames from lens fogging). The output is a sequence of clean, consistently-sized frames ready for feature extraction. Skip this step and you'll burn 30x more GPU compute on redundant frames with no accuracy improvement.
 
@@ -286,10 +278,6 @@ FUNCTION post_process(raw_predictions, sample_rate_fps):
 
 **Step 6: Store structured index and enable search.** The post-processed results become a structured, queryable record of the procedure. This step writes the phase timeline, instrument usage, and events to both a fast-lookup store (DynamoDB for procedure-level queries) and a search index (OpenSearch for cross-procedure queries). The dual-write pattern serves different access patterns: "show me the timeline for procedure X" hits DynamoDB; "find all procedures where bleeding occurred during Calot's triangle dissection" hits OpenSearch. Skip the search index and you lose the ability to do population-level quality analysis, which is half the value of automated video analysis.
 
-<!-- TODO (TechWriter): Expert review S2 (CRITICAL). Add access control model for surgeon-identifiable performance data: pseudonymize surgeon_id in the general search index with a separate restricted lookup table, add role-based access control for surgeon-identified queries, note peer review protection requirements (vary by state, require legal counsel review), and add CloudTrail-based audit logging for queries that resolve surgeon identity. -->
-
-<!-- TODO (TechWriter): Expert review S7 (MEDIUM). Define OpenSearch index mappings for procedure-phases and procedure-events indices: keyword fields for phase_name, event_type, procedure_type, surgeon_id; numeric fields for timestamps and durations; date field for procedure_date. Note that the temporal query pattern (event within a phase time range) works because events carry phase_context. -->
-
 ```pseudocode
 FUNCTION store_results(procedure_id, analysis_results):
     // Write the full procedure analysis to DynamoDB.
@@ -436,8 +424,6 @@ FUNCTION store_results(procedure_id, analysis_results):
 - Instrument detection fails when instruments are partially occluded or when multiple instruments overlap visually.
 - Generalization across surgeons is imperfect. A model trained primarily on right-handed surgeons may perform worse on left-handed technique.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section here (between Expected Results and Variations) per the architecture companion template. -->
-
 ---
 
 ## Variations and Extensions
@@ -470,8 +456,6 @@ FUNCTION store_results(procedure_id, analysis_results):
 - [Video Understanding with Amazon SageMaker](https://aws.amazon.com/blogs/machine-learning/): Search for video analysis and temporal modeling patterns on SageMaker
 - [Processing Video at Scale with AWS](https://aws.amazon.com/media-services/): Overview of AWS media processing services applicable to surgical video pipelines
 
-<!-- TODO: Verify all URLs above are current and accessible. Research dataset links may change as hosting institutions update their sites. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -483,7 +467,6 @@ FUNCTION store_results(procedure_id, analysis_results):
 | **With variations** | 12-18 months | Multiple procedure types. Skill assessment metrics. Near-real-time processing. Integration with surgical scheduling systems. Complication flagging (research mode). |
 
 ---
-
 
 ---
 

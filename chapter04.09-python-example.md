@@ -494,11 +494,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -525,7 +523,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -535,7 +532,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -558,7 +554,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -568,7 +563,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _safe_get_item(table, key: dict) -> dict:
     """
@@ -585,11 +579,9 @@ def _safe_get_item(table, key: dict) -> dict:
                         getattr(table, "name", "table"), exc)
         return {}
 
-
 def _make_plan_input_id() -> str:
     """Opaque plan-input record identifier."""
     return f"input-{uuid.uuid4().hex[:16]}"
-
 
 def _make_plan_id() -> str:
     """
@@ -604,22 +596,17 @@ def _make_plan_id() -> str:
     """
     return f"plan-{uuid.uuid4().hex[:16]}"
 
-
 def _make_narrative_id() -> str:
     return f"narr-{uuid.uuid4().hex[:16]}"
-
 
 def _make_action_record_id() -> str:
     return f"par-{uuid.uuid4().hex[:16]}"
 
-
 def _make_feedback_id() -> str:
     return f"fb-{uuid.uuid4().hex[:16]}"
 
-
 def _make_activation_id() -> str:
     return f"act-{uuid.uuid4().hex[:16]}"
-
 
 def _redact_for_llm(payload: dict) -> dict:
     """
@@ -636,7 +623,6 @@ def _redact_for_llm(payload: dict) -> dict:
         _strip_field(redacted, field)
     return redacted
 
-
 def _strip_field(obj, field: str) -> None:
     """Recursively remove a field from a nested dict/list structure."""
     if isinstance(obj, dict):
@@ -646,7 +632,6 @@ def _strip_field(obj, field: str) -> None:
     elif isinstance(obj, list):
         for v in obj:
             _strip_field(v, field)
-
 
 def _cohort_features_from_profile(patient: dict) -> dict:
     """Pull cohort features for fairness instrumentation from the profile."""
@@ -658,7 +643,6 @@ def _cohort_features_from_profile(patient: dict) -> dict:
         "age_band":                 patient.get("age_band", "unknown"),
     }
 
-
 def _try_fetch_upstream(recipe_name: str, patient_id: str, default):
     """
     Generic stub for fetching signals from upstream Recipes 4.1-4.8.
@@ -668,7 +652,6 @@ def _try_fetch_upstream(recipe_name: str, patient_id: str, default):
     """
     upstream = _DEMO_UPSTREAM_SIGNALS.get(recipe_name, {})
     return upstream.get(patient_id, default)
-
 
 # Demo state populated by the runner.
 _DEMO_UPSTREAM_SIGNALS: dict = {}
@@ -815,7 +798,6 @@ def aggregate_plan_inputs(patient_id: str,
         pass
 
     return plan_input_record
-
 
 def _normalize_clinical_state(bundle: dict) -> dict:
     """
@@ -980,7 +962,6 @@ def derive_goal_set(plan_input_record: dict,
 
     return goal_set
 
-
 def _compute_cohort_tags(plan_input_record: dict) -> set:
     """
     Compute the set of cohort tags that drive cohort overrides on
@@ -1007,7 +988,6 @@ def _compute_cohort_tags(plan_input_record: dict) -> set:
         tags.add("palliative_focused")
     return tags
 
-
 def _apply_cohort_overrides(template: dict, cohort_tags: set) -> dict:
     """
     Apply cohort overrides on a template. If a cohort tag matches
@@ -1031,7 +1011,6 @@ def _apply_cohort_overrides(template: dict, cohort_tags: set) -> dict:
         applied_keys.append(tag)
     out["_overrides_applied"] = applied_keys
     return out
-
 
 def _compute_goc_adjustment(goal: dict, goc: dict) -> dict:
     """
@@ -1075,7 +1054,6 @@ def _compute_goc_adjustment(goal: dict, goc: dict) -> dict:
 
     return {"weight_multiplier": 1.0, "retain_flag": True,
              "override_reason": None}
-
 
 def _deduplicate_goals(goal_set: list) -> list:
     """
@@ -1274,7 +1252,6 @@ def assemble_and_reconcile_actions(goal_set: list,
 
     return {"actions": retained, "reconciliation": reconciliation_record}
 
-
 def _build_patient_state_for_filtering(plan_input_record: dict) -> dict:
     """Pull the patient-state fields used by contraindication checks."""
     clinical = plan_input_record.get("clinical_state", {})
@@ -1289,7 +1266,6 @@ def _build_patient_state_for_filtering(plan_input_record: dict) -> dict:
         "ef":                clinical.get("labs", {}).get("ef_recent"),
         "chf_severity":      features.get("chf_severity"),
     }
-
 
 def _check_contraindications(action: dict, patient_state: dict) -> list:
     """
@@ -1313,7 +1289,6 @@ def _check_contraindications(action: dict, patient_state: dict) -> list:
         ):
             triggered.append("egfr_under_45")
     return triggered
-
 
 def _generate_deprescribing_actions(plan_input_record: dict) -> list:
     """
@@ -1359,7 +1334,6 @@ def _generate_deprescribing_actions(plan_input_record: dict) -> list:
                 })
     return deprescribing
 
-
 def _compute_burden_threshold(plan_input_record: dict) -> float:
     """
     Compute the patient-specific burden threshold. Production: a
@@ -1380,7 +1354,6 @@ def _compute_burden_threshold(plan_input_record: dict) -> float:
     if sdoh.get("transportation") == "limited":
         threshold *= 0.95
     return round(threshold, 2)
-
 
 def _compress_for_burden(retained: list, goal_set: list,
                             target_burden: float) -> list:
@@ -1417,7 +1390,6 @@ def _compress_for_burden(retained: list, goal_set: list,
         current_burden -= action["burden_score"]
     return decisions
 
-
 def _check_owner_capacity(owner_role: str) -> dict:
     """
     Check whether the given owner role is at capacity. Production:
@@ -1426,7 +1398,6 @@ def _check_owner_capacity(owner_role: str) -> dict:
     """
     return _DEMO_CAPACITY.get(owner_role, {"at_capacity": False,
                                               "reason": None})
-
 
 def _find_substitute_owner(action: dict) -> str | None:
     """
@@ -1440,7 +1411,6 @@ def _find_substitute_owner(action: dict) -> str | None:
         "pharmacy_team":               "care_manager",
     }
     return fallback_map.get(action.get("owner_role"))
-
 
 def _sequence_for_schedule(retained: list,
                               plan_input_record: dict) -> list:
@@ -1473,7 +1443,6 @@ def _sequence_for_schedule(retained: list,
                 })
                 action["horizon"] = "this_quarter"
     return decisions
-
 
 # Demo state populated by the runner.
 _DEMO_CAPACITY: dict = {}
@@ -1601,7 +1570,6 @@ def finalize_plan(goal_set: list,
 
     return plan_record
 
-
 def _next_plan_version(patient_id: str) -> int:
     """
     Compute the next plan version for a patient. Production: query
@@ -1613,14 +1581,12 @@ def _next_plan_version(patient_id: str) -> int:
     )
     return _DEMO_PLAN_VERSION_COUNTERS[patient_id]
 
-
 def _band_int(value: int, thresholds: list) -> str:
     """Coarse banding for metric dimensions."""
     for i, t in enumerate(thresholds):
         if value < t:
             return f"under_{t}"
     return f"{thresholds[-1]}_plus"
-
 
 _DEMO_PLAN_VERSION_COUNTERS: dict = {}
 ```
@@ -1713,7 +1679,6 @@ def generate_narratives(plan_record: dict,
 
     return narratives
 
-
 def _generate_one_narrative(context: dict, model_id: str) -> dict:
     """
     Run the regeneration loop for a single narrative:
@@ -1773,7 +1738,6 @@ def _generate_one_narrative(context: dict, model_id: str) -> dict:
         "validator_layers_passed": validator_layers_passed,
     }
 
-
 def _bedrock_invoke_narrative(context: dict, model_id: str,
                                   strict_mode: bool = False) -> dict:
     """
@@ -1828,7 +1792,6 @@ def _bedrock_invoke_narrative(context: dict, model_id: str,
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _clinician_prompt(de_id: dict, strictness_addendum: str) -> str:
     """Clinician-facing narrative prompt."""
     return f"""You generate clinician-facing care plan summaries. Your role
@@ -1858,7 +1821,6 @@ Return ONLY valid JSON (no prose, no code fences) with this shape:
   "narrative_paragraph":   "<3-5 sentences synthesizing the plan focus and tradeoffs>"
 }}
 """
-
 
 def _patient_prompt(de_id: dict, strictness_addendum: str) -> str:
     """Patient-facing narrative prompt."""
@@ -1897,7 +1859,6 @@ Return ONLY valid JSON (no prose, no code fences) with this shape:
 }}
 """
 
-
 def _internal_prompt(de_id: dict, strictness_addendum: str) -> str:
     """Care-team-internal disagreement narrative prompt."""
     return f"""You generate internal-facing disagreement narratives for the
@@ -1924,7 +1885,6 @@ Return ONLY valid JSON (no prose, no code fences) with this shape:
   "recommended_escalation": "<1-2 sentences>"
 }}
 """
-
 
 def _validate_narrative(parsed: dict, context: dict) -> dict:
     """
@@ -1976,7 +1936,6 @@ def _validate_narrative(parsed: dict, context: dict) -> dict:
         "layers_passed":  layers_passed,
     }
 
-
 def _check_schema(parsed: dict, audience: str, issues: list) -> bool:
     """Layer 1: required fields present and sized appropriately."""
     if not isinstance(parsed, dict):
@@ -2003,7 +1962,6 @@ def _check_schema(parsed: dict, audience: str, issues: list) -> bool:
             issues.append(f"oversize_text: {k}")
             return False
     return True
-
 
 def _check_fact_grounding(parsed: dict, context: dict,
                             issues: list) -> bool:
@@ -2035,7 +1993,6 @@ def _check_fact_grounding(parsed: dict, context: dict,
             issues.append(f"ungrounded_id_reference: {token}")
             return False
     return True
-
 
 def _check_prohibited_language(parsed: dict, audience: str,
                                   issues: list) -> bool:
@@ -2079,7 +2036,6 @@ def _check_prohibited_language(parsed: dict, audience: str,
 
     return True
 
-
 def _check_required_content(parsed: dict, audience: str,
                               issues: list) -> bool:
     """Layer 4: required content per audience."""
@@ -2106,7 +2062,6 @@ def _check_required_content(parsed: dict, audience: str,
             return False
     return True
 
-
 def _flatten_narrative_text(parsed: dict) -> str:
     """Concatenate string-valued fields into one flat lowercase text."""
     parts = []
@@ -2122,7 +2077,6 @@ def _flatten_narrative_text(parsed: dict) -> str:
     walk(parsed)
     return " ".join(parts).lower()
 
-
 def _is_safe_keyword(token: str) -> bool:
     """Allow-list for tokens that look like ids but are safe."""
     safe = {
@@ -2131,7 +2085,6 @@ def _is_safe_keyword(token: str) -> bool:
         "monthly", "weekly", "ongoing",
     }
     return token in safe
-
 
 def _templated_narrative_fallback(context: dict) -> dict:
     """
@@ -2200,7 +2153,6 @@ def _templated_narrative_fallback(context: dict) -> dict:
         ),
     }
 
-
 def _compute_what_changed(plan_record: dict) -> list:
     """
     Compute a structured diff between this plan version and the prior
@@ -2232,7 +2184,6 @@ def _compute_what_changed(plan_record: dict) -> list:
         changes.append("Initial plan; no prior plan to compare.")
     return changes
 
-
 def _extract_attention_items(plan_record: dict) -> list:
     """Extract care-team-attention items from the plan record."""
     items = []
@@ -2247,7 +2198,6 @@ def _extract_attention_items(plan_record: dict) -> list:
         items.append(f"Deprescribing candidate: {dep['action_id']}")
     return items
 
-
 def _has_unresolved_conflicts(plan_record: dict) -> bool:
     """True if reconciliation produced items needing care-team escalation."""
     rec = plan_record.get("reconciliation_record", {})
@@ -2256,7 +2206,6 @@ def _has_unresolved_conflicts(plan_record: dict) -> bool:
     if rec.get("compression_decisions"):
         return True
     return False
-
 
 def _extract_unresolved_conflicts(plan_record: dict) -> list:
     """Surface the structured unresolved items for the disagreement narrative."""
@@ -2385,7 +2334,6 @@ def activate_plan(plan_id: str, activation_payload: dict) -> dict:
 
     return activation_record
 
-
 def _apply_clinician_edit(action: dict, edit: dict | None) -> dict:
     """Apply clinician-supplied edits to an action."""
     if not edit:
@@ -2394,7 +2342,6 @@ def _apply_clinician_edit(action: dict, edit: dict | None) -> dict:
     for k, v in edit.items():
         out[k] = v
     return out
-
 
 def _dispatch_action_to_operational_system(action: dict, plan_id: str,
                                               activation_id: str) -> None:
@@ -2410,7 +2357,6 @@ def _dispatch_action_to_operational_system(action: dict, plan_id: str,
         kind, action["action_id"], plan_id, activation_id,
     )
 
-
 def _compute_due_at(action: dict) -> str:
     """Compute due_at from the action's due_date_logic. Demo helper."""
     logic = action.get("due_date_logic", "ongoing")
@@ -2424,7 +2370,6 @@ def _compute_due_at(action: dict) -> str:
     if logic == "monthly":
         return "monthly"
     return "ongoing"
-
 
 def record_feedback(plan_id: str, feedback_payload: dict) -> dict:
     """
@@ -2492,7 +2437,6 @@ def record_feedback(plan_id: str, feedback_payload: dict) -> dict:
         pass
     return record
 
-
 def _update_action_status(plan_id: str, action_id: str,
                             feedback_kind: str, feedback_data: dict) -> None:
     """Update the plan-action-record's status based on feedback."""
@@ -2525,7 +2469,6 @@ def _update_action_status(plan_id: str, action_id: str,
     except Exception:
         pass
 
-
 def _evaluate_feedback_for_revision(plan_id: str,
                                         feedback_record: dict) -> dict:
     """
@@ -2547,7 +2490,6 @@ def _evaluate_feedback_for_revision(plan_id: str,
             return {"should_revise": True,
                      "reason":        "outcome_alert_threshold_crossed"}
     return {"should_revise": False, "reason": None}
-
 
 def run_periodic_plan_review(run_date: str) -> list:
     """
@@ -2608,7 +2550,6 @@ def run_periodic_plan_review(run_date: str) -> list:
                 pass
             alerts.append(alert)
     return alerts
-
 
 def _compute_plan_quality_metrics(plans_table, run_date: str) -> dict:
     """

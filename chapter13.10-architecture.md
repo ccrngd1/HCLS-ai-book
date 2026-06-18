@@ -447,8 +447,6 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 - [Amazon Neptune Pricing](https://aws.amazon.com/neptune/pricing/)
 - [AWS HIPAA Eligible Services](https://aws.amazon.com/compliance/hipaa-eligible-services-reference/)
 
-<!-- TODO (TechWriter): Expert review V1 (LOW). Resolve AWS Sample Repos and AWS Solutions/Blogs subsections: find real Neptune healthcare knowledge graph repos or remove these subsections entirely. -->
-
 **External Standards:**
 - [SPARQL 1.1 Federated Query (W3C)](https://www.w3.org/TR/sparql11-federated-query/)
 - [SNOMED CT Browser](https://browser.ihtsdotools.org/)
@@ -466,7 +464,6 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 | **With variations (federated learning, temporal queries)** | 18-24+ months | Full network with ML-based ontology alignment, federated learning for patient-derived insights, temporal versioning, and automated conflict resolution. |
 
 ---
-
 
 ---
 

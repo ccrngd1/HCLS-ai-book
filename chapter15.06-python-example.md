@@ -235,7 +235,6 @@ def normalize_feature(value: float, feature_def: dict) -> float:
         return 0.5
     return (clipped - min_val) / (max_val - min_val)
 
-
 def construct_state_vector(patient_data: dict) -> np.ndarray:
     """
     Build a normalized state vector from raw patient data.
@@ -469,12 +468,10 @@ def build_episode_from_icu_stay(icu_stay_data: dict, timestep_hours: int = 4) ->
 
     return episode
 
-
 def _discretize_dose(dose_units: float) -> int:
     """Map a continuous dose to the nearest discrete action index."""
     distances = [abs(dose_units - a) for a in ACTION_SPACE]
     return int(np.argmin(distances))
-
 
 def _get_insulin_in_interval(
     insulin_records: list, interval_start: float, hours: int
@@ -488,12 +485,10 @@ def _get_insulin_in_interval(
             total += units
     return total
 
-
 def _get_recent_insulin(insulin_records: list, current_time: float, hours: int) -> float:
     """Sum insulin given in the last N hours (insulin on board)."""
     cutoff = current_time - hours * 3600
     return sum(units for ts, units in insulin_records if ts >= cutoff)
-
 
 def _get_nutrition_at_time(nutrition_records: list, current_time: float) -> float:
     """Get the most recent nutrition rate before current_time."""
@@ -612,7 +607,6 @@ def train_cql_policy(
     logger.info("Training complete. Q-table shape: %s", q_table.shape)
 
     return {"q_table": q_table, "n_bins": N_BINS}
-
 
 def _state_to_index(state_vector: np.ndarray, n_bins: int) -> int:
     """
@@ -745,7 +739,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 state_table = dynamodb.Table(DYNAMODB_TABLE)
 
-
 def fetch_patient_state(patient_id: str) -> dict:
     """
     Retrieve the patient's recent glucose history and clinical state from DynamoDB.
@@ -783,7 +776,6 @@ def fetch_patient_state(patient_id: str) -> dict:
         "apache_score": float(item.get("apache_score", 15)),
         "previous_dose": float(item.get("previous_dose", 0)),
     }
-
 
 def update_patient_state(patient_id: str, new_glucose: float, patient_data: dict):
     """
@@ -827,7 +819,6 @@ def update_patient_state(patient_id: str, new_glucose: float, patient_data: dict
             "updated_at": Decimal(str(int(time.time()))),
         }
     )
-
 
 def get_policy_recommendation(state_vector: np.ndarray) -> dict:
     """
@@ -973,7 +964,6 @@ def generate_insulin_recommendation(patient_id: str, new_glucose: float) -> dict
     print(f"{'='*60}\n")
 
     return recommendation
-
 
 # --- Example usage ---
 if __name__ == "__main__":

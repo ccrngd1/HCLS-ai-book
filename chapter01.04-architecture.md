@@ -238,7 +238,6 @@ FUNCTION classify_page_with_llm(page_text, has_tables, has_forms, model_id):
         reasoning:  result.reasoning
     }
 
-
 FUNCTION classify_all_pages(pages, classification_model_id):
     classifications = empty map
 
@@ -613,7 +612,6 @@ FUNCTION assemble_prior_auth_record(document_key, page_count, page_extractions):
 
     RETURN record
 
-
 FUNCTION store_prior_auth_record(record):
     write record to DynamoDB table "prior-auth-records" with:
         primary key = record.document_key
@@ -817,10 +815,7 @@ BDA makes sense if you want to minimize the pipeline you manage. This recipe tak
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Healthcare-specific forms processing with generative AI for complex or ambiguous fields
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical): Entity extraction and ICD-10 inference from clinical free text
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (three tiers: Basic, Production-ready, With variations) before navigation. Add this section. -->
-
 --- 
-
 
 ---
 

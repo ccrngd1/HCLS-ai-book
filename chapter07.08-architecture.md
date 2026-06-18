@@ -92,8 +92,6 @@ flowchart TD
 
 **Step 1: Assemble longitudinal patient history.** The foundation of disease progression modeling is a complete temporal record for each patient. This step queries HealthLake (or your clinical data store) to retrieve all relevant observations, medications, conditions, and procedures for a patient cohort, organized by time. The key insight: you need not just the current values but the full history of how values changed over time. A single eGFR of 52 tells you almost nothing about trajectory. A sequence of [63, 58, 55, 52] over four years tells you the rate of decline. Skip this step or use only point-in-time snapshots, and your model has no temporal signal to learn from.
 
-<!-- TODO (TechWriter): Expert review S-1 (HIGH). FHIR queries below should be scoped to clinically relevant data categories only (specific LOINC codes for eGFR, creatinine, HbA1c, albumin, hemoglobin, potassium; relevant condition categories like renal, cardiovascular, endocrine, metabolic). Querying all patient data violates the Minimum Necessary standard (45 CFR 164.502(b)) and may violate 42 CFR Part 2 if substance abuse records are returned. Add LOINC code filters and a note about consulting your privacy officer regarding consent requirements before assembling longitudinal datasets. -->
-
 ```pseudocode
 FUNCTION assemble_patient_timeline(patient_id, lookback_years):
     // Query the clinical data store for this patient's history.
@@ -281,8 +279,6 @@ FUNCTION train_progression_model(training_cohort, prediction_horizons):
     RETURN model, validation_metrics
 ```
 
-<!-- TODO (TechWriter): Expert review A-4 (MEDIUM). Add a note referencing published CKD progression models (e.g., the Kidney Failure Risk Equation by Tangri et al., which achieves C-statistics of 0.84-0.90 for 2-year and 5-year kidney failure prediction). Clarify that the recipe's benchmarks assume a general-purpose model predicting stage progression (a broader outcome than kidney failure specifically), which is inherently harder to discriminate than a binary endpoint. -->
-
 **Step 4: Generate individual patient predictions.** Given a trained model and a specific patient's current history, generate a predicted trajectory with uncertainty bounds. This is the inference step that runs in production. The output should communicate not just the most likely future but the range of plausible futures. A clinician needs to know: "Is this patient almost certainly going to progress, or is there meaningful uncertainty?" The prediction should also identify which factors are driving the trajectory (explainability), so the clinician can assess whether the model's reasoning aligns with their clinical judgment.
 
 ```pseudocode
@@ -454,8 +450,6 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
 - Subgroups underrepresented in training data (rare diseases, pediatric populations, specific ethnic groups with different progression patterns).
 - Very long horizons (5+ years). Uncertainty compounds and predictions become too wide to be clinically actionable.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. It should summarize the gaps a production deployment must close (validation governance, causal inference for treatment effects, regulatory review, fairness testing across subgroups, etc.). -->
-
 ---
 
 ## Variations and Extensions
@@ -499,7 +493,6 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
 | **With variations** (multi-disease joint modeling, counterfactual simulation, patient-facing) | 30-40 weeks |
 
 ---
-
 
 ---
 

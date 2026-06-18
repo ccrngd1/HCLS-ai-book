@@ -237,7 +237,6 @@ import io
 
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def upload_training_data(df: pd.DataFrame) -> tuple[str, str]:
     """
     Split data into train/validation sets and upload to S3 in the format
@@ -296,7 +295,6 @@ def upload_training_data(df: pd.DataFrame) -> tuple[str, str]:
 import sagemaker
 from sagemaker.estimator import Estimator
 from sagemaker.inputs import TrainingInput
-
 
 def train_propensity_model(train_uri: str, val_uri: str) -> str:
     """
@@ -367,7 +365,6 @@ def train_propensity_model(train_uri: str, val_uri: str) -> str:
 ```python
 from sagemaker.transformer import Transformer
 
-
 def prepare_scoring_input(df: pd.DataFrame) -> str:
     """
     Prepare open balances for scoring and upload to S3.
@@ -395,7 +392,6 @@ def prepare_scoring_input(df: pd.DataFrame) -> str:
     scoring_uri = f"s3://{ML_BUCKET}/{scoring_key}"
     logger.info("Uploaded %d balances for scoring to %s", len(df), scoring_uri)
     return scoring_uri
-
 
 def run_batch_scoring(model_artifact_uri: str, scoring_input_uri: str) -> str:
     """
@@ -467,7 +463,6 @@ from sklearn.isotonic import IsotonicRegression
 
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def fit_calibration_model(val_predictions: np.ndarray, val_labels: np.ndarray) -> IsotonicRegression:
     """
     Fit a calibration model (isotonic regression) on the validation set.
@@ -492,7 +487,6 @@ def fit_calibration_model(val_predictions: np.ndarray, val_labels: np.ndarray) -
     calibrator.fit(val_predictions, val_labels)
     logger.info("Calibration model fitted on %d validation samples", len(val_labels))
     return calibrator
-
 
 def store_predictions_in_dynamodb(
     balance_ids: list[str],
@@ -723,7 +717,6 @@ def run_propensity_pipeline():
         print(f"    {strategy}: {count} balances ({pct:.1f}%)")
 
     logger.info("Pipeline complete.")
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

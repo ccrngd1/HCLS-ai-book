@@ -443,8 +443,6 @@ FUNCTION aggregate_signals(time_window_days):
 
 ---
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Cover gaps like: expected-effects tuning required, cross-note reasoning not implemented, knowledge-base maintenance burden, human review workflow not defined, regulatory reporting integration not included. -->
-
 ## Variations and Extensions
 
 **Integration with medication reconciliation.** Cross-reference detected adverse events with the patient's current medication list from the pharmacy system. This adds a validation layer: if the system detects a relationship between a drug and a symptom, but the pharmacy system shows the patient hasn't actually filled that prescription in six months, that's likely a false positive from a historical mention. The medication list becomes a plausibility check.
@@ -452,8 +450,6 @@ FUNCTION aggregate_signals(time_window_days):
 **Vaccine adverse event detection.** The same architecture applies to vaccine safety surveillance (VAERS-equivalent at the institutional level). Vaccines have different temporal patterns than chronic medications (most reactions occur within 7-14 days of administration), and the knowledge base of expected vs. unexpected reactions is well-defined by the CDC. Narrower scope makes this a good pilot use case for the broader adverse event detection system.
 
 **Integration with patient-reported outcomes.** Extend the input beyond clinician-authored notes to include patient-reported data: patient portal messages, symptom questionnaires, and nurse triage call notes. Patient-reported symptoms often appear earlier and with more detail than what makes it into the formal clinical note. This catches the signal closer to onset.
-
-<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add cross-note reasoning variation: per-patient medication timeline in DynamoDB updated from pharmacy feeds, query medications started in last 30 days when processing new notes to catch implicit AEs without explicit drug mention in current note. -->
 
 ---
 
@@ -493,7 +489,6 @@ FUNCTION aggregate_signals(time_window_days):
 ---
 
 | [← 8.6: SDOH Extraction](chapter08.06-sdoh-extraction) | [Chapter 8 Index](chapter08-preface) | [8.8: Clinical Assertion Classification →](chapter08.08-clinical-assertion-classification) |
-
 
 ---
 

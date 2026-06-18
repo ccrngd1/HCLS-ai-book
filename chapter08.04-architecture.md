@@ -37,8 +37,6 @@ flowchart LR
     style F fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add SQS dead letter queue to the architecture diagram and "Why These Services" section. Failed Lambda extractions (throttling, malformed notes, 20K char limit exceeded) should route to a DLQ for retry/investigation rather than being silently dropped. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -52,8 +50,6 @@ flowchart LR
 | **CloudTrail** | Enabled: log all Comprehend Medical and S3 API calls for HIPAA audit trail |
 | **Sample Data** | Synthetic clinical notes with medication mentions. MIMIC-III (with DUA) provides realistic note structures. Never use real patient notes in dev without proper IRB/DUA. |
 | **Cost Estimate** | Comprehend Medical DetectEntities: ~$0.01 per 100 characters (minimum 3 units per request). InferRxNorm: ~$0.01 per 100 characters. A typical 2000-character note: ~$0.20 for detection + $0.03-0.10 for RxNorm inference (depending on medication count). Total per note: ~$0.23-0.50 depending on note length and number of medications. Batch pricing available for high volume. |
-
-<!-- TODO (TechWriter): Expert review N2 (LOW). Add a note on Comprehend Medical regional availability (us-east-1, us-east-2, us-west-2, eu-west-1, eu-west-2, ap-southeast-2, ca-central-1 as of 2024). Data residency requirements may constrain region selection. -->
 
 ### Ingredients
 
@@ -271,8 +267,6 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
     RETURN structured_meds
 ```
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a note about idempotency/deduplication. If the same note is reprocessed (S3 at-least-once delivery, pipeline reruns), the extraction_ts sort key creates duplicates. Recommend conditional writes using note_id + medication_text + begin_offset, or using note_id as sort key to overwrite previous extractions. -->
-
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -375,8 +369,6 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullet points covering gaps like pharmacist review workflow, handling of multi-language notes, deduplication across repeated processing, and integration testing against real clinical note diversity. -->
-
 ## Variations and Extensions
 
 **Medication reconciliation pipeline.** Extend this recipe by comparing extracted medications across multiple notes for the same patient (admission note vs. discharge summary vs. outpatient visit). Identify discrepancies: added medications, discontinued medications, dose changes. Feed discrepancies into a reconciliation workflow for pharmacist review. This is where the real clinical value lives, because medication discrepancies during transitions of care are a leading source of adverse events.
@@ -405,8 +397,6 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 - [RxNorm API Documentation](https://lhncbc.nlm.nih.gov/RxNav/APIs/RxNormAPIs.html): REST APIs for RxNorm concept lookup and relationship traversal
 - [i2b2 2009 Medication Extraction Challenge](https://www.i2b2.org/NLP/Medication/): The foundational shared task that established benchmarks for clinical medication NER
 
-<!-- TODO (TechWriter): Verify all GitHub repo URLs exist and are current. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -418,7 +408,6 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 | **With variations** | 10-14 weeks | Medication reconciliation across notes, drug interaction checking, formulary compliance, FHIR output formatting |
 
 ---
-
 
 ---
 

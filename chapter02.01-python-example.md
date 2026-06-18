@@ -236,7 +236,6 @@ Rules you must follow:
 - Sign off using the provider's name from the context
 - Do not include disclaimers about being an AI or about the response being a draft"""
 
-
 def load_system_prompt(prompt_key: str = "prompts/system-prompt-v2.txt") -> str:
     """
     Load the system prompt template from S3.
@@ -260,7 +259,6 @@ def load_system_prompt(prompt_key: str = "prompts/system-prompt-v2.txt") -> str:
         # Exception.
         logger.warning("Failed to load prompt from S3, using default")
         return DEFAULT_SYSTEM_PROMPT
-
 
 def build_prompt(message_text: str, intent: str, context: dict) -> tuple[str, str]:
     """
@@ -525,7 +523,6 @@ def process_message(message_id: str, patient_id: str, provider_id: str, message_
 
     logger.info("Done. draft_status=%s", record["draft_status"])
     return record
-
 
 # Example: run the pipeline against a test message.
 if __name__ == "__main__":

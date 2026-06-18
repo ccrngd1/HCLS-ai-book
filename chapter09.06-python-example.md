@@ -141,7 +141,6 @@ def download_image_from_s3(bucket: str, key: str) -> Image.Image:
     image_bytes = response["Body"].read()
     return Image.open(BytesIO(image_bytes))
 
-
 def calculate_sharpness(image: Image.Image) -> float:
     """
     Estimate image sharpness using Laplacian variance.
@@ -176,7 +175,6 @@ def calculate_sharpness(image: Image.Image) -> float:
     normalized = min(max((variance - 100) / 1400, 0.0), 1.0)
     return normalized
 
-
 def calculate_illumination_uniformity(image: Image.Image) -> float:
     """
     Check whether the image has adequate and uniform illumination.
@@ -207,7 +205,6 @@ def calculate_illumination_uniformity(image: Image.Image) -> float:
 
     return (brightness_score + range_score) / 2
 
-
 def calculate_field_of_view(image: Image.Image) -> float:
     """
     Estimate whether the image captures adequate retinal area.
@@ -236,7 +233,6 @@ def calculate_field_of_view(image: Image.Image) -> float:
     coverage = retinal_pixels / total_pixels
     normalized = min(coverage / 0.60, 1.0)
     return normalized
-
 
 def detect_artifacts(image: Image.Image) -> float:
     """
@@ -274,7 +270,6 @@ def detect_artifacts(image: Image.Image) -> float:
     shadow_penalty = min(dark_ratio * 20, 0.5)
 
     return max(1.0 - reflection_penalty - shadow_penalty, 0.0)
-
 
 def assess_image_quality(bucket: str, image_key: str) -> dict:
     """
@@ -388,7 +383,6 @@ def preprocess_for_model(image: Image.Image) -> bytes:
     # JSON is verbose but universally supported by SageMaker endpoints.
     payload = json.dumps({"instances": [img_array.tolist()]})
     return payload.encode("utf-8")
-
 
 def classify_retinal_image(bucket: str, image_key: str) -> dict:
     """
@@ -616,7 +610,6 @@ def store_screening_result(
     )
 
     return record
-
 
 def trigger_downstream_action(patient_id: str, screening_id: str, image_key: str, decision: dict):
     """
@@ -908,7 +901,6 @@ def create_synthetic_screening_batch():
     print("\n" + "=" * 70)
     print("BATCH COMPLETE")
     print("=" * 70)
-
 
 # Run the synthetic test batch to verify decision logic.
 if __name__ == "__main__":

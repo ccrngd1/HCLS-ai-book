@@ -1,11 +1,3 @@
-<!--
-Editorial pass 5 (TechEditor, 2026-06-17):
-- Post-split polish. This file was mechanically split from the combined recipe to hold the AWS implementation and pseudocode.
-- Added `pseudocode` language tags to all six bare code fences (Steps 1-6). Hard requirement per editorial checklist.
-- Verified: backlink header opens cleanly with correct link to main recipe; no story/concept sections duplicated here; Python callout present after walkthrough; navigation footer links back to main recipe and Python example.
-- Zero em dashes, zero en dashes. All existing TODOs preserved.
--->
-
 # Recipe 2.3 Architecture and Implementation: Clinical Documentation Improvement (CDI) Suggestions
 
 *Companion to [Recipe 2.3: Clinical Documentation Improvement (CDI) Suggestions](chapter02.03-clinical-documentation-improvement). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -331,19 +323,7 @@ FUNCTION store_and_notify(encounter_id, suggestions, suppressed):
 
 The architecture above demonstrates the pattern. Deploying this in a health system requires addressing several gaps:
 
-<!-- TODO (TechWriter): Add a paragraph on PHI minimization before LLM calls. Clinical notes contain Safe Harbor identifiers (patient name, DOB, MRN, addresses) that are not needed for specificity gap analysis. Production implementations should redact or de-identify non-clinical PHI before sending to Bedrock using Amazon Comprehend Medical's DetectPHI API or a regex/rules-based approach, even under BAA, to honor minimum-necessary standards. Expert review H1 (Security, HIGH). -->
-
-<!-- TODO (TechWriter): Add a paragraph on reliable note ingestion. The current architecture shows S3 event -> Lambda with no dead letter queue or retry mechanism. If the Lambda fails (Bedrock throttling, timeout, malformed note), the S3 event is lost with no visibility into which notes failed analysis. Production systems should insert SQS between S3 and Lambda with a redrive policy (3 retries before DLQ) and a CloudWatch alarm on DLQ depth. Expert review H3 (Architecture, HIGH). -->
-
-<!-- TODO (TechWriter): Add a paragraph on idempotency. Duplicate S3 events, EHR re-sends, or Lambda retries after partial failure will currently create duplicate suggestions in DynamoDB because each invocation generates new UUIDs. Production systems should deduplicate using a composite key (encounter_id + diagnosis hash) with a DynamoDB conditional expression, or use an idempotency token passed through from the EHR integration layer. Expert review M4 (Architecture, MEDIUM). -->
-
-<!-- TODO (TechWriter): Add a paragraph on knowledge base retrieval efficiency. The pseudocode queries the KB once per diagnosis plus one template query, so a 5-diagnosis note generates 6 retrieval calls. At scale (morning rounds, shift change bursts) this hits Bedrock Knowledge Base per-account TPS limits. Mitigations: batch common diagnoses into broader queries, cache the top frequently retrieved guideline sections (heart failure, pneumonia, diabetes, sepsis, AKI) in ElastiCache or in-memory, and implement exponential backoff on retrieval calls. Expert review M1 (Architecture, MEDIUM). -->
-
-<!-- TODO (TechWriter): Add a sentence on suggestion retention and secure deletion. DynamoDB TTL deletes expired suggestions within 48 hours of expiration, not immediately, so expired clinical content remains queryable during that window. Data retention policy should specify how long CDI suggestions are kept: archive to S3 Glacier for audit trail versus hard-delete for data minimization. Expert review L1 (Security, LOW). -->
-
 **EHR integration is the hard part.** Getting clinical notes out of an EHR in real time is not a simple API call. Most EHR systems require HL7 FHIR subscriptions, ADT event feeds, or custom integration engines. The note extraction and delivery mechanism is often more complex than the CDI analysis itself. Budget more time for integration than for the AI pipeline.
-
-<!-- TODO (TechWriter): Extend the paragraph above with a sentence on EHR network connectivity. Connectivity to the EHR (Direct Connect, Site-to-Site VPN, or PrivateLink) must be established with TLS encryption and restricted security groups. PHI must never traverse the public internet between the EHR and AWS, even encrypted. Expert review L2 (Networking, LOW). -->
 
 **Feedback loop for model improvement.** When physicians accept or reject suggestions, that signal needs to flow back into the system. Accepted suggestions validate the model's reasoning. Rejected suggestions (especially with physician comments explaining why) are training data for improving future suggestions. Without this feedback loop, you can't measure or improve accuracy over time.
 
@@ -396,7 +376,6 @@ The architecture above demonstrates the pattern. Deploying this in a health syst
 | **With variations** | 16-20 weeks | Concurrent CDI, multi-note context, quality dashboards, provider-specific tuning |
 
 ---
-
 
 ---
 

@@ -217,7 +217,6 @@ def compute_slope(dates: list, values: list) -> float:
     coefficients = np.polyfit(years, values, deg=1)
     return round(float(coefficients[0]), 3)
 
-
 def engineer_progression_features(timeline: dict) -> dict:
     """
     Transform a patient timeline into model-ready features.
@@ -330,7 +329,6 @@ def engineer_progression_features(timeline: dict) -> dict:
 from lifelines import CoxPHFitter
 from lifelines.utils import concordance_index
 
-
 def generate_training_cohort(n_patients: int = 500) -> pd.DataFrame:
     """
     Generate a synthetic training cohort with known outcomes.
@@ -378,7 +376,6 @@ def generate_training_cohort(n_patients: int = 500) -> pd.DataFrame:
         records.append(features)
 
     return pd.DataFrame(records)
-
 
 def train_progression_model(cohort_df: pd.DataFrame) -> CoxPHFitter:
     """
@@ -569,7 +566,6 @@ def predict_progression(model: CoxPHFitter, patient_features: dict, patient_id: 
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def store_prediction(prediction: dict) -> dict:
     """
     Write the progression prediction to DynamoDB for clinical retrieval.
@@ -635,7 +631,6 @@ import sagemaker
 from sagemaker import Session
 from sagemaker.sklearn import SKLearn
 
-
 def upload_training_data(cohort_df: pd.DataFrame, s3_prefix: str = "training-data") -> str:
     """
     Upload the training cohort to S3 for SageMaker training.
@@ -665,7 +660,6 @@ def upload_training_data(cohort_df: pd.DataFrame, s3_prefix: str = "training-dat
 
     logger.info("Training data uploaded to %s", s3_uri)
     return s3_uri
-
 
 def launch_sagemaker_training(training_data_uri: str) -> str:
     """
@@ -780,7 +774,6 @@ def run_full_pipeline():
     # store_prediction(prediction)
 
     return prediction
-
 
 # Run the pipeline.
 if __name__ == "__main__":

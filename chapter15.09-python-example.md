@@ -345,7 +345,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-
 class AdaptivePlanningQNetwork(nn.Module):
     """
     Q-network for radiation therapy adaptive planning.
@@ -601,7 +600,6 @@ def generate_explanation(
         # In production, this is essential for clinician trust.
     }
 
-
 def _translate_factor(feature_name: str, value: float, importance: float) -> str:
     """Convert a feature name and value into a clinician-readable statement."""
     translations = {
@@ -696,7 +694,6 @@ def generate_recommendation(
 ```python
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, config=BOTO3_RETRY_CONFIG)
 
-
 def store_recommendation(recommendation: Dict) -> None:
     """
     Store a recommendation in DynamoDB for audit trail.
@@ -759,7 +756,6 @@ def simulate_tumor_dynamics(
     # Add noise (biology is stochastic).
     new_ratio += np.random.normal(0, 0.005)
     return max(0.1, min(1.2, new_ratio))
-
 
 def generate_synthetic_trajectories(
     num_patients: int = 300,
@@ -893,7 +889,6 @@ def generate_synthetic_trajectories(
 
     return trajectories
 
-
 def run_demo():
     """
     Full demonstration: generate data, train policy, produce recommendations.
@@ -987,7 +982,6 @@ def run_demo():
     if later_recommendation["safety_overridden"]:
         print("\n  ^ SAFETY OVERRIDE: The policy was overridden by hard constraints.")
         print("    This is exactly the scenario adaptive planning prevents.")
-
 
 if __name__ == "__main__":
     run_demo()

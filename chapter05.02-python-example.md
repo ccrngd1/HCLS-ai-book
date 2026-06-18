@@ -106,9 +106,7 @@ assert AUDIT_BUCKET != "", "AUDIT_BUCKET must be set before deploying."
 # The public NPI Registry API is published by CMS at this base URL.
 # It is unauthenticated, free to use, and rate-limited. For batch
 # workloads, do not iterate API calls; use the monthly Downloadable
-# File instead. <!-- TODO: confirm the current base URL and any
-# version path at time of build; CMS occasionally updates the API
-# endpoint. -->
+# File instead. 
 NPI_REGISTRY_BASE_URL = "https://npiregistry.cms.hhs.gov/api/"
 NPI_REGISTRY_API_VERSION = "2.1"
 NPI_REGISTRY_TIMEOUT_SECONDS = 5
@@ -263,13 +261,11 @@ U_PROBABILITIES = {
     },
 }
 
-
 def _to_decimal(value) -> Decimal:
     """Coerce numeric input into Decimal for DynamoDB."""
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
@@ -314,14 +310,12 @@ INTERNAL_SPECIALTY_TO_NUCC = {
     "primary care":         "207Q00000X",  # commonly used as a synonym
 }
 
-
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive matching."""
     if not s:
         return ""
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
-
 
 def _normalize_name(raw: Optional[str]) -> str:
     """Trim, case-fold, strip diacritics, collapse whitespace; preserve hyphens."""
@@ -332,7 +326,6 @@ def _normalize_name(raw: Optional[str]) -> str:
     s = re.sub(r"[^a-z\- ]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
     return s
-
 
 def _normalize_organization_name(raw: Optional[str]) -> str:
     """
@@ -346,12 +339,10 @@ def _normalize_organization_name(raw: Optional[str]) -> str:
     s = re.sub(r"\s+", " ", s)
     return s
 
-
 def _normalize_suffix(raw: Optional[str]) -> str:
     if not raw:
         return ""
     return SUFFIX_CANONICAL.get(raw.lower().strip(), "")
-
 
 def _parse_credential_string(raw: Optional[str]) -> list:
     """
@@ -369,7 +360,6 @@ def _parse_credential_string(raw: Optional[str]) -> list:
         if p and p not in cleaned:
             cleaned.append(p)
     return cleaned
-
 
 def _double_metaphone(s: str) -> str:
     """
@@ -390,7 +380,6 @@ def _double_metaphone(s: str) -> str:
         return ""
     return jellyfish.metaphone(s) or ""
 
-
 def _normalize_phone(raw: Optional[str]) -> str:
     """Strip non-digit characters; drop leading 1 to produce a 10-digit number."""
     if not raw:
@@ -399,7 +388,6 @@ def _normalize_phone(raw: Optional[str]) -> str:
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
     return digits
-
 
 def _normalize_license_number(raw: Optional[str]) -> str:
     """
@@ -412,7 +400,6 @@ def _normalize_license_number(raw: Optional[str]) -> str:
     s = raw.upper().strip()
     s = re.sub(r"\s+", "", s)
     return s
-
 
 def _normalize_address(raw: dict) -> dict:
     """
@@ -454,7 +441,6 @@ def _normalize_address(raw: dict) -> dict:
         "zip": zip_full, "zip5": zip5, "canonical": canonical,
     }
 
-
 def _parse_iso_date(raw) -> Optional[str]:
     """Parse a date-like string into canonical YYYY-MM-DD; None on failure."""
     if not raw:
@@ -463,7 +449,6 @@ def _parse_iso_date(raw) -> Optional[str]:
         return dateparser.parse(str(raw)).strftime("%Y-%m-%d")
     except (ValueError, dateparser.ParserError, OverflowError, TypeError):
         return None
-
 
 def _parse_license_entries(raw_nppes: dict) -> list:
     """
@@ -484,7 +469,6 @@ def _parse_license_entries(raw_nppes: dict) -> list:
             "is_primary_taxonomy": bool(raw_entry.get("primary")),
         })
     return entries
-
 
 def normalize_nppes_record(raw_nppes: dict, file_release_date: str = "") -> dict:
     """
@@ -730,11 +714,9 @@ def _npi_registry_lookup(params: dict) -> list:
     results = body.get("results") or []
     return [normalize_nppes_record(r) for r in results]
 
-
 def _candidate_key(c: dict) -> str:
     """Stable identity for a candidate; used to deduplicate across passes."""
     return c.get("npi", "")
-
 
 def generate_candidates(internal_record: dict) -> list:
     """
@@ -773,10 +755,7 @@ def generate_candidates(internal_record: dict) -> list:
     # exact string match on the license field within taxonomies,
     # so we issue a name-plus-state query and filter client-side.
     # In production with the bulk file, the license-number lookup
-    # is a direct index hit. <!-- TODO: confirm the NPI Registry API's
-    # license-number search behavior at time of build; the public
-    # API has limited license-search support and the bulk file is
-    # the right substrate for license-anchored matching. -->
+    # is a direct index hit. 
     # TODO (TechWriter): Code review F3 (NOTE). Pass 1 is labeled
     # "license-anchored" but executes a name+state query identical
     # to Pass 2 except for the state-field source. Either rename
@@ -904,7 +883,6 @@ def _compare_first_name(a_record: dict, candidate: dict) -> str:
 
     return "mismatch"
 
-
 def _compare_last_name(a_record: dict, candidate: dict) -> str:
     a_last = a_record["last_name"]
     c_last = candidate["last_name"]
@@ -931,7 +909,6 @@ def _compare_last_name(a_record: dict, candidate: dict) -> str:
 
     return "mismatch"
 
-
 def _compare_credentials(internal_creds: list, candidate_creds: list) -> str:
     if not internal_creds or not candidate_creds:
         return "one_null"
@@ -948,7 +925,6 @@ def _compare_credentials(internal_creds: list, candidate_creds: list) -> str:
     ):
         return "subset_match"
     return "mismatch"
-
 
 def _compare_license_set(internal_licenses: list, candidate_licenses: list) -> str:
     """
@@ -979,7 +955,6 @@ def _compare_license_set(internal_licenses: list, candidate_licenses: list) -> s
 
     return "mismatch"
 
-
 def _compare_taxonomy(internal_primary: str, candidate_taxonomies: list) -> str:
     if internal_primary == "unknown_taxonomy" or not internal_primary:
         return "internal_unknown"
@@ -1007,7 +982,6 @@ def _compare_taxonomy(internal_primary: str, candidate_taxonomies: list) -> str:
         return "parent_match"
     return "mismatch"
 
-
 def _compare_address(internal_addr: dict, candidate_addr: dict) -> str:
     if not internal_addr or not candidate_addr:
         return "one_null"
@@ -1021,7 +995,6 @@ def _compare_address(internal_addr: dict, candidate_addr: dict) -> str:
         return "same_state"
     return "mismatch"
 
-
 def _compare_phone(internal_phone: str, candidate_phone: str) -> str:
     if not internal_phone or not candidate_phone:
         return "one_null"
@@ -1030,7 +1003,6 @@ def _compare_phone(internal_phone: str, candidate_phone: str) -> str:
     if internal_phone[-4:] == candidate_phone[-4:]:
         return "last_4_match"
     return "mismatch"
-
 
 def _candidate_has_matching_license_state(internal_record: dict, candidate: dict) -> bool:
     """Hard filter helper: does the candidate have any license in any of the internal record's license states?"""
@@ -1048,7 +1020,6 @@ def _candidate_has_matching_license_state(internal_record: dict, candidate: dict
     }
     return bool(internal_states & candidate_states)
 
-
 def _log_likelihood_ratio(field: str, level: str) -> Decimal:
     """Per-field, per-comparison-level log-likelihood-ratio contribution. Same pattern as recipe 5.1."""
     m = M_PROBABILITIES.get(field, {}).get(level)
@@ -1061,7 +1032,6 @@ def _log_likelihood_ratio(field: str, level: str) -> Decimal:
         return Decimal("0")
     return _to_decimal(math.log(float(m) / float(u)))
 
-
 def _drift_relevant_snapshot(candidate: dict) -> dict:
     """Pick the registry fields most likely to drift between re-verifications."""
     return {
@@ -1073,7 +1043,6 @@ def _drift_relevant_snapshot(candidate: dict) -> dict:
         "deactivation_date": candidate.get("deactivation_date"),
         "last_update_date":  candidate.get("last_update_date"),
     }
-
 
 def score_candidates(internal_record: dict, candidates: list) -> list:
     """
@@ -1183,7 +1152,6 @@ def _serialize_for_dynamodb(obj):
         return Decimal(str(obj))
     return obj
 
-
 def _write_audit_archive(record: dict, partition: str) -> None:
     """Write a JSON-serialized audit record to S3, partitioned by decision and date."""
     today = datetime.now(timezone.utc).strftime("%Y/%m/%d")
@@ -1202,7 +1170,6 @@ def _write_audit_archive(record: dict, partition: str) -> None:
             extra={"partition": partition, "error": str(exc)},
         )
 
-
 def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> None:
     try:
         cloudwatch_client.put_metric_data(
@@ -1218,7 +1185,6 @@ def _emit_metric(metric_name: str, value: float, dimensions: dict = None) -> Non
         )
     except Exception as exc:
         logger.warning("metric emit failed", extra={"metric": metric_name, "error": str(exc)})
-
 
 def route_match(
     internal_record: dict,
@@ -1423,7 +1389,6 @@ def attach_npi(internal_record: dict, matched_candidate_score: dict,
     _emit_metric("NPIAttached", 1.0,
                   dimensions={"Method": decision_metadata.get("method", "unknown")})
 
-
 def _compare_drift_snapshot(previous: dict, current_candidate: dict) -> dict:
     """Detect drift between the stored snapshot and the latest registry record."""
     current = _drift_relevant_snapshot(current_candidate)
@@ -1440,7 +1405,6 @@ def _compare_drift_snapshot(previous: dict, current_candidate: dict) -> dict:
         drift["taxonomy_changed"], drift["deactivation_changed"],
     ])
     return drift
-
 
 def re_verify_npi(internal_provider_id: str) -> dict:
     """
@@ -1639,7 +1603,6 @@ def run_match_pipeline_for_provider(raw_internal: dict) -> dict:
 
     return summary
 
-
 def run_demo():
     """
     Run the full pipeline against a small synthetic roster. This
@@ -1671,7 +1634,6 @@ def run_demo():
         if result["matched_npi"]:
             print(f"  matched:    NPI {result['matched_npi']}  "
                   f"score={result['match_score']:.2f}")
-
 
 SYNTHETIC_INTERNAL_PROVIDERS = [
     # Internal record with full data: license number, state, taxonomy,
@@ -1738,7 +1700,6 @@ SYNTHETIC_INTERNAL_PROVIDERS = [
         "is_active":     True,
     },
 ]
-
 
 if __name__ == "__main__":
     run_demo()

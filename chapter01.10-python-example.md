@@ -69,7 +69,6 @@ from botocore.config import Config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 # ---------------------------------------------------------------------------------
 # Model IDs: cross-region inference profiles for capacity routing
 #
@@ -111,7 +110,6 @@ HEALTHLAKE_DATASTORE_ID = "DATASTORE-ID"
 TEXTRACT_SNS_TOPIC_ARN  = "arn:aws:sns:us-east-1:ACCOUNT:textract-chart-jobs"
 TEXTRACT_SNS_ROLE_ARN   = "arn:aws:iam::ACCOUNT:role/textract-sns-role"
 
-
 # ---------------------------------------------------------------------------------
 # Boto3 client factory with retry configuration
 #
@@ -148,7 +146,6 @@ def get_s3_client():
 
 def get_dynamodb_resource():
     return boto3.resource("dynamodb", config=_retry_config)
-
 
 # ---------------------------------------------------------------------------------
 # S3 lifecycle configuration for the batch-inference bucket
@@ -305,7 +302,6 @@ def generate_migration_manifest(s3_prefix: str, output_key: str) -> tuple[int, s
     )
     return len(manifest_rows), output_key
 
-
 def extract_chart_id_from_key(s3_key: str) -> str:
     """
     Extract the chart ID from the S3 object key.
@@ -406,7 +402,6 @@ def preprocess_chart(chart_pdf_key: str, chart_id: str) -> tuple[str, dict]:
     )
     return processed_key, quality_report
 
-
 def is_blank_page(img, white_threshold: float = 0.98) -> bool:
     """
     Returns True if more than white_threshold fraction of pixels are near-white.
@@ -467,7 +462,6 @@ def start_textract_ocr(processed_chart_key: str, chart_id: str) -> str:
 
     logger.info("Textract job started", extra={"chart_id": chart_id, "job_id": job_id})
     return job_id
-
 
 def retrieve_ocr_results(job_id: str, chart_id: str) -> str:
     """
@@ -614,7 +608,6 @@ Tier guidance:
 
 Return ONLY valid JSON. No explanation. No markdown."""
 
-
 def sanitize_page_text(text: str) -> str:
     """
     Strip content that could be used for prompt injection before including
@@ -648,7 +641,6 @@ def sanitize_page_text(text: str) -> str:
         text = re.sub(pattern, "[FILTERED]", text)
 
     return text
-
 
 def generate_classification_batch_jsonl(
     chart_id: str,
@@ -744,7 +736,6 @@ def generate_classification_batch_jsonl(
     )
     return jsonl_key
 
-
 def submit_bedrock_batch_job(
     input_s3_prefix: str,
     output_s3_prefix: str,
@@ -790,7 +781,6 @@ def submit_bedrock_batch_job(
     job_arn = response["jobArn"]
     logger.info("Batch inference job submitted", extra={"job_arn": job_arn, "model": model_id})
     return job_arn
-
 
 def wait_for_batch_job(job_arn: str, poll_interval_seconds: int = 300) -> str:
     """
@@ -1195,7 +1185,6 @@ def generate_fallback_document_reference(
         }]
     }
 
-
 def assemble_fhir_bundle(
     chart_id: str,
     member_id: str,
@@ -1324,7 +1313,6 @@ def assemble_fhir_bundle(
         "total":           len(deduplicated)
     }
 
-
 def write_fhir_bundle_and_update_dynamo(
     chart_id: str,
     bundle: dict
@@ -1381,7 +1369,6 @@ def write_fhir_bundle_and_update_dynamo(
         }
     )
     return bundle_key
-
 
 def submit_healthlake_import_batch(
     batch_size: int = 2000,
@@ -1601,7 +1588,6 @@ def run_chart_migration_wave(
         "charts":       chart_count,
         "manifest_key": manifest_key
     }
-
 
 if __name__ == "__main__":
     # Example usage: process charts from a specific scanning vendor batch

@@ -179,7 +179,6 @@ def generate_synthetic_providers(n_providers: int = 150, seed: int = 42) -> pd.D
 ```python
 from sklearn.linear_model import LinearRegression
 
-
 def case_mix_adjust(df: pd.DataFrame) -> pd.DataFrame:
     """
     Adjust each utilization metric for patient panel complexity.
@@ -423,7 +422,6 @@ def interpret_clusters(
 
     return profiles
 
-
 def _suggest_label(z_scores: pd.Series) -> str:
     """
     Heuristic label generation based on the cluster's metric profile.
@@ -470,7 +468,6 @@ s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 # Replace with your actual bucket name.
 RESULTS_BUCKET = "provider-practice-patterns"
 
-
 def generate_provider_report(
     provider_row: pd.Series,
     cluster_profiles: list[dict],
@@ -510,7 +507,6 @@ def generate_provider_report(
 
     return report
 
-
 def _interpret_oe(oe_ratio: float) -> str:
     """Human-readable interpretation of an O/E ratio."""
     if oe_ratio < 0.8:
@@ -519,7 +515,6 @@ def _interpret_oe(oe_ratio: float) -> str:
         return f"{(oe_ratio - 1) * 100:.0f}% above expected"
     else:
         return "Near expected"
-
 
 def upload_results_to_s3(
     cluster_profiles: list[dict],
@@ -659,7 +654,6 @@ def run_practice_pattern_analysis(upload_to_s3: bool = False) -> dict:
     print(json.dumps(summary, indent=2, default=str))
 
     return summary
-
 
 # Run the pipeline.
 if __name__ == "__main__":

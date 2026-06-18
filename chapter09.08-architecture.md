@@ -349,8 +349,6 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 - Grading tasks where inter-pathologist agreement is already low (e.g., certain breast cancer grades)
 - Slides from scanners not represented in training data (stain/color shift)
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering production gaps (stain normalization across labs, model monitoring/drift, regulatory submission requirements, LIS integration). -->
-
 ---
 
 ## Variations and Extensions
@@ -395,7 +393,6 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 | **With variations** (multi-cancer, grading, biomarker prediction, FDA submission) | 18-24+ months |
 
 ---
-
 
 ---
 

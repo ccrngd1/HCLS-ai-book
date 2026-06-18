@@ -97,7 +97,6 @@ logger.setLevel(logging.INFO)
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def load_dicom_from_s3(bucket: str, key: str) -> pydicom.Dataset:
     """
     Download a DICOM file from S3 and parse it into a pydicom Dataset.
@@ -116,7 +115,6 @@ def load_dicom_from_s3(bucket: str, key: str) -> pydicom.Dataset:
     # We wrap the bytes in BytesIO to give it a file interface.
     dataset = pydicom.dcmread(BytesIO(dicom_bytes))
     return dataset
-
 
 def is_chest_xray(dataset: pydicom.Dataset) -> bool:
     """
@@ -140,7 +138,6 @@ def is_chest_xray(dataset: pydicom.Dataset) -> bool:
     is_chest = body_part in ("CHEST", "THORAX")
 
     return is_xray and is_chest
-
 
 def route_study(bucket: str, key: str) -> dict | None:
     """
@@ -183,7 +180,6 @@ def route_study(bucket: str, key: str) -> dict | None:
 
 ```python
 from PIL import Image
-
 
 def preprocess_for_inference(dataset: pydicom.Dataset) -> np.ndarray:
     """
@@ -265,7 +261,6 @@ def preprocess_for_inference(dataset: pydicom.Dataset) -> np.ndarray:
 import json
 
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
-
 
 def run_inference(preprocessed_image: np.ndarray, study_id: str) -> dict:
     """
@@ -390,7 +385,6 @@ from decimal import Decimal
 
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def store_triage_result(
     study_metadata: dict,
     predictions: dict,
@@ -462,7 +456,6 @@ This assembles all steps into a single callable function. In production, this wo
 ```python
 import time
 
-
 def triage_chest_xray(bucket: str, key: str) -> dict | None:
     """
     Full triage pipeline: receive DICOM, filter, preprocess, infer, score, store.
@@ -521,7 +514,6 @@ def triage_chest_xray(bucket: str, key: str) -> dict | None:
 
     return record
 
-
 # Example usage (you'd replace this with your actual S3 event trigger):
 if __name__ == "__main__":
     result = triage_chest_xray(
@@ -544,7 +536,6 @@ from pydicom.dataset import Dataset, FileDataset
 from pydicom.uid import generate_uid
 import tempfile
 import os
-
 
 def create_synthetic_chest_xray_dicom() -> str:
     """

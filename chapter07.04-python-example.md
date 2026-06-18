@@ -210,7 +210,6 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 def train_ed_prediction_model(df: pd.DataFrame) -> tuple:
     """
     Train a gradient boosted tree model to predict 30-day ED visits.
@@ -448,7 +447,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 # SSM Parameter Store, not hardcoded strings.
 RISK_SCORES_TABLE = "ed-risk-scores"
 
-
 def store_risk_scores(scored_df: pd.DataFrame) -> int:
     """
     Write patient risk scores to DynamoDB for downstream consumption.
@@ -513,7 +511,6 @@ s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
 DATA_BUCKET = "my-healthcare-ml-data"
 MODEL_PREFIX = "ed-prediction/v1"
-
 
 def upload_training_data(df: pd.DataFrame, bucket: str = DATA_BUCKET) -> str:
     """
@@ -629,7 +626,6 @@ def run_ed_prediction_pipeline():
     print("=" * 60)
 
     return metrics, scored
-
 
 # Run the pipeline
 if __name__ == "__main__":

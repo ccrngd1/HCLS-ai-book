@@ -356,13 +356,8 @@ Let's be direct about the gap between this architecture and clinical deployment:
 - [Amazon SageMaker Pricing](https://aws.amazon.com/sagemaker/pricing/)
 
 **Research References:**
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add specific paper citations for offline RL in radiation therapy (e.g., Tseng et al. on RL for adaptive radiotherapy). -->
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify citation: Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS 2020. -->
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify citation: Fujimoto et al., "Off-Policy Deep Reinforcement Learning without Exploration," ICML 2019. -->
 
 **Clinical Context:**
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link to AAPM Task Group reports on adaptive radiation therapy. -->
-<!-- TODO (TechWriter): Expert review V2 (MEDIUM). Verify and add link to ASTRO guidelines on image-guided radiation therapy. -->
 
 ---
 
@@ -375,7 +370,6 @@ Let's be direct about the gap between this architecture and clinical deployment:
 | With variations (multi-site, continuous actions, regulatory submission) | 24-36 months |
 
 ---
-
 
 ---
 

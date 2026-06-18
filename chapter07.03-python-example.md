@@ -228,7 +228,6 @@ from sklearn.model_selection import train_test_split
 # Create S3 client for uploading training data.
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def prepare_and_upload_training_data(df: pd.DataFrame) -> tuple[str, str]:
     """
     Split data into train/validation sets and upload to S3.
@@ -299,7 +298,6 @@ def prepare_and_upload_training_data(df: pd.DataFrame) -> tuple[str, str]:
 import sagemaker
 from sagemaker.estimator import Estimator
 from sagemaker.inputs import TrainingInput
-
 
 def train_churn_model(train_uri: str, val_uri: str) -> str:
     """
@@ -376,7 +374,6 @@ def train_churn_model(train_uri: str, val_uri: str) -> str:
 
 ```python
 from sagemaker.transformer import Transformer
-
 
 def score_membership_batch(model_uri: str, members_df: pd.DataFrame, scoring_date: str) -> str:
     """
@@ -507,7 +504,6 @@ def assign_risk_tiers(members_df: pd.DataFrame, probabilities: np.ndarray) -> pd
 
     return results
 
-
 def _identify_risk_factors(member_row: pd.Series) -> list[dict]:
     """
     Identify the top risk factors for a single member based on feature values.
@@ -552,7 +548,6 @@ def _identify_risk_factors(member_row: pd.Series) -> list[dict]:
     # Return top 5 factors (sorted by severity, most impactful first).
     return factors[:5]
 
-
 def _recommend_intervention(factors: list[dict]) -> str:
     """
     Route to the appropriate intervention team based on the dominant risk factor.
@@ -588,7 +583,6 @@ def _recommend_intervention(factors: list[dict]) -> str:
 ```python
 # Create DynamoDB resource.
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
-
 
 def store_results_dynamodb(results_df: pd.DataFrame, scoring_date: str) -> int:
     """
@@ -650,7 +644,6 @@ def store_results_dynamodb(results_df: pd.DataFrame, scoring_date: str) -> int:
 ```python
 # Create EventBridge client.
 events_client = boto3.client("events", config=BOTO3_RETRY_CONFIG)
-
 
 def publish_high_risk_events(results_df: pd.DataFrame, scoring_date: str) -> int:
     """
@@ -797,7 +790,6 @@ def run_churn_prediction_pipeline():
         print(f"  Top factors: {member['top_risk_factors'][:2]}")
 
     return results_df
-
 
 # Run the pipeline.
 if __name__ == "__main__":

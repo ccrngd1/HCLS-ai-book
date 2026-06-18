@@ -151,7 +151,6 @@ The vendor-agnostic architecture for a chemotherapy scheduling optimization syst
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and ingredients, see the [Architecture and Implementation companion](chapter14.09-architecture). The Python example is linked from there.
 
 ## Code: Pseudocode Walkthrough

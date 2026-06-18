@@ -36,7 +36,7 @@
 
 **Amazon Comprehend Medical for unstructured clinical context.** Some of the most useful context for anomaly detection lives in free-text clinical notes (the reason for the medication, the clinical goals of care, the specific symptoms being treated). Comprehend Medical extracts medical entities and relationships from notes and makes them available to the anomaly detector as structured features. Use it sparingly: the cost per page of text adds up, so extract-once-and-cache is the right pattern.
 
-**Amazon Bedrock for LLM-assisted triage (optional, advanced).** For the clinical-reasoning class of anomaly (does this dispense match the clinical intent in the note?), a HIPAA-eligible LLM through Bedrock can compare the dispense event against the patient's recent clinical notes and flag reasoning mismatches. Use only models with BAA coverage on the inference path; Amazon's foundation models on Bedrock are HIPAA-eligible, but third-party models on Bedrock have differing BAA postures, and the model's terms of service have to be reviewed before PHI-bearing prompts are sent. Construct prompts with minimum-necessary context (the relevant note excerpts, the dispense event, the active medication list, not the full chart), filter outputs for clinical-recommendation hallucinations, and log every prompt and response to the audit trail tied to the triage decision. Expensive and requires rigorous validation. Layer on top of the statistical detection, not a replacement for it. See Chapter 2's generative AI recipes (2.4 through 2.10) for the established BAA discipline for PHI-bearing LLM workloads. <!-- TODO (TechWriter): as HIPAA-eligible Bedrock patterns mature in healthcare in 2026, add a specific reference to validated clinical-reasoning triage architectures. Avoid speculative specifics for now. -->
+**Amazon Bedrock for LLM-assisted triage (optional, advanced).** For the clinical-reasoning class of anomaly (does this dispense match the clinical intent in the note?), a HIPAA-eligible LLM through Bedrock can compare the dispense event against the patient's recent clinical notes and flag reasoning mismatches. Use only models with BAA coverage on the inference path; Amazon's foundation models on Bedrock are HIPAA-eligible, but third-party models on Bedrock have differing BAA postures, and the model's terms of service have to be reviewed before PHI-bearing prompts are sent. Construct prompts with minimum-necessary context (the relevant note excerpts, the dispense event, the active medication list, not the full chart), filter outputs for clinical-recommendation hallucinations, and log every prompt and response to the audit trail tied to the triage decision. Expensive and requires rigorous validation. Layer on top of the statistical detection, not a replacement for it. See Chapter 2's generative AI recipes (2.4 through 2.10) for the established BAA discipline for PHI-bearing LLM workloads. 
 
 **Amazon CloudWatch and AWS CloudTrail.** Standard operational and audit logging. CloudWatch dashboards for pipeline health, alert latency, override rates, and drift metrics. CloudTrail data events on every PHI-bearing store so access is auditable end-to-end.
 
@@ -112,7 +112,7 @@ flowchart TB
 | **EHR Integration** | HL7 v2 or FHIR R4 feed from the EHR with at minimum: ADT for demographics and location, ORM/ORC/RXO/RXE (or FHIR MedicationRequest) for medication orders, ORU for lab results, and administrative feeds for problem list and allergies. An integration engine (Rhapsody, Mirth Connect, Cloverleaf, or Corepoint) on-premises is the usual bridge into the AWS ingest layer. |
 | **Controlled-Substance Integration** | For diversion detection, read access to the automated dispensing cabinet transaction logs (Pyxis, Omnicell, BD) in near-real-time. Usually a vendor-specific integration. Also access to the state PDMP for outpatient controlled-substance dispensing data (availability and API varies by state). |
 | **Retention** | HIPAA baseline is 6 years. Controlled-substance records have DEA retention requirements (typically 2 years for dispensing records, longer in some states). State pharmacy boards often impose additional requirements (5-10 years is common). Coordinate with legal and compliance for the specific schedule. |
-| **Cost Estimate** | For a mid-size hospital (say, 400 beds, 8,000 medication events per day, 2-3 million events per year): Kinesis and Lambda real-time path: ~$100-300/month. DynamoDB patient-context cache: ~$50-150/month depending on read pattern. SageMaker Feature Store: ~$20-60/month for this data volume. SageMaker Processing for batch scoring: ~$200-500/month. Neptune for diversion (smaller cluster): ~$400-800/month. OpenSearch alert-audit index: ~$300-600/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-500/month. Total infrastructure: typically $1,500-4,000/month for a mid-size hospital. Compare to cost avoidance: the average preventable ADE costs roughly $5,000-$10,000 per event in additional care, and sentinel-event-level harms cost far more. <!-- TODO (TechWriter): confirm current published ADE cost estimates. AHRQ, ISMP, and IHI have published numbers over the years that need to be checked for current accuracy before citing specifics. --> |
+| **Cost Estimate** | For a mid-size hospital (say, 400 beds, 8,000 medication events per day, 2-3 million events per year): Kinesis and Lambda real-time path: ~$100-300/month. DynamoDB patient-context cache: ~$50-150/month depending on read pattern. SageMaker Feature Store: ~$20-60/month for this data volume. SageMaker Processing for batch scoring: ~$200-500/month. Neptune for diversion (smaller cluster): ~$400-800/month. OpenSearch alert-audit index: ~$300-600/month. Comprehend Medical and optional Bedrock: usage-dependent, typically $100-500/month. Total infrastructure: typically $1,500-4,000/month for a mid-size hospital. Compare to cost avoidance: the average preventable ADE costs roughly $5,000-$10,000 per event in additional care, and sentinel-event-level harms cost far more.  |
 
 ### Ingredients
 
@@ -152,7 +152,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Random Cut Forest and Isolation Forest patterns for unsupervised detection; Feature Store integration examples; processing-job patterns.
 > - [`aws-samples`](https://github.com/aws-samples): Search for "healthcare," "clinical decision support," and "medication safety" for adjacent patterns.
-> <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates medication safety or clinical decision support analytics. A direct match has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
 
@@ -693,8 +693,6 @@ FUNCTION on_adverse_event_report(ade_event):
 
 ### Expected Results
 
-<!-- Sample timestamps and event IDs below are illustrative and reflect the draft date; production output uses real ISO-8601 timestamps from the event-handler's invocation time. -->
-
 **Sample interrupt-severity alert for a pediatric dose anomaly:**
 
 ```json
@@ -821,8 +819,6 @@ FUNCTION on_adverse_event_report(ade_event):
 | Real-time latency p95 (order entry to flag) | 50-150ms | 100-300ms | 100-400ms |
 | Batch trajectory cadence | n/a | n/a | 15-60 min |
 
-<!-- TODO (TechWriter): these benchmark ranges are directional from typical pharmacy-safety project experience. Replace with measured numbers once the pipeline runs for a few cycles. Consider referencing published studies on CDSS alert override rates; they consistently show rates in the 80-95% range for unfiltered pharmacy alerts which is the source of the "alert fatigue" framing. -->
-
 **Where it struggles:**
 
 - **Pediatric weight-based dosing with stale weights.** If the weight in the cache is days old and the patient is fluid-resuscitated (common in pediatric ICU), the dose-per-kg math is wrong. The system flags this with a staleness indicator, but correct handling requires workflow integration to ensure fresh weights on critical patients.
@@ -868,8 +864,6 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 
 **DLQ and replay for the streaming Lambdas.** A dropped event in the real-time-anomaly-service path is a dispense without an anomaly check, which is precisely the failure mode the entire pipeline is designed to prevent. Lambda's default async retry is two retries over six hours and then drop, with the only evidence in CloudWatch Logs. Configure each streaming Lambda's `OnFailure` destination to a dedicated SQS DLQ (`event-normalizer-dlq`, `real-time-anomaly-service-dlq`, `feedback-capture-dlq`); CloudWatch alarms on DLQ depth alert the on-call clinical-informatics and pharmacy-operations teams. For the real-time-anomaly-service DLQ specifically, alarm threshold is 1, because a single dropped dispense event is a patient-safety event. Replay events from the DLQ after fixing the root cause; for events older than the dispense window (typically one hour), escalate to clinical-informatics review rather than auto-replay because the dispense decision has already been made downstream.
 
-<!-- TODO (TechWriter): consider adding a note about FDA 510(k) and De Novo pathways for clinical decision support software, as some dispensing anomaly detectors may cross into regulated device territory depending on how outputs are used. The FDA's 2022 CDS guidance document is the relevant reference. -->
-
 ---
 
 ## Variations and Extensions
@@ -884,7 +878,7 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 
 **Patient-level education and engagement.** Some outpatient anomalies (early refills, missed refills, suspected non-adherence) are best addressed by patient outreach rather than provider review. A Pinpoint-based outreach workflow that sends context-aware messages ("we noticed you refilled early; is everything okay with the dose?" or "it's been 14 days since your scheduled refill; need help getting to the pharmacy?") connects detection to intervention directly. Overlaps with Chapter 4 (Personalization) and Chapter 11 (Conversational AI) on the intervention side.
 
-**LLM-assisted clinical-reasoning triage.** For synchronous-severity alerts, a HIPAA-eligible LLM (through Amazon Bedrock) can read the patient's recent clinical note, the medication order, and the detected anomaly, then generate a triage recommendation. "The note mentions worsening sepsis; the dose increase is consistent with the clinical picture; suggest lower-severity disposition." This is not a replacement for human clinical judgment, and the LLM output has to be validated against clinical experience before being deployed. It's an accelerator for pharmacist triage, not a decision-maker. Adds cost and latency; suitable for the synchronous queue, not the interrupt path. <!-- TODO (TechWriter): once specific validated patterns for LLM-assisted clinical triage are published in the healthcare literature with demonstrated safety data, expand this section with concrete references. As of this writing, pilots exist but broadly-accepted production patterns do not. -->
+**LLM-assisted clinical-reasoning triage.** For synchronous-severity alerts, a HIPAA-eligible LLM (through Amazon Bedrock) can read the patient's recent clinical note, the medication order, and the detected anomaly, then generate a triage recommendation. "The note mentions worsening sepsis; the dose increase is consistent with the clinical picture; suggest lower-severity disposition." This is not a replacement for human clinical judgment, and the LLM output has to be validated against clinical experience before being deployed. It's an accelerator for pharmacist triage, not a decision-maker. Adds cost and latency; suitable for the synchronous queue, not the interrupt path. 
 
 **Closed-loop TPN and compounding sterile preparations.** For IV admixtures and total parenteral nutrition orders, the anomaly space includes compounding errors (wrong base solution, wrong additive concentration, wrong ratio), which are a major source of historical harm events. A dedicated compounding anomaly path that integrates with the automated compounding device and the check-weight station adds a layer of verification that's specifically tuned for these high-risk preparations. A more specialized extension, but one that addresses a known class of severe patient-safety events.
 
@@ -913,13 +907,11 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Random Cut Forest and Isolation Forest patterns applicable to the multivariate anomaly detection layer; Feature Store examples that match the drug-class baseline architecture.
 - [`aws-samples`](https://github.com/aws-samples): Search for "healthcare," "clinical decision support," "hl7," and "fhir" for adjacent integration patterns.
 - [`aws-healthcare-lifesciences`](https://github.com/aws-samples?q=healthcare): browse the aws-samples healthcare repos for adjacent patterns.
-<!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates an end-to-end medication safety or clinical decision support pipeline. A direct match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): browse for clinical decision support and pharmacy analytics reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "anomaly detection," "clinical decision support," and "medication" for architectural deep-dives.
 - [AWS HealthLake](https://aws.amazon.com/healthlake/): managed FHIR repository that can serve as the patient-context data source for the pipeline in deployments that standardize on FHIR.
-<!-- TODO (TechWriter): verify and add two or three specific AWS blog posts on clinical decision support, medication safety analytics, or pharmacy operations on AWS; confirm URLs exist before inclusion. -->
 
 **Industry, Clinical, and Regulatory References:**
 - [Institute for Safe Medication Practices (ISMP)](https://www.ismp.org/): publishes medication error reports, safety guidelines, and the ISMP list of high-alert medications, which is essential reference material for prioritizing the rules layer.
@@ -949,7 +941,6 @@ The pseudocode above gives you the shape. A production medication dispensing ano
 | With variations | Diversion detection module with graph analytics, BCMA integration, outpatient and PDMP integration, LLM-assisted clinical triage, compounding anomaly path, multi-facility rollout | 12-24 months beyond production-ready |
 
 ---
-
 
 ---
 

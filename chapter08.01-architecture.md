@@ -63,8 +63,6 @@ flowchart LR
 | **Amazon DynamoDB** | Abbreviation expansion table and classification result storage |
 | **Amazon SQS** | Dead letter queue for low-confidence classifications needing human review |
 
-<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Add SQS queue access control guidance: queue policy restricting sqs:ReceiveMessage to the review application's IAM role only, message retention period set to match review SLA (e.g., 24 hours not the default 4 days), and a dead-letter queue for messages exceeding max receive count. PHI in an unscoped queue is a compliance gap. -->
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify resource-scoped IAM statements: dynamodb:GetItem on abbreviation-map table ARN only, dynamodb:GetItem+PutItem on classification-results table ARN only. Separate sensitivity levels (config vs. PHI). -->
 | **Amazon API Gateway** | RESTful endpoint for synchronous classification requests |
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Metrics on classification latency, confidence distribution, and error rates |
@@ -302,11 +300,7 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 
 ---
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Cover gaps like error handling, retry logic, input validation, structured logging, multi-language support, and retraining automation. -->
-
 ## Variations and Extensions
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a "Retraining Pipeline" variation showing: SQS review queue corrections written back to training S3 bucket, scheduled (weekly/monthly) Step Functions workflow triggering Comprehend training, A/B accuracy comparison of new model vs. current, and endpoint update strategy. This is the recipe's key differentiator (feedback loop) but currently has no architectural detail for closing it. -->
 
 **Multi-label classification.** Instead of assigning a single category, allow multiple labels for multi-complaint entries. "Chest pain and shortness of breath" gets both "Chest Pain, Cardiac" and "Respiratory, Dyspnea." This requires changing from multi-class to multi-label classification (Comprehend supports both modes). The routing logic downstream needs to handle multiple categories per encounter.
 
@@ -344,7 +338,6 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 | **With variations** (multi-label, acuity stacking, drift detection) | 10-12 weeks |
 
 ---
-
 
 ---
 

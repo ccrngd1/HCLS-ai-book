@@ -129,7 +129,6 @@ The feedback loop is critical. Every time a human overrides the system's recomme
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter14.06-architecture). The Python example is linked from there.
 
 ## The Honest Take

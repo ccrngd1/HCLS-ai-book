@@ -133,7 +133,6 @@ BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb")
 
-
 def submit_extraction_job(
     bucket: str,
     key: str,
@@ -338,7 +337,6 @@ def get_text_from_block(block: dict, block_map: dict) -> str:
                     text += child_block.get("Text", "") + " "
 
     return text.strip()
-
 
 def parse_forms(all_blocks: list, block_map: dict) -> tuple[dict, dict]:
     """
@@ -549,7 +547,6 @@ def parse_tables(all_blocks: list, block_map: dict) -> list[list[list[str]]]:
 ```python
 from decimal import Decimal  # DynamoDB requires Decimal, not float
 
-
 def normalize_fields(raw_kv: dict) -> dict:
     """
     Map raw Textract label text to canonical field names.
@@ -577,7 +574,6 @@ def normalize_fields(raw_kv: dict) -> dict:
                 break   # found the right canonical field; stop checking variants
 
     return normalized
-
 
 def normalize_and_gate(
     raw_kv: dict,
@@ -824,7 +820,6 @@ def process_intake_form(
     logger.info("Done. needs_review=%s, flagged_fields=%d", result['needs_review'], len(result['flagged_fields']))
     return result
 
-
 # Example: run the pipeline directly against a test PDF.
 if __name__ == "__main__":
     import json
@@ -856,7 +851,6 @@ In a production deployment, the two-Lambda architecture from the recipe looks li
 ```python
 import json
 
-
 def lambda_handler_start(event: dict, context) -> None:
     """
     Lambda 1 (intake-start): triggered by S3 upload events.
@@ -877,7 +871,6 @@ def lambda_handler_start(event: dict, context) -> None:
 
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
     logger.info("Submitted job %s for s3://%s/%s", job_id, bucket, key)
-
 
 def lambda_handler_process(event: dict, context) -> None:
     """

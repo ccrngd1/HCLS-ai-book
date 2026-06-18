@@ -105,7 +105,6 @@ SAMPLE_SPECIALTY_HIERARCHY = {
 ```python
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 
-
 def parse_npi_file(bucket: str, key: str) -> list[dict]:
     """
     Parse the NPPES NPI data file from S3 and extract provider records.
@@ -235,7 +234,6 @@ def build_provider_nodes_csv(providers: list[dict]) -> str:
 
     return output.getvalue()
 
-
 def build_location_nodes_csv(providers: list[dict]) -> str:
     """
     Extract unique locations from provider records and format as Neptune node CSV.
@@ -287,7 +285,6 @@ def build_location_nodes_csv(providers: list[dict]) -> str:
     logger.info("Built %d unique location nodes", len(seen_locations))
     return output.getvalue()
 
-
 def build_specialty_nodes_csv() -> str:
     """
     Build specialty nodes from our taxonomy hierarchy.
@@ -314,7 +311,6 @@ def build_specialty_nodes_csv() -> str:
         ])
 
     return output.getvalue()
-
 
 def build_edges_csv(providers: list[dict]) -> str:
     """
@@ -390,7 +386,6 @@ def build_edges_csv(providers: list[dict]) -> str:
 ```python
 neptune_client = boto3.client("neptunedata", region_name=AWS_REGION)
 
-
 def upload_csvs_to_s3(
     provider_csv: str,
     location_csv: str,
@@ -426,7 +421,6 @@ def upload_csvs_to_s3(
 
     return f"s3://{STAGING_BUCKET}/{prefix}"
 
-
 def trigger_bulk_load(s3_source: str) -> dict:
     """
     Trigger Neptune's bulk loader to ingest CSVs from S3.
@@ -457,7 +451,6 @@ def trigger_bulk_load(s3_source: str) -> dict:
     logger.info("Bulk load started. Load ID: %s", load_id)
 
     return {"load_id": load_id, "status": response["status"]}
-
 
 def check_load_status(load_id: str) -> dict:
     """
@@ -518,7 +511,6 @@ def execute_opencypher_query(query: str, parameters: dict = None) -> dict:
     response.raise_for_status()
 
     return response.json()
-
 
 def search_providers(
     specialty_code: str,
@@ -635,7 +627,6 @@ def search_providers(
     logger.info("Found %d matching providers", len(providers))
     return providers
 
-
 def get_specialty_subtree(root_code: str) -> list[str]:
     """
     Traverse the specialty hierarchy to find all subspecialties
@@ -692,7 +683,6 @@ def get_specialty_subtree(root_code: str) -> list[str]:
 # This prevents injection of arbitrary property names into the query.
 UPDATABLE_FIELDS = {"accepting_new", "telehealth", "gender"}
 
-
 def update_provider_property(npi: str, field: str, value) -> dict:
     """
     Update a single property on a provider node.
@@ -730,7 +720,6 @@ def update_provider_property(npi: str, field: str, value) -> dict:
     logger.info("Updated provider %s: %s = %s", npi, field, value)
     return result
 
-
 def add_network_membership(npi: str, network_id: str, effective_date: str) -> dict:
     """
     Add a provider to a network by creating an IN_NETWORK edge.
@@ -760,7 +749,6 @@ def add_network_membership(npi: str, network_id: str, effective_date: str) -> di
     })
     logger.info("Added provider %s to network %s", npi, network_id)
     return result
-
 
 def terminate_network_membership(
     npi: str, network_id: str, term_date: str
@@ -843,7 +831,6 @@ def run_full_directory_load(npi_file_key: str) -> dict:
         "load_id": load_result["load_id"],
         "load_status": load_result["status"],
     }
-
 
 # Example: run the full pipeline.
 if __name__ == "__main__":

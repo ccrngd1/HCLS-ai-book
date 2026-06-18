@@ -181,7 +181,6 @@ VALID_LABELS = {
 # runtime by the patient's preferences where available.
 DEFAULT_CHANNEL_LADDER = ["sms", "voice", "email"]
 
-
 def _to_decimal(value) -> Decimal:
     """
     Coerce numeric input into Decimal for DynamoDB and for downstream math.
@@ -256,7 +255,6 @@ def assemble_features(appointment: dict) -> dict:
 
     return features
 
-
 def _get_patient_features(patient_id: str) -> dict:
     """
     Read the patient's record from the online Feature Store. If the patient
@@ -297,7 +295,6 @@ def _get_patient_features(patient_id: str) -> dict:
         "insurance_type":           raw.get("insurance_type", "commercial"),
     }
 
-
 def _cold_start_patient_features() -> dict:
     """
     Defaults for a patient with no history. The values below are
@@ -315,7 +312,6 @@ def _cold_start_patient_features() -> dict:
         "age":                      45,
         "insurance_type":           "commercial",
     }
-
 
 def _patient_provider_no_show_rate(patient_id: str, provider_id: str) -> float:
     """
@@ -350,7 +346,6 @@ import io
 _MODEL = None
 _MODEL_META = None
 
-
 def _load_model(model_key: str = "current/model.joblib") -> None:
     """
     Download the current model artifact from S3 and deserialize it. The
@@ -363,7 +358,6 @@ def _load_model(model_key: str = "current/model.joblib") -> None:
     _MODEL = payload["pipeline"]          # fitted sklearn Pipeline
     _MODEL_META = payload["meta"]         # dict with version, training_window, etc.
     logger.info("model_loaded", extra={"version": _MODEL_META.get("version")})
-
 
 def score_appointment(features: dict) -> dict:
     """
@@ -399,7 +393,6 @@ def score_appointment(features: dict) -> dict:
         "scorer_version": SCORER_VERSION,
         "scored_at":      features["scored_at"],
     }
-
 
 def archive_prediction(features: dict, prediction: dict) -> None:
     """
@@ -506,7 +499,6 @@ def route_predictions(predictions: list) -> list:
 
     return decisions
 
-
 def _batch_get_baselines(patient_ids: list) -> dict:
     """
     Fetch the current baseline record for a batch of patients. Returns a
@@ -537,7 +529,6 @@ def _batch_get_baselines(patient_ids: list) -> dict:
             })
     return result
 
-
 def _put_queue_item(table_name: str, decision: dict) -> None:
     """
     Write a routing decision to the appropriate queue table. The queue
@@ -558,7 +549,6 @@ def _put_queue_item(table_name: str, decision: dict) -> None:
         "enqueued_at":    datetime.now(timezone.utc).isoformat(),
     }
     table.put_item(Item=item)
-
 
 def _emit_metric(metric_name: str, value: int = 1, dimensions: dict = None) -> None:
     """
@@ -651,7 +641,6 @@ def execute_outreach(queue_item: dict, patient_preferences: dict) -> dict:
 
     return record
 
-
 def _pick_channels(preferences: dict) -> list:
     """
     Determine which channels to try and in what order. Patient preference
@@ -662,7 +651,6 @@ def _pick_channels(preferences: dict) -> list:
     preferred = preferences.get("preferred_channels") or DEFAULT_CHANNEL_LADDER
     opt_outs = set(preferences.get("opt_outs") or [])
     return [c for c in preferred if c not in opt_outs]
-
 
 def _send_sms_reminder(queue_item: dict, prefs: dict, intervention_id: str) -> None:
     """
@@ -691,7 +679,6 @@ def _send_sms_reminder(queue_item: dict, prefs: dict, intervention_id: str) -> N
         },
     )
 
-
 def _send_voice_reminder(queue_item: dict, prefs: dict, intervention_id: str) -> None:
     """
     Send a voice reminder via Pinpoint. Voice messages carry the same
@@ -713,7 +700,6 @@ def _send_voice_reminder(queue_item: dict, prefs: dict, intervention_id: str) ->
             "Context": {"intervention_id": intervention_id},
         },
     )
-
 
 def _send_email_reminder(queue_item: dict, prefs: dict, intervention_id: str) -> None:
     """
@@ -739,14 +725,12 @@ def _send_email_reminder(queue_item: dict, prefs: dict, intervention_id: str) ->
         },
     )
 
-
 def _build_sms_body(queue_item: dict, prefs: dict) -> str:
     """Minimal-PHI SMS body. In production this is template-driven and localized."""
     return (
         "Reminder: you have an appointment tomorrow. "
         "Reply Y to confirm, N to cancel, or call your clinic to reschedule."
     )
-
 
 def _build_voice_ssml(queue_item: dict, prefs: dict) -> str:
     """Minimal-PHI voice SSML. Template-driven and localized in production."""
@@ -756,14 +740,12 @@ def _build_voice_ssml(queue_item: dict, prefs: dict) -> str:
         "a scheduler.</speak>"
     )
 
-
 def _build_email_html(queue_item: dict, prefs: dict) -> str:
     """Minimal-PHI email body. Template-driven in production."""
     return (
         "<p>Reminder: your appointment is scheduled for tomorrow.</p>"
         "<p>Use our patient portal to confirm or reschedule.</p>"
     )
-
 
 def _build_email_text(queue_item: dict, prefs: dict) -> str:
     return (
@@ -839,7 +821,6 @@ def on_appointment_outcome(event: dict) -> None:
         "intervened":  "yes" if interventions else "no",
     })
 
-
 def _derive_label(outcome: str, actual_arrival_time: Optional[str], scheduled_time: str) -> str:
     """
     Map raw EHR outcomes to the training label schema. See the main
@@ -873,7 +854,6 @@ def _derive_label(outcome: str, actual_arrival_time: Optional[str], scheduled_ti
         return "rescheduled_with_lead_time"
     # Conservative default for anything unexpected.
     return "late_cancellation"
-
 
 def _update_patient_baseline(patient_id: str, outcome: str) -> None:
     """
@@ -909,7 +889,6 @@ def _update_patient_baseline(patient_id: str, outcome: str) -> None:
         "last_updated_at":      datetime.now(timezone.utc).isoformat(),
     })
 
-
 def _query_interventions_for_appointment(appointment_id: str) -> list:
     """
     Return every intervention recorded for the given appointment.
@@ -922,7 +901,6 @@ def _query_interventions_for_appointment(appointment_id: str) -> list:
         KeyConditionExpression=Key("appointment_id").eq(appointment_id),
     )
     return response.get("Items", [])
-
 
 def _write_label_to_s3(training_row: dict, outcome_recorded_at: str) -> None:
     """
@@ -943,7 +921,6 @@ def _write_label_to_s3(training_row: dict, outcome_recorded_at: str) -> None:
         # Customer-managed KMS key required for anything carrying PHI.
         ServerSideEncryption="aws:kms",
     )
-
 
 def _decimal_to_jsonable(value):
     """Recursively coerce Decimals to floats for JSON output."""
@@ -992,7 +969,6 @@ def run_nightly_scoring(upcoming_appointments: list) -> list:
         print(f"       {action}: {count}")
 
     return decisions
-
 
 # --- Example usage ---
 #
@@ -1053,7 +1029,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-
 
 def retrain_monthly(training_window_days: int = 365) -> dict:
     """
@@ -1121,7 +1096,6 @@ def retrain_monthly(training_window_days: int = 365) -> dict:
 
     return {"promoted": False, "auc": overall_auc, "reason": "failed_gate"}
 
-
 def _patient_stratified_split(patient_ids, test_size=0.2):
     """Split row indices such that each patient appears in exactly one split."""
     unique = np.array(sorted(set(patient_ids)))
@@ -1131,7 +1105,6 @@ def _patient_stratified_split(patient_ids, test_size=0.2):
     train_idx = [i for i, p in enumerate(patient_ids) if p in train_patients]
     val_idx = [i for i, p in enumerate(patient_ids) if p not in train_patients]
     return train_idx, val_idx
-
 
 def _evaluate_subgroups(pipeline, X_val, y_val, val_meta) -> dict:
     """
@@ -1153,7 +1126,6 @@ def _evaluate_subgroups(pipeline, X_val, y_val, val_meta) -> dict:
             results[f"{column}={value}"] = roc_auc_score(y_val[group_idx], preds)
     return results
 
-
 def _no_subgroup_regression(new_subgroups: dict, incumbent_subgroups: dict, tolerance: float = 0.02) -> bool:
     """
     Promotion is blocked if any subgroup regresses by more than `tolerance`
@@ -1166,7 +1138,6 @@ def _no_subgroup_regression(new_subgroups: dict, incumbent_subgroups: dict, tole
         if incumbent_auc - new_auc > tolerance:
             return False
     return True
-
 
 def _publish_model(pipeline, overall_auc, subgroup_auc):
     """Serialize the pipeline to S3 and update the 'current' pointer."""
@@ -1197,7 +1168,6 @@ def _publish_model(pipeline, overall_auc, subgroup_auc):
         ServerSideEncryption="aws:kms",
     )
 
-
 def _load_labels(training_window_days: int) -> pd.DataFrame:
     """
     Load labels from S3 for the training window. Placeholder; in production,
@@ -1206,7 +1176,6 @@ def _load_labels(training_window_days: int) -> pd.DataFrame:
     """
     # TODO: replace with Athena query or S3 select against Parquet archive.
     return pd.DataFrame()
-
 
 def _fetch_incumbent_metrics() -> dict:
     """Load incumbent model metrics from the model registry."""

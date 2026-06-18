@@ -1,11 +1,3 @@
-<!--
-Editorial pass (TechEditor, 2026-06-17):
-- Post-split polish. Verified backlink header opens cleanly and links to main recipe.
-- Added `pseudocode` language tags to all 7 walkthrough code blocks (bare ``` violations).
-- Final sweep: zero em dashes, zero en dashes, zero bare code block openings, all TODO markers
-  preserved with finding IDs on same line, section order matches RECIPE-GUIDE architecture companion spec.
--->
-
 # Recipe 2.4 Architecture and Implementation: Prior Authorization Letter Generation
 
 *Companion to [Recipe 2.4: Prior Authorization Letter Generation](chapter02.04-prior-auth-letter-generation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
@@ -24,7 +16,7 @@ Editorial pass (TechEditor, 2026-06-17):
 
 **AWS Lambda for orchestration.** The pipeline is a sequence of retrieval and generation steps, each of which is an API call. Lambda orchestrates these without managing servers. For a production deployment, you'll likely split the pipeline across multiple Lambda functions (one per logical stage) coordinated by Step Functions, which gives you better observability, retry logic, and failure handling.
 
-**AWS Step Functions for workflow orchestration.** Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case. <!-- TODO: expert review (A2) recommended specifying the human-in-the-loop pattern explicitly. The physician-review wait should use Step Functions task tokens (`waitForTaskToken`): the generation Lambda completes by emitting a task token bound to the case, and the review UI calls `SendTaskSuccess` with the signed letter (or `SendTaskFailure` if the physician rejects the draft). This avoids polling DynamoDB from within Step Functions (which adds state-transition cost at scale) and gives the workflow a clean wait-for-signal semantic. Task tokens can live up to one year, comfortably longer than any reasonable PA review SLA. -->
+**AWS Step Functions for workflow orchestration.** Once you're past the proof-of-concept, a multi-step pipeline with external retrievals and human review deserves a proper state machine. Step Functions handles the choreography: run retrievals in parallel, wait for physician review, retry failed submissions, branch on payer type. The visual workflow also gives operations staff something concrete to look at when debugging a stuck case. 
 
 **Amazon Textract for payer policy extraction.** Payer medical policies arrive as PDFs. Textract pulls the text and structure out of them so that Knowledge Bases can index the content. For well-formatted payer documents, Textract's form and table detection is sufficient. For older or scanned policies, you may need additional cleanup steps.
 
@@ -75,16 +67,16 @@ flowchart TB
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Bedrock, Bedrock Knowledge Bases, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon API Gateway, Amazon Textract, Amazon HealthLake (optional), Amazon CloudWatch |
-| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `bedrock:RetrieveAndGenerate`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `healthlake:SearchWithGet`, `textract:StartDocumentAnalysis` <!-- TODO: scope each action to specific resource ARNs (KB ARNs, foundation-model ARN, bucket ARNs, table ARN, HealthLake datastore ARN) and add `kms:Decrypt` / `kms:GenerateDataKey` for the CMK. Expert review flagged recurring least-privilege gap across Chapter 2. --> |
+| **IAM Permissions** | `bedrock:InvokeModel`, `bedrock:Retrieve`, `bedrock:RetrieveAndGenerate`, `s3:GetObject`, `s3:PutObject`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`, `states:StartExecution`, `healthlake:SearchWithGet`, `textract:StartDocumentAnalysis`  |
 | **BAA** | AWS BAA signed (required: letters contain PHI). Payer policy content is not PHI but clinical facts extracted from patient data are. |
 | **Bedrock Model Access** | Request access to Claude Sonnet (or equivalent capable model) in the Bedrock console. Letter generation benefits from a stronger model; do not use the smallest tier. |
 | **EHR Integration** | FHIR R4 access to clinical data (direct API or via HealthLake). SMART on FHIR for EHR-embedded workflows (Epic App Orchard, Cerner Code). |
 | **Payer Policy Ingestion** | Recurring process (scheduled Lambda or manual) to pull updated policies from each contracted payer's provider portal. Budget 2-4 hours per payer per quarter for policy maintenance. |
-| **Encryption** | S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption <!-- TODO: expert review (S3) flagged that if Bedrock model-invocation-logging is enabled for quality monitoring or drift analysis, the logged prompts contain PHI (extracted clinical facts, patient identifiers). The log destination bucket or log group must be KMS-encrypted with the same CMK, access-controlled equivalently, and subject to the same retention policy as the primary PHI stores. Consider sampling model-invocation logs rather than logging every call. --> |
-| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions <!-- TODO: expand endpoint list to include `bedrock-agent-runtime` (KB retrieve), `kms`, `textract`, `healthlake`, `logs`, `monitoring`, `secretsmanager`, and `states`. Several of these are required for this pipeline to start in a private subnet. --> |
+| **Encryption** | S3: SSE-KMS with customer-managed keys; DynamoDB: encryption at rest with CMK; Bedrock: TLS in transit and encryption at rest; CloudWatch Logs: KMS encryption  |
+| **VPC** | Production: all Lambda functions in VPC with VPC endpoints for S3, Bedrock, DynamoDB, Step Functions  |
 | **CloudTrail** | Enabled with data events: log all Bedrock invocations, S3 object access, and HealthLake queries for HIPAA audit |
 | **Sample Data** | Synthetic patient cases matched to publicly available payer coverage policies. Never use real patient data in development. Synthea is a useful source of synthetic FHIR data. |
-| **Cost Estimate** | Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter. <!-- TODO: rebuild breakdown accounting for per-criterion extraction in Step 3 and per-criterion mapping in Step 4 (approximately 22+ Bedrock calls per case for a 10-criterion PA). Expert review estimated realistic end-to-end cost at ~$1.50-$2.50 per letter on Claude Sonnet 4. --> |
+| **Cost Estimate** | Bedrock generation (Claude Sonnet): ~$0.05-0.15 per letter depending on length. Knowledge Base retrieval: ~$0.002 per request. Textract policy extraction: ~$1.50 per policy (done once per policy update, cached). Lambda + Step Functions + DynamoDB: negligible at typical volumes. End-to-end: ~$0.10-0.30 per generated letter.  |
 
 ### Ingredients
 
@@ -107,7 +99,7 @@ flowchart TB
 
 #### Walkthrough
 
-**Step 1: Receive the prior auth request and identify context.** The trigger for the pipeline comes from the clinician's workflow: they order a service that requires prior authorization. The EHR or practice management system sends the request to your pipeline with the essentials: patient ID, payer ID, requested service code, ordering provider. The first step stores this context and initializes the workflow state. <!-- TODO: expert review (A4) flagged that duplicate PA submissions from the EHR (retry on perceived timeout, user double-click, duplicate HL7 ADT events) will create two cases with two UUIDs, two full pipeline runs, and two letters potentially submitted to the payer. Suggest adding an idempotency step: derive a deterministic request fingerprint from `(patient_id, payer_id, service_code, diagnosis_code, order_datetime)` and use a DynamoDB conditional write (`attribute_not_exists(fingerprint)`) before starting a new case. If the fingerprint already exists, return the existing case_id instead of starting a second Step Functions execution. -->
+**Step 1: Receive the prior auth request and identify context.** The trigger for the pipeline comes from the clinician's workflow: they order a service that requires prior authorization. The EHR or practice management system sends the request to your pipeline with the essentials: patient ID, payer ID, requested service code, ordering provider. The first step stores this context and initializes the workflow state. 
 
 ```pseudocode
 FUNCTION receive_pa_request(request):
@@ -199,7 +191,7 @@ FUNCTION retrieve_and_extract_criteria(payer_id, service_code, diagnosis_code):
     RETURN { criteria: criteria, policy_found: true, policy_source: policy_chunks }
 ```
 
-**Step 3: Retrieve patient clinical data and extract relevant facts.** Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts. <!-- TODO: expert review (S2) flagged that the pseudocode below pulls two years of clinical data across six FHIR resource types plus unstructured notes, then sends that payload to the model in a loop (one call per criterion). That is the opposite of HIPAA minimum necessary. A production implementation should scope the FHIR query by specialty-relevant resource categories and a shorter default window (12 months, extendable if a specific criterion demands longer history) and consider per-call redaction of identifiers (patient name, MRN, DOB) the LLM does not need to see. Add a paragraph here framing the production scoping requirement without rewriting the pseudocode. -->
+**Step 3: Retrieve patient clinical data and extract relevant facts.** Now you pull the patient's clinical information from the EHR (or from HealthLake if you're caching) and extract the specific facts that map to the criteria identified in Step 2. This is where you translate unstructured clinical data into discrete, verifiable facts. 
 
 ```pseudocode
 FUNCTION retrieve_patient_facts(patient_id, criteria, diagnosis_code):
@@ -450,7 +442,7 @@ FUNCTION generate_letter(case, mappings, citations, patient_info, provider_info,
     RETURN { letter: letter_draft, provenance: provenance }
 ```
 
-**Step 7: Validate claims and prepare for physician review.** Before the letter goes to the physician, a validation step checks that every factual claim in the letter traces back to a source fact and that every citation matches a retrieved reference. This catches hallucinations the model may have introduced despite the prompt constraints. <!-- TODO: expert review (A3) flagged that `REQUIRES_REGENERATION` does not define retry semantics. A naive implementation will loop indefinitely at the same temperature and prompt, burning cost without changing outputs. Suggest adding guidance: cap retries at 2-3 attempts, vary the strategy on each retry (temperature=0 for the first retry, then an explicit negative-constraint prompt on the second retry naming the previously-fabricated claims, then escalate to human composition after exhaustion), track retry counts per case in DynamoDB, and emit a metric when a case exhausts retries. -->
+**Step 7: Validate claims and prepare for physician review.** Before the letter goes to the physician, a validation step checks that every factual claim in the letter traces back to a source fact and that every citation matches a retrieved reference. This catches hallucinations the model may have introduced despite the prompt constraints. 
 
 ```pseudocode
 FUNCTION validate_letter(letter, provenance, inputs):
@@ -549,8 +541,8 @@ FUNCTION validate_letter(letter, provenance, inputs):
 | Physician review time per letter | 3-5 minutes (vs. 20-30 for hand-composed) |
 | Physician acceptance rate without edits | 40-60% |
 | Physician acceptance rate with minor edits | 85-95% |
-| Payer approval rate, generated letters | Comparable to hand-composed (practice-dependent; budget time for measurement) <!-- TODO: no verified benchmark exists; outcomes vary by payer and specialty --> |
-| Cost per letter | $0.10-0.30 (tokens + retrieval) <!-- TODO: see cost TODO in Prerequisites; recompute against full multi-call pipeline --> |
+| Payer approval rate, generated letters | Comparable to hand-composed (practice-dependent; budget time for measurement)  |
+| Cost per letter | $0.10-0.30 (tokens + retrieval)  |
 
 **Where it struggles:**
 
@@ -568,7 +560,7 @@ The architecture above demonstrates the pattern. Deploying it at a practice or h
 
 **Payer policy ingestion is an ongoing operational burden.** There is no standard API for payer medical policies. Each payer publishes them on their provider portal in their own format. Some payers push updates via email. Some bury them in searchable PDF libraries. Some require login credentials that have to be maintained per user. You need a process (often a combination of scheduled scraping, manual updates, and exception handling) to keep your policy knowledge base current. Budget a dedicated staff member for this work if you operate with more than a dozen payer contracts.
 
-**EHR integration is where most projects die.** Getting structured clinical data out of the EHR in real time is not a solved problem for most practices. Epic, Cerner (Oracle Health), Meditech, Allscripts, and athenahealth each have their own integration quirks. FHIR R4 helps, but coverage varies: lab results might be well-supported, medication history might require a separate feed, and clinical notes might only be available through scraping the EHR UI. Plan for integration work to take longer than the AI pipeline itself. <!-- TODO: expert review (N2) recommended adding a short paragraph on network connectivity. Cloud EHRs (Epic on Azure, athenaOne on athenahealth's cloud) require TLS-encrypted egress from your VPC to the EHR vendor's public FHIR endpoint, with per-vendor credentials in Secrets Manager and strict egress security groups. On-premises EHRs require Direct Connect or Site-to-Site VPN with the FHIR gateway reachable via private IP only. In both cases PHI must never traverse the public internet unencrypted, and egress logs should be captured for audit. -->
+**EHR integration is where most projects die.** Getting structured clinical data out of the EHR in real time is not a solved problem for most practices. Epic, Cerner (Oracle Health), Meditech, Allscripts, and athenahealth each have their own integration quirks. FHIR R4 helps, but coverage varies: lab results might be well-supported, medication history might require a separate feed, and clinical notes might only be available through scraping the EHR UI. Plan for integration work to take longer than the AI pipeline itself. 
 
 **The physician review UI is make-or-break.** A generated letter that requires the physician to open a standalone web app, log in, review the letter, sign it, and then upload it to the payer portal will not save time. The review has to happen in the physician's normal workflow: ideally embedded in the EHR via SMART on FHIR or a similar framework. This UI work is substantial and often underestimated in project planning.
 
@@ -633,7 +625,6 @@ The architecture above demonstrates the pattern. Deploying it at a practice or h
 | **With variations** | 32-40 weeks | Multi-payer coverage. Appeals workflow. FHIR PAS submission for supporting payers. Proactive triage at order entry. Practice-wide rollout with change management. |
 
 ---
-
 
 ---
 

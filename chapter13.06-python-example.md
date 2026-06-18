@@ -552,7 +552,6 @@ def identify_gaps(
     logger.info("Identified %d care gaps", len(gaps))
     return gaps
 
-
 def _get_action_codes(action_description: str) -> dict:
     """
     Map an action description to its CPT and LOINC codes.
@@ -639,7 +638,6 @@ def score_gaps(gaps: list, patient_facts: dict) -> list:
 ```python
 # Create DynamoDB resource
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
-
 
 def store_gap_results(
     patient_id: str,
@@ -755,7 +753,6 @@ def evaluate_patient(patient_id: str, evaluation_date: Optional[str] = None) -> 
     print(f"  Stored {result['gap_count']} gaps")
 
     return result
-
 
 # Example: evaluate our synthetic patient.
 if __name__ == "__main__":

@@ -375,8 +375,6 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 **Temporal risk trajectories.** Instead of a single point-in-time clustering, track how patients move between clusters over time. A patient migrating from Cluster 0 (stable commercial) to Cluster 1 (HDHP payment-challenged) is an early warning signal. Build transition matrices showing the probability of moving between clusters quarter-over-quarter. This turns a static segmentation into a dynamic early warning system.

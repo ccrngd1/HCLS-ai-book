@@ -156,7 +156,6 @@ def discretize_action(iv_fluid_ml: float, vasopressor_dose: float) -> int:
 
     return fluid_level * NUM_VASO_LEVELS + vaso_level
 
-
 def decode_action(action_id: int) -> Tuple[int, int]:
     """
     Reverse of discretize_action: given an action ID, return (fluid_level, vaso_level).
@@ -164,7 +163,6 @@ def decode_action(action_id: int) -> Tuple[int, int]:
     fluid_level = action_id // NUM_VASO_LEVELS
     vaso_level = action_id % NUM_VASO_LEVELS
     return fluid_level, vaso_level
-
 
 def compute_reward(
     current_sofa: float,
@@ -212,7 +210,6 @@ def compute_reward(
             reward += lactate_change * REWARD_CONFIG["lactate_clearance_bonus"]
 
     return reward
-
 
 def build_trajectory(patient_data: Dict) -> List[Dict]:
     """
@@ -481,7 +478,6 @@ class ReplayBuffer:
     @property
     def size(self) -> int:
         return len(self.states)
-
 
 def train_cql_policy(replay_buffer: ReplayBuffer, config: Dict) -> QNetwork:
     """
@@ -768,7 +764,6 @@ def get_recommendation(
         "disclaimer": "Advisory only. Clinical judgment supersedes all recommendations.",
     }
 
-
 def _fluid_level_description(level: int) -> str:
     """Human-readable description of a fluid level."""
     descriptions = [
@@ -779,7 +774,6 @@ def _fluid_level_description(level: int) -> str:
         "Very aggressive fluid bolus (~2000+ mL)",
     ]
     return descriptions[min(level, len(descriptions) - 1)]
-
 
 def _vasopressor_level_description(level: int) -> str:
     """Human-readable description of a vasopressor level."""
@@ -847,7 +841,6 @@ def upload_trajectories_to_s3(trajectories: List[List[Dict]], experiment_id: str
     print(f"Uploaded {len(all_states)} transitions to s3://{S3_BUCKET}/{key}")
     return f"s3://{S3_BUCKET}/{key}"
 
-
 def log_recommendation_to_dynamodb(patient_id: str, recommendation: Dict):
     """
     Log every recommendation to DynamoDB for audit trail and outcome tracking.
@@ -877,7 +870,6 @@ def log_recommendation_to_dynamodb(patient_id: str, recommendation: Dict):
     table.put_item(Item=item)
     # PHI Safety: Never log the raw patient state values to the audit table.
     # Log only the recommendation and metadata.
-
 
 def publish_evaluation_metrics(eval_results: Dict, experiment_id: str):
     """
@@ -989,7 +981,6 @@ def run_training_pipeline(patient_data_list: List[Dict], experiment_id: str) -> 
         "num_transitions": replay_buffer.size,
     }
 
-
 def run_inference_example():
     """
     Demonstrate the inference path: given a patient state, get a recommendation.
@@ -1051,7 +1042,6 @@ def run_inference_example():
 
     # Log to audit trail.
     # log_recommendation_to_dynamodb("ANON-ICU-4821", recommendation)
-
 
 # Entry point
 if __name__ == "__main__":

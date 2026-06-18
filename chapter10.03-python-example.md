@@ -240,14 +240,12 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_transcript(transcript):
     """Stable transcript hash for idempotency and audit linkage."""
     if not transcript:
         return None
     return hashlib.sha256(
         transcript.lower().strip().encode("utf-8")).hexdigest()
-
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
@@ -296,7 +294,6 @@ class MockTranscribeStreaming:
             "biasing_applied": self._biasing.get(session_id, []),
         }
 
-
 class MockLex:
     """
     Stands in for Amazon Lex V2's RecognizeText API. The demo
@@ -328,7 +325,6 @@ class MockLex:
             "interpretations": [],
         }
 
-
 class MockBedrock:
     """
     Stands in for Amazon Bedrock's InvokeModel API for the LLM
@@ -354,7 +350,6 @@ class MockBedrock:
             "rationale":          ("Could not confidently classify "
                                     "this transcript."),
         })}
-
 
 class MockEHR:
     """
@@ -524,7 +519,6 @@ class MockEHR:
                 "patient_id": patient_id,
                 "section": section}
 
-
 class MockClient:
     """
     Stands in for the SMART on FHIR voice-navigation client app
@@ -625,7 +619,6 @@ class MockClient:
         self._next_write_confirmation_decision = None
         return decision
 
-
 class MockSessionState:
     """
     Stands in for the DynamoDB session-state table. Holds the
@@ -645,7 +638,6 @@ class MockSessionState:
         existing = self._items.setdefault(session_id,
                                             {"session_id": session_id})
         existing.update(updates)
-
 
 class MockCommandAudit:
     """
@@ -676,7 +668,6 @@ class MockCommandAudit:
                     return record
         return None
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. The pipeline emits events
@@ -691,7 +682,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -712,7 +702,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 session_state    = MockSessionState()
@@ -726,7 +715,6 @@ cloudwatch       = MockCloudWatch()
 transcribe_mock  = None
 lex_mock         = None
 bedrock_mock     = None
-
 
 def audit_log(event):
     """
@@ -1043,7 +1031,6 @@ def _build_bedrock_prompt(transcript, intent_taxonomy):
     }
     return json.dumps(prompt)
 
-
 def _normalize_slot_date(date_text, reference=None):
     """
     Canonicalize a spoken date phrase to ISO 8601. In production
@@ -1085,7 +1072,6 @@ def _normalize_slot_date(date_text, reference=None):
                     return (f"{reference.year:04d}-"
                             f"{month_num:02d}-{day_num:02d}")
     return None
-
 
 def parse_command(asr_result, session_context):
     """
@@ -1232,7 +1218,6 @@ def _build_disambiguation_prompt(candidate_patients):
             f"appointment {appt}")
     return "\n".join(lines)
 
-
 def _resolve_patient_slot(spoken_name, schedule):
     """
     Match the spoken name against today's schedule. Return the
@@ -1247,7 +1232,6 @@ def _resolve_patient_slot(spoken_name, schedule):
         return []
     return ehr.search_schedule(
         clinician_id=None, name_query=spoken_name)
-
 
 def resolve_context(parsed_command, session_context):
     """
@@ -1380,7 +1364,6 @@ def _build_command_description(enriched_command):
     if intent == "navigate_schedule":
         return f"Schedule navigation: {slots.get('target', '?')}"
     return f"Run intent: {intent}"
-
 
 def confirm_command(enriched_command):
     """
@@ -1850,7 +1833,6 @@ def process_voice_command(session_context):
         "session_id": session_context["session_id"],
     }
 
-
 def run_demo():
     """
     Run a small set of end-to-end scenarios that exercise the
@@ -2062,7 +2044,6 @@ def run_demo():
     for record in command_audit._records:
         print(f"  - intent={record.get('intent'):<24} "
               f"outcome={record.get('execution_status')}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

@@ -579,7 +579,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of `_to_decimal` for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -592,11 +591,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -604,7 +601,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -623,7 +619,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -644,7 +639,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -669,7 +663,6 @@ def _audit_tool_call(session_id: str,
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
 
-
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields from tool arguments before ledger storage."""
     redacted = dict(arguments)
@@ -681,7 +674,6 @@ def _redact_tool_args(arguments: dict) -> dict:
         if key in sensitive_keys:
             redacted[key] = "[REDACTED]"
     return redacted
-
 
 def _resolve_session_key(session_id: str) -> Optional[str]:
     """Resolve a session_id to the session_key partition key."""
@@ -704,7 +696,6 @@ def _resolve_session_key(session_id: str) -> Optional[str]:
             session_id, exc)
     return None
 
-
 def _session_state(session_id: str) -> dict:
     """Read the session-state row keyed by session_id."""
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
@@ -713,7 +704,6 @@ def _session_state(session_id: str) -> dict:
         return {}
     response = table.get_item(Key={"session_key": session_key})
     return _from_decimal(response.get("Item", {}))
-
 
 def _update_session_field(session_id: str,
                             field_name: str,
@@ -734,7 +724,6 @@ def _update_session_field(session_id: str,
             "Failed to set %s on session %s: %s",
             field_name, session_id, exc)
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """Append a turn record to the conversation-metadata table."""
     table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
@@ -748,7 +737,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
     except Exception as exc:
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 4) -> list:
     """Return the most recent k turns for context."""
@@ -768,7 +756,6 @@ def _recent_turns(session_id: str, k: int = 4) -> list:
     items = [_from_decimal(i)
               for i in response.get("Items", [])]
     return list(reversed(items))
-
 
 def _build_chat_reply(session_id: str,
                        response_text: str,
@@ -874,7 +861,6 @@ def receive_message(channel: str,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
 
-
 def _get_or_create_session(channel: str,
                              channel_session_id: str,
                              auth_context: dict,
@@ -946,7 +932,6 @@ def _get_or_create_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _screen_input(session_id: str,
                    user_message: str,
                    language: str) -> dict:
@@ -995,7 +980,6 @@ def _screen_input(session_id: str,
         }
 
     return {"action": "proceed"}
-
 
 def _handle_screening_action(session_id: str,
                                channel: str,
@@ -1141,11 +1125,9 @@ def _handle_benefits_message(session_id: str,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
 
-
 # In production this is a configuration knob; the demo defaults
 # to True so the example exercises the full authenticated path.
 REQUIRE_AUTHENTICATED_FOR_MEMBER_SPECIFIC = True
-
 
 def _load_benefits_context(session_id: str) -> dict:
     """Load plan, accumulator, and subscriber context."""
@@ -1573,7 +1555,6 @@ def _handle_coverage_question(session_id: str,
         disposition="coverage_answer",
         citations=citations)
 
-
 def _applicable_disclosures(intent: dict,
                               plan: dict,
                               extra_context: dict) -> list:
@@ -1765,7 +1746,6 @@ def _handle_network_status_question(session_id: str,
         attach_greeting=attach_initial_greeting,
         disposition="network_status_answer",
         citations=citations)
-
 
 def _handle_deductible_balance_question(session_id: str,
                                             channel: str,
@@ -2232,7 +2212,6 @@ def _handle_cost_estimate(session_id: str,
         disposition="cost_estimate_answer",
         citations=citations)
 
-
 def _handle_prior_auth_question(session_id: str,
                                   channel: str,
                                   user_message: str,
@@ -2292,7 +2271,6 @@ def _handle_prior_auth_question(session_id: str,
         attach_greeting=attach_initial_greeting,
         disposition="prior_auth_answer",
         citations=citations)
-
 
 def _handle_formulary_question(session_id: str,
                                   channel: str,
@@ -2359,7 +2337,6 @@ def _handle_formulary_question(session_id: str,
         disposition="formulary_answer",
         citations=citations)
 
-
 def _handle_plan_document_question(session_id: str,
                                        channel: str,
                                        user_message: str,
@@ -2375,7 +2352,6 @@ def _handle_plan_document_question(session_id: str,
         intent=intent,
         attach_initial_greeting=attach_initial_greeting,
         language=language)
-
 
 def _route_to_member_services(session_id: str,
                                 channel: str,
@@ -2573,7 +2549,6 @@ def _screen_output(session_id: str,
         "citations":      citations,
     }
 
-
 def _detect_benefits_scope_violation(text: str
                                         ) -> Optional[str]:
     """Backstop keyword scope check on generated output."""
@@ -2700,7 +2675,6 @@ def _persist_decision_record(session_id: str,
     _put_metric("CitationCoverageRate",
                 1 if citations else 0,
                 {"intent": intent or "unknown"})
-
 
 def _write_decision_journal(record: dict) -> None:
     """Write a durable decision-record journal entry to S3."""
@@ -2890,7 +2864,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """Apply redaction rules before streaming to the audit archive."""
     redacted = dict(turn)
@@ -2913,7 +2886,6 @@ def plan_context_lookup_tool(member_id: str) -> dict:
     return eligibility_system.plan_context_lookup(
         member_id=member_id)
 
-
 def accumulator_lookup_tool(member_id: str,
                               plan_id: str,
                               plan_year: str) -> dict:
@@ -2923,12 +2895,10 @@ def accumulator_lookup_tool(member_id: str,
         plan_id=plan_id,
         plan_year=plan_year)
 
-
 def subscriber_context_lookup_tool(member_id: str) -> dict:
     """Pull family members covered, residence state, representative arrangements."""
     return eligibility_system.subscriber_context_lookup(
         member_id=member_id)
-
 
 def intent_classify_tool(user_message: str,
                             recent_turns: list,
@@ -3042,7 +3012,6 @@ def intent_classify_tool(user_message: str,
     return {"category": "general_chat",
              "confidence": 0.50}
 
-
 def _extract_service_description(lowered: str
                                     ) -> Optional[str]:
     """Look for service hints to attach to the intent."""
@@ -3055,7 +3024,6 @@ def _extract_service_description(lowered: str
             return term
     return None
 
-
 def _extract_family_member_reference(lowered: str
                                         ) -> Optional[str]:
     """Crude family-member detection for the demo."""
@@ -3065,7 +3033,6 @@ def _extract_family_member_reference(lowered: str
         if term in lowered:
             return term
     return None
-
 
 def _extract_service_category(lowered: str
                                   ) -> Optional[str]:
@@ -3086,7 +3053,6 @@ def _extract_service_category(lowered: str
         return "preventive_care"
     return None
 
-
 def plan_document_retrieval_tool(query: str,
                                      plan_id: str,
                                      plan_year: str,
@@ -3101,7 +3067,6 @@ def plan_document_retrieval_tool(query: str,
         document_types_in_scope=document_types_in_scope,
         top_k=top_k)
 
-
 def coverage_lookup_tool(plan_id: str,
                             plan_year: str,
                             service_category: str) -> dict:
@@ -3110,7 +3075,6 @@ def coverage_lookup_tool(plan_id: str,
         plan_id=plan_id,
         plan_year=plan_year,
         service_category=service_category)
-
 
 def provider_network_lookup_tool(provider_query: str,
                                     plan_id: str,
@@ -3127,7 +3091,6 @@ def provider_network_lookup_tool(provider_query: str,
         include_ancillary_services=
             include_ancillary_services)
 
-
 def claim_lookup_tool(member_id: str,
                         plan_id: str,
                         identifying_hints: dict) -> dict:
@@ -3136,7 +3099,6 @@ def claim_lookup_tool(member_id: str,
         member_id=member_id,
         plan_id=plan_id,
         identifying_hints=identifying_hints)
-
 
 def carc_rarc_translation_tool(carc_code: Optional[str],
                                   rarc_codes: list) -> dict:
@@ -3159,7 +3121,6 @@ def carc_rarc_translation_tool(carc_code: Optional[str],
         "library_version": DISCLOSURE_LIBRARY_VERSION,
     }
 
-
 def prior_auth_lookup_tool(member_id: str,
                               plan_id: str,
                               service_query:
@@ -3170,7 +3131,6 @@ def prior_auth_lookup_tool(member_id: str,
         plan_id=plan_id,
         service_query=service_query)
 
-
 def formulary_lookup_tool(plan_id: str,
                               plan_year: str,
                               drug_query: str) -> dict:
@@ -3179,7 +3139,6 @@ def formulary_lookup_tool(plan_id: str,
         plan_id=plan_id,
         plan_year=plan_year,
         drug_query=drug_query)
-
 
 def cost_estimate_compute_tool(member_id: str,
                                   plan_id: str,
@@ -3258,7 +3217,6 @@ def cost_estimate_compute_tool(member_id: str,
             accumulator_snapshot.get("as_of_date"),
     }
 
-
 def aeob_or_gfe_lookup_tool(member_id: Optional[str],
                                 service_query:
                                     Optional[str],
@@ -3272,7 +3230,6 @@ def aeob_or_gfe_lookup_tool(member_id: Optional[str],
         service_query=service_query,
         scheduled_date=scheduled_date,
         provider=provider)
-
 
 def member_services_route_tool(session_id: str,
                                   member_id: Optional[str],
@@ -3384,7 +3341,6 @@ class MockTable:
                 return key
         return None
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -3408,17 +3364,14 @@ class MockDynamoDBResource:
     def Table(self, name):
         return self._tables[name]
 
-
 class MockBedrockRuntime:
     """Stub. Demo's flow does not invoke Bedrock directly."""
     def invoke_model(self, **kwargs):
         return {"body": _StubBody(b"{}")}
 
-
 class _StubBody:
     def __init__(self, data): self._data = data
     def read(self): return self._data
-
 
 class MockEligibilitySystem:
     """Stand-in for the payer's eligibility system."""
@@ -3498,7 +3451,6 @@ class MockEligibilitySystem:
             "summary": {"covered": "unknown"},
         }
 
-
 class MockAccumulatorSystem:
     """Stand-in for the deductible/OOP-max accumulator."""
     def __init__(self):
@@ -3526,7 +3478,6 @@ class MockAccumulatorSystem:
              "family_deductible_met":     Decimal("0.00"),
              "individual_oop_met":        Decimal("0.00"),
              "family_oop_met":            Decimal("0.00")})
-
 
 class MockClaimsSystem:
     """Stand-in for the adjudicated-claims system."""
@@ -3579,7 +3530,6 @@ class MockClaimsSystem:
                               scheduled_date, provider):
         return {"found": False}
 
-
 class MockProviderDirectory:
     """Stand-in for the provider-network database."""
     def __init__(self):
@@ -3627,7 +3577,6 @@ class MockProviderDirectory:
             "as_of_date": as_of_date,
         }
 
-
 class MockFormularySystem:
     """Stand-in for the PBM formulary."""
     def __init__(self):
@@ -3665,7 +3614,6 @@ class MockFormularySystem:
                      "acme-formulary-2026-q2",
                  "as_of_date": _now_iso()[:10]}
 
-
 class MockUtilizationManagement:
     """Stand-in for the prior-auth records."""
     def prior_auth_lookup(self, member_id, plan_id,
@@ -3673,7 +3621,6 @@ class MockUtilizationManagement:
         # Demo returns nothing.
         return {"records": [],
                  "as_of_date": _now_iso()[:10]}
-
 
 class MockKnowledgeBase:
     """Stand-in for the plan-document corpus retrieval."""
@@ -3700,7 +3647,6 @@ class MockKnowledgeBase:
                 if score > 0]
         return {"chunks": top}
 
-
 class MockMemberServices:
     """Stand-in for the member-services routing system."""
     def __init__(self):
@@ -3721,13 +3667,11 @@ class MockMemberServices:
         return {"outcome": "queued",
                  "ticket_id": ticket["ticket_id"]}
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -3735,20 +3679,17 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockS3:
     def __init__(self): self.objects = {}
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"VersionId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of
 # the file calls them transparently. Comment these out to run
@@ -3767,7 +3708,6 @@ formulary_system      = MockFormularySystem()
 utilization_management = MockUtilizationManagement()
 knowledge_base        = MockKnowledgeBase()
 member_services       = MockMemberServices()
-
 
 def run_demo():
     """
@@ -3910,7 +3850,6 @@ def run_demo():
           f"{len(cloudwatch_client.metrics)}")
     print(f"Member-services tickets:      "
           f"{len(member_services.tickets)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

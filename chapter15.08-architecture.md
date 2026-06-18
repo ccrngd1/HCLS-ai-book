@@ -499,7 +499,6 @@ This recipe describes a research architecture. Deploying RL-based chemotherapy d
 - Gottesman et al., "Guidelines for reinforcement learning in healthcare," Nature Medicine, 2019
 - Tang et al., "Clinician-in-the-loop decision making: Reinforcement learning with near-optimal batch queries," NeurIPS, 2020
 - Kumar et al., "Conservative Q-Learning for Offline Reinforcement Learning," NeurIPS, 2020
-<!-- TODO (TechWriter): Verify these citations are accurate and add DOIs if available -->
 
 **Regulatory Guidance:**
 - [FDA: Artificial Intelligence/Machine Learning (AI/ML)-Based Software as a Medical Device Action Plan](https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-aiml-software-medical-device)
@@ -517,7 +516,6 @@ This recipe describes a research architecture. Deploying RL-based chemotherapy d
 | **Total to clinical deployment** | 2-4 years |
 
 ---
-
 
 ---
 

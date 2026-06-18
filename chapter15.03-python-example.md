@@ -558,7 +558,6 @@ def run_simulated_trial(config, true_response_rates, total_patients=150):
     improvement = (total_responses - expected_fixed_total) / expected_fixed_total * 100
     print(f"Improvement: ~{improvement:.1f}% more patients received effective treatment")
 
-
 def compute_thompson_allocation_local(posteriors, min_alloc, max_alloc, num_samples):
     """
     Local version of Thompson Sampling (no DynamoDB Decimal conversion).
@@ -581,7 +580,6 @@ def compute_thompson_allocation_local(posteriors, min_alloc, max_alloc, num_samp
     constrained = constrained / constrained.sum()
 
     return dict(zip(arms, constrained))
-
 
 # Run the simulation
 if __name__ == "__main__":

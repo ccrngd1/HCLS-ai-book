@@ -69,7 +69,6 @@ This matters for implementation because it dramatically reduces the data require
 
 **Regulatory landscape.** In the US, pathology AI tools that make diagnostic claims require FDA clearance (typically through the 510(k) or De Novo pathway). Several products have been cleared for specific indications (prostate cancer detection, cervical cytology screening), but the regulatory pathway for each new indication is separate and time-consuming.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. "General Architecture Pattern" should be H2, not H3 nested under The Technology. Promote to ## when restructuring. -->
 ### The General Architecture Pattern
 
 ```text

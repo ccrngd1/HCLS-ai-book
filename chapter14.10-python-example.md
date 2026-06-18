@@ -160,7 +160,6 @@ def compute_travel_time(zone: dict, facility: dict) -> float:
 
     return travel_minutes
 
-
 def compute_choice_probabilities(zones: dict, facilities: dict, service_line: str) -> dict:
     """
     Compute patient choice probabilities using a gravity model.
@@ -377,7 +376,6 @@ def solve_model(model: LpProblem) -> dict:
         "objective_value": value(model.objective) if model.status == 1 else None,
     }
 
-
 def extract_solution(
     facilities: dict,
     zones: dict,
@@ -472,7 +470,6 @@ def create_scenarios(base_zones: dict) -> dict:
     }
     return scenarios
 
-
 def run_scenario(
     facilities: dict,
     base_zones: dict,
@@ -512,7 +509,6 @@ def run_scenario(
     )
     solution["objective_value"] = solve_result["objective_value"]
     return solution
-
 
 def identify_robust_decisions(scenario_results: dict) -> dict:
     """
@@ -569,7 +565,6 @@ s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
 RESULTS_BUCKET = "health-system-network-optimization"
 # Replace with your actual bucket name. Must have SSE-KMS encryption enabled.
-
 
 def store_optimization_results(run_id: str, results: dict) -> str:
     """
@@ -685,7 +680,6 @@ def run_network_design_optimization() -> dict:
 
     logger.info("=== Optimization Complete ===")
     return final_output
-
 
 # Run the pipeline
 if __name__ == "__main__":

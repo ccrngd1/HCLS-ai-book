@@ -38,10 +38,6 @@ flowchart LR
 
 ### Prerequisites
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Split IAM permissions into read-only (query Lambda: neptune-db:ReadDataViaQuery, neptune-db:connect) and read-write (loader Lambda: neptune-db:ReadDataViaQuery, neptune-db:WriteDataViaQuery, neptune-db:connect). Add note about enabling Neptune IAM authentication on the cluster. -->
-
-<!-- TODO (TechWriter): Expert review N1 (HIGH). Expand VPC section to specify: Lambda in private subnets, required VPC endpoints (S3 gateway, CloudWatch Logs interface, STS interface for IAM auth), security group rules (Lambda SG -> Neptune SG on port 8182, Lambda SG -> Redis SG on port 6379), and NAT gateway requirement if Lambda needs internet access for RxNorm API calls. -->
-
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon Neptune, Amazon S3, AWS Lambda, API Gateway or AppSync, Amazon ElastiCache (Redis), AWS Step Functions (optional, for large loads) |
@@ -160,8 +156,6 @@ FUNCTION parse_formulary_file(bucket, key):
     RETURN vertices, edges
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add error handling guidance for the ingest pipeline: SQS dead letter queue on the S3 event notification or Lambda async invocation config, CloudWatch alarm on DLQ messages, and note that for production the Step Functions orchestration (already mentioned as optional) should be considered mandatory for retry logic and execution history. Mention idempotency: MERGE operations prevent duplicates, but partial loads could leave the graph inconsistent without transaction boundaries. -->
-
 **Step 2: Load graph data into Neptune.** Take the parsed vertices and edges and load them into the graph database. Neptune supports bulk loading via its loader API (for initial loads) and individual upserts via openCypher MERGE statements (for incremental updates). The key decision: on a quarterly full formulary refresh, do you drop and rebuild, or do you merge? Merging preserves any enrichment you've added (like manually curated alternative relationships), but it's slower and risks stale data if a drug is removed from the formulary. The pragmatic approach: use a versioned subgraph per formulary effective date, and point queries at the current version. Skip this step and your parsed data sits in Lambda's memory doing nothing.
 
 ```pseudocode
@@ -243,8 +237,6 @@ FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
 ```
 
 **Step 4: Cache results for repeated queries.** The same drug-plan combinations get queried repeatedly. Atorvastatin under Blue Cross PPO Plan 1234 might get looked up hundreds of times a day across a health system. Caching these results in Redis avoids hitting Neptune for every request. The cache key combines drug ID and plan ID. Cache TTL aligns with formulary update frequency: set it to 24 hours during normal periods, and flush explicitly when you load new formulary data. Skip caching and your Neptune cluster will be oversized (and over-budget) to handle the query volume.
-
-<!-- TODO (TechWriter): Expert review S2 (HIGH). Add guidance on Redis security posture: (1) Enable ElastiCache AUTH (Redis AUTH token or IAM-based access control via ElastiCache for Redis 7.0+). (2) Note that cache keys containing plan_id create an access pattern log of medication inquiries per member; recommend using plan-type identifiers rather than member-specific plan IDs where possible, or document PHI implications if member-specific caching is required. (3) Confirm TLS in-transit is required for Lambda-to-Redis connections. -->
 
 ```pseudocode
 FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoint):
@@ -421,7 +413,6 @@ FUNCTION handle_formulary_query(request):
 | **With variations** | 10-12 weeks | Multi-plan comparison, step therapy visualization, pricing enrichment, EHR integration |
 
 ---
-
 
 ---
 

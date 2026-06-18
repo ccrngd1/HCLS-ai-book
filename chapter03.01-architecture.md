@@ -81,10 +81,10 @@ flowchart TB
 | **Encryption** | S3: SSE-KMS with customer-managed keys on the raw-837, normalized-claims, and labels buckets. DynamoDB: encryption at rest with customer-managed KMS keys. SageMaker: KMS encryption on training volumes, endpoint volumes, and model artifacts. SQS: SSE with KMS (review-queue and all DLQs). CloudWatch log groups encrypted with KMS (the 837 parser logs structural metadata that can still be PHI-adjacent). TLS in transit everywhere. |
 | **VPC** | Production: all Lambdas in a VPC with VPC endpoints for S3 (gateway), DynamoDB (gateway), SageMaker Runtime (`runtime.sagemaker`), SQS (`sqs`), EventBridge (`events` for verdict-event publication and `scheduler` for the retraining cadence; both are interface endpoints), CloudWatch Logs (`logs`), CloudWatch monitoring (`monitoring`, used by `PutMetricData`), and KMS (`kms`). SageMaker endpoints deployed in a VPC. VPC Flow Logs enabled. |
 | **CloudTrail** | Enabled in the account with data events captured for the claim-history, claim-labels, and review-queue tables/buckets. A CloudTrail query on "who read this claim and when" is what your HIPAA audit needs. |
-| **837 Format Compliance** | The 837 parser handles at minimum the 837P (professional) and 837I (institutional) transaction sets. 837D (dental) follows a similar pattern but with different line-item structures. X12 version 5010 is the current standard; earlier versions may still appear from legacy trading partners. Use a maintained EDI parsing library; do not hand-roll 837 parsing. <!-- TODO: verify current 837 version baseline for CMS and major commercial payers; note if/when 7030 becomes common. --> |
+| **837 Format Compliance** | The 837 parser handles at minimum the 837P (professional) and 837I (institutional) transaction sets. 837D (dental) follows a similar pattern but with different line-item structures. X12 version 5010 is the current standard; earlier versions may still appear from legacy trading partners. Use a maintained EDI parsing library; do not hand-roll 837 parsing.  |
 | **Sample Data** | [Synthea](https://github.com/synthetichealth/synthea) can generate synthetic 837 transactions. CMS publishes [sample 837 transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi/transaction-code-sets) for reference. Never use real PHI in development. |
 | **Retention** | CMS claims processing: 10 years minimum for Medicare claims records. Some state regulators require longer. Configure S3 Object Lock in COMPLIANCE mode on the raw-837 bucket in production (GOVERNANCE mode in dev so you can clean up). |
-| **Cost Estimate** | Per 100,000 claims screened: Lambda (parser + detector + DLQ consumer invocations): ~$3. DynamoDB (blocking queries + writes + claim-decisions idempotency table, on-demand capacity): ~$25. SageMaker real-time inference endpoint (small instance, always-on): ~$50-150/month fixed. S3 storage for claim archive: ~$0.02 per GB-month, small in absolute terms. SQS (review-queue + three DLQs): negligible at this scale. Blended cost across a 1M-claims-per-month payer: in the low hundreds to low thousands of dollars per month depending on the learned-model complexity. If the OpenSearch variation is adopted (see Variations and Extensions), add ~$75-200/month for a small domain. Compared to the recovered value from catching duplicates (1-3% of claim spend is a common range quoted for payer duplicate recovery), the ROI is strongly positive. <!-- TODO: verify recent published range for payer duplicate-claim recovery rates; typical citations in the 1-3% range but worth confirming against a current industry report. --> |
+| **Cost Estimate** | Per 100,000 claims screened: Lambda (parser + detector + DLQ consumer invocations): ~$3. DynamoDB (blocking queries + writes + claim-decisions idempotency table, on-demand capacity): ~$25. SageMaker real-time inference endpoint (small instance, always-on): ~$50-150/month fixed. S3 storage for claim archive: ~$0.02 per GB-month, small in absolute terms. SQS (review-queue + three DLQs): negligible at this scale. Blended cost across a 1M-claims-per-month payer: in the low hundreds to low thousands of dollars per month depending on the learned-model complexity. If the OpenSearch variation is adopted (see Variations and Extensions), add ~$75-200/month for a small domain. Compared to the recovered value from catching duplicates (1-3% of claim spend is a common range quoted for payer duplicate recovery), the ROI is strongly positive.  |
 
 ### Ingredients
 
@@ -117,7 +117,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`aws-samples`](https://github.com/aws-samples): Search for "record linkage" and "entity resolution" patterns; duplicate detection is a flavor of entity resolution where both entities are claims rather than people.
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Covers gradient-boosted classifier training, including XGBoost built-in algorithm workflows that apply directly to the learned scorer.
-> <!-- TODO: verify a specific, current aws-samples repo that demonstrates duplicate claim detection on 837 data; as of this writing, a direct match has not been confirmed. The closest adjacent patterns are in general record-linkage and fraud-detection repos. -->
+> 
 
 #### Walkthrough
 
@@ -306,7 +306,6 @@ FUNCTION field_similarity(field_name, a, b):
         CASE "place_of_service":
             RETURN 1.0 if a == b else 0.0
 
-
 FUNCTION score_pair(incoming, candidate):
     // The rule-based scorer below is the starting point. Once you have enough
     // labels (Step 5 closes that loop), swap this function's body for a call
@@ -476,7 +475,6 @@ FUNCTION on_examiner_verdict(event):
     emit_metric("label_captured", 1, dimensions = { verdict: event.verdict })
     emit_metric("review_duration_sec", label.review_duration_sec)
 
-
 FUNCTION retrain_weekly():
     // Triggered by an EventBridge Scheduler rule on a weekly cadence.
     // The job does the following, in order:
@@ -515,8 +513,6 @@ FUNCTION retrain_weekly():
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter03.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
-
-<!-- Note: sample timestamps below are illustrative and reflect the draft date; production output uses real ISO-8601 timestamps from the detector's invocation time. -->
 
 **Sample routing decision record for a suspected duplicate:**
 
@@ -583,8 +579,6 @@ That second example is the kind of case an examiner needs to see. Same patient, 
 | Review-queue size (% of all claims) | 3-7% | 2-5% |
 | End-to-end detection latency (per claim) | 50-200 ms | 100-400 ms (adds inference call) |
 
-<!-- TODO: these benchmark ranges are directional and not tied to a specific published case study. Replace with measured numbers once deployed, or cite specific payer case studies if published. -->
-
 **Where it struggles:**
 
 - **Adjustment claims near the decision boundary.** A corrected resubmission of a paid claim legitimately shares most fields with the original. The scorer will produce a high score; the examiner has to distinguish "duplicate" from "adjustment." Some payers capture the adjustment intent in a claim frequency code (the `CLM05-3` segment in 837) and use it as a scorer feature; this helps substantially but doesn't eliminate the problem.
@@ -617,22 +611,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **PHI in the review queue and labels.** SQS messages and label records contain enough PHI to require careful controls. Encrypt at rest with customer-managed KMS keys. Keep retention short on SQS (the queue is a work-in-progress store, not an archive). The label store is the long-lived one; scope read access tightly (the label-writer Lambda, the retraining job, named audit roles).
 
 **Fairness monitoring.** Duplicate detection doesn't have the same fairness concerns as a clinical risk model, but it's not fairness-free either. If your scorer systematically flags claims from certain provider categories (small practices, rural providers, non-English-documentation claims) at higher rates than the underlying duplicate base rate in that subgroup, you have a problem. Add subgroup monitoring on the auto-suspend rate by provider size, geography, and specialty. Disparities that can't be explained by the underlying duplicate rate are a signal to investigate.
-
-<!-- TODO (TechWriter): consider adding a note about the SIU hand-off. When the detector identifies a pattern consistent with coordinated fraud (many duplicates from a single provider, unusual submission patterns), the handoff to the Special Investigations Unit is a separate workflow from prospective denial. This isn't in the core recipe scope but is a natural extension. -->
-
-<!-- closed: A1: Blocking hash uses patient_id + month only; NPI prefix removed. Inline comment in Step 1 explains NPIs are NPPES-sequential with no org hierarchy, and forward-references Recipe 5.1 for the tax_id-based provider-hierarchy lookup. Per-field NPI similarity handled in Step 3 scorer. -->
-
-<!-- closed: A2: Idempotency guards added to Step 1 (conditional DynamoDB write with attribute_not_exists) and Step 4 (deterministic decision_key with conditional write to claim-decisions table before SQS send or suspension write). -->
-
-<!-- closed: A3: OpenSearch removed from architecture diagram and core Ingredients; demoted to Variations and Extensions with a dedicated paragraph explaining the promotion path when name-field matching at scale is needed. Why-These-Services retains a brief mention noting the situational value. -->
-
-<!-- closed: A4: Already resolved by editor. Diagram node H shows "replaces inline scorer once labels accumulate"; Step 3 score_pair includes a commented-out SageMaker invoke_endpoint call showing the exact swap pattern. No remaining gap. -->
-
-<!-- closed: A5: DLQ pattern added to architecture diagram (parser-dlq, detector-dlq, label-writer-dlq), Ingredients table, and "Why This Isn't Production-Ready" section with operational guidance. -->
-
-<!-- closed: S1: PHI scrub added to Step 5 on_examiner_verdict before label write. Regex-based pattern stripping with Comprehend Medical recommended for production. reasoning_code carries operational signal; scrubbed text is supplementary only. -->
-
-<!-- TODO (TechWriter): code review (Finding 5) flagged a small drift between Step 4 pseudocode and the Python companion's `route_claim`. The Python adds a `match_type` parameter and an exact-match fast-path (auto-suspend when `find_candidates` returned `match_type == "exact"`, regardless of score-threshold logic) that this pseudocode does not describe. The Python's branch is defense-in-depth (an exact `content_hash` collision lands at score 1.0 and would auto-suspend anyway) but the pseudocode-to-Python parity should be restored either by adding an explicit exact-match fast-path at the top of `route_claim` here, or by leaving a one-line note in the Python companion explaining the intentional deviation. -->
 
 ---
 
@@ -668,12 +646,10 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost classifier training patterns directly applicable to the learned scorer; includes examples of binary-classification workflows and model evaluation.
 - [`aws-samples`](https://github.com/aws-samples): Search for "record linkage," "entity resolution," and "fraud detection" for adjacent patterns.
-<!-- TODO: verify and add a specific aws-samples repo that demonstrates 837 parsing, claim deduplication, or related claims-processing patterns. As of this writing a direct match for duplicate claim detection specifically has not been confirmed. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): browse for claims processing and payer analytics reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "claims," "record linkage," "fraud detection" for architecture deep-dives relevant to this pipeline.
-<!-- TODO: verify and add two or three specific AWS blog posts on claims processing or record linkage architectures; confirm URLs exist before inclusion. -->
 
 **Regulatory and Standards References:**
 - [CMS Electronic Billing & EDI Transactions](https://www.cms.gov/medicare/coding-billing/electronic-billing-edi): CMS documentation on 837 transaction sets and claims processing standards.
@@ -697,7 +673,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Real-time detection at ingestion edge, embedding-based similarity on attachments, graph detection of coordinated duplicates, cross-payer privacy-preserving linkage, LLM-assisted review triage | 6-12 months beyond production-ready |
 
 ---
-
 
 ---
 

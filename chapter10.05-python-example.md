@@ -362,13 +362,11 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
-
 
 def _hash_otp(code, salt):
     """OTP storage uses HMAC-SHA256 with a per-issuance salt."""
@@ -376,10 +374,8 @@ def _hash_otp(code, salt):
                      code.encode("utf-8"),
                      hashlib.sha256).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _generate_otp(length=OTP_LENGTH):
     """Cryptographically random OTP."""
@@ -434,7 +430,6 @@ class MockLex:
             }],
         }
 
-
 class MockBedrock:
     """
     Stands in for Amazon Bedrock's InvokeModel and the Bedrock
@@ -481,7 +476,6 @@ class MockBedrock:
             "source_passages": [],
         })}
 
-
 class MockBedrockKB:
     """
     Stands in for Bedrock Knowledge Bases retrieval. The demo
@@ -498,7 +492,6 @@ class MockBedrockKB:
                 return {"passages": list(snippets[:max_results])}
         return {"passages": []}
 
-
 class MockComprehendMedical:
     """
     Stands in for Amazon Comprehend Medical's DetectEntitiesV2
@@ -514,7 +507,6 @@ class MockComprehendMedical:
             if substring in normalized:
                 return dict(response)
         return {"Entities": []}
-
 
 class MockPolly:
     """
@@ -540,7 +532,6 @@ class MockPolly:
                 "ContentType": "audio/pcm",
                 "RequestCharacters": len(text or "")}
 
-
 class MockPinpoint:
     """
     Stands in for Amazon Pinpoint's OTP delivery. Captures the
@@ -561,7 +552,6 @@ class MockPinpoint:
                 {"Result": {destination: {"StatusCode": 200,
                                           "DeliveryStatus":
                                               "SUCCESSFUL"}}}}
-
 
 class MockConnect:
     """
@@ -589,7 +579,6 @@ class MockConnect:
             "screen_pop_packet":  screen_pop_packet,
             "transferred_at":     _now_iso(),
         })
-
 
 class MockEHR:
     """
@@ -647,7 +636,6 @@ class MockEHR:
         self._refill_tickets.append(ticket)
         return ticket
 
-
 class MockPatientRegistry:
     """
     Stands in for the institutional patient registry. The demo
@@ -699,7 +687,6 @@ class MockPatientRegistry:
                 return True
         return False
 
-
 class MockConversationState:
     def __init__(self):
         self._items = {}
@@ -714,7 +701,6 @@ class MockConversationState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockIdentityVerification:
     """
@@ -759,7 +745,6 @@ class MockIdentityVerification:
             return {"verified": True}
         return {"verified": False, "reason": "code_mismatch"}
 
-
 class MockConversationMetadata:
     def __init__(self):
         self._items = {}
@@ -774,7 +759,6 @@ class MockConversationMetadata:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockS3:
     """
@@ -801,7 +785,6 @@ class MockS3:
                 for (b, k), v in self._objects.items()
                 if bucket is None or b == bucket]
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. Lifecycle events flow
@@ -814,7 +797,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -835,7 +817,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 conversation_state    = MockConversationState()
@@ -855,7 +836,6 @@ lex_mock              = None
 bedrock_mock          = None
 kb_mock               = None
 comprehend_mock       = None
-
 
 def audit_log(event):
     """
@@ -916,7 +896,6 @@ def determine_consent_regime(caller_id, institution_state):
         return "all_party_consent"
     return "one_party_consent"
 
-
 def play_consent_disclosure(consent_regime, language):
     """
     Play the appropriate consent disclosure. Production uses
@@ -935,7 +914,6 @@ def play_consent_disclosure(consent_regime, language):
         language_code=language,
         lexicon_names=POLLY_LEXICON_NAMES)
     return text
-
 
 def open_conversation(channel_type, caller_id,
                        channel_metadata=None,
@@ -1136,7 +1114,6 @@ def detect_crisis(utterance):
     return {"severity": "none", "category": None,
             "matched_phrase": None}
 
-
 def handle_crisis(session_context, crisis_signal, utterance):
     """
     Hard-interrupt handler invoked when the crisis detector
@@ -1239,7 +1216,6 @@ def handle_crisis(session_context, crisis_signal, utterance):
             "target_queue":   target_queue,
             "response_text":  response_text}
 
-
 def on_utterance_received(session_context, utterance,
                             asr_avg_confidence=Decimal("0.92")):
     """
@@ -1316,7 +1292,6 @@ AVAILABLE_INTENTS = [
     "out_of_scope_billing_complex",
     "test_results_inquiry",
 ]
-
 
 def classify_intent(session_context, utterance):
     """
@@ -1400,7 +1375,6 @@ def classify_intent(session_context, utterance):
         "source":     "default_transfer",
     }
 
-
 def extract_medication_slot(utterance):
     """
     Use Comprehend Medical's RxNorm linker to extract a coded
@@ -1426,7 +1400,6 @@ def extract_medication_slot(utterance):
         "extraction_confidence":
             Decimal(str(best.get("Score", 0.0))),
     }
-
 
 def classify_and_extract(session_context, utterance):
     """
@@ -1565,7 +1538,6 @@ def soft_personal_check(session_context, dob_attempt):
             "patient_id": record["patient_id"],
             "registry_record": record}
 
-
 def issue_otp(session_context, patient_id):
     """
     Issue an OTP via Pinpoint and persist the salted hash to
@@ -1611,7 +1583,6 @@ def issue_otp(session_context, patient_id):
     return {"issued":      True,
             "destination": destination,
             "_demo_code":  code}  # Real code never returned.
-
 
 def ensure_identity_for_intent(session_context, intent,
                                   patient_dob_attempt=None,
@@ -1783,7 +1754,6 @@ def format_appointment_response(appointment, language="en-US"):
             f"{appointment['provider']} at "
             f"{appointment['location']}.")
 
-
 def fulfill_appointment_lookup(session_context, identity_context):
     """
     Look up the patient's upcoming appointments through the
@@ -1822,7 +1792,6 @@ def fulfill_appointment_lookup(session_context, identity_context):
             "transfer_after": False,
             "multiple":       True}
 
-
 def fulfill_refill_request(session_context, slots,
                              identity_context):
     """
@@ -1859,7 +1828,6 @@ def fulfill_refill_request(session_context, slots,
                 f"I can help with?"),
             "transfer_after": False,
             "ticket_id":      ticket["ticket_id"]}
-
 
 def fulfill_facility_info(session_context, utterance):
     """
@@ -1913,7 +1881,6 @@ def fulfill_facility_info(session_context, utterance):
             "source_passage_count": len(parsed.get(
                 "source_passages", []))}
 
-
 def fulfill_callback_request(session_context, slots):
     """
     Create a callback ticket. The patient does not need an
@@ -1927,7 +1894,6 @@ def fulfill_callback_request(session_context, slots):
                 "number you called from."),
             "transfer_after": False,
             "ticket_id": f"cb-{uuid.uuid4().hex[:8]}"}
-
 
 def scope_filter_check(response_text):
     """
@@ -1945,7 +1911,6 @@ def scope_filter_check(response_text):
                         "category":       category,
                         "matched_pattern": pattern}
     return {"violation": False, "category": None}
-
 
 def fulfill_intent(session_context, classification,
                      identity_context, utterance):
@@ -2118,7 +2083,6 @@ def summarize_conversation_for_agent(state):
         f"Identity assurance: "
         f"{state.get('identity_assurance_level', 0)}.")
 
-
 def build_warm_handoff_packet(session_context, target_queue,
                                 handoff_reason):
     """
@@ -2156,7 +2120,6 @@ def build_warm_handoff_packet(session_context, target_queue,
         "transcript_archive_ref":
             state.get("transcript_archive_ref"),
     }
-
 
 def warm_transfer(session_context, target_queue, handoff_reason):
     """
@@ -2384,7 +2347,6 @@ def close_conversation_and_audit(session_context):
 
     return audit_record
 
-
 def _primary_intent(state):
     """
     Extract the primary (first non-fallback) intent from the
@@ -2395,7 +2357,6 @@ def _primary_intent(state):
         if intent and intent != "FallbackIntent":
             return intent
     return "none"
-
 
 def _resolve_opt_in_age_band(patient_id):
     """
@@ -2517,7 +2478,6 @@ def handle_turn(session_context, utterance,
     return {"continue": True,
             "disposition": "fulfilled",
             "response_text": speak_result["text_spoken"]}
-
 
 def run_demo():
     """
@@ -2806,7 +2766,6 @@ def run_demo():
           f"{len(connect_mock.transfers)}")
     print(f"Refill tickets created:      "
           f"{len(ehr._refill_tickets)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

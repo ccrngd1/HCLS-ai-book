@@ -99,7 +99,6 @@ BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 # are configured in your environment.
 textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
 
-
 def extract_card(bucket: str, key: str) -> dict:
     """
     Send a card image from S3 to Textract and get back the raw analysis.
@@ -176,7 +175,6 @@ def get_text_from_block(block: dict, block_map: dict) -> str:
 
     # strip() removes any trailing whitespace left by the loop above.
     return text.strip()
-
 
 def parse_key_value_pairs(textract_response: dict) -> dict:
     """
@@ -378,7 +376,6 @@ dynamodb = boto3.resource("dynamodb")
 # Replace this with your actual DynamoDB table name.
 TABLE_NAME = "card-extractions"
 
-
 def store_result(image_key: str, fields: dict, flagged: list) -> dict:
     """
     Write the extraction result to DynamoDB as a permanent record.
@@ -482,7 +479,6 @@ def process_card(bucket: str, key: str) -> dict:
 
     logger.info("Done. needs_review=%s", result['needs_review'])
     return result
-
 
 # Example: run the pipeline against a test image.
 if __name__ == "__main__":

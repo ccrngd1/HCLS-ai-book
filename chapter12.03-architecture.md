@@ -12,8 +12,6 @@ The AWS implementation borrows heavily from Recipes 12.1 and 12.2; the platform 
 
 **Amazon SageMaker for model training and inference.** SageMaker handles both the classical statistical methods (statsmodels' Poisson regression, Prophet, in custom containers) and the multi-series neural methods like the [DeepAR built-in algorithm](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html). For a single ED, classical methods fit comfortably; for a multi-ED health system, DeepAR's joint training across series is genuinely useful. Amazon Forecast was the obvious choice a few years ago but AWS [announced its end of availability](https://aws.amazon.com/blogs/machine-learning/transition-your-amazon-forecast-usage-to-amazon-sagemaker-canvas/), so new builds target SageMaker directly.
 
-<!-- TODO (TechWriter): N1. Verify the Amazon Forecast deprecation status and link as of the publication date. -->
-
 **Amazon HealthLake or Kinesis Data Streams for ADT ingestion.** ED ADT messages can be ingested via Amazon HealthLake (which natively understands HL7 v2 and FHIR) for systems that want a longitudinal patient store, or via Kinesis Data Streams for systems that just want the hourly arrival counts and don't need full FHIR storage. For the lightest-weight forecasting pipeline, Kinesis is simpler. HealthLake is the right choice when other workloads (Recipes 12.5, 12.7) also need the patient timeline.
 
 **Amazon S3 for historical data and forecast outputs.** Hourly arrival counts (aggregated from the ADT stream), weather and surveillance data, model artifacts, and forecast outputs all land in S3, partitioned by date and ED. SSE-KMS encryption is mandatory for the arrival data, which is PHI-adjacent (linked to specific patient encounters even when aggregated to counts).
@@ -27,8 +25,6 @@ The AWS implementation borrows heavily from Recipes 12.1 and 12.2; the platform 
 **Amazon EventBridge for scheduling.** EventBridge Scheduler triggers the hourly inference pipeline and the weekly retraining pipeline on cron schedules.
 
 **Amazon Bedrock or AWS Lambda for explanation generation (optional).** ED leadership often wants a one-line explanation accompanying each forecast spike: "Volume forecast 22% above seasonal baseline; main drivers: cold front arriving 18:00, increased flu surveillance signal in surrounding zip codes, basketball tournament downtown." Generating that text from the model's feature contributions is an optional Bedrock-or-Lambda step that adds significant value to the dashboard.
-
-<!-- TODO (TechWriter): Expert review S3 (LOW). Specify HIPAA-eligible Bedrock model selection (consult the AWS HIPAA Eligible Services list at deployment time), confirm BAA coverage at the account level, configure model-invocation logging to a destination encrypted with the model-artifacts CMK, and treat the prompt-construction layer as PHI-adjacent: feature contributions like "flu surveillance for zip codes [list]" are PHI-by-association even when the resulting one-line explanation does not name a patient. -->
 
 ### Architecture Diagram
 
@@ -55,10 +51,6 @@ flowchart LR
     style M fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). The Step Functions hourly inference pipeline lacks retry, DLQ, and partial-failure semantics; the diagram's `Errors -> CloudWatch Alarms / SNS Topic` reads as alarm-only, which is the wrong response for a clinical-operational system. Specify: (1) per-stage retry policy (3 retries, exponential backoff, ~8-min stage budget); (2) catch-and-route on persistent failure to an SQS DLQ plus CloudWatch metric `inference_stage_failed`; (3) explicit `model_freshness: "stale"` record write to DynamoDB on missed cycles so the dashboard renders staleness explicitly; (4) bounded BatchWriteItem `UnprocessedItems` retry with metric; (5) two-tier alarms (page on-call on any failure, escalate to medical informatics director after consecutive failures). Add DLQ box and stale-write path to the Mermaid diagram. -->
-
-<!-- TODO (TechWriter): Expert review N2 (LOW). Add a paragraph specifying the external-feed egress posture: weather-API, CDC FluView, state-surveillance, and event-calendar puller Lambdas run inside the VPC with egress through a NAT gateway in a public subnet; NAT flow logs enabled; API keys stored in Secrets Manager with 90-day rotation; TLS 1.2 minimum (TLS 1.3 preferred); puller IAM permissions scoped to write only to the destination S3 bucket and prefix per feed. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -71,18 +63,6 @@ flowchart LR
 | **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail. |
 | **Sample Data** | Synthetic ED arrival data. The [MIMIC-IV-ED](https://physionet.org/content/mimic-iv-ed/) database (de-identified ED visits from a Boston academic medical center) is a strong public dataset with permission via PhysioNet credentialing. For lighter-weight prototyping, generate synthetic data from a known process (Poisson with hour-of-day intensity plus weekly seasonality plus weather effects plus noise) and validate the pipeline against ground truth. Never use real ED arrival data in dev. |
 | **Cost Estimate** | SageMaker hourly inference (small endpoint): ~$50/month. Weekly retraining: ~$5/month. Kinesis ingest (low volume): ~$30/month. S3, DynamoDB, Step Functions, Lambda, Glue: under $50/month combined. Total: $200-$700/month per ED, depending on retraining frequency and inference volume. |
-
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Update the Encryption row to specify customer-managed KMS keys (CMKs) per data class for blast-radius containment. Recommended split: a CMK for the ADT stream and arrivals-hourly bucket (PHI), a CMK for weather/flu-index/event-calendar buckets (operational, no PHI), a CMK for the model-artifacts bucket, a CMK for the forecasts bucket and DynamoDB serving table, a CMK for SageMaker training output, a CMK for CloudWatch log groups. Update the IAM permissions row to grant per-Lambda least-privilege `kms:Decrypt` only on the relevant CMK; do not grant cross-class decrypt at the IAM-policy level. Mirrors S1 in the 12.2 expert review and should be consolidated at the chapter level. -->
-
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Update the CloudTrail row to specify data events on PHI-bearing buckets, tables, streams, and CMKs: "Enabled at the account level. Data events enabled on the arrivals-hourly bucket, model-artifacts bucket, forecasts bucket, the DynamoDB serving table, the Kinesis stream, and the customer-managed KMS keys. Management events for SageMaker, Kinesis, Glue, Step Functions, EventBridge, DynamoDB, and Lambda. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days." -->
-
-<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Update the VPC row to enumerate the full endpoint set with type. Gateway endpoints for S3 and DynamoDB (free, no per-AZ cost). Interface endpoints (per-AZ cost) for SageMaker (API), SageMaker (Runtime), Kinesis Streams, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (if used for weather-API or EHR-integration credentials). Mirrors N1 in the 12.2 expert review. -->
-
-<!-- TODO (TechWriter): Expert review N3 (LOW). Append to the VPC row: "TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary, including the SageMaker endpoint, the DynamoDB query path from the dashboard, and all external-feed puller calls." -->
-
-<!-- TODO (TechWriter): Expert review V2 (LOW). Decompose the Cost Estimate row by ED size. The $200-$700/month range assumes a 30,000-80,000-annual-visit community-to-mid-size ED with hourly inference and weekly retraining. A high-volume Level I trauma center (150,000+ annual visits) with 15-minute-bucket forecasting and continuous retraining can reach $1,500-$3,000/month. Multi-ED health-system deployments amortize the retraining cost across EDs when a shared model is used (DeepAR pattern), reducing per-ED cost meaningfully at scale. -->
-
-<!-- TODO (TechWriter): V1. Verify SageMaker, Kinesis, and DynamoDB pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
 
 ### Ingredients
 
@@ -107,13 +87,9 @@ flowchart LR
 > - [Amazon SageMaker DeepAR Forecasting](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html): Built-in algorithm documentation for DeepAR
 > - [Amazon HealthLake Documentation](https://docs.aws.amazon.com/healthlake/latest/devguide/what-is-amazon-health-lake.html): For systems ingesting full FHIR rather than raw HL7 ADT
 
-<!-- TODO (TechWriter): N2. Verify all three reference implementation links are still live and up-to-date. -->
-
 #### Walkthrough
 
 **Step 1: Aggregate the ADT stream to hourly counts.** The pipeline starts by consuming raw ADT registration messages from the streaming layer and bucketing them into hourly counts per ED per ESI level. Each registration record at minimum has an arrival timestamp, an ED identifier, and an ESI level (if triage has occurred by the time the record is captured). For records that arrive before triage assignment, you have two options: assign a placeholder ESI level and update later, or wait until triage completes before counting. The wait approach is cleaner but introduces a lag that hurts short-horizon forecasts. Most production systems take the placeholder approach and reconcile in a second pass.
-
-<!-- TODO (TechWriter): Expert review V3 (LOW). The pseudocode comment correctly flags local-time-zone bucketing but does not address daylight-saving transitions (duplicated 01:00-02:00 hour in fall, missing 02:00-03:00 hour in spring). Use a time-zone-aware library (zoneinfo in Python 3.9+) and key on the UTC instant plus a local-time label string with offset (e.g., 2026-04-15T18:00:00-05:00) so the fall-back duplicated hour disambiguates. For the spring-forward missing hour, emit a zero-arrival record with an explicit `dst_transition: "spring_forward"` flag the model can ignore at training time. -->
 
 ```text
 FUNCTION aggregate_arrivals_to_hourly(adt_stream_records):
@@ -311,11 +287,7 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
     RETURN count of records written
 ```
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Specify the DynamoDB write idempotency contract in Step 5: (1) `generated_at` is computed once at pipeline start and propagated through the Step Functions state, not recomputed per Lambda; (2) the `CURRENT` upsert uses a conditional write `ConditionExpression: attribute_not_exists(generated_at) OR generated_at < :new_generated_at` so a stale upsert cannot overwrite a newer pointer; (3) the EventBridge trigger uses a `pipeline_run_id` derived from the schedule's invocation ID so at-least-once trigger delivery produces idempotent runs; (4) BatchWriteItem `UnprocessedItems` retry is bounded (5 retries with exponential backoff) and surfaces a metric on the unprocessed count; (5) backfill writes from reconciliation use a `revision` attribute and the same `CURRENT` conditional-write logic. Mirrors A5 in the 12.2 expert review. -->
-
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and a forecasting library like statsmodels or Prophet, check out the [Python Example](chapter12.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
-
-<!-- TODO (TechWriter): N3. The Python companion file (chapter12.03-python-example.md) is referenced here but does not yet exist in this branch. Confirm it has been drafted before publishing this recipe. -->
 
 ### Expected Results
 
@@ -354,8 +326,6 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 | Acuity mix classification (macro F1) | 0.55-0.70 |
 | Cost per ED per month | $200-$700 |
 
-<!-- TODO (TechWriter): A1. Accuracy benchmarks above are typical industry figures for ED arrival forecasting on EDs with 2+ years of clean ADT history and weather/surveillance feeds. Confirm against your reference data sources before publication. -->
-
 **Where it struggles:** EDs with fewer than 18 months of clean ADT history (annual seasonality cannot be learned). Newly opened EDs or EDs that have undergone major operational changes (relocation, scope expansion, partnership shifts) where history is no longer representative. Periods with active diversion windows that distort the apparent arrival rate. Acuity mix prediction during atypical events (mass casualty incidents, infectious disease outbreaks) where the historical mix doesn't apply. Forecasts beyond the 7-day horizon, where weather forecast uncertainty dominates and the model effectively reverts to seasonal averages. Periods immediately following a regional shock (a competitor ED closes, a new urgent care opens nearby) where the catchment area and patient mix are realigning.
 
 ---
@@ -367,8 +337,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **Real-time data freshness and the late-record problem.** ADT messages do not always arrive in order. A registration that happened at 14:32 might land in your stream at 14:45 because of EHR queue delays. Hourly aggregation needs an explicit watermark and a late-record reconciliation pass. Without this, the most recent hour's count is always wrong, and the model sees biased recent history.
 
 **Forecast monitoring and drift detection.** Track forecast error against actuals on a rolling basis at each horizon. Alert when MAPE exceeds tolerance for two consecutive cycles. Retrain on a schedule (weekly is the practical default) and on demand when drift is detected. ED arrival patterns shift faster than ambulatory ones because the catchment is more dynamic; treat retraining cadence as a tighter knob.
-
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Drift detection is correctly elevated as a production concern but is not architecturally specified. Add a separate horizon-aware drift-detection Lambda (or Step Functions step) invoked from EventBridge after each cycle's actuals are available at each horizon. It joins the prior cycle's forecasts at that horizon against actuals, computes per-ED and per-horizon MAPE plus prediction-interval-coverage rate (the share of actuals that fell inside the 80% interval), writes the metrics to CloudWatch with dimensions `(ed_id, horizon_hours)`, and alerts on two-consecutive-cycle threshold breaches at any horizon. Mirrors A4 in the 12.2 expert review. -->
 
 **Acuity-level timing.** ESI assignment happens at triage, which can be minutes to hours after arrival. The placeholder approach in Step 1 keeps the pipeline running but biases acuity counts in the most recent windows. A second-pass reconciliation that updates ESI levels as triage data arrives keeps the historical record clean. Without it, the acuity classifier learns a slightly distorted mapping.
 
@@ -422,8 +390,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 **AWS Solutions and Blogs:**
 - [Transitioning Amazon Forecast to SageMaker Canvas](https://aws.amazon.com/blogs/machine-learning/transition-your-amazon-forecast-usage-to-amazon-sagemaker-canvas/): Migration guidance for teams previously using Amazon Forecast
 
-<!-- TODO (TechWriter): N4. Audit all external links during final pre-publication pass. The MIMIC-IV-ED, CDC FluView, AHRQ ESI handbook, and Hyndman textbook links are stable. AWS blog and docs links should be re-verified. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -433,7 +399,6 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - **With variations (sub-hourly, real-time updating, multi-ED hierarchical):** 16-24 weeks
 
 ---
-
 
 ---
 

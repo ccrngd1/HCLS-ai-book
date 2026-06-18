@@ -10,8 +10,6 @@
 
 **Amazon SageMaker for model development and solver execution.** Network design optimization requires significant compute for solver execution (especially multi-scenario runs) and a development environment for model formulation. SageMaker provides managed Jupyter notebooks for model development and processing jobs for compute-intensive solver runs and data preparation. You can install commercial solvers (Gurobi, CPLEX) on SageMaker instances or use open-source solvers (HiGHS, PuLP) directly.
 
-<!-- TODO (TechWriter): Expert review ARC-2 (MEDIUM). Clarify why Processing Jobs (not Training Jobs) are the right abstraction for solver execution. Training Jobs carry ML-specific semantics (model artifacts, hyperparameter tuning) that don't apply here. If Spot instance checkpointing is the reason for Training Jobs, state that explicitly. -->
-
 **Amazon S3 for data lake and model artifacts.** The input data (patient origin files, demographic projections, financial data, competitor intelligence) and output artifacts (solution files, scenario comparisons, sensitivity analyses) all live in S3. This provides durable, versioned storage with fine-grained access control.
 
 **AWS Glue for data integration and preparation.** Network design requires pulling data from multiple source systems (EHR, financial systems, census data, competitor databases). Glue ETL jobs handle the extraction, transformation, and loading into the analytics-ready format the optimizer needs.
@@ -483,8 +481,6 @@ The pseudocode demonstrates the optimization pattern. Deploying this for actual 
 - [Gurobi Optimization Documentation](https://www.gurobi.com/documentation/)
 - [HiGHS Solver (Open Source)](https://highs.dev/)
 - [PuLP: Python Linear Programming Library](https://coin-or.github.io/pulp/)
-
-<!-- TODO: Verify these AWS sample repos exist and are current -->
 
 **AWS Solutions and Blogs:**
 - [Optimization with Amazon SageMaker](https://aws.amazon.com/sagemaker/)

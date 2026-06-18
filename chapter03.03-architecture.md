@@ -99,7 +99,7 @@ flowchart TB
 | **Provider Reference Data** | The peer grouping depends on provider taxonomy (specialty, subspecialty), practice setting, and geography. Sources include the NPPES (National Plan and Provider Enumeration System) dataset for NPI-to-taxonomy mapping, plus internal provider master data for practice setting and network tier. Budget integration time for this reference data; it's usually in a different system than the claims data. |
 | **Fairness Monitoring Data** | Subgroup dashboards require provider-level attributes that may not be in the claims warehouse: practice size, patient-population demographics, geographic characteristics. Coordinate with provider-network operations on what attributes are available and how they can be joined to the case registry. |
 | **Subgroup Data Access** | Provider-level attributes used for fairness monitoring (practice setting, geographic region, patient-population demographics where captured, network tier) may be governed differently from claims PHI in some regulatory regimes. Restrict read access to the demographic-and-attribute store to the supervised training job role and the QuickSight dashboard role, with CloudTrail data events on subgroup queries. The QuickSight dashboard backed by Athena should query an aggregated subgroup-metrics table, not the raw demographic-joined case-registry archive, so dashboard-user access does not require row-level read on the subgroup attributes. |
-| **Cost Estimate** | Per monthly cycle for a mid-size payer (say, 3-5 million claims per month, 15,000-25,000 active providers): Athena scans for aggregation: ~$5-20. Glue provider-period rollup: ~$10-30. SageMaker Processing for scoring: ~$5-15. Feature Store storage (10GB of provider features): ~$5/month. DynamoDB (case registry with PITR): ~$10-30/month depending on case volume. Total infrastructure: typically $200-800/month. Compare to recovery: if the program prevents even 0.25% of fraudulent or erroneous payments on a $500M annual spend, that's $1.25M recovered against a $10K/year infrastructure cost. <!-- TODO: verify whether any published payer case studies report specific ROI numbers for payment integrity programs at this scale; directional claim is industry-accepted but a citation would strengthen it. --> |
+| **Cost Estimate** | Per monthly cycle for a mid-size payer (say, 3-5 million claims per month, 15,000-25,000 active providers): Athena scans for aggregation: ~$5-20. Glue provider-period rollup: ~$10-30. SageMaker Processing for scoring: ~$5-15. Feature Store storage (10GB of provider features): ~$5/month. DynamoDB (case registry with PITR): ~$10-30/month depending on case volume. Total infrastructure: typically $200-800/month. Compare to recovery: if the program prevents even 0.25% of fraudulent or erroneous payments on a $500M annual spend, that's $1.25M recovered against a $10K/year infrastructure cost.  |
 
 ### Ingredients
 
@@ -134,7 +134,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Processing job patterns, Random Cut Forest unsupervised anomaly detection, and Feature Store integration with XGBoost for the supervised classifier path.
 > - [`aws-samples`](https://github.com/aws-samples): Search for "healthcare fraud," "payment integrity," and "claims analytics" for adjacent patterns.
-> <!-- TODO: verify and add a specific aws-samples or aws-solutions-library-samples repo that demonstrates healthcare claims anomaly detection or payment integrity analytics. As of this writing a direct match has not been confirmed. -->
+> 
 
 #### Walkthrough
 
@@ -529,7 +529,6 @@ FUNCTION on_investigation_outcome(event):
         disposition: event.disposition
     })
 
-
 FUNCTION retrain_supervised_quarterly():
     // Only runs if enough labeled data has accumulated.
     training_df = Athena.query("""
@@ -570,8 +569,6 @@ FUNCTION retrain_supervised_quarterly():
 ---
 
 ### Expected Results
-
-<!-- Sample timestamps and case IDs are illustrative and reflect the draft date; production output uses real ISO-8601 timestamps and case IDs from the case-assembly Lambda's invocation time. -->
 
 **Sample case record for a sustained E&M upcoding pattern:**
 
@@ -687,8 +684,6 @@ The second case is exactly the kind of case that wouldn't be caught by a pure "E
 | False positive burden (provider-months flagged unnecessarily per 1,000 providers) | 150-300 | 20-50 | 5-20 |
 | Time from anomaly onset to flag (months) | 3-6 | 1-3 | 0-2 |
 
-<!-- TODO: these benchmark ranges are directional from typical payment integrity project experience. Replace with measured numbers once the pipeline runs for a few cycles; consider citing specific case studies from payer groups if published. -->
-
 **Where it struggles:**
 
 - **New providers.** First few months of billing produce no self-comparison signal (no history to drift from). Peer comparison is the only axis available, and new providers often have unstable statistics while they ramp up. Mitigation: add a minimum claim count or minimum months-in-network before peer z-score flags fire.
@@ -731,8 +726,6 @@ The pseudocode above covers the shape of the pipeline. A production payment inte
 
 **Cost of investigation per case.** An experienced payment integrity analyst costs real money per hour, and a complex case can consume dozens of hours. The system should track not just how many cases are generated but the marginal analyst cost per case and the marginal dollars recovered per case. The break-even threshold (cases that cost more to investigate than they recover) is where the lower routing threshold should be set, and that threshold drifts over time as labor costs and fraud patterns shift.
 
-<!-- TODO (TechWriter): consider adding a note about the intersection with external fraud detection vendors. Many payers use external SIU-focused platforms (companies like Cotiviti, Codoxo, Change Healthcare). The in-house anomaly detector and the external vendor platform often flag overlapping but not identical cases, and the operational question of "which tool flags first and which tool is authoritative" is real. Recipe 3.6 may be a better home for this discussion. -->
-
 ---
 
 ## Variations and Extensions
@@ -773,12 +766,10 @@ The pseudocode above covers the shape of the pipeline. A production payment inte
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Random Cut Forest and Isolation Forest patterns for unsupervised anomaly detection, plus Feature Store and XGBoost patterns applicable to the supervised classifier path.
 - [`aws-samples`](https://github.com/aws-samples): Search for "claims analytics," "healthcare fraud," and "payment integrity" for adjacent patterns.
 - [`amazon-sagemaker-clarify`](https://github.com/aws/amazon-sagemaker-examples/tree/main/sagemaker_processing/fairness_and_explainability): SageMaker Clarify examples for bias detection and SHAP-based explanation, both applicable to the subgroup monitoring and case explainability requirements.
-<!-- TODO: verify and add a specific aws-solutions-library-samples or aws-samples repo that demonstrates a healthcare payment-integrity or provider-anomaly detection pattern end-to-end. A direct match has not been confirmed as of this writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): browse for claims analytics and payment integrity reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "anomaly detection," "payment integrity," "Random Cut Forest," and "healthcare claims" for architecture deep-dives.
-<!-- TODO: verify and add two or three specific AWS blog posts on payment integrity, claims anomaly detection, or healthcare fraud analytics; confirm URLs exist before inclusion. -->
 
 **Industry and Regulatory References:**
 - [CMS National Correct Coding Initiative (NCCI)](https://www.cms.gov/medicare/coding-billing/ncci-medicare): the code-combination edits that underpin rule-based screening. Useful context even for ML-based detection because the NCCI edit file is the reference for which code pairs should not appear together.
@@ -804,7 +795,6 @@ The pseudocode above covers the shape of the pipeline. A production payment inte
 | With variations | Supervised classifier once labels accumulate, real-time claim-level screening, network/graph analysis, case-mix-adjusted expected billing, cross-payer benchmark integration, automated provider education routing | 6-12 months beyond production-ready |
 
 ---
-
 
 ---
 

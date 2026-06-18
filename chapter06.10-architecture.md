@@ -403,8 +403,6 @@ Sample output for a validated multi-morbidity pattern:
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 ### Variation 1: Medication-Condition Interaction Patterns
@@ -452,7 +450,6 @@ Once patterns are discovered and validated, build a real-time scoring system tha
 | **With variations** (medication interactions, cost weighting, real-time scoring) | 20-28 weeks | Adds pharmacy data integration, cost modeling, streaming pattern assignment |
 
 ---
-
 
 ---
 

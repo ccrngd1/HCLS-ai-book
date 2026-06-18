@@ -92,8 +92,6 @@ Several approaches work for LOS prediction, each with tradeoffs:
 
 **Accuracy expectations are unrealistic.** Clinicians expect the model to be right. But LOS has inherent irreducible uncertainty. Even a perfect model can't predict that a patient will fall on day 3 and fracture their hip. Setting expectations around confidence intervals rather than point predictions is essential for adoption.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add "Fairness and Equity Considerations" subsection here. LOS predictions drive resource allocation; must discuss disparate impact across demographic groups, insurance type as a protected-class proxy, and demographic-stratified evaluation metrics. See expert review for full suggested content. -->
-
 ### The General Architecture Pattern
 
 ```text

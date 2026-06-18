@@ -92,7 +92,6 @@ s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 sqs_client = boto3.client("sqs", config=BOTO3_RETRY_CONFIG)
 
-
 def ingest_slide(bucket: str, key: str) -> str:
     """
     Register a new whole slide image and queue it for analysis.
@@ -184,7 +183,6 @@ def ingest_slide(bucket: str, key: str) -> str:
 from PIL import Image
 import io
 
-
 def detect_tissue(slide_id: str, thumbnail_bytes: bytes) -> tuple[np.ndarray, float]:
     """
     Generate a binary tissue mask from a low-resolution slide thumbnail.
@@ -248,7 +246,6 @@ def detect_tissue(slide_id: str, thumbnail_bytes: bytes) -> tuple[np.ndarray, fl
 
     return tissue_mask, tissue_fraction
 
-
 def _otsu_threshold(channel: np.ndarray) -> int:
     """
     Compute Otsu's threshold for a single-channel image.
@@ -290,7 +287,6 @@ def _otsu_threshold(channel: np.ndarray) -> int:
 
     return best_threshold
 
-
 def _morphological_close(mask: np.ndarray, kernel_size: int) -> np.ndarray:
     """
     Morphological closing: dilate then erode. Fills small holes in tissue regions.
@@ -300,7 +296,6 @@ def _morphological_close(mask: np.ndarray, kernel_size: int) -> np.ndarray:
     closed = ndimage.binary_dilation(mask, structure=structure)
     closed = ndimage.binary_erosion(closed, structure=structure)
     return closed
-
 
 def _remove_small_objects(mask: np.ndarray, min_pixels: int) -> np.ndarray:
     """
@@ -404,7 +399,6 @@ import time
 
 sagemaker_client = boto3.client("sagemaker", config=BOTO3_RETRY_CONFIG)
 
-
 def prepare_patch_manifest(slide_id: str, coordinates: list[dict]) -> str:
     """
     Write the patch coordinate manifest to S3 as input for SageMaker Batch Transform.
@@ -432,7 +426,6 @@ def prepare_patch_manifest(slide_id: str, coordinates: list[dict]) -> str:
     )
 
     return f"s3://{FEATURE_BUCKET}/{manifest_key}"
-
 
 def start_feature_extraction(slide_id: str, manifest_uri: str) -> str:
     """
@@ -485,7 +478,6 @@ def start_feature_extraction(slide_id: str, manifest_uri: str) -> str:
 
     logger.info("Started SageMaker transform job: %s", job_name)
     return job_name
-
 
 def wait_for_feature_extraction(job_name: str, timeout_minutes: int = 30) -> str:
     """
@@ -563,7 +555,6 @@ def load_features_from_s3(slide_id: str, features_uri: str) -> np.ndarray:
     logger.info("Loaded features: shape %s", features.shape)
     return features
 
-
 def attention_mil_aggregate(features: np.ndarray) -> tuple[dict, np.ndarray]:
     """
     Attention-based Multiple Instance Learning aggregation.
@@ -628,7 +619,6 @@ def attention_mil_aggregate(features: np.ndarray) -> tuple[dict, np.ndarray]:
     }
 
     return prediction, attention_weights
-
 
 def generate_heatmap(
     patch_coordinates: list[dict],
@@ -842,7 +832,6 @@ def analyze_slide(bucket: str, key: str) -> dict:
 
     return result
 
-
 def _generate_synthetic_thumbnail() -> bytes:
     """
     Generate a synthetic slide thumbnail for testing.
@@ -875,7 +864,6 @@ def _generate_synthetic_thumbnail() -> bytes:
     buffer = io.BytesIO()
     result_img.save(buffer, format="PNG")
     return buffer.getvalue()
-
 
 # Run the pipeline against a test slide
 if __name__ == "__main__":

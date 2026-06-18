@@ -836,8 +836,6 @@ FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws/): Deployable solution for document classification, extraction, and human review; includes A2I integration patterns that parallel this recipe
 - [Amazon Bedrock Data Automation](https://aws.amazon.com/bedrock/data-automation/): The managed alternative to the dual-path architecture described here; worth evaluating if you want less custom engineering
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (Basic / Production-ready / With variations tiers) before navigation. Add this section. -->
-
 ---
 
 *← [Main Recipe 1.6](chapter01.06-handwritten-clinical-note-digitization) · [Python Example](chapter01.06-python-example) · [Chapter Preface](chapter01-preface)*

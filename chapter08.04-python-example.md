@@ -364,7 +364,6 @@ def find_section_for_offset(sections: list[dict], offset: int) -> dict:
     # Fallback: if no section matched, return a generic one.
     return {"header": "unknown", "category": "OTHER"}
 
-
 def store_medication_extraction(
     patient_id: str,
     note_id: str,
@@ -479,7 +478,6 @@ despite prior recommendation. Will continue current medications. Consider
 adding low-dose aspirin at next visit.
 """
 
-
 def process_clinical_note(patient_id: str, note_id: str, note_text: str) -> list[dict]:
     """
     Run the full medication extraction and normalization pipeline for one note.
@@ -513,7 +511,6 @@ def process_clinical_note(patient_id: str, note_id: str, note_text: str) -> list
     logger.info("  Stored %d structured medication records", len(results))
 
     return results
-
 
 if __name__ == "__main__":
     results = process_clinical_note(

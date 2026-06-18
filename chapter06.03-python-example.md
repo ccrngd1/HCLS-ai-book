@@ -399,7 +399,6 @@ def profile_clusters(patients: pd.DataFrame, labels: np.ndarray) -> list[dict]:
 
     return profiles
 
-
 def _generate_cluster_label(profile: dict) -> str:
     """
     Heuristic label generation based on cluster characteristics.
@@ -682,7 +681,6 @@ def run_payer_risk_clustering_pipeline(
         "best_k": best_model.n_clusters,
         "alerts": alerts,
     }
-
 
 if __name__ == "__main__":
     result = run_payer_risk_clustering_pipeline(n_patients=5000)

@@ -1,16 +1,3 @@
-<!--
-Editorial pass (TechEditor, 2026-05-11):
-- Hoisted `import time` from the orchestrator body to the module-level imports; per-function imports are legal Python but a teaching example should model the conventional style (code review F4).
-- Added a brief inline note on colons in ISO timestamps that end up embedded in S3 keys, for readers who `aws s3 cp` objects to Windows filesystems during local debugging (code review F3, optional fix).
-- Preserved F1 (unused `Decimal` import, intentional with inline comment) and F2 (MAX_SUGGESTIONS_PER_NOTE deliberately set to 3 here vs 5 in the main recipe pseudocode, with inline explanation) as the reviewer recommended no change.
-- No new technical content, no API signature changes, no pedagogical restructuring. Code review verdict remained PASS with four NOTE-level findings and none requiring a rewrite.
-
-Editorial pass 2 (TechEditor, 2026-05-11):
-- Re-verified pass-1 scope: `import time` now at module top alongside `datetime`, `uuid`, `json`, `logging`; colon-in-ISO-timestamp caveat retained in `receive_note`; `Decimal` import still annotated with the intent comment; `MAX_SUGGESTIONS_PER_NOTE = 3` still carries the pilot-vs-steady-state rationale tied back to the main recipe.
-- Confirmed: zero em dashes (U+2014), no trailing whitespace, all fenced code blocks tagged (`python`, `bash`), Bedrock Messages API request body and response traversal (`content[0]["text"]`) correct, `bedrock-agent-runtime.retrieve` parameter shape (`retrievalQuery`, `retrievalConfiguration.vectorSearchConfiguration.numberOfResults`) correct, S3 keys use forward slashes with no leading slash, DynamoDB writes use only string values so no float-to-Decimal footgun, sample note clearly labeled as synthetic and non-PHI.
-- Gap-to-Production section still names the right production-hardening concerns (EHR integration, KB maintenance, context-window strategy, feedback loop, compliance review of queries, concurrent vs retrospective, hallucination detection via evidence-in-note cross-check, rate limiting, multi-note dedup, DynamoDB GSIs, VPC + both Bedrock endpoints, synthetic-note testing) and stays out of the teaching path in the function sections above it. No rewrites performed.
--->
-
 # Recipe 2.3: Python Implementation Example
 
 > **Heads up:** This is a deliberately simple, illustrative implementation of the pseudocode walkthrough from Recipe 2.3. It shows one way you could translate those CDI concepts into working Python code using Amazon Bedrock. It is not production-ready. There's no EHR integration, no real-time streaming, no compliance-reviewed query templates. Think of it as the sketchpad version: useful for understanding the shape of the solution, not something you'd deploy to a CDI workqueue on Monday morning. Consider it a starting point, not a destination.
@@ -778,7 +765,6 @@ def analyze_note_for_cdi(note_content: str, metadata: dict) -> dict:
         "suppressed_count": len(prioritized["suppressed"]),
         "processing_time_ms": elapsed_ms,
     }
-
 
 # --- Example usage ---
 if __name__ == "__main__":

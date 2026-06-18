@@ -26,10 +26,6 @@ Note on API access patterns: the staff dashboard and pharmacy system are interna
 
 ### Architecture Diagram
 
-<!-- TODO (TechWriter): Expert review A2 (HIGH). Add bidirectional arrow between Staff Dashboard and scheduling engine. Add paragraph describing human override mechanism: drag-and-drop reassignment, assignment locking, ad-hoc constraint addition, re-solve requests. Log all overrides with staff ID and reason. Track override frequency to identify missing model constraints. The recipe's Honest Take already advises "Allow overrides" but the architecture doesn't implement it. -->
-
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add failover/degradation subsection. The optimization layer enhances existing scheduling; it does not replace it. Define: if batch optimizer fails by 6 AM, fall back to template-based schedule. If real-time adjuster times out (>5s), route to human scheduler queue. Staff dashboard must show current schedule regardless of optimizer availability. Alert if batch job fails or real-time latency exceeds 5s for 3+ consecutive events. -->
-
 ```mermaid
 flowchart TD
     A[Oncology EHR\nTreatment Orders] -->|FHIR/HL7| B[EventBridge\nOrder Events]
@@ -143,7 +139,6 @@ Some patients receive multiple treatments across different departments (radiatio
 ---
 
 [← Recipe 14.8: Ambulance Routing and Dispatch](chapter14.08-ambulance-routing-dispatch) | [Chapter 14 Index](chapter14-preface) | [Recipe 14.10: Health System Network Design →](chapter14.10-health-system-network-design)
-
 
 ---
 

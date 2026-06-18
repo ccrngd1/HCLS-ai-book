@@ -207,7 +207,6 @@ def _to_decimal(value, precision="0.001"):
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
 
-
 def _decimalize(obj):
     """Recursively convert floats to Decimals for DynamoDB write."""
     if isinstance(obj, float):
@@ -218,7 +217,6 @@ def _decimalize(obj):
         return [_decimalize(v) for v in obj]
     return obj
 
-
 def _undecimalize(obj):
     """Inverse of _decimalize for read-side conversion to Python-native types."""
     if isinstance(obj, Decimal):
@@ -228,7 +226,6 @@ def _undecimalize(obj):
     if isinstance(obj, list):
         return [_undecimalize(v) for v in obj]
     return obj
-
 
 def determine_cohorts(discharge_event):
     """Map a discharge event to one or more cohorts.
@@ -264,7 +261,6 @@ def determine_cohorts(discharge_event):
         cohorts = ["general"]   # fallback bucket; thresholds default to DEFAULT
     return cohorts
 
-
 def tier_from_discharge_score(score, cohorts, program_caps=None):
     """Pick the initial monitoring tier from the discharge-time risk score.
 
@@ -289,7 +285,6 @@ def tier_from_discharge_score(score, cohorts, program_caps=None):
     if score >= thresholds["tier_3"]:
         return "tier_3"
     return "below_threshold"
-
 
 def on_discharge_event(discharge_event):
     """Enroll a patient into the post-discharge monitoring program.
@@ -389,7 +384,6 @@ def verify_vendor_signature(webhook_request):
     # AWS Secrets Manager, check the timestamp window, reject replays.
     return True
 
-
 def resolve_patient_id_from_device(device_id):
     """Look up the enrolled patient for a device serial number.
 
@@ -403,7 +397,6 @@ def resolve_patient_id_from_device(device_id):
     #   response = table.get_item(Key={"device_id": device_id})
     #   return response.get("Item", {}).get("patient_id")
     return device_id
-
 
 def convert_to_canonical_units(value, units, modality):
     """Convert vendor-specific units to the canonical unit per modality.
@@ -435,7 +428,6 @@ def convert_to_canonical_units(value, units, modality):
     # the units field and rejects mismatches.
     return v
 
-
 def parse_vendor_payload(webhook_request):
     """Normalize a vendor-specific payload to a uniform internal shape.
 
@@ -444,7 +436,6 @@ def parse_vendor_payload(webhook_request):
     target shape so we can focus on the canonical-event construction.
     """
     return webhook_request
-
 
 def on_rpm_webhook(webhook_request):
     """Receive an RPM measurement webhook and put it on the event stream.
@@ -497,7 +488,6 @@ def on_rpm_webhook(webhook_request):
 
     return {"statusCode": 200}
 
-
 def compute_symptom_score(responses, template_id):
     """Aggregate a check-in response set into a single symptom score.
 
@@ -523,7 +513,6 @@ def compute_symptom_score(responses, template_id):
         )
     # Generic fallback.
     return float(sum(int(v) for v in responses.values() if str(v).isdigit()))
-
 
 def on_pro_check_in(check_in_event):
     """Receive a patient-reported outcome submission.
@@ -575,7 +564,6 @@ def _is_more_recent(new_observed_at, existing):
         return True
     return new_observed_at > existing.get("observed_at", "")
 
-
 def _trim_recent_acute_events(events, lookback_days=14):
     """Keep recent ED visits and external admissions. Older events fall
     out of the state record (they live in the audit index for retrospective
@@ -583,12 +571,10 @@ def _trim_recent_acute_events(events, lookback_days=14):
     cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
     return [e for e in events if e.get("occurred_at", "") >= cutoff]
 
-
 def _trim_medication_events(events, lookback_days=21):
     """Keep recent medication events; older ones fall out of state."""
     cutoff = (datetime.now(timezone.utc) - timedelta(days=lookback_days)).isoformat()
     return [e for e in events if e.get("occurred_at", "") >= cutoff]
-
 
 def classify_medication(rxnorm_code):
     """Map an RxNorm code to a therapeutic class.
@@ -609,7 +595,6 @@ def classify_medication(rxnorm_code):
         return "insulin"
     return "other"
 
-
 def should_rescore_immediately(canonical_event):
     """Decide whether an event triggers immediate re-scoring.
 
@@ -627,7 +612,6 @@ def should_rescore_immediately(canonical_event):
         if canonical_event.get("symptom_score", 0) >= 8:
             return True
     return False
-
 
 def on_canonical_event(canonical_event):
     """Apply a canonical event to patient state and trajectory history."""
@@ -815,7 +799,6 @@ def daily_scoring_pipeline(scoring_handler):
 
     return score_records
 
-
 def run_modality_detector(modality, history, baseline, cohort_prior):
     """Per-modality control-chart anomaly detector.
 
@@ -860,7 +843,6 @@ def run_modality_detector(modality, history, baseline, cohort_prior):
         "baseline_age_days": baseline_age_days,
     }
 
-
 def cohort_prior_for(cohorts, modality):
     """Return the cohort-level prior for a modality.
 
@@ -892,7 +874,6 @@ def cohort_prior_for(cohorts, modality):
     # Generic fallbacks.
     return {"expected_value": 0.0, "expected_std": 1.0}
 
-
 def map_to_tier(calibrated_probability, cohorts):
     """Map a calibrated probability to a tier using cohort thresholds."""
     cohort_priority = ["heart_failure", "post_op_cardiac", "copd", "diabetes",
@@ -906,7 +887,6 @@ def map_to_tier(calibrated_probability, cohorts):
     if calibrated_probability >= thresholds["tier_3"]:
         return "tier_3"
     return "below_threshold"
-
 
 def score_patient(patient_id, encounter_id, trigger, model, calibrator,
                   feature_order):
@@ -1011,13 +991,11 @@ def score_patient(patient_id, encounter_id, trigger, model, calibrator,
     score_record["_features_for_explanation"] = features
     return score_record
 
-
 def days_between(start_iso, end_iso):
     """Days between two ISO-8601 timestamps, fractional."""
     s = datetime.fromisoformat(start_iso.replace("Z", "+00:00"))
     e = datetime.fromisoformat(end_iso.replace("Z", "+00:00"))
     return (e - s).total_seconds() / 86400.0
-
 
 def modalities_for_cohorts(cohorts):
     """Union of monitored modalities across the patient's cohorts."""
@@ -1025,7 +1003,6 @@ def modalities_for_cohorts(cohorts):
     for c in cohorts:
         out.update(COHORT_MODALITIES.get(c, []))
     return sorted(out)
-
 
 def _emit_metric(metric_name, value, unit="Count"):
     """Emit a CloudWatch metric for operational monitoring."""
@@ -1068,7 +1045,6 @@ def _compute_slope(timestamped_values):
         return 0.0
     return float(np.cov(t, y, ddof=0)[0, 1] / t.var())
 
-
 def fetch_modality_history(patient_id, modality, days, as_of):
     """Query Timestream for a modality's history within the lookback window."""
     as_of_dt = datetime.fromisoformat(as_of.replace("Z", "+00:00"))
@@ -1096,7 +1072,6 @@ def fetch_modality_history(patient_id, modality, days, as_of):
         })
     return series
 
-
 def compute_patient_baseline(history):
     """Build a patient-specific baseline from the first several days of
     post-discharge data. Returns None when too few observations exist;
@@ -1117,7 +1092,6 @@ def compute_patient_baseline(history):
         "n_obs":      len(values),
         "age_days":   1.0,   # baseline is anchored to early post-discharge
     }
-
 
 def compute_features(state, as_of):
     """Compute the model's input feature vector.
@@ -1343,7 +1317,6 @@ def _feature_vector_to_array(features, feature_order):
             row.append(0.0)   # categorical features encoded upstream in production
     return np.array([row], dtype=float)
 
-
 def score_via_sagemaker_endpoint(features, feature_order):
     """Invoke the deployed SageMaker endpoint with a feature vector.
 
@@ -1361,14 +1334,12 @@ def score_via_sagemaker_endpoint(features, feature_order):
     body = response["Body"].read().decode("utf-8").strip()
     return float(body.split(",")[0])
 
-
 def score_via_local_model(features, feature_order, local_model):
     """Score against a tiny in-process model, for the teaching example."""
     X = _feature_vector_to_array(features, feature_order)
     if hasattr(local_model, "predict_proba"):
         return float(local_model.predict_proba(X)[0, 1])
     return float(1.0 / (1.0 + math.exp(-float(local_model.decision_function(X)[0]))))
-
 
 # Human-readable feature descriptions for the explanation layer. In
 # production this is loaded from a versioned reference table maintained
@@ -1401,7 +1372,6 @@ FEATURE_DESCRIPTIONS = {
     "food_insecurity_flag":           "food insecurity flag",
 }
 
-
 def humanize_driver(feature_name, value):
     """Build a clinical-meaning string for a single driver."""
     description = FEATURE_DESCRIPTIONS.get(feature_name, feature_name)
@@ -1412,7 +1382,6 @@ def humanize_driver(feature_name, value):
     else:
         value_str = str(value)
     return f"{description}: {value_str}"
-
 
 def compute_top_drivers(features, feature_order, model, top_n=5):
     """Compute approximate top contributing features.
@@ -1443,7 +1412,6 @@ def compute_top_drivers(features, feature_order, model, top_n=5):
 
     contributions.sort(key=lambda c: abs(c["contribution"]), reverse=True)
     return contributions[:top_n]
-
 
 def suggested_outreach_for(cohorts, top_drivers, engagement_status):
     """Build a structured outreach suggestion based on the top drivers
@@ -1503,7 +1471,6 @@ def suggested_outreach_for(cohorts, top_drivers, engagement_status):
         ),
     }
 
-
 def build_explanation(score_record, model, feature_order):
     """Assemble structured drivers plus a Bedrock-generated narrative."""
     features = score_record.get("_features_for_explanation") or {}
@@ -1551,7 +1518,6 @@ def build_explanation(score_record, model, feature_order):
         "generated_at":       datetime.now(timezone.utc).isoformat(),
         "explanation_version": "shap_proxy_plus_bedrock_v1",
     }
-
 
 def invoke_bedrock_narrative(score_record, top_drivers, engagement_status,
                               cohorts, days_post_discharge):
@@ -1663,7 +1629,6 @@ def check_suppression(state, score):
 
     return {"suppressed": False}
 
-
 def current_capacity_for_cohorts(cohorts):
     """Return the daily worklist capacity for a cohort.
 
@@ -1676,11 +1641,9 @@ def current_capacity_for_cohorts(cohorts):
     # vary substantially based on staffing.
     return {"max_rows": 25}
 
-
 def apply_capacity_caps(sorted_rows, capacity):
     """Trim the worklist to the top N rows the team can realistically work."""
     return sorted_rows[: capacity.get("max_rows", 25)]
-
 
 def build_worklist(date_iso, score_records, model, feature_order):
     """Build the daily worklist from a batch of scoring records.
@@ -1838,7 +1801,6 @@ def on_care_manager_action(action_event):
         _emit_metric("SuccessfulContacts", 1)
 
     return intervention_record
-
 
 def on_outcome_event(outcome_event):
     """Record a downstream clinical outcome and link it to recent alerts.
@@ -2047,7 +2009,6 @@ def train_demo_model(num_synthetic_patients=400, random_state=42):
     calibrator.fit(raw_probs, y)
 
     return model, calibrator, feature_order
-
 
 def run_post_discharge_pipeline(discharge_events, rpm_events, pro_events,
                                  ehr_events, model, calibrator, feature_order):

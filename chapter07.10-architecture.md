@@ -8,8 +8,6 @@
 
 ### Why These Services
 
-<!-- TODO (TechWriter): Expert review ARC-1 (HIGH). Add model monitoring/drift detection to the architecture: SageMaker Model Monitor for feature distribution tracking, periodic recalibration job comparing predicted vs. observed event rates, CloudWatch alarm when C-index drops below 0.65, and a model health dashboard showing calibration curves over time. -->
-
 **Amazon SageMaker for model training and hosting.** Dynamic survival models require custom architectures (RNNs, transformers) trained on longitudinal patient data. SageMaker handles the GPU training infrastructure you need for sequence models, plus experiment tracking and real-time inference endpoints. The model registry handles versioning as you retrain on new outcome data, which matters here because timing models need frequent recalibration.
 
 **AWS Glue and Amazon S3 for longitudinal data assembly.** Building patient timelines from disparate source systems (EHR extracts, claims feeds, pharmacy data, ADT feeds) is an ETL-heavy workload. Glue handles the transformation logic; S3 provides the durable data lake layer. Glue's support for incremental processing matters here because patient timelines need daily updates, not full rebuilds.
@@ -17,8 +15,6 @@
 **Amazon Kinesis Data Streams for real-time event ingestion.** Intervention timing is time-sensitive. If a patient's lab result comes back critically abnormal at 2 PM, you don't want to wait for tomorrow's batch run to flag them. Kinesis ingests real-time clinical events (ADT messages, lab results, medication fills) and feeds them to the scoring pipeline with sub-minute latency. Configure a dead letter queue (SQS) on the Lambda event source mapping so failed records aren't silently dropped; for a clinical system, a missed scoring event means a patient who should have been flagged is invisible.
 
 **AWS Lambda for intervention window scoring.** The scoring logic (apply decision rules to model output, check operational constraints, generate recommendations) is stateless and event-driven. Lambda processes each patient's updated trajectory and determines whether to surface an intervention recommendation.
-
-<!-- TODO (TechWriter): Expert review ARC-2 (HIGH). Explicitly describe DynamoDB TTL on the expires_at field to auto-delete stale recommendations, a DynamoDB Streams trigger on TTL deletions to log "expired without action" events for model feedback, and re-scoring logic that runs when a recommendation expires to determine if a new window has opened or the risk has resolved. -->
 
 **Amazon DynamoDB for patient state and recommendation storage.** Each patient has a current state (latest risk trajectory, last intervention date, engagement history) that needs fast point lookups and frequent updates. DynamoDB's key-value model with TTL support handles this cleanly. Recommendations are written here for the care team interface to consume.
 
@@ -421,7 +417,6 @@ FUNCTION generate_recommendations(scored_patients, care_team_capacity):
 
     RETURN recommendations
 
-
 FUNCTION generate_explanation(scored_result):
     // Build a human-readable explanation of why this patient needs outreach now.
     // Care managers need to understand the "why" to trust and act on the recommendation.
@@ -493,8 +488,6 @@ Without provisioned concurrency, Lambda cold starts in VPC can push real-time pa
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (model monitoring, A/B holdout ethics, integration testing with EHR, etc.). -->
-
 ## Variations and Extensions
 
 **Multi-intervention timing.** Instead of a single "intervene or wait" decision, model the optimal timing for different intervention types: phone call, text message, home visit, medication adjustment, specialist referral. Each intervention type has different effectiveness curves at different risk levels. A text reminder might work at moderate risk; a home visit might be needed at high risk. The model outputs a recommended intervention type alongside the timing.
@@ -536,7 +529,6 @@ Without provisioned concurrency, Lambda cold starts in VPC can push real-time pa
 | **With variations** (multi-intervention, causal correction, continuous learning) | 30-40+ weeks |
 
 ---
-
 
 ---
 

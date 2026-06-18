@@ -343,7 +343,6 @@ def segment_wound_synthetic(image: Image.Image) -> tuple:
 
     return wound_mask.astype(np.uint8), confidence
 
-
 def segment_wound_sagemaker(image: Image.Image) -> tuple:
     """
     Call SageMaker endpoint for wound segmentation.
@@ -706,7 +705,6 @@ def measure_wound(
     print(f"{'='*60}\n")
 
     return record
-
 
 # --- Run the pipeline with synthetic data ---
 if __name__ == "__main__":

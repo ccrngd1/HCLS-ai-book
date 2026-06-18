@@ -471,7 +471,6 @@ def solve_assignment(model, x, patients, beds) -> dict:
         "unassigned_patients": unassigned,
     }
 
-
 def build_reasoning(patient: dict, bed: dict) -> list:
     """
     Generate human-readable explanations for why this bed was chosen.
@@ -498,7 +497,6 @@ def build_reasoning(patient: dict, bed: dict) -> list:
     reasons.append(f"Unit at {UNIT_STAFFING[bed['unit']]['current_census']}/{UNIT_STAFFING[bed['unit']]['staffed_capacity']} staffed capacity")
 
     return reasons
-
 
 def explain_unassignment(patient: dict, beds: list) -> str:
     """
@@ -657,7 +655,6 @@ def run_bed_assignment_optimization():
     print("=" * 60)
 
     return result
-
 
 # Run it.
 if __name__ == "__main__":

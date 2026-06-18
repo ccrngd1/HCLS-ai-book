@@ -1,49 +1,3 @@
-<!--
-Editorial pass (TechEditor, 2026-05-11):
-- Corrected the per-document cost estimate: Comprehend Medical dominates and was omitted from the top-line number (expert review A2).
-- Added KMS VPC endpoint and interface-vs-gateway distinction to Prerequisites (S1/N1/N2).
-- Added Bedrock endpoint name (bedrock-runtime) and noted it serves both InvokeModel and ApplyGuardrail (N3).
-- Added Lambda timeout and memory row to Prerequisites (A1).
-- Added note on Bedrock model-invocation-logging PHI to Encryption row (S4).
-- Revised The Honest Take's retry-loop claim to match the current single-pass behavior (A4).
-- Removed the Architecture Diagram's second Comprehend Medical arrow, which disagreed with Step 4's string-matching logic (A3).
-- Added a parenthetical on segment-classifier ambiguity in Step 2 (A6).
-- Added input-side Guardrails note for untrusted sources in Step 3 (S2).
-- Added PHI retention / TTL guidance to Step 5 (S3).
-- Added guardrail-event metric note to Step 3 (S5).
-- Replaced two broken URLs in Additional Resources; removed the V2 inline TODO (V2).
-- Preserved the V3 TODO on Recipe 8.1 cross-reference for the book-wide sweep.
-- Flagged remaining structural items (cache lookup step, classifier upgrade, retry loop) as TODOs for TechWriter (A4, A5, A6).
-
-Editorial pass 2 (TechEditor, 2026-05-11):
-- Removed stray double blank lines before "## The AWS Implementation" and before the Step 1 code fence (whitespace polish, no content change).
-- Confirmed zero em dashes, header hierarchy (H1 / H2 / H3 / H4 Walkthrough) consistent with Chapter 1, all URLs well-formed, no documentation-voice or LinkedIn-influencer patterns, vendor balance holds at approximately 70/30.
-- No structural rewrites; all TODOs preserved for the TechWriter.
-
-Editorial pass 3 (TechEditor, 2026-05-11):
-- Final checklist sweep against both reviews. No remaining fixable issues at the editing layer.
-- Verified: zero em dashes (U+2014 full-file scan), zero trailing whitespace, all fenced blocks match chapter-1 convention (bare fences for pseudocode, language tags on json/mermaid), all 12 external URLs are well-formed AWS docs/samples/solutions domains, no hype-marker phrases (leverage, seamless, delve, revolutionize, etc.) present.
-- Header hierarchy (H1 title, H2 major, H3 subsection, H4 Walkthrough) matches chapter01.01 and chapter02.01.
-- RECIPE-GUIDE section order verified: Problem, Technology, General Architecture Pattern, Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code (Walkthrough), Expected Results, Honest Take, Variations, Related Recipes, Additional Resources, Estimated Implementation Time, Tags, Navigation.
-- Vendor balance verified: The Problem, The Technology, and General Architecture Pattern stay vendor-neutral; AWS service names appear only from "The AWS Implementation" onward.
-- Preserved TODOs flagged for downstream personas: (1) cache-lookup Step 0 before Step 1 (TechWriter; A5), (2) optional retry loop in Step 5 with cost/latency adjustment (TechWriter; A4), (3) Recipe 8.1 cross-reference number (book-wide sweep; V3). Per persona instructions, structural additions are left for the TechWriter rather than rewritten here.
-
-Editorial pass 4 (TechEditor, 2026-05-11):
-- Renamed Prerequisites row "Lambda config" to "Lambda Runtime" for title-case consistency with the rest of the table and with chapter02.01's equivalent row. Content of the row unchanged.
-- Re-scanned against both reviews: zero em dashes (U+2014), header hierarchy stable, 12 external URLs all well-formed, 3 preserved TODOs still intact (Step 0 cache lookup, retry-loop cost adjustment, Recipe 8.1 reference number). Persona constraints observed: no structural rewrites, no new technical claims, no TODO removals.
-
-Editorial pass 5 (TechEditor, 2026-05-31):
-- Added finding IDs to all three preserved TODO markers (A5, A4, V3) so the follow-up task generator can track them. No content changes to the markers themselves.
-- Final checklist: zero em dashes, zero trailing whitespace, no consecutive blank lines, header hierarchy (H1/H2/H3/H4) stable, all 12 URLs well-formed, no documentation-voice or hype markers, RECIPE-GUIDE section order compliant, vendor balance holds at ~70/30. Recipe is publication-ready pending the three deferred TechWriter items.
-
-Editorial pass 6 (TechEditor, 2026-06-17): Post-split polish.
-- Fixed en dash (U+2013) in cost line to hyphen.
-- Replaced "see Prerequisites for breakdown" with a link to the architecture companion (Prerequisites now lives there).
-- Replaced "The pseudocode here flags" with "The validation step flags" in The Honest Take to remove dangling reference to companion-file pseudocode.
-- Added `text` language tag to the pipeline-diagram code fence.
-- Verified: architecture callout is correctly placed at end of General Architecture Pattern, The Honest Take has no remaining forward-references to AWS content, all TODOs preserved (A4, A5, V3).
--->
-
 # Recipe 2.2: Medical Terminology Simplification
 
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15-0.30 per document (Comprehend Medical dominates; see the [Architecture companion](chapter02.02-architecture) for a cost breakdown)
@@ -133,7 +87,6 @@ The key design principle: simplification is a transformation with verifiable pro
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter02.02-architecture). The Python example is linked from there.
 
 ## The Honest Take
@@ -142,7 +95,7 @@ This is one of the most satisfying LLM applications to build because the results
 
 The part that surprised me: the segmentation step matters more than the model choice. A single prompt that says "simplify this entire discharge summary" produces mediocre results because the model tries to apply one strategy uniformly. Medication sections get over-explained. Instruction sections get under-simplified. Segmenting first and applying type-specific prompts produces dramatically better output.
 
-The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The validation step flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): Expert review A4 (MEDIUM). If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
+The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The validation step flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. 
 
 The entity preservation check is where you'll find your scariest bugs. Early in development, I watched the model simplify "ticagrelor 90mg BID" into "your blood thinner twice a day." Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy. The preservation checklist catches this, but you need to be thoughtful about what goes on the list.
 
@@ -156,7 +109,7 @@ The caching layer pays for itself quickly. Standard procedure discharge instruct
 
 - **Recipe 2.1 (Patient Message Response Drafting):** Uses similar LLM patterns with Bedrock and Guardrails for patient-facing text generation
 - **Recipe 2.5 (After-Visit Summary Generation):** Generates patient-facing summaries from clinical encounters; could use this recipe's simplification as a post-processing step
-- **Recipe 8.1 (Medical Entity Extraction):** Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification <!-- TODO (TechWriter): Expert review V3 (LOW). Verify recipe number against final chapter 8 index in book-wide cross-reference sweep. -->
+- **Recipe 8.1 (Medical Entity Extraction):** Uses Comprehend Medical for entity extraction, the same technique used here for preservation verification 
 - **Recipe 1.6 (Handwritten Clinical Note Digitization):** Upstream OCR that might produce the clinical text this recipe simplifies
 
 ---

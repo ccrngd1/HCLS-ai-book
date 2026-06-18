@@ -371,8 +371,6 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 
 **Where it struggles:** Patients with pacemakers (pacing spikes confuse morphology analysis). Overlapping conditions (atrial fibrillation with frequent PVCs). Pediatric patients (different normal ranges, different waveform morphology). Periods of high artifact (patient transport, procedures, bathing). And the cold start problem: a new patient with no baseline requires conservative thresholds until the system learns their normal.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps like FDA validation, clinical workflow integration, and model drift monitoring. -->
-
 ---
 
 ## Variations and Extensions
@@ -404,8 +402,6 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 - [Real-Time Streaming Data Analysis on AWS](https://aws.amazon.com/solutions/implementations/real-time-analytics-spark-streaming/): Reference architecture for real-time streaming analytics pipelines
 - [Machine Learning Inference at the Edge](https://aws.amazon.com/blogs/machine-learning/): Search for IoT and edge inference patterns applicable to bedside device processing
 
-<!-- TODO (TechWriter): Verify availability of any aws-samples repos specifically for medical device streaming or physiological signal processing. As of writing, most healthcare ML samples focus on imaging and NLP rather than waveform analysis. -->
-
 ---
 
 ## Estimated Implementation Time
@@ -417,7 +413,6 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 | **With variations** (multi-modal fusion, adaptive baselines, research platform) | 12-18 months |
 
 ---
-
 
 ---
 

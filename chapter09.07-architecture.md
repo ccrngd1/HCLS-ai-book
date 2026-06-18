@@ -340,8 +340,6 @@ FUNCTION update_worklist_and_notify(triage_result):
 - Multi-finding studies where one critical finding masks another
 - Edge cases in modality routing (combined studies, non-standard protocols)
 
-<!-- TODO (TechWriter): Architecture companion is missing a "Why This Isn't Production-Ready" section per RECIPE-GUIDE. Should appear between Expected Results and Variations. -->
-
 ---
 
 ## Variations and Extensions
@@ -392,7 +390,6 @@ FUNCTION update_worklist_and_notify(triage_result):
 
 | [← 9.6: Diabetic Retinopathy Screening](chapter09.06-diabetic-retinopathy-screening) | [Chapter 9 Index](chapter09-preface) | [9.8: Pathology Slide Analysis →](chapter09.08-pathology-slide-analysis) |
 |:---|:---:|---:|
-
 
 ---
 

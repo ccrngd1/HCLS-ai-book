@@ -89,7 +89,6 @@ logger.setLevel(logging.INFO)
 
 s3_client = boto3.client("s3")
 
-
 def parse_formulary_file(bucket: str, key: str) -> tuple[list, list]:
     """
     Read a formulary file from S3 and transform it into graph-ready
@@ -250,7 +249,6 @@ def parse_formulary_file(bucket: str, key: str) -> tuple[list, list]:
 ```python
 import requests
 
-
 def execute_opencypher(query: str, parameters: dict = None) -> dict:
     """
     Execute an openCypher query against Neptune's HTTP endpoint.
@@ -280,7 +278,6 @@ def execute_opencypher(query: str, parameters: dict = None) -> dict:
     )
     response.raise_for_status()
     return response.json()
-
 
 def load_vertices(vertices: list) -> int:
     """
@@ -317,7 +314,6 @@ def load_vertices(vertices: list) -> int:
     logger.info("Loaded %d vertices into Neptune", len(vertices))
     return len(vertices)
 
-
 def load_edges(edges: list) -> int:
     """
     Upsert edges into Neptune using openCypher MERGE.
@@ -351,7 +347,6 @@ def load_edges(edges: list) -> int:
 
     logger.info("Loaded %d edges into Neptune", len(edges))
     return len(edges)
-
 
 def load_graph(vertices: list, edges: list) -> dict:
     """
@@ -448,7 +443,6 @@ import redis
 # In production, use connection pooling and handle connection failures.
 redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
-
 def get_alternatives_cached(drug_id: str, plan_id: str) -> list:
     """
     Get therapeutic alternatives with Redis caching.
@@ -484,7 +478,6 @@ def get_alternatives_cached(drug_id: str, plan_id: str) -> list:
     redis_client.setex(cache_key, CACHE_TTL_SECONDS, json.dumps(alternatives))
 
     return alternatives
-
 
 def invalidate_formulary_cache() -> int:
     """
@@ -537,7 +530,6 @@ def get_drug_tier(drug_id: str, plan_id: str) -> int | None:
         return None
 
     return results[0]["tier"]
-
 
 def handle_formulary_query(drug_id: str, plan_id: str) -> dict:
     """
@@ -640,7 +632,6 @@ def run_formulary_load(bucket: str, key: str) -> dict:
         "cache_entries_invalidated": deleted,
     }
 
-
 def run_formulary_query(drug_id: str, plan_id: str) -> dict:
     """
     Full query pipeline: check cache, query graph, return structured response.
@@ -667,7 +658,6 @@ def run_formulary_query(drug_id: str, plan_id: str) -> dict:
             print(f"  - {alt['drug_name']} (Tier {alt['tier']}, restrictions: {restrictions})")
 
     return result
-
 
 # Example usage:
 if __name__ == "__main__":

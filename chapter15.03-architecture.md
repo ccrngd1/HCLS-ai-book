@@ -171,7 +171,6 @@ FUNCTION compute_thompson_allocation(posteriors, min_alloc, max_alloc):
     
     RETURN constrained
 
-
 FUNCTION apply_allocation_constraints(raw_probs, min_alloc, max_alloc):
     // Clip each probability to the allowed range
     clipped = {}
@@ -318,8 +317,6 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 **Platform trials with multiple experimental arms.** Instead of a fixed set of arms, new experimental treatments can enter the trial while others graduate (to Phase III) or are dropped (for futility). The I-SPY 2 model. This requires a smarter allocation engine that handles arms coming and going while keeping the statistics valid. The architecture extends naturally: add arm management endpoints and modify the posterior engine to handle variable-length arm vectors.
@@ -345,8 +342,6 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 - [FDA Guidance: Master Protocols for Drug and Biological Products (2022)](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/master-protocols-efficient-clinical-trial-design-strategies-expedite-development-oncology-drugs-and)
 
 **Key References:**
-<!-- TODO (TechWriter): Verify URL for Berry et al. "Bayesian Adaptive Methods for Clinical Trials" (CRC Press) -->
-<!-- TODO (TechWriter): Verify URL for Thall & Wathen (2007) "Practical Bayesian adaptive randomisation in clinical trials" (European Journal of Cancer) -->
 
 ---
 
@@ -366,7 +361,6 @@ FUNCTION apply_dsmb_override(trial_id, override_type, parameters):
 
 | [← Recipe 15.2: Notification Timing Optimization](chapter15.02-notification-timing-optimization) | [Chapter 15 Index](chapter15-preface) | [Recipe 15.4: Sepsis Treatment Optimization →](chapter15.04-sepsis-treatment-optimization) |
 |:---|:---:|---:|
-
 
 ---
 

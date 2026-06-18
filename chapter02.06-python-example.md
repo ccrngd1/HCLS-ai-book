@@ -282,7 +282,6 @@ def receive_summary_request(request: dict) -> str:
     )
     return summary_id
 
-
 def _user_has_access(user_id: str, patient_id: str) -> bool:
     """
     Stub for the authorization check. Replace with a call into the EHR's
@@ -453,7 +452,6 @@ def chunk_and_preprocess(notes: list) -> list:
     logger.info("Chunked %d notes into %d chunks", len(notes), len(chunks))
     return chunks
 
-
 def _remove_boilerplate(text: str) -> str:
     """
     Strip common EHR-generated boilerplate that adds no clinical signal.
@@ -476,7 +474,6 @@ def _remove_boilerplate(text: str) -> str:
     # Collapse whitespace.
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
-
 
 def _split_by_headers_then_length(text: str, target_tokens: int) -> list:
     """
@@ -678,7 +675,6 @@ STRICT RULES:
 
     return structured_chunk
 
-
 def _empty_extraction() -> dict:
     """Shape-compatible empty extraction for error fallbacks."""
     return {
@@ -689,7 +685,6 @@ def _empty_extraction() -> dict:
         "code_status_mentioned": "", "devices_or_lines": [],
         "critical_events": [],
     }
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -952,7 +947,6 @@ def aggregate_facts(
     )
     return aggregated
 
-
 def _normalize_key(text: str) -> str:
     """Lowercased, punctuation-stripped key for dedup across notes."""
     if not text:
@@ -1038,7 +1032,6 @@ def apply_must_include_checklist(
         "aggregated": aggregated,
     }
 
-
 def _category_has_content(aggregated: dict, category: str) -> bool:
     """Check whether a named category has content in the aggregated object."""
     mapping = {
@@ -1059,7 +1052,6 @@ def _category_has_content(aggregated: dict, category: str) -> bool:
     }
     check = mapping.get(category)
     return check(aggregated) if check else False
-
 
 def _source_has_data_for_category(retrieved: dict, category: str) -> bool:
     """Determine whether the retrieved source has data for this category."""
@@ -1082,7 +1074,6 @@ def _source_has_data_for_category(retrieved: dict, category: str) -> bool:
         "follow_up": bool(retrieved.get("notes")),
     }
     return mapping.get(category, False)
-
 
 def _attempt_backfill(aggregated: dict, category: str, retrieved: dict) -> bool:
     """
@@ -1433,7 +1424,6 @@ def validate_and_attach_provenance(
         "provenance_map": provenance_map,
     }
 
-
 def _resolve_json_path(obj: dict, path: str):
     """
     Walk a dot-and-bracket path into a nested dict/list structure.
@@ -1463,11 +1453,9 @@ def _resolve_json_path(obj: dict, path: str):
             current = current[idx_int]
     return current
 
-
 def _normalize_for_match(text: str) -> str:
     """Lowercase, strip, collapse whitespace for tolerant matching."""
     return re.sub(r"\s+", " ", text.strip().lower())
-
 
 def _token_overlap_ratio(a: str, b: str) -> float:
     """
@@ -1828,7 +1816,6 @@ def summarize_clinical_notes(
         "processing_time_ms": elapsed_ms,
     }
 
-
 def _update_status(summary_id: str, status: str) -> None:
     """Update a summary's status field in DynamoDB. Used for early exits."""
     requests_table = dynamodb.Table(SUMMARY_REQUESTS_TABLE)
@@ -1838,7 +1825,6 @@ def _update_status(summary_id: str, status: str) -> None:
         ExpressionAttributeNames={"#status": "status"},
         ExpressionAttributeValues={":s": status},
     )
-
 
 # --- Example usage ---
 if __name__ == "__main__":

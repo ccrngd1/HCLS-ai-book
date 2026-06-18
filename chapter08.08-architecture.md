@@ -8,8 +8,6 @@
 
 ### Why These Services
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add SQS queue between EHR event and Lambda for retry/DLQ resilience. Failed notes are silently lost without this. At 2% transient failure rate and 200 notes/hour, ~2900 notes/month dropped. Add CloudWatch alarm on DLQ depth > 0. -->
-
 **Amazon Comprehend Medical for entity extraction.** Comprehend Medical's `DetectEntitiesV2` API extracts clinical entities (medical conditions, medications, tests, procedures) from unstructured text and returns entity spans with category labels. It also provides basic assertion detection (negation and trait detection). For many use cases, Comprehend Medical's built-in assertion is sufficient. For the full multi-class assertion taxonomy (historical, conditional, hypothetical, family), you need to build a custom classification layer on top.
 
 **Amazon SageMaker for custom assertion model.** When Comprehend Medical's built-in assertion categories are too coarse, deploy a custom fine-tuned transformer model on SageMaker. This gives you control over the assertion taxonomy, the training data, and the classification logic. SageMaker real-time endpoints provide low-latency inference for clinical decision support use cases. Batch transform handles high-volume research workloads. To minimize cold starts, configure a minimum instance count of 1 (keeps one instance warm 24/7, roughly $170/month for ml.m5.xlarge). For cost-sensitive deployments, consider SageMaker Serverless Inference (sub-second cold starts but lower throughput ceiling).
@@ -152,8 +150,6 @@ FUNCTION extract_context_windows(note_text, entities):
 
 **Step 3: Classify assertion status.** This is the core step. For each entity in its context window, the assertion classifier predicts the factual status: present, absent, possible, conditional, historical, family, or hypothetical. In our hybrid approach, we first check if simple rules can resolve the assertion (clear negation patterns catch about 60% of absent cases quickly and cheaply). Everything the rules can't confidently classify goes to the ML model. The model input is the context text with the entity span marked using special tokens so the model knows exactly which concept to classify.
 
-<!-- TODO (TechWriter): Expert review A2 (HIGH). Add two-tier threshold guidance: 0.70 (exclude from downstream until reviewed) and 0.85 (include with low_confidence flag, queue for review). Estimate reviewer time at 20-30s per entity. At 200 entities/day that's ~1.5 hours of reviewer time. Address whether low-confidence entities are included in downstream with caveats or excluded until reviewed. -->
-
 ```pseudocode
 // Assertion classes the system can assign
 ASSERTION_CLASSES = ["present", "absent", "possible", "conditional",
@@ -204,7 +200,6 @@ FUNCTION classify_assertions(entity_contexts):
 
     RETURN results
 
-
 FUNCTION apply_assertion_rules(ctx):
     // Simple rule-based assertion detection for high-confidence cases.
     // Catches obvious negations, family history sections, and clear temporal cues.
@@ -241,8 +236,6 @@ FUNCTION apply_assertion_rules(ctx):
 ```
 
 **Step 4: Post-process and resolve conflicts.** When the same clinical concept appears multiple times in a note with different assertion statuses, we need to determine the "current truth." This step consolidates multiple mentions into a single assertion per unique concept. The precedence logic uses a default heuristic: the most recent, most specific mention in the note wins. A concept that is "historical" in Past Medical History but "present" in today's Assessment is currently present. A concept that is "possible" in the initial impression but "absent" in the final assessment (after workup) is absent.
-
-<!-- TODO (TechWriter): Expert review A3 (HIGH). Conflict resolution oversimplifies clinical reality. The section-priority heuristic fails on copy-forward notes, multi-day notes, and cases where both assertions are valid for different clinical questions. Recommend: (1) retain all mentions with individual assertions rather than resolving to a single winner; (2) let downstream consumers specify resolution strategy via a conflict_resolution_strategy parameter; (3) acknowledge the heuristic is a default, not ground truth. Update pseudocode comment from "Pick the highest-priority one" to note this is a default heuristic. -->
 
 ```pseudocode
 FUNCTION resolve_assertion_conflicts(classified_entities):
@@ -294,8 +287,6 @@ FUNCTION resolve_assertion_conflicts(classified_entities):
 ```
 
 **Step 5: Store annotated entities.** Write the final assertion-classified entities to the database. Each record connects back to the source note, includes the full entity context for audit, and is indexed by patient, date, entity type, and assertion status. Downstream systems query this store to answer questions like "what conditions are currently present for this patient?" or "which patients have a family history of breast cancer?"
-
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add DynamoDB TTL on a ttl_epoch attribute aligned with institutional records retention policy (typically 7-10 years). Document that context_snippet should live in a separate restricted-access audit table (finding S2, MEDIUM), and that the needs_review queue requires role-based access control and audit logging of reviewer actions (finding S3, MEDIUM). -->
 
 ```pseudocode
 FUNCTION store_annotated_entities(patient_id, note_id, note_date, resolved_entities):
@@ -451,8 +442,6 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 - [Building NLP Pipelines with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-pipeline-using-amazon-comprehend-medical/): End-to-end clinical NLP pipeline architecture
 
 **Academic References (for assertion methodology):**
-<!-- TODO (TechWriter): Verify current URL for i2b2 2010 Assertion shared task description -->
-<!-- TODO (TechWriter): Verify current URL for NegEx/ConText algorithm paper (Chapman et al.) -->
 
 ---
 
@@ -465,7 +454,6 @@ Input text: "Patient is a 62-year-old male with history of MI (2019). Currently 
 | **With variations** | 14-18 weeks | Add active problem list integration, quality measure automation, multi-specialty model variants. |
 
 ---
-
 
 ---
 

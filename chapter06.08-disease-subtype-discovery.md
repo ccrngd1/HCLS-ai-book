@@ -18,8 +18,6 @@ The challenge: there are no labels. Nobody has pre-defined what the subtypes are
 
 This is research-grade work. It requires clinical collaboration from day one, rigorous statistical validation, and the intellectual honesty to admit when your clusters are artifacts of data quality rather than biology.
 
-<!-- TODO (TechWriter): Expert review A2 (HIGH). Add paragraph on IRB/ethics review requirements: research vs. QI classification, IRB timeline (4-12 weeks), and implication for the "Basic" implementation estimate. Disease subtype discovery using patient data typically requires IRB review before accessing real patient data. -->
-
 ---
 
 ## The Technology: How Unsupervised Clustering Discovers Disease Subtypes

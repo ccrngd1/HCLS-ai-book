@@ -595,7 +595,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of `_to_decimal` for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -608,11 +607,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -635,7 +632,6 @@ def _parse_json_response(raw_text: str) -> dict:
             "Failed to parse JSON from model; returning empty")
         return {}
 
-
 def _redact_pii_for_logging(text: str) -> str:
     """
     Light redaction for log lines. The audit pipeline gets the
@@ -645,7 +641,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -663,7 +658,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -684,7 +678,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -714,7 +707,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """
@@ -819,7 +811,6 @@ def receive_message(channel: str,
         attach_greeting=attach_greeting,
         language=language)
 
-
 def _get_or_create_session(channel: str,
                             channel_session_id: str,
                             auth_context: dict,
@@ -897,7 +888,6 @@ def _get_or_create_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """Append a turn record to the conversation-metadata table."""
     table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
@@ -911,7 +901,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
     except Exception as exc:
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 4) -> list:
     """Return the most recent k turns for context."""
@@ -930,7 +919,6 @@ def _recent_turns(session_id: str, k: int = 4) -> list:
         return []
     items = [_from_decimal(i) for i in response.get("Items", [])]
     return list(reversed(items))
-
 
 def _screen_input(session_id: str,
                    user_message: str,
@@ -973,7 +961,6 @@ def _screen_input(session_id: str,
         }
 
     return {"action": "proceed"}
-
 
 def _handle_screening_action(session_id: str,
                               channel: str,
@@ -1046,7 +1033,6 @@ def _handle_screening_action(session_id: str,
 
     raise ValueError(f"Unknown screening action: {action}")
 
-
 def _update_session_flag(session_id: str,
                           flag_name: str,
                           value) -> None:
@@ -1069,7 +1055,6 @@ def _update_session_flag(session_id: str,
             "Failed to set %s on session %s: %s",
             flag_name, session_id, exc)
 
-
 def _resolve_session_key(session_id: str) -> Optional[str]:
     """Resolve a session_id to the session_key partition key."""
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
@@ -1090,7 +1075,6 @@ def _resolve_session_key(session_id: str) -> Optional[str]:
             "session_key resolution failed for %s: %s",
             session_id, exc)
     return None
-
 
 def _build_chat_reply(session_id: str,
                        response_text: str,
@@ -1215,7 +1199,6 @@ def _handle_in_scope_message(session_id: str,
             "request, or ask about a medication?"),
         attach_greeting=attach_greeting,
         disposition="clarification_requested")
-
 
 def _classify_refill_intent(session_id: str,
                              user_message: str,
@@ -1531,7 +1514,6 @@ def _route_to_refill_flow(session_id: str,
         verified_just_now=True,
         patient_first_name=lookup_result.get("first_name"))
 
-
 def _required_assurance_for(intent: str, ctx: dict) -> str:
     """Look up the required assurance level for (intent, ctx)."""
     rules = IDENTITY_POLICY.get(
@@ -1540,7 +1522,6 @@ def _required_assurance_for(intent: str, ctx: dict) -> str:
         if predicate(ctx):
             return level
     return "basic"
-
 
 def _collect_identifiers_from_message(user_message: str,
                                         recent_turns: list) -> dict:
@@ -1655,7 +1636,6 @@ def _continue_after_identity(session_id: str,
         response_text=OUT_OF_SCOPE_HANDOFFS["out_of_scope"],
         attach_greeting=attach_greeting,
         disposition="handoff_offered")
-
 
 def _resolve_medication(session_id: str,
                          channel: str,
@@ -1905,7 +1885,6 @@ def _resolve_medication(session_id: str,
         verified_just_now=verified_just_now,
         patient_first_name=patient_first_name)
 
-
 def _session_patient_id(session_id: str) -> Optional[str]:
     """Read verified_patient_id from the session state row."""
     table = dynamodb.Table(CONVERSATION_STATE_TABLE)
@@ -1917,7 +1896,6 @@ def _session_patient_id(session_id: str) -> Optional[str]:
     if not item:
         return None
     return item.get("verified_patient_id")
-
 
 def _session_state(session_id: str) -> dict:
     """Read the session-state row keyed by session_id."""
@@ -2152,7 +2130,6 @@ def _execute_disposition(session_id: str,
         attach_greeting=attach_greeting,
         language=language)
 
-
 def _execute_auto_approve(session_id: str,
                             channel: str,
                             decision: dict,
@@ -2341,7 +2318,6 @@ def _execute_auto_approve(session_id: str,
         attach_greeting=attach_greeting,
         disposition="auto_approved")
 
-
 def _execute_clinical_routing(session_id: str,
                                 channel: str,
                                 decision: dict,
@@ -2446,7 +2422,6 @@ def _execute_clinical_routing(session_id: str,
         attach_greeting=attach_greeting,
         disposition="routed")
 
-
 def _execute_denial(session_id: str,
                      channel: str,
                      decision: dict,
@@ -2513,7 +2488,6 @@ def _execute_denial(session_id: str,
         attach_greeting=attach_greeting,
         disposition="denied")
 
-
 def _routing_target_for(disposition: str) -> str:
     """Map disposition to a clinical-inbox routing target."""
     return {
@@ -2524,7 +2498,6 @@ def _routing_target_for(disposition: str) -> str:
             "prescriber_inbox_controlled_substance",
         "early_refill_route":              "prescriber_inbox",
     }.get(disposition, "nurse_triage")
-
 
 def _select_dispensing_pharmacy(medication: dict,
                                   patient_pharmacies: list,
@@ -2545,7 +2518,6 @@ def _select_dispensing_pharmacy(medication: dict,
         return None
     return None
 
-
 def _build_approval_response(medication: dict,
                               pharmacy: dict,
                               prescription_id: str,
@@ -2565,7 +2537,6 @@ def _build_approval_response(medication: dict,
         f"later today. Anything else I can help with?"
     )
     return " ".join(lines)
-
 
 def _build_routing_response(medication: dict,
                               decision: dict,
@@ -2605,7 +2576,6 @@ def _build_routing_response(medication: dict,
         f"to our clinical team. They'll review and get back "
         f"to you within {sla_text}."
     )
-
 
 def _write_refill_journal(record: dict) -> None:
     """
@@ -2715,7 +2685,6 @@ def _handle_status_check(session_id: str,
         attach_greeting=attach_greeting,
         disposition="status_returned")
 
-
 def _handle_cancel_request(session_id: str,
                             channel: str,
                             extracted_parameters: dict,
@@ -2810,7 +2779,6 @@ def _handle_cancel_request(session_id: str,
         attach_greeting=attach_greeting,
         disposition="cancelled")
 
-
 def _handle_medication_question(session_id: str,
                                   channel: str,
                                   extracted_parameters: dict,
@@ -2867,7 +2835,6 @@ def _handle_medication_question(session_id: str,
         response_text=response_text,
         attach_greeting=attach_greeting,
         disposition=disposition)
-
 
 def _is_out_of_scope_clinical_content(text: str) -> bool:
     """Backstop keyword check on generated medication-info text."""
@@ -3006,7 +2973,6 @@ def _handle_eprescribe_failure(session_id: str,
         attach_greeting=False,
         disposition="generic_failure_handoff")
 
-
 def _queue_eprescribe_retry(session_id: str,
                               medication: dict) -> None:
     """
@@ -3140,7 +3106,6 @@ def screen_output(session_id: str, response_text: str) -> dict:
         "violations":     [],
     }
 
-
 def _check_response_scope(response_text: str) -> list:
     """Backstop keyword scope check on generated output."""
     lowered = response_text.lower()
@@ -3157,7 +3122,6 @@ def _check_response_scope(response_text: str) -> list:
             violations.append("clinical_advice_attempted")
             break
     return violations
-
 
 def _extract_refill_claims(response_text: str) -> list:
     """
@@ -3191,7 +3155,6 @@ def _extract_refill_claims(response_text: str) -> list:
         claims.append({"type": "general_refill_claim"})
     return claims
 
-
 def _tool_call_ledger_for_session(session_id: str) -> list:
     """Pull the tool-call ledger entries for the session."""
     table = dynamodb.Table(TOOL_CALL_LEDGER_TABLE)
@@ -3207,7 +3170,6 @@ def _tool_call_ledger_for_session(session_id: str) -> list:
             "Tool-call ledger query failed for %s: %s",
             session_id, exc)
         return []
-
 
 def _find_supporting_eprescribe_call(claim: dict,
                                         ledger: list
@@ -3227,7 +3189,6 @@ def _find_supporting_eprescribe_call(claim: dict,
             if ledger_id == claim["prescription_id"]:
                 return entry
     return None
-
 
 def _extract_medication_mentions(response_text: str,
                                    active_medications: list
@@ -3250,7 +3211,6 @@ def _extract_medication_mentions(response_text: str,
             mentions.append(name or display)
     return mentions
 
-
 def _medication_in_list(name: str,
                           active_medications: list) -> bool:
     """Confirm that a name corresponds to a medication on the list."""
@@ -3261,7 +3221,6 @@ def _medication_in_list(name: str,
         if (med.get("display_name") or "").lower() == name_lower:
             return True
     return False
-
 
 def _detect_controlled_substance_auto_approval_language(
         response_text: str,
@@ -3484,7 +3443,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """Apply redaction rules before streaming to the audit archive."""
     redacted = dict(turn)
@@ -3511,7 +3469,6 @@ def patient_lookup_tool(name: Optional[str],
         date_of_birth=date_of_birth,
         confirmation_factor=confirmation_factor)
 
-
 def medication_list_lookup_tool(patient_id: Optional[str],
                                  active_only: bool = True
                                  ) -> dict:
@@ -3519,7 +3476,6 @@ def medication_list_lookup_tool(patient_id: Optional[str],
     return ehr.medication_list_lookup(
         patient_id=patient_id,
         active_only=active_only)
-
 
 def medication_resolution_tool(patient_descriptor: str,
                                  medication_list: list,
@@ -3574,7 +3530,6 @@ def medication_resolution_tool(patient_descriptor: str,
         "confidence": Decimal("0.5"),
     }
 
-
 def lab_reconciliation_tool(patient_id: Optional[str],
                              medication_class: Optional[str],
                              lookback_days: int = 365) -> dict:
@@ -3583,7 +3538,6 @@ def lab_reconciliation_tool(patient_id: Optional[str],
         patient_id=patient_id,
         medication_class=medication_class,
         lookback_days=lookback_days)
-
 
 def interaction_screening_tool(patient_id: Optional[str],
                                  medication: dict,
@@ -3596,7 +3550,6 @@ def interaction_screening_tool(patient_id: Optional[str],
         active_medications=active_medications,
         allergies=allergies,
         conditions=conditions)
-
 
 def protocol_evaluate_tool(patient_id: Optional[str],
                              medication: dict,
@@ -3750,7 +3703,6 @@ def protocol_evaluate_tool(patient_id: Optional[str],
         "protocol_version": protocol_version,
     }
 
-
 def e_prescribe_tool(patient_id: Optional[str],
                       medication: dict,
                       pharmacy: dict,
@@ -3787,12 +3739,10 @@ def e_prescribe_tool(patient_id: Optional[str],
         prescribing_provider_id=prescribing_provider_id,
         authorization_basis=authorization_basis)
 
-
 def clinical_routing_tool(target: str, ticket: dict) -> dict:
     """Queue the ticket in the appropriate clinical inbox."""
     return ehr.clinical_routing(
         target=target, ticket=ticket)
-
 
 def refill_status_check_tool(patient_id: Optional[str],
                               medication_id: Optional[str]
@@ -3802,7 +3752,6 @@ def refill_status_check_tool(patient_id: Optional[str],
         patient_id=patient_id,
         medication_id=medication_id)
 
-
 def find_pending_refill_request(patient_id: Optional[str],
                                  medication_descriptor:
                                      Optional[str]) -> Optional[dict]:
@@ -3811,11 +3760,9 @@ def find_pending_refill_request(patient_id: Optional[str],
         patient_id=patient_id,
         medication_descriptor=medication_descriptor)
 
-
 def cancel_refill_request_tool(request_id: str) -> dict:
     """Revoke a pending refill request through the e-prescribing platform."""
     return eprescribe_platform.cancel(request_id=request_id)
-
 
 def knowledge_base_retrieve_and_answer(question: str,
                                          medication: Optional[dict],
@@ -3920,7 +3867,6 @@ class MockTable:
                 return key
         return None
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -3940,7 +3886,6 @@ class MockDynamoDBResource:
 
     def Table(self, name):
         return self._tables[name]
-
 
 class MockBedrockRuntime:
     """Canned classifier responses keyed by user message content."""
@@ -4063,7 +4008,6 @@ class MockBedrockRuntime:
             def read(self): return self._data
         return {"body": _Body(
             json.dumps(body_payload).encode())}
-
 
 class MockEHR:
     """Stand-in for the institution's EHR (FHIR resources)."""
@@ -4273,7 +4217,6 @@ class MockEHR:
                 "the next 1-2 business days",
         }
 
-
 class MockCDS:
     """Stand-in for the institutional CDS layer."""
     def interaction_screening(self, medication,
@@ -4283,7 +4226,6 @@ class MockCDS:
             "interactions": [],
             "max_severity": "none",
         }
-
 
 class MockEPrescribingPlatform:
     """Stand-in for Surescripts / e-prescribing transmission."""
@@ -4340,7 +4282,6 @@ class MockEPrescribingPlatform:
     def cancel(self, request_id):
         return {"outcome": "cancelled"}
 
-
 class MockKnowledgeBase:
     def retrieve_and_answer(self, question, medication,
                               language):
@@ -4367,13 +4308,11 @@ class MockKnowledgeBase:
             "pharmacy team can help; their number is 555-0175."
         )
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -4381,20 +4320,17 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockS3:
     def __init__(self): self.objects = {}
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"VersionId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of the
 # file calls them transparently. Comment these out to run against
@@ -4411,7 +4347,6 @@ cds                   = MockCDS()
 eprescribe_platform   = MockEPrescribingPlatform()
 knowledge_base        = MockKnowledgeBase()
 cosignature_queue     = dynamodb.Table(COSIGNATURE_QUEUE_TABLE)
-
 
 def run_demo():
     """
@@ -4589,7 +4524,6 @@ def run_demo():
           f"{len(cloudwatch_client.metrics)}")
     print(f"E-prescriptions transmitted:     "
           f"{len(eprescribe_platform.transmitted)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

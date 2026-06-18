@@ -309,11 +309,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string for run_date."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -336,7 +334,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -346,7 +343,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
@@ -434,7 +430,6 @@ def build_eligible_member_lists(programs: list, run_date: str) -> dict:
 
     return eligible_paths
 
-
 def _build_eligibility_sql(program: dict) -> str:
     """
     Compile structured eligibility criteria into a parameterized SQL
@@ -508,7 +503,6 @@ def _build_eligibility_sql(program: dict) -> str:
         WHERE {where_sql}
     """.strip()
 
-
 def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> None:
     """Poll Athena until the query reaches a terminal state."""
     start = time.time()
@@ -524,7 +518,6 @@ def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> Non
             raise TimeoutError(f"Athena query {execution_id} timed out after {timeout_seconds}s")
         time.sleep(2)
 
-
 def _count_athena_result_rows(execution_id: str) -> int:
     """Read the row count from Athena's runtime statistics."""
     try:
@@ -532,7 +525,6 @@ def _count_athena_result_rows(execution_id: str) -> int:
         return int(response["QueryRuntimeStatistics"]["Rows"]["OutputRows"])
     except Exception:
         return 0
-
 
 def _copy_s3_object(src_uri: str, dst_uri: str) -> None:
     """Copy an S3 object from one URI to another. Production uses
@@ -546,7 +538,6 @@ def _copy_s3_object(src_uri: str, dst_uri: str) -> None:
         CopySource={"Bucket": src_bucket, "Key": src_key},
         ServerSideEncryption="aws:kms",
     )
-
 
 def _parse_s3_uri(uri: str) -> tuple:
     if not uri.startswith("s3://"):
@@ -666,7 +657,6 @@ def score_eligible_population(
         "consolidated_path":  consolidated_uri,
     }
 
-
 def _start_batch_transform(
     job_name: str,
     model_name: str,
@@ -720,7 +710,6 @@ def _start_batch_transform(
         ],
     )
 
-
 def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
     """Poll a Batch Transform job until it reaches a terminal state."""
     start = time.time()
@@ -735,7 +724,6 @@ def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
         if time.time() - start > timeout_seconds:
             raise TimeoutError(f"Transform job {job_name} timed out")
         time.sleep(15)
-
 
 def _consolidate_scores(
     programs: list,
@@ -845,7 +833,6 @@ def rank_per_member(
         len(ranked_rows), len(by_member),
     )
     return ranked_rows
-
 
 def _load_consolidated_scores(consolidated_path: str) -> list:
     """
@@ -1017,7 +1004,6 @@ def allocate_capacity(
     logger.info("Allocated %d members across %d programs", len(allocated), len(programs))
     return allocated
 
-
 def _applicable_floors(cohort_features: dict, floor_definitions: dict) -> list:
     """
     Return the names of equity floors this candidate qualifies for.
@@ -1035,7 +1021,6 @@ def _applicable_floors(cohort_features: dict, floor_definitions: dict) -> list:
         elif floor_name == "sdoh_low_food_security" and cohort_features.get("sdoh_cohort") == "low_food_security":
             result.append(floor_name)
     return result
-
 
 def _lookup_cohort_features(member_id: str) -> dict:
     """
@@ -1061,7 +1046,6 @@ def _lookup_cohort_features(member_id: str) -> dict:
         "sdoh_cohort":                 profile.get("sdoh_cohort"),
         "age_band":                    profile.get("age_band"),
     }
-
 
 def _make_tracking_id(run_date: str, member_id: str, program_id: str) -> str:
     """
@@ -1310,7 +1294,6 @@ def tailor_and_dispatch(
     logger.info("Dispatched %d outreach messages", len(dispatched))
     return dispatched
 
-
 def _summarize_clinical_for_outreach(member: dict, program: dict) -> str:
     """
     Build a one-sentence clinical context line for the LLM prompt.
@@ -1333,7 +1316,6 @@ def _summarize_clinical_for_outreach(member: dict, program: dict) -> str:
     if program_id == "prog-sleep":
         return "Member has indicated sleep concerns are relevant."
     return "Member's profile suggests this program may be helpful."
-
 
 def _tailor_outreach_message(prompt_context: dict) -> dict:
     """
@@ -1383,7 +1365,6 @@ Return ONLY valid JSON with this shape:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_outreach_message(tailored: dict, program: dict) -> bool:
     """
     Validate the tailored outreach against shape and content rules.
@@ -1404,7 +1385,6 @@ def _validate_outreach_message(tailored: dict, program: dict) -> bool:
     if any(bad in full_text for bad in blocklist):
         return False
     return True
-
 
 def _queue_outreach_via_channel_optimizer(
     tracking_id: str,
@@ -1435,7 +1415,6 @@ def _queue_outreach_via_channel_optimizer(
     logger.info("Queued outreach %s (urgency=%s)", tracking_id, urgency)
     return record
 
-
 def _derive_urgency(priority: float, next_cohort_start_iso: str | None) -> str:
     """
     Map priority and cohort proximity to an urgency tag the channel
@@ -1454,7 +1433,6 @@ def _derive_urgency(priority: float, next_cohort_start_iso: str | None) -> str:
         return "elevated"
     return "standard"
 
-
 def _generate_pcp_briefing(prompt_context: dict, member: dict, program: dict) -> str:
     """
     Generate a one-paragraph briefing for the member's PCP that goes
@@ -1471,7 +1449,6 @@ def _generate_pcp_briefing(prompt_context: dict, member: dict, program: dict) ->
         f"member can decline without affecting other care. "
         f"Reply 'endorse' / 'decline' / 'defer' to update the system."
     )
-
 
 def _post_pcp_note(member_id: str, briefing: str, tracking_id: str) -> None:
     """
@@ -1614,7 +1591,6 @@ def process_engagement_event(event: dict) -> None:
         event_type, tracking_id, member_id,
     )
 
-
 def _update_engagement_training_label(rec: dict, event: dict) -> None:
     """
     Update the engagement-prediction training data with this label.
@@ -1628,7 +1604,6 @@ def _update_engagement_training_label(rec: dict, event: dict) -> None:
         "engagement_training_label_added: tracking_id=%s event=%s",
         rec["tracking_id"], event["event_type"],
     )
-
 
 def _update_uplift_training_label(rec: dict, event: dict) -> None:
     """
@@ -1646,7 +1621,6 @@ def _update_uplift_training_label(rec: dict, event: dict) -> None:
         "uplift_training_label_added: tracking_id=%s event=%s",
         rec["tracking_id"], event["event_type"],
     )
-
 
 def _flag_for_clinical_review(event: dict) -> None:
     """
@@ -1760,7 +1734,6 @@ def run_outcome_evaluation(
 
     return results
 
-
 def _pull_treated_cohort(program_id: str, window: dict) -> list:
     """
     Build the treated cohort: members recommended for and engaged
@@ -1771,7 +1744,6 @@ def _pull_treated_cohort(program_id: str, window: dict) -> list:
     empty list; the demo runner injects a synthetic cohort.
     """
     return []
-
 
 def _pull_matched_control(program_id: str, window: dict, method: str) -> list:
     """
@@ -1785,7 +1757,6 @@ def _pull_matched_control(program_id: str, window: dict, method: str) -> list:
     """
     return []
 
-
 def _compute_outcomes(cohort: list, outcome_defs: dict, window: dict) -> dict:
     """
     Compute the cohort's primary and secondary outcomes over the
@@ -1798,7 +1769,6 @@ def _compute_outcomes(cohort: list, outcome_defs: dict, window: dict) -> dict:
         "primary_values":    [],   # populated by the production query
         "n":                 len(cohort),
     }
-
 
 def _estimate_ate(treated: dict, control: dict, method: str) -> dict:
     """
@@ -1818,14 +1788,12 @@ def _estimate_ate(treated: dict, control: dict, method: str) -> dict:
         "interpretation":  "placeholder; production runs doubly-robust estimation",
     }
 
-
 def _stratified_ate(treated: dict, control: dict, cohort_axes: list) -> list:
     """
     Compute ATE within each cohort defined by the cohort_axes. Returns
     a list of {cohort, estimate, ci_95_low, ci_95_high} dicts.
     """
     return []
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Convert numeric values in a flat dict to Decimal for DynamoDB."""
@@ -1909,7 +1877,6 @@ def run_weekly_batch(
         "n_dispatched":       len(dispatched),
         "elapsed_seconds":    elapsed,
     }
-
 
 # --- Demo runner ---
 if __name__ == "__main__":

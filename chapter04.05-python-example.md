@@ -439,11 +439,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string for run_date."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -466,7 +464,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -477,7 +474,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -496,7 +492,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -506,7 +501,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _make_tracking_id(run_date: str, patient_id: str,
                       therapeutic_class: str, intervention_id: str) -> str:
@@ -523,13 +517,11 @@ def _make_tracking_id(run_date: str, patient_id: str,
     """
     return f"adherence-{run_date}-{patient_id}-{therapeutic_class}-{intervention_id}"
 
-
 def _parse_s3_uri(uri: str) -> tuple:
     if not uri.startswith("s3://"):
         raise ValueError(f"Not an S3 URI: {uri}")
     parts = uri[5:].split("/", 1)
     return parts[0], parts[1] if len(parts) > 1 else ""
-
 
 def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> None:
     """Poll Athena until the query reaches a terminal state."""
@@ -545,7 +537,6 @@ def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> Non
         if time.time() - start > timeout_seconds:
             raise TimeoutError(f"Athena query {execution_id} timed out after {timeout_seconds}s")
         time.sleep(2)
-
 
 def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
     """Poll a Batch Transform job until it reaches a terminal state."""
@@ -656,7 +647,6 @@ def compute_adherence_features(run_date: str) -> str:
         len(feature_records), offline_path,
     )
     return offline_path
-
 
 def _compute_pdc_for_class(fills: list, settled_window_end: datetime.date) -> dict:
     """
@@ -773,7 +763,6 @@ def _compute_pdc_for_class(fills: list, settled_window_end: datetime.date) -> di
         "data_quality_flag":                        data_quality_flag,
     }
 
-
 def _empty_pdc_record() -> dict:
     """Sentinel record for a (patient, class) with no fills."""
     return {
@@ -790,7 +779,6 @@ def _empty_pdc_record() -> dict:
         "data_quality_flag": "no_history",
     }
 
-
 def _percentile(values: list, pct: int) -> float:
     """Simple percentile (numpy not required for the demo)."""
     if not values:
@@ -799,7 +787,6 @@ def _percentile(values: list, pct: int) -> float:
     idx = int(len(sorted_v) * pct / 100)
     idx = min(idx, len(sorted_v) - 1)
     return sorted_v[idx]
-
 
 def _is_sporadic_pattern(fills_sorted: list) -> bool:
     """
@@ -826,7 +813,6 @@ def _is_sporadic_pattern(fills_sorted: list) -> bool:
     variance = sum((g - mean_gap) ** 2 for g in gaps) / len(gaps)
     cv = (variance ** 0.5) / mean_gap
     return cv > 0.5
-
 
 def _is_consistent_then_stopped(fills_sorted: list,
                                  settled_window_end: datetime.date) -> bool:
@@ -857,7 +843,6 @@ def _is_consistent_then_stopped(fills_sorted: list,
         return False
     return max(early_gaps) < 45
 
-
 def _assess_data_quality(fills_sorted: list, channel_mix: dict,
                           pharmacy_count: int, cash_pay_count: int,
                           total_fills: int) -> str:
@@ -876,7 +861,6 @@ def _assess_data_quality(fills_sorted: list, channel_mix: dict,
         return "sparse_history"
     return "complete"
 
-
 def _load_settled_fills(athena_execution_id: str, run_date: str) -> dict:
     """
     Load Athena results into an in-memory dict keyed on
@@ -886,7 +870,6 @@ def _load_settled_fills(athena_execution_id: str, run_date: str) -> dict:
     synthetic fills for the offline run.
     """
     return {}
-
 
 def _persist_adherence_features_to_feature_store(records: list, run_date: str) -> None:
     """
@@ -928,7 +911,6 @@ def _persist_adherence_features_to_feature_store(records: list, run_date: str) -
                 r["patient_id"], r["therapeutic_class"], exc,
             )
 
-
 def _compute_regimen_features(fills_by_patient_class: dict, run_date: str) -> list:
     """
     Aggregate per-patient regimen features across all chronic
@@ -966,7 +948,6 @@ def _compute_regimen_features(fills_by_patient_class: dict, run_date: str) -> li
             "run_date":             run_date,
         })
     return records
-
 
 def _persist_regimen_features_to_feature_store(records: list, run_date: str) -> None:
     """Counterpart to the per-medication persistence; same caveats."""
@@ -1107,7 +1088,6 @@ def classify_barriers_for_target_set(
     )
     return results
 
-
 def _rule_based_barrier_classifier(
     adherence: dict, regimen: dict, member: dict, therapeutic_class: str,
 ) -> list:
@@ -1166,7 +1146,6 @@ def _rule_based_barrier_classifier(
 
     return rule_results
 
-
 def _supervised_barrier_predict(
     adherence: dict, regimen: dict, member: dict, therapeutic_class: str,
 ) -> dict:
@@ -1192,7 +1171,6 @@ def _supervised_barrier_predict(
         "complexity":    0.16,
         "access":        0.14,
     }
-
 
 def _blend_rule_and_supervised(
     rule_results: list, supervised_probs: dict,
@@ -1237,7 +1215,6 @@ def _blend_rule_and_supervised(
         "top_1":       ranked[0],
     }
 
-
 def _proxy_need_score(adherence: dict, member: dict, therapeutic_class: str) -> float:
     """
     Cheap proxy for the per-class need score so we can decide whether
@@ -1260,7 +1237,6 @@ def _proxy_need_score(adherence: dict, member: dict, therapeutic_class: str) -> 
         score += 0.2
     return min(score, 1.0)
 
-
 def _should_invoke_llm(blended: dict, need_score: float) -> bool:
     """
     Spend the LLM call only when:
@@ -1273,7 +1249,6 @@ def _should_invoke_llm(blended: dict, need_score: float) -> bool:
     if need_score > NEED_REVIEW_THRESHOLD and top_conf < 0.80:
         return True
     return False
-
 
 def _bedrock_barrier_second_opinion(
     adherence: dict, regimen: dict, member: dict, therapeutic_class: str,
@@ -1359,7 +1334,6 @@ clinical history that isn't shown.
             f"LLM returned invalid confidence: {parsed.get('confidence')}"
         )
     return parsed
-
 
 def _flag_for_pharmacist_review(
     patient_id: str, therapeutic_class: str,
@@ -1478,7 +1452,6 @@ def build_candidate_triples(
     )
     return candidates
 
-
 def _within_cooldown(member: dict, intervention: dict, cooldown_days: int) -> bool:
     """
     True if the member already received this intervention type within
@@ -1498,7 +1471,6 @@ def _within_cooldown(member: dict, intervention: dict, cooldown_days: int) -> bo
         return False
     delta = datetime.datetime.now(timezone.utc) - last_dt.astimezone(timezone.utc)
     return delta.days < cooldown_days
-
 
 def _has_inflight_conflicting(patient_id: str, therapeutic_class: str,
                                intervention: dict) -> bool:
@@ -1551,7 +1523,6 @@ def score_candidates(candidates: list, run_date: str) -> list:
         )
 
     return scored
-
 
 def _score_candidates_via_batch_transform(
     triples: list, intervention_id: str, run_date: str,
@@ -1624,7 +1595,6 @@ def _score_candidates_via_batch_transform(
         })
     return scored
 
-
 def _compute_barrier_fit(ranked_barriers: list, supported_barriers: dict) -> float:
     """
     Dot product between the patient's ranked-barriers vector and the
@@ -1641,16 +1611,13 @@ def _compute_barrier_fit(ranked_barriers: list, supported_barriers: dict) -> flo
         score += entry["confidence"] * supported_barriers.get(b, 0.0)
     return round(score, 4)
 
-
 def _lookup_pdc(patient_id: str, therapeutic_class: str) -> float:
     """Placeholder lookup. Production: read from Feature Store online store."""
     return _DEMO_PDC_LOOKUP.get((patient_id, therapeutic_class), 0.75)
 
-
 def _lookup_engagement_quartile(patient_id: str) -> str:
     """Placeholder lookup. Production: read from patient-profile table."""
     return _DEMO_ENGAGEMENT_QUARTILE.get(patient_id, "q3")
-
 
 # Demo state populated by the runner at the bottom of this file. The
 # production functions above replace these globals with real lookups.
@@ -1977,7 +1944,6 @@ def allocate_heterogeneous(
     )
     return allocated
 
-
 def _conflicts_with(already_allocated: list, intervention: dict) -> bool:
     """
     Cross-intervention exclusion logic. The full table lives in the
@@ -1993,7 +1959,6 @@ def _conflicts_with(already_allocated: list, intervention: dict) -> bool:
             return True
     return False
 
-
 def _lookup_cohort_features_from_profile(member: dict) -> dict:
     """Pull cohort features from the patient-profile dict."""
     return {
@@ -2002,7 +1967,6 @@ def _lookup_cohort_features_from_profile(member: dict) -> dict:
         "sdoh_cohort":                 member.get("sdoh_cohort"),
         "age_band":                    member.get("age_band"),
     }
-
 
 def _applicable_floor_cohorts(cohort_features: dict, floor_definitions: dict) -> list:
     """Return the floor names the candidate qualifies for."""
@@ -2137,14 +2101,12 @@ def orchestrate_interventions(
     logger.info("Dispatched %d intervention assignments", len(dispatched))
     return dispatched
 
-
 def _intervention_generates_contact(intervention_type: str) -> bool:
     """Whether this intervention type produces a patient-facing contact."""
     return intervention_type in {
         "text_reminder", "education", "pharmacist_consult",
         "cost_assistance", "med_sync",
     }
-
 
 def _summarize_adherence_for_outreach(patient_id: str, therapeutic_class: str) -> dict:
     """
@@ -2159,7 +2121,6 @@ def _summarize_adherence_for_outreach(patient_id: str, therapeutic_class: str) -
     if pdc >= 0.50:
         return {"status": "occasional_gaps"}
     return {"status": "frequent_gaps"}
-
 
 def _dispatch_text_reminder(row: dict, member: dict, ctx: dict) -> dict:
     """
@@ -2192,7 +2153,6 @@ def _dispatch_text_reminder(row: dict, member: dict, ctx: dict) -> dict:
         "queued_at":         _now_iso(),
     })
 
-
 def _dispatch_education(row: dict, member: dict, ctx: dict) -> dict:
     """
     Match an education content artifact to the patient's barrier.
@@ -2210,7 +2170,6 @@ def _dispatch_education(row: dict, member: dict, ctx: dict) -> dict:
         "urgency":           "standard",
         "queued_at":         _now_iso(),
     })
-
 
 def _dispatch_pharmacist_consult(
     row: dict, member: dict, med: dict, ctx: dict,
@@ -2244,7 +2203,6 @@ def _dispatch_pharmacist_consult(
     )
     return enqueue_record
 
-
 def _dispatch_cost_assistance(row: dict, member: dict, med: dict) -> dict:
     """
     Hand to the case-management queue. The case manager works through
@@ -2264,7 +2222,6 @@ def _dispatch_cost_assistance(row: dict, member: dict, med: dict) -> dict:
     }
     logger.info("Queued cost-assistance tracking_id=%s", row["tracking_id"])
     return enqueue_record
-
 
 def _dispatch_med_sync(row: dict, member: dict) -> dict:
     """
@@ -2295,7 +2252,6 @@ def _dispatch_med_sync(row: dict, member: dict) -> dict:
     )
     return record
 
-
 def _dispatch_regimen_simplification(
     row: dict, member: dict, med: dict, ctx: dict,
 ) -> dict:
@@ -2325,7 +2281,6 @@ def _dispatch_regimen_simplification(
     logger.info("Posted PCP briefing for %s", row["tracking_id"])
     return record
 
-
 def _queue_via_channel_optimizer(payload: dict) -> dict:
     """
     Hand to Recipe 4.1's channel optimizer. The example logs and
@@ -2338,7 +2293,6 @@ def _queue_via_channel_optimizer(payload: dict) -> dict:
     )
     return payload
 
-
 def _compute_target_window() -> dict:
     """
     The window in which the pharmacist should attempt the consult.
@@ -2350,7 +2304,6 @@ def _compute_target_window() -> dict:
         "start": today.isoformat(),
         "end":   (today + datetime.timedelta(days=7)).isoformat(),
     }
-
 
 def _lookup_intervention(intervention_id: str) -> dict:
     """Fetch an intervention record from the catalog. Production: DynamoDB lookup."""
@@ -2410,7 +2363,6 @@ Return ONLY valid JSON with this shape:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_reminder(tailored: dict) -> bool:
     """
     Shape and prohibited-claims check. Production adds an approved-
@@ -2430,7 +2382,6 @@ def _validate_reminder(tailored: dict) -> bool:
     if any(bad in full_text for bad in blocklist):
         return False
     return True
-
 
 def _bedrock_pharmacist_brief(member: dict, med: dict, ctx: dict) -> dict:
     """
@@ -2477,7 +2428,6 @@ Return ONLY valid JSON with this shape:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_pharmacist_brief(brief: dict) -> bool:
     """Shape check for the pharmacist brief."""
     required = {
@@ -2496,7 +2446,6 @@ def _validate_pharmacist_brief(brief: dict) -> bool:
     if not isinstance(brief["estimated_call_duration_minutes"], (int, float)):
         return False
     return True
-
 
 def _bedrock_pcp_briefing(member: dict, med: dict, ctx: dict) -> dict:
     """
@@ -2706,7 +2655,6 @@ def process_adherence_event(event: dict) -> None:
         event_type, tracking_id, patient_id,
     )
 
-
 def _match_organic_fill_to_open_recommendation(event: dict) -> dict:
     """
     For an organic pharmacy_fill_observed event, find the most recent
@@ -2716,7 +2664,6 @@ def _match_organic_fill_to_open_recommendation(event: dict) -> dict:
     returns None.
     """
     return None
-
 
 def _update_engagement_training_label(rec: dict, event: dict) -> None:
     """
@@ -2728,7 +2675,6 @@ def _update_engagement_training_label(rec: dict, event: dict) -> None:
         "engagement_training_label_added: tracking_id=%s event=%s",
         rec.get("tracking_id"), event["event_type"],
     )
-
 
 def _update_barrier_classifier_training_label(rec: dict, event: dict) -> None:
     """
@@ -2747,7 +2693,6 @@ def _update_barrier_classifier_training_label(rec: dict, event: dict) -> None:
         elicited, confidence, source,
     )
 
-
 def _update_uplift_observation(rec: dict, event: dict) -> None:
     """
     Append the fill observation to the uplift training partition.
@@ -2758,7 +2703,6 @@ def _update_uplift_observation(rec: dict, event: dict) -> None:
         "uplift_observation_added: tracking_id=%s fill_date=%s",
         rec.get("tracking_id"), event.get("payload", {}).get("fill_date"),
     )
-
 
 def _record_pcp_override(rec: dict, event: dict) -> None:
     """
@@ -2868,7 +2812,6 @@ def run_weekly_batch(
         "n_dispatched":     len(dispatched),
         "elapsed_seconds":  elapsed,
     }
-
 
 # --- Demo runner ---
 if __name__ == "__main__":

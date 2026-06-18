@@ -88,7 +88,6 @@ The feedback loop is critical. Track which interventions were attempted, which m
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.03-architecture). The Python example is linked from there.
 
 ## The Honest Take
@@ -104,8 +103,6 @@ The intervention matters more than the model. A perfect churn prediction with no
 Seasonality will fool you. Churn in healthcare is heavily seasonal (open enrollment periods, annual renewal cycles). A model trained on January-March data and deployed in October will underperform because the feature distributions shift. Train on full annual cycles and include time-of-year features.
 
 The ethical dimension is real. Churn models can inadvertently encode discrimination. If members in underserved zip codes have worse network adequacy and higher churn, your model learns "zip code predicts churn." The intervention might then focus retention efforts on members who are already well-served while ignoring the root cause (network gaps) for those who aren't. Monitor your model's predictions across demographic groups and ensure interventions address root causes, not just symptoms. Document your model's fairness characteristics in a model card: which features are included, which were excluded and why, and how predictions distribute across demographic groups. CMS and state regulators are increasingly scrutinizing algorithmic decision-making in health plans. Having a documented fairness analysis before you're asked for one is significantly less painful than producing one under regulatory pressure.
-
-<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add a Step 6 for model monitoring: monthly ground truth join comparing predictions from 90 days ago against actual disenrollment outcomes, rolling AUC-PR and ECE computation published to CloudWatch, retraining trigger when AUC-PR drops below 0.40 or ECE exceeds 0.10. Especially important around open enrollment periods when population composition shifts. -->
 
 ---
 

@@ -205,7 +205,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -280,7 +279,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge.
 
@@ -297,7 +295,6 @@ class MockEventBus:
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
 
-
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch metrics.
 
@@ -313,7 +310,6 @@ class MockCloudWatch:
         for m in MetricData:
             key = f"{Namespace}/{m['MetricName']}"
             self.metrics[key].append(m["Value"])
-
 
 def generate_synthetic_consumption(seed=42):
     """Generate two years of daily SKU consumption with mixed shapes.
@@ -416,7 +412,6 @@ def generate_synthetic_consumption(seed=42):
         })
 
     return rows, case_volume_by_date
-
 
 def generate_synthetic_sku_master():
     """Generate a small SKU master with successor maps and lead times.
@@ -654,10 +649,6 @@ def segment_skus(prepared_rows):
     return segments, diagnostics
 ```
 
-<!-- TODO (TechWriter): Code review Issue 4 (NOTE). Replace the set/sorted/comprehension chain in the per-segment count log with a `Counter`: `from collections import Counter` (alongside the existing `defaultdict` import); `seg_counts = Counter(segments.values())`; then `", ".join(f"{seg}={n}" for seg, n in sorted(seg_counts.items()))`. The current expression rewalks segments.values() once per segment and is harder to read than the prose intent. -->
-
-<!-- TODO (TechWriter): Code review Issue 3 (NOTE). The pseudocode Step 1 in the main recipe lists row-level features `scheduled_cases` and `flu_season_index` that this Python implementation does not attach to each row; the procedure-driven model reads case volume via the side-channel `case_volume_by_date` parameter instead. Either trim those two lines from the recipe pseudocode or attach `scheduled_cases` and a respiratory-season indicator to each row in `prepare_consumption_data` so the modeling-ready table is visibly self-contained (the latter is preferable because it teaches the row-as-feature-vector pattern the pseudocode advocates). -->
-
 ---
 
 ## Step 3: Train a Model per Segment
@@ -755,7 +746,6 @@ class SmoothModel:
             forecasts.append({"date": future_d.isoformat(), "point": point})
         return forecasts
 
-
 class SBAModel:
     """Syntetos-Boylan Approximation for intermittent demand.
 
@@ -834,7 +824,6 @@ class SBAModel:
             for h in range(1, horizon_days + 1)
         ]
 
-
 class ProcedureDrivenModel:
     """Two-stage forecast: case_volume * per-case usage rate.
 
@@ -884,7 +873,6 @@ class ProcedureDrivenModel:
             {"date": cf["date"], "point": max(0.0, cf["point"] * self.usage_per_case)}
             for cf in case_forecasts
         ]
-
 
 def train_segment_models(prepared_rows, segments, case_volume_by_date):
     """Step 3: Fit a model per (sku, segment).
@@ -966,7 +954,6 @@ def _z_score_for_service_level(service_level):
     # Default to 95% if outside the table range.
     return Z_SCORE_BY_SERVICE_LEVEL[Decimal("0.95")]
 
-
 def _suggest_order_quantity(mean_demand_per_day, sku_master_entry):
     """Heuristic order quantity. Production uses real EOQ math.
 
@@ -978,7 +965,6 @@ def _suggest_order_quantity(mean_demand_per_day, sku_master_entry):
     where shelf-life or working-capital constraints dominate.
     """
     return max(1, int(round(mean_demand_per_day * DEFAULT_ORDER_CYCLE_DAYS)))
-
 
 def generate_sku_forecasts_and_reorder_points(trained, sku_master, run_id):
     """Step 4: Forecast, then translate variance into reorder points.
@@ -1225,7 +1211,6 @@ def run_supply_forecast_pipeline(table, event_bus, cloudwatch):
 
     return records
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1252,7 +1237,6 @@ def run_demo():
     print(json.dumps(sample, default=_decimalify, indent=2))
 
     return records
-
 
 if __name__ == "__main__":
     run_demo()

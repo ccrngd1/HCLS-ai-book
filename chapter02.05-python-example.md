@@ -467,7 +467,6 @@ STRICT RULES:
     )
     return summary_object
 
-
 def _parse_json_response(raw_text: str) -> dict:
     """
     Parse JSON from the model's response, stripping common markdown wrappers.
@@ -744,7 +743,6 @@ def validate_summary(
         "unverified_claims": unverified,
     }
 
-
 def _resolve_json_path(obj: dict, path: str):
     """
     Walk a dot-notation path with optional list indexing into a dict.
@@ -770,7 +768,6 @@ def _resolve_json_path(obj: dict, path: str):
                 return None
             current = current[idx_int]
     return current
-
 
 def _normalize_for_match(text: str) -> str:
     """Lowercase, strip, and collapse whitespace for tolerant comparison."""
@@ -859,7 +856,6 @@ def check_readability(summary_text: str, target_grade_level: int) -> dict:
         "sentence_count": sentence_count,
         "hint": hint,
     }
-
 
 def _approximate_syllables(word: str) -> int:
     """Cheap syllable estimator based on vowel groupings."""
@@ -1164,7 +1160,6 @@ def generate_after_visit_summary(
         "processing_time_ms": elapsed_ms,
     }
 
-
 # --- Example usage ---
 if __name__ == "__main__":
     # All data below is SYNTHETIC. Do not use real patient data in development.
@@ -1303,11 +1298,6 @@ Run this end-to-end against a synthetic encounter and you'll see the full patter
 
 **Model-ID lifecycle.** The model IDs in this example will be replaced over time as newer model versions launch. A production pipeline stores model IDs in configuration (SSM Parameter Store or AppConfig), not in code. When you update to a new model version, you rerun your regression suite before flipping the production config. Skipping this is how teams end up discovering at 2 AM that the new model version ignores a critical section of their prompt.
 
-<!-- TODO (TechWriter): Code review Finding 2 (WARNING). The paragraph below
-     claims validation_rate is stored to DynamoDB with Decimal wrapping, but the
-     example code never writes validation_rate to DynamoDB. Either update the prose
-     to say "if you extend the code to persist validation_rate, wrap it with
-     Decimal(str(round(...)))" or add the DynamoDB write to Step 7. -->
 **DynamoDB Decimal gotcha.** The validation_rate in Step 5 gets stored as a Decimal when written to DynamoDB, because DynamoDB doesn't accept Python floats. The example code handles this correctly (`Decimal(str(round(validation_rate, 4)))`), but it's a common trap on the first deployment. Always wrap floats with `Decimal(str(...))` when writing to DynamoDB; going through `str` avoids the binary-precision issues of `Decimal(float_value)`.
 
 **Observability and SLOs.** The target for AVS delivery is typically "before the patient leaves the parking lot," which means roughly 2-5 minutes from note signature to portal publication. Set CloudWatch SLOs for end-to-end latency at the 95th percentile, regeneration-rate SLO for prompt drift, validation-pass-rate SLO for generation quality, and delivery-success-rate SLO per channel. Alert when any of these drift. Without these, you'll discover problems from patient complaints instead of from dashboards.

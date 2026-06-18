@@ -163,7 +163,6 @@ def normalize_feature(value: float, feature_def: dict) -> float:
         return 0.5  # degenerate case, shouldn't happen with real features
     return (clipped - min_val) / (max_val - min_val)
 
-
 def construct_state_vector(patient_data: dict) -> np.ndarray:
     """
     Build a normalized state vector from raw patient data.
@@ -242,7 +241,6 @@ def check_safety_rule(rule: dict, patient_data: dict) -> bool:
     else:
         # Unknown operator: fail safe
         return False
-
 
 def apply_safety_filter(
     action_index: int, q_values: np.ndarray, patient_data: dict
@@ -359,7 +357,6 @@ def compute_step_reward(
 
     return reward
 
-
 def compute_terminal_reward(episode_outcome: str) -> float:
     """
     Compute the terminal reward when an episode ends.
@@ -389,7 +386,6 @@ def compute_terminal_reward(episode_outcome: str) -> float:
 
 ```python
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
-
 
 def get_policy_recommendation(state_vector: np.ndarray) -> dict:
     """
@@ -452,7 +448,6 @@ def get_policy_recommendation(state_vector: np.ndarray) -> dict:
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 episode_table = dynamodb.Table(DYNAMODB_TABLE)
-
 
 def log_recommendation(
     patient_id: str,
@@ -761,7 +756,6 @@ def generate_weaning_recommendation(patient_id: str, patient_data: dict, episode
     print(f"\nFinal recommendation: {final_action}")
     print(json.dumps(result, indent=2, default=str))
     return result
-
 
 # --- Example usage ---
 if __name__ == "__main__":

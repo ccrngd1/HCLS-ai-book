@@ -627,7 +627,6 @@ NORM_REFERENCE_LOOKUP = {
     },
 }
 
-
 # --- Helpers ---
 # DynamoDB rejects native Python float. Every numeric value on
 # its way into DynamoDB has to be a Decimal. This helper
@@ -641,17 +640,14 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _bucket_age(age_years):
     """Translate a numeric age into the cohort age band."""
@@ -667,7 +663,6 @@ def _bucket_age(age_years):
         return "13_17"
     return "adult"
 
-
 def _select_consent_disclosure(jurisdiction,
                                   deployment_context,
                                   is_minor):
@@ -681,7 +676,6 @@ def _select_consent_disclosure(jurisdiction,
     if is_minor:
         return CONSENT_DISCLOSURE_PEDIATRIC_PARENT
     return CONSENT_DISCLOSURE_DEFAULT_ADULT
-
 
 def audit_log(event):
     """
@@ -755,7 +749,6 @@ class MockSageMakerRuntime:
         })
         return {"body": json.dumps(response, default=str)}
 
-
 class MockTranscribeMedical:
     """
     Stands in for the Transcribe Medical batch transcription
@@ -793,7 +786,6 @@ class MockTranscribeMedical:
 
     def retrieve_transcript(self, audio_uri):
         return self._fixtures.get(audio_uri, "")
-
 
 class MockBedrock:
     """
@@ -849,7 +841,6 @@ class MockBedrock:
             })
         return {"body": json.dumps(response, default=str)}
 
-
 class MockHealthLake:
     """
     Stands in for AWS HealthLake's FHIR resource write
@@ -873,7 +864,6 @@ class MockHealthLake:
         })
         return {"resource_id": resource_id}
 
-
 class MockSchoolSIS:
     """
     Stands in for school-district student information
@@ -896,7 +886,6 @@ class MockSchoolSIS:
         })
         return {"record_id": record_id}
 
-
 class MockSessionTable:
     """In-memory stand-in for the DynamoDB session table.
     Each entry tracks one assessment session through the
@@ -914,7 +903,6 @@ class MockSessionTable:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockLongitudinalTable:
     """In-memory stand-in for the DynamoDB longitudinal
@@ -940,7 +928,6 @@ class MockLongitudinalTable:
             key=lambda x: x.get("session_timestamp", ""),
             reverse=True)
         return history[:limit]
-
 
 class MockS3:
     """
@@ -976,7 +963,6 @@ class MockS3:
             "deleted_at": _now_iso(),
         })
 
-
 class MockEventBus:
     """Stands in for Amazon EventBridge. Lifecycle events
     flow here for cross-system fan-out: session_setup_complete,
@@ -989,7 +975,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """Stands in for CloudWatch metric emission. In
@@ -1011,7 +996,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each
 # of these is its own AWS resource accessed via boto3.
 session_table         = MockSessionTable()
@@ -1027,7 +1011,6 @@ school_sis            = MockSchoolSIS()
 sagemaker_mock        = None
 transcribe_mock       = None
 bedrock_mock          = None
-
 
 # --- Patient demographics and goal lookups ---
 # Production reads from the EHR via FHIR or from the school
@@ -1054,10 +1037,8 @@ PATIENT_DEMOGRAPHICS = {
     },
 }
 
-
 def lookup_patient_context(patient_id):
     return dict(PATIENT_DEMOGRAPHICS.get(patient_id, {}))
-
 
 def lookup_patient_id(patient_id_hash):
     """Reverse lookup the unhashed patient ID from the hash.
@@ -1067,7 +1048,6 @@ def lookup_patient_id(patient_id_hash):
         if _hash_value(pid) == patient_id_hash:
             return pid
     return None
-
 
 # Per-patient active goals. Production reads from a goal-
 # tracking table keyed on patient_id; the demo uses an
@@ -1101,11 +1081,9 @@ ACTIVE_GOALS = {
     ],
 }
 
-
 def lookup_active_goals(patient_id):
     return [dict(g) for g in
               ACTIVE_GOALS.get(patient_id, [])]
-
 
 def lookup_most_recent_session(patient_id):
     """Return a reference to the most recent prior session
@@ -1115,7 +1093,6 @@ def lookup_most_recent_session(patient_id):
     if history:
         return history[0].get("session_id")
     return None
-
 
 def lookup_population_profile(patient_context):
     """
@@ -1143,14 +1120,11 @@ def lookup_population_profile(patient_context):
                 else "adult_typical")
     return "adult_typical"
 
-
 def lookup_instrument_definition(instrument_id):
     return INSTRUMENT_DEFINITIONS.get(instrument_id)
 
-
 def lookup_norm_reference(reference_id):
     return NORM_REFERENCE_LOOKUP.get(reference_id)
-
 
 def select_norm_reference(available_norms, age_years, sex,
                              primary_language):
@@ -1211,7 +1185,6 @@ def check_instrument_applicability(patient_context,
                 else "language_outside_validation"),
     }
 
-
 def customize_stimuli(stimulus_list, customizations):
     """
     Apply patient-specific stimulus customizations (skip
@@ -1223,7 +1196,6 @@ def customize_stimuli(stimulus_list, customizations):
                    if c.get("action") == "skip"}
     return [task for task in stimulus_list
             if task.get("task_id") not in skip_items]
-
 
 def determine_consent_frameworks(patient_context,
                                      deployment_context):
@@ -1246,7 +1218,6 @@ def determine_consent_frameworks(patient_context,
        BIOMETRIC_DATA_LAW_STATES:
         frameworks.append("biometric_data_law")
     return frameworks
-
 
 def capture_consent(patient_id, consent_type,
                        deployment_context,
@@ -1273,7 +1244,6 @@ def capture_consent(patient_id, consent_type,
         "captured_at":          _now_iso(),
         "is_minor":             is_minor,
     }
-
 
 def session_initiated(slp_id, patient_id,
                          selected_instruments,
@@ -1456,7 +1426,6 @@ def present_stimulus(task):
         "presented_at":  _now_iso(),
     }
 
-
 def capture_audio_with_task_quality(task, fixture_lookup):
     """
     Capture audio for one task and assess its quality
@@ -1493,11 +1462,9 @@ def capture_audio_with_task_quality(task, fixture_lookup):
             fixture.get("speaker_only_verified", True),
     }
 
-
 # Per-task fixtures wired up by run_demo before each
 # scenario.
 CURRENT_CAPTURE_FIXTURE = {}
-
 
 def capture_session_audio(session_id):
     """
@@ -1650,13 +1617,11 @@ def select_alignment_endpoint(population_profile, task_type):
         population_profile,
         ALIGNMENT_ENDPOINTS.get("adult_typical"))
 
-
 def select_phoneme_endpoint(population_profile):
     """Pick the per-population phoneme classifier endpoint."""
     return PHONEME_CLASSIFIER_ENDPOINTS.get(
         population_profile,
         PHONEME_CLASSIFIER_ENDPOINTS.get("adult_typical"))
-
 
 def select_fluency_endpoint(population_profile):
     """Pick the per-population fluency-detection endpoint."""
@@ -1664,13 +1629,11 @@ def select_fluency_endpoint(population_profile):
         population_profile,
         FLUENCY_ENDPOINTS.get("adult_typical"))
 
-
 def select_voice_quality_endpoint(population_profile):
     """Pick the per-population voice-quality endpoint."""
     return VOICE_QUALITY_ENDPOINTS.get(
         population_profile,
         VOICE_QUALITY_ENDPOINTS.get("adult_voice_disorder"))
-
 
 def parse_alignment(raw_response):
     """Parse the alignment payload from the SageMaker
@@ -1680,14 +1643,12 @@ def parse_alignment(raw_response):
         else raw_response.get("body", {})
     return body.get("alignment", {})
 
-
 def parse_phoneme_classification(raw_response):
     """Parse the phoneme-classification payload."""
     body = json.loads(raw_response["body"]) \
         if isinstance(raw_response.get("body"), str) \
         else raw_response.get("body", {})
     return body.get("phoneme_classification", {})
-
 
 def parse_fluency_events(raw_response):
     """Parse the fluency-events payload."""
@@ -1696,14 +1657,12 @@ def parse_fluency_events(raw_response):
         else raw_response.get("body", {})
     return body.get("fluency_events", [])
 
-
 def parse_voice_quality(raw_response):
     """Parse the voice-quality payload."""
     body = json.loads(raw_response["body"]) \
         if isinstance(raw_response.get("body"), str) \
         else raw_response.get("body", {})
     return body.get("voice_quality", {})
-
 
 def compute_prosodic_features(audio_ref, alignment):
     """
@@ -1729,7 +1688,6 @@ def compute_prosodic_features(audio_ref, alignment):
             fixture.get("pitch_range", Decimal("85")),
     }
 
-
 def extract_linguistic_features(transcript, patient_age,
                                     requested_features):
     """
@@ -1748,11 +1706,9 @@ def extract_linguistic_features(transcript, patient_age,
         for feature in requested_features
     }
 
-
 # Per-task feature fixtures wired up by run_demo.
 PROSODIC_FEATURE_FIXTURES = {}
 LINGUISTIC_FEATURE_FIXTURES = {}
-
 
 def extract_features(session_id):
     """
@@ -1974,12 +1930,10 @@ def collect_features_for_instrument(feature_set, instrument):
         or not relevant_task_ids
     }
 
-
 def extract_item_features(instrument_features, item):
     """Pull the per-task features relevant to this scoring
     item."""
     return instrument_features.get(item.get("task_id"), {})
-
 
 def score_item(item, features, scoring_method):
     """
@@ -2062,7 +2016,6 @@ def score_item(item, features, scoring_method):
         "evidence":      {"reason": "scoring_method_unknown"},
     }
 
-
 def compute_instrument_summary(scoring_method, items):
     """Compute the per-instrument summary score from the
     contributing items."""
@@ -2126,7 +2079,6 @@ def compute_instrument_summary(scoring_method, items):
         "summary_value":  Decimal("0"),
     }
 
-
 def apply_norms(instrument_id, auto_summary, norm_reference):
     """
     Apply the selected norm reference to the auto-summary.
@@ -2174,7 +2126,6 @@ def apply_norms(instrument_id, auto_summary, norm_reference):
             norm_def.get("norm_publication_year"),
     }
 
-
 def classify_severity(instrument_id, auto_summary,
                           norm_comparison, severity_cutoffs):
     """Classify severity per the instrument-defined cutoff
@@ -2191,7 +2142,6 @@ def classify_severity(instrument_id, auto_summary,
         if summary_value >= Decimal(str(cutoff)):
             return label
     return sorted_cutoffs[-1][0] if sorted_cutoffs else None
-
 
 def detect_phonological_patterns(per_item_scores,
                                      pattern_definitions,
@@ -2230,10 +2180,8 @@ def detect_phonological_patterns(per_item_scores,
         })
     return patterns
 
-
 # Fixture-driven phonological pattern detection.
 PHONOLOGICAL_PATTERN_FIXTURES = {}
-
 
 def score_instruments(session_id):
     """
@@ -2410,7 +2358,6 @@ def compute_score_delta(current_summary, prior_summary,
              else "stable_within_typical_variation"),
     }
 
-
 def lookup_within_patient_variation(patient_id_hash,
                                        instrument_id):
     """
@@ -2420,7 +2367,6 @@ def lookup_within_patient_variation(patient_id_hash,
     returns a default proxy.
     """
     return DEFAULT_WITHIN_PATIENT_TYPICAL_VARIATION
-
 
 def analyze_trajectory(history, instrument_id,
                           within_patient_typical_variation):
@@ -2468,7 +2414,6 @@ def analyze_trajectory(history, instrument_id,
         "delta":          newest - oldest,
         "direction":      direction,
     }
-
 
 def evaluate_goal_progress(goal, current_scores,
                               evaluation_rubric):
@@ -2519,7 +2464,6 @@ def evaluate_goal_progress(goal, current_scores,
         "recommended_action": recommended_action,
     }
 
-
 def detect_trajectory_patterns(longitudinal, goal_progress,
                                    pattern_thresholds=None):
     """Detect higher-order patterns across instruments and
@@ -2545,7 +2489,6 @@ def detect_trajectory_patterns(longitudinal, goal_progress,
         flags.append(
             "near_target_attainment_for_one_active_goal")
     return flags
-
 
 def compute_longitudinal(session_id):
     """
@@ -2701,7 +2644,6 @@ def build_slp_review_package(session_id, instrument_scores,
         ],
     }
 
-
 def slp_review_initiated(session_id, slp_id):
     """SLP opens the assessment for review."""
     state = session_table.get(session_id)
@@ -2729,7 +2671,6 @@ def slp_review_initiated(session_id, slp_id):
     })
     return review_package
 
-
 def lookup_item_score(scores, instrument_id, item_id):
     """Find an existing item score in the scoring set."""
     items = scores.get(instrument_id, {}).get(
@@ -2738,7 +2679,6 @@ def lookup_item_score(scores, instrument_id, item_id):
         if it.get("item_id") == item_id:
             return dict(it)
     return None
-
 
 def apply_item_edit(scores, edit):
     """Apply an SLP edit to a per-item score."""
@@ -2756,7 +2696,6 @@ def apply_item_edit(scores, edit):
             it["slp_edit_reasoning"] = edit.get("reasoning")
             it["slp_review_flag"] = False
             break
-
 
 def slp_submits_review(session_id, slp_id, edits,
                           clinical_interpretation):
@@ -2919,7 +2858,6 @@ def extract_metadata(state):
             patient_context.get("primary_language"),
     }
 
-
 def build_report_prompt(input_data, template):
     """Assemble the prompt for Bedrock's SLP-report
     generation."""
@@ -2929,7 +2867,6 @@ def build_report_prompt(input_data, template):
         "version":   SLP_REPORT_PROMPT_VERSION,
     }
 
-
 def build_family_summary_prompt(input_data, template):
     """Assemble the prompt for Bedrock's family-summary
     generation."""
@@ -2938,7 +2875,6 @@ def build_family_summary_prompt(input_data, template):
         "template":  template,
         "version":   FAMILY_SUMMARY_PROMPT_VERSION,
     }
-
 
 def simplify_for_family(final_summaries):
     """Strip clinical-jargon details out of the final
@@ -2953,7 +2889,6 @@ def simplify_for_family(final_summaries):
                     "summary_value"),
         }
     return simplified
-
 
 def extract_progress_highlights(goal_progress):
     """Pull the most important goal-progress points for the
@@ -2978,13 +2913,11 @@ def extract_progress_highlights(goal_progress):
             })
     return highlights
 
-
 def derive_home_practice(clinical_record):
     """Derive home-practice recommendations from the
     SLP's clinical interpretation."""
     return clinical_record.get(
         "free_text_observations", "")
-
 
 def determine_reading_level_for_family(patient_context):
     """Pick a reading level appropriate for the family. For
@@ -2995,7 +2928,6 @@ def determine_reading_level_for_family(patient_context):
         return "grade_6_to_8_for_parent"
     return "grade_6_to_8_for_patient"
 
-
 SLP_REPORT_TEMPLATE = (
     "Standard SLP assessment-report structure: history, "
     "instruments-administered, results-by-instrument, "
@@ -3004,7 +2936,6 @@ FAMILY_SUMMARY_TEMPLATE = (
     "Family-friendly summary at appropriate reading level "
     "with progress highlights and home-practice "
     "recommendations.")
-
 
 def build_fhir_observation(patient_id, instrument_id,
                               instrument_summary,
@@ -3067,7 +2998,6 @@ def build_fhir_observation(patient_id, instrument_id,
         ],
     }
 
-
 def build_fhir_goal(patient_id, goal_modification):
     """Build an FHIR Goal resource for an SLP-recommended
     goal modification or new goal."""
@@ -3088,7 +3018,6 @@ def build_fhir_goal(patient_id, goal_modification):
                                           ""),
         }],
     }
-
 
 def build_fhir_resources(observation_per_instrument,
                             goal_resources,
@@ -3119,7 +3048,6 @@ def build_fhir_resources(observation_per_instrument,
         })
     return resources
 
-
 def convert_to_sis_format(slp_report, fhir_resources):
     """Translate the SLP-report content and FHIR resources
     into the school SIS's expected format. Production
@@ -3129,7 +3057,6 @@ def convert_to_sis_format(slp_report, fhir_resources):
         "report_text": slp_report,
         "structured_results": fhir_resources,
     }
-
 
 def generate_documentation(session_id):
     """
@@ -3285,7 +3212,6 @@ def lookup_audio_retention(consent_id, deployment_context):
         return {"hours": 24}
     return {"hours": 48}
 
-
 def schedule_audio_deletion(audio_refs, delete_after):
     """Schedule audio deletion per the consent retention
     window. Production uses S3 lifecycle keyed on tags or
@@ -3309,12 +3235,10 @@ def schedule_audio_deletion(audio_refs, delete_after):
                     bucket, key,
                     reason="consent_retention_expired")
 
-
 def count_edits_for_instrument(edit_history, instrument_id):
     """Count SLP edits attributable to one instrument."""
     return sum(1 for e in edit_history
                 if e.get("instrument_id") == instrument_id)
-
 
 def summarize_goal_progress(goal_progress):
     """Produce a compact summary of goal progress for the
@@ -3328,7 +3252,6 @@ def summarize_goal_progress(goal_progress):
         }
         for goal_id, progress in goal_progress.items()
     }
-
 
 def summarize_edited_scores(edited_scores):
     """Produce a compact summary of the edited per-item
@@ -3344,7 +3267,6 @@ def summarize_edited_scores(edited_scores):
         }
         for instrument_id, scores in edited_scores.items()
     }
-
 
 def extract_capture_metadata(state):
     """Pull the recording-chain capture metadata for the
@@ -3362,7 +3284,6 @@ def extract_capture_metadata(state):
                  for t in captured),
                 default=Decimal("1")),
     }
-
 
 def audit_and_surveillance(session_id):
     """
@@ -3979,7 +3900,6 @@ def run_demo():
                 "been adherent.",
         })
     print(json.dumps(result, default=str, indent=2))
-
 
 if __name__ == "__main__":
     run_demo()

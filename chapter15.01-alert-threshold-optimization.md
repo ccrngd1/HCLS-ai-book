@@ -71,8 +71,6 @@ For alert threshold optimization, the practical answer is: **start offline, depl
 
 You train the initial policy on historical data. You validate it against held-out periods. You deploy it with hard safety bounds and monitoring. And then you allow it to make small online adjustments within those bounds, with automatic rollback if alert-to-action ratios deteriorate.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Offline policy evaluation methodology is mentioned but never described. Add a subsection describing OPE basics: the counterfactual evaluation challenge, doubly robust estimators as a practical starting point, comparison against behavior policy baseline, and validation via short online A/B test before full deployment. -->
-
 ### The Contextual Bandit Simplification
 
 Here's a pragmatic observation: for many alert threshold problems, you don't actually need full RL. A contextual bandit formulation is often sufficient and much simpler to implement.
@@ -122,7 +120,6 @@ At a conceptual level, the system has four components:
 The key architectural principle: the RL agent never directly controls the alerting system. It makes recommendations that pass through a safety layer. The safety layer has hard-coded bounds that no learned policy can override.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.01-architecture). The Python example is linked from there.
 

@@ -248,7 +248,6 @@ def generate_synthetic_appointments(n_appointments: int = 10000, seed: int = 42)
 ```python
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def upload_training_data(df: pd.DataFrame) -> str:
     """
     Format and upload training data to S3 in SageMaker XGBoost format.
@@ -298,7 +297,6 @@ def upload_training_data(df: pd.DataFrame) -> str:
 import sagemaker
 from sagemaker import image_uris
 from sagemaker.inputs import TrainingInput
-
 
 def train_noshow_model(training_data_uri: str) -> str:
     """
@@ -413,7 +411,6 @@ def prepare_scoring_input(df: pd.DataFrame) -> str:
     logger.info("Uploaded scoring input to %s (%d appointments)", s3_uri, len(scoring_df))
     return s3_uri
 
-
 def score_appointments(model_artifact_uri: str, scoring_input_uri: str) -> str:
     """
     Run SageMaker batch transform to score all upcoming appointments.
@@ -482,7 +479,6 @@ def score_appointments(model_artifact_uri: str, scoring_input_uri: str) -> str:
 ```python
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def classify_risk(probability: float) -> str:
     """
     Convert a continuous no-show probability into an actionable risk tier.
@@ -496,7 +492,6 @@ def classify_risk(probability: float) -> str:
     elif probability >= MEDIUM_RISK_THRESHOLD:
         return "medium"
     return "low"
-
 
 def store_predictions(
     predictions: list[float],
@@ -564,7 +559,6 @@ def store_predictions(
 ```python
 sns_client = boto3.client("sns", config=BOTO3_RETRY_CONFIG)
 
-
 def query_high_risk_appointments(target_date: str) -> list[dict]:
     """
     Query DynamoDB for appointments on the target date that need intervention.
@@ -603,7 +597,6 @@ def query_high_risk_appointments(target_date: str) -> list[dict]:
         len(actionable), target_date, len(items),
     )
     return actionable
-
 
 def run_action_engine(target_date: str) -> dict:
     """
@@ -687,7 +680,6 @@ Here's the full pipeline assembled into a single callable function. In productio
 ```python
 import json
 
-
 def run_full_pipeline() -> dict:
     """
     Run the complete no-show prediction pipeline end-to-end.
@@ -769,7 +761,6 @@ def run_full_pipeline() -> dict:
     logger.info(json.dumps(summary, indent=2, default=str))
 
     return summary
-
 
 # Run the pipeline.
 if __name__ == "__main__":

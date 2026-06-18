@@ -1,32 +1,6 @@
-<!--
-Editorial pass 4 (TechEditor, 2026-06-17):
-- Post-split polish. Verified architecture callout is well placed at end of General Architecture Pattern.
-- Confirmed The Honest Take contains zero AWS service references (no dangling pointers to moved content).
-- Added `text` language tag to the pipeline-flow code block (bare ``` violation).
-- Final sweep: zero em dashes, zero en dashes, zero bare code block openings, header hierarchy intact,
-  all existing TODO markers preserved with finding IDs on same line.
-
-Editorial pass 3 (TechEditor, 2026-05-31):
-- Softened "embarrassingly good" to "unusually strong" in The Honest Take opening per voice review finding V3. The original was borderline hyperbole for a technical cookbook; the replacement keeps the same point in a register consistent with the measured tone of the surrounding paragraphs.
-- Final verification: zero em dashes (U+2014, U+2013), header hierarchy intact (H1 title only, H2 major sections, H3 subsections), RECIPE-GUIDE section order preserved, all TODO markers from prior passes intact and properly formatted with finding IDs on the same line, vendor balance holds (~70/30), no documentation-voice or announcement-voice patterns, no fabricated URLs, Python companion callout present, navigation footer intact.
-- All HIGH/MEDIUM review findings remain as TODO markers for TechWriter follow-up (A1, N1, S1, S2, S3, S4, A2, A3, A4, N2). LOW findings V1a/V1b/V1c also remain as TODOs. V2 (model ID) was addressed in pass 1 with an inline comment. V4 (afterthought metaphor) was addressed in pass 1. S5 (synthetic label) was addressed in pass 1.
-- Recipe is editorially complete pending TechWriter resolution of deferred findings.
-
-Editorial pass (TechEditor, 2026-05-11):
-- Removed a documentation-voice opening sentence at the end of The Problem ("This recipe is about the generation side of prior auth.") that duplicated the next sentence's framing ("This one is about being the provider..."). The second sentence already carries the contrast with Recipe 1.4 in CC voice; the first was redundant and leaned into the anti-pattern flagged in STYLE-GUIDE.md.
-- Preserved all TODO markers inserted by TechWriter, TechCodeReviewer, and TechExpertReviewer, including the three HIGH findings from expert review (cost estimate A1, VPC endpoint list N1, IAM ARN scoping S1), the six MEDIUM findings (S2 minimum-necessary, S3 model-invocation-logging PHI, S4 input-side prompt injection, A2 Step Functions task-token pattern, A3 regeneration retry cap, A4 idempotency fingerprint, N2 EHR connectivity), and the LOW findings (V1 three unverified items, the "PAO" acronym correction, the Recipe 5.x cross-reference). Per persona rules, structural additions that introduce new architectural or clinical content are left for the TechWriter rather than rewritten here.
-- Verified: zero em dashes (U+2014 and U+2013 full-file scans), header hierarchy intact (H1 title, H2 major sections, H3 subsections, H4 Walkthrough), RECIPE-GUIDE section order preserved, vendor balance holds (AWS names first appear at "The AWS Implementation"), all external URLs well-formed (AWS docs, CMS-0057-F fact sheet, HL7 DaVinci PAS IG, AMA PA resources, ACR guidelines), fenced pseudocode blocks match the unlabeled convention established in Chapter 1 and Recipe 2.3, JSON and Mermaid blocks carry language tags, no LinkedIn-influencer or announcement-voice patterns present.
-
-Editorial pass 2 (TechEditor, 2026-05-11):
-- Resolved the self-flagged "PAO" acronym TODO in "Finalize and submit" (General Architecture Pattern) by removing the "or PAO FHIR profiles" clause. The recognized HL7 DaVinci prior-authorization IGs are PAS (Prior Authorization Support), CRD (Coverage Requirements Discovery), and DTR (Documentation Templates and Rules); "PAO" is not a real IG name. Removing the unverified acronym is in-scope for the editor per STYLE-GUIDE.md's "only verified" rule (no fake links, no fake abbreviations) and introduces no new technical content; the retained "DaVinci PAS" reference is factually correct and already accompanied by the verified HL7 link in Additional Resources. Adding a new acronym (CRD, DTR) would be new technical content and is out of editor scope, so I removed rather than corrected.
-- Final checklist sweep against both reviews. No further fixable issues at the editing layer.
-- Re-verified: zero em dashes (U+2014) and zero en dashes (U+2013) on full-file scan, header hierarchy unchanged, RECIPE-GUIDE section order intact, vendor balance holds at approximately 70/30, all external URLs in Additional Resources well-formed (8 AWS docs, 3 AWS samples/blogs, 4 industry resources), Python companion callout present and matches the RECIPE-GUIDE template, navigation footer filenames verified against the repo (chapter02.03, chapter02-index, chapter02.05 all exist).
-- TODOs preserved for TechWriter handoff: cost recomputation against multi-call pipeline (A1, header + Prerequisites + Performance table), VPC endpoint expansion (N1), IAM ARN scoping (S1), minimum-necessary paragraph in Step 3 (S2), model-invocation-logging PHI note in Encryption row (S3), input-side prompt-injection paragraph in Failure Modes (S4), Step Functions task-token pattern in the Step Functions subsection (A2), regeneration retry bounds in Step 7 (A3), idempotency fingerprint in Step 1 (A4), EHR connectivity paragraph in the Production-Ready section (N2), AMA statistics verification (V1a), payer approval rate benchmark removal (V1b), and Recipe 5.x cross-reference resolution (V1c). Per persona rules, each of these introduces new architectural, clinical, or operational prose rather than an in-place correction and is deferred to the TechWriter.
--->
-
 # Recipe 2.4: Prior Authorization Letter Generation
 
-**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter <!-- TODO: recompute cost against actual multi-call pipeline (Step 2 extraction, Step 3 per-criterion fact extraction, Step 4 per-criterion mapping, Step 6 generation). Expert review flagged the current range as ~5-10x optimistic for a typical 10-criterion PA on Claude Sonnet 4. -->
+**Complexity:** Medium · **Phase:** MVP → Production · **Estimated Cost:** ~$0.10-0.30 per letter 
 
 ---
 
@@ -38,7 +12,7 @@ Someone on the practice's staff (usually a medical assistant, a nurse, or a dedi
 
 The letter has to be persuasive but factual. It has to tie specific patient findings to specific payer criteria. It has to cite supporting evidence. It has to be signed by the physician. It has to be faxed or uploaded through the payer's portal (which has its own upload quirks and sometimes breaks). Then everyone waits.
 
-The American Medical Association's annual prior authorization survey reports that practices handle roughly 45 prior authorizations per physician per week, that physicians and staff spend an average of 14 hours per week on prior authorization work, and that 94% of physicians report care delays attributable to prior authorization. <!-- TODO: verify specific statistics against the latest AMA Prior Authorization Physician Survey -->
+The American Medical Association's annual prior authorization survey reports that practices handle roughly 45 prior authorizations per physician per week, that physicians and staff spend an average of 14 hours per week on prior authorization work, and that 94% of physicians report care delays attributable to prior authorization. 
 
 The letter itself typically takes 20 to 30 minutes to write, and that's assuming the writer is experienced and has the source documents at hand. New staff take longer. Complex cases (oncology, rare diseases, off-label requests) can take hours. A practice with 15 physicians processes roughly 600 to 700 prior authorizations per week. That's the equivalent of 2-3 full-time employees writing letters, which is exactly what many practices do: staff whose only job is composing prior auth narratives all day.
 
@@ -93,8 +67,6 @@ The mitigation: never let the model generate clinical facts from its prior knowl
 **Over-confident tone.** LLMs, by default, produce confident prose. A prior auth letter needs to be assertive about the medical need, but it also needs to acknowledge legitimate clinical uncertainty where it exists. A letter that says "the patient will definitely respond to adalimumab" is both clinically wrong and rhetorically counterproductive. A letter that says "the clinical evidence supports adalimumab as the appropriate next-line therapy given the patient's inadequate response to first-line DMARDs" is factually grounded and persuasively framed.
 
 **Citation fabrication.** Ask an LLM to cite supporting literature and it will happily generate plausible-looking journal citations that don't exist. The model confabulates author names, journal titles, and DOIs with high confidence. The mitigation: use retrieval for citations. Pull from a vetted literature corpus or a guideline repository. Never let the model generate citations from its training data alone.
-
-<!-- TODO: expert review (S4) recommended adding a short paragraph here on input-side prompt-injection risk. When clinical note content originates from weakly controlled channels (patient portal messages, OCR of faxed outside records, external referrals), an adversarial string in a note field could attempt to override the grounding constraint and instruct the model to fabricate claims or cite nonexistent literature. The suggested mitigation is configuring Bedrock Guardrails with input-side prompt-attack filters in addition to output filters, and treating EHR-sourced structured data and free-text narrative content as different trust tiers. -->
 
 **Payer-specific formatting.** Most payers accept letters in PDF format submitted through a portal. Some require specific fields in specific places. Some want structured JSON submitted via API (the HL7 DaVinci project is pushing toward this, and CMS-0057-F is accelerating it). Your generation pipeline has to produce the right output format for each payer, which means the architecture has to support multiple output modalities from a common content core.
 
@@ -203,7 +175,7 @@ Finally: don't try to automate the whole thing. The physician signature is load-
 - **Recipe 2.3 (Clinical Documentation Improvement):** CDI suggestions improve the clinical documentation that this recipe depends on. Better notes produce better fact extraction and stronger PA letters.
 - **Recipe 2.7 (Literature Search and Evidence Synthesis):** The evidence retrieval in this recipe is a simplified form of the RAG pattern in 2.7. For complex PA cases where standard citations don't apply, the literature search pattern becomes relevant.
 - **Recipe 2.9 (Clinical Decision Support Synthesis):** Similar synthesis architecture but higher-stakes output. The grounding patterns used here are essential there.
-- **Recipe 5.x (Entity Resolution):** Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. <!-- TODO: verify the specific Chapter 5 recipe number once Chapter 5 planning resolves; update the cross-reference or remove this bullet if no matching recipe exists. -->
+- **Recipe 5.x (Entity Resolution):** Linking patient records across EHR, practice management, and payer systems is a prerequisite for reliable PA automation. 
 
 ---
 

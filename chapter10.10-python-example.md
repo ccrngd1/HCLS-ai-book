@@ -287,7 +287,6 @@ CONSENT_DISCLOSURE_BIPA_OVERLAY_EN = (
 # before deploying.
 BIOMETRIC_DATA_LAW_STATES = {"IL", "TX", "WA"}
 
-
 # --- Topic Category to Deployment Posture Mapping ---
 # The institutional language-access policy owns this mapping.
 # Production maintains it as a clinical-operations-reviewed
@@ -304,7 +303,6 @@ TOPIC_TO_POSTURE = {
     "end_of_life":              "human_only",
     "complex_new_diagnosis":    "human_only",
 }
-
 
 # --- Per-Pair Configuration Definitions ---
 # Each language pair stores the validated vendor selection,
@@ -396,7 +394,6 @@ LANGUAGE_PAIR_CONFIGS = {
     },
 }
 
-
 # --- Helpers ---
 # DynamoDB rejects native Python float. Every numeric value on
 # its way into DynamoDB has to be a Decimal. This helper
@@ -410,17 +407,14 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _select_consent_disclosure(language, jurisdiction):
     """Pick the appropriate disclosure language and any
@@ -434,7 +428,6 @@ def _select_consent_disclosure(language, jurisdiction):
     if overlay:
         return f"{base}\n\n{overlay}"
     return base
-
 
 def audit_log(event):
     """
@@ -521,7 +514,6 @@ class MockTranscribeStreaming:
         pre-canned segment list."""
         return list(self._fixtures.get(audio_ref, []))
 
-
 class MockTranslate:
     """
     Stands in for Amazon Translate's TranslateText API with
@@ -576,7 +568,6 @@ class MockTranslate:
                 fixture.get("confidence", Decimal("0.85")),
         }
 
-
 class MockBedrock:
     """
     Stands in for Amazon Bedrock's InvokeModel for LLM-based
@@ -625,7 +616,6 @@ class MockBedrock:
         })
         return {"body": json.dumps(response, default=str)}
 
-
 class MockPolly:
     """
     Stands in for Amazon Polly's SynthesizeSpeech streaming
@@ -661,7 +651,6 @@ class MockPolly:
                 300 + (len(text or "") // 100) * 30,
         }
 
-
 class MockConnect:
     """
     Stands in for Amazon Connect's contact-center and SIP
@@ -693,7 +682,6 @@ class MockConnect:
             "target_session":  target_session,
             "transferred_at":  _now_iso(),
         })
-
 
 class MockChimeSDK:
     """
@@ -731,7 +719,6 @@ class MockChimeSDK:
             "target_session":  target_session,
             "transferred_at":  _now_iso(),
         })
-
 
 class MockHumanInterpreterPool:
     """
@@ -782,7 +769,6 @@ class MockHumanInterpreterPool:
                 "briefing_id":
                     f"brief-{uuid.uuid4().hex[:8]}"}
 
-
 class MockEncounterTable:
     """In-memory stand-in for the DynamoDB encounter table.
     Each entry tracks one encounter session through the
@@ -801,7 +787,6 @@ class MockEncounterTable:
             encounter_id, {"encounter_id": encounter_id})
         existing.update(updates)
 
-
 class MockAuditTable:
     """In-memory stand-in for the DynamoDB per-utterance
     audit table."""
@@ -815,7 +800,6 @@ class MockAuditTable:
         return [dict(item) for item in self._items
                   if item.get("encounter_id") ==
                      encounter_id]
-
 
 class MockS3:
     """
@@ -850,7 +834,6 @@ class MockS3:
             "deleted_at": _now_iso(),
         })
 
-
 class MockEventBus:
     """Stands in for Amazon EventBridge."""
     def __init__(self):
@@ -859,7 +842,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """Stands in for CloudWatch metric emission."""
@@ -877,7 +859,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each
 # of these is its own AWS resource accessed via boto3.
 encounter_table       = MockEncounterTable()
@@ -894,7 +875,6 @@ polly_mock            = MockPolly()
 transcribe_mock       = None
 translate_mock        = None
 bedrock_mock          = None
-
 
 # --- Patient demographics lookup ---
 PATIENT_DEMOGRAPHICS = {
@@ -921,10 +901,8 @@ PATIENT_DEMOGRAPHICS = {
     },
 }
 
-
 def lookup_patient_context(patient_id):
     return dict(PATIENT_DEMOGRAPHICS.get(patient_id, {}))
-
 
 def lookup_language_pair(source_language, target_language):
     """Return the per-pair configuration. Production reads
@@ -933,13 +911,11 @@ def lookup_language_pair(source_language, target_language):
     pair_id = f"{source_language}_to_{target_language}"
     return dict(LANGUAGE_PAIR_CONFIGS.get(pair_id, {}))
 
-
 def determine_deployment_posture(topic_category, pair_def):
     """Map the topic category to the institutional deployment
     posture. The mapping is policy-owned by clinical-quality
     leadership."""
     return TOPIC_TO_POSTURE.get(topic_category, "human_only")
-
 
 def select_endpointing_threshold(topic_category):
     """Pick the silence threshold for end-of-utterance
@@ -976,7 +952,6 @@ def capture_patient_consent(patient_id, disclosure,
         "captured_at":   _now_iso(),
     }
 
-
 def initiate_human_interpreter_handoff(language, dialect,
                                             encounter_type):
     """Route to the human-interpreter pool when machine
@@ -986,7 +961,6 @@ def initiate_human_interpreter_handoff(language, dialect,
         dialect=dialect,
         encounter_type=encounter_type,
         urgency="standard")
-
 
 def encounter_initiated(clinician_id, patient_id,
                             declared_language, declared_dialect,
@@ -1195,7 +1169,6 @@ def assess_stream_quality(stream_metadata, expected_language):
             and sample_rate >= DEFAULT_MIN_SAMPLE_RATE_HZ,
     }
 
-
 def route_audio_to_asr(encounter_id, patient_audio_stream,
                             clinician_audio_stream):
     """
@@ -1341,7 +1314,6 @@ UNIT_EQUIVALENCES = {
     "years":        {"years", "anos"},
 }
 
-
 def _canonical_unit(unit):
     """Normalize a unit string to its canonical form for
     matching across languages."""
@@ -1353,7 +1325,6 @@ def _canonical_unit(unit):
                             for e in equivalents}:
             return canonical
     return unit_lower
-
 
 def extract_numerical_content(text, language):
     """Extract (value, canonical_unit) pairs from a piece of
@@ -1372,7 +1343,6 @@ def extract_numerical_content(text, language):
         unit = _canonical_unit(match.group(2) or "")
         pairs.append((value, unit))
     return pairs
-
 
 def verify_numerical_content(source_text, target_text,
                                   source_language,
@@ -1411,7 +1381,6 @@ def verify_numerical_content(source_text, target_text,
         ],
     }
 
-
 def archive_text(text):
     """Archive transcript content to encrypted storage with
     appropriate retention. The audit pipeline references the
@@ -1425,7 +1394,6 @@ def archive_text(text):
         body=(text or "").encode("utf-8"),
         metadata={"text_hash": text_hash})
     return text_hash
-
 
 def select_translation_engine(source_language, target_language,
                                   topic_category, segment_text,
@@ -1459,7 +1427,6 @@ def select_translation_engine(source_language, target_language,
         return "bedrock_llm"
     return "translate"
 
-
 def check_faithfulness(source_text, target_text,
                             source_language, target_language):
     """Run an independent verifier model to check that the
@@ -1478,7 +1445,6 @@ def check_faithfulness(source_text, target_text,
         "issues":  parsed.get("issues", []),
     }
 
-
 def escalate_to_human(encounter_id, reason, segment,
                           additional_context=None):
     """Triggered from inside the translation pipeline when
@@ -1492,7 +1458,6 @@ def escalate_to_human(encounter_id, reason, segment,
         "timestamp":       _now_iso(),
     })
     return {"escalation_triggered": True, "reason": reason}
-
 
 def asr_finalized_transcript(encounter_id, speaker, segment):
     """
@@ -1802,7 +1767,6 @@ def build_ssml(text, language, lexicon_ids):
     return (
         f'<speak xml:lang="{language}">{text or ""}</speak>')
 
-
 def deliver_audio_stream(target_audience, audio_stream,
                               encounter_id,
                               time_to_first_byte_target_ms):
@@ -1825,7 +1789,6 @@ def deliver_audio_stream(target_audience, audio_stream,
             time_to_first_byte_target_ms,
         "timestamp":             _now_iso(),
     })
-
 
 def synthesize_translated_audio(encounter_id,
                                      translated_text,
@@ -1893,8 +1856,6 @@ def synthesize_translated_audio(encounter_id,
     }
 ```
 
-<!-- TODO (TechWriter): Code review W2 (WARNING). The conversational state machine never transitions out of `"translating"` or into `"playing_translation"`. After translation completes in `asr_finalized_transcript` and audio is delivered in `synthesize_translated_audio`, the state stays at `"translating"`, so every subsequent `vad_event(... "speech_start")` from the other speaker triggers a spurious BARGE_IN audit event. The six-utterance demo emits five spurious BARGE_IN events. Minimum fix: add `transition_to_state(encounter_id, "idle")` at the end of `synthesize_translated_audio` (after the `cloudwatch.put_metric` call, before `return`). Equivalent reset belongs at the end of `execute_escalation` once audio routes to the human interpreter. Populate `in_flight_translation` when the state enters `"translating"` so legitimate barge-ins (when the demo gets extended) record meaningful translation IDs rather than `None`. -->
-
 ---
 
 ## Step 5: Manage Turn-Taking and Barge-In with a Conversational State Machine
@@ -1912,11 +1873,9 @@ def transition_to_state(encounter_id, new_state, **extra):
     updates.update(extra)
     encounter_table.update(encounter_id, _to_decimal(updates))
 
-
 def get_current_state(encounter_id):
     state = encounter_table.get(encounter_id)
     return state.get("conversational_state", "idle")
-
 
 def halt_translation(translation_id):
     """Halt an in-flight TTS playback. Production sends an
@@ -1927,7 +1886,6 @@ def halt_translation(translation_id):
         "translation_id":  translation_id,
         "timestamp":       _now_iso(),
     })
-
 
 def handle_barge_in(encounter_id, interrupting_speaker,
                        in_flight_translation):
@@ -1945,7 +1903,6 @@ def handle_barge_in(encounter_id, interrupting_speaker,
             in_flight_translation.get("translation_id"),
         "timestamp":       _now_iso(),
     })
-
 
 def vad_event(encounter_id, speaker, event_type):
     """
@@ -2033,7 +1990,6 @@ def determine_interpreter_pool(language, dialect,
         "has_pre_staged":   pre_staged_session is not None,
     }
 
-
 def determine_urgency(topic_category, reason):
     """Pick the urgency tier for on-demand dispatch."""
     if topic_category in (
@@ -2043,7 +1999,6 @@ def determine_urgency(topic_category, reason):
             "faithfulness_below_threshold"):
         return "urgent"
     return "standard"
-
 
 def get_recent_utterances(encounter_id,
                               max_briefing_utterances=5):
@@ -2057,7 +2012,6 @@ def get_recent_utterances(encounter_id,
         reverse=True)
     return audit_records[:max_briefing_utterances]
 
-
 def determine_confidentiality_scope(state):
     """Decide what context the interpreter is allowed to
     receive based on the topic category. Production applies
@@ -2069,7 +2023,6 @@ def determine_confidentiality_scope(state):
                   "substance_use", "sexual_health"):
         return "minimal_briefing"
     return "recent_utterances_only"
-
 
 def build_interpreter_briefing(recent_utterances,
                                     confidentiality_scope,
@@ -2089,7 +2042,6 @@ def build_interpreter_briefing(recent_utterances,
             for u in recent_utterances
         ],
     }
-
 
 def transfer_audio_routing(encounter_id, from_mode, to_mode,
                                 interpreter_session):
@@ -2113,7 +2065,6 @@ def transfer_audio_routing(encounter_id, from_mode, to_mode,
             to_mode=to_mode,
             target_session=interpreter_session.get(
                 "session_id"))
-
 
 def execute_escalation(encounter_id, reason, segment,
                             additional_context=None):
@@ -2246,7 +2197,6 @@ def lookup_audio_retention(consent_id, deployment_context):
     system; the demo uses a default of 7 days for QA."""
     return {"days": 7}
 
-
 def get_audio_refs_for_encounter(encounter_id):
     """Return the audio references captured during the
     encounter."""
@@ -2257,7 +2207,6 @@ def get_audio_refs_for_encounter(encounter_id):
     if state.get("clinician_audio_ref"):
         refs.append(state["clinician_audio_ref"])
     return refs
-
 
 def schedule_audio_deletion(audio_refs, delete_after):
     """Schedule audio deletion per consent terms. Production
@@ -2271,7 +2220,6 @@ def schedule_audio_deletion(audio_refs, delete_after):
                 delete_after.get("days"),
             "timestamp":      _now_iso(),
         })
-
 
 def compute_confidence_distribution(encounter_id):
     """Aggregate per-utterance confidence into a percentile
@@ -2297,7 +2245,6 @@ def compute_confidence_distribution(encounter_id):
         "max":    confidences[-1],
     }
 
-
 def list_escalation_events(encounter_id):
     """Pull the escalation events for the encounter from the
     audit table."""
@@ -2312,7 +2259,6 @@ def list_escalation_events(encounter_id):
         if r.get("escalation_triggered")
     ]
 
-
 def list_modes_used(encounter_id):
     """Track which interpretation modes were used during the
     encounter (machine_only, machine_with_human_standby,
@@ -2323,10 +2269,8 @@ def list_modes_used(encounter_id):
         modes.append("human_interpreter")
     return modes
 
-
 def count_utterances(encounter_id):
     return len(audit_table.query_by_encounter(encounter_id))
-
 
 def compute_latency_distribution(encounter_id):
     """Compute end-to-end latency percentiles. Production
@@ -2352,7 +2296,6 @@ def compute_latency_distribution(encounter_id):
         "p95_ms": pct(0.95),
         "max_ms": values[-1],
     }
-
 
 def encounter_ended(encounter_id, end_reason):
     """
@@ -2822,7 +2765,6 @@ def run_demo():
                 "audit_archive_ref"),
     }
     print(json.dumps(summary, default=str, indent=2))
-
 
 if __name__ == "__main__":
     run_demo()

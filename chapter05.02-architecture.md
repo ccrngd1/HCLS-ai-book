@@ -20,17 +20,11 @@
 
 **AWS Lambda for the per-stage logic.** Normalization of single records, OpenSearch candidate query, single-record scoring, threshold routing, NPI attachment, drift detection, and re-verification scheduling each run as Lambdas. Lambdas are in VPC with VPC endpoints for downstream services. The split between Glue (batch, monthly volumes) and Lambda (real-time, single-record, daily) lets each workload run on the right substrate.
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Specify the identity-boundary policy for the real-time onboarding path, `attach_npi`, `re_verify_npi`, and the review-queue API. The real-time onboarding event should carry a producer-signed envelope (source_system, source_record_id, event_id, signed_payload) that the candidate-generator Lambda validates before processing. `attach_npi` should validate that `decision_metadata.invocation_source` matches the calling Lambda's execution role (auto_attach_pipeline, review_queue_decision, batch_match_pipeline) and reject mismatches with a logged metric. The review-queue Lambda should validate that the named reviewer had an assigned queue containing the pair and is not in the conflict-of-interest list. `re_verify_npi` should be invoked only by the daily Step Functions execution role with `(internal_provider_id, verification_due_date)` as the idempotency key. Same chapter pattern as 4.4-5.1; the consequence here is sharper because the assignment table is the canonical anchor for credentialing, claims, directory, and network-adequacy reporting consumers. -->
-
-
 **Amazon EventBridge for the assignment and drift event bus.** When an NPI is attached or a drift event fires (NPI deactivated, address changed, taxonomy changed), an event flows out to downstream consumers: the credentialing system for cred-file updates, the network management system for directory updates, the claims-processing system for claim-time NPI validation, the network-adequacy reporting pipeline for compliance reports. EventBridge provides the loose coupling and retry semantics for this fan-out.
 
-**AWS Step Functions plus a simple web app (API Gateway + Lambda + a static S3-hosted SPA) for the review queue UI.** Same pattern as recipe 5.1: API Gateway for the read/write endpoints, Cognito for credentialing-team authentication, Lambda backing the API, audit events on every reviewer action. The review interface presents the internal record next to the candidate registry records, highlights matching and differing fields, shows the score and the per-field score contributions, and provides single-keystroke decision plus advance to the next record. <!-- TODO: confirm whether the institution has an existing credentialing system (Symplr, Echo, MedTrainer, Modio, Verifiable, internal) to integrate with. The architecture supports either path; if integrating, replace this surface with the integration adapter and the review queue is exposed as records inside the credentialing tool. -->
+**AWS Step Functions plus a simple web app (API Gateway + Lambda + a static S3-hosted SPA) for the review queue UI.** Same pattern as recipe 5.1: API Gateway for the read/write endpoints, Cognito for credentialing-team authentication, Lambda backing the API, audit events on every reviewer action. The review interface presents the internal record next to the candidate registry records, highlights matching and differing fields, shows the score and the per-field score contributions, and provides single-keystroke decision plus advance to the next record. 
 
 **Amazon QuickSight for the operational and compliance dashboards.** Network adequacy by specialty and geography, provider-directory accuracy metrics (percent of providers with verified-within-90-days NPI assignments, percent with current addresses, percent with current taxonomies), drift event rates, review-queue depth, and cohort-stratified accuracy. QuickSight on Athena over the Glue-cataloged data, with row-level security where institutional policy requires it.
-
-<!-- TODO (TechWriter): Expert review A10 (MEDIUM). Specify Lake Formation column-level and row-level access controls for the audit archive's Glue-cataloged tables. QuickSight has named row-level security but Athena does not; a direct Athena query against the audit archive can read every PHI-adjacent row regardless of cohort or access role. Same chapter pattern as 5.1 Finding A10. -->
-
 
 **AWS KMS, CloudTrail, CloudWatch.** Customer-managed keys for the S3 buckets, the DynamoDB tables, the OpenSearch domain, and the Lambda log groups. CloudTrail data events on the assignment and review-queue tables and on the audit-archive S3 buckets. CloudWatch alarms on review-queue depth, on drift event volume (a sudden spike often indicates a data-quality issue in the latest NPPES file), on re-verification SLA breaches (records whose verification is overdue past the regulatory cadence), and on cohort-stratified accuracy disparity threshold crossings.
 
@@ -133,12 +127,12 @@ flowchart LR
 | **IAM Permissions** | Per-Lambda least-privilege: `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (`provider-npi-assignment`, `verification-schedule`, `provider-review-queue`); `s3:GetObject` / `PutObject` scoped to specific bucket prefixes; `es:ESHttpGet` / `ESHttpPost` scoped to specific OpenSearch indices; `events:PutEvents` on the assignment-and-drift bus; `kms:Decrypt` on the relevant CMKs. Glue jobs need scoped catalog and S3 permissions. Never use `*` actions or `*` resources in production. |
 | **BAA** | AWS BAA signed. The provider data itself is generally lower-sensitivity than patient data but the matching pipeline can carry license numbers and personal addresses, so all services in the architecture run under the BAA on the same posture as patient-matching infrastructure. |
 | **Encryption** | S3: SSE-KMS with bucket-level keys. DynamoDB: customer-managed KMS at rest. OpenSearch: KMS-encrypted indices, TLS in transit, fine-grained access control. Lambda log groups KMS-encrypted. EventBridge: server-side encryption. Glue jobs: KMS for connection passwords and Glue-managed encryption for the catalog. |
-| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. OpenSearch in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway only for external services without VPC endpoints (the NPI Registry API, the NPPES download endpoint); restrict egress with an outbound HTTPS proxy and an allow-list of destination domains. The NPPES download is from a public CMS endpoint; CMS does not require BAA for this data because the NPI registry is public information, but route the egress through your standard outbound proxy so the connection is logged and auditable. <!-- TODO: confirm the current NPPES download URL pattern at time of build; the file is published at download.cms.gov / NPPES download pages. --> |
-| **CloudTrail** | Enabled with data events on the assignment and review-queue tables; data events on the audit-archive S3 buckets. Review-queue API invocations logged at the API Gateway and Lambda layers. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy (typically several years for credentialing records, longer for compliance attestations). <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify the architectural retention floor: the longer of (HIPAA 6-year minimum, the institution's documented credentialing-record retention policy, the state-specific credentialing retention statute, and the network-adequacy attestation retention requirement; many institutions land at 7 to 10 years). Specify S3 Object Lock in Compliance mode for immutability and a lifecycle policy that transitions to S3 Glacier Deep Archive after 90 days. Forward CloudTrail data events to a dedicated audit AWS account isolated from the production data plane. --> |
+| **VPC** | Production: Lambdas in VPC. Glue jobs in VPC connections. OpenSearch in VPC. VPC endpoints for S3 (gateway), DynamoDB (gateway), KMS, CloudWatch Logs, EventBridge, Step Functions, Glue, Athena, STS. NAT Gateway only for external services without VPC endpoints (the NPI Registry API, the NPPES download endpoint); restrict egress with an outbound HTTPS proxy and an allow-list of destination domains. The NPPES download is from a public CMS endpoint; CMS does not require BAA for this data because the NPI registry is public information, but route the egress through your standard outbound proxy so the connection is logged and auditable.  |
+| **CloudTrail** | Enabled with data events on the assignment and review-queue tables; data events on the audit-archive S3 buckets. Review-queue API invocations logged at the API Gateway and Lambda layers. CloudTrail logs encrypted with KMS and retained per the institution's records-retention policy (typically several years for credentialing records, longer for compliance attestations).  |
 | **Data Quality Baseline** | Internal-provider record completeness audit before launching matching: percentage of records with non-null license number, license state, primary taxonomy, practice address. Records with no license number and no NPI present are the hardest to match; depending on volume, plan a parallel data-collection campaign with the credentialing team. |
-| **Review Team Staffing** | A credentialing or provider-data-management team trained on the review interface and the auto-attach / not-this-NPI / unknown decision criteria. Most production deployments allocate 0.1 to 0.5 FTE per 10,000 active providers for ongoing review work, with higher initial allocation during the historical-backlog cleanup. <!-- TODO: verify staffing ratios; the figures here are rough estimates from credentialing-tool vendor literature and may vary by organization. --> |
+| **Review Team Staffing** | A credentialing or provider-data-management team trained on the review interface and the auto-attach / not-this-NPI / unknown decision criteria. Most production deployments allocate 0.1 to 0.5 FTE per 10,000 active providers for ongoing review work, with higher initial allocation during the historical-backlog cleanup.  |
 | **Sample Data** | The NPPES Downloadable File is publicly available and free; download a recent extract for development. For internal provider records, use synthetic data based on representative naming-convention distributions and known-NPI seedings; never use real provider data in development environments. |
-| **Cost Estimate** | At a regional health plan with ~50,000 active network providers and ~200 new credentialing onboardings per month: S3: $20-100/month (NPPES file is multi-GB but compressed parquet is much smaller). DynamoDB on-demand: $50-200/month (low write volume, modest read volume). OpenSearch (one r6g.large.search node minimum, three for production): $200-600/month. Glue (monthly batch refresh, daily re-verification): $50-200/month. Lambda + Step Functions: $30-100/month. EventBridge: $20-50/month. API Gateway + Cognito: $30-100/month. Athena + QuickSight: $50-200/month. Estimated infrastructure total: $450-1,550/month, an order of magnitude lower than patient matching because the cardinality is lower and the workload is less intense. <!-- TODO: replace with verified, current pricing once the implementing team validates against the AWS Pricing Calculator. --> |
+| **Cost Estimate** | At a regional health plan with ~50,000 active network providers and ~200 new credentialing onboardings per month: S3: $20-100/month (NPPES file is multi-GB but compressed parquet is much smaller). DynamoDB on-demand: $50-200/month (low write volume, modest read volume). OpenSearch (one r6g.large.search node minimum, three for production): $200-600/month. Glue (monthly batch refresh, daily re-verification): $50-200/month. Lambda + Step Functions: $30-100/month. EventBridge: $20-50/month. API Gateway + Cognito: $30-100/month. Athena + QuickSight: $50-200/month. Estimated infrastructure total: $450-1,550/month, an order of magnitude lower than patient matching because the cardinality is lower and the workload is less intense.  |
 
 ### Ingredients
 
@@ -165,7 +159,7 @@ flowchart LR
 
 > **Reference implementations:** Useful aws-samples and open-source patterns for this recipe:
 > - [`Splink`](https://github.com/moj-analytical-services/splink): probabilistic record linkage on Spark/DuckDB/Athena; produces Fellegi-Sunter outputs with EM-based parameter estimation. Same library as recipe 5.1.
-> - [`pyNPI`](https://github.com/josephgallant/pynpi): a small Python wrapper around the NPI Registry API for individual NPI lookups; useful for the real-time-onboarding code path. <!-- TODO: confirm the maintained state of pyNPI at time of build; alternative wrappers exist and may be more current. -->
+> - [`pyNPI`](https://github.com/josephgallant/pynpi): a small Python wrapper around the NPI Registry API for individual NPI lookups; useful for the real-time-onboarding code path. 
 > - [NUCC Health Care Provider Taxonomy Code Set](https://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40): the official taxonomy code set referenced in NPPES; download the current version for taxonomy-mapping code in the normalize step.
 
 #### Walkthrough
@@ -566,7 +560,6 @@ FUNCTION route_match(internal_record, scored_candidates, thresholds):
         queue_for_review(internal_record, scored_candidates, reason)
         RETURN "review"
 
-
 FUNCTION queue_for_review(internal_record, scored_candidates, reason):
     DynamoDB.PutItem("provider-review-queue", {
         queue_id: assign_queue_id(internal_record),
@@ -672,7 +665,6 @@ FUNCTION attach_npi(internal_record, matched_candidate, decision_metadata):
             attached_at: current UTC timestamp
         }
     }])
-
 
 FUNCTION re_verify_npi(internal_provider_id, matched_npi):
     // The daily re-verification job pulls due records from the
@@ -854,8 +846,6 @@ FUNCTION re_verify_npi(internal_provider_id, matched_npi):
 | Time from registry deactivation to internal directory removal | weeks to months | hours to days |
 | Network adequacy reporting accuracy | varies, often unaudited | provable from audit logs |
 
-<!-- TODO: replace illustrative figures with measured results from the deployment. Vendor-published figures from provider-data services often emphasize the easy cases (coverage, auto-attach precision) and not the harder ones (cohort fairness, drift-detection latency). -->
-
 **Where it struggles:**
 
 - **Common-name + missing-license combinations.** A "John Smith, MD" with no license number on the internal record can match dozens of NPPES entries. The pipeline correctly routes these to review rather than auto-attaching to a guess. The mitigation is upstream: capture license number on every internal provider record at onboarding.
@@ -878,7 +868,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Specialty-taxonomy mapping table.** The map from internal specialty values to NUCC codes is a maintained artifact, not a one-time build. New internal specialties show up. NUCC publishes new codes periodically. Internal-to-NUCC mappings need a periodic review with input from credentialing leadership. The mapping should be versioned, the version captured in each match record, and the table maintained as code rather than as a spreadsheet that gets edited and lost.
 
-**Re-verification cadence configuration per regulatory regime.** Network adequacy regulations vary by state and by line of business (commercial, Medicare Advantage, Medicaid). The standard ninety-day cadence is a common starting point but is not universal. The architecture should support per-segment re-verification cadences (Medicare Advantage commonly has stricter requirements, Medicaid varies by state) with the cadence stored as configuration rather than hard-coded. <!-- TODO: confirm current network adequacy verification requirements by line of business at time of build; CMS, NCQA, and state-level rules are the relevant authorities. -->
+**Re-verification cadence configuration per regulatory regime.** Network adequacy regulations vary by state and by line of business (commercial, Medicare Advantage, Medicaid). The standard ninety-day cadence is a common starting point but is not universal. The architecture should support per-segment re-verification cadences (Medicare Advantage commonly has stricter requirements, Medicaid varies by state) with the cadence stored as configuration rather than hard-coded. 
 
 **Drift-event downstream consumption.** Emitting a `practice_address_changed` event is the easy part. The hard part is what happens next: who consumes the event, who updates the directory, who notifies members of an in-network provider whose location has moved, who reconciles the cred-file address with the registry address, who decides whether the address change constitutes a re-credentialing event versus a routine update. The downstream workflows are organization-specific and require explicit design.
 
@@ -886,17 +876,11 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Identity-fraud and integrity-of-credentialing detection.** The same techniques that match providers to NPIs also detect potential issues: a credentialing application with a license number that does not match the NPPES license, a provider with a deactivated NPI submitted as active, a license that the state board has shown as suspended. The matcher should route these to the credentialing-integrity team rather than to the standard auto-attach flow. Define the integrity rules in consultation with the credentialing-leadership and compliance teams.
 
-**Sanction list integration.** The OIG List of Excluded Individuals/Entities (LEIE) is a separate authoritative source of providers excluded from federal healthcare programs. <!-- TODO: confirm; the OIG LEIE is published monthly at oig.hhs.gov with the full list and incremental update files. --> Cross-checking the matched NPI against the LEIE catches sanctioned providers before they end up in the directory. The cross-check is straightforward (NPI lookup against the LEIE file) but the response logic is organization-specific (immediate directory removal, claims hold, credentialing review, all of the above). The architecture should support the cross-check as a parallel pipeline that emits its own events.
-
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Promote LEIE integration from "Variations and Extensions" into the main architecture. Federal payer compliance (42 USC § 1320a-7) makes LEIE checks table stakes for organizations participating in Medicare Advantage, Medicaid Managed Care, or any federally-funded program; an unchecked NPI exposes the institution to recoupment risk and CMP penalties under § 1320a-7a. Add to the architecture diagram a parallel LEIE Verification flow consuming the monthly OIG LEIE file, with a `leie-sanction-status` attribute on `provider-npi-assignment` carrying the most recent check timestamp and result. Add to the EventBridge fan-out a `provider_sanctioned` detail-type. Update the Honest Take to name LEIE alongside the deactivation flag as the highest-priority drift events. Reference the OIG Special Advisory Bulletin on the Effect of Exclusion as the regulatory anchor. -->
-
+**Sanction list integration.** The OIG List of Excluded Individuals/Entities (LEIE) is a separate authoritative source of providers excluded from federal healthcare programs.  Cross-checking the matched NPI against the LEIE catches sanctioned providers before they end up in the directory. The cross-check is straightforward (NPI lookup against the LEIE file) but the response logic is organization-specific (immediate directory removal, claims hold, credentialing review, all of the above). The architecture should support the cross-check as a parallel pipeline that emits its own events.
 
 **State-level license-board integration.** Beyond NPPES, state medical boards publish license status (active, suspended, revoked, expired) and disciplinary actions. The matched NPI's license-state plus license-number is sufficient to look up the state board record. The lookup is rate-limited and structurally different per state (some states publish flat files, some publish APIs, some publish web pages that need scraping). For organizations with regulatory exposure, the state-board integration is necessary; design it as a separate verification pipeline that emits drift events when license status changes.
 
 **Real-time matching latency budget for onboarding workflows.** Credentialing-team onboarding workflows expect a sub-second response to "what's the NPI for this provider." The OpenSearch-based candidate generation plus Lambda-based scoring typically lands well under that budget for clean lookups, but edge cases (very common surnames with hundreds of candidates, ambiguous taxonomy mappings) can push latency. Architect for sub-second response with fallback paths: candidate-set capping, asynchronous follow-up scoring for borderline cases, and an "in progress" status the credentialing UI can display while the matching completes.
-
-<!-- TODO (TechWriter): Expert review A8 (MEDIUM). Specify the OpenSearch failover. OpenSearch availability is a single point of failure for the real-time onboarding path; the candidate-generator Lambda should fall back to (a) a direct NPI Registry API query when OpenSearch is unavailable, or (b) "queued for matching" status with an SQS handoff to the asynchronous scoring path, with a CloudWatch alarm on chronic OpenSearch availability issues. Specify the fallback order and the latency-budget check that triggers the asynchronous path. -->
-
 
 **Audit-log retention.** The matching audit log is a regulatory artifact, particularly for the network-adequacy compliance reports. Apply the institution's records-retention policy to the audit log (typically several years for credentialing files, longer for compliance attestations). Apply tighter access control than for general analytics: the audit log should be queryable only by named credentialing leadership, compliance staff, and auditors.
 
@@ -904,23 +888,17 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Idempotency and retry semantics.** Like recipe 5.1, the matching pipeline must handle duplicate-event delivery without producing duplicate attachments or scheduling duplicate verifications. Use the `internal_provider_id` as the idempotency key for normalize-and-route; use the `attachment_id` as the idempotency key for attach-NPI; use `(internal_provider_id, verification_due_date)` as the idempotency key for schedule-re-verification. Lambda invocations should be idempotent at these keys.
 
-<!-- TODO (TechWriter): Expert review A7 (MEDIUM). Specify DLQ coverage on every Lambda path, the Step Functions Catch-with-route-to-DLQ pattern, and an `attachment_id` ConditionExpression on the attach-NPI Put preventing duplicate writes. Distinguish retryable infrastructure failures from terminal logic failures. Same chapter pattern as 4.4-5.1. The duplicate-attach event consequence is sharper here because downstream credentialing-system, directory, and claims-validation consumers may take action on each event delivery. -->
-
-
 **Cross-recipe orchestration with patient matching (recipe 5.1).** The same DynamoDB instance and the same Glue catalog can host both the patient-matching and provider-matching artifacts. Where it makes sense, share the matching-primitives library (blocking passes, comparators, Fellegi-Sunter combiner) as a versioned Lambda layer or Glue Python library so improvements to the comparators benefit both recipes. The provider-matching pipeline is structurally simpler than the patient one, but the operational patterns (review queue, audit, drift detection, equity monitoring) are shared and worth packaging as a shared substrate.
-
-<!-- TODO (TechWriter): Expert review A9 (MEDIUM). Architect the matching-primitives library boundary explicitly. Specify the versioned Lambda layer or Glue Python library that hosts the shared blocking passes, comparators, and Fellegi-Sunter combiner; the version-coupling contract (each recipe pins a specific library version); and the audit-archive shared-substrate cross-recipe consumption pattern. Same chapter pattern as 5.1 Finding A8. -->
-
 
 ---
 
 ## Variations and Extensions
 
-**Sanction-list integration (LEIE) as a parallel verification pipeline.** Cross-check every matched NPI against the OIG List of Excluded Individuals/Entities. The LEIE is published monthly with full and incremental files; the lookup is straightforward NPI exact match. Excluded providers should fire an immediate event to credentialing, claims, and directory consumers. The pattern extends to other authoritative sanction sources (state Medicaid exclusion lists, GSA System for Award Management exclusions, state medical board disciplinary actions). <!-- TODO: confirm current sanction-list sources and update cadences at time of build. -->
+**Sanction-list integration (LEIE) as a parallel verification pipeline.** Cross-check every matched NPI against the OIG List of Excluded Individuals/Entities. The LEIE is published monthly with full and incremental files; the lookup is straightforward NPI exact match. Excluded providers should fire an immediate event to credentialing, claims, and directory consumers. The pattern extends to other authoritative sanction sources (state Medicaid exclusion lists, GSA System for Award Management exclusions, state medical board disciplinary actions). 
 
 **State medical board license verification.** Beyond NPPES, the state medical boards publish license status and disciplinary actions. For each matched NPI's license, schedule a periodic check against the relevant state board (rate-limited per state) and emit drift events for license status changes (suspended, revoked, expired, reinstated). This is an additional verification pipeline running alongside the NPPES one; the architecture is the same with state-specific data sources.
 
-**Death Master File integration.** For organizations with permitted access to the Death Master File, cross-check matched NPIs against death records. Deceased providers in NPPES are sometimes deactivated promptly, sometimes not; the DMF cross-check provides a more aggressive deceased-provider detection. <!-- TODO: confirm DMF access requirements at time of build; the limited-access DMF requires specific authorizations under federal law and may not be available to all organizations. -->
+**Death Master File integration.** For organizations with permitted access to the Death Master File, cross-check matched NPIs against death records. Deceased providers in NPPES are sometimes deactivated promptly, sometimes not; the DMF cross-check provides a more aggressive deceased-provider detection. 
 
 **FHIR Practitioner / PractitionerRole resource generation.** Once the matched NPI and drift-tracked metadata are in place, the institution can publish FHIR-conformant Practitioner and PractitionerRole resources for downstream interoperability consumers (HIE, TEFCA participation, partner integrations). The FHIR resources are derived from the assignment table and the drift snapshot; they are a publishing pattern on top of the existing data, not a new data store.
 
@@ -956,28 +934,26 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **AWS Sample Repos:**
 - [`aws-samples/aws-glue-samples`](https://github.com/aws-samples/aws-glue-samples): Glue ETL patterns applicable to the NPPES bulk processing and batch matching pipelines
 - [`aws-samples/serverless-patterns`](https://github.com/aws-samples/serverless-patterns): Step Functions + Lambda + DynamoDB orchestration patterns applicable to the real-time onboarding and daily re-verification workflows
-<!-- TODO: confirm the current names and locations of the aws-samples repos at time of build; the organizations have been reorganizing. Search aws-samples and aws-solutions-library-samples for entity-resolution and reference-data examples. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter Healthcare and Life Sciences): browse for healthcare data quality and master data management reference architectures
 - [AWS for Industries: Healthcare and Life Sciences Blog](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): search "provider directory," "credentialing," and "NPI" for relevant deep-dives
 - [AWS Big Data Blog](https://aws.amazon.com/blogs/big-data/): search "entity resolution" and "fuzzy matching" for relevant pipeline patterns
-<!-- TODO: replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs. -->
 
 **External References (Authoritative Sources):**
 - [NPPES NPI Registry (CMS)](https://npiregistry.cms.hhs.gov/): the public registry search and the NPI Registry API documentation
-- [NPPES Data Dissemination](https://download.cms.gov/nppes/NPI_Files.html): the monthly NPPES Downloadable File and update schedule <!-- TODO: confirm the current download URL pattern at time of build; CMS occasionally restructures the data-dissemination pages. -->
+- [NPPES Data Dissemination](https://download.cms.gov/nppes/NPI_Files.html): the monthly NPPES Downloadable File and update schedule 
 - [NUCC Health Care Provider Taxonomy Code Set](https://www.nucc.org/index.php/code-sets-mainmenu-41/provider-taxonomy-mainmenu-40): the official taxonomy code set referenced in NPPES
 - [OIG List of Excluded Individuals/Entities (LEIE)](https://oig.hhs.gov/exclusions/): the federal exclusion list
-- [HIPAA Administrative Simplification Standards (CMS)](https://www.cms.gov/Regulations-and-Guidance/Administrative-Simplification/HIPAA-ACA): the regulatory framework establishing the NPI as the standard unique identifier for healthcare providers <!-- TODO: confirm current URL at time of build. -->
+- [HIPAA Administrative Simplification Standards (CMS)](https://www.cms.gov/Regulations-and-Guidance/Administrative-Simplification/HIPAA-ACA): the regulatory framework establishing the NPI as the standard unique identifier for healthcare providers 
 
 **External References (Methodology):**
 - [Splink documentation](https://moj-analytical-services.github.io/splink/): probabilistic record linkage library, healthcare-applicable
 - [dedupe documentation](https://docs.dedupe.io/): library for fuzzy matching and entity resolution
 
 **External References (Regulatory and Industry):**
-- [No Surprises Act provider-directory provisions (CMS)](https://www.cms.gov/nosurprises): the federal framework imposing provider-directory accuracy requirements <!-- TODO: confirm the most relevant CMS guidance pages at time of build. -->
-- [CMS Medicare Advantage Provider Directory Reviews](https://www.cms.gov/): annual CMS audits documenting provider-directory accuracy patterns <!-- TODO: confirm specific URL at time of build; CMS publishes Secret Shopper studies and Provider Directory Review reports periodically. -->
+- [No Surprises Act provider-directory provisions (CMS)](https://www.cms.gov/nosurprises): the federal framework imposing provider-directory accuracy requirements 
+- [CMS Medicare Advantage Provider Directory Reviews](https://www.cms.gov/): annual CMS audits documenting provider-directory accuracy patterns 
 - [NCQA Health Plan Accreditation Standards](https://www.ncqa.org/): provider-directory accuracy requirements within NCQA accreditation
 - [The Sequoia Project Provider Directory Initiatives](https://sequoiaproject.org/): industry-collaborative work on provider data standards and exchange
 
@@ -992,7 +968,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 | With variations | Add state medical board license verification, Death Master File integration, FHIR Practitioner / PractitionerRole publication, multi-source taxonomy reconciliation, active-learning-driven gold-set construction, per-cohort m/u models, credentialing-system bidirectional sync, provider self-service portal | 4-8 months beyond production-ready |
 
 ---
-
 
 ---
 

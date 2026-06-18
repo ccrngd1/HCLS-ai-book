@@ -325,14 +325,12 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_transcript(transcript):
     """Stable transcript hash for idempotency and audit linkage."""
     if not transcript:
         return None
     return hashlib.sha256(
         transcript.lower().strip().encode("utf-8")).hexdigest()
-
 
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
@@ -391,7 +389,6 @@ class MockTranscribeMedical:
             "biasing_applied":  self._biasing.get(session_id, []),
         }
 
-
 class MockBedrock:
     """
     Stands in for Amazon Bedrock's InvokeModel API. Two
@@ -433,7 +430,6 @@ class MockBedrock:
     def _fixture_key(verbatim):
         return (verbatim or "").lower().split(".")[0][:60]
 
-
 class MockComprehendMedical:
     """
     Stands in for Amazon Comprehend Medical's DetectEntitiesV2,
@@ -449,7 +445,6 @@ class MockComprehendMedical:
             if fixture_key in (text or "").lower():
                 return dict(fixture_response)
         return {"Entities": []}
-
 
 class MockEHR:
     """
@@ -558,7 +553,6 @@ class MockEHR:
         })
         return {"status": "applied", "icd10_code": condition_code}
 
-
 class MockClient:
     """
     Stands in for the dictation client (browser EHR plugin,
@@ -615,7 +609,6 @@ class MockClient:
         self._signature = None
         return signature
 
-
 class MockSessionState:
     def __init__(self):
         self._items = {}
@@ -630,7 +623,6 @@ class MockSessionState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockDictationMetadata:
     """
@@ -666,7 +658,6 @@ class MockDictationMetadata:
                     return record
         return None
 
-
 class MockClinicianConfig:
     """
     Stands in for the per-clinician configuration table. Holds
@@ -685,7 +676,6 @@ class MockClinicianConfig:
             "preferred_template": "primary-care-followup-v2",
             "macros":            {},
         }))
-
 
 class MockS3:
     """
@@ -712,7 +702,6 @@ class MockS3:
                 for (b, k), v in self._objects.items()
                 if bucket is None or b == bucket]
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. Lifecycle events flow here
@@ -725,7 +714,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -746,7 +734,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 session_state     = MockSessionState()
@@ -763,7 +750,6 @@ transcribe_med    = None
 bedrock_mock      = None
 comprehend_mock   = None
 clinician_config  = None
-
 
 def audit_log(event):
     """
@@ -1197,10 +1183,8 @@ def _segment_by_pauses(word_level_results, pause_threshold_seconds):
         segments.append(current)
     return segments
 
-
 def _segment_text(segment):
     return " ".join(w["word"] for w in segment).strip().lower()
-
 
 def disambiguate_commands(asr_result, session_context):
     """
@@ -1314,7 +1298,6 @@ NUMBER_WORDS = {
     "hundred": 100, "thousand": 1000,
 }
 
-
 def _words_to_number(words):
     """
     Convert a sequence of number words to an integer. Handles
@@ -1341,7 +1324,6 @@ def _words_to_number(words):
             else:
                 current += value
     return total + current
-
 
 def _canonicalize_numbers(text):
     """
@@ -1397,7 +1379,6 @@ def _canonicalize_numbers(text):
 
     return text
 
-
 def _apply_punctuation_and_capitalization(text):
     """
     Convert dictated punctuation words ("comma", "period", "colon",
@@ -1432,7 +1413,6 @@ def _apply_punctuation_and_capitalization(text):
 
     return text.strip()
 
-
 def _detect_section_headers(text, template):
     """
     Recognize section-header patterns in the text and convert
@@ -1457,7 +1437,6 @@ def _detect_section_headers(text, template):
             text, flags=re.IGNORECASE)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
-
 
 def _build_formatter_prompt(verbatim, rule_based_draft, template,
                               specialty):
@@ -1490,7 +1469,6 @@ def _build_formatter_prompt(verbatim, rule_based_draft, template,
         "specialty":        specialty,
     }
 
-
 def _build_faithfulness_prompt(verbatim, formatted_note):
     """
     Build the faithfulness-check prompt. The check returns a
@@ -1513,7 +1491,6 @@ def _build_faithfulness_prompt(verbatim, formatted_note):
         "verbatim":       verbatim,
         "formatted_note": formatted_note,
     }
-
 
 def format_and_structure(disambiguated, asr_result, session_context):
     """
@@ -1706,7 +1683,6 @@ def detect_critical_errors(verbatim, formatted_text):
                     f"This pair is on the critical-error list."),
             })
     return alerts
-
 
 def extract_structured_fields(asr_result, formatted, session_context):
     """
@@ -1914,7 +1890,6 @@ def _build_confidence_overlay(formatted_text, word_level_results):
             "end_time":   word["end_time"],
         })
     return overlay
-
 
 def render_review_and_capture_decisions(
         asr_result, formatted, structured, session_context):
@@ -2450,7 +2425,6 @@ def process_dictation(clinician_id, smart_on_fhir_context,
         "time_to_sign": float(audit_record["time_to_sign_seconds"]),
     }
 
-
 def run_demo():
     """
     Run a small set of end-to-end scenarios that exercise the
@@ -2785,7 +2759,6 @@ def run_demo():
           f"{len(ehr._created_notes)}")
     print(f"EHR structured writes:       "
           f"{len(ehr._structured_writes)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

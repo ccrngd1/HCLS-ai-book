@@ -145,16 +145,11 @@ Logical stages:
 
 5. **Case retrieval API.** Downstream consumers (billing worklists, provider portals) can request "show me similar resolved claims" for any given claim. Returns enriched records with outcome, denial reason, and similarity score.
 
-<!-- TODO (TechWriter): Expert review SEC-3 (MEDIUM). Add access control guidance for the case retrieval API: provider portals should only surface cases from the same provider organization (or de-identified cases); internal billing worklists can see broader comparisons. Implement row-level filtering in the OpenSearch query by provider_org_id for provider-facing use cases, or strip identifiable metadata for cross-organization comparisons. -->
-
 6. **Cluster assignment.** Periodically re-cluster the denied claims population. Assign incoming denied claims to their nearest archetype cluster for routing.
-
-<!-- TODO (TechWriter): Expert review ARCH-3 (MEDIUM). Add operational detail: re-cluster monthly (or when denial volume exceeds threshold since last run). Store cluster labels with a cluster_version field in DynamoDB. Downstream routing queries by current cluster version. Alert when cluster composition shifts significantly between runs. -->
 
 7. **Hybrid decision engine.** Combines the primary XGBoost score from 7.11 with the novelty score and kNN outcome distribution to produce a final recommendation: {prediction, confidence, supporting_cases, novelty_flag, recommended_action}.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.12-architecture). The Python example is linked from there.
 

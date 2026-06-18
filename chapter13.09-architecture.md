@@ -18,8 +18,6 @@
 
 **AWS Lambda and Step Functions for pipeline orchestration.** The extraction pipeline is a multi-step workflow: fetch article, parse, run NER, run RE, normalize, grade, store. Step Functions coordinates these steps with error handling, retries, and parallel processing. Lambda handles the stateless compute for each step.
 
-<!-- TODO (TechWriter): Expert review A-1 (HIGH). Add dead-letter queue (DLQ) for failed Step Functions executions. When any step fails after retries, send article ID and failure metadata to an SQS DLQ. Add CloudWatch alarm on DLQ depth and a reprocessing Lambda for replay. Add failure path to the Mermaid diagram. Without this, failed articles silently disappear from the pipeline. -->
-
 **Amazon OpenSearch for full-text search.** While Neptune handles graph traversal queries, you also need full-text search across node properties, edge metadata, and source sentences. OpenSearch provides this complementary access pattern, letting users search for "what does the literature say about metformin and PCOS" without knowing the exact graph structure.
 
 ### Architecture Diagram
@@ -82,8 +80,6 @@ flowchart TD
 #### Walkthrough
 
 **Step 1: Literature ingestion.** The pipeline starts by fetching new articles from PubMed and PubMed Central on a schedule. PubMed's E-utilities API provides programmatic access to article metadata and abstracts. PMC's Open Access subset provides full-text XML for articles with permissive licenses. The fetcher tracks what's already been ingested (using a simple watermark: the last fetch timestamp or the highest PMID processed) and only retrieves new content. Each article is stored as raw XML in the document lake, along with parsed metadata. Full-text articles yield dramatically more relationships than abstracts alone (a typical abstract might contain 2-5 extractable relationships; a full paper might contain 20-50), so prioritize full-text sources where available. When both a PubMed abstract and a PMC full-text version exist for the same article, process only the full-text version to avoid inflating support counts with duplicate extractions. Skip this step and your graph goes stale immediately.
-
-<!-- TODO (TechWriter): Expert review S-1 (HIGH). Add a PHI screening step between document parsing and NER. Case reports and clinical trial results may contain individually identifiable health information in source sentences. Flag case reports using MeSH publication type metadata. For flagged documents, either skip provenance sentence storage or redact potential identifiers from stored sentences before they enter Neptune/OpenSearch. -->
 
 ```pseudocode
 FUNCTION fetch_new_articles(last_watermark):
@@ -210,8 +206,6 @@ FUNCTION extract_entities(sentences):
 
 **Step 4: Relation extraction.** This is the core intellectual step. Given a sentence with identified entities, determine what relationships exist between them. A custom transformer model (fine-tuned on biomedical relation extraction datasets like BioRED or ChemProt) classifies entity pairs into relationship types: treats, causes, associated_with, inhibits, metabolized_by, variant_of, and so on. Critically, the model must also detect negated and speculative relationships. "Drug X does not treat disease Y" is a relationship, but it's a negative one. "Drug X may treat disease Y" is speculative. Both need to be captured with appropriate modifiers. Skip negation detection and your graph will contain confident assertions that the literature actually refutes.
 
-<!-- TODO (TechWriter): Expert review A-2 (HIGH). Add a validation_status field to edges with values: "machine_extracted" (default), "human_validated", "human_rejected". Add query-time guidance: clinical applications should filter on validation_status = "human_validated" OR evidence_score >= 0.85 AND support_count >= 3. The 0.70 confidence threshold yields 18-30% false positives per the benchmarks, which is dangerous for downstream clinical use without this guardrail. -->
-
 ```pseudocode
 FUNCTION extract_relations(sentences, entity_mentions):
     // Group entities by sentence for pairwise relation extraction
@@ -312,7 +306,6 @@ FUNCTION normalize_entities(triples):
 
     RETURN normalized_triples
 
-
 FUNCTION normalize_entity(text, entity_type, drug_lookup, disease_lookup, gene_lookup):
     // Select the appropriate ontology based on entity type
     lookup = SELECT based on entity_type:
@@ -393,7 +386,6 @@ FUNCTION grade_and_resolve(normalized_triples, existing_graph):
             triple.status = "READY"
 
     RETURN scored_triples
-
 
 FUNCTION section_weight(section):
     // Findings stated in Results carry more weight than Discussion speculation
@@ -531,10 +523,6 @@ FUNCTION insert_into_graph(scored_triples):
 
 **Where it struggles:** Implicit relationships that require world knowledge to infer. Relationships spanning multiple sentences or paragraphs. Highly hedged language where the assertion strength is ambiguous. Novel entity types not in existing ontologies (newly discovered genes, experimental compounds). Languages other than English (most biomedical NER models are English-only). Retracted papers that remain in the corpus.
 
-<!-- TODO (TechWriter): Expert review A-3 (HIGH). Add retraction monitoring component to the architecture. A scheduled Lambda should check PubMed for newly retracted articles (using "Retracted Publication" publication type filter). When detected: flag affected edges with status "RETRACTED_SOURCE"; if the retracted paper was the sole source (support_count = 1), change edge status to "RETRACTED"; if other papers also support the edge, recalculate evidence_score excluding the retracted source. This is a patient safety concern: retracted findings (e.g., Wakefield MMR-autism) can persist and influence clinical queries. Add as a pipeline step or parallel monitoring process with pseudocode. -->
-
-<!-- TODO (TechWriter): Add a "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE structure. Content should cover the gaps a production deployment must close. -->
-
 ---
 
 ## Variations and Extensions
@@ -562,13 +550,9 @@ FUNCTION insert_into_graph(scored_triples):
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune graph database examples including data loading, querying, and visualization patterns
 - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP extraction with Comprehend Medical integrated into FHIR workflows
 
-<!-- TODO: Verify these repos still exist and are current -->
-
 **AWS Solutions and Blogs:**
 - [Drug Discovery with Amazon Neptune](https://aws.amazon.com/blogs/database/building-a-biomedical-knowledge-graph-with-amazon-neptune/): Architecture for biomedical knowledge graphs on Neptune
 - [NLP for Healthcare on AWS](https://aws.amazon.com/blogs/machine-learning/building-a-medical-language-processing-system-on-aws/): End-to-end medical NLP pipeline architecture
-
-<!-- TODO: Verify blog URLs are current and accessible -->
 
 **External Resources:**
 - [PubMed E-utilities API Documentation](https://www.ncbi.nlm.nih.gov/books/NBK25501/): Programmatic access to PubMed article data
@@ -587,7 +571,6 @@ FUNCTION insert_into_graph(scored_triples):
 | **With variations** (RAG integration, systematic review support, real-time safety signals) | 8-12 months |
 
 ---
-
 
 ---
 

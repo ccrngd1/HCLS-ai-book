@@ -18,13 +18,13 @@
 
 **Amazon DynamoDB for the cell state and cluster state stores.** Per-cell state (current count, baseline expected, recent flag history) and per-cluster state (open investigations, suppression status, evidence pointers) live in DynamoDB. Single-digit-millisecond reads on cell lookup; DynamoDB streams trigger downstream re-evaluation when cells update.
 
-**Amazon Timestream for time-series cell counts and baselines.** Per-cell time-series of counts, baselines, and detector scores are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-year baseline window cost-effectively. <!-- TODO (TechWriter): verify the current HIPAA eligibility status of Amazon Timestream and BAA coverage; some deployments use S3 with Athena instead. -->
+**Amazon Timestream for time-series cell counts and baselines.** Per-cell time-series of counts, baselines, and detector scores are time-series data. Timestream's storage and query model fit; magnetic-tier retention covers the multi-year baseline window cost-effectively. 
 
 **Amazon Location Service for geocoding.** Patient address fields (where authority and configuration permit) get geocoded to coordinates and to administrative geographies (census tract, ZIP code tabulation area, county). Combined with custom geography reference data (sewersheds, school districts, hospital catchments) for the multi-resolution geographic stratification.
 
 **Amazon Aurora PostgreSQL with PostGIS for geographic operations.** The geography hierarchy and the geographic operations (point-in-polygon for assigning encounters to administrative areas, polygon-overlap for cluster aggregation, distance computations for cross-jurisdiction routing) fit PostGIS naturally. Aurora provides managed Postgres with HIPAA eligibility.
 
-**Amazon Neptune for the contact and exposure graph (when used).** Contact tracing and exposure-network modeling fit the property-graph model. Less central than for Recipe 3.9, but useful when contact-tracing investigations or exposure-network analyses are part of the surveillance program. <!-- TODO (TechWriter): verify current HIPAA eligibility status of Amazon Neptune. -->
+**Amazon Neptune for the contact and exposure graph (when used).** Contact tracing and exposure-network modeling fit the property-graph model. Less central than for Recipe 3.9, but useful when contact-tracing investigations or exposure-network analyses are part of the surveillance program. 
 
 **Amazon OpenSearch Service for case search, line list, and surveillance analytics.** Surveillance line-list data, encounter-search archives, and the searchable history of clusters and investigations live in OpenSearch. OpenSearch supports the kind of ad-hoc query the surveillance team needs ("show me every fever-respiratory ED visit in this ZIP in the last 14 days," "show me every confirmed Salmonella case in the state for the last 90 days, sorted by serotype").
 
@@ -32,7 +32,7 @@
 
 **AWS Step Functions for orchestration.** The daily surveillance run, the cluster-building pipeline, and the periodic retraining are multi-step workflows. Step Functions handles orchestration with retry and error handling.
 
-**Amazon Bedrock for cluster narrative generation.** The cluster builder hands the structured evidence to a Bedrock-hosted LLM that produces the investigator-facing narrative ("A spatiotemporal cluster of 14 fever-respiratory ED visits in census tracts 36055-001100 through 36055-001400 over the past 7 days. Pediatric (under 12) cases account for 11 of 14. Geographic centroid is within 0.4 miles of three elementary schools. No lab-confirmed pathogen in the cluster yet; respiratory panels pending on 4 cases. Compared to the historical baseline for these tracts and this week, the observed count exceeds the 99th percentile."). Decision support, not decision-making. <!-- TODO (TechWriter): confirm the current set of HIPAA-eligible Bedrock foundation models. -->
+**Amazon Bedrock for cluster narrative generation.** The cluster builder hands the structured evidence to a Bedrock-hosted LLM that produces the investigator-facing narrative ("A spatiotemporal cluster of 14 fever-respiratory ED visits in census tracts 36055-001100 through 36055-001400 over the past 7 days. Pediatric (under 12) cases account for 11 of 14. Geographic centroid is within 0.4 miles of three elementary schools. No lab-confirmed pathogen in the cluster yet; respiratory panels pending on 4 cases. Compared to the historical baseline for these tracts and this week, the observed count exceeds the 99th percentile."). Decision support, not decision-making. 
 
 **Amazon SageMaker Model Monitor.** Continuously monitors data drift, prediction drift, and (with labels) model quality. Critical for catching baseline drift caused by EHR upgrades, behavioral shifts, demographic changes, or COVID-era reset effects.
 
@@ -152,7 +152,7 @@ flowchart TB
 | **Clinical Data Source Integrations** | HL7 v2 feeds from EDs, urgent care facilities, and hospital ADT systems are the primary source; coordination with each source institution and (where applicable) state-level data aggregators is required. FHIR-based feeds are emerging but coverage varies. eCR integration follows the eCR Now framework and the AIMS platform; rollout is increasing but not universal. Plan for parallel multi-quarter integration projects per source class. |
 | **Geographic Reference Data** | Census tract boundaries (TIGER/Line shapefiles), ZIP code tabulation areas, county boundaries, school district boundaries, sewershed boundaries (where wastewater surveillance is in scope), hospital service areas. Refresh annually; some boundaries change with the decennial census and with administrative changes. |
 | **Sample Data** | Synthetic data generators exist for syndromic surveillance (the BARDA-funded synthetic generators, academic research datasets) but produce data that's structurally simpler than real EHR feeds. Pseudonymization for development is essential; the relationship structure (which patients live in which tracts, which providers see which patients) must be preserved while identifiers are replaced. The CDC NSSP provides aggregate data products (with appropriate access controls) that can support algorithm development without exposing PHI. |
-| **Cost Estimate** | For a state-level surveillance system covering a population of 5-10 million across 100-500 facilities: Kinesis ingest: ~$500-1,500/month. Lambda for ingest, normalization, classification, detection: ~$2,000-5,000/month. DynamoDB cell-state and cluster-state: ~$500-1,500/month. Aurora PostGIS: ~$700-2,500/month. Timestream cell time-series: ~$300-800/month. OpenSearch line-list and cluster index: ~$2,000-6,000/month (scales with retention; many programs retain multiple years online). AWS Batch for SaTScan and other heavy detectors: ~$300-1,000/month. SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Comprehend Medical for chief-complaint NLP: ~$500-2,000/month (scales with encounter volume). Bedrock for cluster narratives: ~$200-700/month. S3, supporting services: ~$300-700/month. Total infrastructure: typically $8,000-22,000/month for a state-level deployment. Public health staffing (epidemiologists, data analysts, communications) is the dominant program cost; one experienced epidemiologist's loaded cost can equal several months of infrastructure. The infrastructure pays for itself by detecting one or two outbreaks earlier; the cost of a delayed outbreak response (extended community spread, healthcare system strain, mortality) substantially exceeds typical surveillance infrastructure costs. <!-- TODO (TechWriter): cost ranges are directional from typical state-level surveillance program budgets; specific figures vary by population covered, source-feed count, retention requirements, and program scope. --> |
+| **Cost Estimate** | For a state-level surveillance system covering a population of 5-10 million across 100-500 facilities: Kinesis ingest: ~$500-1,500/month. Lambda for ingest, normalization, classification, detection: ~$2,000-5,000/month. DynamoDB cell-state and cluster-state: ~$500-1,500/month. Aurora PostGIS: ~$700-2,500/month. Timestream cell time-series: ~$300-800/month. OpenSearch line-list and cluster index: ~$2,000-6,000/month (scales with retention; many programs retain multiple years online). AWS Batch for SaTScan and other heavy detectors: ~$300-1,000/month. SageMaker endpoints (modest instance class for daily-cadence scoring): ~$500-1,500/month. SageMaker training and Model Monitor: ~$200-500/month. Comprehend Medical for chief-complaint NLP: ~$500-2,000/month (scales with encounter volume). Bedrock for cluster narratives: ~$200-700/month. S3, supporting services: ~$300-700/month. Total infrastructure: typically $8,000-22,000/month for a state-level deployment. Public health staffing (epidemiologists, data analysts, communications) is the dominant program cost; one experienced epidemiologist's loaded cost can equal several months of infrastructure. The infrastructure pays for itself by detecting one or two outbreaks earlier; the cost of a delayed outbreak response (extended community spread, healthcare system strain, mortality) substantially exceeds typical surveillance infrastructure costs.  |
 
 ### Ingredients
 
@@ -1010,8 +1010,6 @@ FUNCTION on_investigator_action(action):
 | Subgroup precision range across syndrome categories | ±0.05-0.20 | ±0.05-0.15 | ±0.04-0.12 | ±0.04-0.10 | ±0.04-0.10 |
 | End-to-end latency (encounter ingest to surveillance score) | <30 minutes | <30 minutes | <2 hours (daily SaTScan) | <2 hours | <2 hours |
 
-<!-- TODO (TechWriter): benchmark ranges are directional from typical state-level surveillance program performance. Specific figures vary substantially by jurisdiction size, source-feed coverage, syndrome mix, baseline data quality, and surveillance team staffing. Published academic literature on syndromic surveillance performance (Buehler et al., the ESSENCE evaluation literature, the BARDA-funded benchmarking studies) provides reference points; replace with measured numbers from local validation. -->
-
 **Where it struggles:**
 
 - **Year-one programs.** A program in its first surveillance season has limited historical baseline data, no cohort calibration, and an unfamiliar review tempo. Expect higher false-alarm rates and slower review cadence during the first 6-12 months. Plan for it in the rollout schedule.
@@ -1025,7 +1023,6 @@ FUNCTION on_investigator_action(action):
 - **Suppressed-cell rules constrain publication.** Counts below the suppression threshold (typically 5 or 10, depending on jurisdiction) cannot be published in geographic detail without re-identification risk. This affects the public-facing dashboard, the cross-jurisdictional information products, and the press communication packages. The internal investigation has full detail; the published version may show only aggregated geography.
 - **Holiday and special-event effects.** The week of Thanksgiving, the week between Christmas and New Year's, the days surrounding major sporting events all have unusual care-seeking patterns. Programs that don't model these explicitly produce predictable false alarms during these windows.
 - **The underfunded-public-health reality.** Investigation capacity is the binding constraint. A surveillance system that detects perfectly but flags more clusters than the public health team can investigate produces no operational value because the alerts that matter are buried in alerts that don't.
-
 
 ---
 
@@ -1075,7 +1072,6 @@ The pseudocode shows the shape. A production surveillance program closes several
 
 **Self-monitoring of the surveillance system.** The surveillance system itself contains highly sensitive data: encounter detail, line lists, investigation histories, demographic distributions. Access to the surveillance system must be tightly controlled, fully audited, and regularly reviewed. The system should monitor itself: an investigator's access to case detail is itself an audit event, and access patterns within the surveillance system warrant the same scrutiny applied to clinical EHRs.
 
-
 ---
 
 ## Variations and Extensions
@@ -1088,7 +1084,7 @@ The pseudocode shows the shape. A production surveillance program closes several
 
 **Wastewater-led surveillance.** A variation where wastewater is the primary surveillance signal and clinical surveillance is the confirmatory signal. Useful for pathogens where wastewater leads clinical by enough to matter (SARS-CoV-2 was the canonical case). Requires reliable wastewater sampling, processing capacity, and the analytic infrastructure to convert concentrations into a usable surveillance signal.
 
-**Wearable-aggregate signal integration.** Population-level deviations in resting heart rate, sleep, and activity from consumer wearables (Fitbit, Apple Watch, Oura, Garmin) can lead clinical signals by days. The Stanford wearable surveillance work, the DETECT Study, and several research programs have demonstrated the signal. Operationally early-stage in 2026; aggregation, privacy, and partnership patterns are still evolving. <!-- TODO (TechWriter): verify the current operational status of major wearable-surveillance research programs and any production-grade integrations. -->
+**Wearable-aggregate signal integration.** Population-level deviations in resting heart rate, sleep, and activity from consumer wearables (Fitbit, Apple Watch, Oura, Garmin) can lead clinical signals by days. The Stanford wearable surveillance work, the DETECT Study, and several research programs have demonstrated the signal. Operationally early-stage in 2026; aggregation, privacy, and partnership patterns are still evolving. 
 
 **LLM-assisted investigation copilot.** An LLM-driven copilot for surveillance epidemiologists that can answer questions about a cluster ("show me every fever-respiratory ED visit in this ZIP in the last 14 days," "what's the historical pattern for this syndrome in this season"), retrieve evidence on demand, and assist with note drafting. Distinct from the cluster-narrative LLM, which compiles the initial summary. Emerging in 2026; substantial productivity potential.
 
@@ -1144,14 +1140,12 @@ The pseudocode shows the shape. A production surveillance program closes several
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): time-series forecasting, anomaly detection, and Processing-job examples relevant to baseline computation and detection.
 - [`aws-samples`](https://github.com/aws-samples): search for "FHIR," "HL7," "geospatial analytics," "Athena geospatial," and "public health" for adjacent integration and analytics patterns.
-<!-- TODO (TechWriter): verify and add specific aws-samples or aws-solutions-library-samples repositories demonstrating syndromic surveillance, public health surveillance, NSSP integration, eCR integration, or wastewater surveillance on AWS. Direct healthcare-public-health-specific matches may be limited; adjacent FHIR and analytics examples are likely. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by Healthcare and AI/ML): healthcare reference architectures.
 - [AWS Industries Blog (Healthcare and Life Sciences)](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): healthcare-specific AWS architectures and customer stories.
 - [AWS Public Sector Blog](https://aws.amazon.com/blogs/publicsector/): government and public-sector use cases including some public health surveillance work.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "anomaly detection," "time series," and "geospatial analytics" for technique deep-dives.
-<!-- TODO (TechWriter): verify and add specific AWS blog posts on public health surveillance, syndromic surveillance, FHIR-based public health integration, or NSSP-aligned architectures on AWS; confirm URLs exist before inclusion. -->
 
 **Public Health and Surveillance References:**
 - [CDC National Syndromic Surveillance Program (NSSP)](https://www.cdc.gov/nssp/): the federal program coordinating ED-based syndromic surveillance.
@@ -1180,18 +1174,10 @@ The pseudocode shows the shape. A production surveillance program closes several
 - [LOINC](https://loinc.org/): laboratory test and observation codes.
 - [SNOMED CT](https://www.snomed.org/): clinical terminology.
 - [ICD-10-CM](https://www.cdc.gov/nchs/icd/icd10cm.htm): diagnosis coding.
-- [SaNDS (Surveillance and Notifiable Disease Standards)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure. <!-- TODO (TechWriter): "SaNDS" does not appear to be a standard CDC acronym for the resource at this URL. The linked page is CDC's "Surveillance Message Mapping Guides" (MMGs); the canonical resource name for CDC's NNDSS surveillance message-structure standards is "Message Mapping Guide" or "MMG." Either replace the label with "CDC NNDSS Message Mapping Guides" to match the actual resource name, or verify that "SaNDS" is the intended acronym and that the URL points to the correct page. -->
+- [SaNDS (Surveillance and Notifiable Disease Standards)](https://www.cdc.gov/nndss/data-and-resources/surveillance-message-mapping-guides.html): CDC standards for surveillance message structure. 
 
 **Academic and Industry Literature:**
-<!-- TODO (TechWriter): Add specific peer-reviewed citations for:
-  - Farrington algorithm: Farrington, Andrews, Beale, Catchpole (1996) "A statistical algorithm for the early detection of outbreaks of infectious disease." Journal of the Royal Statistical Society: Series A.
-  - Farrington Flexible: Noufaily, Enki, Farrington, Garthwaite, Andrews, Charlett (2013) "An improved algorithm for outbreak detection in multiple surveillance systems." Statistics in Medicine.
-  - Spatial scan statistic: Kulldorff (1997) "A spatial scan statistic." Communications in Statistics - Theory and Methods.
-  - Space-time permutation scan: Kulldorff, Heffernan, Hartman, Assunção, Mostashari (2005) "A space-time permutation scan statistic for disease outbreak detection." PLoS Medicine.
-  - ESSENCE evaluation: Buehler et al. publications and the JHUAPL technical literature.
-  - Wastewater surveillance: Wu et al., Bibby et al., Larsen and Wigginton publications on wastewater-based epidemiology.
-  - Genomic surveillance: PulseNet methodology papers; Nextstrain methodology and reference papers.
-  Verify exact citations and DOIs before publication. -->
+
 - [`R/surveillance` package](https://cran.r-project.org/package=surveillance): the canonical R package for outbreak detection methodology, including Farrington Flexible and related algorithms.
 - [SaTScan documentation](https://www.satscan.org/): user guide and methodology references for spatial and spatiotemporal scan statistics.
 
@@ -1212,7 +1198,6 @@ The pseudocode shows the shape. A production surveillance program closes several
 | With variations | Additional states/jurisdictions, genomic-cluster integration, wearable-aggregate signal integration, conversational AI investigator copilot, patient-facing transparency dashboards, federated cross-jurisdictional surveillance, One Health integration with veterinary and environmental surveillance, climate and weather-aware baseline modeling, mass-gathering temporary surveillance overlays, advanced equity audits with formalized disparate-impact analysis | 24-60 months beyond production-ready |
 
 ---
-
 
 ---
 

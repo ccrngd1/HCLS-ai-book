@@ -419,7 +419,6 @@ def predict_hazard_trajectory(features: dict, horizon_days: int = FORECAST_HORIZ
 
     return trajectory
 
-
 # --- SageMaker integration point ---
 # In production, replace predict_hazard_trajectory with a call to your
 # trained model endpoint:
@@ -600,7 +599,6 @@ def generate_explanation(scored_result: dict, features: dict) -> str:
 
     return ". ".join(parts) + "." if parts else "Risk score elevated above action threshold."
 
-
 def generate_worklist(scored_patients: list, features_by_patient: dict,
                       capacity: int = 8) -> list:
     """
@@ -651,7 +649,6 @@ import json
 
 BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
-
 
 def store_recommendation(recommendation: dict) -> dict:
     """
@@ -777,7 +774,6 @@ def run_intervention_timing_pipeline(patient_ids: list, capacity: int = 8) -> li
 
     print(f"Total actionable: {len(worklist)} of {len(scored_patients)} patients scored")
     return worklist
-
 
 # --- Run the demo ---
 if __name__ == "__main__":

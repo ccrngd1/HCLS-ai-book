@@ -215,7 +215,6 @@ def extract_patient_addresses(patients: list[dict]) -> list[dict]:
 # Create a Location Service client.
 location_client = boto3.client("location", config=BOTO3_RETRY_CONFIG)
 
-
 def geocode_addresses(records: list[dict]) -> tuple[list[dict], list[dict]]:
     """
     Convert patient addresses to latitude/longitude coordinates using
@@ -295,7 +294,6 @@ def geocode_addresses(records: list[dict]) -> tuple[list[dict], list[dict]]:
         len(failed),
     )
     return geocoded, failed
-
 
 def geocode_addresses_synthetic(records: list[dict]) -> tuple[list[dict], list[dict]]:
     """
@@ -555,7 +553,6 @@ def enrich_clusters(
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def store_results(clustered_records: list[dict], cluster_metadata: dict) -> None:
     """
     Persist cluster assignments and metadata to DynamoDB and S3.
@@ -704,7 +701,6 @@ def run_geographic_clustering_pipeline(use_synthetic: bool = True) -> dict:
     }
 
     return summary
-
 
 # Run the pipeline with synthetic data
 if __name__ == "__main__":

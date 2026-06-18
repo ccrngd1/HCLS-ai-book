@@ -313,7 +313,6 @@ COMBINATION_CODES = [
     ),
 ]
 
-
 def apply_coding_rules(suggestions: list) -> list:
     """
     Apply ICD-10 coding guidelines to the suggestion list.
@@ -480,7 +479,6 @@ def suggest_icd10_codes(encounter_id: str, clinical_note: str) -> dict:
     print(f"       Done. {result['suggestion_count']} suggestions returned.")
 
     return result
-
 
 # --- Example usage with synthetic data ---
 

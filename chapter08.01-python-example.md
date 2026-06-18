@@ -140,7 +140,6 @@ def load_abbreviation_map() -> dict:
         logger.warning("Failed to load abbreviations from DynamoDB, using fallback: %s", e)
         return FALLBACK_ABBREVIATION_MAP
 
-
 def preprocess_complaint(raw_text: str, abbreviation_map: dict) -> str:
     """
     Clean and normalize a raw chief complaint string for classification.
@@ -472,7 +471,6 @@ def classify_chief_complaint(raw_text: str, enrich: bool = False) -> dict:
 
     logger.info("=== Done. ID: %s | Action: %s ===", record["complaint_id"], gate_result["action"])
     return record
-
 
 # --- Example usage ---
 if __name__ == "__main__":

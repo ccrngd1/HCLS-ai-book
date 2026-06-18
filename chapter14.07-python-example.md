@@ -349,7 +349,6 @@ def get_turnover_time(case_a: dict, case_b: dict) -> int:
     key = f"{case_a['turnover_class']}_to_{case_b['turnover_class']}"
     return TURNOVER_TIMES.get(key, DEFAULT_TURNOVER_MINUTES)
 
-
 def build_or_sequencing_model(cases: list, rooms: list, staff: list) -> tuple:
     """
     Build the CP-SAT constraint model for OR case sequencing.
@@ -643,7 +642,6 @@ def solve_schedule(
         schedule["rooms"][room_id].sort(key=lambda c: c["start_min"])
 
     return schedule
-
 
 def minutes_to_time_str(minutes_from_block_start: int) -> str:
     """
@@ -964,7 +962,6 @@ def optimize_or_schedule(
             )
 
     return record
-
 
 # Run the optimization with our sample data.
 if __name__ == "__main__":

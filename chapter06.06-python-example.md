@@ -495,7 +495,6 @@ def cache_similarity_results(
 
     return record
 
-
 def check_cache(query_patient_id: str, feature_version: str) -> dict | None:
     """
     Check if we have cached similarity results for this patient.
@@ -615,7 +614,6 @@ def run_patient_similarity_pipeline(
     print(json.dumps(result, indent=2, default=str))
 
     return result
-
 
 # --- Run it ---
 if __name__ == "__main__":

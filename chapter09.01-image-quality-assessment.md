@@ -68,7 +68,6 @@ I called this recipe "simple" in the chapter overview, and it is, relative to di
 
 **False positives are expensive.** If your system flags too many images as "poor quality," technologists will start ignoring it. The boy-who-cried-wolf problem is real in clinical workflows. A 5% false positive rate on a system processing 500 images per day means 25 unnecessary alerts daily. That's enough to kill adoption.
 
-<!-- TODO (TechWriter): Per RECIPE-GUIDE, "General Architecture Pattern" should be an H2 section, not H3 nested under The Technology. Promote to ## when restructuring. -->
 ### The General Architecture Pattern
 
 ```text

@@ -14,8 +14,6 @@
 
 **Amazon EventBridge for discharge event processing.** ADT discharge events flow into EventBridge, which triggers the scoring pipeline. EventBridge's event filtering ensures only qualifying inpatient discharges (not observation stays or planned returns) trigger the model. This event-driven architecture means scores are generated automatically without manual intervention.
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add dead letter queue guidance: SQS DLQ for failed scoring events, CloudWatch alarm on DLQ depth > 0, daily retry Lambda, and manual review fallback for patients not scored within 24 hours. -->
-
 **AWS Step Functions for pipeline orchestration.** The scoring workflow (detect discharge, assemble features, invoke model, stratify risk, route intervention, store results) has multiple steps with error handling and retry logic. Step Functions coordinates this sequence and provides visibility into failures. If the feature assembly step fails (e.g., a source system is down), the workflow retries with backoff rather than silently dropping the patient.
 
 **Amazon DynamoDB for risk score storage and lookup.** Scored patients need their risk tier accessible to downstream systems (care management platforms, EHR dashboards, nurse worklists) in real time. DynamoDB provides single-digit-millisecond lookups by patient ID. Scores are written at discharge and read by operational systems throughout the 30-day window.
@@ -97,8 +95,6 @@ flowchart TD
 | **Amazon QuickSight** | Readmission analytics dashboards for leadership and quality teams |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Monitoring, alerting on scoring failures, model performance metrics |
-
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Clarify feature store architecture: for >100 discharges/day, pre-compute historical utilization features nightly via Glue into DynamoDB keyed by patient_id. Scoring workflow queries HealthLake only for current-encounter features + DynamoDB for pre-computed historical features. This hybrid keeps latency under 500ms. -->
 
 ## Pseudocode Walkthrough
 
@@ -482,7 +478,6 @@ For high-risk patients with connected devices (weight scales for CHF, pulse oxim
 ---
 
 [← Recipe 7.4: ED Visit Prediction](chapter07.04-ed-visit-prediction) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.6: Rising Risk Identification →](chapter07.06-rising-risk-identification)
-
 
 ---
 

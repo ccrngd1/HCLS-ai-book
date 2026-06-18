@@ -347,8 +347,6 @@ FUNCTION publish_schedule(schedule):
 
 **Where it struggles:** Days with many urgent add-ons (the schedule is constantly disrupted). Cases with highly uncertain durations (complex revisions, trauma). Facilities where surgeon preferences are treated as hard constraints rather than soft (the problem becomes over-constrained). And the political dimension: a mathematically optimal schedule that moves a senior surgeon's preferred time slot will be rejected regardless of its optimality.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets covering gaps a production deployment must close (e.g., EHR write-back, surgeon preference learning loop, compliance audit trail depth, failover for solver OOM). -->
-
 ---
 
 ## Variations and Extensions
@@ -390,7 +388,6 @@ FUNCTION publish_schedule(schedule):
 | With variations (stochastic, multi-day, downstream integration) | 6-9 months |
 
 ---
-
 
 ---
 

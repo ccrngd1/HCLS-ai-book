@@ -159,16 +159,6 @@ flowchart TB
 
 **Step 1: Trigger and orchestrate.** The pipeline starts from a clinical event or a clinician request. The first step creates the reasoning run record and prepares to kick off parallel modality ingestion.
 
-<!-- TODO (TechWriter, from expert review A3): EventBridge is at-least-once
-     delivery. The UUID approach here produces a new run on every duplicate
-     delivery. Consider deriving run_id from a deterministic event-key hash
-     (for example `f"{patient_id}:{encounter_id}:{scenario}"`) and using a
-     DynamoDB conditional write (`attribute_not_exists(run_id)`) plus a
-     Step Functions deterministic execution name so duplicates are rejected
-     at the orchestration layer rather than running the full pipeline twice.
-     This pattern has recurred across multiple Chapter 2 recipes and is a
-     candidate for a chapter-wide appendix. -->
-
 ```pseudocode
 FUNCTION start_reasoning_run(trigger):
     // trigger.type: "ed_presentation", "admission", "oncology_treatment_planning",
@@ -266,6 +256,7 @@ FUNCTION ingest_imaging(run_id, patient_id, scenario):
 
     RETURN imaging_records
 ```
+
 ```pseudocode
 FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
@@ -316,6 +307,7 @@ FUNCTION ingest_ecg(run_id, patient_id, scenario, encounter_id):
 
     RETURN ecg_records
 ```
+
 ```pseudocode
 FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
 
@@ -381,6 +373,7 @@ FUNCTION ingest_labs_and_vitals(run_id, patient_id, scenario):
     RETURN { lab_trends: lab_trends, vitals_summary: vitals_summary,
              source_id: f"labs_vitals:{patient_id}" }
 ```
+
 ```pseudocode
 FUNCTION ingest_notes(run_id, patient_id, scenario):
 
@@ -417,6 +410,7 @@ FUNCTION ingest_notes(run_id, patient_id, scenario):
 
     RETURN notes
 ```
+
 ```pseudocode
 FUNCTION ingest_structured_context(run_id, patient_id):
 
@@ -433,22 +427,6 @@ FUNCTION ingest_structured_context(run_id, patient_id):
     RETURN structured
 ```
 **Step 3: Normalize, annotate, and build the modality inventory.** Each modality's ingestion produces its own representation. This step assembles them into a unified patient state with consistent timestamps, source identifiers, and a modality inventory that the reasoning layer will consult.
-
-<!-- TODO (TechWriter, from expert review A2): each ingestion function currently
-     returns a bare list. Expert review A2 recommends distinguishing "failed to
-     retrieve" (HealthImaging timeout, Comprehend throttle, vendor AI 500) from
-     "genuinely absent" (the patient does not have this modality). Consider
-     returning a status-annotated record per modality (`status: "retrieved" |
-     "empty" | "failed" | "scoped_out"`) and building the inventory from status
-     rather than cardinality. The scope gate's defer path should then route
-     `failed` to retry rather than defer. -->
-<!-- TODO (TechWriter, from expert review S1): add a PHI-minimization step
-     between Step 3 and Step 7 that strips MRN, DOB, name, address, phone,
-     email, and payer or NPI identifiers from the serialized state before the
-     reasoning prompt is constructed. Bedrock under BAA is compliant for PHI,
-     but minimum-necessary applies inside the BAA boundary as well. The
-     rendered output re-associates reasoning to the patient via run_id plus
-     patient_id; identifiers do not need to round-trip through the prompt. -->
 
 ```pseudocode
 FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
@@ -507,18 +485,6 @@ FUNCTION normalize_and_inventory(imaging, ecg, labs_vitals, notes, structured):
     RETURN { patient_state: patient_state, modality_inventory: modality_inventory }
 ```
 **Step 4: Scope gate.** Given the scenario and the modality inventory, decide whether the reasoning run should proceed. If a recent run covered the same scenario without material changes, suppress. If critical modalities are missing for the scenario, either scope down or defer with an explanatory output.
-
-<!-- TODO (TechWriter, from expert review A4): the "scoped_to" rewrite for
-     missing recommended modalities fires only when scenario ==
-     "comprehensive_reasoning". For any other scenario (including
-     "ed_dyspnea_workup"), a recommended-but-missing modality currently has
-     no architectural handler; the recipe depends on the reasoning layer
-     obeying the prompt's hard requirements rather than a scope-gate
-     guarantee. Consider expanding this branch so every scenario has one of
-     three handlers for a missing recommended modality: (a) narrow the scope
-     to a sub-scenario, (b) proceed with a completeness_cap of "low", or (c)
-     defer when the recommended modality is effectively required for that
-     sub-scenario (for example ECG for ACS-inclusive reasoning). -->
 
 ```pseudocode
 FUNCTION scope_gate(scenario, modality_inventory, patient_id, recent_runs):
@@ -1041,15 +1007,9 @@ FUNCTION tier_render_archive(reasoning, id_to_source, patient_id, encounter_id,
 ```
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-
 ### Expected Results
 
 **Sample output for the ED dyspnea case from the opening vignette:**
-
-<!-- Note: the specific findings, quantitative values, and guideline attributions below
-     are illustrative. In a real deployment, every claim grounds in actual content
-     retrieved from a real, current authoritative corpus plus the patient's actual
-     modality records. Do not treat the sample as clinical guidance. -->
 
 ```json
 {
@@ -1368,8 +1328,8 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 
 **Research and Benchmarks:**
 - [MedQA](https://github.com/jind11/MedQA): Medical licensing exam QA pairs
-- [HealthBench](https://openai.com/index/healthbench/): OpenAI benchmark for healthcare-relevant LLM evaluations <!-- TODO (TechWriter): verify current status and URL of HealthBench. -->
-- [MedHELM](https://crfm.stanford.edu/helm/medical/latest/): Stanford HELM benchmark for medical LLMs <!-- TODO (TechWriter): verify current URL and status. -->
+- [HealthBench](https://openai.com/index/healthbench/): OpenAI benchmark for healthcare-relevant LLM evaluations 
+- [MedHELM](https://crfm.stanford.edu/helm/medical/latest/): Stanford HELM benchmark for medical LLMs 
 
 ---
 
@@ -1382,7 +1342,6 @@ A multi-modal clinical reasoning pipeline is, in practical terms, a long-horizon
 | **With variations (multiple scenarios and extensions)** | 104-156 weeks | Multiple scenario modules across specialties. Tumor board preparation and comparative imaging variants. Risk-score integration and explanation modules. Second-opinion synthesis. Genomic-informed reasoning for oncology. Continuous monitoring integration for critical care. Patient-facing reasoning summaries. Post-market surveillance instrumentation across scenarios. Ongoing clinical evaluation program with versioned benchmarks per scenario. |
 
 ---
-
 
 ---
 

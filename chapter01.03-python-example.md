@@ -213,7 +213,6 @@ textract_client = boto3.client("textract", config=BOTO3_RETRY_CONFIG)
 comprehend_medical_client = boto3.client("comprehendmedical", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb")
 
-
 def submit_extraction_job(
     bucket: str,
     key: str,
@@ -391,7 +390,6 @@ def get_text_from_block(block: dict, block_map: dict) -> str:
                     text += child_block.get("Text", "") + " "
 
     return text.strip()
-
 
 def parse_forms_and_checkboxes(
     all_blocks: list,
@@ -828,7 +826,6 @@ def normalize_fields(text_key_values: dict) -> tuple[dict, dict, list]:
 
     return patient_fields, provider_fields, flagged_text_fields
 
-
 def assemble_and_store(
     document_key: str,
     patient_fields: dict,
@@ -1054,7 +1051,6 @@ def process_lab_requisition(
     logger.info("Done. needs_review=%s, total flags=%d", result['needs_review'], flagged_total)
     return result
 
-
 # Example: run the pipeline directly against a test lab requisition PDF.
 if __name__ == "__main__":
     import json
@@ -1087,7 +1083,6 @@ In a production deployment, the two-Lambda architecture from the recipe looks li
 import json
 import os
 
-
 def lambda_handler_start(event: dict, context) -> None:
     """
     Lambda 1 (lab-req-start): triggered by S3 upload events.
@@ -1106,7 +1101,6 @@ def lambda_handler_start(event: dict, context) -> None:
 
     job_id = submit_extraction_job(bucket, key, sns_topic_arn, textract_role_arn)
     logger.info("Submitted job %s for s3://%s/%s", job_id, bucket, key)
-
 
 def lambda_handler_process(event: dict, context) -> None:
     """

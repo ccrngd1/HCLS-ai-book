@@ -134,7 +134,6 @@ def register_source(
 # without redeploying.
 _mapping_cache = {}
 
-
 def load_ontology_mapping(source_institution_id: str, mapping_version: str) -> dict:
     """
     Fetch the ontology mapping file for a specific institution from S3.
@@ -308,7 +307,6 @@ def find_relevant_sources(query_domains: list, requester_context: dict) -> list:
         query_domains,
     )
     return authorized
-
 
 def evaluate_sharing_policy(source: dict, requester_context: dict, query_domains: list) -> bool:
     """
@@ -558,7 +556,6 @@ def local_query_adapter_handler(event: dict, context) -> dict:
 
     return {"status": "success", "results": enriched}
 
-
 def validate_local_authorization(requester: dict) -> bool:
     """
     Validate that the requester is authorized for this query.
@@ -576,7 +573,6 @@ def validate_local_authorization(requester: dict) -> bool:
         "research-consortium-west",
     ]
     return requester.get("institution_id") in allowed_institutions
-
 
 def execute_sparql_locally(sparql_query: str) -> list:
     """
@@ -709,12 +705,10 @@ def assemble_results(results_by_source: dict) -> list:
 
     return merged_results
 
-
 def evidence_rank(provenance: dict) -> int:
     """Map evidence level letters to numeric ranks for sorting."""
     ranks = {"A": 4, "B": 3, "C": 2, "D": 1, "ungraded": 0}
     return ranks.get(provenance.get("evidence_level", "ungraded"), 0)
-
 
 def max_evidence_rank(provenances: list) -> int:
     """Get the highest evidence rank from a list of provenance records."""
@@ -789,7 +783,6 @@ def federated_drug_interaction_query(
     print(f"  Results returned: {len(response.get('results', []))}")
 
     return response
-
 
 # Example: register some sources, then run a federated query.
 if __name__ == "__main__":

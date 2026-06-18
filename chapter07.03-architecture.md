@@ -364,8 +364,6 @@ FUNCTION store_and_serve(results, scoring_date):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (e.g., model monitoring, fairness audits, retraining automation, integration testing with intervention systems). -->
-
 ## Variations and Extensions
 
 **Real-time event-triggered scoring.** Instead of weekly batch scoring, trigger a re-score when specific high-signal events occur: PCP leaves network, grievance filed, claim denied for a high-cost service. This catches rapid deterioration between batch runs. Implement with EventBridge rules that invoke a SageMaker real-time endpoint for the affected member.
@@ -406,7 +404,6 @@ FUNCTION store_and_serve(results, scoring_date):
 | **With variations** (real-time triggers, reason sub-models, group-level prediction) | 14-18 weeks |
 
 ---
-
 
 ---
 

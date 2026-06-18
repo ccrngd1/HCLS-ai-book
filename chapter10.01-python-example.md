@@ -331,7 +331,6 @@ class MockEHR:
             matches.append(p)
         return matches
 
-
 class MockEPrescribing:
     """
     Stands in for the e-prescribing system. In production this is
@@ -417,7 +416,6 @@ class MockEPrescribing:
         })
         return refill_request_id
 
-
 class MockActiveCallContext:
     """
     Stands in for the DynamoDB active-call-context table. The
@@ -438,7 +436,6 @@ class MockActiveCallContext:
             self._items[call_id] = {"call_id": call_id}
         self._items[call_id].update(updates)
 
-
 class MockCallDispositionLog:
     """
     Stands in for the DynamoDB call-disposition-log table. This
@@ -454,7 +451,6 @@ class MockCallDispositionLog:
     def put(self, record):
         self.records.append(dict(record))
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. The IVR emits events for
@@ -469,7 +465,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -488,7 +483,6 @@ class MockCloudWatch:
             "timestamp":  datetime.now(timezone.utc).isoformat(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 ehr                  = MockEHR()
@@ -497,7 +491,6 @@ active_call_context  = MockActiveCallContext()
 call_disposition_log = MockCallDispositionLog()
 event_bus            = MockEventBus()
 cloudwatch           = MockCloudWatch()
-
 
 def audit_log(event):
     """
@@ -635,7 +628,6 @@ def matches_urgency_lexicon(transcript):
             return phrase
     return None
 
-
 def load_per_intent_threshold(intent_name):
     """
     Look up the per-intent confidence threshold. Falls back to
@@ -643,7 +635,6 @@ def load_per_intent_threshold(intent_name):
     """
     return PER_INTENT_CONFIDENCE_THRESHOLDS.get(
         intent_name, PER_INTENT_CONFIDENCE_THRESHOLDS["_default"])
-
 
 def handle_lex_turn(turn_event):
     """
@@ -920,7 +911,6 @@ def verify_caller_if_needed(call_id, intent_name):
             "number we have on file?",
     }
 
-
 def verify_slots_returned(call_id, dob, partial_phone):
     """
     Validate the verification slots the caller provided.
@@ -1054,7 +1044,6 @@ def fuzzy_match_medication(spoken_name, candidates):
     # matches should never silently pick one.
     return None
 
-
 def check_self_service_eligibility(patient_id, medication):
     """
     Check whether the medication is eligible for IVR
@@ -1093,7 +1082,6 @@ def check_self_service_eligibility(patient_id, medication):
         "eligible": True,
         "reason":   "eligible_for_self_service",
     }
-
 
 def handle_refill_intent(call_id, slots, turn_index):
     """
@@ -1462,7 +1450,6 @@ def simulate_inbound_call(call_scenario):
     print(f"\n=== Call {call_id} ended: {end_reason} ===")
     return disposition
 
-
 def run_demo():
     """
     Run a small set of end-to-end scenarios that exercise the
@@ -1619,7 +1606,6 @@ def run_demo():
           f"{len(cloudwatch.metrics)}")
     print(f"Refill requests queued: "
           f"{len(e_prescribing.queued_refills)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

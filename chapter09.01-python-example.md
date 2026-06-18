@@ -98,7 +98,6 @@ sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 sns_client = boto3.client("sns", config=BOTO3_RETRY_CONFIG)
 
-
 def receive_image(bucket: str, key: str) -> dict:
     """
     Download a DICOM image from S3 and extract pixel data + metadata.
@@ -202,7 +201,6 @@ def compute_laplacian_variance(pixel_array: np.ndarray) -> float:
 
     # The variance of the Laplacian output is our blur metric.
     return float(np.var(laplacian))
-
 
 def compute_basic_metrics(pixel_array: np.ndarray) -> dict:
     """
@@ -540,7 +538,6 @@ def assess_image_quality(bucket: str, key: str) -> dict:
 
     logger.info("Done. Decision: %s", decision_result["decision"])
     return decision_result
-
 
 # Example: run the pipeline against a test image.
 if __name__ == "__main__":

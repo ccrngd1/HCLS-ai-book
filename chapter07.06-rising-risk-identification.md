@@ -60,8 +60,6 @@ Rising risk detection requires multiple observations per patient over time. This
 
 **Regression to the mean.** Patients identified as "rising risk" based on recent score increases will, on average, partially revert even without intervention. This is a statistical phenomenon, not a clinical one. It makes it genuinely hard to measure whether your interventions are working, because some of the "improvement" you observe would have happened anyway. Proper evaluation requires a control group or at minimum a regression-adjusted comparison.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add subsection "Equity and Bias Considerations" after this paragraph. Cover: differential data density (sparse-visit patients fall into INSUFFICIENT_HISTORY), inherited model bias (Obermeyer et al. 2019), threshold equity across demographic groups, and intervention allocation fairness. Include mitigation strategies: audit flag rates by demographic group, group-specific threshold calibration, proactive outreach for sparse-data patients, equity reporting for the insufficient-history population. -->
-
 ### Feature Engineering for Trajectory Detection
 
 The features that predict rising risk are different from those that predict current risk. You need both levels and changes:
@@ -119,7 +117,6 @@ The rising risk pipeline operates on a different cadence than real-time scoring.
 **Prioritization and Routing.** Rank the candidates by intervention urgency and likelihood of benefit. Route to the appropriate care management program based on the nature of the risk increase (behavioral health escalation goes to BH care managers; chronic disease acceleration goes to disease management; social determinant deterioration goes to community health workers).
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.06-architecture). The Python example is linked from there.
 

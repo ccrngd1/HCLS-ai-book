@@ -112,10 +112,7 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 **Human override layer.** Any production scheduling system must support manual overrides. Charge nurses and surgeons need the ability to lock a case to a specific room or time slot, swap two cases within a room, or exclude a room from re-optimization entirely. Overrides are stored as hard constraints that the solver respects on subsequent runs. The dashboard should visually distinguish optimizer-assigned slots from manually-locked slots, and an audit trail records who overrode what and when.
 
-<!-- TODO (TechWriter): Expert review A3 (HIGH). Expand human override into a full subsection in the Code walkthrough showing how overrides are stored as fixed constraints in DynamoDB and read by the solver. Include role-based permissions (charge nurse can override, random staff cannot). -->
-
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter14.07-architecture). The Python example is linked from there.
 

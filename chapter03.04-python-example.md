@@ -204,7 +204,6 @@ CONTINUOUS_MONITORING_DRUGS = {
     "11124": "vancomycin",  # antibiotic trough-directed titration
 }
 
-
 def _to_decimal(value) -> Decimal:
     """
     Coerce numeric input into Decimal for DynamoDB and downstream math.
@@ -221,7 +220,6 @@ def _to_decimal(value) -> Decimal:
         return Decimal("0.0000")
     return Decimal(str(value)).quantize(Decimal("0.0001"))
 
-
 def _decimal_to_float(value):
     """Recursively coerce Decimals to floats for JSON output or ML input."""
     if isinstance(value, Decimal):
@@ -231,7 +229,6 @@ def _decimal_to_float(value):
     if isinstance(value, list):
         return [_decimal_to_float(v) for v in value]
     return value
-
 
 def _staleness_check(observed_at_iso: Optional[str], max_age_days: int) -> bool:
     """
@@ -244,10 +241,8 @@ def _staleness_check(observed_at_iso: Optional[str], max_age_days: int) -> bool:
     age = datetime.now(timezone.utc) - observed_at
     return age.days > max_age_days
 
-
 def _max_weight_age(acuity: str) -> int:
     return WEIGHT_MAX_AGE_DAYS.get(acuity, 30)
-
 
 def _max_egfr_age(acuity: str) -> int:
     return EGFR_MAX_AGE_DAYS.get(acuity, 30)
@@ -346,7 +341,6 @@ def normalize_dispense_event(raw_event: dict) -> Optional[dict]:
     }
     return canonical_event
 
-
 def _resolve_drug_to_rxnorm(raw_event: dict) -> Optional[str]:
     """
     In production, call the drug knowledge base's NDC lookup, formulary
@@ -361,7 +355,6 @@ def _resolve_drug_to_rxnorm(raw_event: dict) -> Optional[str]:
             return RXNORM_BY_NAME[key]
     # Real code: NDC lookup, formulary crosswalk, confidence-gated fuzzy match.
     return None
-
 
 def _convert_to_canonical_unit(raw_value: float, raw_unit: str, canonical_unit: str) -> float:
     """
@@ -384,7 +377,6 @@ def _convert_to_canonical_unit(raw_value: float, raw_unit: str, canonical_unit: 
     if factor is None:
         raise ValueError(f"No conversion from {raw_unit} to {canonical_unit}")
     return raw_value * factor
-
 
 def _parse_frequency(sig_text: Optional[str]) -> Optional[dict]:
     """
@@ -410,7 +402,6 @@ def _parse_frequency(sig_text: Optional[str]) -> Optional[dict]:
             return {**structured, "prn": "prn" in text}
     return None
 
-
 def _normalize_route(raw_route: Optional[str]) -> Optional[str]:
     """Map common route strings to a canonical short form."""
     if not raw_route:
@@ -423,7 +414,6 @@ def _normalize_route(raw_route: Optional[str]) -> Optional[str]:
         "topical":      "top",
     }
     return mapping.get(raw_route.strip().lower(), raw_route)
-
 
 def _drug_display_name(rxnorm_id: str) -> str:
     """
@@ -527,7 +517,6 @@ def enrich_with_patient_context(canonical_event: dict) -> Optional[dict]:
 
     return enriched
 
-
 def _egfr_to_ckd_stage(egfr: Optional[float]) -> Optional[int]:
     """
     Map eGFR to CKD stage (1 through 5). Standard KDIGO cutoffs. Returns
@@ -623,7 +612,6 @@ def load_clinical_rules(drug_rxnorm: str) -> list:
     }
     return rules_by_drug.get(drug_rxnorm, [])
 
-
 def rule_screen(enriched_event: dict) -> list:
     """
     Run the applicable rules against the enriched event. Returns a list of
@@ -652,7 +640,6 @@ def rule_screen(enriched_event: dict) -> list:
             flags.append(fired)
 
     return flags
-
 
 def _check_max_dose_per_kg(event: dict, rule: dict) -> Optional[dict]:
     """
@@ -683,7 +670,6 @@ def _check_max_dose_per_kg(event: dict, rule: dict) -> Optional[dict]:
             "reference": rule["reference"],
         }
     return None
-
 
 def _check_renal_adjustment(event: dict, rule: dict) -> Optional[dict]:
     """
@@ -717,7 +703,6 @@ def _check_renal_adjustment(event: dict, rule: dict) -> Optional[dict]:
         }
     return None
 
-
 def _check_drug_drug_interaction(event: dict, rule: dict) -> Optional[dict]:
     """
     Drug-drug interaction check against the patient's active medication
@@ -736,7 +721,6 @@ def _check_drug_drug_interaction(event: dict, rule: dict) -> Optional[dict]:
             "reference":   rule["reference"],
         }
     return None
-
 
 def _check_allergy_contraindication(event: dict, rule: dict) -> Optional[dict]:
     """
@@ -821,7 +805,6 @@ def population_zscore_check(enriched_event: dict) -> list:
 
     return flags
 
-
 def _build_profile_bucket(event: dict) -> str:
     """
     Canonical profile-bucket string used as the baseline partition key.
@@ -833,7 +816,6 @@ def _build_profile_bucket(event: dict) -> str:
     ckd = event.get("ckd_stage")
     ckd_token = f"ckd{ckd}" if ckd is not None else "ckd_none"
     return f"{age_band}:{acuity}:{ckd_token}"
-
 
 def _age_band(age_years: Optional[float]) -> str:
     if age_years is None:
@@ -849,7 +831,6 @@ def _age_band(age_years: Optional[float]) -> str:
     if age_years < 65:
         return "adult"
     return "elderly"
-
 
 def _get_baseline_from_feature_store(baseline_key: str) -> Optional[dict]:
     """
@@ -884,7 +865,6 @@ def _get_baseline_from_feature_store(baseline_key: str) -> Optional[dict]:
             parsed[name] = raw   # non-numeric features pass through as strings
     return parsed
 
-
 def _robust_zscore_flag(
     value: float,
     baseline_median: Optional[float],
@@ -914,7 +894,6 @@ def _robust_zscore_flag(
         "profile":         profile,
         "severity":        _zscore_to_severity(robust_z),
     }
-
 
 def _zscore_to_severity(robust_z: float) -> str:
     """
@@ -1004,7 +983,6 @@ def route_flags(
 
     return anomaly_event
 
-
 def _max_severity(flags: list) -> str:
     """
     Return the highest-severity tier across all flags. Used to drive the
@@ -1016,7 +994,6 @@ def _max_severity(flags: list) -> str:
         if SEVERITY_ORDER.get(sev, 0) > SEVERITY_ORDER.get(highest, 0):
             highest = sev
     return highest
-
 
 def _context_snapshot(enriched_event: dict) -> dict:
     """
@@ -1039,7 +1016,6 @@ def _context_snapshot(enriched_event: dict) -> dict:
         "dose_per_kg":         enriched_event.get("dose_per_kg"),
     }
 
-
 def _index_anomaly_event(anomaly_event: dict) -> None:
     """
     Write the anomaly event to the OpenSearch audit index. In a real
@@ -1056,7 +1032,6 @@ def _index_anomaly_event(anomaly_event: dict) -> None:
         "severity": anomaly_event["severity"],
     })
 
-
 def _index_dispense_audit(enriched_event: dict, flags: list) -> None:
     """
     Record the fact that we scored this event, whether or not it flagged.
@@ -1072,7 +1047,6 @@ def _index_dispense_audit(enriched_event: dict, flags: list) -> None:
         "scored_at":        datetime.now(timezone.utc).isoformat(),
     }
     logger.info("dispense_audited", extra=audit)
-
 
 def _publish_to_event_bus(anomaly_event: dict) -> None:
     """
@@ -1093,7 +1067,6 @@ def _publish_to_event_bus(anomaly_event: dict) -> None:
             "event_id": anomaly_event["event_id"],
             "error":    str(ex),
         })
-
 
 def _publish_interrupt_alert(anomaly_event: dict) -> None:
     """
@@ -1128,7 +1101,6 @@ def _publish_interrupt_alert(anomaly_event: dict) -> None:
             "error":    str(ex),
         })
         _emit_metric("interrupt_alert_publish_failure")
-
 
 def _emit_metric(metric_name: str, value: int = 1, dimensions: dict = None) -> None:
     """
@@ -1216,7 +1188,6 @@ def batch_trajectory_scoring(
     })
     return events
 
-
 def _cusum_trajectory(
     patient_id: str,
     drug_rxnorm: str,
@@ -1276,7 +1247,6 @@ def _cusum_trajectory(
         "detected_at":      as_of_timestamp.isoformat(),
     }
 
-
 def _build_patient_day_features(
     recent: pd.DataFrame,
     as_of_timestamp: datetime,
@@ -1304,7 +1274,6 @@ def _build_patient_day_features(
             "insulin_events":   int((group["drug_rxnorm"] == "5856").sum()),
         })
     return pd.DataFrame(rows)
-
 
 def _score_patient_day_vectors(
     vectors_df: pd.DataFrame,
@@ -1343,7 +1312,6 @@ def _score_patient_day_vectors(
             "detected_at":      as_of_timestamp.isoformat(),
         })
     return events
-
 
 def _load_isolation_forest() -> Optional[dict]:
     """
@@ -1415,7 +1383,6 @@ def on_pharmacist_response(response_event: dict) -> None:
             "detector_version": DETECTOR_VERSION,
         }, partition_date=response_event["responded_at"])
 
-
 def on_adverse_event_report(
     ade_event: dict,
     recent_dispenses_fn,
@@ -1480,7 +1447,6 @@ def on_adverse_event_report(
                     "error":             str(ex),
                 })
 
-
 def _write_label_to_s3(label_row: dict, partition_date: str) -> None:
     """
     Append a labeled training row to the labels bucket, partitioned by
@@ -1536,7 +1502,6 @@ def score_one_dispense_event(raw_event: dict) -> Optional[dict]:
     # --- Step 5: route ---
     anomaly_event = route_flags(enriched, rule_flags, zscore_flags)
     return anomaly_event
-
 
 # --- Example usage ---
 #

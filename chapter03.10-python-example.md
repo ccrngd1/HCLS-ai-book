@@ -261,7 +261,6 @@ def _to_decimal(value, precision="0.0001"):
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
 
-
 def _decimalize(obj):
     """Recursively convert floats to Decimals for DynamoDB write."""
     if isinstance(obj, float):
@@ -271,7 +270,6 @@ def _decimalize(obj):
     if isinstance(obj, list):
         return [_decimalize(v) for v in obj]
     return obj
-
 
 def _undecimalize(obj):
     """Inverse of _decimalize for read-side conversion to Python-native types."""
@@ -283,11 +281,9 @@ def _undecimalize(obj):
         return [_undecimalize(v) for v in obj]
     return obj
 
-
 def generate_event_id():
     """Generate a surveillance event identifier."""
     return f"EV-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:10]}"
-
 
 def pseudonymize(patient_identifier):
     """Replace a clinical patient identifier with a surveillance pseudonym.
@@ -305,7 +301,6 @@ def pseudonymize(patient_identifier):
     import hashlib
     return "SP-" + hashlib.sha256(patient_identifier.encode("utf-8")).hexdigest()[:12]
 
-
 def bucket_age(age_years):
     """Bucket continuous age into surveillance age groups."""
     if age_years is None:
@@ -320,7 +315,6 @@ def bucket_age(age_years):
         return "50_64"
     return "65_plus"
 
-
 def parse_by_source(raw_message, source_id):
     """Parse a source-specific message into a normalized intermediate dict.
 
@@ -331,7 +325,6 @@ def parse_by_source(raw_message, source_id):
     so the demo runs without a real parser stack.
     """
     return raw_message
-
 
 def ingest_encounter(raw_message, source_id):
     """Receive an encounter event, normalize, and put on the event stream.
@@ -435,7 +428,6 @@ _DEMO_GEOGRAPHY = {
     ],
 }
 
-
 def format_address(address):
     """Format an address dict as a single string for the geocoder."""
     parts = [
@@ -445,7 +437,6 @@ def format_address(address):
         address.get("zip", ""),
     ]
     return ", ".join(p for p in parts if p)
-
 
 def geocode_with_amazon_location(address):
     """Geocode an address using Amazon Location Service.
@@ -471,7 +462,6 @@ def geocode_with_amazon_location(address):
         "94110": {"lon": -122.418, "lat": 37.748},
     }
     return zip_to_coords.get(address.get("zip"), {"lon": -77.625, "lat": 43.125})
-
 
 def query_postgis_for_admin_geographies(coords):
     """Spatial join: find every administrative geography that contains the point.
@@ -510,13 +500,11 @@ def query_postgis_for_admin_geographies(coords):
         "hospital_service_area":  None,
     }
 
-
 def hash_address(address):
     """Compute a stable hash key for the geocode cache."""
     import hashlib
     canonical = format_address(address).lower().strip()
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:24]
-
 
 def geocode_and_stratify(canonical_event):
     """Attach geographic stratification to a canonical event.
@@ -592,7 +580,6 @@ Structured-data rules plus NLP on the chief complaint and triage note produce a 
 ```python
 import re
 
-
 def apply_icd_rules(diagnosis_codes, syndromes_set):
     """Apply ICD-10-pattern-to-syndrome rules to a list of diagnosis codes."""
     for code in diagnosis_codes or []:
@@ -600,7 +587,6 @@ def apply_icd_rules(diagnosis_codes, syndromes_set):
             if re.match(rule["pattern"], code or ""):
                 syndromes_set.add(rule["syndrome"])
     return syndromes_set
-
 
 def call_comprehend_medical(text):
     """Call Amazon Comprehend Medical for entity extraction.
@@ -620,7 +606,6 @@ def call_comprehend_medical(text):
         _emit_metric("ComprehendMedicalFailed", 1)
         return []
 
-
 def apply_entity_rules(entities, syndromes_set):
     """Map Comprehend-Medical-detected entities to syndromic categories."""
     for entity in entities or []:
@@ -634,7 +619,6 @@ def apply_entity_rules(entities, syndromes_set):
                     syndromes_set.add(rule["syndrome"])
                     break
     return syndromes_set
-
 
 def score_via_syndrome_classifier(text, age_group):
     """Invoke the deployed SageMaker syndrome-classifier endpoint.
@@ -671,7 +655,6 @@ def score_via_syndrome_classifier(text, age_group):
             predictions.append({"syndrome": "neuro", "confidence": 0.80})
         return predictions
 
-
 def lookup_recent_lab_results(surveillance_pid, window_days=14):
     """Look up recent lab results for the patient.
 
@@ -682,7 +665,6 @@ def lookup_recent_lab_results(surveillance_pid, window_days=14):
     """
     return []
 
-
 def apply_lab_rules(lab_results, syndromes_set):
     """Promote encounters to pathogen-specific syndromic categories."""
     for lab in lab_results or []:
@@ -692,7 +674,6 @@ def apply_lab_rules(lab_results, syndromes_set):
             if lab.get("pathogen") in rule["pathogens"]:
                 syndromes_set.add(rule["syndrome"])
     return syndromes_set
-
 
 def classify_syndrome(canonical_event):
     """Classify an encounter into one or more syndromic categories.
@@ -767,7 +748,6 @@ def stratifications_for(canonical_event):
         strats.append(f"sex_{canonical_event['sex']}")
     return strats
 
-
 def cell_keys_for(canonical_event):
     """Build the cell key set this event participates in.
 
@@ -803,14 +783,12 @@ def cell_keys_for(canonical_event):
                     })
     return cell_keys
 
-
 def cell_partition_key(cell_key):
     """Render a cell key as a single DynamoDB partition key string."""
     return (
         f"{cell_key['geo_type']}|{cell_key['geo_id']}|"
         f"{cell_key['strat']}|{cell_key['syndrome']}|{cell_key['window']}"
     )
-
 
 def increment_cell(cell_key, observed_at):
     """Atomically increment a cell's count and update last-event timestamp."""
@@ -837,7 +815,6 @@ def increment_cell(cell_key, observed_at):
             ":win": cell_key["window"],
         },
     )
-
 
 def write_to_timestream(cell_key, observed_at):
     """Append a per-cell increment to the Timestream cell-time-series table.
@@ -876,16 +853,13 @@ def write_to_timestream(cell_key, observed_at):
                      extra={"error": str(e)})
         _in_memory_timestream_append(cell_key, observed_at)
 
-
 # In-memory Timestream stand-in for the demo. Production reads from
 # real Timestream; the demo populates and reads this dict.
 _IN_MEMORY_TIMESTREAM = defaultdict(list)
 
-
 def _in_memory_timestream_append(cell_key, observed_at):
     pk = cell_partition_key(cell_key)
     _IN_MEMORY_TIMESTREAM[pk].append(observed_at)
-
 
 def update_cell_counters(canonical_event):
     """Increment every cell the event participates in."""
@@ -932,7 +906,6 @@ def query_timestream_for_history(cell_key, lookback_years):
     df["day"] = pd.to_datetime(df["day"])
     return df
 
-
 def known_outbreak_dates(cell_key):
     """Return historical outbreak windows to exclude from baseline fitting.
 
@@ -944,7 +917,6 @@ def known_outbreak_dates(cell_key):
     example returns an empty list.
     """
     return []
-
 
 def fit_negative_binomial_glm(history_df, exclude_dates=None):
     """Fit a seasonal-and-trend GLM to per-day count history.
@@ -1010,7 +982,6 @@ def fit_negative_binomial_glm(history_df, exclude_dates=None):
             "std_count":   float(max(history_df["count"].std() or 1.0, 1.0)),
         }
 
-
 def predict_baseline_for_date(model_summary, target_date):
     """Predict expected count and prediction intervals for a target date."""
     if model_summary["model_type"] == "constant_mean_fallback":
@@ -1050,7 +1021,6 @@ def predict_baseline_for_date(model_summary, target_date):
         "std":      std,
     }
 
-
 def downscale_parent(parent_model, cell):
     """Use the parent geography's model with a cell-specific offset.
 
@@ -1069,7 +1039,6 @@ def downscale_parent(parent_model, cell):
         }
     return parent_summary
 
-
 def get_parent_baseline_model(cell_key):
     """Return the baseline model for the cell's parent geography.
 
@@ -1081,7 +1050,6 @@ def get_parent_baseline_model(cell_key):
         "mean_count":  3.0,
         "std_count":   1.5,
     }
-
 
 def enumerate_active_cells():
     """Return all currently-active cells in the system.
@@ -1103,7 +1071,6 @@ def enumerate_active_cells():
                 "window":    parts[4],
             })
     return cells
-
 
 def compute_baselines(reference_date):
     """Recompute baselines for every active cell.
@@ -1208,7 +1175,6 @@ def get_recent_counts(cell_key, days=60):
     cutoff = pd.Timestamp(datetime.now(timezone.utc).date() - timedelta(days=days))
     return history[history["day"] >= cutoff].copy()
 
-
 def load_baseline_for_cell(cell_key, reference_date):
     """Load the baseline record persisted for the cell on this reference date."""
     cell_table = dynamodb.Table(CELL_STATE_TABLE)
@@ -1220,7 +1186,6 @@ def load_baseline_for_cell(cell_key, reference_date):
         "upper_99":  item.get("upper_99", 7.0),
         "std":       max(item.get("upper_95", 5.0) - item.get("expected", 1.0), 1.0) / 1.96,
     }
-
 
 def compute_cusum(observed, expected, sigma, k, h):
     """Compute a CUSUM control chart on the observed series.
@@ -1246,7 +1211,6 @@ def compute_cusum(observed, expected, sigma, k, h):
         "history":      history,
     }
 
-
 def compute_ewma(observed, expected, sigma, lambda_val, limit):
     """Compute an EWMA control chart on the observed series.
 
@@ -1269,7 +1233,6 @@ def compute_ewma(observed, expected, sigma, lambda_val, limit):
         "signal":       abs(history[-1]) > limit * ewma_sigma,
         "history":      history,
     }
-
 
 def run_control_chart_detectors(reference_date):
     """Run CUSUM and EWMA per active cell."""
@@ -1305,7 +1268,6 @@ def run_control_chart_detectors(reference_date):
             "reference_date":  reference_date.isoformat(),
         })
     return results
-
 
 def run_farrington_flexible_detector(reference_date):
     """Run the Farrington Flexible regression-based detector per cell.
@@ -1343,7 +1305,6 @@ def run_farrington_flexible_detector(reference_date):
             "reference_date":  reference_date.isoformat(),
         })
     return results
-
 
 def submit_satscan_batch_job(scan_geography, reference_date, method,
                               max_window_pct=25, max_temporal_window_days=14):
@@ -1396,7 +1357,6 @@ def submit_satscan_batch_job(scan_geography, reference_date, method,
     }
     return {"significant_clusters": [cluster]}
 
-
 def run_satscan_detectors(reference_date):
     """Run spatial and spatiotemporal scan statistics."""
     results = []
@@ -1429,7 +1389,6 @@ def run_satscan_detectors(reference_date):
                 "reference_date":  reference_date.isoformat(),
             })
     return results
-
 
 def run_detector_bank(reference_date):
     """Run all detectors and return the combined result list."""
@@ -1490,11 +1449,9 @@ _DEMO_ABSENTEEISM = {
     ],
 }
 
-
 def load_ww_concentration_history(sewershed, pathogen):
     """Load wastewater concentration history for a sewershed and pathogen."""
     return _DEMO_WASTEWATER.get(sewershed, {}).get(pathogen, [])
-
 
 def fit_ww_baseline(history):
     """Fit a simple baseline mean and std on log-transformed concentrations.
@@ -1512,14 +1469,12 @@ def fit_ww_baseline(history):
     return {"mean": float(values.mean()),
             "std":  float(max(values.std(), 0.1))}
 
-
 def current_ww_concentration(sewershed, pathogen, reference_date):
     """Return the most recent wastewater concentration for the sewershed."""
     history = _DEMO_WASTEWATER.get(sewershed, {}).get(pathogen, [])
     if not history:
         return None
     return history[-1]["concentration"]
-
 
 def run_wastewater_detector(reference_date):
     """Detect wastewater pathogen-concentration anomalies."""
@@ -1547,7 +1502,6 @@ def run_wastewater_detector(reference_date):
                 })
     return results
 
-
 def run_absenteeism_detector(reference_date):
     """Detect school absenteeism spikes."""
     results = []
@@ -1571,7 +1525,6 @@ def run_absenteeism_detector(reference_date):
             })
     return results
 
-
 def run_pharmacy_detector(reference_date):
     """Detect pharmacy-volume spikes (placeholder; demo returns empty).
 
@@ -1579,7 +1532,6 @@ def run_pharmacy_detector(reference_date):
     and prescription-fill data. The teaching example skips this path.
     """
     return []
-
 
 def candidate_geo_windows(clinical_results, auxiliary_results):
     """Build the set of geography-window candidates from detector outputs.
@@ -1639,7 +1591,6 @@ def candidate_geo_windows(clinical_results, auxiliary_results):
 
     return list(candidates.values())
 
-
 def classify_syndrome_class(syndrome):
     """Group syndromes into broader classes for fusion calibration."""
     if syndrome in {"fever_respiratory", "ili", "asthma_copd"}:
@@ -1654,7 +1605,6 @@ def classify_syndrome_class(syndrome):
         return "sepsis"
     return "other"
 
-
 def classify_geo_class(geo_type):
     """Group geography types into broader classes for fusion calibration."""
     if geo_type in {"census_tract", "zcta"}:
@@ -1662,7 +1612,6 @@ def classify_geo_class(geo_type):
     if geo_type == "county":
         return "county"
     return geo_type
-
 
 def max_score_for(results, candidate, detector=None):
     """Return the maximum score for the candidate from results."""
@@ -1687,11 +1636,9 @@ def max_score_for(results, candidate, detector=None):
                             min(result.get("score", 0.0) / 5.0, 1.0))
     return max_score
 
-
 def count_concordant_sources(*signals, threshold):
     """Count how many signal scores exceed the concordance threshold."""
     return sum(1 for s in signals if s and s > threshold)
-
 
 def apply_fusion_calibration(score, cohort, calibration):
     """Apply a per-cohort calibration mapping to the fused score.
@@ -1700,7 +1647,6 @@ def apply_fusion_calibration(score, cohort, calibration):
     historical adjudications. The teaching example clips to [0, 1].
     """
     return min(max(score, 0.0), 1.0)
-
 
 def run_auxiliary_and_fuse(reference_date, clinical_results):
     """Run auxiliary detectors and fuse with clinical signals."""
@@ -1814,7 +1760,6 @@ def aggregate_adjacent_flags(signals, temporal_window_days):
         })
     return proto_clusters
 
-
 def find_existing_open_cluster(proto):
     """Search for an open cluster covering the same geography and syndrome."""
     cluster_table = dynamodb.Table(CLUSTER_STATE_TABLE)
@@ -1833,7 +1778,6 @@ def find_existing_open_cluster(proto):
             return existing
     return None
 
-
 def update_existing_cluster(existing_cluster, proto):
     """Append the new signal to an existing open cluster."""
     cluster_table = dynamodb.Table(CLUSTER_STATE_TABLE)
@@ -1847,7 +1791,6 @@ def update_existing_cluster(existing_cluster, proto):
             ":t": datetime.now(timezone.utc).isoformat(),
         },
     )
-
 
 def check_recent_dismissal(proto, reason_class):
     """Was this same pattern recently dismissed for the relevant geographies?"""
@@ -1869,7 +1812,6 @@ def check_recent_dismissal(proto, reason_class):
             return True
     return False
 
-
 def log_suppression(proto, reason):
     """Log that a proto-cluster was suppressed."""
     logger.info("cluster suppressed",
@@ -1877,7 +1819,6 @@ def log_suppression(proto, reason):
                        "geographies": [g["id"] for g in proto["geographies"]],
                        "syndromes": proto["syndromes"]})
     _emit_metric(f"Suppressed_{reason}", 1)
-
 
 def line_list_build(geographies, syndromes, window_start, window_end):
     """Build the line list for a cluster.
@@ -1906,7 +1847,6 @@ def line_list_build(geographies, syndromes, window_start, window_end):
                 })
     return line_list
 
-
 def line_list_summary(line_list):
     """Return a de-identified summary of the line list for case display."""
     if not line_list:
@@ -1918,7 +1858,6 @@ def line_list_summary(line_list):
         "age_distribution": dict(Counter(c["age_group"] for c in line_list)),
     }
 
-
 def persist_line_list(line_list):
     """Persist the line list (with case-detail authority required to read).
 
@@ -1928,7 +1867,6 @@ def persist_line_list(line_list):
     """
     line_list_id = f"LL-{uuid.uuid4().hex[:12]}"
     return line_list_id
-
 
 def sum_of_expected_for(geographies, syndromes, window_start, window_end):
     """Sum the baseline expected counts across the cluster's cells and window."""
@@ -1949,7 +1887,6 @@ def sum_of_expected_for(geographies, syndromes, window_start, window_end):
             expected += baseline["expected"] * days
     return expected
 
-
 def summarize_demographics(line_list):
     """Compute a demographic distribution summary for the line list."""
     if not line_list:
@@ -1959,7 +1896,6 @@ def summarize_demographics(line_list):
         "sex":         dict(Counter(c.get("sex") for c in line_list)),
     }
 
-
 def build_geo_payload(line_list_coords, heatmap_resolution="h3_level_8"):
     """Build a geography visualization payload for the surveillance UI.
 
@@ -1967,7 +1903,6 @@ def build_geo_payload(line_list_coords, heatmap_resolution="h3_level_8"):
     teaching example returns a placeholder.
     """
     return {"resolution": heatmap_resolution, "cell_count": len(line_list_coords)}
-
 
 def lookup_lab_results_for_cases(line_list, days):
     """Look up lab results associated with cases in the line list."""
@@ -1978,7 +1913,6 @@ def lookup_lab_results_for_cases(line_list, days):
         "novel_pathogen_signals":      0,
     }
 
-
 def lookup_genomic_clusters(lab_context):
     """Look up genomic-cluster context for the cases."""
     return {
@@ -1986,7 +1920,6 @@ def lookup_genomic_clusters(lab_context):
         "preliminary_clusters":    [],
         "alerting_signal":         "no_genomic_data",
     }
-
 
 def build_cluster_narrative_prompt(structured_evidence):
     """Build the Bedrock prompt for cluster-narrative generation.
@@ -2035,12 +1968,10 @@ def build_cluster_narrative_prompt(structured_evidence):
         "actions. End with the required closing phrase."
     )
 
-
 def parse_bedrock_response(response):
     """Parse a Bedrock InvokeModel response into the narrative text."""
     body = json.loads(response["body"].read())
     return body["content"][0]["text"].strip()
-
 
 def invoke_bedrock_narrative(structured_evidence):
     """Generate the surveillance-team-facing cluster narrative via Bedrock."""
@@ -2073,7 +2004,6 @@ def invoke_bedrock_narrative(structured_evidence):
             "the public health response."
         )
 
-
 def _emit_metric(metric_name, value, unit="Count"):
     """Emit a CloudWatch metric for operational monitoring."""
     try:
@@ -2090,12 +2020,10 @@ def _emit_metric(metric_name, value, unit="Count"):
         logger.debug("metric emit failed",
                      extra={"metric": metric_name, "error": str(e)})
 
-
 def generate_cluster_id():
     """Generate a cluster identifier."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     return f"CL-{today}-{uuid.uuid4().hex[:8]}"
-
 
 def tier_from_composite(composite_score, cohort="DEFAULT"):
     """Map a composite score to a surveillance-team tier."""
@@ -2107,7 +2035,6 @@ def tier_from_composite(composite_score, cohort="DEFAULT"):
     if composite_score >= thresholds["tier_3"]:
         return "tier_3"
     return "below_threshold"
-
 
 def build_clusters(fused_signals, reference_date):
     """Build cluster candidates, attach evidence, and persist to cluster-state."""
@@ -2248,7 +2175,6 @@ NOTIFIABLE_CONDITIONS = {
     "viral_hemorrhagic_fever", "yellow_fever", "rabies",
 }
 
-
 def initiate_external_reporting(cluster):
     """Trigger external reporting (NEDSS, eCR, NORS, NHSN, NMI) for a confirmed cluster.
 
@@ -2271,7 +2197,6 @@ def initiate_external_reporting(cluster):
         "EventBusName": CLUSTER_BUS,
     }])
 
-
 def notify_neighboring_jurisdictions(cluster):
     """Notify cross-jurisdictional partners about a confirmed cluster.
 
@@ -2290,7 +2215,6 @@ def notify_neighboring_jurisdictions(cluster):
         "EventBusName": CLUSTER_BUS,
     }])
 
-
 def initiate_response_coordination(cluster):
     """Hand off a confirmed outbreak to the response coordination workflow."""
     eventbridge.put_events(Entries=[{
@@ -2305,7 +2229,6 @@ def initiate_response_coordination(cluster):
         }, default=str),
         "EventBusName": CLUSTER_BUS,
     }])
-
 
 def add_suppression_rule(geographies, syndromes, reason, valid_for_days,
                           reason_class="false_alarm"):
@@ -2324,7 +2247,6 @@ def add_suppression_rule(geographies, syndromes, reason, valid_for_days,
     }
     suppression_table.put_item(Item=_decimalize(rule))
 
-
 def cluster_feature_snapshot(cluster):
     """Build a feature snapshot for retraining."""
     return {
@@ -2337,7 +2259,6 @@ def cluster_feature_snapshot(cluster):
         "multi_source_concordance": cluster.get("multi_source_concordance"),
         "demographic_breakdown":    cluster.get("demographic_breakdown"),
     }
-
 
 def on_investigator_action(action):
     """Record an investigator's adjudication and feed the learning loop.
@@ -2475,7 +2396,6 @@ def seed_demo_history():
                             f"{target.isoformat()}T12:00:00Z"
                         )
 
-
 def seed_demo_cluster_state_tables():
     """No-op for the demo; production would create DynamoDB tables once.
 
@@ -2484,7 +2404,6 @@ def seed_demo_cluster_state_tables():
     fallback patterns earlier in this file).
     """
     pass
-
 
 def run_outbreak_detection_pipeline(audit_events, reference_date):
     """End-to-end pipeline against a batch of clinical encounters.
@@ -2530,7 +2449,6 @@ def run_outbreak_detection_pipeline(audit_events, reference_date):
           "on_investigator_action from the surveillance UI handler")
 
     return cluster_ids, canonical_events
-
 
 if __name__ == "__main__":
     # Seed demo history so baseline fitting has data to work with.

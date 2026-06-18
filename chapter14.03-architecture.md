@@ -434,8 +434,6 @@ FUNCTION check_and_reorder(inventory_event):
 
 **Where it struggles:** Items with extremely sporadic demand (used once a month, then three times in a day). New items with no consumption history (cold-start problem). Supply chain disruptions that invalidate lead time assumptions. Items where demand is driven by a single physician's preference (one surgeon leaves, demand drops to zero overnight).
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets on gaps a production deployment must close. -->
-
 ---
 
 ## Variations and Extensions

@@ -1,18 +1,5 @@
 # Recipe 4.6 Architecture and Implementation: Care Gap Prioritization
 
-<!--
-TechEditor pass v1 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
-- Updated TODO A6 to clarify that the chained-closure state machine
-  primitive belongs in this file's Walkthrough, not the main recipe's
-  General Architecture Pattern section (which is now a separate file).
-- Verified backlink header opens cleanly and references main recipe.
-- Verified no dangling references to main-recipe sections in prose
-  (cross-references in TODOs to "The Technology section" are valid
-  TechWriter coordination notes).
-- Em-dash count: 0. En-dash count: 0.
-- All prior TODO markers preserved.
--->
-
 *Companion to [Recipe 4.6: Care Gap Prioritization](chapter04.06-care-gap-prioritization). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
@@ -21,7 +8,7 @@ TechEditor pass v1 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
 
 ### Why These Services
 
-**Amazon SageMaker for the model training and serving stack.** Three model families live here: the per-gap-type clinical urgency model (gradient-boosted regression, optionally with a supervised outcome layer for gaps with rich training data), the per-pathway engagement and completion-probability models (gradient-boosted binary classifiers, one per pathway), and an optional per-gap-type uplift model where randomized closure-pathway data exists. The recommendation run uses SageMaker Batch Transform; same reasoning as 4.4 and 4.5 (batch is dramatically cheaper than an idle real-time endpoint, and gap evaluation runs are scheduled). Visit-context ranking runs on a near-real-time cadence (the day before each visit); it can use the offline-trained models with cached scores rather than requiring a live endpoint. SageMaker is HIPAA-eligible under BAA. <!-- TODO: confirm SageMaker Batch Transform's current HIPAA eligibility and the appropriate instance types for the model sizes implied here. -->
+**Amazon SageMaker for the model training and serving stack.** Three model families live here: the per-gap-type clinical urgency model (gradient-boosted regression, optionally with a supervised outcome layer for gaps with rich training data), the per-pathway engagement and completion-probability models (gradient-boosted binary classifiers, one per pathway), and an optional per-gap-type uplift model where randomized closure-pathway data exists. The recommendation run uses SageMaker Batch Transform; same reasoning as 4.4 and 4.5 (batch is dramatically cheaper than an idle real-time endpoint, and gap evaluation runs are scheduled). Visit-context ranking runs on a near-real-time cadence (the day before each visit); it can use the offline-trained models with cached scores rather than requiring a live endpoint. SageMaker is HIPAA-eligible under BAA. 
 
 **Amazon SageMaker Feature Store for per-(patient, gap) features.** This is where the Feature Store investment from Recipes 4.4 and 4.5 pays off again. Patient-level features (clinical risk, engagement history, demographics, SDOH proxies, prior intervention engagement) are reused. New features specific to this recipe (per-gap state, days-in-window, days-overdue, prior closures of this gap type, prior referral-completion rate, last-visit data, scheduled-visit data) are added as new feature groups. The offline store powers the daily gap evaluation; the online store supports real-time visit-context ranking when the day's schedule lands.
 
@@ -45,17 +32,17 @@ TechEditor pass v1 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
 
 3. **Patient-facing closure messaging.** Same pattern as 4.4 and 4.5: structured intervention assignment goes in, the personalized message comes out, the message goes through a clinical-claims validator before send.
 
-Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. <!-- TODO: confirm current Bedrock service terms and the eligible-model list at the time of build; the BAA-covered model list has been evolving. -->
+Bedrock is HIPAA-eligible under BAA. Confirm in service terms that prompts and completions are not used to train the underlying foundation models. 
 
 **AWS Lambda for per-stage glue logic.** The measure-registry evaluator dispatcher, the closure-tracker reconciliation worker, the priority synthesizer, the visit-context ranker (the deterministic-ranking part), the briefing generator (the orchestration around the LLM call), the override handler, the engagement-attribution worker, and the contact-cap enforcer all run as Lambdas.
 
 **Amazon Connect (or a contracted outreach platform) for chase-team telephonic outreach.** Same pattern as 4.5. Plans with in-house chase teams often build on Amazon Connect; plans with vendor outreach use the vendor's queue. The AWS-specific piece is HIPAA-eligible call recording and the contact-flow-to-engagement-event integration.
 
-**Amazon SES for member-facing email and Pinpoint (or a contracted vendor) for SMS.** Same as 4.4 and 4.5; both under BAA. <!-- TODO: confirm SES HIPAA eligibility and BAA scope at the time of build; verify Pinpoint SMS eligibility. -->
+**Amazon SES for member-facing email and Pinpoint (or a contracted vendor) for SMS.** Same as 4.4 and 4.5; both under BAA. 
 
 **Amazon QuickSight for operations dashboards.** Per-measure, per-cohort, per-clinician closure dashboards. Equity-monitoring views (closure-rate disparities by language, race, SDOH cohort). HEDIS-cycle dashboards showing measure progress against year-end targets. Clinician-level closure-rate dashboards with peer comparisons. QuickSight on Athena, with row-level security for cohort-specific filters.
 
-**AWS HealthLake (optional, for FHIR-based EHR integration).** When the practice's EHR exposes FHIR APIs and the recommender needs to ingest fine-grained clinical data (problem list, observations, encounters, immunizations, conditions) for the candidate-gap surfacer or for the urgency model, HealthLake provides a FHIR-native data store with built-in normalization. The lighter pattern is direct FHIR API integration with bulk export to S3; HealthLake is the heavier pattern for plans/practices with multiple EHR vendors and a long-term need to maintain unified FHIR storage. <!-- TODO: confirm AWS HealthLake's current pricing and HIPAA eligibility at the time of build; consider whether HealthLake is the right fit relative to direct FHIR-to-S3 patterns for the implementing team. -->
+**AWS HealthLake (optional, for FHIR-based EHR integration).** When the practice's EHR exposes FHIR APIs and the recommender needs to ingest fine-grained clinical data (problem list, observations, encounters, immunizations, conditions) for the candidate-gap surfacer or for the urgency model, HealthLake provides a FHIR-native data store with built-in normalization. The lighter pattern is direct FHIR API integration with bulk export to S3; HealthLake is the heavier pattern for plans/practices with multiple EHR vendors and a long-term need to maintain unified FHIR storage. 
 
 **AWS KMS, CloudTrail, CloudWatch.** Same PHI infrastructure pattern as prior recipes. Customer-managed keys, CloudTrail data events on PHI tables, CloudWatch alarms on batch-run failures and cohort-metric drift.
 
@@ -149,14 +136,14 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker (Training, Batch Transform, Feature Store), Amazon DynamoDB, Amazon S3, AWS Glue, Amazon Athena, AWS Step Functions, Amazon EventBridge, Amazon Kinesis Data Streams, Amazon Kinesis Data Firehose, AWS Lambda, Amazon Bedrock, Amazon SES, Amazon Pinpoint or contracted SMS provider, Amazon Connect (optional, for in-house chase team), Amazon QuickSight, AWS HealthLake (optional, for FHIR-based EHR integration), AWS KMS, Amazon CloudWatch, AWS CloudTrail. |
-| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` and `sagemaker:DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially the `patient-gaps` table); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to gap, claims, and recommendation buckets; `kinesis:PutRecord` on the closure-and-engagement stream; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities; `connect:*` scoped to the chase-team contact flow only. Never `*`. <!-- TODO: pair these actions with one or two scoped Resource ARN examples so a reader copying into an IAM policy doesn't default to `Resource: *`. Same chapter-wide pattern flagged in 4.1, 4.2, 4.3, 4.4, 4.5 reviews. --> |
-| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker (Training, Batch Transform, Feature Store), DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, SES, Pinpoint, Connect (when configured for HIPAA workloads), KMS, HealthLake. <!-- TODO: confirm Bedrock + selected models are eligible at the time of build; verify Pinpoint and Connect HIPAA-eligible configurations; verify HealthLake eligibility. --> |
+| **IAM Permissions** | Per-Lambda least-privilege: `sagemaker:CreateTransformJob` and `sagemaker:DescribeTransformJob` scoped to specific model ARNs; `dynamodb:GetItem` / `BatchWriteItem` / `UpdateItem` scoped to specific tables (especially the `patient-gaps` table); `bedrock:InvokeModel` on specific foundation-model ARNs; `s3:GetObject` / `PutObject` scoped to gap, claims, and recommendation buckets; `kinesis:PutRecord` on the closure-and-engagement stream; `ses:SendEmail` and `pinpoint:SendMessages` scoped to BAA-covered identities; `connect:*` scoped to the chase-team contact flow only. Never `*`.  |
+| **BAA** | AWS BAA signed. All services in the architecture must be HIPAA-eligible: SageMaker (Training, Batch Transform, Feature Store), DynamoDB, S3, Glue, Athena, Step Functions, EventBridge, Kinesis, Firehose, Lambda, Bedrock, SES, Pinpoint, Connect (when configured for HIPAA workloads), KMS, HealthLake.  |
 | **Encryption** | DynamoDB: customer-managed KMS at rest (especially the `patient-gaps` table; the per-gap state plus reasoning is highly inferential PHI). S3: SSE-KMS with bucket-level keys. Kinesis and Firehose: server-side encryption. SageMaker training, Batch Transform, and Feature Store: VPC-only, with KMS keys for model artifacts and Feature Store offline storage. Lambda log groups KMS-encrypted. Clinician briefings stored in DynamoDB are PHI; the briefing text contains diagnostic and risk-related content. |
 | **VPC** | Production: Lambdas in VPC. SageMaker training, Batch Transform, and Feature Store online store run in VPC. VPC endpoints for DynamoDB (gateway), S3 (gateway), Bedrock, Kinesis, Firehose, KMS, CloudWatch Logs, SageMaker Runtime, Step Functions (`states`), EventBridge (`events`), Glue, Athena, STS, SES, Pinpoint, Connect, HealthLake. NAT Gateway only for external services without VPC endpoints (e.g., a state immunization registry that does not support PrivateLink); restrict egress with security groups. EHR FHIR feeds typically arrive via PrivateLink, Direct Connect, or SFTP-over-VPN. VPC Flow Logs enabled. |
 | **CloudTrail** | Enabled with data events on the `patient-gaps` table, `measure-registry` table, `clinician-briefings` table, `clinician-overrides` table, `recommendation-log` table, and `patient-profile` table. Data events on the S3 buckets containing source feeds, gap evaluation outputs, briefings, and recommendation outputs. |
 | **Equity Governance** | Document the priority synthesis weights (clinical urgency vs. completion probability vs. quality-measure value vs. window urgency), the equity floors (capacity reserved for cohorts with documented closure-rate disparities), and the cohort-monitoring thresholds before launch. Cross-functional review committee (medical director, quality lead, equity lead, data science, operations) signs off on the policy and reviews quarterly. Decisions about quality-measure-driven capacity allocation versus clinical-urgency-driven allocation go through this committee, not just the analytics team. |
 | **Sample Data** | A starter set of synthetic patients with realistic demographics and condition mixes (Synthea generates good baseline data for HEDIS measures). A small measure registry (10-20 measures: a few preventive screenings, a few diabetes-related, a few HEDIS Stars-bonus measures, a few patient-specific clinical patterns). A synthetic schedule feed for visit-context ranking. Synthetic engagement labels for engagement-prediction training. |
-| **Cost Estimate** | At a 400,000-member health plan with ~250,000 patients eligible for at least one care gap, ~40 measures in the registry, daily evaluation: SageMaker Batch Transform (3 model families per run, ~1M (patient, gap) rows per run, daily): roughly $200-500/month at modest instance sizes. SageMaker Feature Store offline store: $80-150/month. SageMaker training (monthly retrain of 3 model families): $150-300/month. DynamoDB on-demand: $200-500/month (the per-gap state table is the largest). Lambda + Step Functions: $100-200/month. Bedrock for candidate-gap surfacer (sampled, ~5K patients/week), clinician briefings (~10K visits/day with briefings), patient-message tailoring (~50K/week), Haiku-class: $1,000-2,500/month. SES + Pinpoint SMS (~50K outreach per week): $100-200/month. Connect (if used, 6-10 FTE chase-team agents): $300-600/month plus telephony. S3 + Glue + Athena: $300-600/month. QuickSight: $50/user/month for authors plus reader fees. HealthLake (if used): $500-2,000/month depending on data volume. Estimated total: $2,500-6,000/month range for a regional plan, before staff time and referral-management vendor costs. <!-- TODO: replace with verified, current pricing once the implementing team validates against the AWS Pricing Calculator. --> |
+| **Cost Estimate** | At a 400,000-member health plan with ~250,000 patients eligible for at least one care gap, ~40 measures in the registry, daily evaluation: SageMaker Batch Transform (3 model families per run, ~1M (patient, gap) rows per run, daily): roughly $200-500/month at modest instance sizes. SageMaker Feature Store offline store: $80-150/month. SageMaker training (monthly retrain of 3 model families): $150-300/month. DynamoDB on-demand: $200-500/month (the per-gap state table is the largest). Lambda + Step Functions: $100-200/month. Bedrock for candidate-gap surfacer (sampled, ~5K patients/week), clinician briefings (~10K visits/day with briefings), patient-message tailoring (~50K/week), Haiku-class: $1,000-2,500/month. SES + Pinpoint SMS (~50K outreach per week): $100-200/month. Connect (if used, 6-10 FTE chase-team agents): $300-600/month plus telephony. S3 + Glue + Athena: $300-600/month. QuickSight: $50/user/month for authors plus reader fees. HealthLake (if used): $500-2,000/month depending on data volume. Estimated total: $2,500-6,000/month range for a regional plan, before staff time and referral-management vendor costs.  |
 
 ### Ingredients
 
@@ -191,7 +178,7 @@ flowchart LR
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost and SageMaker Batch Transform notebooks that mirror the per-gap urgency and per-pathway engagement scoring patterns used here.
 > - [`amazon-sagemaker-feature-store-end-to-end-workshop`](https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop): End-to-end Feature Store usage that maps onto the per-(patient, gap) feature pipeline.
 > - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Demonstrates structured-output prompting applicable to the candidate-gap surfacer, clinician briefings, and patient message tailoring.
-> <!-- TODO: confirm the current names and locations of these aws-samples repos. -->
+> 
 
 #### Walkthrough
 
@@ -314,15 +301,7 @@ FUNCTION evaluate_measures(patients, run_date):
         //                 suggested_evidence_to_check,
         //                 confidence, supporting_chart_excerpts }, ... ]
         validate_candidate_gaps(candidates, patient_id, observed_data = chart_context)
-            // <!-- TODO (TechWriter): Specify validate_candidate_gaps's
-            // four-layer structure mirroring 4.5 Step 2: (1) schema and
-            // taxonomy check, (2) rationale length/structure, (3)
-            // rationale must cite observable data points whose values
-            // match observed_data within tolerance, (4) prohibited
-            // content (PHI not in source, prescriber names) in
-            // rationale. Specify failure handling: validator failure
-            // means the candidate is dropped from the review queue and
-            // the failure is logged for prompt-engineering review. -->
+            // 
 
         FOR each candidate in candidates.passing_validation:
             DynamoDB.PutItem("clinical-informatics-review-queue", {
@@ -467,7 +446,6 @@ FUNCTION enrich_open_gaps(patient_gaps_today, run_date):
     RETURN enriched
 ```
 
-
 **Step 3: Visit-context ranking for tomorrow's encounters.** Consume the next-day schedule, look up each scheduled patient's enriched gap list, filter to gaps with closure pathways compatible with the visit type and visit time, and produce a per-encounter ranked agenda. Skip the visit-fit filter and you put a colonoscopy referral on a 15-minute sick visit's agenda, which is a useless recommendation.
 
 ```
@@ -566,20 +544,7 @@ FUNCTION rank_visit_agendas(next_day_schedule, run_date):
             //   confidence_notes }
 
         validate_briefing(briefing_parsed, observed_agenda = in_visit_agenda)
-            // <!-- TODO (TechWriter): Specify validate_briefing's
-            // four-layer structure: (1) schema and length, (2) every
-            // referenced agenda item must appear in observed_agenda
-            // (the LLM cannot hallucinate gaps that aren't on the
-            // deterministic agenda), (3) prohibited content (PHI
-            // not in source, prescriber names other than the visit
-            // provider's, suggestions that override the deterministic
-            // ranker's choices), (4) required disclaimers ("subject
-            // to clinical judgment", briefings are advisory, etc.).
-            // Specify failure handling: validator failure means the
-            // briefing is replaced with a templated fallback that
-            // simply lists the in_visit_agenda items without LLM
-            // narration; the failure is logged for prompt-engineering
-            // review. -->
+            // 
 
         DynamoDB.PutItem("clinician-briefings", {
             briefing_id:      build_briefing_id(encounter, run_date),
@@ -650,17 +615,7 @@ FUNCTION orchestrate_async_closures(visit_agendas, enriched_gaps_today, run_date
         member = lookup_member(candidate.patient_id)
         chosen_pathway = candidate.best_pathway
 
-        // <!-- TODO (TechWriter, MEDIUM per Code Review WARNING 3): When
-        //      best_pathway == "in_visit" but the patient has no upcoming
-        //      visit on the visit-context-ranker horizon, the current
-        //      pseudocode silently allocates the gap to a no-op (no
-        //      outreach is sent, no chase queue is populated, no PCP
-        //      inbox note is filed). The gap is registered as "surfaced"
-        //      but never acted on. Add an explicit fall-through to
-        //      second_best_pathway when chosen_pathway == "in_visit" AND
-        //      candidate.patient_id NOT IN visited_or_planned. The visit-
-        //      context ranker is the only place in_visit gaps should be
-        //      surfaced; the async orchestrator should never see them. -->
+        // 
 
         // Per-pathway capacity.
         IF capacity_remaining[chosen_pathway] <= 0:
@@ -813,30 +768,7 @@ FUNCTION orchestrate_async_closures(visit_agendas, enriched_gaps_today, run_date
     RETURN allocated
 ```
 
-<!-- TODO (TechWriter): Same reconciliation gap as 4.5. The optimistic
-increment of `outreach_recent_total_30d_count` happens before send
-confirmation. Add to Step 5 the matching `closure_outreach_failed` /
-`closure_outreach_bounced` clauses that decrement the counter, plus a
-stale-pending sweep for tracking_ids with no engagement-stream
-activity within 24 hours. The cross-recipe global counter makes this
-even more important: a phantom contact recorded in this recipe
-suppresses outreach for the patient in 4.4, 4.5, and 4.7 too. -->
-
-
 **Step 5: Track closures from multiple sources and update gap state.** Closure events arrive from claims, EHR encounters, lab feeds, pharmacy data, immunization registries, and patient self-report. Each has its own latency and trustworthiness profile. Skip the multi-source reconciliation and your chase team will call patients about colonoscopies they had last week.
-
-<!-- TODO (TechWriter, MEDIUM per Expert Review A10): The current state machine
-mutates state per-event; this is brittle in the face of out-of-order arrival,
-retroactive corrections, late-arriving exclusions, and source-side restatements
-that the prose names explicitly as production concerns. Add a paragraph naming
-the event-replay pattern: events are stored in a per-(patient, gap) event log
-ordered by event.timestamp; current state is computed by replaying the log
-under the canonical-source rules from the registry; new events re-trigger
-replay rather than mutating state directly. This guarantees out-of-order
-arrivals produce the same final state regardless of receipt order, retroactive
-corrections work via superseding markers, late-arriving exclusions can override
-prior closures, and duplicate events are no-ops. The replay cost is small in
-practice (most gaps have <10 events). -->
 
 ```
 FUNCTION process_closure_event(event):
@@ -937,16 +869,7 @@ FUNCTION process_clinician_override(event):
         LOG("override event with no matched briefing: " + str(event))
         RETURN
 
-    // <!-- TODO (TechWriter, MEDIUM per Expert Review S1): Add identity-boundary
-    //      checks here, mirroring the chapter pattern from 4.2/4.3/4.4/4.5.
-    //      An override event arriving with mismatched (event.patient_id,
-    //      event.measure_id) versus (rec.patient_id, rec.measure_id) should
-    //      be dropped with an `override_identity_mismatch` metric, not written
-    //      to the override audit trail under the event's claimed patient_id.
-    //      Three downstream effects depend on this check: clinician-overrides
-    //      is part of the audit trail; apply_suppression denies outreach for
-    //      30-180 days; update_training_label feeds the urgency-model retrain
-    //      pipeline. A patient-id mismatch contaminates all three. -->
+    // 
     // IF event.patient_id != rec.patient_id OR
     //    event.measure_id != rec.measure_id:
     //     LOG("override event identity mismatch with briefing; dropping",
@@ -1025,12 +948,6 @@ FUNCTION process_clinician_override(event):
 ### Expected Results
 
 **Sample patient gap state record:**
-
-<!-- TODO (TechWriter, HIGH per Expert Review A3): Update `measure_id` from
-`hedis-cdc-eye-exam` to `hedis-eed` (current NCQA naming after the CDC
-parent measure was retired and split into EED/KED/GSD/BPD beginning HEDIS
-MY 2022). Coordinate with the matching fix in The Technology section and
-the Python companion's synthetic registry. -->
 
 ```json
 {
@@ -1163,8 +1080,6 @@ the Python companion's synthetic registry. -->
 | Pre-visit ranking time (10K visits, briefings) | n/a | 30-60 minutes |
 | Equity floor utilization | n/a | 75-95% (configurable) |
 
-<!-- TODO: the benchmarks above are illustrative ranges informed by published care gap and HEDIS-program literature; replace with measured results from your deployment, or with citations once verified. Be wary of vendor-published numbers that conflate gap-list generation with gap closure, or that report HEDIS impact without baseline comparison. -->
-
 **Where it struggles:**
 
 - **Patients with fragmented care across multiple practices.** A patient who sees PCPs in two different health systems and gets screened at retail clinics has gap closure events scattered across data sources the recommender doesn't all see. The `data_quality_flag` exposes this, but downstream consumers (chase team, dashboards) need to gate on it. A "gap open" label on a patient with `cross_provider_fragmentation` data quality is much less reliable than the same label on a patient with `complete` data quality.
@@ -1183,7 +1098,7 @@ the Python companion's synthetic registry. -->
 
 The pseudocode and architecture above demonstrate the pattern. A production deployment needs to close several gaps that are intentionally out of scope for a recipe.
 
-**Measure-registry curation as an ongoing program.** The registry is the source of truth for what counts as a gap, and it has to be maintained continuously. Annual NCQA HEDIS revisions, CMS Stars technical updates, USPSTF guideline changes, and contract-specific measure additions all require registry updates. The team that owns the registry needs structured change-management: proposed change, clinical informatics review, evidence packet, version bump, parallel evaluation against the prior version on a sample to quantify population impact, then promotion. A registry that drifts out of sync with NCQA's published HEDIS specs produces gap lists that don't match the plan's reported HEDIS performance, which is a credibility-destroying problem that takes months to recover from. Plan for at least 0.5 to 1.0 FTE of clinical-informatics time on registry maintenance ongoing. <!-- TODO: confirm the current NCQA HEDIS update cadence and the CMS Stars technical-notes release pattern at the time of build. -->
+**Measure-registry curation as an ongoing program.** The registry is the source of truth for what counts as a gap, and it has to be maintained continuously. Annual NCQA HEDIS revisions, CMS Stars technical updates, USPSTF guideline changes, and contract-specific measure additions all require registry updates. The team that owns the registry needs structured change-management: proposed change, clinical informatics review, evidence packet, version bump, parallel evaluation against the prior version on a sample to quantify population impact, then promotion. A registry that drifts out of sync with NCQA's published HEDIS specs produces gap lists that don't match the plan's reported HEDIS performance, which is a credibility-destroying problem that takes months to recover from. Plan for at least 0.5 to 1.0 FTE of clinical-informatics time on registry maintenance ongoing. 
 
 **Measure-spec parity testing against the plan's HEDIS vendor.** The plan typically has a HEDIS vendor (Inovalon, Cotiviti, Episource, Vatica Health, others) producing the official quality reporting. The recommender's gap evaluation will not exactly match the vendor's numerator counts; small implementation differences in value sets, lookback boundary handling, and supplemental-data inclusion can shift numerators by 1 to 3 percentage points. Build a parity test that runs nightly comparing the recommender's open-gap counts to the vendor's open-gap counts at the population level, with alerting on divergence beyond an established tolerance. Persistent divergence is an alignment task with the vendor, not a model failure.
 
@@ -1191,39 +1106,25 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Clinical-urgency model training data.** The urgency models work best when trained against longitudinal outcome data. For some gaps (vaccinations, screenings) the outcome that the urgency model is trying to estimate is rare in any individual year and requires multi-year longitudinal data to estimate well. For others (chronic disease monitoring like UACR or A1c), the outcome is common but defining the right outcome variable is non-trivial. Plan for 6 to 12 months of training data preparation per measure family, with explicit handling of confounding (the patients who close their gaps differ from the patients who don't, and the urgency model's training pipeline must adjust for that confounding or the urgency estimates will be systematically biased upward for non-engaged patients).
 
-<!-- TODO (TechWriter): Specify the SageMaker training-job trigger mechanism and model-promotion path from training to inference. The architecture diagram shows "Periodic retrain" without an explicit trigger or promotion path; mirror the pattern flagged in 4.4 and 4.5 (EventBridge schedule or CloudWatch metric threshold for trigger; SageMaker Model Registry with canary run for promotion). -->
-
 **Visit-context features need to be accurate.** The visit-context ranker depends on knowing the visit type, the typical visit duration for the provider, the acute context (a patient coming in for back pain has the visit dominated by back pain), and the clinician's closure habits. Visit-type metadata in scheduling systems is often noisy or inconsistent; "annual wellness visit" can mean different things across providers; visit-duration estimates vary widely. Production deployment requires investing in scheduling-data quality: clean visit-type taxonomy, per-provider visit-duration calibration from historical encounter data, and a feedback loop where clinician overrides update the model's understanding of visit fit.
 
 **Clinical informatics review queue for LLM-surfaced candidates.** The candidate-gap surfacer's output is only useful if there's a real review process behind it. Plan for 10 to 20 hours per week of clinical-informatics time on the review queue (varies by sample size and surfacing aggressiveness). Without staff on the review side, the queue grows, the surfacer's quality stagnates (no one is correcting bad patterns), and the candidate-gap mechanism becomes shelfware. If you can't staff the review, scope the surfacer to a small, well-defined set of patient types where the patterns are most likely to be valuable.
 
 **Suppression-rule governance.** The suppression policies tied to clinician-override reasons have material impact on patient care. A "patient_refusal" suppressed for 180 days is a reasonable default; suppressed for 18 months is a patient-safety problem when the clinical context shifts. Each suppression rule needs an exception-condition mapping: shifts in clinical context that should reopen the gap regardless of prior suppression (a new abnormal lab, a new diagnosis, a hospitalization). Build the exception-condition logic into the suppression worker, not as an afterthought.
 
-<!-- TODO (TechWriter): Replace the string-concatenation tracking_id and briefing_id with opaque, non-reversible identifiers (UUID or HMAC-SHA256 over the composite with a per-environment secret). Plain-text patient_ids and provider_ids embedded in tracking IDs (carried in email open-tracking pixels, SMS click-through links, EHR inbox URLs) are PHI leakage. Mirror the language from 4.4 and 4.5. Update the Expected Results sample tracking_ids accordingly. -->
-
 **Cross-recipe orchestration with Recipes 4.4 and 4.5 and 4.7.** Same pattern as 4.5. A patient with multiple care gaps, multiple non-adherent medications, and a wellness program enrollment recommendation can easily exceed any reasonable contact-frequency budget if each recipe orchestrates independently. The shared `outreach_recent_total_30d_count` on the patient-profile table is the foundation; the cross-recipe coordination policy that decides which recipe wins when caps would be exceeded needs to be explicit, version-controlled, and committee-reviewed.
-
-<!-- TODO (TechWriter): Add a paragraph specifying the cross-recipe priority arbitration. When 4.4, 4.5, 4.6, 4.7 all want to message the same patient and the global cap allows only one, what wins? Default proposal: weighted priority across recipes with a clinical-urgency tiebreaker, with explicit documentation that the operationally-attractive recipes (4.5 adherence reminders, 4.6 quality-measure-driven gaps near window close) cannot crowd out the high-clinical-urgency cohorts from 4.4 (DPP for newly diagnosed diabetes) or 4.6 (rising eGFR with no CKD conversation). Reference the cross-recipe orchestration discussed in 4.4 and 4.5. -->
 
 **Patient-facing message governance for care gap content.** Care gap reminders are a regulated communication category, and the rules vary by gap type. State pharmacy boards have varying rules on vaccination prompts. CMS has guidance on Medicare Advantage member communications. Some health-condition prompts (cancer screening, depression screening) have additional state-specific consumer-protection rules. Engage compliance counsel on per-measure messaging before launch. The validator should enforce: required disclosures, prohibition on unapproved clinical claims, plan-sponsorship identification where required, and respect for state-specific care-prompt rules. A patient who gets an unsolicited "you're due for a mammogram" message in a state where direct-to-patient screening prompts require additional consent is a compliance issue, not just an awkward message.
 
-<!-- TODO (TechWriter): Specify the validator's pseudocode shape (four layers: schema, required disclosures and identifications, prohibited-claims regex/blocklist, approved-claims-only check against a per-measure approved-claims artifact). Specify failure handling: schema/length failures fall back to a templated default; clinical-claim or prohibited-claims failures defer the outreach with reason `validator_failed:<reason>` and flag for human review. Reference 4.4's and 4.5's parallel governance discussion. -->
-
 **Privacy in the gap state and recommendation log.** The `patient-gaps` table joins (patient_id, measure_id, state, urgency_score, evidence) and is highly inferential. A row indicating "patient has open mental-health-follow-up gap with high urgency" is much more sensitive than a row indicating "patient has open flu-shot gap." Apply tighter controls to gap state for stigmatized or high-sensitivity measures (mental health, substance use, HIV-related, reproductive health): narrower IAM read scopes, optional separate-table partitioning so general analytics access does not expose them, additional CloudTrail data event capture, and a documented minimum-necessary access policy.
-
-<!-- TODO (TechWriter): Add a paragraph on the SDOH-cohort PHI boundary in the cohort_features attribute. Cohort labels like "transportation_barrier" and "low_food_security" are PHI-equivalent and should follow the minimum-necessary principle. Engagement events should carry only the cohort axes the equity dashboard actually consumes, with narrower IAM scope than for general engagement data. Mirror the language flagged in 4.4 and 4.5. -->
 
 **Equity floor design.** The equity floors implemented in Step 4 reserve capacity for cohorts with documented closure-rate disparities. Designing the floors well requires baseline cohort closure data (which you don't have until you've been operating for some time), explicit policy on which disparities trigger floors versus other interventions, and willingness to accept that you'll be wrong sometimes about which cohorts need protection. Start with conservative floors (small reserved capacity), monitor cohort closure-rate parity, expand floors where parity remains poor, and revisit quarterly. Don't try to design the perfect equity floor on day one; design the right operating cadence for adjusting them.
 
 **Idempotency and retry semantics.** Same pattern as 4.4 and 4.5. Each stage's outputs are addressed by deterministic keys (run_date, measure_id, patient_id) and writes are conditional, so a Step Functions retry that re-attempts a completed step is a no-op rather than a duplicate. The Step Functions Catch should distinguish retryable infrastructure failures from terminal logic failures and route terminal failures to the DLQ.
 
-<!-- TODO (TechWriter): Specify DLQ coverage on all Lambda paths in the architecture, none of which the diagram currently shows: (a) Step Functions to Lambda pipeline: Catch on each Lambda task pointing to an SQS failure queue keyed on (run_date, stage, failure_reason); (b) Kinesis to closure-tracker Lambda: configure an OnFailure destination on the event source mapping pointing to SQS or SNS, with a CloudWatch alarm on DLQ depth; (c) Batch Transform job failures: SageMaker doesn't surface failures via DLQ; wire the Step Functions Catch to handle TransformJob failed states explicitly. A silently-dropped closure event is operationally damaging in this recipe (the chase team calls a patient who already closed the gap), so the DLQ coverage matters more here than in some prior recipes. Mirror the language from 4.4 and 4.5. -->
-
 **Cost-per-closure tracking.** The cost numbers in the prerequisites table are infrastructure only. Production reporting needs to ladder up to per-measure total cost (infrastructure + staff time + outreach vendor invoices + referral logistics) divided by confirmed closures attributable to the program (above the matched-control baseline). That number is what gets compared to the value of closure (HEDIS bonus for measure-bound gaps, clinical-outcome benefit for clinically-driven gaps). The data engineering to track this end-to-end with attribution is its own project. Without it, the program reports gap-closure totals that include closures that would have happened anyway.
 
 **Quality-measure year-end push handling.** Many quality programs run a year-end "chase" where the team aggressively closes outstanding gaps in the last 60 to 90 days of the measurement year. This creates a natural seasonality in the program and a temptation to throw the priority weights toward window-urgency in the chase period. Build the seasonality into the policy explicitly (e.g., a `chase_period_weight_overrides` block that activates between specific dates), document it, and put the cohort-equity dashboard on a shorter monitoring cycle during the chase. Otherwise the year-end push quietly redistributes effort to the easiest-to-close gaps in the cohorts already best-served by the program.
-
-<!-- TODO (TechWriter, MEDIUM per Expert Review A11): The `chase_period_weight_overrides` block is named here but not architected. Add a concrete schema sketch (start_date, end_date, weight_overrides, weight_caps, equity_floor_multipliers, monitoring_cadence_days) so a team building this recipe has the architectural primitive to implement. Without the primitive, year-end policy changes happen in a config-management process separate from the recommender, which means the year-end equity-monitoring tightening doesn't happen and the equity floors don't shift; both gaps produce the failure mode the Honest Take warns about. Specify that seasonal overrides go through the same governance review as base policy changes, and that equity floors should expand (not contract) during chase periods because chase periods disproportionately benefit operationally-easy cohorts. -->
 
 **Patient-friendly closure visibility.** Patients should be able to see their own care gaps and closures in the patient portal, with explanations they can understand. "You are due for a screening colonoscopy" is more useful than "HEDIS COL-E open." Patient-facing summaries are a separate UX project, with content review by health-literacy specialists, but the gap state machine in this recipe is the source data for that view. Plan for the patient-facing layer as a parallel deliverable; without it, patients only learn about gaps when the chase team calls, which is the worst time to learn about them.
 
@@ -1241,23 +1142,9 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 
 **Gap-closure incentive integration.** Some plans offer member-facing incentives for gap closure (gift cards, premium discounts, reward points) within regulatory limits. The recommender can route incentive-eligible gaps with a different message frame and track incentive uptake as a closure-conversion lift signal. Beware: incentive programs can introduce unintended behavioral patterns, including cherry-picking by patients who chase incentives across multiple low-value closures while neglecting clinically important high-effort closures.
 
-**Care-team load balancing.** When chase-team capacity is bounded and the priority queue exceeds capacity, the allocator from Step 4 picks the top of the priority list. A more sophisticated approach: cluster gaps by patient, route patients with multiple high-priority gaps to a single high-touch outreach contact (the agent addresses all of them in one call), and use lower-touch automation for patients with single moderate-priority gaps. This pattern is sometimes called "outreach bundling" and is operationally more efficient than gap-by-gap routing. <!-- TODO: cite literature on outreach bundling effectiveness; the practice is widespread but published evidence is mixed. -->
+**Care-team load balancing.** When chase-team capacity is bounded and the priority queue exceeds capacity, the allocator from Step 4 picks the top of the priority list. A more sophisticated approach: cluster gaps by patient, route patients with multiple high-priority gaps to a single high-touch outreach contact (the agent addresses all of them in one call), and use lower-touch automation for patients with single moderate-priority gaps. This pattern is sometimes called "outreach bundling" and is operationally more efficient than gap-by-gap routing. 
 
 **Specialist-coordination workflows.** For gaps that close via specialist visits (retinal exam, mammogram, colonoscopy, behavioral-health follow-up), build an end-to-end coordination workflow: scheduling assistance, transportation help, prior auth, reminder cascades, result-return-tracking, and PCP notification. The recommender's referral generation is the entry point; the closure depends on the workflow. Plans that invest in this coordination see materially higher referral-completion rates than plans that send a referral and hope.
-
-<!-- TODO (TechWriter, MEDIUM per Expert Review A6): The specialist-coordination
-workflow named in this Variation requires a chained-closure state machine
-that the core architecture doesn't show. Add the architectural primitive to
-this file's Walkthrough (or a new subsection here): `recommendation-log` adds
-chain_id (UUID), chain_position, chain_total, predecessor_recommendation_id.
-Step 4 emits the first link of the chain (e.g., referral_generation) with
-chain_position = 1; later links are not allocated until the predecessor
-completes. Step 5 adds an intermediate-event handler: events that match a
-chain link without closing the gap (e.g., referral_scheduled, referral_attended)
-advance the chain_position and trigger the next link's allocation. Only the
-final qualifying event (per the registry's numerator definition) closes the
-gap. Reference Recipe 14.x for the full multi-stage stochastic-program version.
-Same pattern flagged in 4.5 Finding A7. -->
 
 **Cohort-specific intervention catalogs.** Some patient cohorts benefit from cohort-specific closure pathways: patients in rural areas may need mobile screening units; patients with limited English proficiency benefit from in-language outreach; patients with documented transportation barriers may need rideshare-funded transport. The intervention catalog can carry cohort-eligibility flags so the allocator picks cohort-appropriate pathways rather than defaulting to the general-population pathway.
 
@@ -1293,18 +1180,14 @@ Same pattern flagged in 4.5 Finding A7. -->
 - [`amazon-sagemaker-feature-store-end-to-end-workshop`](https://github.com/aws-samples/amazon-sagemaker-feature-store-end-to-end-workshop): End-to-end Feature Store usage that maps to the per-(patient, gap) feature pipeline
 - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Hands-on labs covering structured-output prompting that informs the candidate-gap surfacer, clinician briefings, and message tailoring
 
-<!-- TODO: confirm the current names and locations of the aws-samples repos above; aws-samples and aws-solutions-library-samples have been reorganizing. -->
-
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter AI/ML and Healthcare): browse for healthcare quality and personalization reference architectures
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search "SageMaker Batch Transform," "Feature Store," and "personalization" for relevant deep-dives
 - [AWS for Industries Blog](https://aws.amazon.com/blogs/industries/) (Healthcare and Life Sciences): search "care gap" and "HEDIS" for end-to-end customer architectures
 
-<!-- TODO: replace generic "search the blog" pointers with two or three specific, verified blog post URLs once they are confirmed to exist. Avoid any made-up URLs. -->
-
 **External References (Conceptual and Methodological):**
-- [NCQA HEDIS Measures and Technical Resources](https://www.ncqa.org/hedis/): canonical HEDIS measure specifications including denominator, numerator, exclusion, and value-set definitions <!-- TODO: confirm the current NCQA HEDIS landing page and access path at the time of publication. -->
-- [CMS Medicare Star Ratings Technical Notes](https://www.cms.gov/medicare/health-drug-plans/part-c-d-performance-data): Star Ratings methodology including measure specifications and cut-point determination <!-- TODO: confirm the most current CMS landing page; the URL has moved repeatedly. -->
+- [NCQA HEDIS Measures and Technical Resources](https://www.ncqa.org/hedis/): canonical HEDIS measure specifications including denominator, numerator, exclusion, and value-set definitions 
+- [CMS Medicare Star Ratings Technical Notes](https://www.cms.gov/medicare/health-drug-plans/part-c-d-performance-data): Star Ratings methodology including measure specifications and cut-point determination 
 - [USPSTF Recommendations](https://www.uspreventiveservicestaskforce.org/uspstf/recommendation-topics): canonical US Preventive Services Task Force recommendations for screening and preventive care
 - [American Diabetes Association Standards of Care](https://diabetesjournals.org/care/issue): annually updated diabetes care guidelines including monitoring intervals
 - [KDIGO Guidelines](https://kdigo.org/guidelines/): kidney disease guidelines including monitoring and referral recommendations
@@ -1324,7 +1207,6 @@ Same pattern flagged in 4.5 Finding A7. -->
 | With variations | Add real-time closure-suppression triggers, pre-visit patient prep, at-the-visit EHR integration, patient-driven self-service, incentive integration, outreach bundling, specialist-coordination workflows, cohort-specific catalogs, closure-rate forecasting | 8-14 months beyond production-ready |
 
 ---
-
 
 ---
 

@@ -152,7 +152,6 @@ class MockKinesis:
         })
         return {"ShardId": "shard-0001", "SequenceNumber": str(len(self.records))}
 
-
 class MockDynamoDB:
     """Simulates DynamoDB GetItem/PutItem against an in-memory dict."""
     def __init__(self):
@@ -169,7 +168,6 @@ class MockDynamoDB:
         self.items[pk] = Item
         return {}
 
-
 class MockTimestream:
     """Simulates Timestream WriteRecords. Stores records in a list."""
     def __init__(self):
@@ -179,7 +177,6 @@ class MockTimestream:
         for record in Records:
             self.records.append({**CommonAttributes, **record})
         return {"RecordsIngested": {"Total": len(Records)}}
-
 
 class MockSNS:
     """Simulates SNS Publish. Stores messages in a list."""
@@ -193,7 +190,6 @@ class MockSNS:
             "Message": json.loads(Message),
         })
         return {"MessageId": str(uuid.uuid4())}
-
 
 # Instantiate mocks for the demo.
 mock_kinesis = MockKinesis()
@@ -273,7 +269,6 @@ PATIENT_STATES = {}
 
 # Maximum readings to keep in the rolling window per parameter.
 MAX_WINDOW_SIZE = 60  # covers ~60 minutes of 1-min data or ~10 hours of q10min data
-
 
 def update_patient_state(vital_event: dict) -> dict:
     """
@@ -378,7 +373,6 @@ def _linear_regression_slope(times: list, values: list) -> float:
 
     return (n * sum_xy - sum_x * sum_y) / denominator
 
-
 def compute_trajectory(state: dict, parameter: str) -> dict:
     """
     Compute trajectory features for a single vital sign parameter.
@@ -477,7 +471,6 @@ def _check_condition(trajectory: dict, condition: str) -> bool:
     elif condition == "deviating":
         return abs(trajectory["deviation"]) > 1.5
     return False
-
 
 def check_multi_parameter_patterns(all_trajectories: dict) -> list:
     """
@@ -785,7 +778,6 @@ def process_vital_sign(source_event: dict) -> dict:
 
     return alert_decision
 
-
 # --- Demo: Simulate a sepsis deterioration ---
 def run_demo():
     """
@@ -878,7 +870,6 @@ def run_demo():
             for p, t in payload["trajectories"].items():
                 print(f"      {p}: current={t['current']}, baseline={t['baseline']}, "
                       f"slope={t['slope_per_hour']}/hr, dev={t['deviation_sigma']}σ")
-
 
 if __name__ == "__main__":
     run_demo()

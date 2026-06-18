@@ -313,7 +313,6 @@ def normalize_medication_name(text: str, rx_lookup: dict) -> str:
         return rx_lookup[lower_text]["description"].lower()
     return lower_text
 
-
 def text_matches_terms(entity_text: str, target_terms: list) -> bool:
     """
     Check if an entity's text matches any of the target terms.
@@ -327,7 +326,6 @@ def text_matches_terms(entity_text: str, target_terms: list) -> bool:
         if term in lower_text or lower_text in term:
             return True
     return False
-
 
 def check_failure_context(entity: dict, note_text: str, failure_indicators: list) -> bool:
     """
@@ -348,7 +346,6 @@ def check_failure_context(entity: dict, note_text: str, failure_indicators: list
             return True
     return False
 
-
 def extract_numeric_value(entity: dict) -> float | None:
     """
     Try to extract a numeric value from a test/lab entity's attributes.
@@ -367,7 +364,6 @@ def extract_numeric_value(entity: dict) -> float | None:
             except ValueError:
                 continue
     return None
-
 
 def evaluate_note_against_criteria(
     extraction_result: dict,
@@ -686,7 +682,6 @@ def run_phenotype_extraction(patient_id: str, notes: list, phenotype_def: dict) 
 
     return classification
 
-
 # Run the pipeline on our synthetic patient
 if __name__ == "__main__":
     result = run_phenotype_extraction(
@@ -740,7 +735,6 @@ def store_evidence_item(patient_id: str, evidence_item: dict) -> None:
         item["numeric_value"] = Decimal(str(evidence_item["numeric_value"]))
 
     table.put_item(Item=item)
-
 
 def query_patient_evidence(patient_id: str) -> list:
     """

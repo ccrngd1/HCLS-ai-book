@@ -893,7 +893,6 @@ def discover_multimorbidity_patterns():
         "communities": len(set(community_map.values())),
     }
 
-
 # Run the pipeline.
 if __name__ == "__main__":
     results = discover_multimorbidity_patterns()

@@ -62,8 +62,6 @@ flowchart TD
 | **Sample Data** | Model 2-3 clinical pathways from published guidelines (e.g., IDSA pneumonia guidelines, AHA heart failure pathway). Use synthetic patient data for testing. |
 | **Cost Estimate** | Neptune: ~$0.35/hr for db.r5.large (smallest production instance); add a read replica for CDS query isolation (~$504/month total for primary + replica). DynamoDB: on-demand pricing ~$1.25 per million writes. Lambda: negligible at typical query volumes. Monthly estimate for 500-bed hospital: $400-800/month (Neptune primary + read replica accounts for ~70% of cost). Scale linearly with pathway query volume. Add ~$200/month per additional read replica for high-query-volume deployments. |
 
-<!-- TODO (TechWriter): Expert review S2 (HIGH). DynamoDB patient-pathway-state table has no item-level access control. For HIPAA Minimum Necessary, consider IAM leading-key conditions (dynamodb:LeadingKeys with department tags) or application-layer enforcement so that Lambdas processing one department cannot access another department's patient records. Document the chosen approach in the Prerequisites or a security callout. -->
-
 ### Ingredients
 
 | AWS Service | Role |
@@ -450,8 +448,6 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
 
 **Where it struggles:** Pathways with many parallel branches create combinatorial state spaces. Condition evaluation that requires pulling data from slow EHR APIs adds latency. Pathways that reference subjective clinical judgment ("if clinician feels patient is improving") can't be fully automated. And the biggest challenge: getting clinicians to actually model their pathways as structured graphs rather than prose documents.
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add a section covering gaps a production deployment must close (e.g., HL7/FHIR integration testing, pathway authoring UI, clinical committee governance workflow). -->
-
 ---
 
 ## Variations and Extensions
@@ -478,8 +474,6 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): General Neptune examples including graph data modeling, loading, and querying patterns
 - [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Ontology modeling in Neptune, directly relevant to clinical knowledge representation
 
-<!-- TODO (TechWriter): Verify if there are additional healthcare-specific Neptune samples available on aws-samples. -->
-
 **AWS Solutions and Blogs:**
 - [Building a Knowledge Graph on AWS](https://aws.amazon.com/blogs/database/building-a-knowledge-graph-application-with-amazon-neptune/): Architecture patterns for knowledge graph applications on Neptune
 - [Architecting for HIPAA on AWS (Whitepaper)](https://docs.aws.amazon.com/whitepapers/latest/architecting-hipaa-security-and-compliance-on-aws/welcome.html)
@@ -495,7 +489,6 @@ FUNCTION get_pathway_recommendations(patient_id, pathway_id):
 | **With variations** | 20-28 weeks | Multi-pathway coordination, outcome linkage, pathway-aware order entry |
 
 ---
-
 
 ---
 

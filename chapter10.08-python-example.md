@@ -481,7 +481,6 @@ CAPTURE_PROTOCOLS = {
     },
 }
 
-
 # --- Helpers ---
 # DynamoDB rejects native Python float. Every numeric value on
 # its way into DynamoDB has to be a Decimal. This helper
@@ -495,17 +494,14 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _bucket_age(age):
     """Translate a numeric age into the cohort age band."""
@@ -519,7 +515,6 @@ def _bucket_age(age):
     if age < 85:    return "75_84"
     return "85_plus"
 
-
 def _select_consent_disclosure(jurisdiction, indication_type):
     """Pick the disclosure language for the patient's
     jurisdiction and the indication's clinical vs. research
@@ -529,7 +524,6 @@ def _select_consent_disclosure(jurisdiction, indication_type):
     if jurisdiction in BIOMETRIC_DATA_LAW_STATES:
         return CONSENT_DISCLOSURE_BIPA
     return CONSENT_DISCLOSURE_DEFAULT
-
 
 def audit_log(event):
     """
@@ -640,7 +634,6 @@ class MockSageMakerRuntime:
         })
         return {"body": json.dumps(response, default=str)}
 
-
 class MockTranscribeMedical:
     """
     Stands in for the Transcribe Medical batch transcription
@@ -671,7 +664,6 @@ class MockTranscribeMedical:
     def retrieve_transcript(self, audio_uri):
         return self._fixtures.get(audio_uri, "")
 
-
 class MockComprehendMedical:
     """
     Stands in for Comprehend Medical's DetectEntitiesV2,
@@ -697,7 +689,6 @@ class MockComprehendMedical:
                                   "text_len": len(text)})
         return self._fixtures.get(text,
                                     {"Entities": []})
-
 
 class MockBedrock:
     """
@@ -752,7 +743,6 @@ class MockBedrock:
             "guardrail_action": "NONE",
         }, default=str)}
 
-
 class MockHealthLake:
     """
     Stands in for AWS HealthLake's FHIR Observation write
@@ -772,7 +762,6 @@ class MockHealthLake:
             "observation":    dict(observation),
         })
         return {"resource_id": observation_id}
-
 
 class MockEHRDecisionSupport:
     """
@@ -798,7 +787,6 @@ class MockEHRDecisionSupport:
         })
         return {"alert_id": alert_id}
 
-
 class MockPatientCommunication:
     """
     Stands in for the patient-communication system (patient
@@ -817,7 +805,6 @@ class MockPatientCommunication:
             "sent_at":         _now_iso(),
         })
 
-
 class MockCaptureSessionTable:
     """In-memory stand-in for the DynamoDB capture-session
     table. Each entry tracks one voice-biomarker session
@@ -835,7 +822,6 @@ class MockCaptureSessionTable:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockTrajectoryTable:
     """In-memory stand-in for the DynamoDB trajectory table.
@@ -858,7 +844,6 @@ class MockTrajectoryTable:
                 and item.get("indication") == indication
                 and item.get("sample_timestamp", "") >= cutoff]
 
-
 class MockClinicianFeedbackTable:
     """In-memory stand-in for the clinician-feedback table.
     Captures the clinician's response to a delivered
@@ -869,7 +854,6 @@ class MockClinicianFeedbackTable:
 
     def put(self, item):
         self._items.append(dict(item))
-
 
 class MockS3:
     """
@@ -904,7 +888,6 @@ class MockS3:
             "deleted_at": _now_iso(),
         })
 
-
 class MockEventBus:
     """Stands in for Amazon EventBridge. Lifecycle events
     flow here for cross-system fan-out: sample_captured,
@@ -916,7 +899,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """Stands in for CloudWatch metric emission. In
@@ -938,7 +920,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 capture_session_table = MockCaptureSessionTable()
@@ -957,7 +938,6 @@ sagemaker_mock        = None
 transcribe_mock       = None
 comprehend_mock       = None
 bedrock_mock          = None
-
 
 # --- Patient demographics lookup ---
 # Production reads from the EHR via FHIR; the demo uses an
@@ -986,20 +966,16 @@ PATIENT_DEMOGRAPHICS = {
     },
 }
 
-
 def lookup_patient_demographics(patient_id):
     return dict(PATIENT_DEMOGRAPHICS.get(patient_id, {}))
-
 
 def lookup_patient_jurisdiction(patient_id):
     return PATIENT_DEMOGRAPHICS.get(
         patient_id, {}).get("jurisdiction", "unknown")
 
-
 def lookup_patient_language(patient_id):
     return PATIENT_DEMOGRAPHICS.get(
         patient_id, {}).get("primary_language", "en-US")
-
 
 def lookup_recent_clinical_events(patient_id_hash,
                                      window_days=30):
@@ -1013,9 +989,7 @@ def lookup_recent_clinical_events(patient_id_hash,
     """
     return CLINICAL_EVENTS_BY_PATIENT.get(patient_id_hash, [])
 
-
 CLINICAL_EVENTS_BY_PATIENT = {}
-
 
 def lookup_protocol(indication, patient_language,
                       capture_context):
@@ -1033,11 +1007,9 @@ def lookup_protocol(indication, patient_language,
             "respiratory_monitoring_v1")
     return None
 
-
 def lookup_model_card(indication):
     """Look up the per-indication model card."""
     return MODEL_CARDS.get(indication)
-
 
 def lookup_cohort_calibration(indication, cohort):
     """Look up the per-cohort calibration entry."""
@@ -1050,7 +1022,6 @@ def lookup_cohort_calibration(indication, cohort):
         return None
     return CALIBRATION_LOOKUP.get(
         (indication, cohort, calibration_version))
-
 
 def lookup_clinical_action_mapping(indication, category,
                                      trajectory,
@@ -1103,7 +1074,6 @@ def build_disclosure(indication, retention_terms,
         f"days. You may request deletion at any time.")
     return base_disclosure + retention_addendum
 
-
 def capture_consent(patient_id, consent_type, disclosure,
                      require_explicit):
     """
@@ -1121,7 +1091,6 @@ def capture_consent(patient_id, consent_type, disclosure,
         "explicit":      require_explicit,
         "captured_at":   _now_iso(),
     }
-
 
 def capture_audio_with_quality_assessment(task,
                                               quality_thresholds,
@@ -1176,11 +1145,9 @@ def capture_audio_with_quality_assessment(task,
 
     return captured
 
-
 # Per-task fixtures. The demo wires this up before running
 # each scenario.
 CURRENT_CAPTURE_FIXTURE = {}
-
 
 def capture_initiated(patient_id, indication,
                         capture_context, session_id_hint=None):
@@ -1386,7 +1353,6 @@ def determine_codec_bandwidth(state):
         min_bandwidth = min(min_bandwidth, bandwidth)
     return min_bandwidth if min_bandwidth != float("inf") else 8000
 
-
 def lookup_task_definition(indication, task_id):
     """
     Look up the per-indication, per-task feature
@@ -1456,7 +1422,6 @@ def lookup_task_definition(indication, task_id):
         "is_spontaneous_speech":   False,
     })
 
-
 def filter_features_by_bandwidth(requested_features,
                                     available_bandwidth_hz):
     """
@@ -1492,7 +1457,6 @@ def filter_features_by_bandwidth(requested_features,
         "excluded":   excluded,
     }
 
-
 def compute_acoustic_features(audio_ref, features,
                                  return_confidence=True):
     """
@@ -1515,7 +1479,6 @@ def compute_acoustic_features(audio_ref, features,
         },
     }
 
-
 def compute_speech_embeddings(audio_ref, model_id):
     """
     Compute the pretrained-speech-model embedding for the
@@ -1528,7 +1491,6 @@ def compute_speech_embeddings(audio_ref, model_id):
     fixture_key = (audio_ref, model_id)
     return EMBEDDING_FIXTURES.get(fixture_key,
         [Decimal("0.0")] * 8)
-
 
 def transcribe_for_linguistic_features(audio_ref, language):
     """
@@ -1544,7 +1506,6 @@ def transcribe_for_linguistic_features(audio_ref, language):
         language=language)
     return transcribe_mock.retrieve_transcript(audio_ref)
 
-
 def extract_linguistic_features(transcript,
                                    requested_features):
     """
@@ -1559,7 +1520,6 @@ def extract_linguistic_features(transcript,
             (transcript, feature), Decimal("0.5"))
         for feature in requested_features.get("linguistic", [])
     }
-
 
 def has_actionable_clinical_content(clinical_entities):
     """
@@ -1577,7 +1537,6 @@ def has_actionable_clinical_content(clinical_entities):
         if any(term in text for term in actionable_terms):
             return True
     return False
-
 
 def route_to_clinical_review(session_id, clinical_entities):
     """
@@ -1599,13 +1558,11 @@ def route_to_clinical_review(session_id, clinical_entities):
         "timestamp":       _now_iso(),
     })
 
-
 # Per-segment feature fixtures. The demo wires these up
 # before each scenario.
 ACOUSTIC_FEATURE_FIXTURES = {}
 EMBEDDING_FIXTURES = {}
 LINGUISTIC_FEATURE_FIXTURES = {}
-
 
 def extract_features(session_id):
     """
@@ -1781,7 +1738,6 @@ def check_demographic_envelope(patient_demographics,
         "language_eligible": language_eligible,
     }
 
-
 def check_recording_envelope(recording_metadata,
                                 validation_envelope):
     """
@@ -1810,7 +1766,6 @@ def check_recording_envelope(recording_metadata,
         "bandwidth_eligible": bandwidth_eligible,
     }
 
-
 def check_task_completion(captured_segments,
                             required_tasks,
                             min_per_task_quality):
@@ -1837,7 +1792,6 @@ def check_task_completion(captured_segments,
         "low_quality_tasks":     low_quality_tasks,
     }
 
-
 def check_confounds(patient_id_hash, recent_clinical_events,
                       model_confounds):
     """
@@ -1854,7 +1808,6 @@ def check_confounds(patient_id_hash, recent_clinical_events,
         if confound in event_keys:
             flags.append(confound)
     return flags
-
 
 def assign_cohort(patient_demographics,
                     recording_chain_metadata,
@@ -1882,7 +1835,6 @@ def assign_cohort(patient_demographics,
         recording_class = "unknown_recording"
 
     return f"{age_band}_{sex}_{language}_{recording_class}"
-
 
 def summarize_ineligibility(elig):
     """Produce a short, human-readable list of ineligibility
@@ -1915,7 +1867,6 @@ def summarize_ineligibility(elig):
         if elig["task_fit"]["low_quality_tasks"]:
             reasons.append("low_quality_required_tasks")
     return reasons
-
 
 def check_eligibility(session_id, candidate_indications,
                         patient_id):
@@ -2053,7 +2004,6 @@ def assemble_model_input(feature_set, model_card,
             feature_set.get("recording_chain_metadata", {}),
     }
 
-
 def parse_score(raw_response):
     """Parse the raw response from the SageMaker endpoint."""
     body = json.loads(raw_response["body"]) \
@@ -2067,7 +2017,6 @@ def parse_score(raw_response):
         "model_version":  body.get(
             "model_version", "unknown"),
     }
-
 
 def apply_calibration(raw_score, calibration_curve):
     """
@@ -2124,7 +2073,6 @@ def apply_calibration(raw_score, calibration_curve):
         return Decimal(str(knots[-1]["calibrated"]))
     return raw_score
 
-
 def compute_confidence_interval(score, cohort_size,
                                    calibration_uncertainty):
     """
@@ -2145,7 +2093,6 @@ def compute_confidence_interval(score, cohort_size,
         "width":  upper - lower,
     }
 
-
 def assign_category(calibrated_score, thresholds):
     """
     Assign a categorical label based on the threshold map.
@@ -2162,7 +2109,6 @@ def assign_category(calibrated_score, thresholds):
             last_label = label
     return last_label
 
-
 def compute_attribution(model_card, model_input,
                           raw_response):
     """
@@ -2177,7 +2123,6 @@ def compute_attribution(model_card, model_input,
         else raw_response.get("body", {})
     return body.get("feature_attribution",
                      {"top_features": []})
-
 
 def score_biomarkers(session_id):
     """
@@ -2429,7 +2374,6 @@ def compute_patient_baseline(prior_samples,
                 for s in baseline_samples),
     }
 
-
 def compute_trajectory_delta(current_score, baseline,
                                 model_card):
     """
@@ -2467,7 +2411,6 @@ def compute_trajectory_delta(current_score, baseline,
             f"{baseline['window_end']}",
     }
 
-
 def build_summary_prompt(indication, score, trajectory,
                             clinical_action, template):
     """
@@ -2483,7 +2426,6 @@ def build_summary_prompt(indication, score, trajectory,
         "clinical_action":  clinical_action,
         "template":         template,
     }
-
 
 def package_interpretation(session_id):
     """
@@ -2679,7 +2621,6 @@ def build_fhir_observation(patient_id, indication,
         ],
     }
 
-
 def lookup_patient_id(patient_id_hash):
     """Reverse-lookup the unhashed patient ID for FHIR
     write-back. Production reads from a small ID-mapping
@@ -2690,12 +2631,10 @@ def lookup_patient_id(patient_id_hash):
             return pid
     return None
 
-
 def lookup_patient_preference(patient_id_hash):
     """Look up the patient's communication preference. The
     demo returns a default of patient portal."""
     return "patient_portal"
-
 
 def generate_patient_message(interpretation,
                                 guardrail_id):
@@ -2712,7 +2651,6 @@ def generate_patient_message(interpretation,
     return body.get("content",
                     "Your voice check has been completed.")
 
-
 def schedule_patient_communication(patient_id_hash, message,
                                        channel):
     """Schedule the patient communication. The demo just
@@ -2721,7 +2659,6 @@ def schedule_patient_communication(patient_id_hash, message,
         patient_id_hash=patient_id_hash,
         message=message,
         channel=channel)
-
 
 def create_decision_support_alert(patient_id_hash,
                                       indication,
@@ -2734,7 +2671,6 @@ def create_decision_support_alert(patient_id_hash,
         indication=indication,
         interpretation=interpretation,
         priority=priority)
-
 
 def deliver_to_workflow(session_id):
     """
@@ -2888,7 +2824,6 @@ def deliver_to_workflow(session_id):
 
     return delivery_records
 
-
 def clinician_acknowledges_result(session_id, clinician_id,
                                      indication,
                                      action_taken,
@@ -2979,7 +2914,6 @@ def lookup_audio_retention(consent_id, jurisdiction):
         base_hours = 24
     return {"hours": base_hours}
 
-
 def schedule_audio_deletion(audio_refs, delete_after):
     """
     Schedule audio deletion per the consent retention window.
@@ -3009,7 +2943,6 @@ def schedule_audio_deletion(audio_refs, delete_after):
                 s3_store.delete_object(
                     bucket, key,
                     reason="consent_retention_expired")
-
 
 def audit_and_surveillance(session_id, patient_age_band=None):
     """
@@ -3508,7 +3441,6 @@ def run_demo():
             "respiratory_monitoring": "clinician_review"},
         session_id_hint=session_id_2)
     print(json.dumps(result_2, default=str, indent=2))
-
 
 if __name__ == "__main__":
     run_demo()

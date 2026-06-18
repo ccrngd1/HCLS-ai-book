@@ -16,7 +16,6 @@
 
 **Amazon DynamoDB for study tracking and metadata.** Track pipeline state: which studies are in progress, which completed, which failed. Store registration quality metrics, fusion parameters used, and audit records. Point lookups by study ID support the clinical workflow where a radiologist checks whether fusion results are ready.
 
-<!-- TODO (TechWriter): Verify whether HealthLake Imaging (announced re:Invent 2022) supports the DICOM-RT and multi-modal query patterns needed here, or whether a custom DICOM indexing layer on S3 is the better approach for this use case. -->
 **Amazon HealthLake or S3 + custom indexing for DICOM management.** For DICOM study management, evaluate HealthLake Imaging for native DICOM storage and retrieval, or build a custom indexing layer on S3 if your query patterns (DICOM-RT cross-references, multi-modal series linking) exceed what HealthLake supports natively.
 
 ## Architecture Diagram
@@ -357,7 +356,6 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE does not specify a "Why This Isn't Production-Ready" section. Consider merging this content into "The Honest Take" below, or folding regulatory/validation points into a subsection there. The content is strong but the extra H2 breaks the expected section order. -->
 ## Why This Isn't Production-Ready
 
 **FDA regulatory pathway.** If this system's outputs influence clinical decisions (treatment planning contours, diagnostic segmentation), it likely requires FDA clearance as a Class II medical device. The 510(k) pathway requires demonstrated substantial equivalence to a predicate device, plus clinical validation studies. This recipe covers the technical architecture, not the regulatory journey, which adds 12-24 months and significant cost.
@@ -399,9 +397,8 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 
 **AWS Solutions and Blogs:**
 - [Medical Image Analysis on AWS](https://aws.amazon.com/solutions/implementations/medical-image-analysis-on-aws/): Reference architecture for medical imaging workloads on AWS
-<!-- TODO (TechWriter): Verify this AWS Solutions URL still exists and is relevant to multi-modal fusion -->
+
 - [Build a medical image analysis pipeline on AWS](https://aws.amazon.com/blogs/machine-learning/): Blog posts covering SageMaker-based medical imaging pipelines
-<!-- TODO (TechWriter): Search for specific blog posts on medical imaging pipelines with SageMaker and replace with verified URLs -->
 
 ---
 
@@ -414,7 +411,6 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 | **With variations** | 12-18 months | Intraoperative navigation, longitudinal response tracking, federated training across institutions, FDA submission preparation. |
 
 ---
-
 
 ---
 

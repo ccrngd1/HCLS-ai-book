@@ -8,7 +8,7 @@
 
 ### Why These Services
 
-**Amazon Web Services HealthScribe for the end-to-end ambient documentation pipeline.** HealthScribe is a HIPAA-eligible managed service that performs speech recognition, speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note generation from conversational audio. It is designed explicitly for this use case. For most teams, HealthScribe is the right primary service because it collapses most of the hard pipeline steps into one API surface, and because its outputs include the transcript-to-note traceability that clinician review requires. HealthScribe supports both synchronous (batch) and streaming modes. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify streaming availability and regional coverage; HealthScribe has historically been batch-first with streaming added later, and regional availability has expanded over time. -->
+**Amazon Web Services HealthScribe for the end-to-end ambient documentation pipeline.** HealthScribe is a HIPAA-eligible managed service that performs speech recognition, speaker diarization with clinician-patient role assignment, clinical entity extraction, and structured clinical note generation from conversational audio. It is designed explicitly for this use case. For most teams, HealthScribe is the right primary service because it collapses most of the hard pipeline steps into one API surface, and because its outputs include the transcript-to-note traceability that clinician review requires. HealthScribe supports both synchronous (batch) and streaming modes. 
 
 **Amazon Transcribe Medical as an alternative or complement to HealthScribe.** Transcribe Medical is AWS's medical-specific ASR service. It supports both batch and streaming transcription with medical vocabulary tuning and specialty-specific models (primary care, cardiology, oncology, radiology, neurology, urology). Teams that want more control over the pipeline (e.g., custom diarization, custom note-generation prompts, integration with a non-HealthScribe generation step) use Transcribe Medical as the ASR building block and assemble the downstream pipeline themselves. Teams that want the managed end-to-end path use HealthScribe and accept its opinions about diarization and note structure.
 
@@ -88,14 +88,14 @@ flowchart TB
 
 | Requirement | Details |
 |-------------|---------|
-| **AWS Services** | AWS HealthScribe (primary), Amazon Transcribe Medical (alternative or complement), Amazon Bedrock, Amazon Bedrock Guardrails, Amazon Comprehend Medical, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon Kinesis Video Streams with WebRTC (optional, for real-time), Amazon API Gateway, Amazon Cognito, AWS HealthLake (optional, for FHIR-based EHR integration), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, AWS KMS. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify current HealthScribe regional availability. --> |
+| **AWS Services** | AWS HealthScribe (primary), Amazon Transcribe Medical (alternative or complement), Amazon Bedrock, Amazon Bedrock Guardrails, Amazon Comprehend Medical, Amazon S3, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon Kinesis Video Streams with WebRTC (optional, for real-time), Amazon API Gateway, Amazon Cognito, AWS HealthLake (optional, for FHIR-based EHR integration), AWS Secrets Manager, Amazon CloudWatch, AWS CloudTrail, AWS KMS.  |
 | **IAM Permissions** | `transcribe:StartMedicalScribeJob`, `transcribe:GetMedicalScribeJob`, `transcribe:ListMedicalScribeJobs` for HealthScribe; `transcribe:StartMedicalTranscriptionJob` for Transcribe Medical; `bedrock:InvokeModel`, `bedrock:ApplyGuardrail`; `comprehendmedical:DetectEntitiesV2`, `comprehendmedical:InferRxNorm`, `comprehendmedical:InferICD10CM`; `s3:GetObject`, `s3:PutObject`, `s3:GetObjectRetention`, `s3:PutObjectRetention`; `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:UpdateItem`, `dynamodb:Query`; `states:StartExecution`, `states:SendTaskSuccess` (for human-review wait states); `kinesisvideo:*` (scoped) if using Kinesis Video Streams; `healthlake:CreateResource`, `healthlake:UpdateResource` if using HealthLake; `secretsmanager:GetSecretValue`; `kms:Decrypt`, `kms:GenerateDataKey`. Scope every action to specific resource ARNs. |
 | **BAA** | AWS BAA signed. Every service in the pipeline touching audio, transcripts, or notes must be HIPAA-eligible and covered under the BAA. Audio is always PHI (voice is biometric). Transcripts are PHI (contain patient identifiers and clinical content). Draft notes are PHI. Consent capture is the contractual anchor that makes the recording lawful; patients must consent affirmatively and be able to opt out without penalty. |
 | **HealthScribe Access** | HealthScribe is a distinct service from Transcribe Medical; ensure your account has access in the intended region. Verify regional availability and quota before building. |
 | **Bedrock Model Access** | Request access to a capable generation model (Claude Sonnet or equivalent) and a cheaper model (Claude Haiku or Nova Lite) for validation passes. Run note-quality evaluation with your chosen model before production. |
 | **EHR Integration** | Access to the institution's EHR write API (Epic Orders, Oracle Health, other). For FHIR-based integrations, either direct FHIR endpoints or HealthLake as an intermediary. Credential rotation, TLS, and audit requirements are set by the EHR vendor. |
 | **Encryption** | S3 audio, transcripts, draft notes, signed notes: SSE-KMS with customer-managed keys. Consider separate CMKs per data class (audio vs text) for finer retention control. DynamoDB: encryption at rest with CMK. Bedrock and HealthScribe: TLS in transit, encryption at rest. Bedrock model-invocation logging (if enabled) will contain the transcript and the draft note; log destination must be KMS-encrypted to the same standard as the note archive. CloudTrail logs to a KMS-encrypted S3 bucket with Object Lock for audit immutability where required. |
-| **VPC** | Production: Lambda in private subnets with interface endpoints for Transcribe (used by HealthScribe; verify endpoint availability for the HealthScribe-specific APIs in your region), Bedrock, Bedrock Runtime, Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, HealthLake (if used). Gateway endpoints for S3 and DynamoDB. If using Kinesis Video Streams with WebRTC for streaming audio, add `kinesisvideo` and `kinesisvideo-signaling` interface endpoints for the control plane; note that WebRTC media flows use ICE-negotiated peer connectivity that typically traverses the public internet through STUN/TURN servers. If API Gateway is configured as a private REST API, add `execute-api` interface endpoint. API Gateway can use a private REST API if the clinician app reaches it through VPN/Direct Connect; otherwise, API Gateway is internet-facing with WAF, Cognito authorizers, and strict rate limits. Interface endpoints cost roughly $7-10/month per AZ per endpoint; include this in the cost estimate. <!-- TODO (TechWriter): Expert review V1 (HIGH). Verify which Transcribe/HealthScribe endpoints support VPC interface endpoints in your target region. --> |
+| **VPC** | Production: Lambda in private subnets with interface endpoints for Transcribe (used by HealthScribe; verify endpoint availability for the HealthScribe-specific APIs in your region), Bedrock, Bedrock Runtime, Comprehend Medical, KMS, Secrets Manager, Step Functions, CloudWatch Logs, CloudWatch Monitoring, HealthLake (if used). Gateway endpoints for S3 and DynamoDB. If using Kinesis Video Streams with WebRTC for streaming audio, add `kinesisvideo` and `kinesisvideo-signaling` interface endpoints for the control plane; note that WebRTC media flows use ICE-negotiated peer connectivity that typically traverses the public internet through STUN/TURN servers. If API Gateway is configured as a private REST API, add `execute-api` interface endpoint. API Gateway can use a private REST API if the clinician app reaches it through VPN/Direct Connect; otherwise, API Gateway is internet-facing with WAF, Cognito authorizers, and strict rate limits. Interface endpoints cost roughly $7-10/month per AZ per endpoint; include this in the cost estimate.  |
 | **CloudTrail** | Enabled with data events for S3 (audio and note buckets), DynamoDB (session table), and Secrets Manager. Correlate every artifact to the encounter session ID and the requesting clinician identity. CloudTrail logs must be immutable (separate AWS account with Object Lock, or equivalent). |
 | **Consent Management** | A consent-capture workflow is a hard prerequisite. Depending on jurisdiction, consent may be required to be explicit, documented, and revocable. Two-party consent states (California, Florida, and others in the US) have stricter requirements than one-party consent states. Even in one-party consent states, clinical ethics standards require patient consent. The consent record is a compliance artifact; design accordingly. |
 | **Sample Data** | For development and evaluation: synthetic clinical conversations generated from templates, publicly-available medical conversation corpora (if redistributable, see MTS-Dialog and similar research datasets), and recorded mock encounters with actors under research consent. Never use real clinical audio in development or test environments. For end-to-end production evaluation, use a consented pilot with a small clinician cohort and formal quality review. |
@@ -570,7 +570,6 @@ FUNCTION present_for_review(session_id, note_sections, claims, validation_result
     // the workflow resumes when the clinician signs.
     RETURN { status: "AWAITING_SIGNOFF" }
 
-
 FUNCTION capture_clinician_signoff(session_id, edited_note, clinician_attestation):
 
     session = get DynamoDB "documentation-sessions" for session_id
@@ -765,10 +764,6 @@ FUNCTION emit_quality_metrics(session):
 
 **Sample output for an ambulatory family medicine encounter (illustrative; not a real patient):**
 
-<!-- Note: the encounter, patient, and clinical content below are synthetic. The
-     sample transcript and generated note are illustrative of pipeline outputs,
-     not records from a real encounter. -->
-
 ```json
 {
   "session_id": "AMB-2026-05-10-04621",
@@ -935,7 +930,7 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 - [`amazon-healthscribe-samples`](https://github.com/aws-samples/amazon-healthscribe-samples): Sample applications demonstrating HealthScribe end-to-end patterns
 - [`amazon-bedrock-samples`](https://github.com/aws-samples/amazon-bedrock-samples): Bedrock patterns including grounded generation, Guardrails, and RAG components that apply to the template rendering step
 - [`aws-healthcare-lifescience-ai-ml-sample-notebooks`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml-sample-notebooks): Healthcare-specific ML patterns, including clinical text processing
-- [`aws-health-ai-samples`](https://github.com/aws-samples/aws-health-ai-samples): Broader healthcare AI patterns on AWS <!-- TODO (TechWriter): Code review C1. Verify this repo name and URL exist; replace with a confirmed aws-samples repo if it does not. -->
+- [`aws-health-ai-samples`](https://github.com/aws-samples/aws-health-ai-samples): Broader healthcare AI patterns on AWS 
 
 **AWS Solutions and Blogs:**
 - [AWS HealthScribe Product Page](https://aws.amazon.com/healthscribe/): Overview, use cases, and pricing for HealthScribe
@@ -947,11 +942,11 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 - [AMA Augmented Intelligence in Health Care](https://www.ama-assn.org/practice-management/digital/augmented-intelligence-ai): AMA perspective and guidance on AI in clinical settings, including documentation
 - [HHS Office for Civil Rights HIPAA Guidance](https://www.hhs.gov/hipaa/index.html): HIPAA Privacy and Security Rule guidance applicable to recording and storing clinical conversations
 - [ONC on Health IT and AI](https://www.healthit.gov/topic/scientific-initiatives/artificial-intelligence-health-it): Office of the National Coordinator resources on AI in health IT
-- [Federation of State Medical Boards AI Guidance](https://www.fsmb.org/): State medical board resources on the use of AI in clinical practice <!-- TODO (TechWriter): verify the most current FSMB AI guidance document and link directly. -->
+- [Federation of State Medical Boards AI Guidance](https://www.fsmb.org/): State medical board resources on the use of AI in clinical practice 
 
 **Research and Benchmarks:**
 - [MTS-Dialog](https://github.com/abachaa/MTS-Dialog): A dataset of doctor-patient conversations paired with clinical notes, useful for ambient documentation research and evaluation
-- [Primock57](https://github.com/babylonhealth/primock57): Dataset of simulated primary-care consultations with associated notes <!-- TODO (TechWriter): verify both research dataset URLs and access terms before using for production evaluation. -->
+- [Primock57](https://github.com/babylonhealth/primock57): Dataset of simulated primary-care consultations with associated notes 
 
 ---
 
@@ -964,7 +959,6 @@ Deploying ambient documentation at a health system is a twelve-to-twenty-four mo
 | **With variations** | 60-96 weeks | Multi-language support. Inpatient progress notes. Procedure note generation. Telemedicine integration. Orders extraction with clinician confirmation workflow. Longitudinal patient context. Institution-wide rollout with specialty-specific tuning. Ongoing evaluation program with monthly clinical case review. Cost optimization at scale. Integration with revenue cycle and coding workflows. |
 
 ---
-
 
 ---
 

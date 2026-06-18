@@ -513,7 +513,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 THRESHOLD_TABLE = "alert-thresholds"
 AUDIT_TABLE = "threshold-audit-log"
 
-
 def apply_threshold_update(
     alert_type: str,
     unit: str,
@@ -592,7 +591,6 @@ def apply_threshold_update(
         "audit_record": audit_record,
     }
 
-
 def write_threshold_to_dynamodb(alert_type: str, unit: str, new_threshold: float, audit_record: dict):
     """
     Persist the new threshold and audit trail to DynamoDB.
@@ -644,7 +642,6 @@ cloudwatch = boto3.client("cloudwatch", config=BOTO3_RETRY_CONFIG)
 
 METRIC_NAMESPACE = "HealthcareAI/AlertOptimization"
 
-
 def emit_metrics(alert_type: str, unit: str, metrics: dict):
     """
     Publish threshold optimization metrics to CloudWatch.
@@ -691,7 +688,6 @@ def emit_metrics(alert_type: str, unit: str, metrics: dict):
 
     cloudwatch.put_metric_data(Namespace=METRIC_NAMESPACE, MetricData=metric_data)
 
-
 def check_rollback_needed(alert_type: str, unit: str, current_action_rate: float, baseline_action_rate: float) -> bool:
     """
     Determine if the current threshold should be rolled back.
@@ -714,7 +710,6 @@ def check_rollback_needed(alert_type: str, unit: str, current_action_rate: float
         return True
 
     return False
-
 
 def rollback_threshold(alert_type: str, unit: str, previous_threshold: float):
     """
@@ -878,7 +873,6 @@ def run_full_demo():
     print("\n" + "=" * 70)
     print("Demo complete. See the main recipe for full architectural context.")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     run_full_demo()

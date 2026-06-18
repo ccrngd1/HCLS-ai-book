@@ -1,49 +1,3 @@
-<!--
-Editor notes (ch12-r01-edit, iter-433):
-- Upstream draft, python companion, code review, and expert review artifacts
-  were marked "passing" in tasks.json but never landed in this branch's git
-  history. This file is the editor's reconstruction following STYLE-GUIDE.md
-  and the chapter01 reference, scoped to well-established time-series
-  forecasting concepts and durable AWS services.
-- TODO markers below flag items that a TechWriter follow-up should verify
-  or expand once upstream artifacts exist.
-
-Editor notes (ch12-r01-edit, iter-435):
-- Quality-review verdict from iter-433 flagged 5 unlabeled fenced code blocks
-  as failing the "all code blocks have language tags" pass condition. Added
-  `text` language hints to the General Architecture flow diagram and the
-  four pseudocode FUNCTION blocks (prepare_training_data,
-  train_forecast_model, generate_forecast, load_forecasts_to_dynamodb).
-  No content changed; only the opening fence lines.
-
-Editor notes (ch12-r01-edit, iter-443):
-- Editorial verification pass. Confirmed iter-435 language-tag fix is intact
-  (all 7 fenced opens carry tags: text x5, mermaid x1, json x1). Re-ran the
-  full editorial checklist:
-  * Em dashes (U+2014): zero, confirmed by grep.
-  * Header hierarchy: H1 once, H2 for the 10 major sections, H3 for
-    subsections under Technology and AWS Implementation, one H4 under
-    `### Code` (`#### Walkthrough`). No skipped levels.
-  * Voice drift: no documentation-voice ("This recipe demonstrates"),
-    no announcement language, no LinkedIn-influencer phrasing. Tone matches
-    STYLE-GUIDE.md and the chapter01 reference.
-  * Vendor balance: Problem and Technology sections are vendor-agnostic;
-    AWS service names appear in Why These Services, Architecture Diagram,
-    Prerequisites, Ingredients, and Code as expected.
-  * TODO markers (N1, V1, N2, N3, A1, N4) are intact and carry finding IDs
-    on the same line so the follow-up task generator can track them.
-- No content changes in this iteration.
-
-Editor notes (ch12-r01-archsplit, iter-1576):
-- Polish pass after mechanical split into main recipe + architecture companion.
-- Confirmed architecture callout is correctly placed at end of General
-  Architecture Pattern section.
-- Confirmed The Honest Take has no dangling AWS references.
-- Confirmed architecture companion opens cleanly with backlink header.
-- Replaced en dashes (U+2013) with hyphens in numeric ranges (cost, MAPE).
-- No structural changes, no new content.
--->
-
 # Recipe 12.1: Appointment Volume Forecasting ⭐
 
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$50-$200 per month for a single clinic forecast
@@ -94,7 +48,6 @@ Three families of methods cover most of what you need for appointment volume for
 
 **Modern decomposition methods (Prophet and friends).** Frameworks like [Prophet](https://facebook.github.io/prophet/) (originally developed at Meta for business forecasting) frame forecasting as a curve-fitting problem with explicit components for trend, multiple seasonalities, holiday effects, and changepoints. They handle missing data gracefully, accept holiday calendars and special events as structured inputs, and produce reasonable forecasts on noisy real-world data with very little tuning. For most healthcare appointment forecasting use cases, Prophet is the pragmatic choice. It's not the most accurate method available, but it's accurate enough, and the maintenance burden is dramatically lower than for ARIMA.
 
-<!-- TODO (TechWriter): V3. The Technology section mentions "Amazon's DeepAR" and links to AWS SageMaker docs, which introduces vendor-specific content into the vendor-agnostic portion of the main recipe. Consider reframing as a generic deep learning approach with DeepAR as one example, moving the AWS link to the architecture companion. -->
 **Deep learning approaches (DeepAR, N-BEATS, Temporal Fusion Transformer).** Neural network methods that learn forecasting models across many related time series jointly. These shine when you have hundreds or thousands of related series (one per provider, one per specialty, one per location) and want to share strength across them. Amazon's [DeepAR](https://docs.aws.amazon.com/sagemaker/latest/dg/deepar.html) is a built-in algorithm in SageMaker that implements this pattern. For a single clinic forecasting total daily volume, deep learning is overkill. For a health system forecasting volume across hundreds of clinics simultaneously, it earns its keep.
 
 ### Why This Is Harder Than It Looks

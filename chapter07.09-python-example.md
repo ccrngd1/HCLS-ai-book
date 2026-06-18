@@ -246,7 +246,6 @@ def compute_sofa_respiratory(pf_ratio: float) -> int:
             return score
     return 4
 
-
 def compute_sofa_coagulation(platelets: float) -> int:
     """Compute SOFA coagulation component from platelet count."""
     if platelets is None or np.isnan(platelets):
@@ -255,7 +254,6 @@ def compute_sofa_coagulation(platelets: float) -> int:
         if platelets >= threshold:
             return score
     return 4
-
 
 def compute_sofa_liver(bilirubin: float) -> int:
     """Compute SOFA liver component from bilirubin."""
@@ -266,7 +264,6 @@ def compute_sofa_liver(bilirubin: float) -> int:
             return score
     return 4
 
-
 def compute_sofa_renal(creatinine: float) -> int:
     """Compute SOFA renal component from creatinine."""
     if creatinine is None or np.isnan(creatinine):
@@ -275,7 +272,6 @@ def compute_sofa_renal(creatinine: float) -> int:
         if creatinine < threshold:
             return score
     return 4
-
 
 def compute_sofa_cardiovascular(mean_map: float, norepi_dose: float) -> int:
     """
@@ -290,7 +286,6 @@ def compute_sofa_cardiovascular(mean_map: float, norepi_dose: float) -> int:
         return 1
     return 0
 
-
 def compute_trend(values: np.ndarray) -> float:
     """
     Compute linear trend (slope) of a time series using least squares.
@@ -302,7 +297,6 @@ def compute_trend(values: np.ndarray) -> float:
     # Simple linear regression: slope = cov(x,y) / var(x)
     slope = np.polyfit(x, values, 1)[0]
     return float(slope)
-
 
 def engineer_features(raw_data: dict) -> dict:
     """
@@ -428,7 +422,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import roc_auc_score, brier_score_loss
 
-
 def generate_training_dataset(n_patients: int = 2000) -> tuple[pd.DataFrame, np.ndarray]:
     """
     Generate a synthetic training dataset of ICU patients with mortality outcomes.
@@ -479,7 +472,6 @@ def generate_training_dataset(n_patients: int = 2000) -> tuple[pd.DataFrame, np.
     logger.info("Generated %d patients. Mortality rate: %.1f%%",
                 n_patients, 100 * labels.mean())
     return df, labels
-
 
 def train_mortality_model(X: pd.DataFrame, y: np.ndarray) -> tuple:
     """
@@ -548,7 +540,6 @@ def train_mortality_model(X: pd.DataFrame, y: np.ndarray) -> tuple:
 ```python
 import shap
 
-
 def score_patient(features: dict, raw_model, calibrated_model) -> dict:
     """
     Score a single patient and generate SHAP explanations.
@@ -608,7 +599,6 @@ def score_patient(features: dict, raw_model, calibrated_model) -> dict:
         "top_contributors": top_contributors,
     }
 
-
 def _explain_feature(feature_name: str, value: float, shap_val: float) -> str:
     """
     Translate a feature name and value into plain language a clinician can read.
@@ -652,7 +642,6 @@ def _explain_feature(feature_name: str, value: float, shap_val: float) -> str:
 ```python
 from decimal import Decimal
 
-
 def _convert_floats_to_decimal(obj):
     """Recursively convert float values to Decimal for DynamoDB compatibility."""
     if isinstance(obj, float):
@@ -662,7 +651,6 @@ def _convert_floats_to_decimal(obj):
     elif isinstance(obj, list):
         return [_convert_floats_to_decimal(i) for i in obj]
     return obj
-
 
 def build_prediction_record(patient_id: str, admission_id: str,
                             score_result: dict, features: dict) -> dict:
@@ -701,7 +689,6 @@ def build_prediction_record(patient_id: str, admission_id: str,
     }
 
     return record
-
 
 def store_prediction_dynamodb(record: dict) -> None:
     """
@@ -887,7 +874,6 @@ def run_full_pipeline():
     print("\n" + "=" * 70)
     print("Pipeline complete. See 'Gap to Production' below for what's missing.")
     print("=" * 70)
-
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

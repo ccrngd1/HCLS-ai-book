@@ -453,7 +453,6 @@ FUNCTION aggregate_facts(structured_chunks, retrieved_structured_data):
     // The conflicts list is consumed by Step 7's generation prompt, which renders
     // each conflict attributed by service without reconciling to a single recommendation.
 
-
     write to S3: "aggregations/{summary_id}/aggregated.json" = aggregated
 
     RETURN aggregated
@@ -687,11 +686,6 @@ FUNCTION render_and_deliver(summary_id, summary_text, provenance_map, request_pa
 
 **Sample output for a hospitalist handoff summary on a 6-day inpatient admission:**
 
-<!-- Note: all identifiers, dates, and clinician names below are synthetic. Never use
-     real patient data in development or test fixtures. -->
-
-
-
 > **Reading the sample:** Clinician-facing summaries use clinical shorthand by design. Key abbreviations below: NSTEMI (non-ST-elevation myocardial infarction), PCI (percutaneous coronary intervention), DES (drug-eluting stent), LAD (left anterior descending artery), DAPT (dual antiplatelet therapy), IJ (internal jugular), UF (ultrafiltration), BNP (B-type natriuretic peptide), HD (hemodialysis), s/p (status post), "cards" (cardiology service). The summary reads naturally to its intended audience; non-clinician readers can use this key.
 
 ```json
@@ -840,7 +834,6 @@ The pipeline above produces summaries that are structurally sound and clinically
 | **With variations** | 36-52 weeks | Six or more specialty templates. Longitudinal disease-specific summarization. Interval summaries. Audio rendering. Multi-patient rounding summaries. Quality-measure extraction alongside summarization. Production-grade feedback loop with automated retraining or prompt iteration. Health system-wide rollout with change management and clinician training. |
 
 ---
-
 
 ---
 

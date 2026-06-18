@@ -223,7 +223,6 @@ def _now_iso() -> str:
     """UTC ISO timestamp for audit fields."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _get_opensearch_client() -> OpenSearch:
     """Build an IAM-authenticated OpenSearch client."""
     session = boto3.Session()
@@ -244,7 +243,6 @@ def _get_opensearch_client() -> OpenSearch:
         timeout=30,
     )
 
-
 def _embed_text(text: str) -> list:
     """
     Embed a single string with the configured embedding model.
@@ -263,7 +261,6 @@ def _embed_text(text: str) -> list:
     payload = json.loads(response["body"].read())
     return payload["embedding"]
 
-
 def _parse_json_response(raw_text: str) -> dict:
     """Parse JSON from a model response, stripping common markdown wrappers."""
     cleaned = raw_text.strip()
@@ -279,14 +276,12 @@ def _parse_json_response(raw_text: str) -> dict:
         logger.warning("Failed to parse JSON response; returning empty dict")
         return {}
 
-
 def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     """Truncate to at most max_bytes when encoded as utf-8."""
     encoded = text.encode("utf-8")
     if len(encoded) <= max_bytes:
         return text
     return encoded[:max_bytes].decode("utf-8", errors="ignore")
-
 
 def _to_decimal_safe(value):
     """
@@ -302,7 +297,6 @@ def _to_decimal_safe(value):
     if isinstance(value, list):
         return [_to_decimal_safe(v) for v in value]
     return value
-
 
 def _hours_since(iso_timestamp: str | None) -> float | None:
     """Return hours since an ISO timestamp. None if invalid."""
@@ -448,7 +442,6 @@ def ingest_imaging(run_id: str, patient_id: str, scenario: str) -> list:
                 len(imaging_records), run_id)
     return imaging_records
 
-
 def _list_relevant_imaging_for_scenario(patient_id: str,
                                          scenario: str) -> list:
     """
@@ -464,7 +457,6 @@ def _list_relevant_imaging_for_scenario(patient_id: str,
         {"image_set_id": "synthetic-imageset-cxr-current"},
         {"image_set_id": "synthetic-imageset-echo-2024"},
     ]
-
 
 def _get_healthimaging_metadata(image_set_id: str) -> dict:
     """
@@ -491,7 +483,6 @@ def _get_healthimaging_metadata(image_set_id: str) -> dict:
         }
     return {"study_instance_uid": image_set_id, "modality": "unknown",
             "study_description": "", "study_date": _now_iso()}
-
 
 def _fetch_radiology_report_from_healthlake(patient_id: str,
                                               study_uid: str | None) -> dict:
@@ -526,7 +517,6 @@ def _fetch_radiology_report_from_healthlake(patient_id: str,
         text = ""
     return {"content": text, "id": f"docref-synth-{study_uid}"}
 
-
 def _scenario_requires_cleared_ai(scenario: str, modality: str | None) -> bool:
     """Whether to query a cleared imaging AI vendor for this combination."""
     if scenario == "ed_dyspnea_workup" and modality in ("CR", "CT"):
@@ -534,7 +524,6 @@ def _scenario_requires_cleared_ai(scenario: str, modality: str | None) -> bool:
     if scenario == "oncology_treatment_planning" and modality in ("CT", "MR"):
         return True
     return False
-
 
 def _get_cleared_imaging_ai_output(study_uid: str | None,
                                     modality: str | None) -> dict | None:
@@ -548,7 +537,6 @@ def _get_cleared_imaging_ai_output(study_uid: str | None,
     # finding probability, localization (bounding boxes or segmentations),
     # vendor name, model version, and clearance reference.
     return None  # default: no AI output for the synthetic studies
-
 
 def _build_pacs_deep_link(metadata: dict) -> str:
     """Construct a deep link into the PACS viewer for this study."""
@@ -604,7 +592,6 @@ def ingest_ecg(run_id: str, patient_id: str, scenario: str,
     logger.info("Ingested %d ECG records for run %s", len(ecg_records), run_id)
     return ecg_records
 
-
 def _synthetic_ecg_records(patient_id: str, scenario: str) -> list:
     """
     Synthetic ECGs for illustration. Replace with HealthLake Observation
@@ -617,10 +604,8 @@ def _synthetic_ecg_records(patient_id: str, scenario: str) -> list:
     """
     return []
 
-
 def _scenario_requires_ecg_foundation_model(scenario: str) -> bool:
     return scenario in ("hf_management", "ed_dyspnea_workup")
-
 
 def _invoke_ecg_foundation_model(waveform_reference: str | None) -> dict | None:
     """
@@ -630,7 +615,6 @@ def _invoke_ecg_foundation_model(waveform_reference: str | None) -> dict | None:
     if not waveform_reference or not ECG_FOUNDATION_MODEL_ENDPOINT:
         return None
     return None
-
 
 def ingest_labs_and_vitals(run_id: str, patient_id: str,
                             scenario: str) -> dict:
@@ -692,7 +676,6 @@ def ingest_labs_and_vitals(run_id: str, patient_id: str,
         "vitals_summary": vitals_summary,
     }
 
-
 def _lab_loincs_for_scenario(scenario: str) -> dict:
     """LOINCs relevant to the scenario. Expand per clinical domain."""
     common = {
@@ -712,7 +695,6 @@ def _lab_loincs_for_scenario(scenario: str) -> dict:
     if scenario == "hf_management":
         return {**common, "42637-9": "BNP", "4548-4": "HbA1c"}
     return common
-
 
 def _synthetic_observations_for_loinc(loinc: str, display: str) -> list:
     """Synthetic lab observations for illustration."""
@@ -742,7 +724,6 @@ def _synthetic_observations_for_loinc(loinc: str, display: str) -> list:
         ]
     return []
 
-
 def _percent_change(old, new):
     if old is None or new is None:
         return None
@@ -752,7 +733,6 @@ def _percent_change(old, new):
         return round(((float(new) - float(old)) / float(old)) * 100.0, 1)
     except (TypeError, ValueError):
         return None
-
 
 def _classify_trend(obs_list: list) -> str:
     """Coarse trend classification. Production uses smoothed slope analysis."""
@@ -771,7 +751,6 @@ def _classify_trend(obs_list: list) -> str:
         return "falling"
     return "stable"
 
-
 def _synthetic_vitals_summary(patient_id: str, scenario: str) -> dict:
     """Synthetic vitals summary for illustration."""
     return {
@@ -783,7 +762,6 @@ def _synthetic_vitals_summary(patient_id: str, scenario: str) -> dict:
         "temp": {"most_recent": 98.4, "unit": "F"},
         "age_hours": 1.0,
     }
-
 
 def ingest_notes(run_id: str, patient_id: str, scenario: str) -> list:
     """
@@ -831,7 +809,6 @@ def ingest_notes(run_id: str, patient_id: str, scenario: str) -> list:
     logger.info("Ingested %d notes for run %s", len(notes), run_id)
     return notes
 
-
 def _synthetic_notes(patient_id: str, scenario: str) -> list:
     """Synthetic notes for illustration."""
     if scenario == "ed_dyspnea_workup":
@@ -867,7 +844,6 @@ def _synthetic_notes(patient_id: str, scenario: str) -> list:
         ]
     return []
 
-
 def ingest_structured_context(run_id: str, patient_id: str) -> dict:
     """
     Pull the core FHIR resources for structured patient facts.
@@ -888,7 +864,6 @@ def ingest_structured_context(run_id: str, patient_id: str) -> dict:
                 len(structured.get("current_medications", [])),
                 len(structured.get("allergies", [])))
     return structured
-
 
 def _synthetic_ed_vignette_bundle(patient_id: str) -> dict:
     """Synthetic FHIR bundle for the ED vignette in Recipe 2.10."""
@@ -928,7 +903,6 @@ def _synthetic_ed_vignette_bundle(patient_id: str) -> dict:
             }},
         ],
     }
-
 
 def _normalize_patient_context(bundle: dict) -> dict:
     """Minimal FHIR-bundle-to-structured-context normalization."""
@@ -1052,7 +1026,6 @@ def normalize_and_inventory(imaging: list, ecg: list, labs_vitals: dict,
                 inventory["labs"]["present"], inventory["notes"]["present"])
     return {"patient_state": patient_state, "modality_inventory": inventory}
 
-
 def _min_age_hours(records: list) -> float | None:
     """Minimum age in hours among a list of records with age_hours fields."""
     ages = [r.get("age_hours") for r in records
@@ -1144,7 +1117,6 @@ def scope_gate(scenario: str, modality_inventory: dict, patient_id: str,
     decision["reason"] = "all_required_modalities_present"
     decision["missing"] = missing_recommended  # informational
     return decision
-
 
 def _modality_available(inventory: dict, requirement: str) -> bool:
     """Check whether a requirement token is satisfied by the inventory."""
@@ -1254,7 +1226,6 @@ def retrieve_supporting_content(scenario: str, patient_state: dict,
         "case_analogs": case_analogs,
     }
 
-
 def _derive_retrieval_queries(scenario: str, patient_state: dict,
                                 inventory: dict) -> dict:
     """Build scenario-aware retrieval queries."""
@@ -1284,7 +1255,6 @@ def _derive_retrieval_queries(scenario: str, patient_state: dict,
     return {"guideline_queries": [], "protocol_queries": [],
             "case_analog_queries": []}
 
-
 def _hybrid_search(client, index: str, queries: list, scenario: str,
                     size: int) -> list:
     """
@@ -1302,7 +1272,6 @@ def _hybrid_search(client, index: str, queries: list, scenario: str,
     # text, fuse with RRF, return top-K. See Recipe 2.7/2.9 for the
     # complete implementation.
     return []
-
 
 def _case_analog_corpus_enabled(scenario: str) -> bool:
     """Whether a curated case-analog corpus exists for this scenario."""
@@ -1470,7 +1439,6 @@ Produce the reasoning now. Output ONLY the JSON object."""
     return {"status": "GENERATED", "reasoning": reasoning,
             "id_to_source": id_to_source}
 
-
 def _build_sources_block(patient_state: dict, inventory: dict,
                           retrieved: dict, safety_findings: dict
                           ) -> tuple[str, dict]:
@@ -1558,7 +1526,6 @@ def _build_sources_block(patient_state: dict, inventory: dict,
 
     return "\n".join(lines), id_to_source
 
-
 def _format_inventory_for_prompt(inventory: dict, scope_decision: dict) -> str:
     """Human-readable modality inventory for the prompt."""
     out = [f"Scope: {scope_decision.get('scoped_to')}, "
@@ -1566,7 +1533,6 @@ def _format_inventory_for_prompt(inventory: dict, scope_decision: dict) -> str:
     for mod, info in inventory.items():
         out.append(f"- {mod}: {json.dumps(info, default=str)}")
     return "\n".join(out)
-
 
 def _format_safety_for_prompt(safety_findings: dict, id_to_source: dict) -> str:
     """Flat bullet list of safety findings for the prompt."""
@@ -1748,7 +1714,6 @@ def validate_reasoning(reasoning: dict, id_to_source: dict,
                    "(%d HIGH, %d MEDIUM)", high, medium)
     return {"status": "REVIEW_REQUIRED", "unverified": unverified}
 
-
 def _collect_all_citations(item: dict) -> list:
     """Walk an item's evidence lists and collect every source_citation."""
     cits = []
@@ -1762,7 +1727,6 @@ def _collect_all_citations(item: dict) -> list:
             cits.append(m)
     return list(set(cits))
 
-
 def _collect_item_text(item: dict) -> str:
     """Concatenate all text fields of an item for scanning."""
     parts = [item.get("description") or "",
@@ -1774,7 +1738,6 @@ def _collect_item_text(item: dict) -> str:
     for step in item.get("suggested_next_steps") or []:
         parts.append(str(step))
     return " ".join(parts)
-
 
 def _flatten_safety_items(safety_findings: dict) -> list:
     """Short signatures for every safety finding (drug/condition/etc)."""
@@ -1799,7 +1762,6 @@ def _flatten_safety_items(safety_findings: dict) -> list:
         )
     return [s for s in sigs if s]
 
-
 def _flatten_safety_representations(reasoning: dict) -> list:
     """Gather text representations of safety findings from the reasoning."""
     reps = []
@@ -1808,7 +1770,6 @@ def _flatten_safety_representations(reasoning: dict) -> list:
     for item in reasoning.get("differential_or_recommendations", []) or []:
         reps.append(_collect_item_text(item).lower())
     return reps
-
 
 def _build_validation_hint(unverified: list) -> str:
     """Compact regeneration hint covering the distinct issue types seen."""
@@ -2013,7 +1974,6 @@ def tier_render_archive(reasoning: dict, id_to_source: dict,
     return {"status": "DELIVERED", "rendered": rendered,
             "rendered_key": rendered_key, "trace_key": trace_key}
 
-
 def _format_source_for_bibliography(source: dict) -> str:
     """Human-readable bibliography entry for a source."""
     if source.get("_kind") == "guideline":
@@ -2038,7 +1998,6 @@ def _format_source_for_bibliography(source: dict) -> str:
                 f"{source.get('current_value')} {source.get('current_unit', '')}, "
                 f"{source.get('current_date')}.")
     return json.dumps(source, default=str)[:160]
-
 
 def _deep_link_for_source(source: dict, source_id: str) -> str:
     """Deep link into the source's native system for clinician review."""
@@ -2066,7 +2025,6 @@ The full pipeline assembled into one callable. Runs every step sequentially for 
 # version that also reads bracketed inline citations from description and
 # evidence fields. Do NOT redefine it here; a second `def` at module scope
 # would silently shadow the Step 8 helper and weaken the validator.
-
 
 def run_multi_modal_reasoning(trigger: dict) -> dict:
     """
@@ -2321,7 +2279,6 @@ def run_multi_modal_reasoning(trigger: dict) -> dict:
         "processing_time_ms": elapsed_ms,
     }
 
-
 def _query_recent_runs(patient_id: str, encounter_id: str) -> list:
     """
     Query DynamoDB for recent runs for this patient+encounter. In
@@ -2329,7 +2286,6 @@ def _query_recent_runs(patient_id: str, encounter_id: str) -> list:
     returns an empty list so the example runs without history.
     """
     return []
-
 
 # --- Example usage ---
 if __name__ == "__main__":

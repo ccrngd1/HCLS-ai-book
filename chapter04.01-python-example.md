@@ -244,7 +244,6 @@ def on_appointment_created(appointment: dict) -> list:
 
     return created_schedules
 
-
 def _shift_if_quiet_hours(send_time_utc: datetime.datetime,
                            patient_tz: ZoneInfo) -> datetime.datetime:
     """
@@ -572,7 +571,6 @@ def dispatch(patient: dict, appointment: dict, channel: str,
 
     return reminder_id
 
-
 def _send_sms(phone: str, content: dict, reminder_id: str) -> None:
     """Send an SMS reminder via SNS. For scale, migrate to AWS End User Messaging SMS."""
     message_body = (
@@ -601,7 +599,6 @@ def _send_sms(phone: str, content: dict, reminder_id: str) -> None:
             },
         },
     )
-
 
 def _send_email(email: str, content: dict, reminder_id: str) -> None:
     """Send an email reminder via SES with reminder_id tag for event linkage."""
@@ -636,7 +633,6 @@ def _send_email(email: str, content: dict, reminder_id: str) -> None:
         ConfigurationSetName=SES_CONFIGURATION_SET,
         Tags=[{"Name": "reminder_id", "Value": reminder_id}],
     )
-
 
 def _format_local_time(iso_string: str, tz_name: str) -> str:
     """Format an ISO timestamp as a patient-friendly local time string."""
@@ -765,7 +761,6 @@ def process_engagement_event(event: dict) -> None:
         patient_id, channel, reward, event_type,
     )
 
-
 def _emit_event_metric(channel: str, event_type: str) -> None:
     """Emit a count metric for an engagement event, sliced by channel and type."""
     cloudwatch_client.put_metric_data(
@@ -862,7 +857,6 @@ def run_end_to_end_example():
         "timestamp": datetime.datetime.now(timezone.utc).isoformat(),
     })
     print("  Bandit posterior updated. Alpha for this arm +1.")
-
 
 if __name__ == "__main__":
     # This example assumes the three DynamoDB tables already exist:

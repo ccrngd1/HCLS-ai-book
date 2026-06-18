@@ -294,7 +294,6 @@ CANONICAL_SCHEMA = {
     }
 }
 
-
 FUNCTION map_to_canonical_schema(raw_header, raw_tables, document_key, payer_hint):
     // [EDITOR: review fix: P1 #5 idempotency check: check DynamoDB before any expensive
     // LLM call. SNS delivers at least once; a Lambda retry would otherwise re-invoke
@@ -320,7 +319,6 @@ FUNCTION map_to_canonical_schema(raw_header, raw_tables, document_key, payer_hin
     // The LLM receives the raw column headers, a sample of cell values to infer
     // semantics, and the canonical schema with field descriptions.
     RETURN map_with_llm(raw_header, raw_tables), "bedrock_mapping"
-
 
 FUNCTION map_with_llm(raw_header, raw_tables):
     // Build the prompt payload.
@@ -405,7 +403,6 @@ FUNCTION map_with_llm(raw_header, raw_tables):
 
     RETURN mapping
 
-
 // [EDITOR: review fix: P0 #2 _apply_static_profile processes all tables: changed the
 // inner loop from raw_tables[0].headers to iterate all elements of raw_tables.
 // A 2-page EOB with a summary table on page 1 and line items on page 2 silently lost
@@ -478,7 +475,6 @@ FUNCTION check_mapping_coverage(line_items, mapping_path):
 
     RETURN true, null
 
-
 // In the main pipeline, between assemble_line_items and validate_eob_financials:
 coverage_ok, coverage_reason = check_mapping_coverage(line_items, mapping_path)
 IF not coverage_ok:
@@ -507,7 +503,6 @@ FUNCTION parse_currency(text):
     cleaned = remove "$", "," from text.strip()
     IF cleaned matches a number pattern: RETURN float(cleaned)
     RETURN null
-
 
 FUNCTION validate_eob_financials(header_fields, line_items):
     errors = []
@@ -713,7 +708,6 @@ This is a simple string scan on the header label keys (not values). It runs befo
 - [Building an End-to-End Intelligent Document Processing Solution Using AWS](https://aws.amazon.com/blogs/machine-learning/building-an-end-to-end-intelligent-document-processing-solution-using-aws/): Comprehensive walkthrough of multi-stage IDP pipelines with Textract and generative AI
 
 --- 
-
 
 ---
 

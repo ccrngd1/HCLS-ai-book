@@ -214,7 +214,6 @@ def action_index_to_clinical(action_index: int) -> Dict:
         "gcsf": GCSF_OPTIONS[gcsf_idx],
     }
 
-
 def clinical_to_action_index(dose_fraction: float, delay_days: int, gcsf: bool) -> int:
     """
     Convert a clinical action back to a flat index.
@@ -400,7 +399,6 @@ def apply_safety_constraints(
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
 
 class QNetwork(nn.Module):
     """
@@ -657,7 +655,6 @@ def generate_recommendation(
 
     return recommendation
 
-
 def get_protocol_recommendation(state: np.ndarray) -> Dict:
     """
     Standard protocol-based dosing recommendation.
@@ -686,7 +683,6 @@ def get_protocol_recommendation(state: np.ndarray) -> Dict:
         "delay_days": delay,
         "gcsf": False,  # Protocol doesn't proactively recommend G-CSF
     }
-
 
 def identify_key_drivers(
     state: np.ndarray, policy: QNetwork, action_index: int
@@ -719,7 +715,6 @@ def identify_key_drivers(
     importances.sort(key=lambda x: x["importance"], reverse=True)
     return importances[:3]
 
-
 def _get_q_value(policy: QNetwork, state: np.ndarray, action_index: int) -> float:
     """Helper: get Q-value for a specific state-action pair."""
     with torch.no_grad():
@@ -736,7 +731,6 @@ def _get_q_value(policy: QNetwork, state: np.ndarray, action_index: int) -> floa
 
 ```python
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION, config=BOTO3_RETRY_CONFIG)
-
 
 def store_recommendation(recommendation: Dict) -> None:
     """
@@ -883,7 +877,6 @@ def generate_synthetic_trajectories(num_patients: int = 200, cycles_per_patient:
 
     return trajectories
 
-
 def run_demo():
     """
     Full demonstration: generate data, train policy, produce recommendation.
@@ -934,7 +927,6 @@ def run_demo():
         print("\n  ^ Policy DIFFERS from protocol. Review key drivers above.")
     else:
         print("\n  ^ Policy AGREES with protocol for this patient state.")
-
 
 if __name__ == "__main__":
     run_demo()

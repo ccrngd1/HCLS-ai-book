@@ -48,8 +48,6 @@ Three families of methods cover most practical ED arrival forecasting.
 
 For a single ED, a sensible starting architecture is a Poisson regression with calendar and weather features for volume, plus a separate multinomial classifier for acuity mix. That gets you 80% of the available accuracy with a model the medical director can interrogate. Prophet is a strong second choice when you have several years of history and want to capture seasonality without engineering all the features by hand. DeepAR makes sense at scale, when you're standing up a forecast across dozens of EDs in a health system and want to share strength across them.
 
-<!-- TODO (TechWriter): Expert review A6 (MEDIUM). Add a paragraph that names the iterated-versus-direct multi-step trade-off explicitly: Poisson regression with engineered lag features as described in Step 4 is iterated multi-step (errors compound across horizons); DeepAR is direct multi-step by construction. For 4-hour horizons the two perform comparably; for 24-hour and 7-day horizons direct is meaningfully more accurate. The recipe should call this out so readers pick consciously. -->
-
 ### The Acuity Mix Problem
 
 Forecasting acuity is its own modeling problem on top of the volume forecast. Two reasonable approaches:
@@ -104,10 +102,6 @@ At a conceptual level, the pipeline looks like this:
 **Forecast Generation.** On a frequent cadence (typically every hour for short-horizon forecasts, every 4 to 6 hours for longer horizons), the trained models produce forecasts at the operational horizons consumers need: 4-hour for charge nurse decisions, 24-hour for shift staffing, 7-day for schedule planning. Each forecast is a count plus a prediction interval, broken out by ESI level.
 
 **ED Operational Consumers.** The forecasts feed into the charge nurse dashboard, the staffing scheduler, the surge plan trigger logic, and the patient flow management system. The integration is usually a structured table or API. The dashboard shows projected arrivals by hour with prediction intervals overlaid on actuals, plus a per-acuity breakdown.
-
-<!-- TODO (TechWriter): Expert review A2 (HIGH). Promote the late-record / out-of-order ADT handling from production-gaps prose into an architectural primitive in the General Architecture Pattern. Specifically: (1) explicit event-time watermark on hourly aggregation with configurable lateness tolerance (15 min default); (2) scheduled reconciliation pass (every 4-6 hours) that re-aggregates the prior 24 hours and writes delta records with a `revision` attribute; (3) inference reads only watermarked hours (current hour H consumes lag_1h from H-1, which is finalized); (4) backfill of corrected forecasts when reconciled deltas exceed threshold; (5) CloudWatch metrics on `late_records_per_hour` and `reconciliation_delta_distribution`. Without this, lag features are systematically biased near the trailing edge at hourly cadence. -->
-
-<!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add Diversion-Log Integration and ESI-Reconciliation Second Pass as architectural primitives. The diversion log (manually entered or inferred from EMS) joins into the feature table as a per-hour boolean indicator; training either excludes diversion-affected hours or includes them with the indicator as a feature. The ESI-reconciliation second pass sweeps the prior 24 hours, finds placeholder esi_unknown values, queries the EHR for triage updates, and writes corrections with a `revision` attribute. Same shape as the late-record reconciliation in A2; consolidate as a single reusable primitive in the chapter. -->
 
 That's the whole concept. Stream, features, model, forecast, deliver. The real complexity is in the feature engineering and the operational integration, not in the modeling itself.
 

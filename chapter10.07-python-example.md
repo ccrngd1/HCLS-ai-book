@@ -326,17 +326,14 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _bucket_audio_quality(quality_metrics):
     """
@@ -451,7 +448,6 @@ class MockHealthScribeStreaming:
             "acoustic_events": [],
         })
 
-
 class MockHealthScribeBatch:
     """
     Stands in for the batch HealthScribe API used after the
@@ -492,7 +488,6 @@ class MockHealthScribeBatch:
     def retrieve_note_draft(self, encounter_id):
         return dict(self._fixture_note_drafts.get(
             encounter_id, {}))
-
 
 class MockBedrock:
     """
@@ -584,7 +579,6 @@ class MockBedrock:
         return {"body": json.dumps(response,
                                      default=str)}
 
-
 class MockComprehendMedical:
     """
     Stands in for Amazon Comprehend Medical's
@@ -613,7 +607,6 @@ class MockComprehendMedical:
                                  "text_len": len(text)})
         return self._fixtures.get("infer_icd10cm",
                                     {"Entities": []})
-
 
 class MockEHR:
     """
@@ -689,7 +682,6 @@ class MockEHR:
             "release_at": release_at,
         })
 
-
 class MockClinicianReviewClient:
     """
     Stands in for the clinician's review-and-sign web client.
@@ -730,7 +722,6 @@ class MockClinicianReviewClient:
         self._signature = None
         return signature
 
-
 class MockEncounterState:
     def __init__(self):
         self._items = {}
@@ -745,7 +736,6 @@ class MockEncounterState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockTranscriptState:
     def __init__(self):
@@ -773,7 +763,6 @@ class MockTranscriptState:
         return list(self._items.get(session_id, {})
                      .get("streaming_segments", []))
 
-
 class MockNoteState:
     def __init__(self):
         self._items = {}
@@ -788,7 +777,6 @@ class MockNoteState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockS3:
     """
@@ -819,7 +807,6 @@ class MockS3:
                 for (b, k), v in self._objects.items()
                 if bucket is None or b == bucket]
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. Lifecycle events flow
@@ -833,7 +820,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -854,7 +840,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 encounter_state        = MockEncounterState()
@@ -873,7 +858,6 @@ healthscribe_batch_mock = None
 bedrock_mock           = None
 comprehend_mock        = None
 
-
 # Clinician voiceprint registry. Production stores enrolled
 # clinician voiceprints (with consent, with biometric-data
 # governance) and references them at session start so the
@@ -883,7 +867,6 @@ CLINICIAN_VOICEPRINT_REGISTRY = {
     "clinician-patel":   "voiceprint-patel-abc123",
     "clinician-okonkwo": "voiceprint-okonkwo-def456",
 }
-
 
 def audit_log(event):
     """
@@ -927,7 +910,6 @@ def determine_consent_regime(clinic_jurisdiction, visit_type):
         return "all_party_consent"
     return "one_party_consent"
 
-
 def select_disclosure_text(consent_regime):
     """Return the disclosure text for the regime."""
     if consent_regime == "behavioral_health_explicit":
@@ -935,7 +917,6 @@ def select_disclosure_text(consent_regime):
     if consent_regime == "all_party_consent":
         return CONSENT_DISCLOSURE_ALL_PARTY
     return CONSENT_DISCLOSURE_ONE_PARTY
-
 
 def lookup_feature_status(clinician_id, visit_type):
     """
@@ -947,7 +928,6 @@ def lookup_feature_status(clinician_id, visit_type):
     # Production reads from a per-institution policy table.
     # The demo defaults all encounters to enabled.
     return {"enabled": True, "reason": "default_enabled"}
-
 
 def configure_audio_capture(room_id, session_id, device_type,
                               expected_speaker_count):
@@ -976,7 +956,6 @@ def configure_audio_capture(room_id, session_id, device_type,
             f"audio/{session_id}/encounter.pcm",
     }
 
-
 def check_voiceprint_enrollment(clinician_id):
     """
     Look up whether the clinician has an enrolled voiceprint.
@@ -987,7 +966,6 @@ def check_voiceprint_enrollment(clinician_id):
     institutional review.
     """
     return clinician_id in CLINICIAN_VOICEPRINT_REGISTRY
-
 
 def encounter_start(encounter_id, patient_id, clinician_id,
                      clinician_specialty, clinic_jurisdiction,
@@ -1208,7 +1186,6 @@ def push_audio_quality_warning(session_id, quality):
         "timestamp":            _now_iso(),
     })
 
-
 def stream_audio_to_healthscribe(session_context):
     """
     Run the streaming HealthScribe session for the encounter.
@@ -1342,7 +1319,6 @@ def stream_audio_to_healthscribe(session_context):
         "avg_audio_quality_snr":     avg_snr,
     }
 
-
 def handle_streaming_segment(session_id, event, language,
                                 specialty):
     """
@@ -1406,7 +1382,6 @@ def select_template(visit_type, specialty):
     if specialty == "geriatrics":
         return DEFAULT_TEMPLATES["geriatric-comprehensive-v1"]
     return DEFAULT_TEMPLATES["primary-care-soap-v3"]
-
 
 def run_batch_healthscribe(session_context,
                               audio_archive_ref):
@@ -1557,7 +1532,6 @@ def lookup_clinician_style(clinician_id):
             "prefer_terse_assessment": False,
             "specific_phrasings": []}
 
-
 def determine_faithfulness_severity(failed_checks, score):
     """
     Map faithfulness-check results to a severity level.
@@ -1587,7 +1561,6 @@ def determine_faithfulness_severity(failed_checks, score):
     if score < FAITHFULNESS_PASS_THRESHOLD:
         return "flag"
     return "pass"
-
 
 def run_faithfulness_check(session_context, rendered_note,
                              canonical_transcript, ehr_context):
@@ -1651,7 +1624,6 @@ def run_faithfulness_check(session_context, rendered_note,
         "failed_checks": failed_checks,
         "annotations":   annotations,
     }
-
 
 def render_institutional_note(session_context,
                                  canonical_transcript,
@@ -1871,7 +1843,6 @@ def lookup_speaker_role_for_offset(transcript, offset_seconds):
             return segment.get("speaker_role")
     return "unknown"
 
-
 def extract_context_snippet(transcript, offset_seconds,
                               window_seconds=10):
     """
@@ -1891,7 +1862,6 @@ def extract_context_snippet(transcript, offset_seconds,
             return segment.get("text", "")
     return ""
 
-
 def infer_clinician_action(entity, transcript):
     """
     Heuristic: was the medication mentioned in a context that
@@ -1905,7 +1875,6 @@ def infer_clinician_action(entity, transcript):
     speaker_role = lookup_speaker_role_for_offset(
         transcript, offset)
     return speaker_role == "clinician"
-
 
 def extract_structured_fields(session_context,
                                 canonical_transcript):
@@ -2080,7 +2049,6 @@ def extract_low_confidence_segments(canonical_transcript,
             })
     return flagged
 
-
 def extract_uncertain_speaker_segments(canonical_transcript):
     """
     Identify segments where speaker attribution is uncertain.
@@ -2097,7 +2065,6 @@ def extract_uncertain_speaker_segments(canonical_transcript):
                     segment.get("speaker_alternatives", []),
             })
     return uncertain
-
 
 def extract_bystander_segments(canonical_transcript,
                                   bystanders):
@@ -2116,7 +2083,6 @@ def extract_bystander_segments(canonical_transcript,
              "text_excerpt": (seg.get("text", "") or "")[:80]}
             for seg in canonical_transcript.get("segments", [])
             if seg.get("speaker_role") in bystander_roles]
-
 
 def clinician_review_request(session_context):
     """
@@ -2192,7 +2158,6 @@ def clinician_review_request(session_context):
     })
 
     return review_payload
-
 
 def clinician_save_review(session_context, review_actions):
     """
@@ -2280,7 +2245,6 @@ def clinician_save_review(session_context, review_actions):
     return {"confirmed": confirmed_extractions,
             "rejected":  rejected_extractions}
 
-
 def build_idempotency_key(encounter_id, clinician_id,
                             document_type, signed_at):
     """
@@ -2291,7 +2255,6 @@ def build_idempotency_key(encounter_id, clinician_id,
     minute = signed_at.split(":")[0] + ":" + signed_at.split(":")[1]
     raw = f"{encounter_id}|{clinician_id}|{document_type}|{minute}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
-
 
 def clinician_sign(session_context, patient_id):
     """
@@ -2471,7 +2434,6 @@ def compute_edit_distance(draft_text, final_text):
         distances = new_row
     return distances[-1]
 
-
 def compute_audio_retention(visit_type):
     """
     Per-visit-type audio retention. Behavioral-health visits
@@ -2481,7 +2443,6 @@ def compute_audio_retention(visit_type):
     if visit_type in SENSITIVE_VISIT_TYPES:
         return {"hours": 24}
     return {"hours": 168}  # 7 days default
-
 
 def schedule_audio_deletion(audio_ref, delete_after):
     """
@@ -2498,7 +2459,6 @@ def schedule_audio_deletion(audio_ref, delete_after):
             delete_after.get("hours"),
         "timestamp":             _now_iso(),
     })
-
 
 def audit_archive_and_telemetry(session_context,
                                   patient_age_band="not_disclosed"):
@@ -3243,7 +3203,6 @@ def run_demo():
         review_decisions=[],
         patient_age_band="55_64")
     print(json.dumps(result_2, default=str, indent=2))
-
 
 if __name__ == "__main__":
     run_demo()

@@ -272,7 +272,6 @@ def compute_preference_score(patient: dict, provider_id: str, provider: dict) ->
 
     return score
 
-
 def build_preference_matrix(patients: list, providers: dict) -> dict:
     """
     Build the full preference score matrix for all patient-provider pairs.
@@ -297,7 +296,6 @@ def build_preference_matrix(patients: list, providers: dict) -> dict:
 
 ```python
 import pulp
-
 
 def solve_assignment(
     patients: list,
@@ -497,7 +495,6 @@ def interpret_assignments(
 
     return results
 
-
 def validate_assignments(assignments: dict, patients: list, providers: dict) -> dict:
     """
     Run validation checks on the proposed assignments.
@@ -577,7 +574,6 @@ BOTO3_RETRY_CONFIG = Config(retries={"max_attempts": 3, "mode": "adaptive"})
 dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 
 TABLE_NAME = "patient-provider-assignments"
-
 
 def store_assignments(
     assignment_records: list,
@@ -712,7 +708,6 @@ def run_assignment_pipeline() -> dict:
         "objective_value": solution["objective_value"],
         "storage": storage,
     }
-
 
 # Run the pipeline
 if __name__ == "__main__":

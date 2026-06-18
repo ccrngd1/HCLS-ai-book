@@ -319,13 +319,11 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _normalize_phone(phone):
     """Strip non-digit characters; we store and compare as digits only."""
     if not phone:
         return None
     return re.sub(r"\D", "", phone)
-
 
 def _build_priority_key(urgency_rank, recorded_at_iso):
     """
@@ -382,7 +380,6 @@ class MockS3:
 
     def get_object(self, bucket, key):
         return self._objects.get((bucket, key))
-
 
 class MockTranscribeMedical:
     """
@@ -442,7 +439,6 @@ class MockTranscribeMedical:
         # returns it directly.
         return self._jobs.get(job_name, {}).get("transcript_json")
 
-
 class MockBedrock:
     """
     Stands in for Amazon Bedrock's InvokeModel API. The classifier
@@ -488,7 +484,6 @@ class MockBedrock:
                                       "the purpose of this voicemail.",
         })}
 
-
 class MockComprehendMedical:
     """
     Stands in for Amazon Comprehend Medical's DetectEntitiesV2
@@ -506,7 +501,6 @@ class MockComprehendMedical:
             if fixture_key in text.lower():
                 return {"Entities": fixture_entities}
         return {"Entities": []}
-
 
 class MockEHR:
     """
@@ -564,7 +558,6 @@ class MockEHR:
     def get_active_conditions(self, patient_id):
         return list(self._active_conditions.get(patient_id, []))
 
-
 class MockVoicemailRecords:
     """
     Stands in for the DynamoDB voicemail-records table. Holds the
@@ -605,7 +598,6 @@ class MockVoicemailRecords:
                 results.append(vm)
         return results
 
-
 class MockTriageQueue:
     """
     Stands in for the DynamoDB triage-queue table. Triage records
@@ -628,7 +620,6 @@ class MockTriageQueue:
                        key=lambda r: r.get("priority_key", ""),
                        reverse=True)
 
-
 class MockSNS:
     """
     Stands in for SNS publishing. In production the emergent-
@@ -647,7 +638,6 @@ class MockSNS:
             "timestamp":  datetime.now(timezone.utc).isoformat(),
         })
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. The pipeline emits events
@@ -661,7 +651,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -679,7 +668,6 @@ class MockCloudWatch:
             "dimensions": dimensions or {},
             "timestamp":  datetime.now(timezone.utc).isoformat(),
         })
-
 
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
@@ -703,7 +691,6 @@ cloudwatch           = MockCloudWatch()
 transcribe_mock      = None
 bedrock_mock         = None
 comprehend_mock      = None
-
 
 def audit_log(event):
     """
@@ -943,7 +930,6 @@ def preprocess_audio(stage_input):
         "detected_language": detected_language,
     }
 
-
 def _short_circuit_preprocessing(voicemail_id, status, disposition,
                                    reason, metadata=None):
     """Helper: terminal disposition without ASR."""
@@ -1058,7 +1044,6 @@ def start_asr_job(stage_input):
     })
 
     return {"voicemail_id": voicemail_id, "job_name": job_name}
-
 
 def handle_asr_completion(stage_input):
     """
@@ -1214,7 +1199,6 @@ def scan_for_urgency_phrases(transcript):
                 }
     return best
 
-
 def _max_urgency(rule_level, classifier_level):
     """
     The rule layer can only escalate, never de-escalate. Take
@@ -1226,7 +1210,6 @@ def _max_urgency(rule_level, classifier_level):
     if rule_rank >= classifier_rank:
         return rule_level
     return classifier_level
-
 
 def _build_classifier_prompt(transcript):
     """
@@ -1260,7 +1243,6 @@ def _build_classifier_prompt(transcript):
         },
     }
     return json.dumps(prompt)
-
 
 def classify_voicemail(stage_input):
     """
@@ -1875,7 +1857,6 @@ def process_voicemail(source_event):
 
     return voicemail_id
 
-
 def run_demo():
     """
     Run a small set of end-to-end scenarios that exercise the
@@ -2164,7 +2145,6 @@ def run_demo():
             print(f"    - {item['voicemail_id']} "
                   f"urgency={item['urgency']} "
                   f"intent={item['intent']}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

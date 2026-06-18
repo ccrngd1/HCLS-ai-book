@@ -160,12 +160,10 @@ PROTOCOLS = {
     },
 }
 
-
 def get_total_duration(protocol_key: str) -> int:
     """Sum all phase durations for a protocol. Returns total minutes in chair."""
     protocol = PROTOCOLS[protocol_key]
     return sum(phase["duration_minutes"] for phase in protocol["phases"])
-
 
 def get_nursing_demand_at_offset(protocol_key: str, offset_minutes: int) -> float:
     """
@@ -1000,7 +998,6 @@ def run_scheduling_pipeline(target_date: str = "2026-06-02") -> dict:
                                  extra_minutes=30)
 
     return schedule
-
 
 # Entry point
 if __name__ == "__main__":

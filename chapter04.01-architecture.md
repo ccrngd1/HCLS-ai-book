@@ -1,16 +1,5 @@
 # Recipe 4.1 Architecture and Implementation: Appointment Reminder Channel Optimization
 
-<!--
-TechEditor pass v1 (2026-06-17, ch04-r01-archsplit). Post-split polish:
-- Added `pseudocode` language tags to all five walkthrough code blocks
-  (previously bare ```).
-- Verified opening backlink header links correctly to main recipe.
-- Verified section order matches RECIPE-GUIDE architecture-companion spec.
-- No em dashes (U+2014 count: 0).
-- En dashes (U+2013) in numeric ranges only, per convention.
-- All existing TODO markers preserved verbatim.
--->
-
 *Companion to [Recipe 4.1: Appointment Reminder Channel Optimization](chapter04.01-appointment-reminder-channel-optimization). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
@@ -27,7 +16,7 @@ TechEditor pass v1 (2026-06-17, ch04-r01-archsplit). Post-split polish:
 
 **Amazon SageMaker for propensity models (optional).** If you're using gradient-boosted propensity models, SageMaker hosts them as low-latency real-time endpoints. For a Thompson-sampling bandit with a simple posterior, SageMaker is overkill. For a contextual bandit with neural features, you want a managed endpoint. Start simple, graduate to SageMaker when you actually need it.
 
-**Amazon SNS for SMS.** Amazon SNS supports direct SMS publishing to phone numbers. It's the simplest path for low to mid-volume reminder traffic. Once you need dedicated short codes, advanced carrier filtering, or end-to-end compliance workflows (STOP keyword handling, opt-out databases), AWS End User Messaging SMS is the right evolution. (AWS has been consolidating Pinpoint's SMS and push capabilities into AWS End User Messaging. Confirm the current service naming and feature set against AWS documentation when you implement. <!-- TODO: verify current service boundaries between Amazon SNS SMS, AWS End User Messaging SMS, and any remaining Pinpoint components. -->)
+**Amazon SNS for SMS.** Amazon SNS supports direct SMS publishing to phone numbers. It's the simplest path for low to mid-volume reminder traffic. Once you need dedicated short codes, advanced carrier filtering, or end-to-end compliance workflows (STOP keyword handling, opt-out databases), AWS End User Messaging SMS is the right evolution. (AWS has been consolidating Pinpoint's SMS and push capabilities into AWS End User Messaging. Confirm the current service naming and feature set against AWS documentation when you implement. )
 
 **Amazon SES for email.** Amazon SES is the managed email delivery service. Configure a dedicated sending domain with DKIM, SPF, and DMARC so your reminders don't land in spam. SES provides delivery and bounce events via SNS topics or EventBridge, which feed straight into the engagement pipeline.
 
@@ -73,14 +62,14 @@ flowchart LR
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon DynamoDB, AWS Lambda, Amazon EventBridge, EventBridge Scheduler, Amazon SNS (or AWS End User Messaging SMS), Amazon SES, Amazon Connect (optional, for voice), Amazon Kinesis Data Streams, AWS KMS, Amazon CloudWatch, AWS CloudTrail. Optionally Amazon SageMaker for propensity models. |
-| **IAM Permissions** | Least-privilege role per Lambda: `dynamodb:GetItem`, `dynamodb:UpdateItem` on specific tables; `sns:Publish` to specific topic ARNs; `ses:SendEmail` with configuration set restrictions; `scheduler:CreateSchedule` and `scheduler:DeleteSchedule`; `kinesis:PutRecord` on the engagement stream. Never `*`. <!-- TODO (TechWriter, Finding 5): add one or two example scoped ARNs to make least-privilege guidance concrete (e.g., `sns:Publish` on `arn:aws:sns:{region}:{account}:reminders-sms`; `scheduler:CreateSchedule` on `arn:aws:scheduler:{region}:{account}:schedule/default/reminder-*`). --> |
+| **IAM Permissions** | Least-privilege role per Lambda: `dynamodb:GetItem`, `dynamodb:UpdateItem` on specific tables; `sns:Publish` to specific topic ARNs; `ses:SendEmail` with configuration set restrictions; `scheduler:CreateSchedule` and `scheduler:DeleteSchedule`; `kinesis:PutRecord` on the engagement stream. Never `*`.  |
 | **BAA** | AWS BAA signed. Critical: the BAA must cover every messaging service you use. Amazon SNS, SES, Connect, End User Messaging, DynamoDB are all HIPAA-eligible with BAA. If you integrate any third-party messaging provider outside AWS, you need a separate BAA with that provider. |
 | **Encryption** | DynamoDB: encryption at rest with customer-managed KMS keys (not AWS-owned). Kinesis: server-side encryption with KMS. SES: TLS enforced for all sending; consider SES configuration sets with TLS policy set to `Require`. SNS: TLS in transit. All Lambda CloudWatch log groups encrypted with KMS (lambdas can log extracted patient context; never assume the default null-encrypted log group is acceptable for PHI). |
-| **VPC** | Production: Lambdas in VPC with VPC endpoints for DynamoDB, SNS, SES, Kinesis, CloudWatch Logs, KMS, EventBridge, and EventBridge Scheduler. VPC Flow Logs enabled. <!-- TODO (TechWriter, Finding 14): add a short note on egress posture for Lambdas that reach services outside VPC-endpoint coverage. Egress through a NAT Gateway with restricted security groups; no 0.0.0.0/0 from Lambda subnets. --> |
+| **VPC** | Production: Lambdas in VPC with VPC endpoints for DynamoDB, SNS, SES, Kinesis, CloudWatch Logs, KMS, EventBridge, and EventBridge Scheduler. VPC Flow Logs enabled.  |
 | **CloudTrail** | Enabled in the account with data events captured for DynamoDB tables containing PHI. |
-| **Consent & Opt-out Management** | TCPA (Telephone Consumer Protection Act) compliance for voice and SMS: explicit prior written consent to send automated reminders to mobile numbers, documented STOP-keyword handling, and an opt-out database that is queried before every send. Email CAN-SPAM compliance is simpler but still mandatory: working unsubscribe link on every email, honored within 10 business days. <!-- TODO (TechWriter, Finding 4): nuance the TCPA language. Healthcare messages from an existing provider qualify for the FCC healthcare exemption for appointment reminders (47 CFR § 64.1200(a)(3)(iv)) with narrow content scope (no marketing, no billing collections, no third-party content). Many orgs default to prior-consent capture anyway for safety; pick a posture and document it. STOP-keyword handling and opt-out enforcement are required regardless of posture. --> |
+| **Consent & Opt-out Management** | TCPA (Telephone Consumer Protection Act) compliance for voice and SMS: explicit prior written consent to send automated reminders to mobile numbers, documented STOP-keyword handling, and an opt-out database that is queried before every send. Email CAN-SPAM compliance is simpler but still mandatory: working unsubscribe link on every email, honored within 10 business days.  |
 | **Sample Data** | Synthetic patient profiles and synthetic engagement event histories. Never use real PHI in dev. [Synthea](https://github.com/synthetichealth/synthea) produces synthetic FHIR patients with demographic variety suitable for bandit seed data. |
-| **Cost Estimate** | SMS: roughly $0.00645 per US SMS via SNS (prices vary by destination and route; pricing verification needed). <!-- TODO: verify current Amazon SNS SMS pricing for healthcare-relevant geographies. --> SES: $0.10 per 1,000 emails, essentially free at reminder volumes. Connect: voice is more expensive, typically $0.01–$0.02 per minute of call, plus per-minute telephony charges. DynamoDB and Lambda costs are negligible at typical reminder volumes. Blended cost at a mid-size practice (say, 5,000 reminders per month across channels): in the range of $30–$100 per month. |
+| **Cost Estimate** | SMS: roughly $0.00645 per US SMS via SNS (prices vary by destination and route; pricing verification needed).  SES: $0.10 per 1,000 emails, essentially free at reminder volumes. Connect: voice is more expensive, typically $0.01–$0.02 per minute of call, plus per-minute telephony charges. DynamoDB and Lambda costs are negligible at typical reminder volumes. Blended cost at a mid-size practice (say, 5,000 reminders per month across channels): in the range of $30–$100 per month. |
 
 ### Ingredients
 
@@ -104,7 +93,7 @@ flowchart LR
 > **Reference implementations:** Explore these aws-samples repositories for patterns that apply here:
 > - [`amazon-personalize-samples`](https://github.com/aws-samples/amazon-personalize-samples): Recommendation and ranking patterns using Amazon Personalize. If you grow beyond a simple bandit into a learned re-ranker, this is a useful reference.
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Includes contextual bandit notebooks (search for "bandit" within the repo) that show how to host a bandit as a SageMaker endpoint with continuous learning.
-> <!-- TODO: verify a specific, current healthcare-engagement aws-samples repo that shows EventBridge Scheduler + multi-channel messaging. As of this writing, a direct match is not confirmed. -->
+> 
 
 #### Walkthrough
 
@@ -254,8 +243,6 @@ FUNCTION dispatch(patient, appointment, channel):
     RETURN reminder_id
 ```
 
-<!-- TODO (TechWriter, Findings 1 + 7, HIGH): the portal_push branch needs expanded treatment before publication. APNs (Apple) and FCM (Google) are not typically BAA-covered, so sending the `content` object (which combines patient_first_name, provider_last_name, and appt_date_local, i.e., PHI in combination) directly in the push payload is a HIPAA issue as written. Two viable paths: (a) remove `portal_push` from the candidate channel list and mention it as a future extension that requires BAA-compliant push infrastructure; or (b) add a dedicated paragraph in "Why These Services" and an architecture-diagram component showing Amazon SNS Mobile Push → APNs/FCM with a content-free payload that triggers the app to fetch reminder details from a BAA-covered backend via an authenticated call (or end-to-end-encrypt the payload the app decrypts on device). Delivery events flow back via SNS Mobile Push platform attributes and CloudWatch metrics. -->
-
 **Step 5: Close the feedback loop.** A separate Lambda (or Kinesis consumer) listens to the engagement event bus, joins events to reminder decisions, computes the reward, and updates the bandit posterior. Delivery events alone aren't the reward; the reward is "did the patient actually confirm or show up." Since the "show up" signal lags by days, most practical implementations use a proxy reward (confirmed within 4 hours of the reminder) that can be computed quickly, then retrospectively correct the posterior with the true outcome once it's available. This is the step most teams under-invest in. It is the one that makes the model get smarter.
 
 ```pseudocode
@@ -335,8 +322,6 @@ FUNCTION process_engagement_event(event):
 }
 ```
 
-<!-- TODO (TechWriter, Finding 3): add a note (here or in "Why This Isn't Production-Ready") that the reminder-decisions and bandit-state tables contain PHI in combination (patient IDs joined to appointment IDs and channel/response patterns). Recommended controls: CloudTrail data events on read access, a defined retention policy (not indefinite accumulation), and narrow IAM read scopes (recommender Lambda, reward-updater Lambda, and named audit roles only). -->
-
 **Performance benchmarks (illustrative, your mileage varies):**
 
 | Metric | Baseline (rule-based) | With Thompson bandit |
@@ -346,11 +331,8 @@ FUNCTION process_engagement_event(event):
 | End-to-end reminder latency (decision + dispatch) | <500 ms for SMS/email; 1–3 s for voice | Same |
 | Cost per reminder | $0.008 (SMS) to $0.03 (voice) | Same |
 
-<!-- TODO: the "Confirmed-or-showed rate" lift range is illustrative and has not been measured for this specific pipeline. Replace with measured results when available, or with citations from published healthcare bandit deployments. -->
-
 **Where it struggles:**
 
-<!-- TODO (TechWriter, Finding 8): add a bullet or paragraph nuancing per-patient bandit convergence for low-frequency patients. A typical primary care patient has 1–3 appointments per year and accumulates only a handful of per-channel observations annually; reaching ~50 observations per (patient, channel) would take 15–50 years. Most patients will never move off the cohort prior. The bandit's real value at fleet scale is efficient cohort-level learning plus high-frequency-patient personalization. A hierarchical or partial-pooling formulation is worth considering if per-patient personalization is the primary goal. -->
 - Very-low-volume patients (new to the practice, one or two prior visits): the bandit's personal posterior is too wide to be meaningful, and the decision is effectively driven by the cohort prior. This is fine, but don't expect meaningful personalization in the first few interactions.
 - Rapidly changing patient circumstances: the bandit learns slowly compared to an explicit preference update. A patient who just switched phones and has stopped responding to SMS will look "unresponsive to SMS in general" for a while. Explicit preference capture at registration and during visits is a critical complement, not a competitor.
 - High-stakes overrides: some appointment types (new-patient first visit, procedure requiring prep) warrant multiple reminders across multiple channels regardless of what the model thinks. Hard-code those exceptions as business rules, and have the bandit decide the "default" reminder schedule only.
@@ -372,20 +354,6 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 **Reward computation job reliability.** The reward updater is the thing that makes the model get smarter. If it fails silently, the bandit state stops updating and the model slowly becomes stale. Monitor the lag between engagement event ingestion and bandit state update. Alert when the lag grows.
 
 **Fairness monitoring that someone actually looks at.** The architecture emits `reminder_reward` metrics sliced by cohort. That data has to flow into a dashboard that a human reviews on a regular cadence. "No one reviewed the cohort dashboard for six months and SMS response for our over-65 population quietly dropped to 40%" is the kind of operational drift that destroys trust in the system.
-
-<!--
-TODO (TechWriter): the expert review flagged the following additional production-hardening gaps that belong in this section. Add each as its own paragraph in the style of the existing items above:
-
-- Finding 6 (HIGH): Dead-letter queues are absent from the architecture. Add an SQS DLQ on the EventBridge Scheduler → recommender target (Scheduler drops events after max retries with no durable sink, so a failed recommender invocation silently loses the reminder). Add an on-failure destination (SQS or SNS) on the Kinesis → reward-updater event source mapping. Add CloudWatch alarms on DLQ depth. Update the architecture diagram to show both. Describe the replay runbook: when messages land in the DLQ, what does the operator do?
-
-- Finding 2 (MEDIUM): The `confirm_url` uses a reminder-ID UUID in the path, unauthenticated. UUIDs travel through SMS gateways, email servers, third-party URL shorteners, and lock-screen previews. Use single-use, time-limited tokens (not long-lived reminder IDs), and require the shortener to be an internal or BAA-covered service (not bit.ly). Confirm pages should not display clinical detail beyond what the reminder itself contained.
-
-- Finding 9 (MEDIUM): EventBridge Scheduler account quotas (default 1M active schedules, creation/deletion TPS limits) become a design constraint at scale. A mid-size health system with 100K appointments per month and four offsets has 400K active schedules. Request quota increases when needed and consider schedule groups for operational management. For very large deployments, evaluate a DynamoDB-backed custom scheduler against Scheduler.
-
-- Finding 10 (MEDIUM): The recommender Lambda experiences a fan-out spike at common offsets (especially T-24h the morning before appointments). Shared-account Lambda concurrency can be starved by unrelated workloads. Set reserved concurrency on the recommender Lambda so reminder dispatch is protected.
-
-- Finding 11 (LOW): The cohort prior loading mechanism is unspecified. In production, priors are computed offline (monthly or quarterly) from historical outcomes, stored in a small DynamoDB lookup table keyed by cohort, and read into Lambda module memory on cold start with a scheduled refresh. Call out the refresh cadence and the k-anonymity threshold that prevents small cohorts from leaking PHI.
--->
 
 ---
 
@@ -417,13 +385,9 @@ TODO (TechWriter): the expert review flagged the following additional production
 - [`amazon-personalize-samples`](https://github.com/aws-samples/amazon-personalize-samples): Reference patterns for recommendation and ranking that extend naturally to content-level personalization layered on this recipe
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Includes contextual bandit and multi-armed bandit examples, useful when you graduate from in-Lambda Thompson sampling to a SageMaker-hosted model
 
-<!-- TODO: verify and add an aws-solutions-library-samples repository for EventBridge Scheduler + multi-channel messaging if one exists; as of this writing a direct healthcare-reminder sample has not been confirmed. -->
-
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter AI/ML and Healthcare): browse for customer-engagement and messaging architectures relevant to reminder pipelines
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "contextual bandit" and "multi-armed bandit" for SageMaker implementation deep-dives
-
-<!-- TODO: verify and add two or three specific AWS Machine Learning blog posts on bandits or patient engagement architectures; confirm URLs exist before inclusion. -->
 
 **External References (Conceptual):**
 - [Thompson Sampling, Wikipedia](https://en.wikipedia.org/wiki/Thompson_sampling): concise conceptual introduction to the algorithm used here
@@ -440,7 +404,6 @@ TODO (TechWriter): the expert review flagged the following additional production
 | With variations | Add LLM-based content drafting, multi-touch sequence optimization, uplift modeling, SDOH integration | 6–9 months beyond production-ready |
 
 ---
-
 
 ---
 

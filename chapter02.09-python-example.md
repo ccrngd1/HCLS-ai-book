@@ -241,7 +241,6 @@ def _now_iso() -> str:
     """UTC ISO timestamp for audit fields."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _build_event_key(trigger: dict) -> str:
     """
     Build a deterministic event key from the trigger so that duplicate
@@ -272,7 +271,6 @@ def _build_event_key(trigger: dict) -> str:
         request_uuid = payload.get("request_uuid", str(uuid.uuid4()))
         return f"{patient_id}:{request_uuid}:clinician_request"
 
-
 def _get_opensearch_client() -> OpenSearch:
     """
     Build an IAM-authenticated OpenSearch client.
@@ -299,7 +297,6 @@ def _get_opensearch_client() -> OpenSearch:
         timeout=30,
     )
 
-
 def _embed_text(text: str) -> list:
     """
     Embed a single string with the configured embedding model.
@@ -319,7 +316,6 @@ def _embed_text(text: str) -> list:
     )
     payload = json.loads(response["body"].read())
     return payload["embedding"]
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -341,7 +337,6 @@ def _parse_json_response(raw_text: str) -> dict:
         logger.warning("Failed to parse JSON response; returning empty dict")
         return {}
 
-
 def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     """
     Truncate text to at most max_bytes when encoded as utf-8.
@@ -354,7 +349,6 @@ def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     if len(encoded) <= max_bytes:
         return text
     return encoded[:max_bytes].decode("utf-8", errors="ignore")
-
 
 def _to_decimal_safe(value):
     """
@@ -371,7 +365,6 @@ def _to_decimal_safe(value):
     if isinstance(value, list):
         return [_to_decimal_safe(v) for v in value]
     return value
-
 
 def _execute_aurora_sql(sql: str, parameters: list) -> list:
     """
@@ -413,7 +406,6 @@ def _execute_aurora_sql(sql: str, parameters: list) -> list:
             row[col_name] = _data_api_cell_value(cell)
         rows.append(row)
     return rows
-
 
 def _data_api_cell_value(cell: dict):
     """Unwrap the Data API's typed-cell format into a plain Python value."""
@@ -535,7 +527,6 @@ def trigger_synthesis(trigger: dict) -> dict:
         "trigger":       trigger,
     }
 
-
 def _resource_types_for_trigger(trigger_type: str) -> list:
     """
     Pick which FHIR resource types to pull based on the trigger.
@@ -551,7 +542,6 @@ def _resource_types_for_trigger(trigger_type: str) -> list:
     if trigger_type in ("admission", "clinician_request"):
         base.append("DocumentReference")  # recent notes for context
     return base
-
 
 def _fetch_fhir_bundle_from_healthlake(patient_id: str,
                                        resource_types: list) -> dict:
@@ -575,7 +565,6 @@ def _fetch_fhir_bundle_from_healthlake(patient_id: str,
         "type":         "collection",
         "entry":        _synthetic_patient_bundle_entries(patient_id),
     }
-
 
 def _synthetic_patient_bundle_entries(patient_id: str) -> list:
     """
@@ -757,7 +746,6 @@ def normalize_patient_context(patient_bundle: dict) -> dict:
     )
     return structured
 
-
 def _calculate_age_years(birth_date_str: str | None) -> int | None:
     """Age in years from a YYYY-MM-DD birthdate. None if invalid."""
     if not birth_date_str:
@@ -771,7 +759,6 @@ def _calculate_age_years(birth_date_str: str | None) -> int | None:
     except ValueError:
         return None
 
-
 def _is_active_condition(cond: dict) -> bool:
     """True if the Condition.clinicalStatus includes 'active'."""
     status = cond.get("clinicalStatus") or {}
@@ -779,7 +766,6 @@ def _is_active_condition(cond: dict) -> bool:
         if coding.get("code", "").lower() == "active":
             return True
     return False
-
 
 def _extract_coding_code(coded: dict | None, system: str) -> str | None:
     """Pick the code from a CodeableConcept matching the requested system."""
@@ -789,7 +775,6 @@ def _extract_coding_code(coded: dict | None, system: str) -> str | None:
         if coding.get("system") == system:
             return coding.get("code")
     return None
-
 
 def _most_recent_observation_value(observations: list, loinc: str):
     """Return the numeric value of the most recent Observation with this LOINC."""
@@ -805,7 +790,6 @@ def _most_recent_observation_value(observations: list, loinc: str):
     candidates.sort(reverse=True)
     return candidates[0][1]
 
-
 def _infer_pregnancy_status(resources_by_type: dict) -> bool:
     """
     Conservative pregnancy check: look for any active pregnancy-coded
@@ -818,7 +802,6 @@ def _infer_pregnancy_status(resources_by_type: dict) -> bool:
         if "pregnan" in display and _is_active_condition(cond):
             return True
     return False
-
 
 def _calculate_egfr_ckd_epi_2021(demographics: dict,
                                  serum_creatinine_mg_dl) -> float | None:
@@ -858,7 +841,6 @@ def _calculate_egfr_ckd_epi_2021(demographics: dict,
 
     egfr = 142.0 * min_term * max_term * age_term * sex_coef
     return round(egfr, 1)
-
 
 def _calculate_bmi(weight_kg, height_cm):
     """BMI from weight and height. None if either is missing."""
@@ -977,7 +959,6 @@ def determine_scope(trigger: dict,
 
     return decision
 
-
 def _compute_trigger_signature(trigger: dict, context: dict) -> str:
     """
     Stable hash-ish signature for duplicate-suppression comparisons.
@@ -1001,7 +982,6 @@ def _compute_trigger_signature(trigger: dict, context: dict) -> str:
         key_parts.append(proposed.get("rxnorm_code")
                          or proposed.get("display") or "")
     return "|".join(key_parts)[:250]  # cap length for DynamoDB index efficiency
-
 
 def _derive_admission_scenarios(context: dict, trigger: dict) -> list:
     """
@@ -1041,7 +1021,6 @@ def _derive_admission_scenarios(context: dict, trigger: dict) -> list:
         })
     return scenarios
 
-
 def _classify_drug(drug: dict) -> str | None:
     """
     Map a drug to a coarse therapeutic class. Production uses a drug
@@ -1059,7 +1038,6 @@ def _classify_drug(drug: dict) -> str | None:
         return "opioid_iv"
     return drug.get("class")
 
-
 def _drug_class_to_domain(drug_class: str | None) -> str:
     """Map a drug class to a clinical domain for retrieval tagging."""
     mapping = {
@@ -1070,7 +1048,6 @@ def _drug_class_to_domain(drug_class: str | None) -> str:
         "antiarrhythmic":      "cardiology",
     }
     return mapping.get(drug_class or "", "general")
-
 
 def _patient_has_relevant_conditions_for_drug(context: dict,
                                               drug: dict) -> bool:
@@ -1087,7 +1064,6 @@ def _patient_has_relevant_conditions_for_drug(context: dict,
     if egfr is not None and egfr < CONSERVATIVE_RENAL_EGFR:
         return True
     return False
-
 
 def _is_critical_lab(lab: dict, context: dict) -> bool:
     """
@@ -1111,7 +1087,6 @@ def _is_critical_lab(lab: dict, context: dict) -> bool:
     }
     check = thresholds.get(name)
     return bool(check and check(value))
-
 
 def _derive_lab_triggered_scenarios(lab: dict, context: dict) -> list:
     """Starter lab-triggered scenarios; map labs to clinical questions."""
@@ -1308,7 +1283,6 @@ def run_deterministic_safety_checks(structured_context: dict,
     )
     return findings
 
-
 def _drug_allergy_match(drug: dict, allergy: dict) -> str | None:
     """
     Decide whether a drug conflicts with an allergy.
@@ -1443,7 +1417,6 @@ Return ONLY a JSON array. Each element refines one input scenario:
     logger.info("Built %d retrieval plans", len(plans))
     return plans
 
-
 def _derive_population_tags(context: dict) -> list:
     """Infer population tags from demographics for metadata filtering."""
     tags = []
@@ -1464,7 +1437,6 @@ def _derive_population_tags(context: dict) -> list:
     if egfr is not None and egfr < 60:
         tags.append("ckd")
     return tags
-
 
 def _derive_drug_db_lookups(scenario: dict, context: dict,
                             safety_findings: dict) -> list:
@@ -1589,7 +1561,6 @@ def multi_source_retrieval(retrieval_plans: list) -> dict:
     )
     return results_per_scenario
 
-
 def _hybrid_search_index(client, index: str, queries: list,
                          entity_terms: list, filters: dict, size: int) -> list:
     """
@@ -1694,7 +1665,6 @@ def _hybrid_search_index(client, index: str, queries: list,
         fused.append(doc)
     return fused
 
-
 def _build_opensearch_filters(filters: dict) -> list:
     """Translate our filters dict into OpenSearch filter clauses."""
     clauses = []
@@ -1753,7 +1723,6 @@ def rank_and_filter(results_per_scenario: dict,
 
     logger.info("Ranked and trimmed retrieval results per scenario")
     return results_per_scenario
-
 
 def _score_chunk(chunk: dict, population_tags: list) -> float:
     """
@@ -1980,7 +1949,6 @@ Produce the synthesis now. Output ONLY the JSON object."""
         "id_to_source": id_to_source,
     }
 
-
 def _build_sources_block(retrieval_results: dict) -> tuple[str, dict]:
     """
     Build the prompt's sources block and an id_to_source mapping the
@@ -2027,7 +1995,6 @@ def _build_sources_block(retrieval_results: dict) -> tuple[str, dict]:
             source_id += 1
 
     return "\n\n".join(lines), id_to_source
-
 
 def _format_safety_findings_for_prompt(safety_findings: dict,
                                         id_to_source: dict) -> str:
@@ -2251,7 +2218,6 @@ def validate_synthesis(synthesis: dict,
     )
     return {"status": "REVIEW_REQUIRED", "unverified": unverified}
 
-
 def _flatten_safety_representations(synthesis: dict) -> list:
     """
     Collect all text that could represent a safety finding in the output:
@@ -2265,7 +2231,6 @@ def _flatten_safety_representations(synthesis: dict) -> list:
         for f in rec.get("relevant_safety_findings") or []:
             representations.append((f or "").lower())
     return representations
-
 
 def _safety_finding_signature(item: dict) -> str:
     """
@@ -2294,14 +2259,12 @@ def _safety_finding_signature(item: dict) -> str:
         return (item.get("class") or "").lower()
     return json.dumps(item, default=str).lower()[:60]
 
-
 def _strip_quoted_passages(text: str) -> str:
     """
     Remove content inside double-quotes so the directive-phrase scan
     doesn't flag verbatim guideline quotes.
     """
     return re.sub(r'"[^"]*"', "", text)
-
 
 def _build_validation_hint(unverified: list) -> str:
     """Compact hint for the next regeneration attempt."""
@@ -2475,7 +2438,6 @@ def tier_suppress_render(synthesis: dict,
 
     return {"status": "RENDERED", "rendered": rendered}
 
-
 def _determine_delivery_tier(rec: dict, prior: list) -> str:
     """
     Compare this recommendation to prior engagement history and assign a
@@ -2508,7 +2470,6 @@ def _determine_delivery_tier(rec: dict, prior: list) -> str:
         return "new_important"
     return "informational"
 
-
 def _format_source_for_bibliography(source: dict) -> str:
     """Produce a human-readable bibliography entry for a source."""
     kind = source.get("_kind")
@@ -2529,7 +2490,6 @@ def _format_source_for_bibliography(source: dict) -> str:
             f"- {source.get('source_citation') or source.get('display_name') or ''}"
         )
     return "Source"
-
 
 def _query_patient_history(patient_id: str, encounter_id: str) -> list:
     """
@@ -2958,7 +2918,6 @@ def run_cds_synthesis(trigger: dict,
         "attempts":          attempts,
         "processing_time_ms": elapsed_ms,
     }
-
 
 # --- Example usage ---
 if __name__ == "__main__":

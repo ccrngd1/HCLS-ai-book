@@ -233,7 +233,6 @@ def submit_eob_extraction(bucket: str, key: str) -> str:
     print(f"Textract job submitted: job_id={job_id}, key={key}, payer_hint={payer_hint}")
     return job_id
 
-
 def _extract_payer_from_key(key: str) -> Optional[str]:
     """
     Parses an S3 key like 'eobs-inbox/unitedhealthcare/2026/...' and returns
@@ -248,7 +247,6 @@ def _extract_payer_from_key(key: str) -> Optional[str]:
         if candidate and not candidate.isdigit():
             return candidate
     return None
-
 
 # [EDITOR: review fix: P1 #4 payer detection: added _detect_payer_from_header() as the
 # keyword fallback for pipelines that don't use per-payer S3 prefixes. Called in
@@ -433,7 +431,6 @@ def extract_raw_content(
 
     return raw_header, raw_tables
 
-
 def _assemble_text(block: dict, block_map: dict) -> str:
     """
     Assembles the text content of a block by following its CHILD word relationships.
@@ -520,11 +517,9 @@ def map_to_canonical_schema(
         print(f"Bedrock schema mapping failed: routing to review (error_type={type(e).__name__})")
         return {"table_mapping": {}, "header_mapping": {}}, "mapping_failed"
 
-
 class AlreadyProcessedError(Exception):
     """Raised when a document has already been successfully processed (idempotency guard)."""
     pass
-
 
 # [EDITOR: review fix: P0 #2 _apply_static_profile processes all tables: replaced the
 # loop over raw_tables[0]["headers"] with a loop over all elements of raw_tables.
@@ -557,7 +552,6 @@ def _apply_static_profile(raw_header: dict, raw_tables: list, profile: dict) -> 
 
     return {"table_mapping": table_mapping, "header_mapping": header_mapping}
 
-
 def _sanitize_for_prompt(text: str) -> str:
     """
     Strips control characters and obvious injection patterns from text before
@@ -570,7 +564,6 @@ def _sanitize_for_prompt(text: str) -> str:
     cleaned = _INJECTION_PATTERNS.sub("[REDACTED]", cleaned)
     # Truncate to a reasonable length; column headers are never this long.
     return cleaned[:200].strip()
-
 
 def _map_with_llm(raw_header: dict, raw_tables: list) -> dict:
     """
@@ -782,7 +775,6 @@ def parse_currency(text: Optional[str]) -> Optional[float]:
         return float(cleaned)
     return None
 
-
 def validate_eob_financials(header_fields: dict, line_items: list) -> list:
     """
     Applies arithmetic validation rules to the canonical line items.
@@ -874,7 +866,6 @@ def _floats_to_decimal(obj):
     if isinstance(obj, list):
         return [_floats_to_decimal(i) for i in obj]
     return obj
-
 
 def assemble_and_route(
     document_key: str,
@@ -1070,7 +1061,6 @@ def process_eob_document(job_id: str, document_key: str, payer_hint: Optional[st
     )
 
     return record
-
 
 def lambda_handler(event: dict, context) -> dict:
     """

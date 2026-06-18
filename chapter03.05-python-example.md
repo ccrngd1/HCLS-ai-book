@@ -229,7 +229,6 @@ HEMOLYSIS_GATE_INDEX = 3     # hemolysis index >= 3 invalidates potassium
 ICTERUS_GATE_INDEX = 4
 LIPEMIA_GATE_INDEX = 4
 
-
 def _to_decimal(value) -> Decimal:
     """
     Coerce numeric input into Decimal for DynamoDB and downstream math.
@@ -246,7 +245,6 @@ def _to_decimal(value) -> Decimal:
         return Decimal("0.0000")
     return Decimal(str(value)).quantize(Decimal("0.0001"))
 
-
 def _decimal_to_float(value):
     """Recursively coerce Decimals to floats for JSON output or ML input."""
     if isinstance(value, Decimal):
@@ -257,13 +255,11 @@ def _decimal_to_float(value):
         return [_decimal_to_float(v) for v in value]
     return value
 
-
 def _hours_between(t1_iso: str, t2_iso: str) -> float:
     """Return hours between two ISO-8601 timestamps (t2 - t1)."""
     t1 = datetime.fromisoformat(t1_iso.replace("Z", "+00:00"))
     t2 = datetime.fromisoformat(t2_iso.replace("Z", "+00:00"))
     return (t2 - t1).total_seconds() / 3600.0
-
 
 def _age_band(age_years: Optional[float]) -> str:
     """
@@ -417,7 +413,6 @@ def normalize_result(raw_result: dict) -> Optional[dict]:
     }
     return canonical_result
 
-
 def _lis_to_loinc_crosswalk(lis_test_code: str, analyzer: Optional[str]) -> Optional[str]:
     """
     Tiny in-process crosswalk for teaching. In production this is a managed
@@ -432,7 +427,6 @@ def _lis_to_loinc_crosswalk(lis_test_code: str, analyzer: Optional[str]) -> Opti
         "NA+":     "2951-2",
     }
     return stub.get(lis_test_code.upper()) if lis_test_code else None
-
 
 def _convert_to_canonical_unit(
     raw_value: float,
@@ -479,7 +473,6 @@ def _convert_to_canonical_unit(
 
     raise ValueError(f"No conversion from {raw_unit} to {canonical_unit} for {loinc_code}")
 
-
 def _range_selection_attrs(raw_result: dict, patient_id: str) -> dict:
     """
     Gather the patient attributes needed for reference-range selection.
@@ -494,7 +487,6 @@ def _range_selection_attrs(raw_result: dict, patient_id: str) -> dict:
         "sex":              raw_result.get("patient_sex"),
         "pregnancy_status": raw_result.get("patient_pregnancy_status"),
     }
-
 
 def _lookup_reference_range(
     loinc_code: str,
@@ -922,7 +914,6 @@ def cohort_zscore_check(enriched_result: dict) -> list:
         })
     return flags
 
-
 def _build_cohort_key(patient_attributes: dict) -> str:
     """
     Canonical cohort-key string used as the Feature Store partition. Keep
@@ -934,7 +925,6 @@ def _build_cohort_key(patient_attributes: dict) -> str:
     pregnancy = "pregnant" if patient_attributes.get("pregnancy_status") == "pregnant" else "npg"
     dialysis = "hd" if patient_attributes.get("on_dialysis") else "nohd"
     return f"{age_band}:{sex}:{pregnancy}:{dialysis}"
-
 
 def _get_cohort_baseline(record_id: str) -> Optional[dict]:
     """
@@ -1053,7 +1043,6 @@ def route_result(enriched_result: dict, all_flags: list) -> Optional[dict]:
 
     return outlier_event
 
-
 def _max_severity(flags: list) -> str:
     """Return the highest-severity tier across all flags."""
     highest = "informational"
@@ -1062,7 +1051,6 @@ def _max_severity(flags: list) -> str:
         if SEVERITY_ORDER.get(sev, 0) > SEVERITY_ORDER.get(highest, 0):
             highest = sev
     return highest
-
 
 def _severity_to_routing(overall_severity: str, flags: list) -> str:
     """
@@ -1078,7 +1066,6 @@ def _severity_to_routing(overall_severity: str, flags: list) -> str:
     if overall_severity == "tech_review_hold":
         return "tech_review_hold"
     return "autoverify_with_flag"
-
 
 def _choose_chart_flag(flags: list) -> Optional[str]:
     """
@@ -1098,7 +1085,6 @@ def _choose_chart_flag(flags: list) -> Optional[str]:
         return "L"
     return None
 
-
 def _context_snapshot(enriched_result: dict) -> dict:
     """
     Return the subset of the enriched result that gets persisted with the
@@ -1117,7 +1103,6 @@ def _context_snapshot(enriched_result: dict) -> dict:
         "history_size":       len(enriched_result.get("recent_results", [])),
     }
 
-
 def _index_outlier_event(outlier_event: dict) -> None:
     """
     Write the outlier event to the OpenSearch audit index. In a real
@@ -1130,7 +1115,6 @@ def _index_outlier_event(outlier_event: dict) -> None:
         "routing":  outlier_event["routing"],
         "severity": outlier_event["severity"],
     })
-
 
 def _index_dispense_audit(enriched_result: dict, flags: list) -> None:
     """
@@ -1147,7 +1131,6 @@ def _index_dispense_audit(enriched_result: dict, flags: list) -> None:
         "scored_at":        datetime.now(timezone.utc).isoformat(),
     }
     logger.info("result_audited", extra=audit)
-
 
 def _publish_to_event_bus(outlier_event: dict) -> None:
     """
@@ -1167,7 +1150,6 @@ def _publish_to_event_bus(outlier_event: dict) -> None:
             "event_id": outlier_event["event_id"],
             "error":    str(ex),
         })
-
 
 def _publish_critical_callback(outlier_event: dict) -> None:
     """
@@ -1211,7 +1193,6 @@ def _publish_critical_callback(outlier_event: dict) -> None:
         })
         _emit_metric("critical_callback_publish_failure")
 
-
 def _autoverify_release(enriched_result: dict, chart_flag: Optional[str]) -> None:
     """
     Placeholder for the autoverify release service. In production, the
@@ -1223,7 +1204,6 @@ def _autoverify_release(enriched_result: dict, chart_flag: Optional[str]) -> Non
         "loinc":      enriched_result["loinc_code"],
         "chart_flag": chart_flag,
     })
-
 
 def _hold_for_tech_review(
     enriched_result: dict,
@@ -1241,7 +1221,6 @@ def _hold_for_tech_review(
         "routing":           outlier_event["routing"],
         "request_recollect": request_recollect,
     })
-
 
 def _emit_metric(metric_name: str, value: int = 1, dimensions: dict = None) -> None:
     """
@@ -1342,7 +1321,6 @@ def panel_multivariate_check(
         })
     return events
 
-
 def patient_trajectory_cusum(
     patient_series: pd.DataFrame,
     loinc_code: str,
@@ -1418,7 +1396,6 @@ def patient_trajectory_cusum(
         ),
     }
 
-
 def run_batch_trajectory_scoring(
     recent_results_df: pd.DataFrame,
     as_of_timestamp: datetime,
@@ -1458,7 +1435,6 @@ def run_batch_trajectory_scoring(
         "trajectory_events": len(events),
     })
     return events
-
 
 def _load_isolation_forest(key: str) -> Optional[dict]:
     """
@@ -1537,7 +1513,6 @@ def on_tech_review_decision(decision_event: dict) -> None:
             "detector_version": DETECTOR_VERSION,
         }, partition_date=decision_event["decided_at"])
 
-
 def on_recollect_result(
     original_outlier_event_id: str,
     original_outlier: dict,
@@ -1597,7 +1572,6 @@ def on_recollect_result(
         _emit_metric("confirmed_artifact", dimensions={"loinc": loinc})
     else:
         _emit_metric("confirmed_real", dimensions={"loinc": loinc})
-
 
 def _write_label_to_s3(label_row: dict, partition_date: str) -> None:
     """
@@ -1662,7 +1636,6 @@ def score_one_result(raw_result: dict) -> Optional[dict]:
 
     # --- Step 6: aggregate and route ---
     return route_result(enriched, all_flags)
-
 
 # --- Example usage ---
 #

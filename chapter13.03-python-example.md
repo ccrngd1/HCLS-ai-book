@@ -127,7 +127,6 @@ EDGE_TYPES = {
 ```python
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 
-
 def derive_parent_code(code: str) -> str | None:
     """
     Derive the parent code from an ICD-10-CM code by removing the last
@@ -158,7 +157,6 @@ def derive_parent_code(code: str) -> str | None:
         return parent_clean[:3] + "." + parent_clean[3:]
     else:
         return parent_clean
-
 
 def parse_icd10_order_file(bucket: str, key: str, version: str) -> tuple[list, list]:
     """
@@ -301,7 +299,6 @@ def parse_crosswalk_file(bucket: str, key: str) -> list:
     logger.info("Parsed %d cross-walk edges from %s", len(edges), key)
     return edges
 
-
 def parse_exclusion_annotations(bucket: str, key: str) -> list:
     """
     Parse ICD-10-CM excludes annotations into graph edges.
@@ -397,7 +394,6 @@ def format_nodes_as_neptune_csv(nodes: list) -> str:
 
     return output.getvalue()
 
-
 def format_edges_as_neptune_csv(edges: list) -> str:
     """
     Transform edge dictionaries into Neptune bulk load CSV format.
@@ -437,7 +433,6 @@ def format_edges_as_neptune_csv(edges: list) -> str:
         ])
 
     return output.getvalue()
-
 
 def upload_and_bulk_load(nodes: list, edges: list) -> dict:
     """
@@ -528,7 +523,6 @@ def execute_opencypher(query: str, parameters: dict = None) -> list:
     result = response.json()
     return result.get("results", [])
 
-
 def get_children(code: str, depth: int = 99, version: str = "FY2026") -> list:
     """
     Find all descendant codes under a given code in the hierarchy.
@@ -563,7 +557,6 @@ def get_children(code: str, depth: int = 99, version: str = "FY2026") -> list:
     logger.info("get_children(%s, depth=%d): %d results", code, depth, len(results))
     return results
 
-
 def get_ancestors(code: str) -> list:
     """
     Walk up the hierarchy from a code to the chapter level.
@@ -589,7 +582,6 @@ def get_ancestors(code: str) -> list:
     results = execute_opencypher(query, {"code": code})
     logger.info("get_ancestors(%s): %d levels", code, len(results))
     return results
-
 
 def get_crosswalks(code: str, target_system: str = "CPT") -> list:
     """
@@ -620,7 +612,6 @@ def get_crosswalks(code: str, target_system: str = "CPT") -> list:
     logger.info("get_crosswalks(%s -> %s): %d results", code, target_system, len(results))
     return results
 
-
 def get_exclusions(code: str) -> list:
     """
     Find codes that cannot be reported together with this one (EXCLUDES1).
@@ -647,7 +638,6 @@ def get_exclusions(code: str) -> list:
     results = execute_opencypher(query, {"code": code})
     logger.info("get_exclusions(%s): %d exclusions", code, len(results))
     return results
-
 
 def get_siblings(code: str) -> list:
     """
@@ -838,7 +828,6 @@ def run_initial_load():
     logger.info("=== Initial Load Complete ===")
     return load_result
 
-
 def handle_api_request(query_type: str, code: str, **kwargs) -> dict:
     """
     Handle an API request by dispatching to the appropriate query function.
@@ -879,7 +868,6 @@ def handle_api_request(query_type: str, code: str, **kwargs) -> dict:
         "results": results,
         "total_results": len(results),
     }
-
 
 # Example usage: run queries against the loaded graph.
 if __name__ == "__main__":

@@ -41,8 +41,6 @@ flowchart TD
     style F fill:#9ff,stroke:#333
 ```
 
-<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add SQS Dead Letter Queue to architecture diagram and mention CloudWatch alarm on DLQ depth for failed note processing. -->
-
 ### Prerequisites
 
 | Requirement | Details |
@@ -326,9 +324,6 @@ FUNCTION normalize_to_codes(sdoh_findings, code_map):
 
 **Step 6: Store patient-level SDOH profile.** Write the normalized findings to the patient's SDOH profile in DynamoDB. The profile is a living document: new extractions add to it, resolved needs get updated, and the history is preserved for longitudinal analysis. Each finding includes provenance (which note, which sentence, which date) so care managers can trace back to the source. The profile supports queries like "show me all patients with active food insecurity in my panel" and "what SDOH needs were identified for this patient in the last 6 months?" Skip this step and extractions are ephemeral, useful for one-time reporting but not for ongoing care coordination.
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Note that population-level queries ("all patients with active food insecurity") require a GSI on domain#assertion as partition key. Add 1-2 sentences here or in Prerequisites. -->
-<!-- TODO (TechWriter): Expert review S1 (MEDIUM). Add note about restricting sdoh-profiles table access to care management roles; mention option to store only metadata (domain, assertion, codes) without source_text, linking to note_id for authorized reviewers. -->
-
 ```pseudocode
 FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
     FOR each finding in findings:
@@ -428,8 +423,6 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close. -->
-
 ### Variations and Extensions
 
 **Screening questionnaire integration.** Combine NLP-extracted SDOH data with structured screening results (PRAPARE, AHC-HRSN, or proprietary tools). Structured screenings have higher precision but lower coverage (only administered during specific encounters). NLP extraction has broader coverage but lower precision. Merging both gives you the best of each: use structured results as ground truth when available, NLP as gap-filling when no screening was administered.
@@ -457,9 +450,6 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 - [Gravity Project SDOH Clinical Care Standards](https://thegravityproject.net/): Defines SDOH domain value sets, code mappings, and FHIR implementation guides
 - [CMS ICD-10-CM Z-Code Documentation](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official Z55-Z65 code definitions for social determinant documentation
 - [HL7 FHIR US Core SDOH Profiles](https://www.hl7.org/fhir/us/core/): FHIR resource profiles for representing SDOH observations and conditions
-
-<!-- TODO: Verify that the amazon-comprehend-medical-fhir-integration repo still exists and is maintained -->
-<!-- TODO: Verify current Comprehend Medical pricing for DetectEntitiesV2 -->
 
 ---
 

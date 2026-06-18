@@ -416,7 +416,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of _to_decimal for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -429,16 +428,13 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
-
 def _now() -> datetime:
     """Current UTC datetime."""
     return datetime.now(timezone.utc)
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -446,7 +442,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _hash_id(raw_id: str) -> str:
     """
@@ -459,7 +454,6 @@ def _hash_id(raw_id: str) -> str:
     import hashlib
     pepper = b"DEMO_PEPPER_REPLACE_IN_PRODUCTION"
     return hashlib.sha256(pepper + raw_id.encode("utf-8")).hexdigest()[:16]
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -482,7 +476,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
 
-
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
     """Emit a CloudWatch metric. Best-effort; never blocks."""
@@ -502,7 +495,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       trial_id: str,
@@ -529,7 +521,6 @@ def _audit_tool_call(session_id: str,
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
 
-
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields before ledger storage."""
     redacted = dict(arguments)
@@ -545,7 +536,6 @@ def _redact_tool_args(arguments: dict) -> dict:
         if key in sensitive_keys:
             redacted[key] = "[REDACTED]"
     return redacted
-
 
 def _detect_emergency_signal(text: str) -> Optional[dict]:
     """
@@ -567,7 +557,6 @@ def _detect_emergency_signal(text: str) -> Optional[dict]:
             }
     return None
 
-
 def _detect_out_of_scope(text: str) -> Optional[str]:
     """
     Return the out-of-scope category name if any out-of-
@@ -581,21 +570,17 @@ def _detect_out_of_scope(text: str) -> Optional[str]:
                 return category
     return None
 
-
 def _shape_session_id(prefix: str = "tr_session") -> str:
     """Generate a session identifier with a recognizable prefix."""
     return f"{prefix}_{uuid.uuid4().hex[:24]}"
-
 
 def _shape_decision_id(prefix: str = "tr_decision") -> str:
     """Generate a recruitment-decision identifier."""
     return f"{prefix}_{uuid.uuid4().hex[:24]}"
 
-
 def _shape_handoff_id(prefix: str = "tr_handoff") -> str:
     """Generate a coordinator-handoff identifier."""
     return f"{prefix}_{uuid.uuid4().hex[:24]}"
-
 
 def _safe_get(table_name: str, key: dict) -> Optional[dict]:
     """
@@ -685,7 +670,6 @@ class MockTable:
         results = list(self._store.values())
         return {"Items": results, "Count": len(results)}
 
-
 class MockEventBus:
     def __init__(self):
         self.events: list = []
@@ -696,7 +680,6 @@ class MockEventBus:
                 "Entries": [{"EventId": uuid.uuid4().hex}
                              for _ in Entries]}
 
-
 class MockCloudWatch:
     def __init__(self):
         self.metrics: list = []
@@ -706,7 +689,6 @@ class MockCloudWatch:
             self.metrics.append({"namespace": Namespace, **m})
         return {}
 
-
 class MockS3:
     def __init__(self):
         self.objects: dict = {}
@@ -714,7 +696,6 @@ class MockS3:
     def put_object(self, Bucket, Key, Body, **_kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"ETag": uuid.uuid4().hex}
-
 
 class MockPinpoint:
     def __init__(self):
@@ -724,7 +705,6 @@ class MockPinpoint:
         self.messages.append({"app": ApplicationId,
                               "request": MessageRequest})
         return {"MessageResponse": {"Result": {}}}
-
 
 class MockConnect:
     def __init__(self):
@@ -736,7 +716,6 @@ class MockConnect:
         return {"ContactId": contact_id,
                 "ParticipantId": uuid.uuid4().hex,
                 "ParticipantToken": uuid.uuid4().hex}
-
 
 class MockStepFunctions:
     def __init__(self):
@@ -750,7 +729,6 @@ class MockStepFunctions:
             "input": input})
         return {"executionArn": execution_arn,
                 "startDate": _now()}
-
 
 class MockBedrockAgentRuntime:
     """Stand-in for the Bedrock Knowledge Base retrieval
@@ -790,7 +768,6 @@ class MockBedrockAgentRuntime:
             ]
         }
 
-
 class MockBedrockRuntime:
     """Very small stand-in for bedrock-runtime.invoke_model.
     Returns canned tool-call sequences for the demo."""
@@ -828,14 +805,12 @@ class MockBedrockRuntime:
             "ResponseMetadata": {"HTTPStatusCode": 200},
         }
 
-
 class _MockStreamBody:
     def __init__(self, payload: str):
         self._payload = payload
 
     def read(self):
         return self._payload.encode("utf-8")
-
 
 # Build mock tables and replace clients.
 mock_tables = {
@@ -869,10 +844,8 @@ mock_tables = {
         CONSENT_RECORD_TABLE,       "session_id"),
 }
 
-
 def _mock_dynamodb_table(name):
     return mock_tables[name]
-
 
 # Replace boto3 dynamodb.Table with the mock for the demo.
 dynamodb.Table = _mock_dynamodb_table
@@ -993,7 +966,6 @@ def onboard_trial(*,
         record["content_version"])
     return record
 
-
 def set_trial_state(*, trial_id, state, amendment_version,
                      reason):
     """
@@ -1016,7 +988,6 @@ def set_trial_state(*, trial_id, state, amendment_version,
         "state":         state,
         "amendment_ver": amendment_version,
     })
-
 
 def register_eligibility_criterion(*,
                                     trial_id,
@@ -1060,7 +1031,6 @@ def register_eligibility_criterion(*,
     table = dynamodb.Table(ELIGIBILITY_RULE_TABLE)
     table.put_item(Item=_to_decimal(record))
     return record
-
 
 def register_recruitment_faq(*,
                               trial_id,
@@ -1113,7 +1083,6 @@ def register_recruitment_faq(*,
         },
     })
     return record
-
 
 def register_irb_approved_corpus_excerpt(*,
                                            trial_id,
@@ -1173,7 +1142,6 @@ def get_trial_state(trial_id: str) -> dict:
         }
     return _from_decimal(record)
 
-
 def get_trial_context(trial_id: str) -> Optional[dict]:
     """
     Retrieve the per-trial IRB-approved context. Production
@@ -1185,7 +1153,6 @@ def get_trial_context(trial_id: str) -> Optional[dict]:
     record = _safe_get(TRIAL_CONTEXT_TABLE,
                         {"trial_id": trial_id})
     return _from_decimal(record) if record else None
-
 
 def request_irb_amendment(*,
                             trial_id,
@@ -1231,7 +1198,6 @@ def request_irb_amendment(*,
         "irb_application_id":  irb_application_id,
         "requested_at":        _now_iso(),
     })
-
 
 def apply_irb_amendment_approval(*,
                                   trial_id,
@@ -1324,7 +1290,6 @@ def apply_irb_amendment_approval(*,
         "applied_at":          _now_iso(),
     })
 
-
 def pause_trial_enrollment(*, trial_id, reason):
     """Pause enrollment. The conversation engine will route
     in-flight conversations and new entries appropriately."""
@@ -1334,7 +1299,6 @@ def pause_trial_enrollment(*, trial_id, reason):
         amendment_version=get_trial_state(trial_id).get(
             "amendment_version", "unknown"),
         reason=reason)
-
 
 def close_trial_enrollment(*, trial_id, reason):
     """Close enrollment. Subsequent recruitment-conversation
@@ -1540,7 +1504,6 @@ def receive_conversation_turn(*,
         "turn_index":           turn_index,
     }
 
-
 def handle_emergency_routing(turn_result: dict) -> dict:
     """Render the IRB-approved emergency message and pause
     the recruitment conversation."""
@@ -1571,7 +1534,6 @@ def handle_emergency_routing(turn_result: dict) -> dict:
         "response_text": response_text,
         "routing":       "EMERGENCY",
     }
-
 
 def handle_out_of_scope_routing(turn_result: dict) -> dict:
     """Render an IRB-approved out-of-scope routing message
@@ -1624,7 +1586,6 @@ def handle_out_of_scope_routing(turn_result: dict) -> dict:
         "category":      category,
     }
 
-
 def handle_trial_unavailable(turn_result: dict) -> dict:
     """Render an IRB-approved message for closed-or-paused
     trials and route to the appropriate alternative."""
@@ -1666,7 +1627,6 @@ def handle_trial_unavailable(turn_result: dict) -> dict:
         "routing":       "TRIAL_UNAVAILABLE",
         "trial_state":   state,
     }
-
 
 def handle_identity_mismatch(turn_result: dict) -> dict:
     """The trial does not enroll the identity class of this
@@ -1846,7 +1806,6 @@ RECRUITMENT_TOOL_SCHEMA = [
     },
 ]
 
-
 def build_system_prompt(trial_context: dict,
                           identity: str,
                           conversation_state: dict) -> str:
@@ -1918,7 +1877,6 @@ def build_system_prompt(trial_context: dict,
             lines.append(f"  - {d}")
 
     return "\n".join(lines)
-
 
 def run_agent_turn(turn_result: dict) -> dict:
     """
@@ -2046,7 +2004,6 @@ def run_agent_turn(turn_result: dict) -> dict:
         "iterations_used": iteration + 1,
     }
 
-
 def _summarize_tool_result(tool_result: dict) -> dict:
     """Strip large payloads before tool-call ledger storage."""
     summary = {}
@@ -2125,7 +2082,6 @@ def dispatch_tool(*, tool_name, tool_args, session_id,
     return {"outcome": "ERROR",
             "error":   f"Unknown tool {tool_name}"}
 
-
 def tool_trial_context_retrieve(*, trial_id, section) -> dict:
     """Retrieve a section from the IRB-approved trial
     context. Returns the IRB-approved text with citation
@@ -2162,7 +2118,6 @@ def tool_trial_context_retrieve(*, trial_id, section) -> dict:
                 context.get("content_version"),
         }],
     }
-
 
 def tool_recruitment_faq_retrieve(*, trial_id, question) -> dict:
     """Retrieve IRB-approved FAQ entries matching the
@@ -2218,7 +2173,6 @@ def tool_recruitment_faq_retrieve(*, trial_id, question) -> dict:
         } for m in matches],
     }
 
-
 def tool_eligibility_question_surface(*, trial_id,
                                         criterion_id) -> dict:
     """Surface an eligibility-criterion question. Returns
@@ -2247,7 +2201,6 @@ def tool_eligibility_question_surface(*, trial_id,
                 record.get("irb_review_record", {}),
         }],
     }
-
 
 def tool_eligibility_response_capture(*, session_id,
                                         trial_id,
@@ -2313,7 +2266,6 @@ def tool_eligibility_response_capture(*, session_id,
                 record.get("irb_review_record", {}),
         }],
     }
-
 
 def evaluate_eligibility_criterion(*,
                                      rule_definition,
@@ -2459,7 +2411,6 @@ def evaluate_eligibility_criterion(*,
     return {"outcome": EVAL_OUTCOME_INDETERMINATE,
             "reason":  f"Unknown rule type: {rule_type}"}
 
-
 def _convert_unit(*, value, from_unit, to_unit) -> Optional[float]:
     """Small unit-conversion table. Production uses a
     clinical-leadership-owned conversion library reviewed
@@ -2479,7 +2430,6 @@ def _convert_unit(*, value, from_unit, to_unit) -> Optional[float]:
     }
     fn = conversions.get((from_unit, to_unit))
     return fn(value) if fn else None
-
 
 def tool_prescreen_save_progress(*, session_id, trial_id,
                                    captured_responses,
@@ -2538,7 +2488,6 @@ RECOMMENDATION_PATTERNS_RAW = [
 RECOMMENDATION_PATTERNS = [
     re.compile(p, re.IGNORECASE)
     for p in RECOMMENDATION_PATTERNS_RAW]
-
 
 def screen_assistant_response(*,
                                 response_text,
@@ -2812,7 +2761,6 @@ def tool_coordinator_handoff_request(*, session_id, trial_id,
         }],
     }
 
-
 def build_prescreen_summary(*,
                               session_id,
                               trial_id,
@@ -2854,7 +2802,6 @@ def build_prescreen_summary(*,
                 criterion_id)
     return summary
 
-
 def _expected_followup_window(preferred_time_window):
     """Return a coarse ETA for the coordinator follow-up.
     Production uses the per-trial coordinator-queue
@@ -2863,7 +2810,6 @@ def _expected_followup_window(preferred_time_window):
     if not preferred_time_window:
         return "within 2 business days"
     return f"within 2 business days during {preferred_time_window}"
-
 
 def tool_request_coordinator_immediate(*, session_id,
                                          trial_id,
@@ -2963,7 +2909,6 @@ def tool_representativeness_capture(*, session_id, trial_id,
                     "stage":      FUNNEL_STAGE_PRESCREEN_STARTED,
                 })
     return {"outcome": "OK"}
-
 
 def record_funnel_stage(*, session_id, trial_id, stage,
                           metadata=None) -> None:
@@ -3065,7 +3010,6 @@ def persist_recruitment_decision(*,
 
     return {"decision_id": decision_id}
 
-
 def archive_conversation_transcript(*,
                                       session_id,
                                       trial_id,
@@ -3144,7 +3088,6 @@ def generate_per_trial_report(*, trial_id) -> dict:
             k: dict(v) for k, v in cohort_counts.items()
         },
     }
-
 
 def correlate_consent_and_randomization(*,
                                           trial_id,
@@ -3368,7 +3311,6 @@ def chat_handler(*,
         "safety_verdict": safety_result["verdict"],
     })
 
-
 def _finalize_turn(turn_result, result, terminate=False):
     """Augment the result with structural metadata and
     return."""
@@ -3571,7 +3513,6 @@ def _seed_demo_trial():
 
     return trial_id
 
-
 def _seed_scripted_model_responses(trial_id):
     """Queue mock model responses for the demo turns. Real
     deployments use the real bedrock-runtime client."""
@@ -3703,7 +3644,6 @@ def _seed_scripted_model_responses(trial_id):
         }],
     })
 
-
 def run_demo():
     """Wire up a small end-to-end demo. Onboards a fictional
     trial, runs a recruitment conversation through the
@@ -3757,7 +3697,6 @@ def run_demo():
     print("Per-trial report:")
     report = generate_per_trial_report(trial_id=trial_id)
     print(json.dumps(report, indent=2, default=str))
-
 
 if __name__ == "__main__":
     run_demo()

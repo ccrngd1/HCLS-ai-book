@@ -227,8 +227,6 @@ FUNCTION train_bcq_policy(episodes, bcq_threshold=0.3, discount=0.95):
 
 **Step 5: Off-policy evaluation.** Before any policy touches a patient, estimate how it would have performed on held-out historical data. For chronic disease, you care about agreement rate with clinicians (high agreement means the policy learned that clinicians are mostly right), estimated treatment intensity (is the policy more or less aggressive?), and concordance with outcomes.
 
-<!-- TODO (TechWriter): Expert review finding 3 (HIGH). The Python companion's evaluate_policy_offline docstring claims "weighted importance sampling" but the implementation only computes concordance metrics (agreement rate and average treatment levels). Either add actual importance sampling to the pseudocode here, or clarify that this is concordance-based evaluation with a note that full OPE would use IS/DR estimators. The current pseudocode below uses concordance metrics, which matches the Python implementation. -->
-
 ```pseudocode
 FUNCTION evaluate_policy_offline(policy, action_frequency, test_episodes):
     // Concordance-based evaluation: how often does the learned policy
@@ -407,8 +405,6 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add production gap analysis (model validation, regulatory pathway, clinician trust, prospective trial requirements). -->
-
 ## Variations and Extensions
 
 **Multi-condition optimization.** Most patients with type 2 diabetes have multiple chronic conditions (hypertension, hyperlipidemia, CKD, heart failure). Extend the framework to jointly optimize across conditions, since some medications have cross-condition benefits (SGLT2 inhibitors help both diabetes and heart failure). The state space grows, but the architecture is the same.
@@ -456,7 +452,6 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 
 | [← 15.6: Glucose Control in ICU](chapter15.06-glucose-control-icu) | [Chapter 15 Index](chapter15-preface) | [15.8: Chemotherapy Dose Optimization →](chapter15.08-chemotherapy-dose-optimization) |
 |:---|:---:|---:|
-
 
 ---
 

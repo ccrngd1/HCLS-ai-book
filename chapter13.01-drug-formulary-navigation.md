@@ -131,7 +131,6 @@ The key architectural decision is where intelligence lives. The graph itself is 
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter13.01-architecture). The Python example is linked from there.
 
 ## The Honest Take

@@ -14,8 +14,6 @@
 
 **AWS Lambda for feature engineering orchestration.** The feature engineering pipeline (temporal aggregations, derived features, missing value imputation) runs on each prediction request or on a schedule. Lambda handles the stateless, event-driven nature of this work: a new lab result arrives, trigger a feature refresh, score the patient. For patients with ICU stays exceeding 7-10 days, the volume of vital sign data may approach Lambda's 15-minute timeout. In those cases, pre-aggregate vital signs into hourly summaries in a separate pipeline (AWS Glue or SageMaker Processing), or allocate maximum Lambda memory (10 GB) to maximize compute throughput. Include a timeout fallback that serves the most recent successful prediction rather than failing silently.
 
-<!-- TODO (TechWriter): Expert review A-1 (HIGH). Consider adding a dedicated paragraph or callout box about the Lambda timeout edge case for long-stay patients, with concrete guidance on the pre-aggregation pipeline pattern. -->
-
 **Amazon DynamoDB for prediction storage and serving.** Predictions need to be stored durably (for audit and outcome tracking) and served with low latency to clinical displays. DynamoDB's single-digit-millisecond reads and write-once-read-many access pattern fit perfectly.
 
 **Amazon EventBridge for orchestration.** The pipeline has multiple triggers: new data arrives, scheduled rescoring, model retraining events, drift alerts. EventBridge provides the event routing without custom integration code. In production, supplement the 4-hour schedule with event-triggered rescoring for high-acuity changes (new vasopressor started, intubation, cardiac arrest code). EventBridge rules can match specific HL7 ADT event types to trigger immediate rescoring. See Variations for implementation details.
@@ -430,8 +428,6 @@ FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_out
 - Cases where withdrawal of life-sustaining treatment is the proximate cause of death (self-fulfilling prophecy)
 - Rapidly changing clinical status where 4-hour rescoring misses the inflection point (mitigated by event-triggered rescoring)
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add per template. -->
-
 ---
 
 ## Variations and Extensions
@@ -478,7 +474,6 @@ FUNCTION store_and_serve(patient_id, admission_id, calibration_result, model_out
 | **With variations** (multi-horizon, event-triggered, palliative care integration) | 24-36 weeks |
 
 ---
-
 
 ---
 

@@ -256,7 +256,6 @@ DEFAULT_ENVELOPE_BY_CLASS = {
 }
 ```
 
-
 ## Helpers
 
 Same family of small helpers used in recipes 5.1 - 5.6. The `_to_decimal` and `_serialize_for_dynamodb` helpers are the load-bearing ones; DynamoDB rejects Python `float` and the recursive serializer keeps the rest of the code readable.
@@ -268,11 +267,9 @@ def _to_decimal(value) -> Decimal:
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local time."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for case-insensitive
@@ -282,7 +279,6 @@ def _strip_diacritics(s: str) -> str:
         return ""
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
-
 
 def _canonical_name(*parts) -> str:
     """Normalize a name to canonical lowercase whitespace-collapsed
@@ -295,10 +291,8 @@ def _canonical_name(*parts) -> str:
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes 5.1 - 5.6."""
@@ -311,7 +305,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _emit_metric(metric_name: str, value: float,
                   dimensions: dict = None) -> None:
@@ -334,7 +327,6 @@ def _emit_metric(metric_name: str, value: float,
     except Exception as exc:
         logger.warning("metric emit failed",
                         extra={"metric": metric_name, "error": str(exc)})
-
 
 def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      key_id: str = None) -> None:
@@ -518,7 +510,6 @@ SYNTHETIC_IDENTITY_STORE = {
     },
 }
 
-
 # --- In-memory canonical event log ---
 # Append-only list of all name-change events ever written. The
 # current state of each identity is computed from the event log
@@ -529,7 +520,6 @@ SYNTHETIC_IDENTITY_STORE = {
 _IN_MEMORY_EVENT_LOG: list = []
 _IN_MEMORY_OUTBOX:   list = []
 _IN_MEMORY_REVIEW_QUEUE: list = []
-
 
 # --- Reference data: nickname dictionary, surname-change
 # patterns, transliteration maps, naming-tradition rules ---
@@ -603,7 +593,6 @@ class MockReferenceData:
     def versions_used(self) -> dict:
         return dict(REFERENCE_DATA_VERSIONS)
 
-
 # --- Patient preferences (output of patient-portal capture) ---
 class MockPatientPreferences:
     """In-memory store for patient-expressed preferences for
@@ -619,7 +608,6 @@ class MockPatientPreferences:
 
     def get_for_identity(self, identity_id: str) -> dict:
         return self._prefs.get(identity_id, {"display_scope": "default"})
-
 
 # --- Jurisdictional overlays ---
 class MockJurisdictionalOverlays:
@@ -647,7 +635,6 @@ class MockJurisdictionalOverlays:
             })
         return overlays
 
-
 # Module-level singletons for the demo.
 reference_data           = MockReferenceData()
 patient_preferences_db   = MockPatientPreferences()
@@ -665,14 +652,12 @@ def _classify_source_strength(source_type: str) -> str:
     """Map a trigger source to its strength tier."""
     return SOURCE_STRENGTH.get(source_type, "WEAK")
 
-
 def _identity_lookup_by_local_id(local_patient_id: str) -> Optional[dict]:
     """Stand-in for the active-search-index lookup by local MRN."""
     for identity in SYNTHETIC_IDENTITY_STORE.values():
         if local_patient_id in (identity.get("linked_local_mrns") or []):
             return identity
     return None
-
 
 def _identity_lookup_by_member_id(payer_id: str,
                                       member_id: str) -> Optional[dict]:
@@ -684,7 +669,6 @@ def _identity_lookup_by_member_id(payer_id: str,
                     and link.get("member_id") == member_id):
                 return identity
     return None
-
 
 def _identity_search_by_name_and_demographics(
         name: dict, demographics: dict,
@@ -731,7 +715,6 @@ def _identity_search_by_name_and_demographics(
             best_score = score
             best_identity = identity
     return best_identity if best_score >= Decimal("0.5") else None
-
 
 def _name_pair_plausibility(asserted_name: dict,
                                 identity: dict) -> Decimal:
@@ -792,7 +775,6 @@ def _name_pair_plausibility(asserted_name: dict,
         best = max(best, combined)
     return best
 
-
 def _demographic_match_strength(asserted_demographics: dict,
                                     identity: dict, as_of_date: str) -> Decimal:
     """Score non-name demographic alignment. DOB is the dominant
@@ -836,7 +818,6 @@ def _demographic_match_strength(asserted_demographics: dict,
 
     return score / weight_total if weight_total > 0 else Decimal("0.5")
 
-
 def _temporal_plausibility(asserted_change_date: Optional[str],
                               identity: dict) -> Decimal:
     """Score whether the asserted change date is consistent with
@@ -856,7 +837,6 @@ def _temporal_plausibility(asserted_change_date: Optional[str],
         return Decimal("0.3")
     return Decimal("1.0")
 
-
 def _combine_detection_signals(features: dict,
                                   source_strength: str) -> Decimal:
     """Weighted combination of the three detection-signal
@@ -866,7 +846,6 @@ def _combine_detection_signals(features: dict,
     multiplier = SOURCE_STRENGTH_MULTIPLIER.get(source_strength,
                                                     Decimal("0.7"))
     return weighted * multiplier
-
 
 def detect_name_change_candidate(trigger_event: dict) -> dict:
     """
@@ -1017,7 +996,6 @@ def _classify_sensitivity(candidate: dict, identity: dict) -> str:
     # Default everything else to GENERAL.
     return "GENERAL"
 
-
 def _infer_effective_date(candidate: dict, identity: dict) -> str:
     """Infer the change-effective date when the assertion did
     not carry one. Use the trigger's event date as a fallback;
@@ -1025,7 +1003,6 @@ def _infer_effective_date(candidate: dict, identity: dict) -> str:
     metadata where available."""
     return (candidate.get("asserted_change_date")
               or candidate.get("detected_at", _now_iso())[:10])
-
 
 def _compute_updated_identity_state(identity: dict,
                                        new_event: dict) -> dict:
@@ -1053,7 +1030,6 @@ def _compute_updated_identity_state(identity: dict,
     updated["current_event_version"] = (
         identity.get("current_event_version", 0) + 1)
     return updated
-
 
 def resolve_name_change(detection_envelope: dict) -> dict:
     """
@@ -1202,7 +1178,6 @@ def _derive_display_contexts(sensitivity_class: str,
         base = ["audit_only"]
     return base
 
-
 def _derive_release_scopes(sensitivity_class: str,
                               patient_pref: dict,
                               overlays: list) -> list:
@@ -1220,7 +1195,6 @@ def _derive_release_scopes(sensitivity_class: str,
         base = [s for s in base if s == "patient_access_api"]
     return base
 
-
 def _derive_audit_rules(sensitivity_class: str,
                           patient_pref: dict,
                           overlays: list) -> dict:
@@ -1236,7 +1210,6 @@ def _derive_audit_rules(sensitivity_class: str,
     if (patient_pref or {}).get("monthly_summary_to_patient_portal"):
         base["monthly_summary_to_patient_portal"] = True
     return base
-
 
 def apply_sensitivity_and_consent_envelope(resolution_envelope: dict
                                                 ) -> dict:
@@ -1314,7 +1287,6 @@ def _build_search_index_entries(updated_identity: dict,
                     "permitted_display_contexts"],
         })
     return entries
-
 
 def persist_resolved_name_change(resolution_envelope: dict,
                                       access_control_envelope: dict) -> dict:
@@ -1709,7 +1681,6 @@ def run_pipeline(trigger_event: dict) -> dict:
         "propagation": propagation,
     }
 
-
 def run_demo():
     """Run the full pipeline against four representative trigger
     events covering the auto-resolve, pending-review, indirect-
@@ -2001,14 +1972,11 @@ def run_demo():
           f" affected={len(inv_5['affected_identities'])} "
           f"actions={inv_5['actions']}")
 
-
 if __name__ == "__main__":
     run_demo()
 ```
 
 Expected console output (the SQS / EventBridge / S3 / DynamoDB / CloudWatch warnings appear in demo mode because the resources do not exist; they are harmless):
-
-<!-- TODO (TechWriter): Code review Finding 3 (WARNING). The detection_score values printed below diverge from what the toy scoring functions actually compute (Trigger 1: documented 0.943 vs actual ~0.892; Trigger 2: documented 0.808 vs actual ~0.779; Trigger 3: documented 0.879 vs actual ~0.819; Trigger 4: documented 0.951 vs actual ~0.883). The threshold-band routing outcomes still match because the actual scores cross the right thresholds, but the documented numbers do not correspond to the implemented math. Two paths to reconcile: (a) re-run the demo, capture actual values, and replace the documented scores; or (b) adjust the toy scoring functions (raise the family-name pattern detection's `maiden_to_married_or_replacement` weight from 0.6 or the given-name first-letter fallback from 0.30) to reach the documented values. Same divergence applies to the Expected Results JSON in the main recipe file. Reconcile in one pass. -->
 
 ```
 ======================================================================

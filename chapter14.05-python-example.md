@@ -75,7 +75,6 @@ FAIRNESS_THRESHOLD = 0.7
 ```python
 s3_client = boto3.client("s3", config=BOTO3_RETRY_CONFIG)
 
-
 def load_optimization_inputs(bucket: str, prefix: str) -> dict:
     """
     Load the pre-assembled optimization inputs from S3.
@@ -616,7 +615,6 @@ def run_block_optimization(
         "analysis": analysis,
         "output_path": output_path,
     }
-
 
 # --- Entry point for local testing ---
 if __name__ == "__main__":

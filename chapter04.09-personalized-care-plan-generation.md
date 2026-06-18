@@ -2,7 +2,6 @@
 
 **Complexity:** Complex · **Phase:** Research-to-Production · **Estimated Cost:** ~$0.05-0.20 per generated care plan (depends on number of recommended actions assembled, LLM tokens for tailored narrative, and the breadth of care-team review surfaces)
 
-
 ---
 
 ## The Problem
@@ -335,10 +334,9 @@ The pipeline has seven logical components: a clinical-content component that mai
 
 **Equity instrumentation is non-negotiable.** Plan ambition parity across cohorts (the plan does not systematically aim lower for some cohorts than others). Plan complexity parity (the plan is not systematically simpler or more burdensome for some cohorts than others). Action assignment parity (some cohorts are not systematically assigned more self-management actions while other cohorts get more clinician-led actions). Outcome trajectory parity (plan-attributable outcome improvements are not concentrated in some cohorts). Each axis is monitored, with thresholds that trigger committee review when crossed. The Obermeyer pattern (proxies that encode access disparities driving differential recommendations) applies here in a slightly different form: a care plan generation system that aims its plans at what the model thinks the patient can do, where what-the-patient-can-do is conflated with what-the-patient-has-historically-had-access-to, will produce systematically less ambitious plans for patients in under-resourced cohorts. That is exactly the disparity the system should be working against, not reinforcing.
 
-**Regulatory posture is set early.** In implementations where the care plan is reviewed and modified by the care team before activation, the clinical decision support is mediated by clinician judgment and the regulatory framing is similar to other care-management workflows. In implementations where the plan is presented to the patient with minimal clinical review (a chronic-disease self-management plan delivered through a patient portal, for example), the regulatory analysis tightens; depending on jurisdiction and the clinical claims made in the patient-facing narrative, FDA SaMD regulation may apply. Most production deployments err toward the reviewed-by-care-team posture; teams attempting more direct-to-patient delivery should invest in regulatory analysis early. <!-- TODO: confirm current FDA Clinical Decision Support guidance and the 21st Century Cures Act exemption criteria; the regulatory landscape is evolving and the analysis is fact-specific. -->
+**Regulatory posture is set early.** In implementations where the care plan is reviewed and modified by the care team before activation, the clinical decision support is mediated by clinician judgment and the regulatory framing is similar to other care-management workflows. In implementations where the plan is presented to the patient with minimal clinical review (a chronic-disease self-management plan delivered through a patient portal, for example), the regulatory analysis tightens; depending on jurisdiction and the clinical claims made in the patient-facing narrative, FDA SaMD regulation may apply. Most production deployments err toward the reviewed-by-care-team posture; teams attempting more direct-to-patient delivery should invest in regulatory analysis early. 
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter04.09-architecture). The Python example is linked from there.
 

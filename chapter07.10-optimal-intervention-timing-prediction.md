@@ -93,12 +93,9 @@ For most healthcare organizations starting this work, the practical approach is 
 
 **Decision Engine.** Combine the intervention window score with operational constraints: care manager capacity, patient preferences, channel availability (phone, text, in-person), time of day. The output is a prioritized, actionable worklist with recommended timing.
 
-<!-- TODO (TechWriter): Expert review SEC-1 (HIGH). Add data minimization guidance for the delivery layer: (1) row-level access control so care managers see only their assigned patients; (2) consider coded explanations with deep links to the patient chart rather than embedding full clinical detail in the worklist; (3) if full clinical detail is included, the care management platform must meet the same encryption and access logging requirements as the EHR. -->
-
 **Care Team Delivery.** Surface the recommendation to the care team through their existing workflow tools (EHR task lists, care management platforms, mobile apps). Include the "why now" explanation: what changed in this patient's trajectory that makes today the right day to act.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter07.10-architecture). The Python example is linked from there.
 

@@ -249,7 +249,6 @@ def split_into_sentences(text: str) -> list:
     # Filter out empty strings and very short fragments (< 10 chars).
     return [s.strip() for s in sentences if len(s.strip()) >= 10]
 
-
 def classify_aspect_keyword_fallback(sentence: str) -> tuple:
     """
     Fallback aspect classifier using keyword matching.
@@ -280,7 +279,6 @@ def classify_aspect_keyword_fallback(sentence: str) -> tuple:
     confidence = 0.7 if best_score > 0 else 0.3
     return best_aspect, confidence
 
-
 def classify_aspect_with_comprehend(sentence: str, endpoint_arn: str) -> tuple:
     """
     Classify which aspect a sentence discusses using a trained custom classifier.
@@ -307,7 +305,6 @@ def classify_aspect_with_comprehend(sentence: str, endpoint_arn: str) -> tuple:
     # ClassifyDocument returns classes sorted by confidence descending.
     top_class = response["Classes"][0]
     return top_class["Name"], top_class["Score"]
-
 
 def extract_aspects(redacted_text: str, classifier_endpoint_arn: str = None) -> list:
     """
@@ -412,7 +409,6 @@ def determine_needs_attention(document_sentiment: dict, aspects: list) -> bool:
             return True
 
     return False
-
 
 def store_analysis_result(
     source_metadata: dict,
@@ -554,7 +550,6 @@ SYNTHETIC_FEEDBACK = [
     },
 ]
 
-
 def analyze_feedback_item(
     feedback_item: dict,
     classifier_endpoint_arn: str = None,
@@ -618,7 +613,6 @@ def analyze_feedback_item(
     )
 
     return record
-
 
 # Run the pipeline against synthetic data.
 if __name__ == "__main__":

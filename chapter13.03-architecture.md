@@ -402,8 +402,6 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 
 ---
 
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE.md. Should appear between Expected Results and Variations. -->
-
 ## Variations and Extensions
 
 **Coding assistance with similarity search.** Combine the hierarchy graph with a text embedding model. When a coder types a free-text description ("chest wall pain after coughing"), embed it, find the nearest code descriptions in vector space, then use the graph to show the full context: parent codes, sibling codes, and exclusions. The graph turns a flat similarity search into a navigable decision tree.

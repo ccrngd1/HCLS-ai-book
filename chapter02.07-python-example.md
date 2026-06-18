@@ -223,7 +223,6 @@ def _get_opensearch_client() -> OpenSearch:
         timeout=30,
     )
 
-
 def _embed_text(text: str) -> list:
     """
     Embed a single string with the configured embedding model.
@@ -254,7 +253,6 @@ def _embed_text(text: str) -> list:
     payload = json.loads(response["body"].read())
     return payload["embedding"]
 
-
 def _parse_json_response(raw_text: str) -> dict:
     """
     Parse JSON from a model response, stripping common markdown wrappers.
@@ -274,7 +272,6 @@ def _parse_json_response(raw_text: str) -> dict:
     except json.JSONDecodeError:
         logger.warning("Failed to parse JSON response; returning empty dict")
         return {}
-
 
 def _safe_utf8_truncate(text: str, max_bytes: int) -> str:
     """
@@ -1286,7 +1283,6 @@ AT THE END, append a JSON code block with tracked claims:
         "chunks_used": top_chunks,
     }
 
-
 def _extract_trailing_json_block(text: str) -> dict:
     """
     Pull the last ```json ... ``` block out of the model's response.
@@ -1311,7 +1307,6 @@ def _extract_trailing_json_block(text: str) -> dict:
     except json.JSONDecodeError:
         logger.warning("Trailing JSON block failed to parse")
         return {}
-
 
 def _strip_trailing_json_block(text: str) -> str:
     """Remove the last ```json ... ``` block and any trailing whitespace."""
@@ -1505,13 +1500,11 @@ def validate_answer(
         "unverified_claims": unverified,
     }
 
-
 def _normalize_for_match(text: str) -> str:
     """Lowercase, strip punctuation edges, collapse whitespace."""
     if not text:
         return ""
     return re.sub(r"\s+", " ", text.strip().lower())
-
 
 def _token_overlap_ratio(a: str, b: str) -> float:
     """
@@ -1526,7 +1519,6 @@ def _token_overlap_ratio(a: str, b: str) -> float:
     if not tokens_a or not tokens_b:
         return 0.0
     return len(tokens_a & tokens_b) / len(tokens_a | tokens_b)
-
 
 def _extract_numeric_tokens(text: str) -> list:
     """
@@ -1553,7 +1545,6 @@ def _extract_numeric_tokens(text: str) -> list:
         r"(?:\s*(?:%|mg|mcg|g|kg|mL|IU|mmHg|U/L|ng/mL|bpm))?"
     )
     return pattern.findall(text)
-
 
 def _build_regeneration_hint(unverified: list) -> str:
     """Summarize validator issues into a concise instruction for the next try."""
@@ -1730,7 +1721,6 @@ def render_answer(
         ),
     }
 
-
 def _format_citation(chunk: dict) -> str:
     """
     Build a human-readable citation string from chunk metadata.
@@ -1768,7 +1758,6 @@ def _format_citation(chunk: dict) -> str:
         parts.append(f"{year}.")
     return " ".join(parts)
 
-
 def _build_source_link(chunk: dict) -> str:
     """
     Build a clickable source link from chunk metadata.
@@ -1786,7 +1775,6 @@ def _build_source_link(chunk: dict) -> str:
     if "/" in doi_or_pmid:
         return f"https://doi.org/{doi_or_pmid}"
     return ""
-
 
 def _get_corpus_date_range_stub() -> str:
     """
@@ -2180,7 +2168,6 @@ def answer_clinical_question(request: dict) -> dict:
         "attempts": attempts,
         "processing_time_ms": elapsed_ms,
     }
-
 
 # --- Example usage ---
 if __name__ == "__main__":

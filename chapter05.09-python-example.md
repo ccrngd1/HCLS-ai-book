@@ -301,14 +301,12 @@ def _to_decimal(value) -> Decimal:
         return value
     return Decimal(str(value))
 
-
 def _now_iso() -> str:
     """UTC timestamp in ISO 8601 format. Always UTC; never local
     time. Cross-QHIN audit reconstruction joins logs from
     multiple participants whose servers are in different time
     zones; UTC is the only sane lingua franca."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _strip_diacritics(s: str) -> str:
     """Strip combining diacritical marks for cross-participant
@@ -322,7 +320,6 @@ def _strip_diacritics(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", s)
     return "".join(c for c in nfkd if not unicodedata.combining(c))
 
-
 def _canonical_name(*parts) -> str:
     """Normalize a name to canonical lowercase whitespace-
     collapsed form. Production handles per-tradition rules
@@ -335,7 +332,6 @@ def _canonical_name(*parts) -> str:
     joined = re.sub(r"[^\w\s'-]", " ", joined)
     joined = re.sub(r"\s+", " ", joined).strip()
     return joined
-
 
 def _normalize_address(address: str) -> str:
     """Light USPS-style standardization. Production uses a real
@@ -357,7 +353,6 @@ def _normalize_address(address: str) -> str:
         s = re.sub(pattern, repl, s, flags=re.IGNORECASE)
     return _canonical_name(s)
 
-
 def _normalize_phone(phone: str) -> str:
     """Strip non-digits, keep last 10. Production handles the
     e164 canonical form; the demo's last-10 is a stand-in."""
@@ -365,7 +360,6 @@ def _normalize_phone(phone: str) -> str:
         return ""
     digits = re.sub(r"\D", "", phone)
     return digits[-10:] if len(digits) >= 10 else digits
-
 
 def _jaro_winkler(s1: str, s2: str) -> Decimal:
     """Jaro-Winkler approximate string similarity. Production
@@ -424,10 +418,8 @@ def _jaro_winkler(s1: str, s2: str) -> Decimal:
             break
     return jaro + Decimal(prefix) * Decimal("0.1") * (Decimal(1) - jaro)
 
-
 def _sha256(s: str) -> str:
     return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
 
 def _serialize_for_dynamodb(obj):
     """Recursive serialization helper. Same pattern as recipes
@@ -441,7 +433,6 @@ def _serialize_for_dynamodb(obj):
     if isinstance(obj, float):
         return Decimal(str(obj))
     return obj
-
 
 def _summarize_payload_for_audit(demographic_features: dict) -> dict:
     """Audit-friendly summary of a demographic-feature payload.
@@ -464,7 +455,6 @@ def _summarize_payload_for_audit(demographic_features: dict) -> dict:
         "feature_count":     len(features_present),
         "payload_hash":      _sha256(canonical)[:16],
     }
-
 
 def _build_attribution_chain(originating_user_or_patient: str,
                                 is_patient_mediated: bool,
@@ -490,7 +480,6 @@ def _build_attribution_chain(originating_user_or_patient: str,
             f"{is_patient_mediated}")[:16],
     }
 
-
 def _emit_metric(metric_name: str, value: float,
                   dimensions: dict = None) -> None:
     """CloudWatch metric emit. Cohort-bucket-hash dimensions
@@ -515,7 +504,6 @@ def _emit_metric(metric_name: str, value: float,
                         extra={"metric": metric_name,
                                 "error": str(exc)})
 
-
 def _archive_to_s3(payload: dict, bucket: str, partition: str,
                      key_id: str = None) -> None:
     """Best-effort archive to S3 with KMS encryption. Failures
@@ -533,7 +521,6 @@ def _archive_to_s3(payload: dict, bucket: str, partition: str,
         logger.info("archive write skipped (demo mode is fine)",
                      extra={"bucket": bucket, "key": key,
                               "error": str(exc)})
-
 
 def _audit_log(event: dict) -> None:
     """Write an audit-event-log row. In production this is a
@@ -647,7 +634,6 @@ class MockSecretsCustody:
             "timestamp":     _now_iso(),
         })
 
-
 def _sign_payload(payload: dict, signing_key: bytes,
                     key_version: str) -> dict:
     """Produce a signature envelope for a query or response
@@ -665,7 +651,6 @@ def _sign_payload(payload: dict, signing_key: bytes,
         "payload_hash":         _sha256(canonical),
         "signed_at":            _now_iso(),
     }
-
 
 def _verify_signature_against_any(payload: dict,
                                        signature_envelope: dict,
@@ -696,7 +681,6 @@ def _verify_signature_against_any(payload: dict,
         if hmac.compare_digest(expected, sig_value):
             return True
     return False
-
 
 # --- Mock local MPI ---
 # The local master patient index. Production is Aurora
@@ -799,7 +783,6 @@ SYNTHETIC_LOCAL_MPI_RECORDS = [
     },
 ]
 
-
 class MockLocalMPI:
     """Stand-in for Aurora PostgreSQL holding the participant's
     canonical patient identity records. Production has indexes
@@ -827,7 +810,6 @@ class MockLocalMPI:
         1, 4)) or similar blocking keys to reduce O(n) scans on
         the full MPI. The demo does a full scan."""
         return list(self._records)
-
 
 # --- Mock consent store ---
 class MockConsentStore:
@@ -875,7 +857,6 @@ class MockConsentStore:
             "exchange_purpose": exchange_purpose,
             "granted_at":       _now_iso(),
         }
-
 
 # --- Mock jurisdictional overlay rules ---
 class MockJurisdictionalOverlays:
@@ -932,7 +913,6 @@ class MockJurisdictionalOverlays:
                     "reason":     "ias_third_party_request_restriction",
                 })
         return overlays
-
 
 # --- Mock QHIN federation router ---
 class MockQHINFederationRouter:
@@ -1022,7 +1002,6 @@ class MockQHINFederationRouter:
         WebSocket; the demo returns the in-memory list."""
         return list(self._pending_responses.get(
             federation_handle, []))
-
 
 # --- Module-level singletons for the demo ---
 secrets_custody              = MockSecretsCustody()
@@ -1193,7 +1172,6 @@ def handle_inbound_patient_discovery_query(
                                 "QhinId": qhin_id})
     return signed_response
 
-
 def _build_rejection_response(query_id: str, qhin_id: str,
                                   reason_code: str) -> dict:
     return {
@@ -1205,7 +1183,6 @@ def _build_rejection_response(query_id: str, qhin_id: str,
         },
         "signature": None,  # rejections are unsigned in the demo
     }
-
 
 def _build_purpose_denied_response(query_id: str, qhin_id: str,
                                           attribution_chain: dict,
@@ -1354,7 +1331,6 @@ def run_local_matcher_under_cross_network_tolerance(
                                 "ConfidenceTier": "mixed"})
     return scored
 
-
 def _extract_disclosable_features(mpi_record: dict,
                                           exchange_purpose: str) -> dict:
     """Return the demographic-feature subset the participant is
@@ -1384,7 +1360,6 @@ def _extract_disclosable_features(mpi_record: dict,
         "state":        mpi_record["state"],
         "zip_code":     mpi_record["zip_code"],
     }
-
 
 def _compute_per_feature_similarities(query_normalized: dict,
                                           mpi_record: dict) -> dict:
@@ -1423,7 +1398,6 @@ def _compute_per_feature_similarities(query_normalized: dict,
         else Decimal("0.0"))
     return similarities
 
-
 def _combine_with_fellegi_sunter(per_feature: dict,
                                       weights: dict) -> Decimal:
     """Weighted-sum combination across features; the production
@@ -1438,7 +1412,6 @@ def _combine_with_fellegi_sunter(per_feature: dict,
     if total == 0:
         return Decimal("0")
     return weighted / total
-
 
 def _compute_cohort_axis_hashes(mpi_record: dict) -> dict:
     """Compute hashed cohort-axis values for the response. The
@@ -1637,7 +1610,6 @@ def originate_outbound_patient_discovery_query(
         "use_case_context":  use_case_context,
     }
     return federation_handle
-
 
 _IN_MEMORY_FEDERATION_HANDLES: dict = {}
 ```
@@ -1938,7 +1910,6 @@ def execute_document_query_and_retrieval(
                                             "treatment")})
     return consolidated_documents
 
-
 def _retrieve_documents_for_candidate(opaque_token: str,
                                               responder_id: str,
                                               source_org_id: str,
@@ -2067,7 +2038,6 @@ def register_demo_participants() -> None:
     for pid, handler in other_participants:
         qhin_router.register_participant(pid, handler)
 
-
 def _make_inbound_handler_for_other_participant(
         participant_id: str, mpi_records: list):
     """Produce an inbound-query-handler closure for a mock
@@ -2172,7 +2142,6 @@ def _make_inbound_handler_for_other_participant(
             "signature": response_signature,
         }
     return handler
-
 
 def run_demo():
     """Run two representative cross-network query flows: a
@@ -2458,7 +2427,6 @@ def run_demo():
     print("   overlay engine suppressed the candidate because the")
     print("   requesting jurisdiction is incompatible with the")
     print("   patient's residence-jurisdiction overlay.)")
-
 
 if __name__ == "__main__":
     run_demo()

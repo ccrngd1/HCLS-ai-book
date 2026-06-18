@@ -171,7 +171,6 @@ dynamodb = boto3.resource("dynamodb", config=BOTO3_RETRY_CONFIG)
 # Table where we store the latest state observations from each source system.
 state_table = dynamodb.Table("hospital-resource-state")
 
-
 def build_state_vector(hospital_id: str, timestamp_epoch: float) -> np.ndarray:
     """
     Assemble the current hospital state into a normalized feature vector.
@@ -717,7 +716,6 @@ class PolicyNetwork:
         action = np.random.choice(self.action_dim, p=masked_probs)
         return action, masked_probs[action]
 
-
 def train_policy_loop(num_episodes: int = 1000) -> PolicyNetwork:
     """
     Train the resource allocation policy using PPO with Lagrangian constraints.
@@ -957,7 +955,6 @@ def evaluate_policy_offline(
 sagemaker_runtime = boto3.client("sagemaker-runtime", config=BOTO3_RETRY_CONFIG)
 dynamodb_client = boto3.client("dynamodb", config=BOTO3_RETRY_CONFIG)
 
-
 def generate_recommendation(hospital_id: str, policy: PolicyNetwork) -> dict:
     """
     Generate resource allocation recommendations for the current hospital state.
@@ -1027,7 +1024,6 @@ def generate_recommendation(hospital_id: str, policy: PolicyNetwork) -> dict:
 
     return payload
 
-
 def _describe_action(action_name: str) -> str:
     """Human-readable description of each action."""
     descriptions = {
@@ -1045,7 +1041,6 @@ def _describe_action(action_name: str) -> str:
         "hold_or_bed_for_post_op": "Reserve bed for upcoming OR case completion",
     }
     return descriptions.get(action_name, action_name)
-
 
 def _generate_explanation(action_name: str, state: np.ndarray) -> str:
     """
@@ -1080,7 +1075,6 @@ def _generate_explanation(action_name: str, state: np.ndarray) -> str:
     else:
         return "Recommended based on current state and predicted demand trajectory."
 
-
 def _summarize_state(state: np.ndarray) -> dict:
     """Create a human-readable state summary for the dashboard."""
     return {
@@ -1090,7 +1084,6 @@ def _summarize_state(state: np.ndarray) -> dict:
         "ed_boarders": int(state[11]) if len(state) > 11 else 0,
         "or_cases_remaining": int(state[15]) if len(state) > 15 else 0,
     }
-
 
 def _log_recommendation(payload: dict):
     """
@@ -1179,7 +1172,6 @@ def run_full_pipeline(hospital_id: str):
     print("\n" + "=" * 60)
     print("Pipeline complete. Model ready for decision support deployment.")
     print("=" * 60)
-
 
 if __name__ == "__main__":
     run_full_pipeline(hospital_id="hospital-demo-001")

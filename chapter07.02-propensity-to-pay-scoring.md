@@ -38,8 +38,6 @@ Propensity to pay in healthcare works on the same principle: use historical beha
 
 **Harder because:** Healthcare balances are heterogeneous in ways that credit card balances aren't. A $25 copay, a $500 deductible, and a $15,000 surgical balance are fundamentally different collection problems. The patient's propensity to pay a $25 copay tells you almost nothing about their propensity to pay a $15,000 balance. Your model needs to account for balance characteristics, not just patient characteristics.
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add a paragraph noting FCRA implications. Since the recipe draws an explicit credit scoring analogy, note that propensity scores used for adverse financial decisions (escalating to collections, denying payment plans) may trigger Fair Credit Reporting Act requirements. Recommend consulting legal counsel and using scores for prioritization rather than exclusion. -->
-
 ### Binary Classification with Calibrated Probabilities
 
 Like no-show prediction (Recipe 7.1), propensity to pay is a binary classification problem at its core. Given features about a patient and their balance, predict: will this balance be paid within N days? The output is a probability between 0 and 1.

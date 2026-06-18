@@ -41,7 +41,6 @@ A few things worth knowing upfront:
 
 ---
 
-
 ## Configuration and Constants
 
 Everything that is configuration rather than logic lives here: thresholds, code maps, resource names, and lookup tables. These are the knobs that move most often between dev, test, and production, and between SIU playbook revisions. Keep them at the top of the file so a reviewer can see the levers without wading through function bodies.
@@ -187,7 +186,6 @@ def _to_decimal(value, precision="0.01"):
         return None
     return Decimal(str(value)).quantize(Decimal(precision))
 
-
 def _redact_for_logs(canonical_claim):
     """Produce a log-safe structural summary of a claim.
 
@@ -201,7 +199,6 @@ def _redact_for_logs(canonical_claim):
         "service_date": canonical_claim.get("service_date"),
         "num_lines": len(canonical_claim.get("lines", [])),
     }
-
 
 def normalize_claim(raw_claim):
     """Convert a raw payer/clearinghouse claim into the canonical shape used
@@ -309,7 +306,6 @@ def _load_external_reference_data():
         "sam": set(),   # entity IDs debarred from federal contracting
         "sunshine_act": defaultdict(list),  # NPI -> list of industry payments
     }
-
 
 def resolve_providers(claims_batch, external_reference):
     """Produce a canonical provider ID for each NPI referenced in the batch.
@@ -601,7 +597,6 @@ def _safe_zscore(value, peer_mean, peer_std, floor_std=0.01):
     denom = max(peer_std or 0, floor_std)
     return (value - peer_mean) / denom
 
-
 def _cusum(series, k, h):
     """Classic one-sided upper CUSUM.
 
@@ -618,7 +613,6 @@ def _cusum(series, k, h):
         if c > h * std:
             return i
     return None
-
 
 def score_provider_statistics(provider_id, provider_features, peer_baselines):
     """Score a provider's monthly feature vector against peer baselines and
@@ -691,7 +685,6 @@ def score_provider_statistics(provider_id, provider_features, peer_baselines):
 
     return flags
 
-
 def train_isolation_forest(feature_matrix):
     """Train a multivariate Isolation Forest on provider-period feature vectors.
 
@@ -708,7 +701,6 @@ def train_isolation_forest(feature_matrix):
     )
     model.fit(feature_matrix)
     return model
-
 
 def score_isolation_forest(model, feature_matrix, provider_ids):
     """Score a batch of providers against the trained Isolation Forest.
@@ -859,7 +851,6 @@ def _overall_severity(flag_severities):
         return "high"
     return "medium"
 
-
 def _determine_routing(severity, exposure):
     """Routing policy by case severity and dollar exposure.
 
@@ -872,7 +863,6 @@ def _determine_routing(severity, exposure):
     if severity == "high" and exposure >= HIGH_SEVERITY_EXPOSURE:
         return {"queue": "priority", "notify": ["lead-investigator"]}
     return {"queue": "standard", "notify": []}
-
 
 def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
     """Group flags by target entity, compute case severity and exposure,
@@ -969,7 +959,6 @@ def aggregate_flags_to_cases(all_flags, claim_exposure_by_entity):
 
     _emit_metric("CasesCreated", len(cases_written))
     return cases_written
-
 
 def _emit_metric(metric_name, value, unit="Count"):
     """Emit a CloudWatch metric."""
@@ -1231,7 +1220,6 @@ def run_fwa_pipeline(
 
     return cases, all_flags
 
-
 def _build_provider_features(canonical_claims):
     """Compute a tiny subset of per-provider features from the claims batch.
 
@@ -1271,7 +1259,6 @@ def _build_provider_features(canonical_claims):
         )
         agg["unique_patients"] = len(agg["unique_patients"])
     return dict(by_provider)
-
 
 def _compute_exposure(canonical_claims, resolved_entities):
     """Sum billed amounts by rendering-provider canonical ID for exposure."""

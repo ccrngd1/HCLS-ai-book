@@ -1,36 +1,3 @@
-<!--
-TechEditor pass v7 (2026-06-17):
-- Post-split polish. This file was mechanically split from a monolithic recipe
-  into a main recipe (this file: story and concepts) and an architecture
-  companion (chapter03.02-architecture.md: AWS implementation and pseudocode).
-  This pass verifies that the main recipe reads as a coherent standalone document
-  after the split.
-- Confirmed: General Architecture Pattern section is fully vendor-agnostic. No
-  AWS service names, no references to pseudocode or code blocks that now live in
-  the companion. The section ends with the architecture callout linking to the
-  companion, matching the RECIPE-GUIDE template.
-- Confirmed: The Honest Take section contains no dangling references to AWS
-  content. All discussion is conceptual and self-contained.
-- Confirmed: architecture callout is well placed (end of General Architecture
-  Pattern, before The Honest Take) and uses the canonical wording from RECIPE-GUIDE.
-- Confirmed: 0 em dashes (U+2014), 0 en dashes (U+2013), all code fences tagged
-  (2 fenced blocks, both `text`). Header hierarchy: 1 H1, 5 H2, 7 H3, 0 H4.
-  No skipped levels.
-- Confirmed: sections present and in order per RECIPE-GUIDE for the main file:
-  The Problem, The Technology, General Architecture Pattern (with callout),
-  The Honest Take, Related Recipes, Tags, Navigation footer.
-- Confirmed: 0 documentation-voice, 0 marketing-language hits.
-- Previous version-history (v1-v6) described the pre-split monolithic file and
-  referenced sections, line numbers, code-fence counts, and link inventories
-  that are no longer accurate for this file. Replaced with this post-split
-  summary. The v1-v6 editorial findings remain valid for the content that now
-  lives in the architecture companion; the companion carries its own editorial
-  history.
-- TODO inventory for this file: 1 HTML-comment TODO in The Problem (sentence-
-  fragment clarification, owned by TechWriter). All other TODOs from v1-v6 now
-  live in the architecture companion where the relevant content landed.
--->
-
 # Recipe 3.2: Patient No-Show Pattern Detection ⭐
 
 **Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.005 per appointment scored (mostly compute; feature pulls dominate)
@@ -57,7 +24,7 @@ There's the patient who tried to cancel and couldn't. Called the number on the a
 
 And there's the patient who is a habitual no-show. Not because they don't care, but because their life circumstances (housing instability, transportation precarity, shift work with little notice, chronic conditions that flare unpredictably) make committing to a weekday appointment three weeks out genuinely hard to keep. Their no-show pattern is a signal about their life, not about the care the clinic is offering.
 
-The usual response to this mess is uniform: send every patient the same reminder via the same channel at the same time, then double-book the slots that historically no-show the most. Both of these are blunt instruments. The uniform reminder wastes budget on patients who don't need reminding and fails the patients who'd have responded to a different channel (see Recipe 4.1 for the channel optimization problem in detail). The double-booking punishes the patients who do show up for their slots, because the provider is now running thirty minutes behind and a legitimate reason someone had to wait. <!-- TODO (TechWriter): the trailing clause "and a legitimate reason someone had to wait" reads as a sentence fragment with a missing word. Probable intent: "and there's no legitimate reason they had to wait" or "and the patients who showed up on time had no legitimate reason to be punished by waiting." Please clarify the intended meaning. -->
+The usual response to this mess is uniform: send every patient the same reminder via the same channel at the same time, then double-book the slots that historically no-show the most. Both of these are blunt instruments. The uniform reminder wastes budget on patients who don't need reminding and fails the patients who'd have responded to a different channel (see Recipe 4.1 for the channel optimization problem in detail). The double-booking punishes the patients who do show up for their slots, because the provider is now running thirty minutes behind and a legitimate reason someone had to wait. 
 
 What you actually want to do is more targeted. You want to rank tomorrow's appointments by no-show risk. You want to intervene on the high-risk ones (extra reminder, phone outreach, transportation assistance, maybe an offer to reschedule to a more convenient time) before they become no-shows. And crucially, you want to know which of those high-risk appointments are driven by patient-level patterns versus appointment-level factors (wrong time of day for this patient, wrong provider, wrong prep instructions) because those two cases need different interventions.
 
@@ -159,7 +126,6 @@ The same discipline applies to patient baselines. If you update a patient's roll
 
 The fix is the same exclusion you apply to the retraining data: only update the patient's rolling baseline when no intervention was applied. If the patient showed up after receiving a care coordinator call, record the outcome for label purposes but don't let it shift the baseline. Track intervened observations separately (an `intervened_observation_count` field on the baseline record) so you can analyze the intervention-adjusted rate if needed, but keep the baseline clean as a measure of what the patient does when left to their own devices.
 
-
 ### Fairness Concerns, Which Are Real
 
 No-show prediction has well-documented fairness pitfalls. The model's features correlate with race, income, housing stability, and transportation access, and those correlations are not coincidences. A model trained naively can end up systematically scoring patients of color, Medicaid patients, or patients in lower-income ZIP codes as higher-risk. If the operational response to a high-risk score is "don't prioritize their reschedule," the system becomes a mechanism for further restricting access to care for the populations with the worst access to begin with. This is not hypothetical. It has happened. It's the main reason "just predict no-shows and double-book them" is the wrong framing.
@@ -237,7 +203,6 @@ At a conceptual level, the pipeline has four stages plus a feedback loop. The st
 **Retraining.** Monthly is a common cadence. A weekly retrain is overkill for a problem where patient behavior changes slowly; a quarterly retrain is too slow to catch schedule-pattern changes from things like seasonality or operational shifts. The retrain pipeline should include subgroup performance evaluation (by age, insurance type, language, race/ethnicity where available) before promotion.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter03.02-architecture). The Python example is linked from there.
 

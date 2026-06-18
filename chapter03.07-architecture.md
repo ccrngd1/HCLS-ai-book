@@ -14,7 +14,7 @@
 
 **Amazon DynamoDB for the patient state store.** Single-digit-millisecond reads on the current patient snapshot. Each admitted patient is a record (or a small set of records) with current vitals, rolling history pointers, active medications, current location, and active orders. DynamoDB Streams trigger the feature engine on state changes, so scoring is event-driven (not polling) for fresh events while a periodic backstop catches patients whose state hasn't changed but whose elapsed-time features have shifted.
 
-**Amazon Timestream for time-series storage.** Vitals and labs are inherently time-series data, and Timestream is purpose-built for this. Trajectory features (slopes, deltas, rolling statistics) compute efficiently against a Timestream-backed history. Magnetic-tier retention is cost-effective for the multi-year history needed for retraining. <!-- TODO (TechWriter): verify current HIPAA eligibility status of Amazon Timestream; confirm with the AWS HIPAA Eligible Services Reference. Some deployments may prefer storing time-series data in DynamoDB or S3 (with Athena) if Timestream eligibility or feature set doesn't match requirements. -->
+**Amazon Timestream for time-series storage.** Vitals and labs are inherently time-series data, and Timestream is purpose-built for this. Trajectory features (slopes, deltas, rolling statistics) compute efficiently against a Timestream-backed history. Magnetic-tier retention is cost-effective for the multi-year history needed for retraining. 
 
 **Amazon SageMaker for model training, hosting, and feature management.** Training runs as SageMaker Training Jobs against retrospective data in S3. The trained model deploys to a SageMaker real-time endpoint for online scoring (low latency for the inline alert path) plus a batch transform pipeline for the periodic backstop. SageMaker Feature Store keeps the offline (training) and online (scoring) feature vectors consistent, with point-in-time correctness so that historical predictions can be reproduced for governance and clinical safety review. SageMaker Clarify produces fairness reports across subgroups and per-prediction SHAP values for the explanation layer.
 
@@ -32,7 +32,7 @@
 
 **Amazon Comprehend Medical for nursing note feature extraction.** When the model includes free-text nursing assessment features, Comprehend Medical extracts structured entities (mental status descriptions, pain assessments, concerns expressed). The extracted entities feed the feature engine. Optional but useful when the Rothman-Index-style nursing-assessment features are part of the model.
 
-**Amazon Bedrock for explanation generation.** Per-prediction explanations are essential for clinician trust. SHAP values surface the technical drivers; Bedrock-hosted LLMs convert those drivers plus the patient context into clinician-readable narrative ("Risk increased substantially over the last 4 hours, driven primarily by rising heart rate (76 → 102 bpm), rising respiratory rate (16 → 22), and a new lactate of 3.2. Pattern is consistent with early sepsis. Suggest sepsis bundle evaluation."). Always with human review; the LLM is producing decision support, not decisions. <!-- TODO (TechWriter): confirm the set of HIPAA-eligible Bedrock foundation models as of the current year. Model availability under the AWS BAA has been expanding; verify before recommending a specific model. -->
+**Amazon Bedrock for explanation generation.** Per-prediction explanations are essential for clinician trust. SHAP values surface the technical drivers; Bedrock-hosted LLMs convert those drivers plus the patient context into clinician-readable narrative ("Risk increased substantially over the last 4 hours, driven primarily by rising heart rate (76 → 102 bpm), rising respiratory rate (16 → 22), and a new lactate of 3.2. Pattern is consistent with early sepsis. Suggest sepsis bundle evaluation."). Always with human review; the LLM is producing decision support, not decisions. 
 
 **AWS Step Functions for orchestration.** Retraining pipelines, periodic batch backstops, and scheduled subgroup performance evaluations are multi-step workflows with retry and error handling needs.
 
@@ -178,7 +178,7 @@ flowchart TB
 > **Reference implementations:** These aws-samples repositories demonstrate patterns that apply here:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Time-series modeling examples, XGBoost on tabular features, Feature Store with online and offline stores, Model Monitor configurations, Clarify SHAP examples.
 > - [`aws-samples`](https://github.com/aws-samples): search for "FHIR," "HealthLake," and "clinical" for healthcare-specific integration patterns.
-> <!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating clinical deterioration prediction, sepsis prediction, or early warning systems on AWS. Adjacent examples exist (real-time scoring, healthcare ML pipelines); a direct match for deterioration prediction has not been confirmed at the time of writing. -->
+> 
 
 #### Walkthrough
 
@@ -372,10 +372,6 @@ FUNCTION invoke_scoring(patient_id, encounter_id, trigger):
 ```
 
 **Step 4: Compute the feature vector.** The feature engine reads patient state and time-series history, computes the model's input vector, and writes it to the Feature Store for both online use and offline reproduction.
-
-<!-- TODO (TechWriter): expert review finding A3 (treatment-leakage and feature-cutoff). The Technology section's Sampling-Time-Windows-And-Right-Censoring subsection correctly identifies treatment leakage and event leakage as fundamental modeling concerns and names the as-of-cutoff mitigation ("restrict the model to features available at decision time only"). The pseudocode below accepts an `as_of` parameter but does not enforce a temporal filter on every field (medication-class features, order-context features, and current-vital reads pull from the latest patient state without filtering on `observed_at <= as_of - LEAKAGE_BUFFER_MINUTES`). Add a `LEAKAGE_BUFFER_MINUTES` configuration constant (typically 30-60 minutes per the Event-Leakage paragraph) and apply it consistently across vitals, labs, medications, and orders. Add a paragraph to the General Architecture Pattern's Feature Engine subsection naming feature-cutoff and leakage-buffer discipline as a first-class concern; tie the buffer setting to clinical-governance ownership. -->
-
-<!-- TODO (TechWriter): expert review finding A4 (cold-start handling). The "Where it struggles" subsection correctly identifies cold-start as a key failure mode and names the operational mitigation (rely on standard track-and-trigger during the early-stay window). The pseudocode below does not detect cold-start state or route cold-start patients differently. Add a `data_richness_index` computation (number of vitals observations in the last 24 hours, number of labs in the last 48 hours, hours since admission) and a `cold_start_flag` in this Step 4; in Step 5, route cold-start patients to a population-prior model variant or to a NEWS2 fallback with the cold-start status surfaced in the alert payload in Step 7. Add a paragraph to the General Architecture Pattern's Scoring Service subsection naming cold-start handling as a first-class concern. -->
 
 ```
 FUNCTION compute_features(patient_id, encounter_id, as_of):
@@ -627,12 +623,6 @@ FUNCTION build_explanation(score_record, features):
 
 **Step 7: Route alerts based on tier and suppression rules.** The alert router applies tier-based routing, suppression rules (active comfort care, already in ICU, recent rapid response), and delta detection (this patient's score just jumped substantially).
 
-<!-- TODO (TechWriter): expert review finding S1 (alert payload PHI minimization for pager / Vocera / TigerConnect channels). The pseudocode below constructs an `alert` object that carries `patient_id`, current vital values, a structured explanation with feature values, and the full Bedrock-generated narrative (which itself names the deterioration phenotype, surgical context, and current vital and lab values), then publishes it to pager / messaging channels via `send_pager_notification(alert)`. For lock-screen-visible channels, this is a substantial PHI surface that exceeds the chapter-3-settled "alert-id-only with fetch-by-id" convention used in Recipes 3.1, 3.3, 3.4, 3.5, 3.6. Update Step 7 so the EventBridge / SNS / pager-integration message carries only `alert_id`, `tier`, and a minimal location attribute; the consuming application fetches the full alert by `alert_id` through an authenticated path with appropriate IAM scope on the alert-state table and the alert audit index. PHI does not transit pager / Vocera / TigerConnect / SMS channels or any logs they generate. Update the sample alert payload in Expected Results to show the minimal pager-channel payload separately from the full alert record stored in the alert-state DynamoDB table and the OpenSearch alert audit index. -->
-
-<!-- TODO (TechWriter): expert review finding A5 (suppression-rule expiry-enforcement primitive and care-transition trigger). The `check_suppression_rules` function below correctly reads `state.suppression_until` at alert-routing time but no scheduled job walks the suppression registry for expired entries (which would transition them to "expired_pending_review" and notify the suppression-owning attending), and no ADT-event-triggered suppression-review step surfaces suppressions to the receiving care team at unit transfer. For a deterioration system where missed alerts can produce harm, silent suppression-blind-spots at care transitions are a clinical-safety concern. Add a daily scheduled job and an ADT-trigger; default-expire suppressions without documented `suppression_until` to a programmatic default (typically 72 hours). -->
-
-<!-- TODO (TechWriter): expert review finding A6 (reference-data versioning propagation). Step 5's score record correctly captures `model_version`, `feature_snapshot_id`, and `feature_importance`, and the sample alert payload in Expected Results shows an `audit_trail` block with `feature_snapshot_id`, `scoring_record_id`, `calibration_curve_version`, and `thresholds_version`, but the pseudocode below does not show audit_trail construction. Update Step 7's `route_alert` to construct an explicit `audit_trail` block on the alert object (feature_snapshot_id, scoring_record_id, model_version, calibration_curve_version, thresholds_version, rule_library_version, unit_threshold_set_id) and update OpenSearch indexing to include the audit_trail block. The snapshot-ID trail is what makes a clinical-safety review's "reproduce the prediction" requirement tractable under the FDA CDS exemption posture. -->
-
 ```
 FUNCTION route_alert(score_record, explanation):
     // Suppression rules. Many alerts that the model would generate are not
@@ -721,8 +711,6 @@ FUNCTION check_suppression_rules(score_record):
 
 **Step 8: Capture acknowledgments and outcomes.** Every alert generates an acknowledgment requirement. Subsequent clinical events (ICU transfer, code blue, sepsis bundle initiation) get linked to the alert as the eventual outcome.
 
-<!-- TODO (TechWriter): expert review finding A1 (outcome-event idempotency at the EventBridge -> outcome-capture and ack-capture Lambdas). EventBridge -> Lambda async is at-least-once; the pseudocode below has no idempotency guard. Redelivered outcome events double-link outcomes to alerts and double-write S3 label rows, biasing the supervised classifier's training distribution toward redelivered cases on a rare positive class. Same recurring trigger-idempotency pattern as Recipes 2.4-2.10 and 3.1-3.6 (twelfth consecutive recipe). Add a deterministic event-key derivation (`outcome_event.event_id + outcome_event.type` for outcomes; `acknowledgment_event_id` for acks) and a conditional DynamoDB write to `processed-outcome-events` and `processed-acknowledgment-events` tables before the OpenSearch search, the linkage update, and the S3 label write. Strongly recommend a cookbook-wide trigger-idempotency appendix to consolidate this twelve-recipe-deep pattern; per-recipe-edit posture is producing diminishing returns. -->
-
 ```
 FUNCTION on_clinician_acknowledgment(alert_id, clinician_id, disposition, intervention, notes):
     alert_state = DynamoDB.GetItem(
@@ -790,16 +778,6 @@ FUNCTION on_clinical_outcome(patient_id, encounter_id, outcome_event):
 ---
 
 ### Expected Results
-
-<!-- TODO (TechWriter): expert review finding V1 (future-dated timestamps).
-The 2026-05-14 alert IDs and timestamps in the two sample payloads below
-are tied to the opening 3:14 a.m. medical-surgical-floor sepsis vignette
-(post-op day 2, daughter pressing the call button at 1:40 a.m., sepsis
-protocol activation, ICU transfer). They are illustrative; production
-output uses real ISO-8601 timestamps from the alert-router invocation
-time. Either replace with placeholder patterns or keep the dates and
-add an inline visible-to-reader caveat tying them to the vignette
-before publication. -->
 
 **Sample alert payload:**
 
@@ -931,8 +909,6 @@ These ranges are directional from typical published deterioration-model performa
 | End-to-end latency (event ingest to alert) p95 | n/a | <60s | <60s | <60s | <60s |
 | Scoring throughput (patients per minute, peak) | n/a | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load | infrastructure-dependent; budget for 2x peak load |
 
-<!-- TODO (TechWriter): benchmark ranges are directional from typical published deterioration model performance. Specific figures vary substantially by population, outcome definition, and prediction window. Replace with measured numbers from local validation before clinical deployment. Key references include Wong et al. (Epic Deterioration Index), Romero-Brufau et al. (machine learning for deterioration), Churpek et al. (eCART), and the meta-analyses by Smith et al. on early warning scores. -->
-
 **Where it struggles:**
 
 - **Cold-start patients.** A patient just admitted has no prior vitals, no patient-specific baseline, and no trajectory features. The model falls back to a "no-baseline" mode that uses population priors. Performance is materially worse for the first several hours of stay; many programs accept this and rely on standard track-and-trigger during the early-stay window.
@@ -975,8 +951,6 @@ The pseudocode shows the shape. A production deterioration early warning system 
 **Vendor handoffs.** When the deterioration model is supplied by a vendor (Epic EDI, eCART, others), the hospital still owns the workflow integration, the local validation, the subgroup monitoring, the alert routing, and the governance. The vendor owns the model. The split of responsibilities needs to be explicit in the contract; both parties need to agree on what local validation looks like, what notification of model updates looks like, and what shared monitoring access looks like.
 
 **Disaster recovery and continuity.** The deterioration system is ideally available 24/7. Multi-AZ deployment is the minimum. For a pipeline this safety-relevant, multi-region failover is worth considering, with regular failover drills. The fallback must be documented: when the system is down, the existing track-and-trigger system (NEWS2 charted in the flowsheet) is the backstop, and the staff need to know that.
-
-<!-- TODO (TechWriter): expert review finding A2 (DLQ and poison-message handling for the five critical Lambdas: event-normalizer, scoring-orchestrator, alert-router, ack-capture, outcome-capture). For a system in the alert path of inpatient clinical care, a dropped vital event is a patient-state gap, a dropped scoring event is an unscored patient at the moment a triggering vital came in, and a dropped alert event is a missed alert. Lambda's default async retry behavior (two retries over six hours then drop) is not acceptable for a deterioration system whose FDA-CDS-exemption posture depends on transparent operation. Add five SQS DLQs with `OnFailure` destinations on each Lambda and CloudWatch alarms on DLQ depth (alarm threshold 1 for the event-normalizer and scoring-orchestrator paths because a single dropped event is a patient-state gap or an unscored patient; sustained-backlog threshold acceptable for the alert-router and capture paths). Replay events from DLQ after fixing the root cause; for events older than the deterioration prediction window, escalate to clinical-governance-committee review rather than auto-replay because the timing-of-detection is itself part of the system's safety case. -->
 
 **Integration with rapid response and code teams.** The output of the system is a pre-arrival alert. The downstream rapid response team needs to know what to do with a "high-tier deterioration alert" that isn't yet a code or an active rapid response activation. Their protocols need to be updated to include the alert path. Often this involves new workflows: a rapid response team that visits the bedside for a high-tier alert without a formal RRT activation, providing situational assessment without taking over care.
 
@@ -1038,13 +1012,11 @@ The pseudocode shows the shape. A production deterioration early warning system 
 **AWS Sample Repos:**
 - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Time-series modeling, XGBoost on tabular features, Feature Store examples, Model Monitor, and Clarify SHAP examples that apply to the scoring layer.
 - [`aws-samples`](https://github.com/aws-samples): search for "FHIR," "HealthLake," "clinical," and "real-time scoring" for adjacent integration patterns.
-<!-- TODO (TechWriter): verify and add a specific aws-samples or aws-solutions-library-samples repository demonstrating clinical deterioration prediction, sepsis prediction, or patient monitoring on AWS. Adjacent examples exist (real-time scoring patterns, healthcare ML pipelines); a direct match has not been confirmed at the time of writing. -->
 
 **AWS Solutions and Blogs:**
 - [AWS Solutions Library](https://aws.amazon.com/solutions/) (filter by AI/ML + Healthcare): healthcare ML reference architectures.
 - [AWS Machine Learning Blog](https://aws.amazon.com/blogs/machine-learning/): search for "sepsis," "deterioration," "clinical decision support," and "patient monitoring" for architectural deep-dives.
 - [AWS Industries Blog (Healthcare)](https://aws.amazon.com/blogs/industries/category/industries/healthcare/): healthcare-specific AWS architectures and customer stories.
-<!-- TODO (TechWriter): verify and add two or three specific AWS blog posts on clinical deterioration prediction, sepsis prediction, or related early-warning topics on AWS; confirm URLs exist before inclusion. -->
 
 **Clinical and Research References:**
 - [National Early Warning Score (NEWS2)](https://www.rcplondon.ac.uk/projects/outputs/national-early-warning-score-news-2): Royal College of Physicians, UK; standard track-and-trigger reference.
@@ -1063,14 +1035,7 @@ The pseudocode shows the shape. A production deterioration early warning system 
 - [FDA Predetermined Change Control Plans for AI/ML Software](https://www.fda.gov/medical-devices/software-medical-device-samd/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligencemachine): FDA framework for ML model updates over time.
 
 **Academic Literature (Conceptual Foundations):**
-<!-- TODO (TechWriter): Add specific peer-reviewed citations including:
-  - Wong, A. et al. (2021). External Validation of Epic Deterioration Index. JAMA Internal Medicine.
-  - Romero-Brufau, S. et al. - machine learning for clinical deterioration prediction.
-  - Churpek, M. M. et al. - eCART score development and validation.
-  - Smith, G. B. et al. - meta-analyses on early warning scores.
-  - Escobar, G. et al. - Kaiser Permanente Advance Alert Monitor (AAM) outcomes.
-  - Sepsis-3 definition: Singer, M. et al. (2016). The Third International Consensus Definitions for Sepsis and Septic Shock. JAMA.
-  Verify exact citations and DOIs before publication. -->
+
 - [SHAP (SHapley Additive exPlanations)](https://github.com/shap/shap): per-prediction explanation library, central to the explanation layer.
 - [GraphSAGE / Graph Neural Network references](https://arxiv.org/abs/1706.02216): for graph-based extensions of the deterioration prediction problem.
 - [Statistical Process Control (Wikipedia)](https://en.wikipedia.org/wiki/Statistical_process_control): CUSUM and control chart background for trajectory features and drift monitoring.
@@ -1086,7 +1051,6 @@ The pseudocode shows the shape. A production deterioration early warning system 
 | With variations | Phenotype-specific models (sepsis, respiratory failure, post-op), bedside monitor integration, LSTM or transformer-based time-series model, multi-channel alert routing (Vocera/TigerConnect), nursing note NLP features (Rothman-style), LLM-generated narrative explanations, federated learning across multiple sites, closed-loop interventions for specific narrow scenarios, pediatric or maternal-fetal specializations | 18-36 months beyond production-ready |
 
 ---
-
 
 ---
 

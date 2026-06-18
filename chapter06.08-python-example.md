@@ -623,7 +623,6 @@ def run_subtype_discovery_pipeline():
         "top_features": importance[:5],
     }
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     results = run_subtype_discovery_pipeline()

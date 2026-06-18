@@ -199,10 +199,8 @@ def _get_opensearch_client() -> OpenSearch:
     )
     return _opensearch_client
 
-
 # Lazy module-level cache. Populated on first _get_opensearch_client() call.
 _opensearch_client: OpenSearch | None = None
-
 
 def _embed_text(text: str) -> list:
     """
@@ -227,7 +225,6 @@ def _embed_text(text: str) -> list:
     )
     payload = json.loads(response["body"].read())
     return payload["embedding"]
-
 
 def _ensure_index_exists(client: OpenSearch) -> None:
     """
@@ -278,7 +275,6 @@ def _ensure_index_exists(client: OpenSearch) -> None:
     }
     client.indices.create(index=OPENSEARCH_INDEX, body=index_body)
     logger.info("Created OpenSearch index %s", OPENSEARCH_INDEX)
-
 
 def _strip_html_basic(html_text: str) -> str:
     """
@@ -439,7 +435,6 @@ def on_content_published(content_event: dict) -> dict:
         "s3_key": s3_key,
     }
 
-
 def _mime_for_format(fmt: str) -> str:
     """Map a format hint to a Content-Type header value."""
     return {
@@ -534,7 +529,6 @@ def build_patient_context(patient_id: str) -> dict | None:
         "audience":           _infer_audience(profile),
     }
 
-
 def _highest_engagement_format(engagement_summary: dict) -> str | None:
     """
     Determine the patient's most-engaged content format.
@@ -550,7 +544,6 @@ def _highest_engagement_format(engagement_summary: dict) -> str | None:
     if clicks:
         return max(clicks, key=lambda k: clicks[k])
     return None
-
 
 def _infer_audience(profile: dict) -> str:
     """
@@ -1110,7 +1103,6 @@ def process_engagement_event(event: dict) -> None:
         event_type, patient_id, content_id, rec_id,
     )
 
-
 def _append_recent_topics(table, patient_id: str, new_tags: list) -> None:
     """
     Maintain a small rolling list of recently-engaged topic tags.
@@ -1135,7 +1127,6 @@ def _append_recent_topics(table, patient_id: str, new_tags: list) -> None:
         UpdateExpression="SET last_topics_engaged = :tags",
         ExpressionAttributeValues={":tags": combined},
     )
-
 
 def _reading_level_band(level) -> str:
     """Bucket a reading level into a low-cardinality cohort label."""
@@ -1213,7 +1204,6 @@ def recommend_for_patient(patient_id: str) -> dict:
     print(f"  recommendation_id={response['recommendation_id']} "
           f"({elapsed_ms} ms)")
     return response
-
 
 # --- Demo runner ---
 if __name__ == "__main__":

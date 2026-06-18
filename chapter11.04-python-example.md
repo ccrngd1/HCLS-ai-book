@@ -668,7 +668,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of `_to_decimal` for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -681,11 +680,9 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
-
 
 def _parse_json_response(raw_text: str) -> dict:
     """
@@ -708,14 +705,12 @@ def _parse_json_response(raw_text: str) -> dict:
             "Failed to parse JSON from model; returning empty")
         return {}
 
-
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
     redacted = text
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -734,7 +729,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
         logger.error(
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
-
 
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
@@ -755,7 +749,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -779,7 +772,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields from tool arguments before ledger storage."""
@@ -891,7 +883,6 @@ def receive_message(channel: str,
         attach_initial_greeting=attach_initial_greeting,
         attach_resume_greeting=attach_resume_greeting,
         language=language)
-
 
 def _get_or_resume_session(channel: str,
                              channel_session_id: str,
@@ -1006,7 +997,6 @@ def _get_or_resume_session(channel: str,
     table.put_item(Item=_to_decimal(new_session))
     return new_session, attach_resume
 
-
 def _decode_encounter_token(token: Optional[str]) -> Optional[str]:
     """
     Decode the signed deep-link token to an encounter_id. The
@@ -1014,7 +1004,6 @@ def _decode_encounter_token(token: Optional[str]) -> Optional[str]:
     verifies the signature and the expiration.
     """
     return token
-
 
 def _load_partial_state(encounter_id: str,
                           patient_id: str) -> Optional[dict]:
@@ -1031,7 +1020,6 @@ def _load_partial_state(encounter_id: str,
             encounter_id, patient_id, exc)
         return None
     return _from_decimal(response.get("Item"))
-
 
 def _persist_partial_state(session: dict) -> None:
     """Write the resumable partial state after each captured turn."""
@@ -1068,7 +1056,6 @@ def _persist_partial_state(session: dict) -> None:
             "Partial-state write failed for %s: %s",
             session.get("session_id"), exc)
 
-
 def _append_turn(session_id: str, turn: dict) -> None:
     """Append a turn record to the conversation-metadata table."""
     table = dynamodb.Table(CONVERSATION_METADATA_TABLE)
@@ -1082,7 +1069,6 @@ def _append_turn(session_id: str, turn: dict) -> None:
     except Exception as exc:
         logger.error(
             "Failed to append turn for %s: %s", session_id, exc)
-
 
 def _recent_turns(session_id: str, k: int = 4) -> list:
     """Return the most recent k turns for context."""
@@ -1102,7 +1088,6 @@ def _recent_turns(session_id: str, k: int = 4) -> list:
     items = [_from_decimal(i)
               for i in response.get("Items", [])]
     return list(reversed(items))
-
 
 def _screen_input(session_id: str,
                    user_message: str,
@@ -1151,7 +1136,6 @@ def _screen_input(session_id: str,
 
     return {"action": "proceed"}
 
-
 def _categorize_crisis_cue(cue: str) -> str:
     """Bucket the matched cue into a crisis category."""
     suicidal_cues = [
@@ -1176,7 +1160,6 @@ def _categorize_crisis_cue(cue: str) -> str:
         return "acute_medical_emergency_description"
     return "generic_crisis"
 
-
 def _handle_unauthenticated(session_id: str,
                               channel: str,
                               attach_greeting: bool,
@@ -1197,7 +1180,6 @@ def _handle_unauthenticated(session_id: str,
         attach_greeting=attach_greeting,
         attach_resume=False,
         disposition="require_portal_login")
-
 
 def _handle_screening_action(session_id: str,
                                channel: str,
@@ -1256,7 +1238,6 @@ def _handle_screening_action(session_id: str,
 
     raise ValueError(f"Unknown screening action: {action}")
 
-
 def _build_chat_reply(session_id: str,
                        response_text: str,
                        attach_greeting: bool,
@@ -1274,7 +1255,6 @@ def _build_chat_reply(session_id: str,
         "response":    full_text,
         "disposition": disposition,
     }
-
 
 def _update_session_field(session_id: str,
                             field_name: str,
@@ -1294,7 +1274,6 @@ def _update_session_field(session_id: str,
         logger.warning(
             "Failed to set %s on session %s: %s",
             field_name, session_id, exc)
-
 
 def _resolve_session_key(session_id: str) -> Optional[str]:
     """Resolve a session_id to the session_key partition key."""
@@ -1316,7 +1295,6 @@ def _resolve_session_key(session_id: str) -> Optional[str]:
             "session_key resolution failed for %s: %s",
             session_id, exc)
     return None
-
 
 def _session_state(session_id: str) -> dict:
     """Read the session-state row keyed by session_id."""
@@ -1396,7 +1374,6 @@ def _handle_intake_message(session_id: str,
         attach_initial_greeting=attach_initial_greeting,
         attach_resume_greeting=attach_resume_greeting,
         language=language)
-
 
 def _load_visit_and_chart_context(session_id: str,
                                     channel: str) -> dict:
@@ -1519,7 +1496,6 @@ def _load_visit_and_chart_context(session_id: str,
         session_id, "context_loaded", True)
 
     return {"action": "context_loaded"}
-
 
 def _age_cohort(age: Optional[int]) -> Optional[str]:
     """Bucket the patient's age for per-cohort metrics."""
@@ -1676,7 +1652,6 @@ def _conduct_intake_turn(session_id: str,
         attach_resume=attach_resume_greeting,
         disposition="asked_next_question")
 
-
 def _question_flow_state_machine(session: dict) -> dict:
     """
     Walk the per-visit-type protocol's question flow, advancing
@@ -1706,7 +1681,6 @@ def _question_flow_state_machine(session: dict) -> dict:
         "total_questions":   len(full_flow),
     }
 
-
 def _resolve_branch_questions(branches: dict,
                                 captured: dict) -> list:
     """
@@ -1729,7 +1703,6 @@ def _resolve_branch_questions(branches: dict,
                            for a in additional):
                     additional.append(q)
     return additional
-
 
 def _phrase_question_conversationally(question: dict,
                                          recent_turns: list,
@@ -1767,14 +1740,12 @@ def _phrase_question_conversationally(question: dict,
         question=question,
         chart_context=chart_context)
 
-
 def _format_screener_item(item: dict) -> str:
     """Format a screener item with its validated wording and options."""
     options = "\n".join(
         f"- {o['label']}"
         for o in item.get("response_options", []))
     return f"{item['text']}\n\n{options}"
-
 
 def _phrase_from_template(question: dict,
                             chart_context: dict) -> str:
@@ -1874,7 +1845,6 @@ def _phrase_from_template(question: dict,
             "mention before we wrap up?")
     return "Could you tell me a bit more about that?"
 
-
 def _add_captured_finding(session_id: str,
                             question: dict,
                             finding: Optional[dict]) -> None:
@@ -1886,7 +1856,6 @@ def _add_captured_finding(session_id: str,
     captured[question.get("id")] = finding
     _update_session_field(
         session_id, "captured_findings", captured)
-
 
 def _add_acuity_flag(session_id: str, flag: dict) -> None:
     """Persist an acuity flag onto the session."""
@@ -2076,7 +2045,6 @@ def _crisis_and_acuity_flagging(session_id: str,
         "acuity_flag":     None,
     }
 
-
 def _acuity_pattern_detection(captured_findings: dict,
                                 chart_context: dict,
                                 visit_context: dict
@@ -2099,7 +2067,6 @@ def _acuity_pattern_detection(captured_findings: dict,
                     pattern["version"],
             }
     return None
-
 
 def _pattern_matches(pattern: dict,
                        findings: dict) -> bool:
@@ -2133,7 +2100,6 @@ def _pattern_matches(pattern: dict,
             return False
     return True
 
-
 def _detect_new_information(captured_finding:
                                 Optional[dict],
                               chart_context: dict
@@ -2155,7 +2121,6 @@ def _detect_new_information(captured_finding:
                 "captured_at": _now_iso(),
             }
     return None
-
 
 def _persist_flag_event(event: dict) -> None:
     """Write a flag event to the flag-events table."""
@@ -2265,7 +2230,6 @@ def _route_crisis(session_id: str,
         attach_resume=False,
         disposition="crisis_routed")
 
-
 def crisis_routing_tool(session_id: str,
                           patient_id: Optional[str],
                           crisis_category: Optional[str],
@@ -2370,7 +2334,6 @@ def screener_administer_tool_capture_item(
         "finding": finding,
     }
 
-
 def _match_response_value(item: dict,
                             answer_text: str
                             ) -> Optional[int]:
@@ -2386,7 +2349,6 @@ def _match_response_value(item: dict,
                for o in item.get("response_options", [])):
             return value
     return None
-
 
 def _compute_screener_score(screener_id: str,
                               item_responses: list) -> dict:
@@ -2625,7 +2587,6 @@ def _assemble_and_deliver_packet(session_id: str,
         attach_resume=False,
         disposition="intake_completed")
 
-
 def _build_closing_summary(captured_findings: dict,
                               screener_records: list,
                               acuity_flags: list) -> str:
@@ -2653,7 +2614,6 @@ def _build_closing_summary(captured_findings: dict,
         lines.append(
             "- The notes I captured from our conversation")
     return "\n".join(lines)
-
 
 def _write_packet_journal(record: dict) -> None:
     """
@@ -2730,7 +2690,6 @@ def _screen_output(session_id: str,
         "response_text":  response_text,
     }
 
-
 def _detect_intake_scope_violation(text: str) -> Optional[str]:
     """Backstop keyword scope check on generated output."""
     lowered = text.lower()
@@ -2758,7 +2717,6 @@ def _detect_intake_scope_violation(text: str) -> Optional[str]:
             return "severity_assessment_attempted"
     return None
 
-
 def _extract_chart_fact_references(response_text: str
                                       ) -> list:
     """
@@ -2775,7 +2733,6 @@ def _extract_chart_fact_references(response_text: str
     for match in pattern.finditer(response_text):
         refs.append(match.group(1).strip().lower())
     return refs
-
 
 def _ref_supported_by_chart(ref: str, chart: dict) -> bool:
     """Confirm the reference matches an item in the chart context."""
@@ -2990,7 +2947,6 @@ def close_conversation_and_archive(session_id: str,
 
     return audit_record
 
-
 def _redact_turn_for_audit(turn: dict) -> dict:
     """Apply redaction rules before streaming to the audit archive."""
     redacted = dict(turn)
@@ -3016,7 +2972,6 @@ def encounter_context_lookup_tool(
         encounter_token=encounter_token,
         patient_id=patient_id)
 
-
 def chart_context_lookup_tool(
         patient_id: Optional[str],
         relevant_resources: list) -> dict:
@@ -3025,7 +2980,6 @@ def chart_context_lookup_tool(
         patient_id=patient_id,
         relevant_resources=relevant_resources)
 
-
 def prior_intake_lookup_tool(patient_id: Optional[str],
                               lookback_days: int) -> dict:
     """Look up the patient's prior intake responses for skip-reuse."""
@@ -3033,13 +2987,11 @@ def prior_intake_lookup_tool(patient_id: Optional[str],
         patient_id=patient_id,
         lookback_days=lookback_days)
 
-
 def patient_demographics_lookup_tool(
         patient_id: Optional[str]) -> dict:
     """Pull age, preferred language, accessibility accommodations."""
     return ehr.patient_demographics_lookup(
         patient_id=patient_id)
-
 
 def protocol_selector_tool(visit_type: Optional[str],
                               patient_age: Optional[int],
@@ -3057,7 +3009,6 @@ def protocol_selector_tool(visit_type: Optional[str],
         is_new_patient=is_new_patient,
         prior_intake_recency=prior_intake_recency,
         encounter_modality=encounter_modality)
-
 
 def hpi_extraction_tool(hpi_dimension: Optional[str],
                           question_text: str,
@@ -3094,7 +3045,6 @@ def hpi_extraction_tool(hpi_dimension: Optional[str],
     }
     return {"action": "captured", "finding": finding}
 
-
 def ros_extraction_tool(organ_system: Optional[str],
                           answer_text: str,
                           language: str) -> dict:
@@ -3118,7 +3068,6 @@ def ros_extraction_tool(organ_system: Optional[str],
         "extracted_at": _now_iso(),
     }
     return {"action": "captured", "finding": finding}
-
 
 def medication_reconciliation_capture_tool(
         chart_medications: list,
@@ -3151,7 +3100,6 @@ def medication_reconciliation_capture_tool(
     }
     return {"action": "captured", "finding": finding}
 
-
 def allergy_reconciliation_capture_tool(
         chart_allergies: list,
         answer_text: str,
@@ -3168,7 +3116,6 @@ def allergy_reconciliation_capture_tool(
         "captured_at":  _now_iso(),
     }
     return {"action": "captured", "finding": finding}
-
 
 def history_extraction_tool(history_dimension: Optional[str],
                               answer_text: str,
@@ -3199,7 +3146,6 @@ def history_extraction_tool(history_dimension: Optional[str],
         "captured_at":  _now_iso(),
     }
     return {"action": "captured", "finding": finding}
-
 
 def packet_assemble_tool(session_id: str,
                             patient_id: Optional[str],
@@ -3251,7 +3197,6 @@ def packet_assemble_tool(session_id: str,
         "assembled_at":         _now_iso(),
     }
 
-
 def packet_deliver_tool(packet: dict,
                           encounter_id: Optional[str]) -> dict:
     """
@@ -3263,7 +3208,6 @@ def packet_deliver_tool(packet: dict,
     return ehr.deliver_packet(
         packet=packet,
         encounter_id=encounter_id)
-
 
 def clinical_staff_routing_tool(target: Optional[str],
                                    ticket: dict) -> dict:
@@ -3363,7 +3307,6 @@ class MockTable:
                 return key
         return None
 
-
 class MockDynamoDBResource:
     def __init__(self):
         self._tables = {
@@ -3387,7 +3330,6 @@ class MockDynamoDBResource:
     def Table(self, name):
         return self._tables[name]
 
-
 class MockBedrockRuntime:
     """Stub. The demo's flow does not invoke Bedrock directly."""
     def invoke_model(self, **kwargs):
@@ -3397,11 +3339,9 @@ class MockBedrockRuntime:
             }).encode())
         }
 
-
 class _StubBody:
     def __init__(self, data): self._data = data
     def read(self): return self._data
-
 
 class MockEHR:
     """Stand-in for the institution's EHR (FHIR resources)."""
@@ -3516,7 +3456,6 @@ class MockEHR:
         return {"outcome": "queued",
                  "queue_position": 3}
 
-
 class MockProtocolRegistry:
     """Selects the per-visit-type protocol from PROTOCOL_LIBRARY."""
     def select(self, visit_type, patient_age, patient_sex,
@@ -3530,13 +3469,11 @@ class MockProtocolRegistry:
                 "primary_care_followup"]
         return dict(protocol)
 
-
 class MockEventBus:
     def __init__(self): self.events = []
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockFirehose:
     def __init__(self): self.records = []
@@ -3544,20 +3481,17 @@ class MockFirehose:
         self.records.append((DeliveryStreamName, Record))
         return {"RecordId": str(uuid.uuid4())}
 
-
 class MockS3:
     def __init__(self): self.objects = {}
     def put_object(self, Bucket, Key, Body, **kwargs):
         self.objects[(Bucket, Key)] = Body
         return {"VersionId": str(uuid.uuid4())}
 
-
 class MockCloudWatch:
     def __init__(self): self.metrics = []
     def put_metric_data(self, Namespace, MetricData):
         self.metrics.extend([
             (Namespace, m) for m in MetricData])
-
 
 # Wire the mocks into the module-level clients so the rest of
 # the file calls them transparently. Comment these out to run
@@ -3570,7 +3504,6 @@ s3_client             = MockS3()
 cloudwatch_client     = MockCloudWatch()
 ehr                   = MockEHR()
 protocol_registry     = MockProtocolRegistry()
-
 
 def run_demo():
     """
@@ -3727,7 +3660,6 @@ def run_demo():
           f"{len(ehr.delivered_packets)}")
     print(f"Acuity tickets routed:        "
           f"{len(ehr.routed_tickets)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

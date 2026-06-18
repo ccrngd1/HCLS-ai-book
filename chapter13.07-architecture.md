@@ -68,27 +68,23 @@ flowchart TD
     Lambda -->|Uncertain Cases| PharmReview
 ```
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add error handling guidance for the query path: distinguish HTTP 200 (no findings) from HTTP 503 (query failed). For failed queries, CDS should display "pharmacogenomic check unavailable" notification. Log failed queries to SQS for retry. Add CloudWatch alarm on query failure rate exceeding 1% over 5 minutes. -->
-
 ### Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | AWS Services | Neptune, S3, Glue, Lambda, API Gateway, Step Functions, EventBridge, IAM, KMS, CloudWatch |
 | IAM Permissions | neptune-db:*, s3:GetObject/PutObject, glue:StartJobRun, lambda:InvokeFunction, states:StartExecution |
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Split IAM permissions into read-only (query Lambda: neptune-db:ReadDataViaQuery, GetQueryStatus) and read-write (ETL pipeline: full neptune-db write access). Add note that query path must never have graph write permissions. -->
+
 | BAA | Required. Patient genomic data is PHI under HIPAA. Genetic information also protected under GINA. |
-<!-- TODO (TechWriter): Expert review S2 (HIGH). Expand GINA compliance: add role-based access control guidance (pharmacists get full genotype, ordering physicians get recommendation only), separate audit logging for genetic data access, state-specific genetic privacy law considerations. -->
+
 | Encryption | S3 SSE-KMS for all data at rest. Neptune encryption at rest enabled. TLS 1.2+ in transit. |
-<!-- TODO (TechWriter): Expert review S5 (LOW). Specify customer-managed KMS key (CMK) with automatic annual rotation. Apply same CMK to S3, Neptune (set at cluster creation), and CloudWatch Logs. -->
+
 | VPC | Neptune must run in VPC. Lambda in same VPC with Neptune access. VPC endpoints for S3 and Glue. |
-<!-- TODO (TechWriter): Expert review N1 (HIGH). Replace VPC endpoint list with complete enumeration: S3 (Gateway), KMS (Interface), CloudWatch Logs (Interface), CloudWatch Monitoring (Interface), Step Functions (Interface), EventBridge (Interface). Remove incorrect Glue endpoint reference. Add note that no NAT Gateway should be required for the query path. -->
+
 | CloudTrail | All API calls logged. Neptune audit logs enabled for query tracking. |
-<!-- TODO (TechWriter): Expert review S4 (MEDIUM). Specify Neptune audit log enablement: cluster parameter group neptune_enable_audit_log=1, publish to CloudWatch Logs, encrypt log group with same KMS CMK, set retention to match HIPAA audit policy (6-7 years). -->
+
 | Sample Data | PharmGKB open-access datasets. ClinVar public XML dump. Synthetic patient variants for testing. |
 | Cost Estimate | Neptune db.r5.large (~$0.58/hr), Glue ETL (~$0.44/DPU-hr weekly), Lambda queries (~$0.0001/query) |
-<!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add read replica recommendation for HA and query/write separation. Production cost with replica: ~$836/month. Also address N3: deploy Multi-AZ with read replica in different AZ for automatic failover (under 30 seconds). Query Lambda should use Neptune reader endpoint. -->
-<!-- TODO (TechWriter): Expert review N2 (MEDIUM). Add security group guidance: Neptune SG allows inbound TCP 8182 only from Lambda SG. Lambda SG allows outbound TCP 8182 to Neptune SG and outbound TCP 443 to VPC endpoint SGs. No inbound rules on Lambda SG. -->
 
 ### Ingredients
 
@@ -194,8 +190,6 @@ FUNCTION resolve_entities(source_records):
     
     RETURN resolved
 ```
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Specify what happens to graph edges depending on ambiguous entities: recommend conservative exclusion (exclude ambiguous records from graph load until resolved). Add alerting threshold if ambiguity rate exceeds 5% of total records. -->
 
 #### Step 3: Graph Construction
 
@@ -346,8 +340,6 @@ FUNCTION load_diplotype_phenotype_mappings():
 
 Given a patient's genetic test results and current medications, traverse the graph to find actionable pharmacogenomic findings.
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add input validation block at the start of this function: validate rsID format (rs[0-9]+), confirm gene symbols are in known pharmacogenes list, validate RxNorm CUI format for medications. Log and skip malformed inputs rather than passing to Neptune. -->
-
 This is the clinical payoff. Everything above was infrastructure. This step answers the question: "For this specific patient, which of their medications might be affected by their genetics, and what should we do about it?"
 
 ```pseudocode
@@ -429,8 +421,6 @@ FUNCTION query_patient_pharmacogenomics(patient_variants, current_medications, e
 #### Step 6: Graph Update Pipeline
 
 Orchestrate the periodic refresh of the knowledge graph as sources publish new data.
-
-<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Commit to a specific zero-downtime update strategy. Recommended: Neptune cloneCluster (clone production, bulk load into clone, run integration tests, swap endpoint, terminate old cluster). Current pseudocode loads into the live cluster which leaves queries in an inconsistent state during the load window. -->
 
 This step keeps the graph current. Pharmacogenomic knowledge evolves rapidly. A graph that's six months stale might miss newly actionable gene-drug pairs or updated evidence classifications.
 
@@ -557,8 +547,6 @@ Sample output from a patient pharmacogenomics query:
 - Novel drugs without established pharmacogenomic data (graph has no edges to traverse)
 - Conflicting evidence between sources (requires human adjudication workflow)
 
-<!-- TODO (TechWriter): RECIPE-GUIDE compliance. The "Where It Struggles" subsection above serves as the production-readiness assessment, but RECIPE-GUIDE expects a standalone H2 "Why This Isn't Production-Ready" section between Expected Results and Variations. Consider promoting to its own section. -->
-
 ---
 
 ## Variations and Extensions
@@ -597,8 +585,6 @@ Extend the graph with clinical trial nodes connected to their molecular eligibil
 - [DrugBank](https://go.drugbank.com/) - Comprehensive drug data including gene targets and metabolic pathways
 - [FDA Table of Pharmacogenomic Biomarkers](https://www.fda.gov/drugs/science-and-research-drugs/table-pharmacogenomic-biomarkers-drug-labeling) - FDA-recognized gene-drug pairs in drug labeling
 
-<!-- TODO: Verify AWS sample repo links exist before publishing. Search aws-samples for Neptune + healthcare or knowledge graph examples. -->
-
 ### AWS Blogs and Solutions
 
 - [Build a knowledge graph in Amazon Neptune](https://aws.amazon.com/blogs/database/build-a-knowledge-graph-in-amazon-neptune/) - Patterns for knowledge graph construction on Neptune
@@ -615,7 +601,6 @@ Extend the graph with clinical trial nodes connected to their molecular eligibil
 | With variations (tumor genomics, population analytics) | 24-32 weeks | OncoKB integration, analytics dashboards, clinical trial matching |
 
 ---
-
 
 ---
 

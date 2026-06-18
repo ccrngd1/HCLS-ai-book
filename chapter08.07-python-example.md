@@ -674,7 +674,6 @@ def process_note(note: dict) -> list:
     print(f"\n{'='*60}")
     return results
 
-
 def run_demo():
     """
     Process all synthetic notes and display results.
@@ -703,7 +702,6 @@ def run_demo():
             print(f"  - {ae['medication']} -> {ae['event']}")
             print(f"    Patient: {ae['patient_id']}, Severity: {ae['severity']}")
             print(f"    Score: {ae['evidence_score']}, Reasons: {ae['evidence_reasons']}")
-
 
 if __name__ == "__main__":
     run_demo()

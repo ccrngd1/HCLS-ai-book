@@ -216,7 +216,6 @@ PEER_GROUP_FALLBACK_ORDER = [
     ("specialty",),
 ]
 
-
 def _to_decimal(value) -> Decimal:
     """
     Coerce numeric input into Decimal for DynamoDB and for downstream math.
@@ -232,7 +231,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
         return Decimal("0.0000")
     return Decimal(str(value)).quantize(Decimal("0.0001"))
-
 
 def _decimal_to_float(value):
     """Recursively coerce Decimals to floats for JSON output or ML input."""
@@ -301,7 +299,6 @@ def rollup_provider_period(claims_df: pd.DataFrame, period_start: str, period_en
         "providers_skipped_low_volume": claims_df["provider_id"].nunique() - len(features_df),
     })
     return features_df
-
 
 def _compute_provider_features(
     provider_id: str,
@@ -401,7 +398,6 @@ def _compute_provider_features(
         "unique_patients_per_claim":  unique_patients_per_claim,
     }
 
-
 def _shannon_entropy(counts: Counter) -> float:
     """
     Shannon entropy of a distribution over code counts. Used as a single-
@@ -418,7 +414,6 @@ def _shannon_entropy(counts: Counter) -> float:
         if c > 0
     )
 
-
 def _modifier_rate(claims: pd.DataFrame, modifier: str) -> float:
     """
     Fraction of claims in the frame that carry the given modifier.
@@ -429,7 +424,6 @@ def _modifier_rate(claims: pd.DataFrame, modifier: str) -> float:
     """
     has_modifier = claims["modifiers"].apply(lambda ms: modifier in (ms or []))
     return float(has_modifier.mean())
-
 
 def write_features_to_feature_store(features_df: pd.DataFrame) -> None:
     """
@@ -538,7 +532,6 @@ def assign_peer_groups(provider_master_df: pd.DataFrame) -> pd.DataFrame:
 
     return merged
 
-
 def _count_all_candidate_groups(provider_master: pd.DataFrame) -> dict:
     """
     Pre-compute the size of every candidate peer group across every
@@ -553,7 +546,6 @@ def _count_all_candidate_groups(provider_master: pd.DataFrame) -> dict:
                 key_tuple = (key_tuple,)   # single-attribute grouping returns scalars
             sizes[(attribute_order, key_tuple)] = count
     return sizes
-
 
 def compute_peer_group_statistics(features_df: pd.DataFrame, peer_assignments: pd.DataFrame) -> None:
     """
@@ -611,7 +603,6 @@ def compute_peer_group_statistics(features_df: pd.DataFrame, peer_assignments: p
                 "computed_at":    datetime.now(timezone.utc).isoformat(),
             })
 
-
 def _leave_one_out_stats(group_stats: dict, provider_value: float) -> tuple:
     """
     Compute the leave-one-out mean and stddev for a peer group given the
@@ -648,7 +639,6 @@ The Isolation Forest model is trained once per quarter on a population sample of
 _ISOLATION_FOREST = None
 _ISOLATION_FOREST_META = None
 
-
 def _load_isolation_forest(model_key: str = "current/isolation_forest.joblib") -> None:
     """
     Download the current Isolation Forest artifact from S3 and deserialize
@@ -661,7 +651,6 @@ def _load_isolation_forest(model_key: str = "current/isolation_forest.joblib") -
     _ISOLATION_FOREST = payload["model"]
     _ISOLATION_FOREST_META = payload["meta"]
     logger.info("isolation_forest_loaded", extra={"version": _ISOLATION_FOREST_META.get("version")})
-
 
 def score_anomalies(
     features_df: pd.DataFrame,
@@ -742,7 +731,6 @@ def score_anomalies(
     })
     return all_signals
 
-
 def _score_peer_zscores(record: pd.Series, peer_key: str, peer_stats_table) -> list:
     """
     Compute leave-one-out z-scores for each quantitative feature against
@@ -780,7 +768,6 @@ def _score_peer_zscores(record: pd.Series, peer_key: str, peer_stats_table) -> l
                 "severity":    _zscore_to_severity(z),
             })
     return fired
-
 
 def _score_self_cusum(record: pd.Series, provider_history: pd.DataFrame) -> list:
     """
@@ -834,7 +821,6 @@ def _score_self_cusum(record: pd.Series, provider_history: pd.DataFrame) -> list
             })
     return fired
 
-
 def _score_isolation_forest(record: pd.Series) -> Optional[dict]:
     """
     Multivariate Isolation Forest score for the current period vector.
@@ -881,7 +867,6 @@ def _score_isolation_forest(record: pd.Series) -> Optional[dict]:
         "severity":         _if_score_to_severity(score),
     }
 
-
 def _zscore_to_severity(z: float) -> str:
     absz = abs(z)
     if absz >= 4.0:
@@ -889,7 +874,6 @@ def _zscore_to_severity(z: float) -> str:
     if absz >= 3.0:
         return "medium"
     return "low"
-
 
 def _shift_to_severity(shift: float, baseline_stddev: float) -> str:
     if baseline_stddev == 0:
@@ -901,7 +885,6 @@ def _shift_to_severity(shift: float, baseline_stddev: float) -> str:
         return "medium"
     return "low"
 
-
 def _if_score_to_severity(score: float) -> str:
     # More negative = more anomalous.
     if score <= -0.25:
@@ -909,7 +892,6 @@ def _if_score_to_severity(score: float) -> str:
     if score <= -0.15:
         return "medium"
     return "low"
-
 
 def _write_signal_payload(payload: dict) -> None:
     """
@@ -996,7 +978,6 @@ def assemble_cases(period_start: str, period_end: str) -> list:
     })
     return cases
 
-
 def _list_signal_payloads(period_start: str) -> list:
     """
     Enumerate all signal files for the period and load them as Python dicts.
@@ -1009,7 +990,6 @@ def _list_signal_payloads(period_start: str) -> list:
             response = s3_client.get_object(Bucket=ANOMALY_SIGNALS_BUCKET, Key=obj["Key"])
             payloads.append(json.loads(response["Body"].read()))
     return payloads
-
 
 def _assemble_one_case(payload: dict, period_start: str, period_end: str) -> Optional[dict]:
     """
@@ -1063,7 +1043,6 @@ def _assemble_one_case(payload: dict, period_start: str, period_end: str) -> Opt
         "created_at":         datetime.now(timezone.utc).isoformat(),
     }
 
-
 def _query_prior_cases(provider_id: str, lookback_months: int) -> list:
     """
     Query the case-registry GSI on provider_id to find recent cases for
@@ -1077,7 +1056,6 @@ def _query_prior_cases(provider_id: str, lookback_months: int) -> list:
         FilterExpression=Key("period_start").gte(cutoff),
     )
     return response.get("Items", [])
-
 
 def _count_consecutive_periods(prior_cases: list, ending_period: str) -> int:
     """
@@ -1106,7 +1084,6 @@ def _count_consecutive_periods(prior_cases: list, ending_period: str) -> int:
         else:
             break
     return streak
-
 
 def _pull_evidence_claims(
     provider_id: str,
@@ -1177,11 +1154,9 @@ def _pull_evidence_claims(
         })
     return claims
 
-
 def _sql_escape(value: str) -> str:
     """Minimal SQL string escape for our internal provider IDs."""
     return value.replace("'", "''")
-
 
 def _overall_severity(signals: list, persistence: int, exposure: float) -> str:
     """
@@ -1209,7 +1184,6 @@ def _overall_severity(signals: list, persistence: int, exposure: float) -> str:
         return "medium"
     return "low"
 
-
 def _determine_routing(severity: str, signals: list) -> str:
     """
     Map severity and signal types to one of three queues. Specialty-atypical
@@ -1230,10 +1204,8 @@ def _determine_routing(severity: str, signals: list) -> str:
         return "watch_list"
     return "watch_list"
 
-
 def _severity_rank(severity: str) -> int:
     return {"high": 3, "medium": 2, "low": 1}.get(severity, 0)
-
 
 def _build_narrative(signals: list, persistence: int, exposure: float) -> str:
     """
@@ -1274,7 +1246,6 @@ def _build_narrative(signals: list, persistence: int, exposure: float) -> str:
 
     return " ".join(parts)
 
-
 def _case_for_dynamo(case: dict) -> dict:
     """
     Convert floats in the case record to Decimals for DynamoDB.
@@ -1283,7 +1254,6 @@ def _case_for_dynamo(case: dict) -> dict:
     item["exposure_dollars"] = _to_decimal(case["exposure_dollars"])
     item["signals"] = [_signal_for_dynamo(s) for s in case["signals"]]
     return item
-
 
 def _signal_for_dynamo(signal: dict) -> dict:
     """Recursively coerce numerics in a signal dict to Decimal."""
@@ -1304,7 +1274,6 @@ def _signal_for_dynamo(signal: dict) -> dict:
             out[key] = value
     return out
 
-
 def _notify_analysts(case: dict) -> None:
     """
     Publish a minimal notification to the payment integrity SNS topic.
@@ -1323,7 +1292,6 @@ def _notify_analysts(case: dict) -> None:
         Message=json.dumps(message),
         Subject=f"New {case['overall_severity']}-severity case: {case['case_id']}",
     )
-
 
 def _emit_metric(metric_name: str, value: int = 1, dimensions: dict = None) -> None:
     """
@@ -1440,7 +1408,6 @@ def on_investigation_outcome(event: dict) -> None:
         "disposition": event["disposition"],
     })
 
-
 def _derive_label(disposition: str) -> str:
     """
     Map a disposition to a supervised training label. See "The Labeling
@@ -1458,13 +1425,11 @@ def _derive_label(disposition: str) -> str:
         return "ambiguous"
     return "unknown"
 
-
 def _outcome_lag_days(case: dict, event: dict) -> int:
     """Days between case creation and investigation outcome."""
     created = datetime.fromisoformat(case["created_at"])
     resolved = datetime.fromisoformat(event["resolved_at"])
     return (resolved - created).days
-
 
 def _write_label_to_s3(training_row: dict, resolved_at: str) -> None:
     """
@@ -1541,7 +1506,6 @@ def run_monthly_pipeline(
         print(f"       routing={routing}: {count}")
 
     return cases
-
 
 # --- Example usage ---
 #
@@ -1693,7 +1657,6 @@ def retrain_isolation_forest_quarterly(history_window_months: int = 6) -> dict:
     )
 
     return {"trained": True, "version_key": version_key, "rows": int(len(X))}
-
 
 def _load_training_window(months: int) -> pd.DataFrame:
     """

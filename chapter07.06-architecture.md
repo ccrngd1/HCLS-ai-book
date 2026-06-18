@@ -16,13 +16,7 @@
 
 **Amazon DynamoDB for operational risk state.** The current risk tier, trajectory status, and intervention routing for each patient needs to be available in real-time for care management workflows. DynamoDB provides single-digit-millisecond lookups by patient ID, which is what the care management platform needs when a nurse opens a patient's record.
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add paragraph on access control: API layer with panel-level authorization mediating DynamoDB access, Lambda authorizer validating panel assignment, restricting direct DynamoDB access to pipeline IAM roles only. HIPAA minimum-necessary standard requires care managers access only attributed patients. -->
-
 **Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly or monthly). EventBridge Scheduler triggers the pipeline, and EventBridge rules route completion events to downstream consumers (notifications to care managers, updates to the care management platform, alerts for rapid deterioration).
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about pipeline failure monitoring: recommend Step Functions or equivalent orchestrator with error handling. Each step should emit success/failure metrics to CloudWatch. Configure alarms for: pipeline not completing within expected window, any step failure, anomalous output (flagged count deviating >50% from prior cycle). Alert ops team if pipeline fails, since a missed cycle means rising-risk patients go unidentified for an additional month. -->
-
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add note: SNS notifications with patient IDs and trajectory data are PHI. Restrict subscriptions to HIPAA-compliant endpoints (SQS, Lambda, HTTPS). Avoid email/SMS with clinical details. Send minimal alerts with dashboard links instead of embedding trajectory data in notification body. -->
 
 **Amazon QuickSight for population-level dashboards.** Leadership needs to see the rising risk population in aggregate: how many patients are flagged, what's the distribution of trajectory severity, which programs are at capacity. QuickSight can query the S3 score history directly, so you don't need to stand up a separate data warehouse just for leadership dashboards.
 
@@ -56,7 +50,6 @@ flowchart TD
 | **AWS Services** | Amazon SageMaker, Amazon S3, AWS Glue, Amazon DynamoDB, AWS Lambda, Amazon EventBridge, Amazon SNS, Amazon QuickSight |
 | **IAM Permissions** | `sagemaker:CreateTransformJob`, `s3:GetObject`, `s3:PutObject`, `glue:StartJobRun`, `dynamodb:PutItem`, `dynamodb:GetItem`, `events:PutEvents`, `sns:Publish` |
 
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note: each pipeline phase should use a dedicated IAM role scoped to specific resource ARNs. Glue feature assembly role gets S3 read on source + write on feature store only. SageMaker role gets S3 read on features + write on score history only. Lambda detection role gets DynamoDB write on risk state table + events:PutEvents on specific event bus. Never use a single role with all permissions. -->
 | **BAA** | AWS BAA signed (risk scores derived from PHI) |
 | **Encryption** | S3: SSE-KMS for all buckets; DynamoDB: encryption at rest (default); all API calls over TLS; Glue jobs: security configuration with S3 and CloudWatch encryption |
 | **VPC** | Production: Glue jobs and SageMaker in VPC with VPC endpoints for S3, DynamoDB, CloudWatch Logs, EventBridge, SNS, and SageMaker API. If Lambda detection function runs in VPC, ensure all AWS service calls have corresponding VPC endpoints to avoid NAT Gateway dependency. |
@@ -393,7 +386,6 @@ FUNCTION store_and_route(flagged_patients, previous_flags):
 | Detection + routing (Lambda) | 2-5 minutes |
 | Rising risk flag rate | 0.5-1.5% of population per cycle |
 
-<!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add note: for populations exceeding 500K, consider splitting the detection step. Use a Glue job for threshold application and signal collection (bulk data transformation), and Lambda only for routing and notification (handles only the flagged subset, typically <1% of population). This avoids Lambda memory and timeout constraints for the bulk filtering operation. -->
 | False positive rate (estimated) | 30-50% (patients flagged who would have stabilized without intervention) |
 | Cost per scoring cycle | $50-150 for 500K patients |
 
@@ -458,7 +450,6 @@ FUNCTION store_and_route(flagged_patients, previous_flags):
 | **With variations** (multi-dimensional trajectories, predictive modeling, peer cohort comparison, outcome tracking) | 16-22 weeks |
 
 ---
-
 
 ---
 

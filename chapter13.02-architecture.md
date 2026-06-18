@@ -74,8 +74,6 @@ flowchart TD
 | **AWS KMS** | Encryption key management for Neptune, S3, and OpenSearch |
 | **Amazon CloudWatch** | Monitoring, query latency metrics, and alerting on stale data |
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add specific CloudWatch custom metrics to the architecture: last successful bulk load timestamp (alert if >48h), percentage of provider records updated in last 30 days, and count of edges with term_date in the past. Consider adding a health endpoint on the query API that returns graph freshness metadata. -->
-
 ### Code
 
 > **Reference implementations:** The following AWS resources demonstrate the patterns used in this recipe:
@@ -465,7 +463,6 @@ FUNCTION apply_incremental_update(change_event):
 ---
 
 [← Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.3: ICD/CPT Hierarchy Navigation →](chapter13.03-icd-cpt-hierarchy-navigation)
-
 
 ---
 

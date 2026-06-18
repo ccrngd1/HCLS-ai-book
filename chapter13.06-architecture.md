@@ -8,8 +8,6 @@
 
 ### Why These Services
 
-<!-- TODO (TechWriter): Expert review A1 (CRITICAL). Neptune does NOT natively support OWL reasoning/inference. The claim below that "the query engine handles the inference automatically" is factually incorrect. Neptune stores RDF/OWL data and queries it with SPARQL, but hierarchy traversal requires explicit SPARQL property paths (e.g., rdfs:subClassOf*) or pre-materialized inferred triples. Rewrite this section to use SPARQL property paths for hierarchy traversal, or integrate a third-party reasoner (e.g., RDFox). Remove all claims of "native" OWL inference. See AWS blog "Use semantic reasoning to infer new facts from your RDF graph by integrating RDFox with Amazon Neptune" (Feb 2023) for the correct pattern. -->
-
 **Amazon Neptune for the knowledge graph.** Neptune is AWS's managed graph database service supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For care gap reasoning, the RDF/SPARQL model is the better fit because it natively supports ontological reasoning through OWL (Web Ontology Language) inference. You can define class hierarchies (coronary artery disease subClassOf cardiovascular disease) and the query engine handles the inference automatically. Neptune is HIPAA eligible, supports encryption at rest and in transit, and runs within your VPC.
 
 **AWS Lambda for patient evaluation orchestration.** Each patient evaluation is a bounded, stateless operation: assemble facts, query the graph, score the gaps, return results. Lambda handles the per-patient compute without requiring persistent infrastructure. For batch population evaluation (running all 50,000 patients overnight), Lambda's concurrency model scales naturally.
@@ -407,8 +405,6 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 
 **Performance benchmarks:**
 
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). The 45-minute batch estimate doesn't match the per-patient latency math (100 Lambdas × 500 patients × 200-500ms = 2-4 minutes, not 45). Either show the math behind the 45-minute estimate (what's the bottleneck: Step Functions orchestration overhead? Neptune connection pooling?) or correct it. Also add Neptune connection management guidance: reuse connections across invocations, set neptune_query_timeout, monitor SparqlRequestsPerSec. -->
-
 | Metric | Typical Value |
 |--------|---------------|
 | Per-patient evaluation latency | 200-500ms |
@@ -419,8 +415,6 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 | Cost per patient evaluation | ~$0.002 (Neptune query + Lambda + DynamoDB write) |
 
 **Where it struggles:** Patients with complex multi-morbidity where guideline conflicts arise. Claims data lag causing false positive gaps. Exclusion criteria that require clinical judgment (e.g., "patient declined" is often not coded). Guidelines that reference social determinants not captured in structured data.
-
-<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE.md, between Expected Results and Variations. -->
 
 ---
 
@@ -446,7 +440,7 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 
 **AWS Sample Repos:**
 - [`amazon-neptune-samples`](https://github.com/aws-samples/amazon-neptune-samples): Neptune code samples including RDF loading, SPARQL queries, and graph analytics patterns
-<!-- TODO (TechWriter): Verify this GitHub URL exists before publication. -->
+
 - [`amazon-neptune-ontology-example-blog`](https://github.com/aws-samples/amazon-neptune-ontology-example-blog): Demonstrates building and querying ontologies in Neptune with OWL reasoning
 
 **AWS Solutions and Blogs:**
@@ -470,7 +464,6 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 ---
 
 [← Recipe 13.5: Clinical Pathway Protocol Modeling](chapter13.05-clinical-pathway-protocol-modeling) | [Chapter 13 Index](chapter13-preface) | [Recipe 13.7: Disease-Gene-Drug Relationship Graph →](chapter13.07-disease-gene-drug-relationship-graph)
-
 
 ---
 

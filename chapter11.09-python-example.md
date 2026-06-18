@@ -418,7 +418,6 @@ def _to_decimal(obj):
         return [_to_decimal(v) for v in obj]
     return obj
 
-
 def _from_decimal(obj):
     """Inverse of _to_decimal for JSON serialization."""
     if isinstance(obj, Decimal):
@@ -431,16 +430,13 @@ def _from_decimal(obj):
         return [_from_decimal(v) for v in obj]
     return obj
 
-
 def _now_iso() -> str:
     """Current UTC time in ISO-8601 format."""
     return datetime.now(timezone.utc).isoformat()
 
-
 def _now() -> datetime:
     """Current UTC datetime."""
     return datetime.now(timezone.utc)
-
 
 def _redact_pii_for_logging(text: str) -> str:
     """Light redaction for log lines."""
@@ -448,7 +444,6 @@ def _redact_pii_for_logging(text: str) -> str:
     for pattern in PHI_PATTERNS.values():
         redacted = pattern.sub("[REDACTED]", redacted)
     return redacted
-
 
 def _emit_event(detail_type: str, detail: dict) -> None:
     """
@@ -471,7 +466,6 @@ def _emit_event(detail_type: str, detail: dict) -> None:
             "EventBridge emit failed for %s: %s",
             detail_type, exc)
 
-
 def _put_metric(metric_name: str, value: float,
                 dimensions: dict) -> None:
     """Emit a CloudWatch metric. Best-effort; never blocks."""
@@ -491,7 +485,6 @@ def _put_metric(metric_name: str, value: float,
         logger.error(
             "CloudWatch put_metric_data failed for %s: %s",
             metric_name, exc)
-
 
 def _audit_tool_call(session_id: str,
                       tool: str,
@@ -515,7 +508,6 @@ def _audit_tool_call(session_id: str,
         logger.error(
             "Tool-call ledger write failed for %s/%s: %s",
             session_id, tool, exc)
-
 
 def _redact_tool_args(arguments: dict) -> dict:
     """Strip sensitive fields before ledger storage."""
@@ -576,7 +568,6 @@ class MockTable:
 
     def update_item(self, Key, **kwargs):
         return {}
-
 
 class MockBedrockRuntime:
     """
@@ -724,7 +715,6 @@ class MockBedrockRuntime:
             "tool_calls": [],
         }
 
-
 class MockHealthLake:
     """
     Stands in for AWS HealthLake. Production queries this
@@ -743,7 +733,6 @@ class MockHealthLake:
 
     def get_chart(self, patient_id):
         return self.charts.get(patient_id, {})
-
 
 class MockProtocolCorpus:
     """Stands in for the coordination-protocol Knowledge Base."""
@@ -792,7 +781,6 @@ class MockProtocolCorpus:
     def retrieve(self, protocol_type=None):
         return self.protocols.get(protocol_type)
 
-
 class MockClinicianQueue:
     """Stands in for Amazon Connect care-management queue."""
 
@@ -808,7 +796,6 @@ class MockClinicianQueue:
         self.handoffs.append({**payload,
                                "queued_at": _now_iso()})
 
-
 class MockEventBus:
     """Stands in for EventBridge."""
 
@@ -820,7 +807,6 @@ class MockEventBus:
             self.events.append(entry)
         return {"FailedEntryCount": 0}
 
-
 class MockPinpoint:
     """Stands in for Pinpoint message dispatch."""
 
@@ -830,7 +816,6 @@ class MockPinpoint:
     def send_messages(self, **kwargs):
         self.messages.append(kwargs)
         return {"MessageResponse": {"Result": {}}}
-
 
 class MockS3:
     """Stands in for S3 PutObject for the audit archive."""
@@ -845,7 +830,6 @@ class MockS3:
         }
         return {}
 
-
 class MockCloudWatch:
     """Stands in for CloudWatch metrics."""
 
@@ -858,7 +842,6 @@ class MockCloudWatch:
                 "namespace": Namespace,
                 **record,
             })
-
 
 class MockStepFunctions:
     """Stands in for Step Functions transition-of-care workflows."""
@@ -876,7 +859,6 @@ class MockStepFunctions:
             "started_at":     _now_iso(),
         })
         return {"executionArn": execution_id}
-
 
 # Module-level mock instances.
 mock_bedrock           = MockBedrockRuntime()
@@ -911,10 +893,8 @@ mock_tables = {
         CONSENT_RECORD_TABLE, "patient_id"),
 }
 
-
 def _mock_dynamodb_table(name):
     return mock_tables[name]
-
 
 # Replace boto3 dynamodb.Table with the mock for the demo.
 dynamodb.Table = _mock_dynamodb_table
@@ -1104,7 +1084,6 @@ def enroll_patient(*,
             [cg["caregiver_id"] for cg in caregiver_records],
     }
 
-
 def _check_eligibility(*, patient_id, program):
     """
     Check the patient against institutional exclusion
@@ -1136,7 +1115,6 @@ def _check_eligibility(*, patient_id, program):
 
     return {"eligible": True}
 
-
 def _state_specific_consent_provisions(state_of_residence):
     """
     Resolve state-specific medical-record privacy
@@ -1158,7 +1136,6 @@ def _state_specific_consent_provisions(state_of_residence):
         state_of_residence,
         {"enhanced_protections": False,
          "statute": "HIPAA_baseline"})
-
 
 def _check_state_caregiver_law(state_of_residence,
                                   relationship):
@@ -1276,7 +1253,6 @@ def ingest_event(*,
         "triggers_emitted": len(triggers),
     }
 
-
 def _parse_message(source_type, raw_message):
     """
     Per-source parsing. The demo accepts pre-structured
@@ -1288,7 +1264,6 @@ def _parse_message(source_type, raw_message):
     if isinstance(raw_message, dict):
         return raw_message
     return {}
-
 
 def _classify_sensitivity(parsed):
     """
@@ -1314,7 +1289,6 @@ def _classify_sensitivity(parsed):
     if "genetic" in text or "brca" in text:
         return {"category": "genetic"}
     return {"category": "general"}
-
 
 def _verify_consent(*, patient_id, source_type,
                        sensitivity_category):
@@ -1348,7 +1322,6 @@ def _verify_consent(*, patient_id, source_type,
                         f"{sensitivity_category}_not_consented"}
 
     return {"allowed": True}
-
 
 def _write_provenance(*, patient_id, source_type,
                          ingestion_metadata, parsed,
@@ -1397,7 +1370,6 @@ def _write_provenance(*, patient_id, source_type,
 
     return provenance_id
 
-
 def _normalize_event(source_type, parsed):
     """
     Normalize the event to the coordination-state schema.
@@ -1414,7 +1386,6 @@ def _normalize_event(source_type, parsed):
         "ingested_at": _now_iso(),
     }
 
-
 def _kind_from_source_type(source_type):
     """Map source type to coordination-state record kind."""
     return {
@@ -1426,7 +1397,6 @@ def _kind_from_source_type(source_type):
         "home_health_vendor_api":"home_health_visit",
         "patient_reported":      "patient_reported",
     }.get(source_type, "unknown")
-
 
 def _reconcile_with_state(*, patient_id, normalized_event,
                               provenance_id):
@@ -1441,7 +1411,6 @@ def _reconcile_with_state(*, patient_id, normalized_event,
         "update_type": "new_entry",
         "details":     {},
     }
-
 
 def _update_coordination_state(*, patient_id,
                                   normalized_event,
@@ -1494,7 +1463,6 @@ def _update_coordination_state(*, patient_id,
     current["last_updated"] = _now_iso()
 
     state_table.put_item(Item=_to_decimal(current))
-
 
 def _derive_triggers(normalized_event, reconciliation):
     """
@@ -1710,7 +1678,6 @@ def evaluate_seams_and_triggers(*, patient_id, event):
         "escalations":            escalations,
     }
 
-
 def _eval_med_discrepancy_rule(state, event):
     """
     Detect medication discrepancies between pharmacy fills
@@ -1739,7 +1706,6 @@ def _eval_med_discrepancy_rule(state, event):
                     entry.get("provenance_id"),
             }
     return None
-
 
 def _eval_referral_window_rule(state, event):
     """
@@ -1782,7 +1748,6 @@ def _eval_referral_window_rule(state, event):
                 })
     return findings or None
 
-
 def _eval_transition_gap_rule(state, event):
     """
     Detect post-discharge follow-up appointments missing
@@ -1820,7 +1785,6 @@ def _eval_transition_gap_rule(state, event):
                 })
     return findings or None
 
-
 def _evaluate_protocol_triggers(*, state, event):
     """
     Evaluate which protocol triggers fire for this event.
@@ -1857,7 +1821,6 @@ def _evaluate_protocol_triggers(*, state, event):
         })
 
     return triggers
-
 
 def _schedule_engagement(*, patient_id, trigger):
     """
@@ -1973,7 +1936,6 @@ def receive_conversation_turn(*,
         "coordination_context": coordination_context,
     }
 
-
 def _get_or_create_session(state_table, channel,
                               channel_session_id,
                               auth_context):
@@ -2001,7 +1963,6 @@ def _get_or_create_session(state_table, channel,
     state_table.put_item(Item=_to_decimal(new_session))
     return new_session
 
-
 def _screen_input(session_id, user_message):
     """Input safety screening."""
     msg_lower = user_message.lower()
@@ -2013,7 +1974,6 @@ def _screen_input(session_id, user_message):
         return {"action": "block",
                 "reason": "message_too_long"}
     return {"action": "pass"}
-
 
 def _coordination_acuity_screen(user_message):
     """
@@ -2038,7 +1998,6 @@ def _coordination_acuity_screen(user_message):
                     "matched":          keyword}
 
     return {"routing_required": False}
-
 
 def _route_to_acuity_pathway(session_id, acuity):
     """Route to the appropriate adjacent recipe pathway."""
@@ -2073,7 +2032,6 @@ def _route_to_acuity_pathway(session_id, acuity):
         "disposition": "acuity_routed",
         "citations":   [],
     }
-
 
 def _load_coordination_context(*, patient_id, speaker_role,
                                   proxy_scope):
@@ -2127,7 +2085,6 @@ def _load_coordination_context(*, patient_id, speaker_role,
         "proxy_scope":    proxy_scope,
         "carve_outs":     carve_outs,
     }
-
 
 def _handle_block(session_id, screening):
     return {
@@ -2240,7 +2197,6 @@ def handle_conversation(*,
         "coordination_context": coordination_context,
     }
 
-
 def compose_coordination_system_prompt(*,
                                           bot_persona_name,
                                           patient_record,
@@ -2318,7 +2274,6 @@ def compose_coordination_system_prompt(*,
         f"friend. Honest about what you are and are not.\n\n"
 
         f"REGULATORY: {regulatory_position}.")
-
 
 def _execute_coordination_tool(tool_call,
                                   coordination_context):
@@ -2482,7 +2437,6 @@ def screen_coordination_output(*,
         "tool_calls":   tool_calls,
     }
 
-
 def _detect_coordination_scope_violation(response_text):
     """
     Detect attempts at diagnosis, dose-titration,
@@ -2523,7 +2477,6 @@ def _detect_coordination_scope_violation(response_text):
                     "matched":  pattern}
 
     return None
-
 
 def _verify_coordination_faithfulness(*, response_text,
                                           tool_results,
@@ -2612,7 +2565,6 @@ def _verify_coordination_faithfulness(*, response_text,
 
     return {"passes": True}
 
-
 def _speaker_role_disclosure_check(*, response_text,
                                        speaker_role,
                                        carve_outs):
@@ -2632,7 +2584,6 @@ def _speaker_role_disclosure_check(*, response_text,
                         f"carve_out_disclosed_{carve_out}"}
     return {"violation": False}
 
-
 def _suggests_clinical_judgment(response_text):
     """
     Quick heuristic for whether a response is making a
@@ -2647,7 +2598,6 @@ def _suggests_clinical_judgment(response_text):
         "the right thing is to",
     ]
     return any(ind in text_lower for ind in indicators)
-
 
 def _contains_deference(response_text):
     """Check whether the response defers to the care team."""
@@ -2664,7 +2614,6 @@ def _contains_deference(response_text):
     ]
     return any(ind in text_lower
                for ind in deference_indicators)
-
 
 def persist_coordination_artifacts(*,
                                        session_id,
@@ -2767,7 +2716,6 @@ def persist_coordination_artifacts(*,
 
     return {"decisions_recorded": decision_ids}
 
-
 def _extract_coordination_decisions(response_payload):
     """Extract decisions worth journaling from the response."""
     decisions = []
@@ -2811,7 +2759,6 @@ def _extract_coordination_decisions(response_payload):
 
     return decisions
 
-
 def _process_tool_side_effects(*, session_id, patient_id,
                                   tool_call,
                                   coordination_context):
@@ -2832,7 +2779,6 @@ def _process_tool_side_effects(*, session_id, patient_id,
                 "patient_id": patient_id,
                 "alert_type": args.get("alert_type"),
             })
-
 
 def _consent_permits_care_team_sharing(consent_record):
     """
@@ -2938,7 +2884,6 @@ def initiate_transition_of_care(*, patient_id,
             transition_protocol.get("window_days", 30),
     }
 
-
 def _select_transition_protocol(*, patient_id,
                                     admission_type,
                                     destination):
@@ -2956,7 +2901,6 @@ def _select_transition_protocol(*, patient_id,
         "items":   base.get("items", []),
         "window_days": 30,
     }
-
 
 def _select_state_machine_arn(*, destination):
     """Pick the Step Functions state machine for the destination."""
@@ -3098,7 +3042,6 @@ def process_referral_event(*, patient_id, referral_event):
             "new_state": referral["state"],
             "next_action": next_action}
 
-
 def _map_event_to_target_state(event_type):
     """Map a referral event type to its target state."""
     mapping = {
@@ -3115,7 +3058,6 @@ def _map_event_to_target_state(event_type):
         "aged_out":             "aged_out",
     }
     return mapping.get(event_type)
-
 
 def _next_referral_action(referral, event_type):
     """Derive the next protocol-driven action."""
@@ -3216,7 +3158,6 @@ def process_medication_event(*, patient_id,
         "seams_raised":   len(seam_ids),
     }
 
-
 def _normalize_medication(medication_event):
     """
     Normalize a medication entry. Demo: thin pass-through
@@ -3242,7 +3183,6 @@ def _normalize_medication(medication_event):
             medication_event.get("ingested_at",
                                   _now_iso()),
     }
-
 
 def _reconcile_medication(*, normalized, current_list):
     """
@@ -3301,7 +3241,6 @@ def _reconcile_medication(*, normalized, current_list):
         })
 
     return {"update": "update_existing", "seams": seams}
-
 
 def _apply_med_reconciliation(*, current_list,
                                   reconciliation, normalized,
@@ -3433,7 +3372,6 @@ def compose_weekly_digest(patient_id, window_days=7):
     })
 
     return digest
-
 
 def queue_outcome_correlation(*, patient_id,
                                   window_days_ago=30):
@@ -3861,7 +3799,6 @@ def run_demo():
           f"{len(pinpoint_client.messages)}")
     print(f"S3 archive objects:              "
           f"{len(s3_client.objects)}")
-
 
 if __name__ == "__main__":
     logging.basicConfig(

@@ -479,11 +479,9 @@ def _now_iso() -> str:
     """Current UTC timestamp in ISO 8601 format."""
     return datetime.datetime.now(timezone.utc).isoformat()
 
-
 def _today_str() -> str:
     """Current UTC date as YYYY-MM-DD string for run_date."""
     return datetime.datetime.now(timezone.utc).date().isoformat()
-
 
 def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     """
@@ -506,7 +504,6 @@ def _emit_metric(name: str, value: float, dimensions: dict) -> None:
     except Exception as exc:
         logger.warning("Metric publish failed for %s: %s", name, exc)
 
-
 def _to_decimal(value) -> Decimal:
     """
     DynamoDB does not accept Python floats. Going through str avoids
@@ -517,7 +514,6 @@ def _to_decimal(value) -> Decimal:
     if isinstance(value, Decimal):
         return value
     return Decimal(str(value))
-
 
 def _to_decimal_dict(d: dict) -> dict:
     """Recursively convert numeric values in a dict to Decimal for DynamoDB."""
@@ -540,7 +536,6 @@ def _to_decimal_dict(d: dict) -> dict:
             out[k] = v
     return out
 
-
 def _from_decimal(value):
     """Inverse of _to_decimal for reading DynamoDB items into Python."""
     if isinstance(value, Decimal):
@@ -550,7 +545,6 @@ def _from_decimal(value):
     if isinstance(value, list):
         return [_from_decimal(v) for v in value]
     return value
-
 
 def _make_tracking_id(run_date: str, patient_id: str,
                       measure_id: str, pathway: str) -> str:
@@ -567,13 +561,11 @@ def _make_tracking_id(run_date: str, patient_id: str,
     """
     return f"gap-{run_date}-{patient_id}-{measure_id}-{pathway}"
 
-
 def _make_briefing_id(encounter: dict, run_date: str) -> str:
     """Same caveat as _make_tracking_id. Replace with opaque ID in production."""
     return (
         f"brief-{run_date}-{encounter['provider_id']}-{encounter['patient_id']}"
     )
-
 
 def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> None:
     """Poll Athena until the query reaches a terminal state."""
@@ -590,7 +582,6 @@ def _wait_for_athena_query(execution_id: str, timeout_seconds: int = 300) -> Non
             raise TimeoutError(f"Athena query {execution_id} timed out")
         time.sleep(2)
 
-
 def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
     """Poll a Batch Transform job until it reaches a terminal state."""
     start = time.time()
@@ -605,7 +596,6 @@ def _wait_for_transform_job(job_name: str, timeout_seconds: int = 3600) -> None:
         if time.time() - start > timeout_seconds:
             raise TimeoutError(f"Transform job {job_name} timed out")
         time.sleep(15)
-
 
 def _redact_identifiers(items: list) -> list:
     """
@@ -728,7 +718,6 @@ def evaluate_measures(patients: list, run_date: str) -> list:
     )
     return transitions
 
-
 def _load_active_measures(run_date: str) -> list:
     """
     Load every active measure version from the registry. The registry
@@ -749,7 +738,6 @@ def _load_active_measures(run_date: str) -> list:
         # Offline demo path: fall back to the synthetic registry.
         return [m for m in SAMPLE_MEASURE_REGISTRY
                 if m["effective_start"] <= run_date <= m["effective_end"]]
-
 
 def _evaluate_denominator(patients: list, measure: dict, run_date: str) -> list:
     """
@@ -780,7 +768,6 @@ def _evaluate_denominator(patients: list, measure: dict, run_date: str) -> list:
 
         eligible.append(patient["patient_id"])
     return eligible
-
 
 def _evaluate_numerator(denominator: list, measure: dict, run_date: str) -> dict:
     """
@@ -825,7 +812,6 @@ def _evaluate_numerator(denominator: list, measure: dict, run_date: str) -> dict
 
     return found
 
-
 def _evaluate_exclusions(denominator: list, measure: dict, run_date: str) -> set:
     """
     Apply measure-specific exclusion logic. Some patients are excluded
@@ -840,7 +826,6 @@ def _evaluate_exclusions(denominator: list, measure: dict, run_date: str) -> set
         if patient_exclusions & excluded_codes:
             excluded.add(patient_id)
     return excluded
-
 
 def _determine_state(patient_id: str, qualifying_events: dict,
                       excluded: set, measure: dict) -> tuple:
@@ -862,7 +847,6 @@ def _determine_state(patient_id: str, qualifying_events: dict,
         return "confirmed_closed", qe
     return "provisionally_closed", qe
 
-
 def _read_previous_state(gaps_table, patient_id: str, measure_id: str) -> dict:
     """Read the previous state record for this (patient, measure)."""
     try:
@@ -872,7 +856,6 @@ def _read_previous_state(gaps_table, patient_id: str, measure_id: str) -> dict:
         return _from_decimal(response.get("Item") or {})
     except Exception:
         return {}
-
 
 def _compute_transition(previous: dict, new_state: str,
                          measure: dict, run_date: str) -> str:
@@ -900,7 +883,6 @@ def _compute_transition(previous: dict, new_state: str,
 
     return f"transitioned_{prev_state}_to_{new_state}"
 
-
 def _compute_measure_window(measure: dict, patient_id: str,
                              run_date: str) -> tuple:
     """
@@ -913,7 +895,6 @@ def _compute_measure_window(measure: dict, patient_id: str,
     """
     year = int(run_date[:4])
     return f"{year}-01-01", f"{year}-12-31"
-
 
 def _assess_source_completeness(patient_id: str, measure: dict,
                                  evidence) -> str:
@@ -944,14 +925,12 @@ def _assess_source_completeness(patient_id: str, measure: dict,
 
     return "complete"
 
-
 # Demo state populated by the runner at the bottom of this file. The
 # production functions above replace these with real data feeds.
 _DEMO_QUALIFYING_EVENTS: dict = {}
 _DEMO_EXCLUSION_FLAGS: dict = {}
 _DEMO_FRAGMENTATION_FLAGS: dict = {}
 _DEMO_HISTORY_COUNT: dict = {}
-
 
 def surface_candidate_gaps_via_llm(
     patients_subset: list, run_date: str,
@@ -1014,7 +993,6 @@ def surface_candidate_gaps_via_llm(
     )
     return candidates_emitted
 
-
 def _build_chart_context(patient: dict, lookback_days: int) -> dict:
     """
     Build a structured, de-identified chart context block for the LLM.
@@ -1029,7 +1007,6 @@ def _build_chart_context(patient: dict, lookback_days: int) -> dict:
         "current_medications":   patient.get("current_medications", []),
         "family_history_flags":  patient.get("family_history_flags", []),
     }
-
 
 def _validate_candidate_gap(candidate: dict, observed_data: dict) -> bool:
     """
@@ -1076,7 +1053,6 @@ def _validate_candidate_gap(candidate: dict, observed_data: dict) -> bool:
         return False
 
     return True
-
 
 def _bedrock_candidate_gap_surface(chart_context: dict) -> list:
     """
@@ -1267,7 +1243,6 @@ def enrich_open_gaps(run_date: str, patients: dict,
     logger.info("Enrichment computed priority for %d open gaps", len(enriched))
     return enriched
 
-
 def _scan_open_gaps(gaps_table) -> list:
     """
     Production: Query a (state, run_date) GSI rather than a scan; this
@@ -1283,7 +1258,6 @@ def _scan_open_gaps(gaps_table) -> list:
     except Exception as exc:
         logger.warning("Scan of patient-gaps failed: %s", exc)
     return open_gaps
-
 
 def _score_clinical_urgency(patient: dict, gap: dict, measure: dict) -> float:
     """
@@ -1331,7 +1305,6 @@ def _score_clinical_urgency(patient: dict, gap: dict, measure: dict) -> float:
 
     return urgency
 
-
 def _score_engagement(patient: dict, gap: dict, measure: dict,
                        pathway: str) -> float:
     """
@@ -1373,7 +1346,6 @@ def _score_engagement(patient: dict, gap: dict, measure: dict,
 
     return max(0.05, min(0.95, base + quartile_adj))
 
-
 def _compute_window_urgency(gap: dict, run_date: str) -> float:
     """
     Time pressure from the measure's closing window. A gap that closes
@@ -1403,7 +1375,6 @@ def _compute_window_urgency(gap: dict, run_date: str) -> float:
     if days_remaining <= 180:
         return 0.40
     return 0.15
-
 
 def _lookup_cohort_features_from_profile(patient: dict) -> dict:
     """Pull cohort features from the patient profile."""
@@ -1547,7 +1518,6 @@ def rank_visit_agendas(next_day_schedule: list, run_date: str,
     logger.info("Built visit agendas for %d encounters", len(visit_agendas))
     return visit_agendas
 
-
 def _compute_visit_fit(gap: dict, visit_type: str, visit_minutes: int,
                         provider: dict, acute_context: dict) -> dict:
     """
@@ -1585,7 +1555,6 @@ def _compute_visit_fit(gap: dict, visit_type: str, visit_minutes: int,
         "time_cost_factor":      time_cost_factor,
         "acute_displacement":    acute_displacement,
     }
-
 
 def _generate_clinician_briefing(encounter: dict, in_visit_agenda: list,
                                   async_queue: list, patient: dict) -> dict:
@@ -1628,7 +1597,6 @@ def _generate_clinician_briefing(encounter: dict, in_visit_agenda: list,
         )
         return _templated_briefing_fallback(in_visit_agenda, async_queue)
 
-
 def _summarize_patient_for_briefing(patient: dict) -> dict:
     """
     Build a compact patient summary for the LLM. Stays at the tier of
@@ -1647,7 +1615,6 @@ def _summarize_patient_for_briefing(patient: dict) -> dict:
         "family_history_flags": patient.get("family_history_flags", []),
     }
 
-
 def _a1c_band(a1c) -> str:
     if a1c is None:
         return "unknown"
@@ -1656,7 +1623,6 @@ def _a1c_band(a1c) -> str:
     if a1c < 8.0:
         return "moderately_controlled"
     return "elevated"
-
 
 def _bedrock_clinician_briefing(context: dict) -> dict:
     """
@@ -1704,7 +1670,6 @@ top_async_items. Do not propose new gaps.
     if not match:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
-
 
 def _validate_briefing(briefing: dict, in_visit_agenda: list) -> bool:
     """
@@ -1763,7 +1728,6 @@ def _validate_briefing(briefing: dict, in_visit_agenda: list) -> bool:
                 return False
 
     return True
-
 
 def _templated_briefing_fallback(in_visit_agenda: list,
                                    async_queue: list) -> dict:
@@ -2008,7 +1972,6 @@ def orchestrate_async_closures(
     )
     return allocated
 
-
 def _collect_patient_ids_with_upcoming_visits(horizon_end: datetime.date) -> set:
     """
     Production: query the schedule feed for patients with visits in
@@ -2016,7 +1979,6 @@ def _collect_patient_ids_with_upcoming_visits(horizon_end: datetime.date) -> set
     set; the runner overrides with synthetic visited patients.
     """
     return _DEMO_VISITED_PATIENTS
-
 
 def _second_best_pathway(candidate: dict,
                           capacity_remaining: dict) -> str | None:
@@ -2035,7 +1997,6 @@ def _second_best_pathway(candidate: dict,
             return p
     return None
 
-
 def _cross_recipe_suppresses(patient_id: str, pathway: str) -> bool:
     """
     Cross-recipe coordination: if the patient is currently in an
@@ -2044,7 +2005,6 @@ def _cross_recipe_suppresses(patient_id: str, pathway: str) -> bool:
     Production: query the patient-profile cross-recipe flags.
     """
     return False
-
 
 def _applicable_floor_cohorts(cohort_features: dict,
                                 floor_definitions: dict) -> list:
@@ -2064,7 +2024,6 @@ def _applicable_floor_cohorts(cohort_features: dict,
               and cohort_features.get("sdoh_cohort") == "transportation_barrier"):
             result.append(floor_name)
     return result
-
 
 def _dispatch_async_pathway(row: dict, patient: dict, measure: dict) -> dict:
     """
@@ -2088,7 +2047,6 @@ def _dispatch_async_pathway(row: dict, patient: dict, measure: dict) -> dict:
         # In-visit pathways are surfaced via the briefing, not async.
         return {"tracking_id": row["tracking_id"], "channel": "in_visit_only"}
     raise ValueError(f"Unknown pathway: {pathway}")
-
 
 def _dispatch_pharmacy_nudge(row: dict, patient: dict, measure: dict) -> dict:
     """
@@ -2122,7 +2080,6 @@ def _dispatch_pharmacy_nudge(row: dict, patient: dict, measure: dict) -> dict:
     )
     return payload
 
-
 def _dispatch_home_kit_fulfillment(row: dict, patient: dict,
                                     measure: dict) -> dict:
     """Hand to the home-kit fulfillment partner."""
@@ -2135,7 +2092,6 @@ def _dispatch_home_kit_fulfillment(row: dict, patient: dict,
     }
     logger.info("Queued home-kit fulfillment for %s", row["tracking_id"])
     return payload
-
 
 def _dispatch_specialist_referral(row: dict, patient: dict,
                                     measure: dict) -> dict:
@@ -2151,7 +2107,6 @@ def _dispatch_specialist_referral(row: dict, patient: dict,
     }
     logger.info("Queued specialist referral for %s", row["tracking_id"])
     return payload
-
 
 def _dispatch_chase_team_call(row: dict, patient: dict, measure: dict) -> dict:
     """
@@ -2180,7 +2135,6 @@ def _dispatch_chase_team_call(row: dict, patient: dict, measure: dict) -> dict:
     logger.info("Queued chase-team call for %s", row["tracking_id"])
     return payload
 
-
 def _dispatch_pcp_inbox(row: dict, patient: dict, measure: dict) -> dict:
     """Post a structured note to the PCP inbox with a one-click order."""
     payload = {
@@ -2194,7 +2148,6 @@ def _dispatch_pcp_inbox(row: dict, patient: dict, measure: dict) -> dict:
     logger.info("Posted PCP inbox note for %s", row["tracking_id"])
     return payload
 
-
 def _suggest_specialty_for_measure(measure: dict) -> str:
     """Mapping of measure to suggested specialty for referral."""
     return {
@@ -2202,13 +2155,11 @@ def _suggest_specialty_for_measure(measure: dict) -> str:
         "uspstf-colorectal-screening":  "gastroenterology",
     }.get(measure["measure_id"], "primary_care")
 
-
 def _default_pcp_action_for_measure(measure: dict) -> str:
     """Default one-click PCP action."""
     return {
         "ada-uacr-annual-diabetes": "order_uacr",
     }.get(measure["measure_id"], "review_chart")
-
 
 def _bedrock_tailor_pharmacy_message(row: dict, patient: dict,
                                        measure: dict) -> dict:
@@ -2253,7 +2204,6 @@ Return ONLY valid JSON with this shape:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_clinical_message(tailored: dict, measure_id: str) -> bool:
     """
     Shape and prohibited-claims check for member-facing messages.
@@ -2272,7 +2222,6 @@ def _validate_clinical_message(tailored: dict, measure_id: str) -> bool:
     if any(bad in full_text for bad in blocklist):
         return False
     return True
-
 
 def _bedrock_chase_brief(row: dict, patient: dict, measure: dict) -> dict:
     """Generate a structured pre-call brief for the chase agent."""
@@ -2314,7 +2263,6 @@ Return ONLY valid JSON with this shape:
         raise ValueError("LLM returned no JSON object")
     return json.loads(match.group(0))
 
-
 def _validate_chase_brief(brief: dict) -> bool:
     """Shape check for the chase brief."""
     required = {"opening_script", "talking_points",
@@ -2328,7 +2276,6 @@ def _validate_chase_brief(brief: dict) -> bool:
     if not isinstance(brief["anticipated_objections"], list):
         return False
     return True
-
 
 # Demo state populated by the runner.
 _DEMO_VISITED_PATIENTS: set = set()
@@ -2482,7 +2429,6 @@ def process_closure_event(event: dict, measure_lookup: dict) -> None:
             patient_id, gap["measure_id"], source, new_state,
         )
 
-
 def _match_event_to_open_gaps(patient_id: str, event: dict,
                                 measure_lookup: dict) -> list:
     """
@@ -2526,7 +2472,6 @@ def _match_event_to_open_gaps(patient_id: str, event: dict,
 
     return matches
 
-
 def _suppress_inflight_outreach(patient_id: str, measure_id: str,
                                  reason: str, closure_state: str) -> None:
     """
@@ -2539,7 +2484,6 @@ def _suppress_inflight_outreach(patient_id: str, measure_id: str,
         "Outreach suppression: patient=%s measure=%s reason=%s state=%s",
         patient_id, measure_id, reason, closure_state,
     )
-
 
 # Synthetic measure -> qualifying code mapping for the demo. Production
 # pulls from the measure registry's numerator value sets.
@@ -2647,7 +2591,6 @@ def process_clinician_override(event: dict) -> None:
         patient_id, measure_id, reason,
     )
 
-
 def _apply_suppression(patient_id: str, measure_id: str,
                         suppression: dict) -> None:
     """
@@ -2697,7 +2640,6 @@ def _apply_suppression(patient_id: str, measure_id: str,
             "Failed to apply suppression to %s/%s: %s",
             patient_id, measure_id, exc,
         )
-
 
 def _update_training_label(override_record: dict) -> None:
     """
@@ -2787,7 +2729,6 @@ def run_daily_batch(
         "n_allocated":       len(allocated),
         "elapsed_seconds":   elapsed,
     }
-
 
 # --- Demo runner ---
 if __name__ == "__main__":
@@ -3016,7 +2957,7 @@ if __name__ == "__main__":
 
 Run this end-to-end against a curated measure registry, populated claims/EHR/lab/pharmacy/immunization-registry feeds, trained SageMaker urgency and engagement models, working visit schedule integration, configured outreach channels, and you'll see the pattern: per-(patient, measure) state machine maintained correctly, urgency and per-pathway probabilities scored, visit-context ranked, async pathways allocated, multi-source closures reconciled, and clinician overrides captured as retraining signal. The distance between this and a real health-plan deployment is significant. Here's where it lives.
 
-**Measure registry curation as an ongoing program.** The registry is the source of truth for what counts as a gap, and it has to be maintained continuously. Annual NCQA HEDIS revisions, CMS Stars technical updates, USPSTF guideline changes, and contract-specific measure additions all require registry updates. Plan for at least 0.5 to 1.0 FTE of clinical-informatics time on registry maintenance ongoing, with structured change-management: proposed change, evidence packet, version bump, parallel evaluation against the prior version on a sample to quantify population impact, then promotion. <!-- TODO: confirm the current NCQA HEDIS update cadence and the CMS Stars technical-notes release pattern at the time of build. -->
+**Measure registry curation as an ongoing program.** The registry is the source of truth for what counts as a gap, and it has to be maintained continuously. Annual NCQA HEDIS revisions, CMS Stars technical updates, USPSTF guideline changes, and contract-specific measure additions all require registry updates. Plan for at least 0.5 to 1.0 FTE of clinical-informatics time on registry maintenance ongoing, with structured change-management: proposed change, evidence packet, version bump, parallel evaluation against the prior version on a sample to quantify population impact, then promotion. 
 
 **Measure-spec parity testing against the plan's HEDIS vendor.** The recommender's gap evaluation will not exactly match the plan's HEDIS vendor's numerator counts; small implementation differences in value sets, lookback boundary handling, and supplemental-data inclusion can shift numerators by 1 to 3 percentage points. Build a parity test that runs nightly comparing the recommender's open-gap counts to the vendor's open-gap counts at the population level, with alerting on divergence beyond an established tolerance. Persistent divergence is an alignment task with the vendor, not a model failure.
 

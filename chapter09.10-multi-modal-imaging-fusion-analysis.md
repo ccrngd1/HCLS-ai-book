@@ -102,7 +102,6 @@ Each stage has failure modes that must be detected and handled: missing slices i
 
 ---
 
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter09.10-architecture). The Python example is linked from there.
 
 ## The Honest Take

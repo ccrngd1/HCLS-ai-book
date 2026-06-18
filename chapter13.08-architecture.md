@@ -55,10 +55,6 @@ flowchart TD
 | **Sample Data** | UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB). |
 | **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment. |
 
-<!-- TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica. -->
-
-<!-- TODO (TechWriter): Expert review A-5 (MEDIUM). Add a fallback strategy for Neptune unavailability: if Neptune is unreachable, return cached results with a "stale: true" flag and "status: service_degraded" for cache misses. Mention Neptune multi-AZ deployment as the primary availability mechanism. -->
-
 ### Ingredients
 
 | AWS Service | Role |
@@ -377,8 +373,6 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
     }
 ```
 
-<!-- TODO (TechWriter): Expert review A-1 (HIGH). Add a Step 7 pseudocode block for cache invalidation during terminology updates. After Neptune bulk load completes, compute the set of changed concept codes from the terminology delta and selectively delete corresponding Redis cache keys. For large deltas (annual ICD-10 update), flush the entire cache or implement a cache warming step for top-N queried concepts. -->
-
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune graph client, check out the [Python Example](chapter13.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
 ### Expected Results
@@ -446,8 +440,6 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
-
 ## Variations and Extensions
 
 **Real-time NLP normalization.** Integrate the normalization API with an NLP pipeline (see Chapter 8) that extracts clinical concepts from free text. The NLP system identifies "type 2 DM" in a clinical note, the normalization service maps it to the canonical SNOMED concept, and downstream systems get structured, coded data from unstructured text. This is the bridge between NLP extraction and computable clinical data.
@@ -491,7 +483,6 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
 | **With variations** | 6-9 months | NLP integration, FHIR ConceptMap exposure, automated mapping suggestions, multi-tenant support |
 
 ---
-
 
 ---
 

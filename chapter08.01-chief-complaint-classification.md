@@ -59,8 +59,6 @@ Chief complaint classification is a well-studied problem. The literature goes ba
 - Active learning workflows let you strategically label the examples where your classifier is least confident, rather than labeling randomly
 - Ensemble approaches (run multiple classifiers, take the majority vote or highest confidence) improve robustness without much added complexity
 
-<!-- TODO (TechWriter): Expert review A2 (HIGH). The 50,000 examples claim earlier in this section and the 1,000-per-category minimum in Prerequisites are inconsistent for a 150-category system. Reconcile: either note that 50K examples across fewer high-frequency categories achieves 85-92% on those categories while long-tail categories underperform, or adjust the total corpus guidance to 100K-200K for full category coverage. -->
-
 The practical state of the art for a well-trained, institution-specific model is 88-95% top-1 accuracy, with top-3 accuracy (correct category is in the top three predictions) often exceeding 97%. That's good enough for automated routing with a confidence threshold: high-confidence predictions route automatically, low-confidence ones go to a human.
 
 ## General Architecture Pattern

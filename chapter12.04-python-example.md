@@ -277,7 +277,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -345,7 +344,6 @@ class MockHealthLake:
         out.sort(key=lambda o: o["effective_dt"])
         return out
 
-
 class MockS3:
     """In-memory stand-in for an S3 bucket.
 
@@ -375,7 +373,6 @@ class MockS3:
             def read(self):
                 return self._b
         return {"Body": _StreamingBody(body)}
-
 
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
@@ -416,7 +413,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge.
 
@@ -433,7 +429,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch.
@@ -454,7 +449,6 @@ class MockCloudWatch:
                 "Unit":  m.get("Unit", "None"),
                 "Time":  datetime.now(timezone.utc).isoformat(),
             })
-
 
 def generate_synthetic_lab_results(history_days=SYNTHETIC_HISTORY_DAYS,
                                    seed=SYNTHETIC_RANDOM_SEED):
@@ -717,7 +711,6 @@ def _convert_units(value, from_unit, to_unit, loinc_code):
     # Unsupported conversion. Better to quarantine than to guess.
     return None
 
-
 def harmonize_lab_result(raw_result, healthlake, s3, bucket):
     """Step 1: Map source code to LOINC, convert units, tag context.
 
@@ -823,7 +816,6 @@ def harmonize_lab_result(raw_result, healthlake, s3, bucket):
 
     return harmonized
 
-
 def harmonize_lab_results(raw_results, healthlake, s3, bucket):
     """Convenience wrapper that runs harmonization across a batch.
 
@@ -874,7 +866,6 @@ def _interquartile_mean(values):
     trimmed = sorted_vals[lo:hi]
     return sum(trimmed) / len(trimmed) if trimmed else sum(sorted_vals) / n
 
-
 def _median_absolute_deviation(values):
     """Robust dispersion measure: median of |x - median(x)|.
 
@@ -886,7 +877,6 @@ def _median_absolute_deviation(values):
         return 0.0
     m = median(values)
     return median([abs(v - m) for v in values])
-
 
 def update_patient_baseline(patient_id, loinc_code, healthlake, s3,
                             baseline_bucket,
@@ -956,7 +946,6 @@ def update_patient_baseline(patient_id, loinc_code, healthlake, s3,
 
     return baseline
 
-
 def update_all_baselines(harmonized, healthlake, s3,
                          baseline_bucket, now_dt=None):
     """Compute baselines for every (patient, lab) seen in the batch.
@@ -994,7 +983,6 @@ def _days_between_iso(ts_a, ts_b):
     a = datetime.fromisoformat(ts_a)
     b = datetime.fromisoformat(ts_b)
     return (b - a).total_seconds() / 86400.0
-
 
 class TheilSenDetector:
     """Pedagogical Theil-Sen + Mann-Kendall detector.
@@ -1087,11 +1075,9 @@ class TheilSenDetector:
             },
         }
 
-
 def _normal_cdf(z):
     """Standard normal CDF using the error function approximation."""
     return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
-
 
 class CUSUMDetector:
     """Pedagogical CUSUM change-point detector.
@@ -1195,7 +1181,6 @@ class CUSUMDetector:
             },
         }
 
-
 class KalmanDetector:
     """Pedagogical local-level Kalman filter for irregularly sampled labs.
 
@@ -1270,7 +1255,6 @@ class KalmanDetector:
             },
         }
 
-
 # Registry that maps detector names to instances. Production loads
 # this from the model registry and the per-LOINC catalog drives
 # the selection.
@@ -1279,7 +1263,6 @@ DETECTOR_REGISTRY = {
     "cusum":     CUSUMDetector(),
     "kalman":    KalmanDetector(),
 }
-
 
 def detect_trend(patient_id, loinc_code, baseline, healthlake,
                  s3, trend_score_bucket,
@@ -1346,7 +1329,6 @@ def detect_trend(patient_id, loinc_code, baseline, healthlake,
 
     return raw_trend
 
-
 def detect_all_trends(baselines, healthlake, s3,
                       trend_score_bucket, now_dt=None):
     """Run trend detection for every (patient, lab) pair with a baseline."""
@@ -1376,7 +1358,6 @@ def _check_direction(slope_per_month, concerning_direction):
         return slope_per_month != 0
     return False
 
-
 def _severity_band(trend, rules):
     """Choose info / advisory / urgent based on how far over threshold."""
     slope_excess = (abs(trend["slope_per_month"])
@@ -1389,7 +1370,6 @@ def _severity_band(trend, rules):
     if overall >= 1.5:
         return "advisory"
     return "info"
-
 
 def compose_clinician_explanation(trend, catalog, baseline_window_months):
     """Plain-language narrative that fits in the eight-second look.
@@ -1412,7 +1392,6 @@ def compose_clinician_explanation(trend, catalog, baseline_window_months):
         f"({trend['baseline_value']:.2f}). All recent values are from "
         f"chronic ambulatory care."
     )
-
 
 def apply_clinical_relevance(trend, catalog,
                              baseline_window_months=DEFAULT_BASELINE_WINDOW_MONTHS):
@@ -1497,7 +1476,6 @@ def apply_clinical_relevance(trend, catalog,
         "computed_at": trend["computed_at"],
         "payload":    payload,
     }
-
 
 def apply_relevance_to_all(trends):
     """Apply the relevance layer across the full trend batch."""
@@ -1739,7 +1717,6 @@ def run_lab_trend_pipeline(table, event_bus, cloudwatch,
 
     return surfaced, suppressed
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1790,7 +1767,6 @@ def run_demo():
               f"reasons={reasons}")
 
     return surfaced, suppressed
-
 
 if __name__ == "__main__":
     run_demo()

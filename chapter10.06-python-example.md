@@ -315,17 +315,14 @@ def _to_decimal(value):
         return [_to_decimal(v) for v in value]
     return value
 
-
 def _hash_value(value):
     """Stable hash for non-PHI audit linkage."""
     if not value:
         return None
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
-
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
-
 
 def _bucket_audio_quality(quality_metrics):
     """
@@ -411,7 +408,6 @@ class MockTranscribeStreaming:
             self.streamed.append(event)
             yield event
 
-
 class MockTranscribeBatch:
     """
     Stands in for the batch Transcribe API used after the visit
@@ -443,7 +439,6 @@ class MockTranscribeBatch:
 
     def retrieve_transcript(self, visit_id):
         return dict(self._fixtures.get(visit_id, {}))
-
 
 class MockBedrock:
     """
@@ -533,7 +528,6 @@ class MockBedrock:
         })
         return {"body": json.dumps(response)}
 
-
 class MockComprehendMedical:
     """
     Stands in for Amazon Comprehend Medical's DetectEntitiesV2,
@@ -558,7 +552,6 @@ class MockComprehendMedical:
         self.invocations.append({"type": "infer_icd10cm",
                                  "text_len": len(text)})
         return self._fixtures.get("infer_icd10cm", {"Entities": []})
-
 
 class MockEHR:
     """
@@ -605,7 +598,6 @@ class MockEHR:
             "release_at": release_at,
         })
 
-
 class MockClinicianReviewClient:
     """
     Stands in for the clinician's review-and-sign web client.
@@ -637,7 +629,6 @@ class MockClinicianReviewClient:
         self._signature = None
         return signature
 
-
 class MockVisitState:
     def __init__(self):
         self._items = {}
@@ -652,7 +643,6 @@ class MockVisitState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockTranscriptState:
     def __init__(self):
@@ -680,7 +670,6 @@ class MockTranscriptState:
         return list(self._items.get(session_id, {})
                      .get("streaming_segments", []))
 
-
 class MockNoteState:
     def __init__(self):
         self._items = {}
@@ -695,7 +684,6 @@ class MockNoteState:
         existing = self._items.setdefault(
             session_id, {"session_id": session_id})
         existing.update(updates)
-
 
 class MockS3:
     """
@@ -725,7 +713,6 @@ class MockS3:
                 for (b, k), v in self._objects.items()
                 if bucket is None or b == bucket]
 
-
 class MockEventBus:
     """
     Stands in for Amazon EventBridge. Lifecycle events flow
@@ -739,7 +726,6 @@ class MockEventBus:
     def put_events(self, entries):
         for entry in entries:
             self.events.append(dict(entry))
-
 
 class MockCloudWatch:
     """
@@ -760,7 +746,6 @@ class MockCloudWatch:
             "timestamp":   _now_iso(),
         })
 
-
 # Module-level singletons for the demo. In production each of
 # these is its own AWS resource accessed via boto3.
 visit_state            = MockVisitState()
@@ -778,7 +763,6 @@ transcribe_streaming   = None
 transcribe_batch_mock  = None
 bedrock_mock           = None
 comprehend_mock        = None
-
 
 def audit_log(event):
     """
@@ -832,7 +816,6 @@ def determine_consent_regime(patient_jurisdiction,
         return "all_party_consent"
     return "one_party_consent"
 
-
 def select_disclosure_text(consent_regime):
     """Return the appropriate disclosure text for the regime."""
     if consent_regime == "behavioral_health_explicit":
@@ -840,7 +823,6 @@ def select_disclosure_text(consent_regime):
     if consent_regime == "all_party_consent":
         return CONSENT_DISCLOSURE_ALL_PARTY
     return CONSENT_DISCLOSURE_ONE_PARTY
-
 
 def configure_audio_capture(visit_id, platform_type,
                               prefer_per_channel=True):
@@ -866,7 +848,6 @@ def configure_audio_capture(visit_id, platform_type,
         "patient_channel":       f"audio/{visit_id}/patient.pcm",
         "mixed_channel":         f"audio/{visit_id}/mixed.pcm",
     }
-
 
 def visit_start(visit_id, patient_id, clinician_id,
                 clinician_specialty, patient_jurisdiction,
@@ -1050,7 +1031,6 @@ def map_speaker_label_to_role(speaker_label, visit_id,
     }
     return label_to_role.get(speaker_label, "unknown")
 
-
 def run_streaming_asr(session_context):
     """
     Run the streaming ASR for the visit. For per-channel
@@ -1149,7 +1129,6 @@ def run_streaming_asr(session_context):
         "per_channel_quality":    per_channel_quality,
     }
 
-
 def handle_streaming_event(session_id, speaker_role, event,
                             language):
     """
@@ -1235,7 +1214,6 @@ def run_batch_transcription(session_context, audio_archive_ref):
 
     return batch_transcript
 
-
 def align_by_timestamp(streaming_segments, batch_segments):
     """
     Align streaming and batch segments by timestamp for
@@ -1258,7 +1236,6 @@ def align_by_timestamp(streaming_segments, batch_segments):
             "batch_speaker":   batch_seg.get("speaker_role"),
         })
     return aligned
-
 
 def reconcile_streaming_and_batch(session_context,
                                     batch_transcript):
@@ -1388,7 +1365,6 @@ def lookup_note_template(specialty, visit_type):
         return DEFAULT_TEMPLATES["cardiology-followup-v1"]
     return DEFAULT_TEMPLATES["primary-care-soap-v3"]
 
-
 def determine_faithfulness_severity(failed_checks, score):
     """
     Map faithfulness-check results to a severity level.
@@ -1416,7 +1392,6 @@ def determine_faithfulness_severity(failed_checks, score):
     if score < FAITHFULNESS_PASS_THRESHOLD:
         return "flag"
     return "pass"
-
 
 def run_faithfulness_check(session_context, generated_note,
                              transcript):
@@ -1479,7 +1454,6 @@ def run_faithfulness_check(session_context, generated_note,
         "failed_checks": failed_checks,
         "annotations":   annotations,
     }
-
 
 def generate_note_draft(session_context, canonical_transcript):
     """
@@ -1647,7 +1621,6 @@ def lookup_speaker_role_for_offset(transcript, offset_seconds):
             return segment.get("speaker_role")
     return "unknown"
 
-
 def extract_context_snippet(transcript, offset_seconds,
                               window_seconds=10):
     """
@@ -1666,7 +1639,6 @@ def extract_context_snippet(transcript, offset_seconds,
         if abs(seg_seconds - offset_seconds) < window_seconds:
             return segment.get("text", "")
     return ""
-
 
 def extract_structured_fields(session_context,
                                 canonical_transcript):
@@ -1831,7 +1803,6 @@ def extract_low_confidence_segments(canonical_transcript,
             })
     return flagged
 
-
 def extract_uncertain_speaker_segments(canonical_transcript):
     """
     Identify segments where speaker attribution is uncertain.
@@ -1848,7 +1819,6 @@ def extract_uncertain_speaker_segments(canonical_transcript):
                     segment.get("speaker_alternatives", []),
             })
     return uncertain
-
 
 def clinician_review_request(session_context):
     """
@@ -1917,7 +1887,6 @@ def clinician_review_request(session_context):
     })
 
     return review_payload
-
 
 def clinician_save_review(session_context, review_actions):
     """
@@ -2005,7 +1974,6 @@ def clinician_save_review(session_context, review_actions):
 
     return {"confirmed": confirmed_extractions,
             "rejected":  rejected_extractions}
-
 
 def clinician_sign(session_context, patient_id):
     """
@@ -2158,7 +2126,6 @@ def compute_edit_distance(draft_text, final_text):
                                 distances[j - 1] + cost))
         distances = new_row
     return distances[-1]
-
 
 def audit_archive_and_telemetry(session_context,
                                   patient_age_band="not_disclosed"):
@@ -2739,7 +2706,6 @@ def run_demo():
         review_decisions=[],
         patient_age_band="55_64")
     print(json.dumps(result_2, default=str, indent=2))
-
 
 if __name__ == "__main__":
     run_demo()

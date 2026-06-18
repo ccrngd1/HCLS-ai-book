@@ -56,8 +56,6 @@ Building a phenotype extraction system requires stacking several NLP capabilitie
 
 ### Why Phenotyping Is Hard (Beyond the NLP)
 
-<!-- TODO (TechWriter): Expert review VOC-1 (MEDIUM). This subsection partially overlaps with the Problem section (inter-rater reliability, ambiguity). Consider consolidating overlapping points and targeting ~20% reduction. Move unique points (portability, prevalence, reproducibility) into a shorter list. -->
-
 The NLP components above are table stakes. The real difficulty lives in the layers surrounding them:
 
 **Phenotype definitions are ambiguous.** Research protocols define inclusion criteria in clinical language, not computational language. "Adequate trial" of an antidepressant could mean different things: the APA says 4-6 weeks at therapeutic dose, but some researchers use 8 weeks, and "therapeutic dose" varies by medication. Your system needs these definitions operationalized into explicit rules, and different research teams might operationalize them differently.

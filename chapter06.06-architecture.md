@@ -338,11 +338,7 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
 
 **Explainability.** A care manager needs to understand why two patients are considered similar. "The algorithm says so" is not acceptable in clinical decision support. You need feature-level explanations: "These patients are similar because they share age range, A1C level, comorbidity profile, and medication history."
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add data governance subsection: patient similarity uses one patient's historical data to inform another's care. Under HIPAA, this typically falls under Treatment/Payment/Operations (no individual authorization required), but organizational policies, state laws, and data use agreements may impose additional constraints. IRB review may be required if the system is used for research or outcomes are published. Patients should be informed that de-identified data contributes to care planning tools. This is a must-address governance conversation before deployment. -->
-
 **Feature store version transitions.** When the nightly ETL produces a new feature snapshot, the ANN index must be rebuilt before queries reflect the latest data. During the rebuild window (5-15 minutes for 100k patients), queries continue against the previous index version. Cached results include a `feature_version` key, so stale entries expire naturally when the version advances. A patient diagnosed with a new condition today won't appear in similarity results for that condition until the next ETL run plus index rebuild completes. For most care planning workflows, this eventual consistency (up to 24 hours) is acceptable. If same-day freshness is required, consider a hybrid approach: serve from the pre-built index for most queries, with a real-time override path for patients whose data changed since the last build.
-
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Address cross-patient PHI exposure model. The similarity results contain patient IDs of other patients. Default recommendation: return only aggregated outcome statistics to the care planning UI (no individual patient IDs). If drill-down into individual similar patient records is needed, require break-the-glass authorization and log the access. The current sample output JSON shows patient IDs in top_similar_patients; clarify that this is the internal API response, not what the UI displays. -->
 
 ---
 
@@ -391,7 +387,6 @@ FUNCTION store_and_present(query_patient_id, similar_patients, outcome_summary):
 ---
 
 | [← 6.5: Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis) | [Chapter 6 Index](chapter06-preface) | [6.7: Clinical Trial Patient Matching →](chapter06.07-clinical-trial-patient-matching) |
-
 
 ---
 

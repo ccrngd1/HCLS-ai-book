@@ -1,109 +1,5 @@
 # Recipe 4.7: Care Management Program Enrollment ⭐⭐⭐
 
-<!--
-TechEditor pass v1 (2026-05-16, ch04-r07-edit). Editorial fixes:
-- Verified em-dash count: 0 (passes "no em dashes ever" rule).
-- Verified en-dash count: 0.
-- Header hierarchy: H1 title only, H2 for major sections, H3 for
-  subsections, no skipped levels. AWS-specific sections (The AWS
-  Implementation, Why This Isn't Production-Ready, Variations,
-  Additional Resources, Estimated Implementation Time) now live in
-  the architecture companion.
-- Voice drift scan: no documentation-voice openings in body prose, no
-  LinkedIn-influencer patterns, no "we are excited" announcements.
-  "High-leverage" appears twice (Step 3 pseudocode comment, Variations)
-  in the colloquial leverage-point sense (acceptable per Voice
-  Reviewer V3 finding, consistent with 4.6 final edit). The Linda
-  vignette and the closing "Build the second one" paragraph are
-  preserved verbatim per Voice Reviewer V1.
-- Vendor balance: 70/30 maintained. The Problem, The Technology, and
-  General Architecture Pattern stay vendor-neutral; AWS service names
-  appear only in the architecture companion
-  (chapter04.07-architecture.md).
-- RECIPE-GUIDE compliance: main-recipe sections present in correct
-  order (Problem, Technology, General Architecture Pattern ending with
-  architecture-companion callout, Honest Take, Related Recipes, Tags,
-  Footer Navigation). AWS Implementation, Expected Results, Why This
-  Isn't Production-Ready, Variations, Additional Resources, and
-  Implementation Time live in the architecture companion
-  (chapter04.07-architecture.md).
-- Existing TechWriter / prior-editor TODO markers preserved verbatim
-  (TCM CPT codes, SageMaker Batch Transform HIPAA, Bedrock service
-  terms, SES/Pinpoint scope, HealthLake pricing, Cost Estimate
-  validation, validate_briefing four-layer spec, validate_rationale
-  spec, model-promotion path, tracking-ID privacy, cross-recipe
-  arbitration, SDOH-cohort PHI promotion, DLQ coverage, caseload
-  literature citation, predictive-disenrollment literature,
-  aws-samples repo confirmation, AWS blog URLs, CMS landing pages,
-  NCQA/Care Continuum URL, performance-benchmark range citations,
-  briefing social-context reconciliation note from prior editor pass).
-- New TODOs added flagging substantive technical concerns rather than
-  rewriting (per persona instructions: "do not introduce new claims or
-  technical content"; "if a section needs substantial rewriting, flag
-  it rather than rewriting"):
-  * Expert Review A1 HIGH: cm_outreach_recent_30d_count optimistic
-    increment lacks decrement on terminal-unreachable, declined,
-    deferred outcomes (added at Step 4 record_outreach_attempt
-    pseudocode). Code Review ERROR 2 names the same gap in the
-    Python implementation's :zero placeholder.
-  * Expert Review A2 HIGH: data_quality_flag is computed in Step 1
-    and named in Where It Struggles as a gating signal for the
-    disenrollment evaluator, but the disenrollment evaluator
-    pseudocode in Step 5 does not gate (added at Step 5
-    evaluate_disenrollment).
-  * Expert Review A3 HIGH: human_review_pending workflow on
-    disenrollment-decisions and cross-program-transitions has no
-    SLA, no escalation, no default action; uniquely 4.7-specific
-    gap (added at Why This Isn't Production-Ready, in the
-    Disenrollment governance and review paragraph).
-  * Code Review ERROR 1: ADD state_history :history_event is invalid
-    DynamoDB UpdateExpression syntax (ADD supports only Number and
-    Set, not List). Pattern propagated chapter-wide. Flagged at the
-    pseudocode preamble for Step 1 and at the Why This Isn't
-    Production-Ready Idempotency paragraph; the fix is in the
-    Python companion file, but a note in the main recipe ensures
-    a reader copying the pseudocode pattern does not reproduce the
-    bug.
-- No code-block language tags changed; the unlabeled fenced blocks
-  carry pseudocode and ASCII architecture diagrams per chapter-wide
-  convention. Mermaid and JSON blocks are tagged.
-
-TechEditor pass v2 (2026-05-21, ch04-r07-edit). Re-verification of
-v1 pass against the editorial checklist:
-- Em-dash count: 0 (re-verified). En-dash count: 0 (re-verified).
-- Header hierarchy: H1 title only; H2 for major sections (The Problem,
-  The Technology, General Architecture Pattern, The Honest Take,
-  Related Recipes, Tags); H3 for subsections inside The Technology.
-  No skipped levels. AWS Implementation, Why This Isn't Production-
-  Ready, Variations, Additional Resources, and Estimated
-  Implementation Time now live in architecture companion.
-- HIGH/ERROR finding TODOs: A1 at the record_outreach_attempt
-  pseudocode block (architecture companion), A2 at the
-  evaluate_disenrollment pseudocode block (architecture companion),
-  A3 at the Disenrollment governance and review paragraph in Why This
-  Isn't Production-Ready (architecture companion), and ERROR 1 at the
-  Idempotency paragraph (architecture companion).
-- All prior TechWriter and editor TODOs preserved verbatim.
-- Voice drift sentinel scan: no documentation-voice openings, no
-  LinkedIn-influencer patterns, no announcement statements. The two
-  "high-leverage" hits flagged by Voice V3 are colloquial leverage-
-  point sense and acceptable per the persona instructions.
-- Vendor balance: 70/30 maintained. Main recipe is vendor-neutral;
-  AWS service names appear only in the architecture companion.
-- Footer navigation present and well-formed (Recipe 4.6 back-link,
-  Chapter 4 Preface, Recipe 4.8 forward-link).
-- Linda continuity: vignette-to-briefing patient name reconciliation
-  was addressed in v1 (Mr. Garcia renamed to Linda). The remaining
-  briefing-vs-vignette social-context reconciliation is correctly
-  deferred to TechWriter via the existing TODO at the briefing JSON.
-- No structural rewrites. No new claims or technical content. No
-  changes to the recipe in this v2 pass beyond this verification
-  note; the v1 pass produced a publishable artifact and the
-  remaining open items are TODOs waiting on TechWriter follow-up
-  (HIGH findings) or external verification (TODO links and pricing).
--->
-
-
 **Complexity:** Medium-Complex · **Phase:** Production · **Estimated Cost:** ~$0.005-0.025 per enrollment recommendation (depends on uplift model serving, LLM-generated enrollment briefings, and longitudinal outcome tracking)
 
 ---
@@ -158,7 +54,7 @@ Before any modeling, the system has to know what programs exist and what each pr
 
 - **Disease-specific programs.** Time-bounded curricula focused on a single condition: heart failure (typically 8 to 16 weeks), diabetes self-management (typically 12 to 26 weeks), COPD (typically 12 weeks), CKD (variable, often longitudinal at later stages). The theory of change is condition-specific behavior change plus medication and monitoring optimization. Best fit: patients whose primary actionable problem is the program's target condition.
 - **Complex-care management.** Longitudinal, multi-condition, multi-disciplinary. Nurse plus social worker plus pharmacist; monthly check-ins or home visits; explicit care plan with quarterly reassessment. Theory of change: the patient's problems are heterogeneous enough that no single-condition program addresses them, and the durable improvement comes from sustained coordination. Best fit: high-risk patients with multi-system disease, behavioral health comorbidity, social complexity.
-- **Transitional care management.** Episodic, post-discharge, focused on the high-risk first 30 days after a hospital stay. RN coordinator, scheduled telephonic check-ins, in-home or televisit medication reconciliation, follow-up appointment scheduling. Theory of change: most readmissions are preventable with structured early support. CMS reimburses TCM (CPT 99495 / 99496) under specific documentation requirements, so the program structure is operationally constrained by billing rules. <!-- TODO: confirm current CMS TCM CPT code definitions and documentation requirements at the time of build. -->
+- **Transitional care management.** Episodic, post-discharge, focused on the high-risk first 30 days after a hospital stay. RN coordinator, scheduled telephonic check-ins, in-home or televisit medication reconciliation, follow-up appointment scheduling. Theory of change: most readmissions are preventable with structured early support. CMS reimburses TCM (CPT 99495 / 99496) under specific documentation requirements, so the program structure is operationally constrained by billing rules. 
 - **Specialized programs.** Polypharmacy/medication-management (clinical pharmacist), behavioral-health integration (BHI codes), maternal/perinatal care management, palliative care management, oncology navigation. Each has its own theory of change and its own staffing model.
 
 A production care management portfolio typically includes three to seven of these, with overlapping eligibility (a patient with heart failure post-discharge is eligible for both heart-failure and transitional-care programs; the orchestrator decides whether to enroll in one, both, or sequence them).
@@ -468,7 +364,6 @@ The pipeline has seven logical components: a program-registry component that mai
 **Care-team integration is bidirectional.** Care managers' notes, clinical observations, and disenrollment reasons flow back into the recommender as features and as labels. A care manager who flags a patient as "not a fit for this program because of X" provides structured signal that retraining should incorporate. The integration is a structured-feedback API on the case-management system, not a free-text-to-NLP pipeline.
 
 ---
-
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter04.07-architecture). The Python example is linked from there.
 

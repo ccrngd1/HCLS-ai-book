@@ -214,7 +214,6 @@ for _name, _value in [
 ]:
     assert _value, f"{_name} must be set before deploying."
 
-
 def _to_decimal(value):
     """Convert numeric values to Decimal for DynamoDB-safe writes.
 
@@ -280,7 +279,6 @@ class MockS3:
                 return self._b
         return {"Body": _StreamingBody(body)}
 
-
 class MockTable:
     """In-memory stand-in for a DynamoDB table.
 
@@ -320,7 +318,6 @@ class MockTable:
         self.items[(pk, sk)] = dict(Item)
         self.write_count += 1
 
-
 class MockEventBus:
     """In-memory stand-in for EventBridge.
 
@@ -337,7 +334,6 @@ class MockEventBus:
     def put_events(self, Entries):
         self.events.extend(Entries)
         return {"FailedEntryCount": 0}
-
 
 class MockCloudWatch:
     """In-memory stand-in for CloudWatch.
@@ -358,7 +354,6 @@ class MockCloudWatch:
                 "Unit":  m.get("Unit", "None"),
                 "Time":  datetime.now(timezone.utc).isoformat(),
             })
-
 
 def generate_synthetic_adt_records(history_days=SYNTHETIC_HISTORY_DAYS,
                                     seed=SYNTHETIC_RANDOM_SEED):
@@ -480,7 +475,6 @@ def generate_synthetic_adt_records(history_days=SYNTHETIC_HISTORY_DAYS,
                 })
 
     return records, weather_by_date, flu_index_by_date
-
 
 def generate_synthetic_event_calendar():
     """Sparse event calendar covering the synthetic history.
@@ -622,7 +616,6 @@ US_FEDERAL_HOLIDAYS = {
     "2026-01-01", "2026-07-04", "2026-12-25",
     "2024-01-01", "2024-07-04", "2024-12-25",
 }
-
 
 def build_feature_table(hourly_rows, weather_by_date,
                         flu_index_by_date, event_calendar):
@@ -883,7 +876,6 @@ class PoissonGLM:
               for name in self.FEATURE_NAMES}
         return self._predict_one(vs)
 
-
 class MultinomialAcuityClassifier:
     """Pedagogical multinomial classifier for per-ESI share.
 
@@ -948,7 +940,6 @@ class MultinomialAcuityClassifier:
         if key in self.share_table:
             return dict(self.share_table[key])
         return {esi: float(s) for esi, s in self.fallback.items()}
-
 
 def train_volume_and_acuity_models(feature_table):
     """Step 3: Fit both models on training history with held-out validation.
@@ -1113,7 +1104,6 @@ def _build_future_feature_row(ed_id, future_hour, weather_by_date,
         "lag_24h":             lag_24h,
         "lag_168h":            lag_168h,
     }
-
 
 def generate_hourly_forecasts(ed_id, trained_models, feature_table,
                               weather_by_date, flu_index_by_date,
@@ -1403,7 +1393,6 @@ def run_ed_forecast_pipeline(table, event_bus, cloudwatch):
 
     return records
 
-
 def run_demo():
     """Run the pipeline end-to-end against the in-memory mocks.
 
@@ -1430,7 +1419,6 @@ def run_demo():
     print(json.dumps(sample, default=_decimalify, indent=2))
 
     return records
-
 
 if __name__ == "__main__":
     run_demo()

@@ -765,7 +765,6 @@ def generate_schedule(schedule_period_start="2026-06-08"):
 
     return result
 
-
 def demo_calloff(result):
     """
     Demonstrate the real-time call-off handling.
@@ -791,7 +790,6 @@ def demo_calloff(result):
         pref_flag = " [prefers this shift]" if c["prefers_this_shift"] else ""
         print(f"    {i}. {c['nurse_name']:20s} score={c['score']}{ot_flag}{pref_flag}")
     print()
-
 
 # Entry point
 if __name__ == "__main__":

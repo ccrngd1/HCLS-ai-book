@@ -70,8 +70,6 @@ flowchart LR
 
 ### Pseudocode Walkthrough
 
-<!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add input validation guidance before preprocessing: verify UTF-8 encoding, enforce minimum length (e.g., 50 chars), reject binary/null bytes, validate encounter_id format. Mention API Gateway rate limiting and authentication to prevent cost-based DoS. -->
-
 **Step 1: Receive and preprocess the clinical note.** Notes arrive from the EHR via API call (synchronous workflow for real-time suggestions in the coding UI) or via a batch file drop (async workflow for overnight processing). The preprocessing step segments the note into clinically relevant sections and identifies the highest-value text for code suggestion. The Assessment and Plan section contains the most explicitly codable content. The Problem List is often a bulleted list of active diagnoses. Sending the entire 5,000-word note to Comprehend Medical works, but it's expensive and introduces noise from review-of-systems negations and template boilerplate.
 
 ```pseudocode
@@ -131,8 +129,6 @@ FUNCTION preprocess_note(raw_note_text):
 
     RETURN coding_text
 ```
-
-<!-- TODO (TechWriter): Expert review A1 (MEDIUM). Add error handling guidance: wrap InferICD10CM call in retry with exponential backoff (2 retries, 1s/2s delays). On persistent failure, return a valid response with suggestion_count: 0 and status: 'service_unavailable' rather than HTTP 500. For batch processing via S3 events, add an SQS DLQ for failed invocations. -->
 
 **Step 2: Call InferICD10CM for code candidates.** This is the core inference step. We send the preprocessed clinical text to Comprehend Medical's ICD-10 inference API and receive back a structured response containing entities (spans of text that map to diagnostic concepts) and their associated ICD-10-CM code candidates ranked by confidence.
 
@@ -296,8 +292,6 @@ FUNCTION group_by_category_prefix(ranked_list):
     RETURN sort groups by max confidence of their suggestions descending
 ```
 
-<!-- TODO (TechWriter): Expert review S3 (LOW). Add requester_id to the stored suggestion record and response payload. For HIPAA minimum necessary compliance, capture who triggered the suggestion request (coder identity from EHR session context in API request headers). -->
-
 **Step 5: Store suggestions and return to coder.** The final step persists the suggestion record for audit and feedback tracking, then returns the ranked suggestion list to the coding interface. The response format is designed for easy integration with coding UIs: grouped by diagnostic category, with evidence text highlighting so the coder can see exactly which text triggered each suggestion.
 
 ```pseudocode
@@ -433,8 +427,6 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 
 ---
 
-<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets covering gaps a production deployment must close (e.g., no human-in-the-loop enforcement, no code version drift handling, no A/B framework for threshold tuning). -->
-
 ## Variations and Extensions
 
 **Hierarchical code selection UI.** Instead of presenting a flat ranked list, build the coding interface around the ICD-10 tree. When the model suggests E11.4x (diabetes with neurological complications), show the coder the entire E11.4 sub-tree with the model's confidence at each level. The coder can accept the category with one click and refine the specificity with a second click. This matches how experienced coders think: they identify the category first, then drill into specifics.
@@ -459,19 +451,14 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Demonstrates integrating Comprehend Medical with FHIR resources, relevant for EHR integration patterns
 - [`amazon-textract-and-amazon-comprehend-medical-claims-example`](https://github.com/aws-samples/amazon-textract-and-amazon-comprehend-medical-claims-example): Healthcare claims processing with Comprehend Medical, includes ICD-10 inference patterns and CloudFormation templates
 
-<!-- TODO (TechWriter): Verify these repo URLs still exist and are public -->
-
 **AWS Solutions and Blogs:**
 - [Extracting Medical Information from Clinical Notes with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/extracting-medical-information-from-clinical-notes-with-amazon-comprehend-medical/): Deep dive on entity extraction and ICD-10 inference from clinical text
 - [Building NLP-Powered Clinical Decision Support with Amazon Comprehend Medical](https://aws.amazon.com/blogs/machine-learning/building-nlp-powered-clinical-decision-support/): Architecture patterns for real-time clinical NLP at scale
-
-<!-- TODO (TechWriter): Verify blog URLs are current -->
 
 **External References:**
 - [CMS ICD-10-CM Official Guidelines](https://www.cms.gov/medicare/coding-billing/icd-10-codes): Official coding guidelines and annual code updates
 - [ICD10Data.com](https://www.icd10data.com/): ICD-10-CM code lookup and hierarchy browser
 - [MIMIC-III Clinical Database](https://physionet.org/content/mimiciii/): De-identified clinical notes for model development and testing (requires credentialing)
-<!-- TODO (TechWriter): Consider updating MIMIC-III references to MIMIC-IV (current version). Verify URL. -->
 
 ---
 
@@ -484,7 +471,6 @@ FUNCTION store_and_respond(encounter_id, note_id, grouped_suggestions, context_e
 | **With variations** | 10-14 weeks | Hierarchical UI, quality audit automation, specialty model training, A/B testing framework for confidence thresholds |
 
 ---
-
 
 ---
 
