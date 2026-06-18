@@ -79,9 +79,7 @@ flowchart TD
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Model performance monitoring, prediction latency, drift detection |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Feature extraction from clinical data.** The foundation of any LOS model is the feature set. At admission time, you extract static features (demographics, diagnosis, comorbidities, admission source). As the stay progresses, you extract dynamic features (latest labs, vital sign trends, medication changes, procedures). The feature extraction logic must handle missing data gracefully because not every patient has every lab drawn on every day. The key design decision: compute features at a consistent cadence (every 24 hours at midnight, for example) so that training data and inference data are aligned temporally. Skip this step or compute features inconsistently, and your model will learn patterns that don't exist in production.
 
@@ -406,6 +404,8 @@ FUNCTION daily_batch_refresh():
 - Patients who develop unexpected complications mid-stay (prediction accuracy drops until the complication is reflected in features)
 - Psychiatric holds and behavioral health patients (LOS driven by legal/capacity factors, not clinical trajectory)
 - Patients awaiting specific procedures with unpredictable scheduling (e.g., OR availability)
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps (error handling, model governance, integration testing, social-feature coverage, etc.) without duplicating The Honest Take from the main recipe. -->
 
 ---
 
