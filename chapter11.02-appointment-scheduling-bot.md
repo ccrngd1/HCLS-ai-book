@@ -154,7 +154,7 @@ A few practical updates worth knowing.
 
 A healthcare appointment scheduling bot decomposes into eight logical stages: channel entry, input safety screening, intent classification, identity verification, conversational slot negotiation (search and refine), transactional fulfillment (hold, confirm, book), output safety screening, and audit logging. The cross-cutting concerns from the FAQ bot (knowledge-base curation, persona and prompt management, escalation, per-cohort monitoring) all carry forward; this recipe adds three new ones (tool-surface contract management, identity-assurance lifecycle, transactional-failure compensation).
 
-```
+```text
 ┌────────── CHANNEL ENTRY ─────────────────────────────────┐
 │                                                           │
 │   [Patient connects through one of the configured         │

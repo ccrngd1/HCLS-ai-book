@@ -219,7 +219,7 @@ flowchart LR
 
 **Step 1: Receive the chat message, bootstrap the session, and run the same input safety screening as recipe 11.1.** The first turn of any scheduling conversation goes through the same input-screening pipeline: crisis detection, prompt-injection detection, PHI minimization. The greeting and disclosure tells the patient this is a chatbot, what scheduling actions it can do, and how to reach a human. Skip the input screening and a patient mentioning chest pain while asking about a follow-up has their crisis signal lost in the booking flow.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id, user_message,
                   auth_context):
     // Step 1A: identify or create the session.
@@ -275,7 +275,7 @@ ON receive_message(channel, channel_session_id, user_message,
 
 **Step 2: Classify intent and route to the appropriate flow or handoff.** The scheduling bot's intents are narrower than the FAQ bot's: new_appointment, reschedule_appointment, cancel_appointment, check_appointment, update_preferences, and out-of-scope. Out-of-scope categories route to the appropriate other handler (FAQ for general questions, refill bot for refills, benefits navigator for plan-specific eligibility, nurse triage for clinical content, live agent for anything outside the bot's scope). Skip the explicit out-of-scope handling and the LLM may attempt to negotiate a refill request as if it were a scheduling request, which is exactly the failure mode the system is supposed to prevent.
 
-```
+```pseudocode
 FUNCTION handle_message(session_id, user_message,
                         attach_greeting):
     classification = classify_scheduling_intent(
@@ -332,7 +332,7 @@ FUNCTION handle_message(session_id, user_message,
 
 **Step 3: Verify identity at the assurance level appropriate for the intent.** A patient logged into the patient portal arrives with an authenticated patient_id; the bot uses it directly. An unauthenticated patient is asked for name and date of birth, then for a confirmation factor (last four of phone, ZIP code, or one-time code). The bot's identity-verification policy table maps (intent, channel, additional context) to required assurance level. Skip the identity verification and the bot ends up taking actions on records that may not belong to the person it is talking to.
 
-```
+```pseudocode
 FUNCTION verify_identity(session_id, intent, auth_context):
     // Step 3A: short-circuit when authenticated.
     IF auth_context.authenticated:
@@ -409,7 +409,7 @@ FUNCTION verify_identity(session_id, intent, auth_context):
 
 **Step 4: Extract the scheduling parameters from the conversation and search for slots.** Once identity is verified, the bot extracts the structured parameters from what the patient has said (provider preference, location preference, visit type, time-window, insurance) and calls the slot-search tool. The visit-type mapping translates natural-language reasons for visit into the institution's visit-type taxonomy. Skip the visit-type mapping and the bot books wrong visit types; skip the no-results handling and the bot fabricates non-existent slots.
 
-```
+```pseudocode
 FUNCTION search_for_slots(session_id, intent,
                           extracted_parameters):
     // Step 4A: assemble structured parameters.
@@ -514,7 +514,7 @@ FUNCTION search_for_slots(session_id, intent,
 
 **Step 5: Refine the slot offer through conversation and place a hold on the chosen slot.** The patient often refines: "anything earlier?", "different day?", "different provider?". Each refinement updates the parameters and re-searches. When the patient picks a specific slot, the bot places a short-term hold to prevent a race with another channel. Skip the slot hold and a second patient can book the same slot during the few seconds between the bot's offer and the patient's confirmation.
 
-```
+```pseudocode
 FUNCTION refine_or_select_slot(session_id, user_message,
                               current_candidates):
     // Step 5A: classify the patient's response.
@@ -605,7 +605,7 @@ FUNCTION refine_or_select_slot(session_id, user_message,
 
 **Step 6: Confirm the booking by converting the hold into a booked appointment.** The patient explicitly confirms the held slot. The bot calls the slot-book tool, which writes the appointment to the scheduling system and triggers the institution's standard notification workflow. Skip the explicit confirmation step and the bot books appointments the patient did not actually agree to.
 
-```
+```pseudocode
 FUNCTION confirm_booking(session_id, user_message):
     // Step 6A: verify the user actually confirmed.
     confirmation = classify_confirmation_response(
@@ -731,7 +731,7 @@ FUNCTION confirm_booking(session_id, user_message):
 
 **Step 7: Handle reschedule and cancel intents through the same general pattern, with the appropriate transactional contracts.** Reschedule and cancel are variations on the booking flow: identity verification, look up the existing appointment, check policy (some same-day cancellations have penalties or require step-up auth), execute the reschedule or cancel tool, journal the event. Skip the policy check and the bot lets patients cancel out of slots that the institution's policy says should require human handling.
 
-```
+```pseudocode
 FUNCTION handle_reschedule_or_cancel(session_id, intent,
                                      extracted_parameters):
     // Step 7A: look up the existing appointment.
@@ -800,7 +800,7 @@ FUNCTION handle_reschedule_or_cancel(session_id, intent,
 
 **Step 8: Handle booking failures and partial-success cases without losing the patient's trust.** Sometimes the booking tool reports failure. Sometimes the booking succeeds but the notification workflow fails. Sometimes the eligibility check fails after booking. The bot has to communicate honestly with the patient about what happened and what the next step is. Skip the partial-success handling and patients leave the conversation thinking the appointment was booked when it was not, or vice versa.
 
-```
+```pseudocode
 FUNCTION handle_booking_failure(session_id, failure):
     IF failure.outcome == "slot_no_longer_available":
         // Race condition. Re-offer fresh candidates.
@@ -861,7 +861,7 @@ FUNCTION handle_booking_failure(session_id, failure):
 
 **Step 9: Run the same output safety screening as recipe 11.1, with one new check specific to scheduling.** The standard output checks (scope filter, hallucination check, vendor-managed guardrails) carry forward. The new check verifies that any "your appointment is confirmed" claim in the response is supported by an actual successful booking-tool result. Skip this check and a hallucinated confirmation that no booking actually backs results in a patient showing up for an appointment that does not exist.
 
-```
+```pseudocode
 FUNCTION screen_output(session_id, response,
                        tool_call_history):
     // Step 9A: standard checks from recipe 11.1.
@@ -910,7 +910,7 @@ FUNCTION screen_output(session_id, response,
 
 **Step 10: Persist the durable conversation record, the tool-call ledger, and the booking-event journal; emit telemetry; close the session.** Every conversation produces three durable artifacts: the conversation log (utterances, redacted of inadvertent PHI, with model and prompt versions stamped), the tool-call ledger (every tool invoked with arguments, results, and latency), and the booking-event journal entries (durable records for every successful booking, reschedule, or cancellation). Skip any of these and the audit trail has gaps that compliance and operations cannot reconstruct.
 
-```
+```pseudocode
 FUNCTION close_conversation_and_archive(session_id, reason):
     state = conversation_state_table.get(session_id)
     metadata =
@@ -1021,7 +1021,7 @@ FUNCTION close_conversation_and_archive(session_id, reason):
 
 **Sample conversation (illustrative):**
 
-```
+```text
 Bot:     Hi! I'm Riverside Clinic's scheduling
          assistant. I can help you book, reschedule,
          or cancel appointments. I can't help with
