@@ -160,7 +160,7 @@ Some practical updates worth knowing.
 
 A voicemail transcription and classification pipeline splits cleanly into seven logical stages: ingestion (the voicemail audio reaches your system), pre-processing (filter noise, normalize loudness, detect speech), transcription (batch ASR), classification (intent, urgency, entity extraction), enrichment (patient context lookup), routing (to the right staff queue with the right priority), and observability (everything captured for analysis and improvement).
 
-```
+```text
 ┌──────────────────── INGESTION ───────────────────────────┐
 │                                                           │
 │   [Voicemail recorded by source system]                  │

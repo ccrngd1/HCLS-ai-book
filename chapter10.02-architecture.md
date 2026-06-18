@@ -225,7 +225,7 @@ flowchart LR
 
 **Step 1: Ingest the voicemail and persist the audio.** The ingestor Lambda is the entry point. The voicemail source system (UCaaS webhook, S3 push, SFTP drop, vendor API pull) delivers a notification with the audio reference. The Lambda fetches the audio (if it is not already in our S3), normalizes the metadata, persists the audio to the encrypted audio bucket, creates the voicemail record in DynamoDB, and starts the Step Functions execution. Skip the audio persist and you have nothing to listen back to when the staff member needs to verify the transcript; skip the metadata normalization and downstream stages have to special-case every source.
 
-```
+```pseudocode
 ON voicemail_arrival(source_event):
     // source_event shape varies per integration. Common fields:
     // caller_phone_number (ANI), called_number (DNIS),
@@ -292,7 +292,7 @@ ON voicemail_arrival(source_event):
 
 **Step 2: Pre-process the audio and decide whether to transcribe.** The pre-processor stage runs voice activity detection, length filtering, and DTMF/fax tone detection. Recordings that have no detectable speech (pocket-dials, silent hangups, fax tones) get short-circuited to a "no-speech disposition" without spending ASR budget. Recordings that pass VAD continue to the transcription stage. Skip this filter and you will spend several hundred dollars a month transcribing pocket-dials and fax tones, and the staff queue will fill up with no-content entries that nobody can act on.
 
-```
+```pseudocode
 FUNCTION preprocess_audio(voicemail_id, audio_s3_bucket, audio_s3_key, duration_seconds):
     // Step 2A: length filter. The bounds are institutional.
     // Common defaults: under 3 seconds is almost certainly
@@ -371,7 +371,7 @@ FUNCTION preprocess_audio(voicemail_id, audio_s3_bucket, audio_s3_key, duration_
 
 **Step 3: Submit the ASR job and handle the result.** Transcribe Medical exposes a job-based async API. Submit the job; the service writes the result to a designated S3 location when complete; an EventBridge rule notifies the pipeline; the result is fetched, parsed, and stored. The state machine has a wait-for-callback pattern that handles the async correctly. Skip the medical-domain model and you will systematically misrecognize the medication names that drive most of the routing; skip the per-word confidence scoring and downstream confidence-aware logic has nothing to work with.
 
-```
+```pseudocode
 FUNCTION start_asr_job(voicemail_id, audio_s3_bucket, audio_s3_key, detected_language):
     // Step 3A: build the transcription job request.
     // Use Transcribe Medical with PRIMARYCARE specialty
@@ -478,7 +478,7 @@ FUNCTION handle_asr_completion(voicemail_id, transcript_s3_uri):
 
 **Step 4: Run the urgency-keyword rule layer first, then the LLM classifier and entity extractor in parallel.** The rule layer is fast, deterministic, and safety-critical. It runs first and short-circuits to "emergent" if any urgent phrase matches. The LLM classifier and Comprehend Medical entity extractor run in parallel afterward. Combine the outputs into the structured triage record. Skip the rule-layer-first ordering and a missed urgency-keyword match will silently mis-route an emergency-room voicemail to the routine queue.
 
-```
+```pseudocode
 FUNCTION classify_voicemail(voicemail_id, transcript_text):
     // Step 4A: run the urgency-keyword rule layer. The
     // lexicon is loaded from a versioned configuration
@@ -643,7 +643,7 @@ FUNCTION classify_voicemail(voicemail_id, transcript_text):
 
 **Step 5: Enrich with patient context and detect repeat callers.** Look up the caller's phone number against the patient index. If exactly one patient matches, fetch their context (medications, recent appointments, conditions). Check whether the same caller has left similar voicemails recently. The enrichment makes the triage record actionable: instead of "someone called about a medication," the staff member sees "Mr. Davis (DOB on file matches), active on lisinopril and metformin, last seen 14 days ago, called Tuesday about the same lisinopril refill." Skip enrichment and the staff member has to repeat lookups for every callback.
 
-```
+```pseudocode
 FUNCTION enrich_voicemail(voicemail_id, ani, intent, entities):
     // Step 5A: ANI-based patient lookup. The patient
     // index is keyed by normalized phone number. A
@@ -739,7 +739,7 @@ FUNCTION enrich_voicemail(voicemail_id, ani, intent, entities):
 
 **Step 6: Route to the right queue with the right priority and emit notifications for emergent items.** The router is the final pipeline stage. It selects the queue based on intent and patient context, computes a priority based on urgency and time, places the triage record in the queue, and emits an active notification if the urgency is emergent. Skip the active-notification path and emergent voicemails will sit in the queue until a staff member looks at it; that may be acceptable for routine items, but it is not acceptable for an emergent clinical signal.
 
-```
+```pseudocode
 FUNCTION route_voicemail(voicemail_id, intent, urgency, enrichment, needs_human_review):
     // Step 6A: select the queue. The mapping is
     // configuration: institution-defined intent-to-queue
@@ -844,7 +844,7 @@ FUNCTION route_voicemail(voicemail_id, intent, urgency, enrichment, needs_human_
 
 **Step 7: Capture staff actions and feed observability.** When a staff member listens to, calls back, escalates, or marks a voicemail resolved, the action is captured and pushed back to the audit log and the analytics layer. The captured outcomes feed the metrics that the institution uses to monitor the system: time-to-callback by urgency tier, classifier-disagreement-with-staff-judgment rate, repeat-caller rate, subgroup-stratified accuracy.
 
-```
+```pseudocode
 ON staff_action(voicemail_id, staff_user_id, action, action_metadata):
     // action is one of:
     // "listened", "called_back", "marked_resolved",
