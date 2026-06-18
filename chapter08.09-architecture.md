@@ -72,9 +72,7 @@ flowchart TD
 | **AWS KMS** | Encryption key management for PHI data |
 | **Amazon Neptune** | (Optional) Graph storage for temporal relationship querying |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Preprocess and segment the clinical note.** Before any temporal analysis, the system needs to understand the document's structure. Section headers carry temporal information: "History of Present Illness" implies past-to-present narrative, "Past Medical History" implies historical events, "Assessment and Plan" implies current and future. The system identifies sections, splits sentences, and extracts the document creation timestamp (the temporal anchor for all relative expressions). Skip this step and relative expressions like "yesterday" or "three days ago" have no anchor point.
 
@@ -407,6 +405,12 @@ FUNCTION generate_timeline(temporal_graph, doc_time):
 - Domain-specific temporal patterns not seen in training data (institution-specific abbreviations)
 - Vague temporal expressions ("recently," "in the past") that resist normalization
 - Discharge summaries that summarize weeks of events in condensed narrative form
+
+---
+
+## Why This Isn't Production-Ready
+
+<!-- TODO (TechWriter): This section is required by RECIPE-GUIDE but was not present after the split. Add 3-5 bullet points covering gaps a production deployment must close (e.g., model retraining cadence, annotation pipeline, cross-document linking, human-in-the-loop review workflows, institution-specific temporal pattern tuning). -->
 
 ---
 
