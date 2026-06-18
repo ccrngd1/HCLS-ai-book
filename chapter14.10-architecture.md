@@ -107,7 +107,7 @@ flowchart TD
 
 **Step 1: Data integration and demand zone construction.** Before you can optimize anything, you need to define the geography. Health system network design operates on "demand zones": geographic units (typically ZIP codes or census tracts) where you can estimate current and future demand for each service line. This step pulls patient origin data from the EHR (where do current patients come from?), overlays demographic projections, and constructs the demand matrix: how many patients of each type will need care in each zone over the planning horizon. Skip this step and you're optimizing against fantasy numbers. The quality of your demand estimates is the single biggest determinant of whether the optimization output is useful or misleading.
 
-```
+```pseudocode
 FUNCTION build_demand_zones(patient_origin_data, demographic_projections, service_lines):
     // Define geographic demand zones from patient origin patterns.
     // Each zone represents a geographic area with estimable demand.
@@ -144,7 +144,7 @@ FUNCTION build_demand_zones(patient_origin_data, demographic_projections, servic
 
 **Step 2: Gravity model estimation.** Patients don't go to the nearest facility. They make choices. The gravity model captures those choices by estimating how "attractive" each facility is to patients in each zone, accounting for distance, facility size, service breadth, and reputation. The parameters are estimated from historical patient flow data: where did patients actually go, and how far did they travel? This model is what allows the optimizer to predict how patient flows will shift when you open a new facility or add a service line. Without it, you're assuming patients will behave in ways they demonstrably don't.
 
-```
+```pseudocode
 FUNCTION estimate_gravity_model(patient_flows, facility_attributes, zone_attributes):
     // The gravity model predicts the probability that a patient in zone z
     // chooses facility f. The classic form:
@@ -182,7 +182,7 @@ FUNCTION estimate_gravity_model(patient_flows, facility_attributes, zone_attribu
 
 **Step 3: Model formulation.** This is the intellectual core. You're translating the business problem into mathematics. Every strategic question ("Should we build a cancer center at location X?") becomes a binary variable. Every constraint ("We can't spend more than $400M") becomes a linear inequality. Every objective ("Maximize net revenue while maintaining access") becomes a function to optimize. The formulation quality determines whether the solver produces useful answers or garbage. A poorly formulated model might be technically optimal but strategically meaningless.
 
-```
+```pseudocode
 FUNCTION formulate_network_model(zones, facilities, service_lines, parameters, constraints):
     // Create the optimization model
     model = new MixedIntegerProgram()
@@ -279,7 +279,7 @@ FUNCTION formulate_network_model(zones, facilities, service_lines, parameters, c
 
 **Step 4: Multi-scenario optimization.** No single demand forecast is reliable over a 10-year horizon. This step runs the optimization under multiple plausible futures and identifies which decisions are robust (good in most scenarios) versus which are contingent (great in one scenario, bad in another). Executives need to know: "Building the cancer center is a good idea regardless of growth assumptions. But the rural hospital conversion only makes sense if population decline continues." That's the kind of insight scenario analysis provides.
 
-```
+```pseudocode
 FUNCTION run_scenario_analysis(base_model, scenarios):
     // Each scenario modifies demand projections, growth rates, 
     // competitive assumptions, or regulatory environment.
@@ -334,7 +334,7 @@ FUNCTION run_scenario_analysis(base_model, scenarios):
 
 **Step 5: Sensitivity analysis and result presentation.** The optimization output is a set of recommended decisions. But executives don't just want "the answer." They want to understand how sensitive that answer is to key assumptions. If the cancer center recommendation flips when you change the growth rate by 5%, that's a fragile recommendation. If it holds across a wide range of assumptions, that's a robust one. This step computes sensitivity metrics and packages everything for the decision support dashboard.
 
-```
+```pseudocode
 FUNCTION compute_sensitivity_and_present(results, key_parameters):
     // For each key assumption, vary it and see if the optimal solution changes
     
@@ -499,9 +499,6 @@ The pseudocode demonstrates the optimization pattern. Deploying this for actual 
 | **Basic** (single service line, single scenario, open-source solver) | 8-12 weeks |
 | **Production-ready** (multi-service, multi-scenario, validated gravity model, executive dashboard) | 6-9 months |
 | **With variations** (multi-period staging, competitive response, equity constraints) | 12-18 months |
-
----
-
 
 ---
 
