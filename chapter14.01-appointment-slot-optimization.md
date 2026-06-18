@@ -114,7 +114,7 @@ Note: the simulation assumes provider behavior remains constant under the new te
 
 **EHR Integration.** Push the approved template into your scheduling system. Most EHRs support template APIs or bulk configuration. The integration is usually the least interesting technical piece but the most operationally painful one.
 
-<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a dedicated paragraph or subsection describing the post-deployment monitoring feedback loop: compare actual throughput, wait times, and overtime against simulation predictions for 1-2 weeks after go-live. If actual performance deviates beyond a threshold (e.g., wait times 50% higher than predicted), alert operations and provide one-click rollback to the previous template version in DynamoDB. This is an architectural requirement, not a future nice-to-have. -->
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a dedicated paragraph describing the post-deployment monitoring feedback loop: compare actual throughput, wait times, and overtime against simulation predictions for 1-2 weeks after go-live. If actual performance deviates beyond a threshold (e.g., wait times 50% higher than predicted), alert operations and trigger rollback to the previous template version. Keep vendor-agnostic here; place AWS-specific rollback mechanism (e.g., DynamoDB versioning) in the architecture companion. -->
 
 ---
 
