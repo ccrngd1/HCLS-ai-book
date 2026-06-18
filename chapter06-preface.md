@@ -1,4 +1,6 @@
-# Chapter 6 Preface: Finding the Patients Who Look Like Each Other
+# Chapter 6: Clustering & Patient Segmentation
+
+*Finding the Patients Who Look Like Each Other*
 
 Every healthcare organization has the same dirty secret: they treat their patient population as if it were one homogeneous group. Same outreach letters. Same care management protocols. Same risk thresholds. Same intervention timing. And then they wonder why their diabetes management program works brilliantly for some patients and completely fails for others.
 

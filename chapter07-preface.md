@@ -1,4 +1,6 @@
-# Chapter 7 Preface — Teaching Machines to See the Future
+# Chapter 7: Predictive Risk Modeling
+
+*Teaching Machines to See the Future*
 
 Every healthcare organization has the same fantasy: what if we could identify the patients who are about to get sicker *before* they actually get sicker? What if we could intervene on Tuesday instead of reacting on Friday? What if we could stop the expensive, traumatic, avoidable event from happening in the first place?
 

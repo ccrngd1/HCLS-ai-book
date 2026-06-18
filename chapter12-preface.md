@@ -1,4 +1,6 @@
-# Chapter 12 Preface: Teaching Machines to See the Future (Sort Of)
+# Chapter 12: Forecasting & Time-Series Analysis
+
+*Teaching Machines to See the Future (Sort Of)*
 
 Healthcare generates time-stamped data the way a fire hydrant generates water pressure. Vital signs every few seconds in the ICU. Lab results drawn weekly, monthly, or whenever the patient remembers their appointment. Appointment volumes by the hour. Supply consumption by the shift. Revenue by the day. Census counts that change with every admission and discharge. Every one of these data points has a timestamp, and every one of them is part of a sequence that tells a story about what happened, what's happening now, and (if you're careful and a little bit lucky) what's about to happen next.
 

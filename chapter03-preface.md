@@ -1,6 +1,8 @@
 <!-- Editorial pass v2 (TechEditor): v1 fixed "models stale" → "models go stale", added comma before "which means" in the personal-baselines paragraph, hyphenated "4- to 8-week projects" to match "two- to four-month projects", and corrected "Recipe 3.6 and 3.7" → "Recipes 3.6 and 3.7". v2 re-ran the full checklist: verified zero em dashes, zero en dashes, zero isolated "-" dash substitutes. Header hierarchy clean (H1 + 8 H2 + 5 H3, no skipped levels). Active-voice prose throughout. CC-voice consistent (asyndetic example lists, punchy short sentences, self-aware asides). Vendor balance ~100/0 general-to-AWS (appropriate for a preface; AWS specifics enter in recipes). Single readability mechanics fix in v2: "not a side-effect of the alert pipeline" → "not a side effect of the alert pipeline" (noun form per Chicago/Merriam-Webster). All TechWriter TODOs preserved (LLM-assisted anomaly detection references). -->
 
-# Chapter 3 Preface: Finding the Weird Stuff
+# Chapter 3: Anomaly & Outlier Detection
+
+*Finding the Weird Stuff*
 
 Here's a thing nobody tells you when you start working on healthcare data: most of the interesting problems are anomaly detection problems wearing different outfits.
 

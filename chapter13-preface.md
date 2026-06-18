@@ -1,4 +1,6 @@
-# Chapter 13 Preface — Teaching Computers What Doctors Already Know
+# Chapter 13: Knowledge Graphs & Clinical Reasoning
+
+*Teaching Computers What Doctors Already Know*
 
 Medicine is a graph problem. Not in the "everything is a graph if you squint hard enough" sense that graph database vendors love to pitch, but in a genuinely structural way. A drug treats a disease. That disease has symptoms. Those symptoms overlap with other diseases. The drug interacts with other drugs. Those other drugs are prescribed for conditions that share genetic risk factors with the original disease. And the physician navigating all of this holds a mental model of these relationships that took a decade of training to build.
 

@@ -1,4 +1,6 @@
-# Chapter 8 Preface: Teaching Computers to Read Between the Lines
+# Chapter 8: Clinical NLP & Information Extraction
+
+*Teaching Computers to Read Between the Lines*
 
 Clinical text is a mess. I don't mean that as an insult to clinicians (they're writing under impossible time constraints), I mean it as a technical observation about the nature of the data. A physician writing a note at 2am after a 14-hour shift is not thinking about how easy their text will be for a downstream system to parse. They're thinking about the patient. And that produces prose that is abbreviated, context-dependent, specialty-specific, and absolutely packed with implicit meaning.
 

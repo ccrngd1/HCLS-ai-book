@@ -1,4 +1,6 @@
-# Chapter 1 Preface — Making Computers Read Documents
+# Chapter 1: Document Intelligence
+
+*Making Computers Read Documents*
 
 Healthcare runs on paper. That's not a criticism, it's a fact that every integration engineer discovers the hard way. Faxes remain the dominant interoperability mechanism for prior authorizations, referrals, and records requests. Every workflow eventually hits a document extraction problem: scanned claims forms, handwritten physician notes, insurance cards photographed on phones, multi-page attachments from providers who aren't on your network.
 

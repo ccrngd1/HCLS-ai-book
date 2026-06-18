@@ -1,4 +1,6 @@
-# Chapter 11 Preface: When the Computer Talks Back
+# Chapter 11: Conversational AI & Virtual Agents
+
+*When the Computer Talks Back*
 
 A few years ago, somewhere around late 2022, something genuinely strange happened to the conversational AI category. For about a decade, "healthcare chatbot" had been a category that everyone was building, almost nobody was using, and most people quietly hated. The product looked like this: you'd open a tab on a hospital website, a little chat bubble would pop up, you'd type a perfectly reasonable question like "do you take Aetna?", and you'd get back a menu of buttons that did not include the answer to your question. After a few rounds of clicking buttons that almost-but-not-quite matched your intent, you'd give up and call the office. The chatbot was a deflection mechanism that mostly didn't deflect. The metric the team optimized for was "containment rate," which in practice meant "how often we successfully prevented a person from getting help."
 

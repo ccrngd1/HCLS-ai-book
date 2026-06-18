@@ -1,4 +1,6 @@
-# Chapter 15 Preface — Teaching Machines to Make Sequential Decisions
+# Chapter 15: Sequential Decision-Making & Reinforcement Learning
+
+*Teaching Machines to Make Sequential Decisions*
 
 Most of the ML in this book follows a familiar pattern: observe data, learn a mapping, predict an outcome. A patient's lab results go in, a risk score comes out. An image goes in, a classification comes out. The model makes one decision, and that decision doesn't change what happens next.
 

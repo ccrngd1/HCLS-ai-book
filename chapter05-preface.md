@@ -1,4 +1,6 @@
-# Chapter 5 Preface: Are These Two Records the Same Person?
+# Chapter 5: Entity Resolution & Record Linkage
+
+*Are These Two Records the Same Person?*
 
 Here's a question that has no good answer in American healthcare: *how do you know two records are about the same person?*
 

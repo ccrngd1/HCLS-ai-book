@@ -1,4 +1,6 @@
-# Chapter 4 Preface: Making Healthcare Feel Like It's For You
+# Chapter 4: Recommendation & Personalization
+
+*Making Healthcare Feel Like It's For You*
 
 Here's a sentence that should make anyone who works in healthcare twitch: *"We sent the reminder. They didn't show."*
 

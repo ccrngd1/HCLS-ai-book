@@ -1,4 +1,6 @@
-# Chapter 14 Preface — When "Good Enough" Scheduling Costs Lives
+# Chapter 14: Optimization & Resource Allocation
+
+*When "Good Enough" Scheduling Costs Lives*
 
 Every hospital I've ever worked with has a whiteboard somewhere. Usually in a charge nurse's office, or tucked behind the OR front desk, or taped to the wall in a supply closet that doubles as a staffing coordination room. On that whiteboard is a schedule. And that schedule was built by a human being who spent hours juggling constraints in their head, making trade-offs they couldn't fully articulate, and arriving at a solution that is technically feasible but almost certainly not optimal.
 

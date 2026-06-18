@@ -1,6 +1,8 @@
 <!-- Editorial pass v2 (TechEditor, resumed): v1 polished the final "What You'll Build" bullet. v2 re-ran full checklist after interruption: verified zero em dashes, header hierarchy (H1 + 9 H2s, no skips), active-voice prose, CC-style voice consistent, RAG/PHI/BAA usage consistent. Vendor balance ~95/5 general-to-AWS (appropriate for a preface; AWS specifics enter in recipes). Small readability polish: "for every one hour" → "for every hour" (removed redundant "one"). All TechWriter TODOs preserved (documentation ratio citation, prior-auth minute range). -->
 
-# Chapter 2 Preface: Teaching Machines to Write (Responsibly)
+# Chapter 2: Clinical Text Generation
+
+*Teaching Machines to Write (Responsibly)*
 
 Large language models are the most overhyped and simultaneously most underestimated technology in healthcare right now. That's not a contradiction. The hype is about what people *think* LLMs can do (replace doctors, automate clinical reasoning, solve healthcare). The underestimation is about what they *actually* can do today, right now, with proper guardrails: eliminate hours of administrative writing that burns out clinicians and delays patient care.
 

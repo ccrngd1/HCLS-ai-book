@@ -1,4 +1,6 @@
-# Chapter 9 Preface: Teaching Machines to See What Doctors See
+# Chapter 9: Medical Imaging & Computer Vision
+
+*Teaching Machines to See What Doctors See*
 
 Radiology has a dirty secret: the bottleneck isn't the imaging equipment. MRI machines, CT scanners, digital X-ray systems. These are engineering marvels that produce exquisitely detailed images in seconds. The bottleneck is the human sitting in a dark room, scrolling through hundreds of slices, looking for the one subtle finding that changes a patient's treatment plan. And that human is exhausted, overworked, and reading more studies per day than the profession was designed for.
 
