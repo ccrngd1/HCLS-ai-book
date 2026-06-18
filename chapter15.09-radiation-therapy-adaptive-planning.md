@@ -168,10 +168,9 @@ The system splits cleanly into two phases: training (offline, periodic) and infe
 
 **Action Execution:** If the clinician agrees, the recommended action is executed (plan continues, intensities are adjusted, or a full replan is initiated).
 
----
-
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter15.09-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 
