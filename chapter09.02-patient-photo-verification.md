@@ -54,7 +54,7 @@ Face comparison in a lab, with controlled lighting and cooperative subjects, ach
 
 **Consent and ethics.** Collecting and storing biometric data (face embeddings are biometric data) triggers specific legal requirements in many jurisdictions. BIPA in Illinois, CCPA in California, various state biometric privacy laws. Patients must consent to having their facial data stored and used for verification. The consent must be informed, specific, and revocable.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
 The pipeline is simpler than you might expect:
 
