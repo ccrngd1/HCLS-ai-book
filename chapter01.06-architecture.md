@@ -122,7 +122,7 @@ flowchart TB
 
 The vision model is more tolerant of imperfect input than OCR alone. A blurry word that stymies OCR might still be readable in image context. But "more tolerant" doesn't mean "immune." Better input produces better output. And crucially, the enhanced image is what your human reviewers will see in the A2I interface, so it should be as legible as possible for them too.
 
-```
+```pseudocode
 FUNCTION preprocess_image(input_image_key):
     // Load the image from the intake bucket.
     image = load_image(input_image_key)
@@ -157,7 +157,7 @@ FUNCTION preprocess_image(input_image_key):
 
 Think of Textract here as a fast, cheap, calibrated sensor. It reads the page and tells us how legible the handwriting is. The actual clinical information extraction happens in the next step.
 
-```
+```pseudocode
 // Routing thresholds: calibrate these against your actual document population.
 TIER_1_THRESHOLD = 70.0   // Avg HW confidence >= 70%: route to Haiku (fast, cost-effective)
 DIRECT_REVIEW_THRESHOLD = 40.0   // Avg HW confidence < 40%: skip vision, route to human review
@@ -222,7 +222,7 @@ Second: **include few-shot examples for difficult handwriting.** If your prompt 
 
 Third: **request structured JSON output.** Ask the model to return entities in a specific schema with confidence levels. Set temperature to 0 for maximum determinism. The model's output should parse cleanly. If it doesn't, that itself is a signal to route to human review.
 
-```
+```pseudocode
 // Extraction prompt design matters enormously. This is a starting template.
 // Tune it based on what your document population actually looks like.
 SYSTEM_PROMPT = """
@@ -264,7 +264,7 @@ Confidence levels:
 """
 ``` 
 
-```
+```pseudocode
 FUNCTION extract_with_vision(enhanced_image_key, ocr_text, model_tier):
     // Select model based on the tier decision from Step 2.
     IF model_tier == "TIER_1":
@@ -342,7 +342,7 @@ FUNCTION extract_with_vision(enhanced_image_key, ocr_text, model_tier):
 
 The vision model's confidence (HIGH/MEDIUM/LOW) is a different signal from Textract's numeric percentage. Map the vision confidence to a numeric scale, then take the minimum with the Textract word-level confidence for the entity span. The minimum-of-two approach remains correct: a chain is only as strong as its weakest link. If OCR couldn't read the word clearly (low Textract confidence), route to human review regardless of vision confidence. If the vision model is uncertain about its interpretation (LOW vision confidence), route to human review regardless of how clean the image was.
 
-```
+```pseudocode
 // Confidence thresholds for handwritten content. Calibrate against your population.
 HIGH_AUTO_ACCEPT_THRESHOLD   = 80.0   // both signals strong: auto-accept
 MEDIUM_FLAG_THRESHOLD        = 60.0   // composite 60-80: accept with flag
@@ -409,7 +409,7 @@ FUNCTION composite_score_and_tier(vision_result, textract_response, handwritten_
 
 **Step 5: Store auto-accepted entities and start human review.** High and medium confidence entities write to DynamoDB immediately. Low-confidence entities bundle into an A2I review task. The mechanism is the same as the original recipe: Step Functions passes a task token to A2I, the workflow suspends, and it resumes when a reviewer submits. The key difference in the reviewer interface: reviewers now see both the vision model's extraction and the Textract OCR text. Showing both sources makes it faster to spot where the two disagree, which is often exactly where the error is.
 
-```
+```pseudocode
 FUNCTION route_entities(document_key, tiered_entities, enhanced_image_key,
                         textract_ocr_text, task_token):
     // Write high and medium confidence entities to DynamoDB immediately.
@@ -572,7 +572,7 @@ For full-page reviews (parse error or DIRECT_REVIEW paths), the sentinel entity 
 
 **Step 7: Process review results and resume workflow.** A2I triggers a Lambda when a review completes. The Lambda reads the reviewer's corrections, sends the task success to Step Functions (waking up the execution), and writes reviewed entities to DynamoDB. The correction tracking matters for two reasons: operational metrics (how often is the vision model wrong?) and prompt improvement (corrected examples become future few-shot prompts, but only after de-identification. If `SendTaskSuccess` fails, the execution stays suspended. Set a heartbeat timeout on the wait state (2 hours is reasonable) and put a DLQ on this Lambda so stuck executions surface quickly.
 
-```
+```pseudocode
 FUNCTION process_review_completion(review_output_s3_key):
     review_data    = load_json_from_storage(review_output_s3_key)
     task_token     = review_data.inputContent.task_token
@@ -620,7 +620,7 @@ The few-shot examples saved here are the feedback loop for this pipeline. When y
 
 **Before any example enters the active prompt library, the source image must be de-identified.** The `image_key` captured here points to a real patient's clinical note. A prompt engineer cannot promote this example directly into `EXTRACTION_SYSTEM_PROMPT` without first replacing the image with a synthetic equivalent. Treat the curation workflow as a PHI-handling process: HIPAA training, HIPAA-covered tooling, and CloudTrail logging of access to the prompt library bucket. The Python companion includes a `_validate_example_is_synthetic()` stub that enforces this check before any image enters the prompt library. 
 
-```
+```pseudocode
 FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
     all_records = query DynamoDB table "clinical-note-entities"
                   where pk == document_key
@@ -836,8 +836,7 @@ FUNCTION assemble_final_record(document_key, execution_id, enhanced_image_key):
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws/): Deployable solution for document classification, extraction, and human review; includes A2I integration patterns that parallel this recipe
 - [Amazon Bedrock Data Automation](https://aws.amazon.com/bedrock/data-automation/): The managed alternative to the dual-path architecture described here; worth evaluating if you want less custom engineering
 
---- 
-
+<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (Basic / Production-ready / With variations tiers) before navigation. Add this section. -->
 
 ---
 

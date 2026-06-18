@@ -1,6 +1,6 @@
 # Recipe 1.6: Handwritten Clinical Note Digitization 🔷
 
-**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.08–0.35 per page (blended with human review)
+**Complexity:** Complex · **Phase:** Phase 3 · **Estimated Cost:** ~$0.08-0.35 per page (blended with human review)
 
 ---
 
@@ -122,7 +122,7 @@ A private workforce remains non-negotiable. PHI cannot touch public or vendor wo
 
 ### The General Architecture Pattern
 
-```
+```text
 [Ingest] → [Pre-process] → [Textract OCR] → [Quality Signal]
                                                     |
                               ┌─────────────────────┼──────────────────────┐
