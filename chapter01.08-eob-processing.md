@@ -1,6 +1,6 @@
 # Recipe 1.8: Explanation of Benefits Processing 🔶
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13–0.22 per EOB 
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.13-0.22 per EOB 
 
 ---
 
@@ -98,7 +98,7 @@ The financial validation step in this recipe is unchanged from the original. Ext
 
 EOB processing follows a pipeline with a new step between table extraction and financial validation:
 
-```
+```text
 [Ingest] → [Extract] → [Map Schema] → [Parse Line Items] → [Validate] → [Store or Flag]
 ```
 
@@ -115,6 +115,8 @@ EOB processing follows a pipeline with a new step between table extraction and f
 **Store or Flag:** Valid records go directly to the output table. Records with validation errors or schema mapping failures go to a review queue.
 
 Any cloud provider, any extraction engine fits this pattern. The schema mapping prompt and the validation logic are portable.
+
+> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter01.08-architecture). The Python example is linked from there.
 
 ---
 
@@ -201,16 +203,16 @@ Any cloud provider, any extraction engine fits this pattern. The schema mapping 
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (2-page EOB, static profile path) | 8–14 seconds |
-| End-to-end latency (2-page EOB, Bedrock mapping path) | 10–18 seconds |
-| Textract table extraction accuracy (clean scan) | 90–96% per cell |
-| Bedrock schema mapping accuracy (common payer formats) | 92–97% |
-| Financial validation catch rate | 80–90% of extraction errors via math checks |
+| End-to-end latency (2-page EOB, static profile path) | 8-14 seconds |
+| End-to-end latency (2-page EOB, Bedrock mapping path) | 10-18 seconds |
+| Textract table extraction accuracy (clean scan) | 90-96% per cell |
+| Bedrock schema mapping accuracy (common payer formats) | 92-97% |
+| Financial validation catch rate | 80-90% of extraction errors via math checks |
 | Incremental Bedrock cost per EOB (Bedrock path) | Under $0.001 |
 | Cost per 2-page EOB (static profile path) | ~$0.13 |
 | Cost per 2-page EOB (Bedrock mapping path) | ~$0.131 |
 
-> **Latency note:** End-to-end latency includes Textract async queue processing time (~5–10 seconds for 2-page documents under normal load; 30–60 seconds under high concurrent job volume). For batch EOB processing, Textract's async queue is the dominant latency variable. Lambda processing time (Bedrock call + validation + DynamoDB write) is typically 2–8 seconds.
+> **Latency note:** End-to-end latency includes Textract async queue processing time (~5-10 seconds for 2-page documents under normal load; 30-60 seconds under high concurrent job volume). For batch EOB processing, Textract's async queue is the dominant latency variable. Lambda processing time (Bedrock call + validation + DynamoDB write) is typically 2-8 seconds.
 
 **Where it struggles:** EOBs with merged table cells in summary sections (common in COB layouts where a multi-payer breakdown appears in a non-standard format). EOBs where line item data appears in paragraph form rather than a table (a small number of payers do this for single-service claims). Multi-page tables where page breaks split a row across pages. And any EOB that has been photocopied more than once: scan quality degradation compounds, and by the third generation you're fighting image noise as much as document structure.
 
@@ -218,8 +220,6 @@ Any cloud provider, any extraction engine fits this pattern. The schema mapping 
 The Bedrock mapping path also has a failure mode the static profile system doesn't: if the LLM maps a column to the wrong canonical field, the error is harder to detect without financial validation catching it. A static profile is wrong in a predictable, consistent way. An LLM mapping can be wrong in an unpredictable way on any given document. For high-stakes EOBs (large claim amounts, COB workflows), the determinism of a validated static profile is a real advantage. Use Bedrock for the long tail; use static profiles where you have volume and validated samples.
 
 ---
-
-> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter01.08-architecture). The Python example is linked from there.
 
 ## The Honest Take
 

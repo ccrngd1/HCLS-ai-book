@@ -81,7 +81,7 @@ flowchart LR
 
 **Step 1: Submit the async Textract job.** The EOB PDF lands in S3 and triggers the eob-start Lambda. We call `StartDocumentAnalysis` with both FORMS and TABLES feature types. This is identical to Recipe 1.2 and Recipe 1.5. If your S3 intake pipeline organizes EOBs into per-payer prefixes (`eobs-inbox/unitedhealthcare/`, `eobs-inbox/medicare/`), record that prefix in the job context: it gives the processing Lambda a free payer hint before running any extraction.
 
-```
+```pseudocode
 FUNCTION submit_eob_extraction(bucket, key, sns_topic_arn, textract_role_arn):
     // Submit the EOB PDF to Textract for async analysis.
     // FORMS extracts claim header fields (claim number, member name, etc.)
@@ -118,7 +118,7 @@ FUNCTION submit_eob_extraction(bucket, key, sns_topic_arn, textract_role_arn):
 
 **Step 2: Retrieve all result pages.** When Textract finishes, the SNS notification triggers eob-process Lambda. Paginate through all result pages via `GetDocumentAnalysis`. This is identical to Recipe 1.2: a multi-page EOB can produce hundreds of blocks, and Textract returns at most 1,000 per API call. Stop early and you have an incomplete document.
 
-```
+```pseudocode
 FUNCTION retrieve_all_blocks(job_id):
     all_blocks = empty list
     next_token = null
@@ -147,7 +147,7 @@ FUNCTION retrieve_all_blocks(job_id):
 
 **Step 3: Extract raw header fields and raw table data.** Before schema mapping, we need the raw extracted data: key-value pairs from the document header, and the table grid (row index, column index, cell text) from the line item section. Both come out of the same Textract response.
 
-```
+```pseudocode
 FUNCTION extract_raw_content(all_blocks, block_map):
     // --- Header: KEY_VALUE_SET blocks from FORMS extraction ---
     raw_header = {}    // label text -> { value: text, confidence: float }
@@ -209,7 +209,7 @@ FUNCTION extract_raw_content(all_blocks, block_map):
 
 **Step 4: Map the extracted data to the canonical EOB schema.** This is the step that replaced the static profile library for all but the highest-volume payers. We check whether the payer falls into our short-list of explicitly-profiled payers. If it does, we apply the static profile dictionary directly: it's cheaper, faster, and completely deterministic. If it doesn't, we send the raw extracted column headers to Bedrock and ask the LLM to map them. 
 
-```
+```pseudocode
 // High-volume payer profiles: maintain these for your top 10-20 payers by volume.
 // For these payers, the LLM is not called at all.
 // These are the same profiles as the original Recipe 1.8, but a much shorter list.
@@ -432,7 +432,7 @@ FUNCTION apply_static_profile(raw_header, raw_tables, profile):
 
 **Step 5: Assemble the canonical line items.** Apply the schema mapping (from whichever path produced it) to the raw extracted data. This step is purely structural: walk the rows, rename the columns, strip whitespace.
 
-```
+```pseudocode
 FUNCTION assemble_line_items(raw_header, raw_tables, mapping):
     // Apply header mapping to the form fields.
     header_fields = {}
@@ -457,11 +457,11 @@ FUNCTION assemble_line_items(raw_header, raw_tables, mapping):
             line_items.append(item)
 
     RETURN header_fields, line_items
-``` 
+```
 
 **Step 5a: Minimum coverage check.** Before financial validation runs, verify that the mapping produced at least the core financial fields. This is the enforcement point for the LLM-to-validation trust boundary.
 
-```
+```pseudocode
 FUNCTION check_mapping_coverage(line_items, mapping_path):
     // If there are no line items at all, the document is incomplete.
     IF len(line_items) == 0:
@@ -501,7 +501,7 @@ validation_errors = validate_eob_financials(header_fields, line_items)
 
 **Step 6: Financial validation.** This step is unchanged from the original recipe. Extract the numeric values from the canonical line items and apply the arithmetic rules that every well-formed EOB must satisfy. This is rule-based code: deterministic, auditable, and not subject to LLM variance. The validation checks whether extracted numbers are internally consistent. If the math is wrong, something went wrong in extraction or mapping, regardless of what the OCR confidence scores say.
 
-```
+```pseudocode
 FUNCTION parse_currency(text):
     IF text is null or text.strip() is empty: RETURN null
     cleaned = remove "$", "," from text.strip()
@@ -565,7 +565,7 @@ FUNCTION validate_eob_financials(header_fields, line_items):
 
 **Step 7: Assemble and route.** Combine everything into a canonical EOB record. Store both the mapping metadata (which path was used: static profile or Bedrock) and the validation output alongside the record. Valid records go directly to DynamoDB. Flagged records go to both DynamoDB and SQS.
 
-```
+```pseudocode
 FUNCTION assemble_and_route(
         document_key, payer_hint, header_fields, line_items,
         validation_errors, mapping_path, coverage_reason=null):
@@ -656,7 +656,7 @@ A few gaps in the pseudocode above that will cause real problems.
 
 **Prompt injection.** The LLM prompt includes extracted document content: column headers and sample cell values from the EOB. A pathologically crafted EOB could include cell values designed to manipulate the LLM's mapping output. The risk is lower here than in Recipe 1.4 (where page text goes to a classifier), because we're sending structured column headers rather than free narrative text. Still, strip null bytes, control characters, and content that looks like instruction injection before including cell values in the Bedrock prompt. The canonical field name validation added in Step 4 provides a second defense: even if injection succeeds in producing a plausible-sounding field name, it won't match the canonical set and will be treated as unmapped. Bedrock Guardrails with content filters adds a third defense layer.
 
-**Bedrock TPM limits at EOB scale.** The schema mapping call consumes approximately 400–900 tokens per document. At default Nova Pro TPM limits (~800K TPM), you can sustain roughly 900–2,000 Bedrock-path EOBs per minute before throttling. The adaptive retry config handles transient throttling, but for sustained workloads above 500 Bedrock-path EOBs per minute, file a quota increase request before go-live. Batch claim windows (Monday morning, end-of-month) are the relevant planning scenario.
+**Bedrock TPM limits at EOB scale.** The schema mapping call consumes approximately 400-900 tokens per document. At default Nova Pro TPM limits (~800K TPM), you can sustain roughly 900-2,000 Bedrock-path EOBs per minute before throttling. The adaptive retry config handles transient throttling, but for sustained workloads above 500 Bedrock-path EOBs per minute, file a quota increase request before go-live. Batch claim windows (Monday morning, end-of-month) are the relevant planning scenario.
 
 **Static profiles need unit tests.** The static profiles for high-volume payers are core business logic. A wrong mapping in the UHC profile means every UHC EOB produces incorrect canonical output, silently. Write unit tests that supply sample column headers and assert the canonical output is correct for each payer profile. Test the Bedrock path too: save a library of raw table extractions from various payers and assert that the LLM mapping produces the correct canonical fields. When a payer updates their template, these tests will catch the drift.
 
@@ -666,7 +666,7 @@ A few gaps in the pseudocode above that will cause real problems.
 
 **Header keyword detection for payer routing.** If your intake pipeline doesn't use per-payer S3 prefixes, you can add keyword detection to `map_to_canonical_schema`. After the S3 prefix check returns null, scan the raw header label keys for known payer name strings before calling Bedrock:
 
-```
+```pseudocode
 IF payer_hint is null:
     header_text = join(raw_header.keys()).lowercase()
     IF "unitedhealthcare" in header_text OR "united health" in header_text:
