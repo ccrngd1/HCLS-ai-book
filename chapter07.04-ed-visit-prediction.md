@@ -90,7 +90,7 @@ Most ML models are not naturally well-calibrated. They rank patients correctly (
 
 **Intervention Routing.** Route high-risk patients to the appropriate intervention: care management outreach, pharmacy consultation, social work referral, or automated patient engagement (text reminders, portal messages). The routing logic is often rule-based on top of the risk score, incorporating what the model identified as the primary risk driver for each patient.
 
-This is not a real-time system. The prediction window is 30-90 days. Running weekly batch scoring is appropriate for the tempo of the interventions you're trying to trigger. Note that weekly scoring creates a blind spot for rapid-onset risk; the Variations section describes event-triggered rescoring for critical transitions like hospital discharge or medication discontinuation.
+This is not a real-time system. The prediction window is 30-90 days. Running weekly batch scoring is appropriate for the tempo of the interventions you're trying to trigger. Note that weekly scoring creates a blind spot for rapid-onset risk. Some implementations add event-triggered rescoring for critical transitions (hospital discharge, medication discontinuation) to capture acute risk between batch cycles. The [Architecture companion](chapter07.04-architecture) covers this variation in detail.
 
 ---
 

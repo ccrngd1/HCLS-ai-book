@@ -6,6 +6,8 @@
 
 ## The AWS Implementation
 
+Here's how I'd build this pipeline on AWS, and why each service earns its place.
+
 ### Why These Services
 
 **Amazon SageMaker for model training and hosting.** SageMaker provides the managed ML infrastructure for the entire model lifecycle: training gradient-boosted models at scale, running hyperparameter tuning jobs, hosting the trained model for batch inference, and managing model versions. For a batch-scoring workload like this, SageMaker Batch Transform is the right deployment pattern (score all patients at once, no need for a real-time endpoint sitting idle between scoring cycles).
