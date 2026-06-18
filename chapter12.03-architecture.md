@@ -70,7 +70,7 @@ flowchart LR
 | **VPC** | Production: SageMaker training and inference in VPC with VPC endpoints for S3, Kinesis, CloudWatch Logs, and KMS. Required for HIPAA workloads. |
 | **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Kinesis API calls for HIPAA audit trail. |
 | **Sample Data** | Synthetic ED arrival data. The [MIMIC-IV-ED](https://physionet.org/content/mimic-iv-ed/) database (de-identified ED visits from a Boston academic medical center) is a strong public dataset with permission via PhysioNet credentialing. For lighter-weight prototyping, generate synthetic data from a known process (Poisson with hour-of-day intensity plus weekly seasonality plus weather effects plus noise) and validate the pipeline against ground truth. Never use real ED arrival data in dev. |
-| **Cost Estimate** | SageMaker hourly inference (small endpoint): ~$50/month. Weekly retraining: ~$5/month. Kinesis ingest (low volume): ~$30/month. S3, DynamoDB, Step Functions, Lambda, Glue: under $50/month combined. Total: $200–$700/month per ED, depending on retraining frequency and inference volume. |
+| **Cost Estimate** | SageMaker hourly inference (small endpoint): ~$50/month. Weekly retraining: ~$5/month. Kinesis ingest (low volume): ~$30/month. S3, DynamoDB, Step Functions, Lambda, Glue: under $50/month combined. Total: $200-$700/month per ED, depending on retraining frequency and inference volume. |
 
 <!-- TODO (TechWriter): Expert review S1 (HIGH). Update the Encryption row to specify customer-managed KMS keys (CMKs) per data class for blast-radius containment. Recommended split: a CMK for the ADT stream and arrivals-hourly bucket (PHI), a CMK for weather/flu-index/event-calendar buckets (operational, no PHI), a CMK for the model-artifacts bucket, a CMK for the forecasts bucket and DynamoDB serving table, a CMK for SageMaker training output, a CMK for CloudWatch log groups. Update the IAM permissions row to grant per-Lambda least-privilege `kms:Decrypt` only on the relevant CMK; do not grant cross-class decrypt at the IAM-policy level. Mirrors S1 in the 12.2 expert review and should be consolidated at the chapter level. -->
 
@@ -347,12 +347,12 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end inference cycle | 1–3 minutes hourly |
-| Volume forecast accuracy (4-hour MAPE) | 10–18% |
-| Volume forecast accuracy (24-hour MAPE) | 15–28% |
-| Volume forecast accuracy (7-day MAPE) | 20–35% |
-| Acuity mix classification (macro F1) | 0.55–0.70 |
-| Cost per ED per month | $200–$700 |
+| End-to-end inference cycle | 1-3 minutes hourly |
+| Volume forecast accuracy (4-hour MAPE) | 10-18% |
+| Volume forecast accuracy (24-hour MAPE) | 15-28% |
+| Volume forecast accuracy (7-day MAPE) | 20-35% |
+| Acuity mix classification (macro F1) | 0.55-0.70 |
+| Cost per ED per month | $200-$700 |
 
 <!-- TODO (TechWriter): A1. Accuracy benchmarks above are typical industry figures for ED arrival forecasting on EDs with 2+ years of clean ADT history and weather/surveillance feeds. Confirm against your reference data sources before publication. -->
 
@@ -428,9 +428,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (one ED, hourly volume forecast, calendar features only):** 2–3 weeks
-- **Production-ready (acuity mix, weather and surveillance feeds, monitoring, drift detection):** 8–12 weeks
-- **With variations (sub-hourly, real-time updating, multi-ED hierarchical):** 16–24 weeks
+- **Basic pipeline (one ED, hourly volume forecast, calendar features only):** 2-3 weeks
+- **Production-ready (acuity mix, weather and surveillance feeds, monitoring, drift detection):** 8-12 weeks
+- **With variations (sub-hourly, real-time updating, multi-ED hierarchical):** 16-24 weeks
 
 ---
 

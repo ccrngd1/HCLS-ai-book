@@ -1,6 +1,6 @@
 # Recipe 12.3: ED Arrival Forecasting ⭐⭐
 
-**Complexity:** Simple-Medium · **Phase:** MVP+ · **Estimated Cost:** ~$200–$700 per month per ED
+**Complexity:** Simple-Medium · **Phase:** MVP+ · **Estimated Cost:** ~$200-$700 per month per ED
 
 ---
 
@@ -78,7 +78,7 @@ The honest list of things that humble first-time ED forecasters:
 
 **Boarding and downstream coupling.** ED throughput depends not just on ED arrivals but on the inpatient hospital's ability to admit boarders. When the hospital is at capacity, the ED fills up regardless of arrival rate. A pure arrival forecast misses this. The full operational picture connects to inpatient census forecasting (Recipe 12.5), and the most useful EDs build coupled forecasts that consider both. That's outside the scope of a basic arrival recipe but worth flagging.
 
-The reassuring news: a basic Poisson regression with hour-of-day, day-of-week, holiday, and weather features routinely achieves 10–20% MAPE on hourly volume forecasts at a 4-hour horizon, and 15–30% at a 24-hour horizon. That's accurate enough to make a meaningful difference in staffing decisions. The forecast doesn't have to be perfect to be useful; it just has to be better than the gut feel of a charge nurse who's been on shift for nine hours.
+The reassuring news: a basic Poisson regression with hour-of-day, day-of-week, holiday, and weather features routinely achieves 10-20% MAPE on hourly volume forecasts at a 4-hour horizon, and 15-30% at a 24-hour horizon. That's accurate enough to make a meaningful difference in staffing decisions. The forecast doesn't have to be perfect to be useful; it just has to be better than the gut feel of a charge nurse who's been on shift for nine hours.
 
 ### The General Architecture Pattern
 
