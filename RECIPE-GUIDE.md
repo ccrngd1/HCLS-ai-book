@@ -4,28 +4,49 @@ _How to write recipes for the Healthcare AI/ML Cookbook. Read this before writin
 
 ---
 
-## Recipe Structure (Main File)
+## Recipe Structure (Three Files)
 
-Every recipe follows a two-part structure. The first half is vendor-agnostic. The second half is AWS-specific.
+Every recipe is split across three files, each serving a different audience:
 
-### Part 1: Vendor-Agnostic
+1. **Main recipe** (`chapter{NN}.{RR}-{name}.md`) — "the book." Vendor-agnostic story and concepts. The part a reader reads.
+2. **Architecture companion** (`chapter{NN}.{RR}-architecture.md`) — the AWS implementation and pseudocode. Reference material for architects/implementers.
+3. **Python companion** (`chapter{NN}.{RR}-python-example.md`) — illustrative working code for developers.
 
-**The Problem.** Make the reader feel why this sucks today. Real-world scenario, human impact, scale of the pain. Not clinical. Passionate. A VP of Operations should read this and nod along because they've lived it.
+This separation keeps the readable core small (each main recipe is ~5,000 words / a 25-minute read) while preserving the full implementation detail in companions.
 
-**The Technology.** Teach the underlying tech from first principles.
-- What is it? How does it actually work?
-- Why is it hard? What are the classic failure modes?
-- Why is it good enough for this use case despite those?
-- Where has the field moved in the last few years?
-- **No vendor names in this section.** No S3, no Lambda, no Textract. Concepts only. A reader using GCP, Azure, or on-premises should learn something valuable here.
+---
 
-**General Architecture Pattern.** Describe the pipeline at a conceptual level. What are the logical stages? What does data flow look like? Still no vendor names. Any cloud, any language.
+## Main Recipe File (Part 1: Vendor-Agnostic + Closer)
 
-### Part 2: AWS-Specific
+The main file is entirely vendor-agnostic except for the closing sections. **No S3, no Lambda, no Textract** in The Problem / The Technology / General Architecture Pattern. A reader on GCP, Azure, or on-premises should learn everything valuable here.
 
-**Why These Services.** Introduce each AWS service and explain why it was chosen for that specific piece of the architecture. Connect each service back to the concept it implements from Part 1.
+**The Problem.** Make the reader feel why this sucks today. Real-world scenario, human impact, scale of the pain. A VP of Operations should read this and nod along.
 
-**Architecture Diagram.** Mermaid flowchart showing the AWS components and data flow.
+**The Technology.** Teach the underlying tech from first principles. What is it? How does it work? Why is it hard, and why is it good enough anyway? Where has the field moved? No vendor names.
+
+**General Architecture Pattern.** The pipeline at a conceptual level: logical stages, data flow. Still no vendor names. End this section with the callout that links to the architecture companion (see below).
+
+**The Honest Take.** Where it breaks in practice, what surprised you, what you'd do differently. Self-deprecating expertise. This stays on the main file as the narrative closer.
+
+**Related Recipes.** Cross-references by recipe number with one-line descriptions.
+
+**Tags.** Searchable labels.
+
+**Navigation.** Footer links to previous recipe, chapter preface, and next recipe.
+
+### The architecture callout (end of General Architecture Pattern)
+
+> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter{NN}.{RR}-architecture). The Python example is linked from there.
+
+---
+
+## Architecture Companion File (Part 2: AWS-Specific)
+
+`chapter{NN}.{RR}-architecture.md`. Opens with a backlink header to the main recipe, then:
+
+**Why These Services.** Introduce each AWS service and connect it back to the concept it implements from the main recipe's Part 1.
+
+**Architecture Diagram.** Mermaid flowchart of the AWS components and data flow.
 
 **Prerequisites.** Table format:
 
@@ -40,35 +61,23 @@ Every recipe follows a two-part structure. The first half is vendor-agnostic. Th
 | Sample Data | Where to get test data. Never use real PHI in dev. |
 | Cost Estimate | Per-unit and monthly estimates |
 
-**Ingredients.** Table of AWS services and their specific roles in this recipe.
+**Ingredients.** Table of AWS services and their specific roles.
 
-**Code (Pseudocode Walkthrough).** Language-agnostic pseudocode with heavy inline comments. Each step gets:
-- A business-level explanation of what it accomplishes and why it matters
-- What goes wrong if you skip it (for the non-technical reader)
-- A pseudocode block with comments accessible to someone who has never written code
-- JSON and YAML are fine for data structures (field maps, configs)
-
-After the walkthrough, include a callout linking to the Python companion:
+**Code (Pseudocode Walkthrough).** Language-agnostic pseudocode with heavy inline comments. Each step gets: a business-level explanation, what goes wrong if you skip it, and a commented pseudocode block. After the walkthrough, include the callout linking to the Python companion:
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter{NN}.{RR}-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-The tone here is important: the Python file is a set of illustrative samples, not a complete or production-ready implementation. Frame it as "want to see how this might look in code?" not "here's the working implementation."
+**Expected Results.** Sample JSON output, performance benchmarks table, where it struggles.
 
-**Expected Results.** Sample JSON output showing what the pipeline produces. Performance benchmarks table (latency, accuracy, confidence, cost, throughput). Where it struggles (honest list of failure modes).
+**Why This Isn't Production-Ready.** The gaps a production deployment must close.
 
-**The Honest Take.** Where it breaks in practice. What surprised you. What you'd do differently. Self-deprecating expertise is the signature here.
+**Variations and Extensions.** 2-3 practical extensions.
 
-**Variations and Extensions.** 2-3 practical extensions with enough detail to get started.
-
-**Related Recipes.** Cross-references by recipe number with one-line descriptions of the connection.
-
-**Additional Resources.** AWS docs, compliance guides, relevant external links. **Only real, verified URLs.** Never make up GitHub repos or doc links.
+**Additional Resources.** AWS docs, sample repos, solutions/blogs. Only real, verified URLs.
 
 **Estimated Implementation Time.** Three tiers: Basic, Production-ready, With variations.
 
-**Tags.** Searchable labels for the recipe.
-
-**Navigation.** Footer links to previous recipe, chapter index, and next recipe.
+**Navigation.** Footer links to the main recipe, the Python example, and the chapter preface.
 
 ---
 
@@ -105,11 +114,13 @@ Each recipe gets a separate Python companion file. This is where developers go w
 | Type | Pattern | Example |
 |------|---------|---------|
 | Main recipe | `chapter{NN}.{RR}-{name}.md` | `chapter01.01-insurance-card-scanning.md` |
+| Architecture companion | `chapter{NN}.{RR}-architecture.md` | `chapter01.01-architecture.md` |
 | Python companion | `chapter{NN}.{RR}-python-example.md` | `chapter01.01-python-example.md` |
-| Chapter index | `chapter{NN}-index.md` | `chapter01-index.md` |
 | Chapter preface | `chapter{NN}-preface.md` | `chapter01-preface.md` |
 
 Zero-pad recipe numbers for sort order: `chapter01.01`, `chapter01.02`, ... `chapter01.10`.
+
+(There is no separate chapter-index file. Chapter navigation points at the chapter preface.)
 
 ---
 
@@ -117,11 +128,12 @@ Zero-pad recipe numbers for sort order: `chapter01.01`, `chapter01.02`, ... `cha
 
 After creating new files, update `_Sidebar.md`:
 - Main recipes appear as top-level items under their chapter heading
-- Python companions appear as indented sub-items under their recipe
+- The architecture companion and Python companion appear as indented sub-items under their recipe, in that order
 
 Example:
 ```
 * [1.1: Insurance Card Scanning](chapter01.01-insurance-card-scanning)
+  * [Architecture and Implementation](chapter01.01-architecture)
   * [Python Example](chapter01.01-python-example)
 ```
 
