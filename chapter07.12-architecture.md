@@ -369,6 +369,8 @@ Sample hybrid decision output:
 - Very high cardinality interactions (specific procedure + specific payer + specific modifier combination) where even with 500K claims, the neighborhood is sparse.
 - Embedding drift: as your claim population shifts (new procedure codes, new patient demographics), old embeddings become less representative. Requires periodic re-embedding and re-indexing.
 
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" H2 section between Expected Results and Variations. Add a brief section covering: no automated embedding-drift detection, no circuit-breaker for OpenSearch outages, no A/B framework for kNN-vs-primary model allocation, no automated threshold recalibration. -->
+
 ---
 
 ## Variations and Extensions
