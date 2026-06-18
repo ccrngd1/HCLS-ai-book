@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for clustering.** SageMaker provides a managed K-Means algorithm (and access to scikit-learn for GMM or DBSCAN via processing jobs) that scales to millions of patients without managing infrastructure. The built-in K-Means implementation is optimized for large datasets and runs on distributed compute. For smaller populations (under 500K patients), a SageMaker Processing Job with scikit-learn is simpler and more flexible. The pseudocode below follows the scikit-learn API pattern. If using SageMaker's built-in K-Means algorithm, the training job requires RecordIO-protobuf or CSV input format and uses the SageMaker Estimator API rather than direct `fit_predict` calls. For populations under 500K patients, a Processing Job running scikit-learn (as shown in the pseudocode and Python companion) is simpler. For larger populations, the built-in algorithm's distributed training is worth the format conversion overhead.
 
@@ -20,7 +18,7 @@
 
 **Amazon EventBridge + Lambda for monitoring and alerts.** Scheduled re-clustering runs and population shift detection. When the distribution changes beyond a threshold, fire an alert to the revenue cycle team. Configure a dead-letter queue on the shift detection Lambda for failed invocations. For quarterly runs, a failed detection is low-urgency but should generate an ops alert so the team knows to investigate.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -41,7 +39,7 @@ flowchart TD
     style I fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -55,7 +53,7 @@ flowchart TD
 | **Data Sources** | Billing/AR system extract, EHR utilization data, eligibility/enrollment feed, census-level demographic data (public). |
 | **Cost Estimate** | Glue ETL: ~$5-20/run. SageMaker training: ~$2-10/run (ml.m5.xlarge, minutes). S3 + Athena: ~$10-50/month. QuickSight: $18/user/month. Total: $50-200/month for quarterly re-clustering. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -69,7 +67,7 @@ flowchart TD
 | **Amazon SNS** | Delivers alerts when population distribution shifts beyond threshold |
 | **AWS KMS** | Encryption key management for all data at rest |
 
-### Pseudocode Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Extract and join source data.** The first challenge is assembling a unified patient-level dataset from systems that were never designed to talk to each other. Billing knows about charges and payments. The EHR knows about visits and diagnoses. Eligibility knows about coverage. Each system has its own patient identifier, its own data model, and its own update cadence. This step pulls from each source, resolves to a single patient identity (using your MPI or whatever patient matching you have), and produces one row per patient with columns from all sources. Skip this step and you're clustering on incomplete information, which produces clusters that reflect data availability rather than actual financial risk.
 
@@ -296,7 +294,7 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample cluster profiles (k=5):**
 
@@ -412,9 +410,6 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 | **Basic** (single-source clustering, manual feature selection, notebook-based) | 2-3 weeks |
 | **Production-ready** (multi-source ETL, automated pipeline, dashboards, monitoring) | 6-8 weeks |
 | **With variations** (temporal trajectories, service-line splits, predictive assignment) | 10-14 weeks |
-
----
-
 
 ---
 
