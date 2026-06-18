@@ -232,7 +232,7 @@ flowchart LR
 
 **Step 1: Ingest a death event from a source feed.** The per-source ingestion pipeline reads the inbound source data, normalizes it to the common death-event schema, captures the per-event provenance, and emits the normalized event into the death-event-resolution pipeline. Skip the provenance capture and the institution loses the ability to reverse premature death reports correctly later, because the audit trail no longer reflects which source triggered the resolution.
 
-```
+```pseudocode
 FUNCTION ingest_death_event_from_source(
     source_id, source_specific_record):
 
@@ -319,7 +319,7 @@ FUNCTION ingest_death_event_from_source(
 
 **Step 2: Match the death event against the MPI under the deceased-patient-resolution tolerance.** The matcher consults the local MPI, applies the per-source matching tolerance (different sources have different demographic-data-quality profiles, so the per-source tolerance is calibrated separately), and produces a candidate set with per-candidate match confidence. High-confidence matches route to auto-resolution; medium-confidence matches route to the verification queue; the matcher also detects hidden-duplicate-revelation cases. Skip the per-source tolerance calibration and you treat the SSA DMF (which has high-quality demographics) the same as the family-reported intake (which has variable demographics), with the consequent matching-quality compromise.
 
-```
+```pseudocode
 FUNCTION match_death_event_against_mpi(event_id):
 
     // Step 2A: load the death-event record.
@@ -462,7 +462,7 @@ FUNCTION match_death_event_against_mpi(event_id):
 
 **Step 3: Reconcile the death event with any existing death events for the same patient.** Multiple sources may report the same patient's death with potentially-different dates, potentially-conflicting evidence, and potentially-different supporting documents. The reconciler combines the per-source events into a consolidated death-event view per patient, applies the date-of-death-conflict-resolution policy, detects premature-death-report candidates (a single source's death event without corroboration from other sources), and produces the consolidated view that the MPI will consume. Skip the multi-source reconciliation and you collapse multiple sources to a single source's view with the consequent quality compromise.
 
-```
+```pseudocode
 FUNCTION reconcile_multi_source_death_events(
     event_id, matched_record_id):
 
@@ -576,7 +576,7 @@ FUNCTION reconcile_multi_source_death_events(
 
 **Step 4: Apply the death-status update to the MPI atomically.** The mpi-update-handler executes the death-status application as a transactional write that includes the consolidated death-event-view application, any coordinated duplicate-resolution actions (where the death event revealed hidden duplicates), and the audit-event emission. The transactional write ensures the MPI's downstream consumers see a consistent state. Skip the transactional discipline and the institution produces inconsistent operational behavior across the systems that consume the MPI's death-status field at slightly different moments.
 
-```
+```pseudocode
 FUNCTION apply_death_status_to_mpi(
     event_id, matched_record_id,
     consolidated_view):
@@ -649,7 +649,7 @@ FUNCTION apply_death_status_to_mpi(
 
 **Step 5: Propagate the death status to the downstream operational systems on each system's appropriate cadence.** Each downstream system has its own appropriate-cadence configuration. The cascade Lambdas consume the deceased-patient-event signal from EventBridge and apply the system-specific behavior change. Each cascade Lambda emits an acknowledgment back to the cascade-ack-store when the change has been applied. Skip the per-system cadence configuration and you apply the cascade at the wrong cadence for some systems (too slow for systems that need real-time, too aggressive for systems that should be batch).
 
-```
+```pseudocode
 FUNCTION cascade_appointment_cancellation(
     event_id, matched_record_id,
     consolidated_date_of_death):
@@ -806,7 +806,7 @@ FUNCTION cascade_communication_path_switch(
 
 **Step 6: Handle premature-death-report verification and reversal.** The verification queue surfaces cases where the death status may be wrongly applied. The verifier (a designated operational role with appropriate training and authorization) reviews the case, applies the institutional verification framework (cross-source verification, supporting-document review, family-contact verification), and produces the verification decision. If the death report is verified, the resolution proceeds; if the death report is reversed, the reversal pathway restores the live-patient state. Skip the verification framework and you produce the disrupted-patient-experience cases the recipe is for.
 
-```
+```pseudocode
 FUNCTION execute_premature_death_report_reversal(
     event_id, matched_record_id, verifier_identity,
     reversal_reason):
