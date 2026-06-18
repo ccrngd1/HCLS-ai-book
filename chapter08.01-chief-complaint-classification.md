@@ -63,7 +63,7 @@ Chief complaint classification is a well-studied problem. The literature goes ba
 
 The practical state of the art for a well-trained, institution-specific model is 88-95% top-1 accuracy, with top-3 accuracy (correct category is in the top three predictions) often exceeding 97%. That's good enough for automated routing with a confidence threshold: high-confidence predictions route automatically, low-confidence ones go to a human.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
 ```text
 [Raw Text Input] → [Preprocessing] → [Vectorization] → [Classification] → [Confidence Gate] → [Route or Queue]

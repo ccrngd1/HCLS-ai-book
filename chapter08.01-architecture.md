@@ -4,11 +4,9 @@
 
 ---
 
-## The AWS Implementation
+## Why These Services
 
-Now let's build this. The chief complaint classifier is a lightweight, high-throughput workload: short text in, category label out, sub-second latency required because it sits in the patient registration workflow. Here's how I'd wire it on AWS.
-
-### Why These Services
+The chief complaint classifier is a lightweight, high-throughput workload: short text in, category label out, sub-second latency required because it sits in the patient registration workflow. Here's how I'd wire it on AWS.
 
 **Amazon Comprehend (Custom Classification)** for the core classification task. Comprehend's custom classifier lets you train a multi-class text classification model on your labeled data without managing ML infrastructure. You upload your training CSV (text, label pairs), Comprehend trains a model, deploys it to a real-time endpoint, and handles scaling. For chief complaint classification, this is the right abstraction because the problem is straightforward supervised classification on short text. You don't need SageMaker's flexibility here; you need a managed classifier that works out of the box.
 
@@ -22,7 +20,7 @@ Now let's build this. The chief complaint classifier is a lightweight, high-thro
 
 **Amazon SQS** for the low-confidence review queue. Predictions below the confidence threshold get dropped into a queue for human review, decoupling the classification pipeline from the review workflow.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart LR
@@ -41,7 +39,7 @@ flowchart LR
     style H fill:#f99,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -54,7 +52,7 @@ flowchart LR
 | **Training Data** | Minimum 1,000 labeled examples per category (ideally 5,000+). Historical chief complaints with routing decisions from your institution's EHR. De-identify before use in development. |
 | **Cost Estimate** | Comprehend Custom Classification: $0.0005 per request (real-time endpoint). Comprehend Medical: $0.01 per 100 characters. Lambda and DynamoDB negligible at this scale. Endpoint hosting: ~$0.50/hour per inference unit (minimum 1 unit, ~$360/month always-on). This hosting fee dominates cost at moderate volumes. Consider scheduling endpoint scale-down during off-peak hours or using async/batch inference for non-real-time use cases. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -71,14 +69,12 @@ flowchart LR
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Metrics on classification latency, confidence distribution, and error rates |
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS resources demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Comprehend custom classification training and real-time inference examples
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical entity extraction with FHIR data models
-
-#### Walkthrough
 
 **Step 1: Preprocess the chief complaint text.** Raw chief complaint text arrives from the EHR or registration system in whatever form the clerk or kiosk produced it. Before classification, we need to normalize it: lowercase everything, expand known abbreviations, strip extraneous characters. This step is critical because "CP" and "chest pain" are the same clinical concept but look completely different to a classifier. Without preprocessing, you're effectively asking the model to learn every abbreviation variant independently, which wastes training capacity and hurts accuracy on rare abbreviations. The abbreviation map is a living configuration that grows as you encounter new shorthand.
 
@@ -265,7 +261,7 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a typical classification:**
 
@@ -305,6 +301,8 @@ FUNCTION store_and_route(original_text, preprocessed_text, prediction, gate_resu
 - Negated complaints in telephone triage contexts ("denies chest pain, presenting for medication refill")
 
 ---
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Cover gaps like error handling, retry logic, input validation, structured logging, multi-language support, and retraining automation. -->
 
 ## Variations and Extensions
 
