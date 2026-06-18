@@ -438,10 +438,9 @@ A few cross-cutting design points the architecture has to bake in.
 
 **Continuous per-language-pair quality monitoring is operational, not project-bounded.** The vendor models update. The patient population shifts. The dialect distribution changes. The clinical content drifts. The institution that measures quality at launch and stops measuring will discover degradation through patient complaints. Continuous monitoring against a curated evaluation set, with vendor-update regression detection, with per-population disparity tracking, and with launch-gate-equivalent thresholds for ongoing operation, is part of the system's lifecycle.
 
----
-
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter10.10-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 
