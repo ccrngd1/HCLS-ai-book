@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **AWS Lambda for the block release engine.** Released blocks trigger an event-driven decision. The lightweight optimization (one block, score candidates, assign) runs in seconds. Lambda's stateless, event-driven model fits perfectly. No idle compute between release events.
 
@@ -22,7 +20,7 @@
 
 **Amazon QuickSight for schedule visualization.** Decision-makers need to see the proposed schedule, compare it to current allocation, and understand the predicted impact. QuickSight dashboards present utilization heatmaps, service allocation summaries, and what-if comparisons.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TB
@@ -52,7 +50,7 @@ flowchart TB
     end
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -65,7 +63,7 @@ flowchart TB
 | **Sample Data** | Synthetic surgical case logs. OR benchmarking collaboratives publish anonymized utilization data. Never use real surgeon names in dev environments. |
 | **Cost Estimate** | Batch solver: ~$2-5 per run (30 min on c5.4xlarge quarterly). Lambda: negligible. DynamoDB: ~$25/month. SageMaker endpoint: ~$100-400/month (persistent) or ~$10-30/month (serverless/batch transform for quarterly-only). VPC endpoints: ~$50-70/month. Total: $200-800/month. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -80,7 +78,7 @@ flowchart TB
 | **AWS KMS** | Encryption key management for data at rest |
 | **Amazon CloudWatch** | Monitoring solver performance, Lambda errors, utilization metrics |
 
-### Code (Pseudocode Walkthrough)
+## Code (Pseudocode Walkthrough)
 
 **Step 1: Extract historical demand data.** Before the optimizer can propose a schedule, it needs to understand what each service actually does with its OR time. This step pulls surgical case history (typically 12-24 months) and computes per-service metrics: average weekly case volume, case duration distributions, cancellation rates, and utilization of currently allocated blocks. These metrics become the demand forecast inputs and the baseline against which the new schedule will be measured. Skip this step and the optimizer is flying blind, producing allocations based on nothing.
 
@@ -344,7 +342,7 @@ FUNCTION handle_block_release(room, block, releasing_service):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and an open-source solver, check out the [Python Example](chapter14.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample proposed schedule output (partial):**
 
@@ -401,6 +399,8 @@ FUNCTION handle_block_release(room, block, releasing_service):
 **Where it struggles:** Hospitals with fewer than 8 ORs (the problem is small enough that manual scheduling works fine). Facilities where political dynamics override optimization (if the chief of cardiac surgery is on the hospital board and refuses to lose blocks regardless of utilization data, your model's output will be overridden). Institutions without good historical case data (garbage in, garbage out). Environments with extremely high cancellation rates (> 20%), where the utilization predictions become unreliable.
 
 ---
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE. Should appear before Variations and Extensions. Content needed: gaps a production deployment must close (approval workflows, EHR integration, surgeon-level decomposition, seasonal re-training, etc.). -->
 
 ## Variations and Extensions
 
