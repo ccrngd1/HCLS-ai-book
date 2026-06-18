@@ -69,7 +69,7 @@ flowchart TD
 | **AWS KMS** | Manages encryption keys for all data at rest |
 | **Amazon CloudWatch** | Monitors job execution, logs, and alerts on failures |
 
-### Code
+### Code (Pseudocode Walkthrough)
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
@@ -80,7 +80,7 @@ flowchart TD
 
 **Step 1: Define the cohort and feature set.** Before any computation happens, you need to define two things: which patients are in the cohort, and which features describe their severity. The cohort definition is typically a diagnosis code filter (e.g., all patients with an active Type 2 diabetes diagnosis and at least 12 months of continuous enrollment). The feature set is the clinical consensus on what dimensions matter for this disease. This step is configuration, not computation, but it drives everything downstream. Get the feature set wrong and no algorithm will save you.
 
-```
+```pseudocode
 // Configuration: defines what we're stratifying and how
 COHORT_DEFINITION:
     diagnosis_codes: ["E11.*"]           // ICD-10 codes for Type 2 Diabetes
@@ -119,7 +119,7 @@ CLUSTER_CONFIG:
 
 **Step 2: Assemble the feature matrix.** This is the ETL step where you pull data from multiple source systems and construct one row per patient with all the features defined in Step 1. In practice, this means joining EHR problem lists (for diagnoses and complications), lab results (for HbA1c and eGFR), claims data (for utilization counts), and screening tools (for PHQ-9 and ADL assessments). The output is a matrix: rows are patients, columns are features. Missing values are common and must be handled explicitly. Skip this step and you have no input for the algorithm.
 
-```
+```pseudocode
 FUNCTION assemble_feature_matrix(cohort_definition, feature_set):
     // Step 2a: Identify the cohort
     // Query the clinical data warehouse for patients matching the cohort definition.
@@ -196,7 +196,7 @@ FUNCTION assemble_feature_matrix(cohort_definition, feature_set):
 
 **Step 3: Preprocess and normalize.** Raw features are on wildly different scales. HbA1c ranges from 5 to 14. ER visits range from 0 to 50. Complication count ranges from 0 to 8. If you feed raw values into K-Means, the features with larger numeric ranges will dominate the distance calculation, and features with small ranges (like binary indicators) will be effectively ignored. Normalization puts all features on a common scale so each contributes proportionally to the clustering. Skip this step and your clusters will be driven entirely by whichever feature has the largest numeric range.
 
-```
+```pseudocode
 FUNCTION preprocess_features(feature_matrix, clinical_weights):
     // Step 3a: Z-score normalization
     // For each feature, subtract the mean and divide by standard deviation.
@@ -229,7 +229,7 @@ FUNCTION preprocess_features(feature_matrix, clinical_weights):
 
 **Step 4: Run clustering.** This is the core algorithm step. For each candidate value of K (number of tiers), run K-Means on the normalized feature matrix and record the results. K-Means works by placing K cluster centers in the feature space, assigning each patient to the nearest center, then iteratively adjusting the centers until assignments stabilize. The output is a tier label for each patient and the cluster centers (which describe the "average patient" in each tier). Running multiple K values lets you compare and choose the best tier count in the validation step.
 
-```
+```pseudocode
 FUNCTION run_clustering(normalized_matrix, cluster_config):
     results = empty map
 
@@ -275,7 +275,7 @@ FUNCTION run_clustering(normalized_matrix, cluster_config):
 
 **Step 5: Validate and label tiers.** This is where data science meets clinical judgment. For each candidate K, examine the cluster centers to understand what each tier represents, then validate against real outcomes. The best K is the one where tiers are both statistically well-separated and clinically meaningful. Once you've chosen K, assign human-readable labels to each tier based on the cluster center profiles. Skip this step and you have numbered clusters that no clinician will trust or use.
 
-```
+```pseudocode
 FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
     // Step 5a: Compare K values using metrics
     FOR each k, result in clustering_results:
@@ -328,7 +328,7 @@ FUNCTION validate_and_label(clustering_results, feature_matrix, outcomes_data):
 
 The severity-tiers table contains PHI (disease diagnosis, severity classification, clinical indicators). Restrict access by role: the pipeline write role gets `dynamodb:PutItem` only; the care management read role gets `dynamodb:GetItem` by patient_id only (no Scan); analytics queries run via Athena over the S3 Parquet copy, not DynamoDB directly. Use an opaque patient identifier as the partition key and maintain the MRN-to-opaque mapping in a separate identity service with tighter access controls.
 
-```
+```pseudocode
 FUNCTION store_tier_assignments(patient_ids, assignments, tier_labels, feature_matrix, run_date):
     // Write to operational database for real-time lookups
     FOR each patient_id, tier_index in zip(patient_ids, assignments):

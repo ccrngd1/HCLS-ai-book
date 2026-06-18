@@ -98,7 +98,7 @@ Here's where severity stratification diverges from generic clustering. In generi
 
 The pipeline for disease severity stratification has five logical stages:
 
-```
+```text
 [Feature Assembly] → [Preprocessing] → [Clustering] → [Validation & Labeling] → [Operationalization]
 ```
 
@@ -125,7 +125,7 @@ Upstream: getting clinicians to agree on the feature set. Every specialist think
 
 Downstream: getting care managers to actually use the tiers. If the stratification doesn't match their clinical intuition for patients they know well, they'll ignore it. The first time a patient they consider "severe" shows up in Tier 1, you've lost credibility. Invest heavily in the validation step. Show them the profiles. Let them challenge the assignments. Iterate.
 
-The thing that surprised me: the biggest predictor of whether a stratification system gets adopted is not accuracy. It's explainability. Care managers need to understand why a patient is in a given tier. "The algorithm said so" is not acceptable. The key_drivers field in the output is not optional. It's the difference between a system that gets used and one that gets ignored.
+The thing that surprised me: the biggest predictor of whether a stratification system gets adopted is not accuracy. It's explainability. Care managers need to understand why a patient is in a given tier. "The algorithm said so" is not acceptable. Including key drivers in the output (the top features that placed this patient in this tier) is not optional. It's the difference between a system that gets used and one that gets ignored.
 
 One more thing: tier assignments are not destiny. They're a snapshot. A patient in Tier 3 who gets intensive care management and improves should move to Tier 2 on the next run. If your tiers never change, either your interventions aren't working or your refresh cadence is too slow. Track tier migration as a program effectiveness metric.
 
@@ -142,7 +142,7 @@ One more thing: tier assignments are not destiny. They're a snapshot. A patient 
 
 ## Tags
 
-`clustering` `k-means` `severity-stratification` `chronic-disease` `population-health` `care-management` `sagemaker` `glue` `cohort-analysis` `unsupervised-learning`
+`clustering` `k-means` `severity-stratification` `chronic-disease` `population-health` `care-management` `cohort-analysis` `unsupervised-learning`
 
 ---
 
