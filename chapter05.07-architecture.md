@@ -169,7 +169,7 @@ flowchart LR
 
 **Step 1: Detect a name-change candidate from the trigger event.** Every operational path that produces a name discrepancy goes through detection first. A registration update with a new name, a payer eligibility refresh with an updated name, a vital-records feed event, a cross-facility match callback that surfaced a different name on the responding side. The detector classifies the trigger as direct (an explicit name-change assertion) or indirect (a high-demographic-match arriving with a different name from the matched identity), pulls the candidate identity record, and produces a detection envelope. Skip the detection step and you treat every name discrepancy as a potential new identity, which over-creates duplicate records and corrupts the longitudinal continuity the recipe is supposed to maintain.
 
-```
+```pseudocode
 FUNCTION detect_name_change_candidate(trigger_event):
     // Extract the asserted name and any change metadata
     // from the trigger. Different sources carry different
@@ -312,7 +312,7 @@ FUNCTION detect_name_change_candidate(trigger_event):
 
 **Step 2: Resolve the candidate against the existing identity record.** The detector produced a candidate; the resolver decides whether to accept it as a name change, hold it for review, or reject it. The resolver consults the identity's existing name history, applies the name-change-specific thresholds, and produces a resolution decision with the evidence preserved for audit. Skip the explicit resolution step and you have a detector that flags candidates without a clear handoff to the persistence layer; the result is name-change events that get partially recorded and then drift out of sync with the rest of the patient record.
 
-```
+```pseudocode
 FUNCTION resolve_name_change(detection_envelope, matcher_config):
     candidate = detection_envelope
 
@@ -444,7 +444,7 @@ FUNCTION resolve_name_change(detection_envelope, matcher_config):
 
 **Step 3: Apply the sensitivity and consent envelope.** A resolved name change carries a sensitivity classification and an access-control envelope. The classification reflects the type of change (general, gender-affirming, protective-custody, intimate-partner-violence, witness-protection) and the patient's expressed preferences for prior-name display. The envelope encodes the access rules that downstream consumers (chart-rendering, release-of-information, patient-portal) must honor. Skip the sensitivity envelope and the prior name surfaces in places the patient did not consent to, which is a dignity violation and, in some jurisdictions, a regulatory violation.
 
-```
+```pseudocode
 FUNCTION apply_sensitivity_and_consent_envelope(resolution_envelope,
                                                     identity,
                                                     patient_preferences,
@@ -526,7 +526,7 @@ FUNCTION apply_sensitivity_and_consent_envelope(resolution_envelope,
 
 **Step 4: Persist the resolved name change atomically with the audit log.** The persistence step writes the new event to the identity-temporal-name table, updates the active-search-index, archives the resolution to the audit S3 bucket, and emits the cross-recipe event. Use a transactional write so partial failures do not leave the system in an inconsistent state. Skip the transactional discipline and you produce identity records whose name history disagrees with the search index, which causes the matcher to make decisions on stale data and the analytics layer to deduplicate incorrectly.
 
-```
+```pseudocode
 FUNCTION persist_resolved_name_change(resolution_envelope,
                                           access_control_envelope):
     new_event = resolution_envelope.new_event
@@ -602,7 +602,7 @@ FUNCTION persist_resolved_name_change(resolution_envelope,
 
 **Step 5: Propagate the resolution to dependent stores.** The downstream consumers maintain their own derived state that depends on the identity's name. The local MPI from recipe 5.1 needs the new name in its master record. The cross-reference table from recipe 5.4 may need an update if the eligibility cross-reference was keyed on the prior name in any way. The cross-facility matcher from recipe 5.5 needs to refresh its prior-name handling for query responses. The chart-rendering layer needs the updated name-history view. Skip the propagation step and the downstream consumers continue to operate on stale data, producing decisions and displays that disagree with the canonical identity store.
 
-```
+```pseudocode
 FUNCTION propagate_to_dependents(identity_event_record,
                                      access_control_envelope):
     // Each dependent consumer subscribes to the
@@ -714,7 +714,7 @@ FUNCTION propagate_to_dependents(identity_event_record,
 
 **Step 6: React to invalidation events that supersede prior resolutions.** A name-change resolution is not permanent. It can be corrected (a wrong assertion was recorded), reversed (the patient changed back), superseded by an identity merge from recipe 5.1, updated by a sensitivity-classification change (the patient has expressed new preferences), upgraded by a document-strength promotion (a previously self-reported change is now backed by a court order). The invalidation pipeline subscribes to these events and selectively re-resolves the affected identities. Skip the invalidation pipeline and the resolved-name-change records drift out of sync with the rest of the institution's identity infrastructure; the drift compounds over time.
 
-```
+```pseudocode
 FUNCTION invalidate_on_event(invalidation_event):
     // Identify which identities and which name-change events
     // are affected.
