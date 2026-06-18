@@ -1,0 +1,228 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1781754782347-000033-528f947a961f0c36 iteration=1572 task_id=ch11-r07-archsplit persona=TechEditor
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[38;5;9mError: [0mJson supplied at /home/lawsnic/.kiro/agents/AmazonBuilderCoreAIAgents-amzn-builder.json is invalid: unknown field `permissions`, expected one of `$schema`, `name`, `description`, `prompt`, `mcpServers`, `tools`, `toolAliases`, `allowedTools`, `resources`, `hooks`, `toolsSettings`, `includeMcpJson`, `useLegacyMcpJson`, `model`, `keyboardShortcut`, `welcomeMessage` at line 3 column 16
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m106417 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m112040 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mBoth files are very long. Let me check for specific issues: dangling AWS references in the main recipe's General Architecture and Honest Take sections, the architecture callout placement, em dashes, and the architecture companion's opening.[0m[0m
+[0m[0m
+Let me search for em dashes and en dashes in both files:[0m[0m
+Searching for: [38;5;141m—|–[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572[0m ([38;5;141mchapter11.07*[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m21 matches[0m in [38;5;244m2 files[0m under /tmp/ralph-worktrees/iter-1572 (result is truncated)
+[38;5;244m - Completed in 0.252s[0m
+
+[38;5;141m> [0mGood - no em dashes in the actual recipe files (only in review files). Now let me check the architecture callout placement and any dangling AWS references in the main recipe's General Architecture section:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m for pattern: [38;5;141mcompanion|aws|bedrock|architecture.md[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'companion|AWS|Bedrock|architecture.md' in /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m for pattern: [38;5;141mcompanion|aws build|bedrock|architecture[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'companion|AWS build|Bedrock|architecture' in /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for: [38;5;141mcompanion|AWS build|Bedrock|architecture[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m11 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I can see the key issues. Let me look at the specific lines around the architecture callout (line 676) and the Bedrock reference in The Honest Take (line 710):[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, from line [38;5;141m672[0m to [38;5;141m716[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m12051 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNow I have a clear picture. The issues to fix:[0m[0m
+[0m[0m
+1. [1mMain recipe, line 710[22m: The Honest Take contains a paragraph starting "The thing about Amazon Bedrock specifically..." which is AWS-specific content that arguably belongs in the architecture companion. However, the task says "Do not move sections" - so I should just check that it doesn't dangle a reference to content that moved. Looking at this paragraph, it's self-contained commentary (not referring to a now-missing section), so it's fine to leave.[0m[0m
+[0m[0m
+2. [1mArchitecture callout (line 676)[22m: Well placed at the end of General Architecture, before The Honest Take. This looks correct.[0m[0m
+[0m[0m
+3. [1mArchitecture companion opening[22m: Let me check if it opens cleanly.[0m[0m
+[0m[0m
+The architecture companion opens with:[0m[0m
+[38;5;10m# Recipe 11.7 Architecture and Implementation: Chronic Disease Management Coach
+
+*Companion to [Recipe 11.7: Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+[0m[0m[0m
+[0m[0m
+This is clean. Now let me check for any bare code blocks without language tags in both files:[0m[0m
+[0m[0m
+Searching for: [38;5;141m^```$[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m^```$[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m11 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThere are bare closing [38;5;10m [0m[38;5;10m[0m Searching for: [38;5;141m^```[^a-z]|^```$[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m^```[^a-z]|^```$[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m11 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThose are all closing markers ([38;5;10m [0m[38;5;10m[0m Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, from line [38;5;141m199[0m to [38;5;141m649[0m
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, from line [38;5;141m199[0m to [38;5;141m203[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m31398 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m861 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mBoth files look clean. The General Architecture section in the main recipe is entirely vendor-agnostic (the text block diagram uses generic terms like "key-value store tables," "object store," "LLM-orchestrated conversation," "vendor-managed guardrail layer"). No AWS references leak into it.[0m[0m
+[0m[0m
+The only potential issue is the Bedrock paragraph in The Honest Take section (line 710). This is AWS-specific commentary that might be considered out of place in the main recipe now that AWS content lives in the companion. However, the task says "Do not move sections, do not add new claims." The paragraph is a commentary/opinion paragraph in The Honest Take (which is allowed to reference implementation considerations briefly), and it's self-contained. The architecture callout appears before The Honest Take, so a reader has already been pointed to the companion. This is a borderline case, but since the task says not to move sections, I'll leave it and it reads coherently as-is (it's advice, not implementation detail).[0m[0m
+[0m[0m
+Let me also verify the link in the callout is correct:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m, from line [38;5;141m1[0m to [38;5;141m5[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m357 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mBoth files are clean. Let me do a final sweep: check for any en dashes (U+2013) in both files:[0m[0m
+[0m[0m
+Searching for: [38;5;141m–[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m–[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m–[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m–[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mNo em dashes, no en dashes in either file. Both files are clean on that front.[0m[0m
+[0m[0m
+Now let me check the section order in both files against the RECIPE-GUIDE requirements. The main recipe should have: The Problem, The Technology, General Architecture Pattern (ending with the architecture-companion callout), The Honest Take, Related Recipes, Tags.[0m[0m
+[0m[0m
+Searching for: [38;5;141m^## [0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m[38;5;244m (using tool: grep)[0mSearching for: [38;5;141m^## |^### [0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m6 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md (result is truncated)
+[38;5;244m - Completed in 0.0s[0m
+
+
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m11 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe main recipe's section order is: The Problem, The Technology, General Architecture Pattern, The Honest Take, Related Recipes. I don't see "Tags" as an H2 but it's at the end. Let me check:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, from line [38;5;141m750[0m to end of file[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m1970 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. Tags section is present. The main recipe structure is correct per RECIPE-GUIDE: The Problem, The Technology, General Architecture Pattern (with callout), The Honest Take, Related Recipes, Tags.[0m[0m
+[0m[0m
+The architecture companion structure: The AWS Implementation (with Why These Services, Architecture Diagram, Prerequisites, Ingredients, Code with pseudocode), Expected Results, Why This Isn't Production-Ready, Variations and Extensions, Additional Resources, Estimated Implementation Time. This matches the expected architecture-companion structure.[0m[0m
+[0m[0m
+Now let me verify one more thing: the architecture companion's "Code" section should have a Python callout. Let me check:[0m[0m
+Searching for: [38;5;141mPython|python-example[0m in [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m3 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mPython callout is present at line 1179. The architecture companion also has a footer navigation with links back.[0m[0m
+[0m[0m
+[1mSummary of findings:[22m[0m[0m
+[0m[0m
+Both files are already in good shape after the mechanical split:[0m[0m
+1. [1mNo em dashes or en dashes[22m in either file.[0m[0m
+2. [1mArchitecture callout is well-placed[22m (line 676 in main, right after the General Architecture section ends, before The Honest Take).[0m[0m
+3. [1mArchitecture companion opens cleanly[22m with a backlink header and clear scope statement.[0m[0m
+4. [1mGeneral Architecture section[22m in the main recipe is entirely vendor-agnostic (no AWS service names leak in).[0m[0m
+5. [1mThe Honest Take[22m does contain one paragraph about "Amazon Bedrock specifically" (line 710) which is AWS-specific, but it's self-contained commentary, doesn't reference moved content, and the task says not to move sections.[0m[0m
+6. [1mAll code blocks have language tags[22m (text, pseudocode, mermaid, json).[0m[0m
+7. [1mSection order[22m is correct in both files per RECIPE-GUIDE.[0m[0m
+8. [1mAll TODO markers[22m from other personas are preserved.[0m[0m
+9. [1mNo dangling references[22m to AWS content that moved to the companion.[0m[0m
+[0m[0m
+The split is clean and both documents read as coherent standalone pieces. No edits are needed. The files are ready as-is.[0m[0m
+[0m[0m
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 11.66 • Time: 1m 30s
+
+[0m[1G[0m[0m[?25h[1mEdit result:[22m No changes applied. Both files ([38;5;10mchapter11.07-chronic-disease-management-coach.md[0m and [38;5;10mchapter11.07-architecture.md[0m) read as coherent standalone documents after the split. The architecture callout is properly placed at the end of the General Architecture section. The main recipe's General Architecture and Honest Take sections contain no dangling references to AWS content that moved to the companion. The architecture companion opens with a clean backlink header. Zero em dashes, zero en dashes, zero bare code fences, correct section order in both files, all existing TODO markers preserved.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0m[38;5;9mError: [0mJson supplied at /home/lawsnic/.kiro/agents/AmazonBuilderCoreAIAgents-amzn-builder.json is invalid: unknown field `permissions`, expected one of `$schema`, `name`, `description`, `prompt`, `mcpServers`, `tools`, `toolAliases`, `allowedTools`, `resources`, `hooks`, `toolsSettings`, `includeMcpJson`, `useLegacyMcpJson`, `model`, `keyboardShortcut`, `welcomeMessage` at line 3 column 16
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m106417 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m112040 bytes[0m from /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I need to check the pass conditions:[0m[0m
+[0m[0m
+1. [1mMain recipe reads as a coherent standalone document[22m with The Problem, The Technology, General Architecture, and The Honest Take sections - ✓ all present[0m[0m
+2. [1mWorking callout to the architecture companion[22m - ✓ present: [38;5;10m> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter11.07-architecture). The Python example is linked from there.[0m[0m[0m
+3. [1mNo dangling references to AWS content that moved to the companion[22m - Let me check the main recipe's General Architecture and The Honest Take sections for AWS references.[0m[0m
+4. [1mArchitecture companion reads standalone with a backlink to the main recipe[22m - ✓ present at the top: [38;5;10m*Companion to [Recipe 11.7: Chronic Disease Management Coach](chapter11.07-chronic-disease-management-coach). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*[0m[0m[0m
+5. [1mIntact pseudocode[22m in the companion - ✓ present (Steps 1-8)[0m[0m
+6. [1mNo em dashes[22m - Let me check both files.[0m[0m
+[0m[0m
+Let me check for em dashes specifically:[0m[0m
+Batch fs_read operation with [38;5;141m2[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md[0m for pattern: [38;5;141m—[0m
+↱ Operation 2: Searching: [38;5;141m/tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md[0m for pattern: [38;5;141m—[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1572/chapter11.07-chronic-disease-management-coach.md
+
+[38;5;10m ✓ [0mFound 0 matches for pattern '—' in /tmp/ralph-worktrees/iter-1572/chapter11.07-architecture.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 2 operations processed, 2 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNo em dashes found in either file. Now let me check if the main recipe's General Architecture or The Honest Take sections have dangling AWS references. Let me look specifically at the Honest Take for any AWS-specific content that should only be in the companion:[0m[0m
+[0m[0m
+The main recipe's "The Honest Take" section does contain a paragraph beginning "The thing about Amazon Bedrock specifically:" - this references AWS content. Let me check whether this is a dangling reference or a brief acceptable mention.[0m[0m
+[0m[0m
+Looking at it more carefully: The Honest Take contains several paragraphs that mention Amazon Bedrock, including "The thing about Amazon Bedrock specifically: same as recipes 11.2 through 11.6, Bedrock Agents is the right level of abstraction..." This is a brief, high-level mention that provides context for the reader without requiring the architecture companion. It's not a dangling reference (it doesn't say "see below" or point to content that was removed). However, the task spec says to check that The Honest Take "does not dangle references to AWS content that moved to the companion."[0m[0m
+[0m[0m
+The Bedrock paragraph in The Honest Take is self-contained - it mentions Bedrock at a high level but doesn't reference detailed implementation that lives elsewhere. It doesn't say "as described in the architecture section below" or similar. The callout to the companion is placed just before The Honest Take, correctly directing readers to the companion for the AWS details.[0m[0m
+[0m[0m
+Let me also verify the General Architecture section doesn't have dangling AWS references:[0m[0m
+[0m[0m
+The General Architecture section uses generic terms like "key-value store tables," "object store with vector retrieval," etc. It does not reference specific AWS services. Good.[0m[0m
+[0m[0m
+The Tags section at the bottom does contain AWS service tags ([38;5;10mbedrock[0m, [38;5;10mbedrock-agents[0m, [38;5;10mlambda[0m, etc.) but these are metadata tags, not dangling references.[0m[0m
+[0m[0m
+Overall assessment: Both files are coherent standalone documents, the callout is well-placed, the backlink exists, pseudocode is intact, no em dashes exist. The mention of Bedrock in The Honest Take is a brief contextual note, not a dangling reference to moved content.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 2.55 • Time: 35s
+
+[0m[1G[0m[0m[?25h{"verdict": "pass", "rationale": "Main recipe flows coherently through The Problem, The Technology, General Architecture (vendor-agnostic), and The Honest Take. The architecture callout is well-placed between General Architecture and The Honest Take. The Honest Take's brief Bedrock paragraph is self-contained context, not a dangling reference. Architecture companion opens with a clear backlink to the main recipe and has intact pseudocode (Steps 1-8). No em dashes in either file."}

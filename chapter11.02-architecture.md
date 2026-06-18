@@ -213,9 +213,7 @@ flowchart LR
 
 ---
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Receive the chat message, bootstrap the session, and run the same input safety screening as recipe 11.1.** The first turn of any scheduling conversation goes through the same input-screening pipeline: crisis detection, prompt-injection detection, PHI minimization. The greeting and disclosure tells the patient this is a chatbot, what scheduling actions it can do, and how to reach a human. Skip the input screening and a patient mentioning chest pain while asking about a follow-up has their crisis signal lost in the booking flow.
 
@@ -1017,7 +1015,7 @@ FUNCTION close_conversation_and_archive(session_id, reason):
 
 ---
 
-### Expected Results
+## Expected Results
 
 **Sample conversation (illustrative):**
 
