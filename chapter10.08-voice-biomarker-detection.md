@@ -118,7 +118,7 @@ A few practical updates worth knowing.
 
 A voice biomarker detection system decomposes into eight logical stages: capture protocol design and consent (the speaker is asked to perform specific tasks under specific conditions, with appropriate consent), audio capture and quality assurance (the audio is captured at sufficient fidelity and quality is verified before it enters the analysis pipeline), preprocessing and feature extraction (the audio is processed into the acoustic and linguistic features the biomarker model consumes), per-indication biomarker scoring (one or more models produce indication-specific scores), confidence and confound assessment (the system evaluates whether the result is clinically interpretable for this specific sample given the demographic and recording-quality context), clinical interpretation packaging (the score is packaged with the supporting features, the per-cohort calibration context, and the clinical-action guidance the institution has approved), clinician review or patient feedback (the score informs a clinical decision, a patient communication, or a research record), and longitudinal storage with post-market monitoring (the sample's score and metadata feed the per-patient trajectory and the institution-wide validation surveillance).
 
-```
+```text
 ┌─────── CAPTURE PROTOCOL & CONSENT ───────────────────────┐
 │                                                           │
 │   [Indication-specific protocol selection]                │

@@ -220,7 +220,7 @@ flowchart LR
 
 **Step 1: Capture the audio sample with the indication-specific protocol, real-time quality assessment, and explicit biometric-data consent.** When the patient or clinician initiates a capture, the system selects the indication-specific protocol, prompts the speaker through the tasks, runs real-time quality checks, and records the consent context including the biometric-data terms. Skip the per-protocol prompt design and the resulting audio cannot be reliably scored against the model's validation conditions. Skip the consent capture and the institution accumulates biometric data without proper authorization, which is a compliance and trust failure.
 
-```
+```pseudocode
 ON capture_initiated(patient_id, indication, capture_context):
 
     // Step 1A: select the protocol for the indication.
@@ -332,7 +332,7 @@ ON capture_initiated(patient_id, indication, capture_context):
 
 **Step 2: Extract acoustic and linguistic features from each task segment, with bandwidth and codec-aware processing.** Each task segment is processed through the appropriate feature pipeline: sustained-vowel segments produce vocal-fold-function features; read-passage and spontaneous-speech segments produce timing, prosody, and articulation features plus optional linguistic features from the transcript; cough-collection segments produce acoustic-event features. The feature extraction is bandwidth-aware; features that depend on frequencies the recording chain does not preserve are flagged as unmeasurable rather than computed against missing signal. Skip the bandwidth-awareness and the resulting features include garbage values from frequencies that the codec discarded.
 
-```
+```pseudocode
 FUNCTION extract_features(session_id):
     state = capture_session_table.get(session_id)
     feature_set = {
@@ -438,7 +438,7 @@ FUNCTION extract_features(session_id):
 
 **Step 3: Check eligibility for each candidate biomarker model based on validation envelope.** Each per-indication model has a validation envelope: the demographic distributions, recording-chain conditions, and task-completion expectations the model was validated under. Before the model is invoked, the system checks whether the current sample fits the envelope. Out-of-envelope samples produce an "indication not assessable" result rather than a potentially-misleading score. Skip the eligibility check and the system silently produces scores on samples the model was not validated for, which is a clinical-safety failure mode.
 
-```
+```pseudocode
 FUNCTION check_eligibility(session_id, candidate_indications):
     state = capture_session_table.get(session_id)
     feature_set = feature_set_archive.get(session_id)
@@ -503,7 +503,7 @@ FUNCTION check_eligibility(session_id, candidate_indications):
 
 **Step 4: Score the eligible biomarkers, applying per-cohort calibration and producing indeterminate results when uncertainty is high.** For each indication that passed eligibility, the system invokes the validated model, applies the per-cohort calibration to the raw model output, and packages the result. When the model's confidence is below the institutional threshold, the result is marked indeterminate rather than passed through as a confident score. Skip the per-cohort calibration and the system produces uncalibrated outputs that perform inconsistently across cohorts. Skip the indeterminate handling and edge-case samples produce confident-looking scores that the clinical workflow takes at face value.
 
-```
+```pseudocode
 FUNCTION score_biomarkers(session_id):
     state = capture_session_table.get(session_id)
     feature_set = feature_set_archive.get(session_id)
@@ -619,7 +619,7 @@ FUNCTION score_biomarkers(session_id):
 
 **Step 5: Compute longitudinal trajectory and package the clinical interpretation.** For patients with prior samples, the system computes the trajectory delta against the patient's baseline. The packaged interpretation includes the score, the trajectory, the supporting features, the cohort context, the confound flags, and the institutionally-approved clinical-action mapping. Skip the trajectory computation and the system loses the per-patient longitudinal context that makes voice biomarkers most reliable. Skip the institutional clinical-action mapping and individual clinicians have to infer how to act on the score, which produces inconsistent and sometimes inappropriate clinical actions.
 
-```
+```pseudocode
 FUNCTION package_interpretation(session_id):
     state = capture_session_table.get(session_id)
     scores = state.scores
@@ -717,7 +717,7 @@ FUNCTION package_interpretation(session_id):
 
 **Step 6: Deliver the result to the clinical workflow with explicit indeterminate handling and clinician override capture.** The clinician sees the biomarker result in their decision-support context, with the option to acknowledge, override, or request follow-up. The biomarker is decision support, not diagnosis; the clinician retains diagnostic authority. The result is also written to the EHR as a FHIR Observation for the longitudinal record. Skip the clinician override capture and the institution loses the feedback loop that supports post-market surveillance. Skip the EHR write and the result is invisible to the rest of the care team.
 
-```
+```pseudocode
 FUNCTION deliver_to_workflow(session_id):
     state = capture_session_table.get(session_id)
     interpretations = state.interpretations
@@ -822,7 +822,7 @@ ON clinician_acknowledges_result(session_id, clinician_id,
 
 **Step 7: Audit, retain audio per consent, and feed cohort-stratified post-market surveillance.** Every sample produces a durable audit record with the score, the cohort context, the confound flags, and the clinical-action linkage. Audio is retained per the consent terms and then deleted; feature vectors are retained longer for surveillance and re-validation. Cohort-stratified metrics feed the post-market surveillance dashboards that monitor the deployed biomarker's performance against ground-truth clinical outcomes. Skip the audio retention enforcement and the institution silently accumulates biometric data beyond its consent commitment. Skip the cohort-stratified surveillance and per-cohort drift surfaces only through complaints.
 
-```
+```pseudocode
 FUNCTION audit_and_surveillance(session_id):
     state = capture_session_table.get(session_id)
     interpretations = state.interpretations
