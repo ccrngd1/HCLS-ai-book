@@ -239,7 +239,7 @@ flowchart LR
 
 **Step 1: Receive the chat message, bootstrap or resume the session, and run input safety screening.** Same primitive as the previous chapter 11 recipes. Crisis detection is especially important during intake because the bot is asking about how the patient is feeling, what medications they are taking, what their family history looks like, and how they are sleeping. Intake conversations are dense disclosure surfaces. Skip the screening and a crisis signal lands silently in the structured packet.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id,
                   user_message, auth_context,
                   encounter_token):
@@ -304,7 +304,7 @@ ON receive_message(channel, channel_session_id,
 
 **Step 2: On a fresh session, load the encounter context, the chart context, and the prior intake context, then select the protocol.** This is the bot's preparation step. The encounter context tells the bot what visit this is. The chart context tells the bot what to confirm versus what to collect. The prior-intake context lets the bot skip stable items the patient already provided recently. The protocol selector matches the visit type to the right per-visit-type protocol. Skip this preparation and the bot asks generic questions blind to the patient's actual situation.
 
-```
+```pseudocode
 FUNCTION load_visit_and_chart_context(session_id):
     // Step 2A: encounter context.
     encounter = encounter_context_lookup_tool.invoke({
@@ -380,7 +380,7 @@ FUNCTION load_visit_and_chart_context(session_id):
 
 **Step 3: Drive the conversation through the question-flow state machine, asking one question per turn and capturing the answer.** The state machine is the deterministic part. It knows the protocol, what has been captured, what branches are open, what the chart already provides. The LLM phrases the question conversationally based on the next-question hint from the state machine. The patient answers; the appropriate extraction tool produces structured findings; the state machine advances. Skip the state machine and the LLM wanders through topics, missing required items and re-asking ones it already covered.
 
-```
+```pseudocode
 FUNCTION conduct_intake_turn(session_id, user_message,
                               attach_greetings):
     // Step 3A: capture the patient's answer for the
@@ -490,7 +490,7 @@ FUNCTION conduct_intake_turn(session_id, user_message,
 
 **Step 4: Run the per-question extraction tool to convert the patient's free-text answer into structured findings.** Each question category has its own extraction tool (HPI, ROS, medication-reconciliation, allergy-reconciliation, history, screener). The tool validates against the schema. If the answer is unparseable, the tool returns "ask_clarification" and the conversation loop asks a follow-up. Skip the schema validation and the structured packet contains malformed data the clinician cannot consume.
 
-```
+```pseudocode
 FUNCTION capture_answer_for_question(session_id, question,
                                       answer_text):
     SWITCH question.category:
@@ -577,7 +577,7 @@ FUNCTION capture_answer_for_question(session_id, question,
 
 **Step 5: Run the crisis-and-acuity flagging pipeline in parallel against every patient utterance and every captured finding.** The pipeline is a separate component, intentionally independent of the conversational LLM, because the consequences of missing a crisis or acuity signal are severe. It runs detection on the user message and on the structured finding, returns crisis flags (which interrupt the conversation) and acuity flags (which surface in the packet without interrupting). Skip this pipeline and high-acuity patients pass through intake without anyone noticing.
 
-```
+```pseudocode
 FUNCTION crisis_and_acuity_flagging(session_id,
                                     user_message,
                                     captured_finding,
@@ -690,7 +690,7 @@ FUNCTION crisis_and_acuity_flagging(session_id,
 
 **Step 6: Handle a crisis interruption with explicit response templates and explicit routing pathways.** A crisis flag is not handled by the LLM's general response generation. The bot pauses the structured intake, delivers a reviewed crisis-response template, offers immediate resources (988, 911, crisis-line for the institution), and routes the session to the crisis pathway. The patient's safety takes precedence over completing the intake. Skip the explicit handling and the bot may continue collecting structured data while a patient is in active crisis, which is a clinical and ethical failure.
 
-```
+```pseudocode
 FUNCTION route_crisis(session_id, flag):
     // Step 6A: pause the structured intake.
     session.intake_paused = true
@@ -753,7 +753,7 @@ FUNCTION route_crisis(session_id, flag):
 
 **Step 7: Administer screeners with their validated wordings and item-by-item capture.** Screeners are not paraphrased. The PHQ-9 item 1 reads "Over the last 2 weeks, how often have you been bothered by little interest or pleasure in doing things?" with response options of "not at all," "several days," "more than half the days," "nearly every day." The bot administers the validated wording, captures the response in the validated response set, computes the score per the validated rules, and writes the score plus item-level responses to the session findings. Skip the validated wordings and the score is not a valid PHQ-9 score. <!-- TODO: verify; the PHQ-9's specific wordings come from the original validation studies and are widely treated as required for the score to be considered a valid PHQ-9 -->
 
-```
+```pseudocode
 FUNCTION administer_screener_bundle(session_id, bundle):
     FOR screener IN bundle.screeners:
         screener_record = {
@@ -850,7 +850,7 @@ FUNCTION administer_screener_bundle(session_id, bundle):
 
 **Step 8: Assemble and deliver the pre-visit packet to the EHR; surface the closing summary to the patient.** The packet's schema is the institution's defined contract. The packet-assemble tool reads the accumulated findings, validates against the schema, and produces the structured packet. The packet-deliver tool writes to the EHR through the institution's intake-data integration point. The closing summary is the patient's confirmation of what was captured. Skip the structured packet and the conversation transcript becomes the only record, which the clinician will not read in detail before the visit.
 
-```
+```pseudocode
 FUNCTION assemble_and_deliver_packet(session_id):
     // Step 8A: assemble the packet.
     packet = packet_assemble_tool.invoke({
@@ -990,7 +990,7 @@ FUNCTION assemble_and_deliver_packet(session_id):
 
 **Step 9: Run the same output safety screening as the previous chapter 11 recipes, with intake-specific checks.** The standard output checks (scope filter, hallucination check, vendor-managed guardrails) carry forward. The new checks: did the bot answer a clinical question the patient asked? Did the bot speculate about what the symptoms might mean? Did the bot reference a chart fact that the chart-context tools did not return? Skip these checks and the bot drifts into clinical-advice territory, which is exactly what the architecture is supposed to prevent.
 
-```
+```pseudocode
 FUNCTION screen_output(session_id, response,
                        tool_call_history):
     // Step 9A: standard checks.
@@ -1065,7 +1065,7 @@ FUNCTION screen_output(session_id, response,
 
 **Step 10: Persist the durable conversation record, the tool-call ledger, the partial-state cleanup, and the per-cohort metrics.** Same archive pattern as the previous chapter 11 recipes. The conversation log is dense PHI and a clinical record. The pre-visit-packet journal is the durable medication-record-equivalent for intake. The partial-state TTL cleanup avoids stale resumable sessions accumulating indefinitely.
 
-```
+```pseudocode
 FUNCTION close_conversation_and_archive(session_id,
                                          reason):
     state = conversation_state_table.get(session_id)
@@ -1212,7 +1212,7 @@ FUNCTION close_conversation_and_archive(session_id,
 
 **Sample conversation (illustrative, abbreviated):**
 
-```
+```text
 Bot:     Hi Marisol, I'm Riverside Clinic's intake
          assistant. I'm going to ask a few questions
          about what's going on so Dr. Adekunle has
