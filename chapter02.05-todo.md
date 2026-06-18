@@ -1,11 +1,9 @@
 # Open TODOs — Recipe 2.5: After-Visit Summary Generation
 
-> Auto-extracted 2026-06-18 from inline source comments (24 items; S2 resolved 2026-06-18). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+> Auto-extracted 2026-06-18 from inline source comments (22 items; S2+L21 resolved 2026-06-18). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 
 ## main — `chapter02.05-after-visit-summary-generation.md`
 
-- **L21** — TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated)
-- **L21** — TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing.
 - **L25** — TODO: verify current CMS readmission statistics
 - **L202** — TODO: verify recipe number once Chapter 11 is drafted
 
