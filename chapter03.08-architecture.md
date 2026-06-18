@@ -247,7 +247,7 @@ flowchart TB
 
 **Step 1: Enroll the patient at discharge.** The discharge event triggers enrollment into the monitoring program. The discharge-time risk score (computed by a separate model, often the Chapter 7 readmission risk model) sets the initial monitoring tier. The condition cohort drives which trajectory metrics will be tracked.
 
-```
+```pseudocode
 FUNCTION on_discharge_event(discharge_event):
     // Discharge events come from the EHR feed when an ADT discharge fires.
     // Pull discharge-time features and the discharge-time risk score from the
@@ -298,7 +298,7 @@ FUNCTION on_discharge_event(discharge_event):
 
 **Step 2: Ingest RPM measurements and PRO check-ins.** RPM device vendors send measurements via webhook. The webhook handler validates the signature, normalizes the payload, and writes the canonical event into the stream.
 
-```
+```pseudocode
 FUNCTION on_rpm_webhook(webhook_request):
     // Validate the vendor's signature. Reject anything that doesn't validate.
     IF NOT verify_vendor_signature(webhook_request):
@@ -354,7 +354,7 @@ FUNCTION on_pro_check_in(check_in_event):
 
 **Step 3: Update patient state and trajectory history.** The event normalizer reads from the stream, updates the patient state with the latest values, and writes time-series records to Timestream.
 
-```
+```pseudocode
 FUNCTION on_canonical_event(event):
     // Read current state. Skip events for patients not actively enrolled.
     state = DynamoDB.GetItem(
@@ -452,7 +452,7 @@ FUNCTION on_canonical_event(event):
 
 **Step 4: Run the daily scoring pipeline.** Once a day (typically early morning), the scoring pipeline iterates every active patient, computes their feature vector, scores them, and produces the worklist.
 
-```
+```pseudocode
 FUNCTION daily_scoring_pipeline():
     // Step Functions orchestrates this; broken into stages for retry and observability.
     active_patients = DynamoDB.Query(
@@ -548,7 +548,7 @@ FUNCTION score_patient(patient_id, encounter_id, trigger):
 
 **Step 5: Compute the feature vector.** The feature engine reads patient state and trajectory history, and produces the model's input feature vector. The cold-start logic falls back to cohort priors when patient-specific baselines aren't established.
 
-```
+```pseudocode
 FUNCTION compute_features(state):
     features = {}
 
@@ -663,7 +663,7 @@ FUNCTION compute_features(state):
 
 **Step 6: Build the explanation layer.** SHAP values plus a Bedrock-generated narrative produce a care-manager-facing explanation. The narrative is decision support; it suggests outreach focus areas without prescribing treatment.
 
-```
+```pseudocode
 FUNCTION build_explanation(score_record, features, state):
     shap_values = SageMaker.Clarify.ExplainPrediction(
         endpoint_name = "post-discharge-anomaly-model",
@@ -717,7 +717,7 @@ FUNCTION build_explanation(score_record, features, state):
 
 **Step 7: Build and publish the worklist.** The worklist builder ranks patients by composite tier, applies suppression and de-duplication, and routes the result to the care management UI back end.
 
-```
+```pseudocode
 FUNCTION build_worklist(date):
     // Pull all scores produced in the last scoring run.
     scores = DynamoDB.Query(
@@ -812,7 +812,7 @@ FUNCTION check_suppression(state, score):
 
 **Step 8: Capture interventions and outcomes.** Care managers act on the worklist; their actions are recorded. Subsequent outcomes (readmission, ED visit, mortality) are linked back to the alerts and interventions for label assembly.
 
-```
+```pseudocode
 FUNCTION on_care_manager_action(action_event):
     state = DynamoDB.GetItem(
         table = "patient-state",
