@@ -1,9 +1,9 @@
-<!-- EDITED: TechEditor final pass verified 2026-06-03. All code review and expert review
-     findings addressed inline (S2, S3, S4, A2, A3, N1, N2, V2, V3) or deferred via TODO (A1, S1).
-     Editorial checklist: zero em/en dashes, all code blocks tagged (8/8 with language),
-     header hierarchy correct (H1>H2>H3>H4, no skips), no voice drift, no documentation-voice,
-     RECIPE-GUIDE compliant, 70/30 vendor balance maintained. Ready for publication pending
-     TechWriter resolution of deferred TODOs (A1, S1). -->
+<!-- EDITED: TechEditor post-split polish 2026-06-17. Verified transition seams after
+     mechanical split: General Architecture and The Honest Take contain zero AWS references,
+     architecture callout correctly placed between General Architecture and The Honest Take,
+     architecture companion opens with clean backlink. Added missing Tags section and
+     navigation footer per RECIPE-GUIDE. Zero em/en dashes confirmed. All code blocks tagged.
+     Deferred TODOs (A1, S1) remain in architecture companion for TechWriter. -->
 
 # Recipe 6.6: Patient Similarity for Care Planning
 
@@ -140,3 +140,11 @@ Start with a single condition (diabetes is the classic choice: large population,
 - **Recipe 13.1 (Medical Ontology Mapping):** Knowledge graphs can enrich feature engineering by providing semantic relationships between diagnoses and medications
 
 ---
+
+## Tags
+
+`cohort-analysis` · `patient-similarity` · `knn` · `nearest-neighbor` · `care-planning` · `feature-engineering` · `clinical-decision-support` · `embeddings`
+
+---
+
+*← [Recipe 6.5: Provider Practice Pattern Analysis](chapter06.05-provider-practice-pattern-analysis) · [Chapter 6 Index](chapter06-preface) · [Recipe 6.7: Clinical Trial Patient Matching →](chapter06.07-clinical-trial-patient-matching)*
