@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker** for the compute-intensive pattern mining and network analysis. Association rule mining on 200,000+ patients with 280 condition categories requires significant memory and compute. SageMaker Processing Jobs provide managed infrastructure that scales to the data size, runs the job, and shuts down. No persistent cluster to manage. For iterative exploration, SageMaker Studio notebooks let data scientists experiment with different parameters interactively. Processing Jobs should use a custom Docker image with all dependencies pre-installed (networkx, scipy, pandas, mlxtend). Do not rely on runtime `pip install`, which requires internet access unavailable in a VPC-deployed Processing Job without NAT Gateway.
 
@@ -20,7 +18,7 @@
 
 **Amazon QuickSight** (Enterprise edition) for visualization dashboards that present results to clinical stakeholders. Network visualizations, temporal progression charts, and pattern prevalence summaries need to be accessible to non-technical clinical leaders. If dashboards allow drill-down to patient-level data, use row-level security to restrict access to authorized clinical users via QuickSight groups mapped to your identity provider. Enable QuickSight audit logging. If dashboards display only aggregate pattern statistics (patient counts, prevalence, lift) without patient-level drill-down, PHI exposure risk is minimal, but confirm with your privacy officer. QuickSight reads validated pattern data from S3 and does not query Neptune directly.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -42,7 +40,7 @@ flowchart TD
     style J fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -55,7 +53,7 @@ flowchart TD
 | **Sample Data** | CMS Synthetic Public Use Files (SynPUFs) provide realistic Medicare claims data with diagnosis codes. MIMIC-IV contains diagnosis histories for ICU patients. Never use real patient data in development. |
 | **Cost Estimate** | Glue ETL: ~$0.44/DPU-hour (typically 2-4 DPU for 2-3 hours). SageMaker Processing: ~$0.25/hour (ml.m5.4xlarge) for 4-8 hours per run. Neptune: ~$0.70/hour (db.r5.large primary + one reader replica) for production HA, or ~$0.35/hour (single instance) for research/development. For networks under 10,000 nodes, consider a simpler alternative: store the graph as a JSON adjacency list in S3, run algorithms in SageMaker, and skip the persistent Neptune cost. Athena: $5/TB scanned. Total per analysis run: $50-$200 depending on population size (excluding persistent Neptune). |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -68,13 +66,11 @@ flowchart TD
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 | **Amazon CloudWatch** | Pipeline monitoring, job duration tracking, error alerting |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Diagnosis data extraction and ICD rollup.** The first step pulls longitudinal diagnosis data from the EHR extract and rolls granular ICD-10-CM codes up to a clinically meaningful grouping level. The choice of granularity is critical: too granular (full ICD-10) and you lack statistical power for combination analysis; too broad (major diagnostic categories) and you lose clinical specificity. Clinical Classifications Software Refined (CCSR) categories provide a good middle ground with ~530 categories, though many implementations use custom clinical groupers with 200-300 categories tuned to their population. The rollup also handles code versioning (ICD-10 codes change annually) and maps historical codes to current equivalents.
 
-```
+```pseudocode
 FUNCTION extract_and_rollup(population_criteria, lookback_years = 10):
     // Pull all diagnosis records for the target population.
     // Each record: patient_id, icd10_code, first_documented_date, encounter_type
@@ -116,7 +112,7 @@ FUNCTION extract_and_rollup(population_criteria, lookback_years = 10):
 
 **Step 2: Build patient-condition matrix and compute baselines.** Transform the longitudinal records into a binary patient-condition matrix (rows = patients, columns = condition categories, values = 0/1 presence). Also compute individual condition prevalences and expected pairwise co-occurrence rates under independence. These baselines are essential for calculating lift and identifying combinations that exceed chance expectations. Without this step, your pattern mining would surface obvious high-prevalence combinations (hypertension + hyperlipidemia) rather than genuinely surprising associations.
 
-```
+```pseudocode
 FUNCTION build_matrix_and_baselines(rolled_up_diagnoses, min_prevalence = 0.01):
     // Construct binary patient-condition matrix.
     // Rows: patients. Columns: condition categories. Values: 0 or 1.
@@ -151,7 +147,7 @@ FUNCTION build_matrix_and_baselines(rolled_up_diagnoses, min_prevalence = 0.01):
 
 **Step 3: Association rule mining.** Apply FP-Growth to find condition combinations with support above the minimum threshold. Then compute lift, confidence, and leverage for each discovered pattern. FP-Growth is preferred over Apriori for this workload because it builds a compressed representation of the dataset (the FP-tree) that avoids repeated database scans. For 200,000 patients with 285 categories, the FP-tree fits comfortably in memory on an ml.m5.4xlarge instance (64 GB RAM). Apriori would also work at this scale but requires more passes over the data. The minimum support threshold is a critical parameter: too low and you get millions of spurious patterns; too high and you miss clinically important but less common combinations. For a population of 200,000 patients, a minimum support of 0.5% (1,000 patients) is a reasonable starting point for pairwise patterns, with higher thresholds for three-way and four-way combinations.
 
-```
+```pseudocode
 FUNCTION mine_association_rules(matrix, prevalences, active_categories,
                                 min_support = 0.005, max_pattern_size = 4):
     N = number of rows in matrix
@@ -198,7 +194,7 @@ FUNCTION mine_association_rules(matrix, prevalences, active_categories,
 
 **Step 4: Temporal sequence analysis.** For the top candidate patterns from Step 3, analyze the temporal ordering of condition acquisition. This transforms static co-occurrence patterns into dynamic trajectories. For each multi-morbidity pattern, determine: which condition typically appears first? What's the median time between conditions? Is there a dominant ordering, or do patients arrive at the same combination via different paths? This temporal information is what makes patterns actionable for prevention: if condition A reliably precedes condition B by 3 years, you have a window for intervention.
 
-```
+```pseudocode
 FUNCTION analyze_temporal_sequences(top_patterns, rolled_up_diagnoses, min_patients = 100):
     temporal_results = empty list
 
@@ -250,7 +246,7 @@ FUNCTION analyze_temporal_sequences(top_patterns, rolled_up_diagnoses, min_patie
 
 **Step 5: Network construction and community detection.** Build a comorbidity network where conditions are nodes and edges represent statistically significant co-occurrence (lift > threshold, FDR-corrected p-value < 0.05). Apply community detection to identify clusters of tightly connected conditions. These communities represent multi-morbidity "neighborhoods" that may share underlying mechanisms. Community detection (Louvain algorithm) runs in the SageMaker Processing Job using networkx or igraph after extracting the adjacency list. Results (community labels) are written back to Neptune as node properties for interactive exploration.
 
-```
+```pseudocode
 FUNCTION build_comorbidity_network(patterns, prevalences, fdr_threshold = 0.05, min_lift = 1.5):
     // Filter to significant pairwise associations.
     // Apply chi-squared test for each pair and correct for multiple testing.
@@ -303,7 +299,7 @@ FUNCTION build_comorbidity_network(patterns, prevalences, fdr_threshold = 0.05, 
 
 **Step 6: Statistical validation and confounder adjustment.** Apply rigorous statistical filters to separate genuine multi-morbidity patterns from artifacts of age, sex, healthcare utilization, or multiple testing. This step is what separates research-grade discovery from noise. Patterns that survive validation are genuinely surprising given the population's demographics and utilization patterns. Patterns that don't survive were likely driven by confounders rather than true clinical associations. Note: bootstrap resamples are computed in-memory and not persisted to disk. Ensure the SageMaker Processing Job uses an encrypted volume (configured via `ProcessingResources.ClusterConfig.VolumeKmsKeyId`) in case the algorithm spills to local storage during large-population resampling.
 
-```
+```pseudocode
 FUNCTION validate_patterns(patterns, patient_demographics, min_lift_adjusted = 1.3):
     validated = empty list
 
@@ -356,7 +352,7 @@ FUNCTION validate_patterns(patterns, patient_demographics, min_lift_adjusted = 1
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 Sample output for a validated multi-morbidity pattern:
 
@@ -406,6 +402,8 @@ Sample output for a validated multi-morbidity pattern:
 - The pipeline cannot distinguish causal relationships from shared risk factors
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close. -->
 
 ## Variations and Extensions
 

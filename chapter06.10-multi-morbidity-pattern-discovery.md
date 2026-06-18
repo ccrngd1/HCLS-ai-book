@@ -1,6 +1,6 @@
 # Recipe 6.10: Multi-Morbidity Pattern Discovery
 
-**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$1.50–$6.00 per patient in the analysis cohort
+**Complexity:** Complex · **Phase:** Research/Innovation · **Estimated Cost:** ~$1.50-$6.00 per patient in the analysis cohort
 
 ---
 
@@ -94,7 +94,7 @@ The network approach is particularly good at visualization. A comorbidity networ
 
 The pipeline has five logical stages:
 
-```
+```text
 [Data Extraction] → [Feature Engineering] → [Pattern Mining] → [Validation & Filtering] → [Clinical Interpretation]
 ```
 
@@ -106,7 +106,7 @@ The pipeline has five logical stages:
 
 **Stage 4: Validation and Filtering.** Apply statistical filters (minimum support, minimum lift, FDR correction), adjust for confounders (age, sex, utilization), test stability (bootstrap resampling, temporal validation on held-out time periods), and rank remaining patterns by clinical relevance heuristics.
 
-**Stage 5: Clinical Interpretation.** Present filtered patterns to clinical experts for review. Clinicians assess: Is this pattern clinically coherent? Does it represent a known mechanism? Is it novel? Is it actionable? Would a dedicated care pathway for this pattern improve outcomes? This step cannot be automated. It's where the value is created. Clinical review status is tracked alongside each validated pattern (in DynamoDB or as metadata in S3). Dashboards include a mechanism for clinicians to mark patterns as "confirmed," "rejected," or "needs investigation." Confirmed patterns feed into care pathway design. Rejected patterns are excluded from future reporting. Design this feedback loop with your clinical informatics team before the first pipeline run.
+**Stage 5: Clinical Interpretation.** Present filtered patterns to clinical experts for review. Clinicians assess: Is this pattern clinically coherent? Does it represent a known mechanism? Is it novel? Is it actionable? Would a dedicated care pathway for this pattern improve outcomes? This step cannot be automated. It's where the value is created. Clinical review status is tracked alongside each validated pattern (in a database or as metadata in your object store). Dashboards include a mechanism for clinicians to mark patterns as "confirmed," "rejected," or "needs investigation." Confirmed patterns feed into care pathway design. Rejected patterns are excluded from future reporting. Design this feedback loop with your clinical informatics team before the first pipeline run.
 
 ---
 
@@ -142,7 +142,7 @@ If I were starting over, I'd spend less time optimizing the mining algorithms an
 
 ## Tags
 
-`cohort-analysis` `clustering` `multi-morbidity` `association-mining` `network-analysis` `temporal-patterns` `population-health` `comorbidity` `sagemaker` `neptune` `glue` `complex`
+`cohort-analysis` `clustering` `multi-morbidity` `association-mining` `network-analysis` `temporal-patterns` `population-health` `comorbidity` `complex`
 
 ---
 
