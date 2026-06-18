@@ -100,7 +100,7 @@ flowchart TB
 
 The SIGNATURES feature instructs Textract to run an additional detection pass for handwritten signature regions. The result appears as SIGNATURE blocks alongside KEY_VALUE_SET, WORD, and LINE blocks. Each SIGNATURE block includes a Confidence score and a bounding box. The full page text from LINE blocks feeds the LLM steps later.
 
-```
+```pseudocode
 FUNCTION extract_records_request(bucket, document_key):
     // Synchronous AnalyzeDocument: one call, one response.
     // FORMS: key-value pair extraction (labeled fields).
@@ -127,7 +127,7 @@ FUNCTION extract_records_request(bucket, document_key):
 
 **Step 2: Parse and normalize request fields.** The FIELD_MAP normalization pattern from Recipe 1.1, applied to the medical records request vocabulary. Because there is no standard template, the map covers label variants across the most common form designs in the wild.
 
-```
+```pseudocode
 REQUEST_FIELD_MAP = {
     "patient_name":     ["patient name", "member name", "name of individual", "patient"],
     "patient_dob":      ["date of birth", "dob", "birth date", "patient dob"],
@@ -164,7 +164,7 @@ FUNCTION parse_and_normalize_fields(kv_blocks, block_map):
 
 **Step 3: Extract signature data.** Pull all SIGNATURE blocks and sort them into document reading order by page and vertical position. The page number matters downstream: the authorization signature is most likely on page 2 of a two-page form, not page 1.
 
-```
+```pseudocode
 FUNCTION extract_signatures(sig_blocks):
     signatures = empty list
 
@@ -191,7 +191,7 @@ FUNCTION extract_signatures(sig_blocks):
 
 If this step fails, the request is deficient. The LLM step does not run. The deficiency record captures the specific regulatory citations that triggered the failure, which is the audit trail you need.
 
-```
+```pseudocode
 REQUIRED_ELEMENTS = {
     "patient_or_rep_signature": "Signature of patient or authorized representative (45 CFR § 164.508(c)(1)(vi))",
     "authorization_date":       "Date the authorization was signed (45 CFR § 164.508(c)(1)(vi))",
@@ -283,7 +283,7 @@ FUNCTION validate_elements_rule_based(normalized_fields, signatures):
 
 A critical framing note for the prompt: the LLM is asked to surface observations, not make compliance determinations. The system prompt establishes this explicitly. The response schema is designed to capture LLM observations separately from the rule-based determinations, so they never appear in the audit trail as if they were regulatory findings.
 
-```
+```pseudocode
 LLM_VALIDATION_SYSTEM_PROMPT = """
 You are a healthcare compliance specialist reviewing HIPAA authorization forms.
 Your role is to identify logical inconsistencies and potential coherence issues
@@ -388,7 +388,7 @@ Describe structural and logical issues only.
 
 The response includes reasoning, not just a label. That reasoning goes into the DynamoDB record and the SQS message so fulfillment specialists have context, especially for ambiguous cases. Label the reasoning clearly as LLM-generated inference, not as a fact about the document.
 
-```
+```pseudocode
 CLASSIFICATION_CATEGORIES = {
     "care_coordination":  "Treating physician or provider requesting records for continuity of care",
     "legal":              "Attorney, law firm, or litigation-related request",
@@ -464,7 +464,7 @@ Full request text:
 
 The LLM observations in the DynamoDB record are stored under `llm_consistency_findings` with an explicit flag that these are model observations, not regulatory findings. This distinction matters if the record ever surfaces in a compliance audit.
 
-```
+```pseudocode
 FULFILLMENT_QUEUES = {
     "care_coordination":  env.CARE_COORDINATION_QUEUE_URL,
     "legal":              env.LEGAL_QUEUE_URL,
@@ -689,17 +689,17 @@ FUNCTION assemble_and_route(document_key, normalized_fields, signatures,
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (1-2 page form, warm Lambda) | 4–10 seconds |
-| Textract (FORMS + SIGNATURES, synchronous) | 1–3 seconds |
-| Bedrock Sonnet (HIPAA consistency check) | 2–5 seconds |
-| Bedrock Nova Pro (classification) | 1–2 seconds |
-| Forms field extraction accuracy | 91–96% |
-| Signature detection accuracy (clean digital PDF) | 92–97% |
-| Signature detection accuracy (fax-quality scan) | 83–91% |
+| End-to-end latency (1-2 page form, warm Lambda) | 4-10 seconds |
+| Textract (FORMS + SIGNATURES, synchronous) | 1-3 seconds |
+| Bedrock Sonnet (HIPAA consistency check) | 2-5 seconds |
+| Bedrock Nova Pro (classification) | 1-2 seconds |
+| Forms field extraction accuracy | 91-96% |
+| Signature detection accuracy (clean digital PDF) | 92-97% |
+| Signature detection accuracy (fax-quality scan) | 83-91% |
 | Rule-based authorization validation accuracy (presence checks) | 95%+ |
 | LLM date conflict detection rate (synthetic test set) | Catches most obvious conflicts; edge cases vary |
-| Request type classification accuracy (LLM) | 91–96% |
-| Cost per 2-page request form | ~$0.12–0.18 |
+| Request type classification accuracy (LLM) | 91-96% |
+| Cost per 2-page request form | ~$0.12-0.18 |
 
 **Where it still struggles:** Fax-degraded signatures below the confidence threshold. Typed names in signature boxes that the LLM might reasonably treat as a missing signature. Multi-page authorizations where required elements span pages in ways that confuse field extraction. Authorizations written entirely in paragraphs with no labeled fields, where the rule-based check may incorrectly fail for element absence. The LLM consistency check can often catch when the rule-based check false-positives, but the recommended recovery is human review rather than automatic overrides.
 
@@ -776,8 +776,7 @@ The pseudocode above demonstrates the core pipeline. A production deployment in 
 - [Intelligent Healthcare Forms Analysis with Amazon Bedrock](https://aws.amazon.com/blogs/machine-learning/intelligent-healthcare-forms-analysis-with-amazon-bedrock): Extends forms extraction with generative AI for complex healthcare fields. The hybrid Textract-plus-LLM pattern here mirrors this recipe's approach.
 - [Building a Medical Claims Processing Solution with Textract and Comprehend Medical](https://aws.amazon.com/blogs/industries/build-a-medical-claims-processing-solution-using-amazon-textract-and-amazon-comprehend-medical/): End-to-end healthcare document processing with routing and compliance patterns.
 
---- 
-
+<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section at the end of architecture companions. Add one. -->
 
 ---
 

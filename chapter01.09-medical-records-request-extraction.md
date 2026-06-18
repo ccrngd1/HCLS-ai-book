@@ -1,6 +1,6 @@
 # Recipe 1.9: Medical Records Request Extraction 🔶 
 
-**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.12–0.18 per request form
+**Complexity:** Moderate · **Phase:** Phase 2 · **Estimated Cost:** ~$0.12-0.18 per request form
 
 ---
 
@@ -107,7 +107,7 @@ One practical note about classification results: present them with the model's r
 
 ### The General Architecture Pattern
 
-```
+```text
 [Request Arrives as Fax or PDF]
              |
              v
