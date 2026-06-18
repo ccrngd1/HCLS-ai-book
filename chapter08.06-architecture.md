@@ -70,14 +70,12 @@ flowchart TD
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Logs, metrics, alarms for extraction failures, latency, and throughput |
 
-### Code
+### Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare NLP pipeline integrating Comprehend Medical with FHIR for structured clinical data extraction
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): Custom classification and entity recognition examples for Amazon Comprehend
-
-#### Walkthrough
 
 **Step 1: Note ingestion and relevance filtering.** Clinical notes arrive from the EHR feed. Before running full NLP extraction (which costs money per character), apply a quick relevance filter. Most progress notes contain zero SDOH information. A simple keyword scan (housing, homeless, food, hungry, unemployed, transportation, etc.) against the note text identifies notes worth processing in full. This isn't perfect (it'll miss implicit mentions), but it reduces processing volume by 70-80% without significantly impacting recall for explicit mentions. The keyword list should be maintained as a living configuration. Skip this step and you'll run expensive NLP on thousands of notes that contain nothing relevant, burning budget on notes about medication titrations and lab follow-ups.
 
@@ -430,7 +428,9 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 
 ---
 
-## Variations and Extensions
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close. -->
+
+### Variations and Extensions
 
 **Screening questionnaire integration.** Combine NLP-extracted SDOH data with structured screening results (PRAPARE, AHC-HRSN, or proprietary tools). Structured screenings have higher precision but lower coverage (only administered during specific encounters). NLP extraction has broader coverage but lower precision. Merging both gives you the best of each: use structured results as ground truth when available, NLP as gap-filling when no screening was administered.
 
@@ -440,7 +440,7 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 
 ---
 
-## Additional Resources
+### Additional Resources
 
 **AWS Documentation:**
 - [Amazon Comprehend Medical DetectEntitiesV2 API Reference](https://docs.aws.amazon.com/comprehend-medical/latest/api/API_DetectEntitiesV2.html)
@@ -463,7 +463,7 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 
 ---
 
-## Estimated Implementation Time
+### Estimated Implementation Time
 
 | Phase | Duration | Notes |
 |-------|----------|-------|
@@ -473,6 +473,9 @@ FUNCTION store_sdoh_profile(patient_id, note_id, note_date, findings):
 
 ---
 
+### Tags
+
+`comprehend-medical` · `comprehend-custom` · `lambda` · `dynamodb` · `sqs` · `kms` · `cloudwatch` · `sdoh` · `nlp` · `text-classification` · `entity-extraction` · `hipaa`
 
 ---
 
