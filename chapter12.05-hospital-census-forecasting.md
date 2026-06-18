@@ -1,6 +1,6 @@
 # Recipe 12.5: Hospital Census Forecasting ⭐⭐⭐
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$400–$1,800 per month per hospital workload
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$400-$1,800 per month per hospital workload
 
 ---
 
@@ -147,7 +147,7 @@ At a conceptual level, the pipeline looks like this:
 
 **Forecast Repository.** The output table: (unit, forecast_for_timestamp, expected_occupancy, lower_bound, upper_bound, generated_at_timestamp). Every consumer reads from this.
 
-**Operational Consumers.** The bed huddle dashboard, the transfer center decision support, the OR scheduler, the ED diversion-decision tool, and the staffing scheduler all consume the same forecast. The integration is structured (REST API or query-on-DynamoDB) and the latency budget is single-digit seconds.
+**Operational Consumers.** The bed huddle dashboard, the transfer center decision support, the OR scheduler, the ED diversion-decision tool, and the staffing scheduler all consume the same forecast. The integration is structured (REST API or query against the forecast store) and the latency budget is single-digit seconds.
 
 That's the whole concept. Three flows, composed into a unit-level census, refreshed continuously, surfaced everywhere. The hard parts are in the data plumbing (ADT cleanup, unit-assignment logic, length-of-stay feature engineering) and in the operational integration, not in the forecasting math.
 

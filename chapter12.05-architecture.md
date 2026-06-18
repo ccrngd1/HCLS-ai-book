@@ -26,7 +26,7 @@ The AWS implementation reuses much of the platform pattern from Recipes 12.3 and
 
 **AWS Step Functions for orchestration.** The forecast pipeline has multiple steps with explicit retry semantics: refresh current-state snapshot, run inflow models, run outflow model on every currently-admitted patient, run Monte Carlo composition, write forecasts. Step Functions orchestrates this with explicit retries and is auditable for HIPAA workflows. A separate state machine handles weekly retraining of the inflow models and monthly retraining of the survival model.
 
-<!-- TODO (TechWriter): Expert review H2 (HIGH). Step Functions inference pipeline lacks explicit retry, DLQ, partial-failure semantics, and stale-forecast signaling. Specify per-stage retry policy (3 retries, exponential backoff 30s–300s on TaskFailed / Lambda.ServiceException / SageMaker.InternalErrorException / HealthLake.ThrottlingException), catch-and-route on persistent failure to SQS DLQ with PHI-scrubbed payload, explicit "stale" marker writes to DynamoDB for affected units when a cycle fails, bounded BatchWriteItem `UnprocessedItems` retry (5 retries) with metric, Bedrock optionality as a separate state-machine branch (Bedrock failure must not block the structured-forecast write), and CloudWatch alarms with clinical-operational escalation thresholds. Update the architecture diagram to show the SQS DLQ wired from each stage's catch path, an SNS topic for on-call alerts, a separate SNS topic for clinical-operational escalation, and the explicit "stale" record write path to DynamoDB. See expert review Finding A1. -->
+<!-- TODO (TechWriter): Expert review H2 (HIGH). Step Functions inference pipeline lacks explicit retry, DLQ, partial-failure semantics, and stale-forecast signaling. Specify per-stage retry policy (3 retries, exponential backoff 30s-300s on TaskFailed / Lambda.ServiceException / SageMaker.InternalErrorException / HealthLake.ThrottlingException), catch-and-route on persistent failure to SQS DLQ with PHI-scrubbed payload, explicit "stale" marker writes to DynamoDB for affected units when a cycle fails, bounded BatchWriteItem `UnprocessedItems` retry (5 retries) with metric, Bedrock optionality as a separate state-machine branch (Bedrock failure must not block the structured-forecast write), and CloudWatch alarms with clinical-operational escalation thresholds. Update the architecture diagram to show the SQS DLQ wired from each stage's catch path, an SNS topic for on-call alerts, a separate SNS topic for clinical-operational escalation, and the explicit "stale" record write path to DynamoDB. See expert review Finding A1. -->
 
 **Amazon EventBridge for scheduling.** EventBridge Scheduler triggers the inference pipeline every 15 to 60 minutes (the cadence is operational policy; faster is better up to the marginal cost limit). Separate rules trigger the weekly inflow-model retraining and the monthly outflow-model retraining.
 
@@ -86,12 +86,12 @@ flowchart LR
 | **VPC** | Production: SageMaker training and inference in private subnets with VPC endpoints for HealthLake, S3 (gateway), DynamoDB (gateway), Kinesis if used, Step Functions, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager. Required for HIPAA workloads handling PHI. |
 | **CloudTrail** | Enabled at the account level. Data events on PHI-bearing buckets, the HealthLake datastore, the DynamoDB serving table, and the customer-managed CMKs. Management events for SageMaker, Glue, Step Functions, EventBridge, DynamoDB, Lambda, and Bedrock. CloudTrail logs in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. |
 | **Sample Data** | [MIMIC-IV](https://physionet.org/content/mimiciv/) is the canonical de-identified inpatient dataset for development, available through PhysioNet credentialing. It includes ED, ICU, and ward admissions with timestamps suitable for census reconstruction. [Synthea](https://github.com/synthetichealth/synthea) generates synthetic FHIR Encounter resources for lighter-weight prototyping. Never use real PHI in dev. |
-| **Cost Estimate** | HealthLake: ~$200–$600/month depending on data volume. SageMaker inference (three endpoints, small instances): ~$150/month. Weekly + monthly retraining: ~$30/month. Glue ETL (hourly): ~$50/month. Lambda Monte Carlo composition: ~$30/month. DynamoDB, S3, Step Functions, EventBridge: ~$40/month combined. Bedrock narrative summaries (optional): ~$20–$100/month depending on call rate. Total: ~$400–$1,800/month per hospital, scaling with bed count and refresh cadence. |
+| **Cost Estimate** | HealthLake: ~$200-$600/month depending on data volume. SageMaker inference (three endpoints, small instances): ~$150/month. Weekly + monthly retraining: ~$30/month. Glue ETL (hourly): ~$50/month. Lambda Monte Carlo composition: ~$30/month. DynamoDB, S3, Step Functions, EventBridge: ~$40/month combined. Bedrock narrative summaries (optional): ~$20-$100/month depending on call rate. Total: ~$400-$1,800/month per hospital, scaling with bed count and refresh cadence. |
 
 <!-- TODO (TechWriter): Expert review H1 (HIGH). Encryption row partially specifies per-data-class CMKs (PHI / operational / model artifacts) but the data classes for this pipeline expand to a finer-grained inventory: HealthLake datastore, raw ADT, OR-schedule feeds, transfer-queue feeds, ED-board feeds, harmonized inference-features, inflow / outflow / forecast samples, Monte Carlo trajectory archives, three model-artifacts buckets, DynamoDB serving table, Bedrock prompt-and-completion logs, CloudWatch logs. Update the Encryption row and IAM permissions row to specify CMKs per data class with key-policy scoping per IAM principal at a granularity that contains blast radius. See expert review Finding S1. -->
 <!-- TODO (TechWriter): Expert review M6 (MEDIUM). Update the CloudTrail row's data-event enumeration to mirror the expanded data-class inventory from H1 once the encryption row is updated. -->
-<!-- TODO (TechWriter): Expert review M9 (MEDIUM). VPC endpoint enumeration is missing SageMaker (API), SageMaker (Runtime), EventBridge, and Bedrock interface endpoints. Update the VPC row to enumerate the full set with endpoint type (gateway versus interface) and budget approximately $50–$150/month for the per-AZ-per-endpoint cost. See expert review Finding A9 and N3. -->
-<!-- TODO (TechWriter): Expert review L5 (LOW). Decompose the cost estimate by hospital bed count, refresh cadence, and unit count; clarify scaling for larger health-system deployments (1000+-bed academic medical centers can reach $2,000–$4,500/month with HealthLake storage and SageMaker inference as the dominant drivers). See expert review Finding V2. -->
+<!-- TODO (TechWriter): Expert review M9 (MEDIUM). VPC endpoint enumeration is missing SageMaker (API), SageMaker (Runtime), EventBridge, and Bedrock interface endpoints. Update the VPC row to enumerate the full set with endpoint type (gateway versus interface) and budget approximately $50-$150/month for the per-AZ-per-endpoint cost. See expert review Finding A9 and N3. -->
+<!-- TODO (TechWriter): Expert review L5 (LOW). Decompose the cost estimate by hospital bed count, refresh cadence, and unit count; clarify scaling for larger health-system deployments (1000+-bed academic medical centers can reach $2,000-$4,500/month with HealthLake storage and SageMaker inference as the dominant drivers). See expert review Finding V2. -->
 <!-- TODO (TechWriter): Expert review L2 (LOW). Add a sentence to the Sample Data row noting that reference-data downloads (MIMIC-IV via PhysioNet credentialing, Synthea synthetic generators) should go through a controlled artifact-mirror path (an internal S3 bucket populated by an audited download workflow) rather than direct public-internet downloads from the development VPC. See expert review Finding N2. -->
 
 <!-- TODO (TechWriter): V1. Verify HealthLake, SageMaker, and Bedrock pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
@@ -433,14 +433,14 @@ FUNCTION deliver_forecast(forecast, table_name):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Pipeline runtime per cycle (30 units, 1000 Monte Carlo samples, 72-hour horizon) | 60–180 seconds |
-| Forecast accuracy (4-hour horizon, MAPE on aggregate hospital census) | 1.5–3% |
-| Forecast accuracy (24-hour horizon, MAPE on aggregate hospital census) | 3–6% |
-| Forecast accuracy (24-hour horizon, MAPE on per-unit census) | 8–15% |
-| Forecast accuracy (72-hour horizon, MAPE on aggregate hospital census) | 5–10% |
-| Prediction-interval coverage at 4-hour horizon (target: 80% nominal) | 75–85% empirical |
-| Prediction-interval coverage at 24-hour horizon (target: 80% nominal) | 70–80% empirical |
-| Cost per hospital workload per month | $400–$1,800 |
+| Pipeline runtime per cycle (30 units, 1000 Monte Carlo samples, 72-hour horizon) | 60-180 seconds |
+| Forecast accuracy (4-hour horizon, MAPE on aggregate hospital census) | 1.5-3% |
+| Forecast accuracy (24-hour horizon, MAPE on aggregate hospital census) | 3-6% |
+| Forecast accuracy (24-hour horizon, MAPE on per-unit census) | 8-15% |
+| Forecast accuracy (72-hour horizon, MAPE on aggregate hospital census) | 5-10% |
+| Prediction-interval coverage at 4-hour horizon (target: 80% nominal) | 75-85% empirical |
+| Prediction-interval coverage at 24-hour horizon (target: 80% nominal) | 70-80% empirical |
+| Cost per hospital workload per month | $400-$1,800 |
 | End-to-end latency from data update to dashboard refresh | under 90 seconds |
 
 <!-- TODO (TechWriter): A1. Performance benchmarks above are typical figures for production hospital census systems running on community-hospital-scale workloads. Verify against your reference data sources before publication. -->
@@ -543,9 +543,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (single hospital, aggregate census forecast, 24-hour horizon, daily refresh):** 8–12 weeks
-- **Production-ready (per-unit forecasts, 4-to-72-hour horizons, 30-minute refresh, calibration loop, narrative summaries, operational integration):** 20–32 weeks
-- **With variations (multi-hospital shared models, OR throughput coupling, surge automation, real-time discharge prioritization):** 36–52 weeks
+- **Basic pipeline (single hospital, aggregate census forecast, 24-hour horizon, daily refresh):** 8-12 weeks
+- **Production-ready (per-unit forecasts, 4-to-72-hour horizons, 30-minute refresh, calibration loop, narrative summaries, operational integration):** 20-32 weeks
+- **With variations (multi-hospital shared models, OR throughput coupling, surge automation, real-time discharge prioritization):** 36-52 weeks
 
 ---
 
