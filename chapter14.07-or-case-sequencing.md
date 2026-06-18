@@ -92,7 +92,7 @@ Most production systems need both: batch for the initial plan, real-time for adj
 
 ## General Architecture Pattern
 
-```
+```text
 [Case Data] → [Constraint Builder] → [Solver Engine] → [Schedule Output]
      ↑                                                        ↓
 [Duration Models] ← [Historical Data]              [Visualization / Alerts]
@@ -131,7 +131,7 @@ The optimization itself is the easy part. Getting a solver to produce a good sch
 
 **Turnover time is where the real gains hide.** Most people focus on case duration optimization, but the 25-45 minutes between cases is where utilization is actually lost. Sequencing similar cases back-to-back (same equipment, same setup) can shave 5-10 minutes per turnover. Over a 6-case room day, that's 30-60 minutes of recovered time.
 
-**Failure handling matters more than optimality.** When the solver fails (and it will: infeasible constraints, OOM on large instances, network timeouts), the system must fall back gracefully to the previous valid schedule and alert the perioperative coordinator. A DLQ on the replan queue with a CloudWatch alarm ensures that silent failures don't leave the OR running on a stale schedule all day.
+**Failure handling matters more than optimality.** When the solver fails (and it will: infeasible constraints, OOM on large instances, network timeouts), the system must fall back gracefully to the previous valid schedule and alert the perioperative coordinator. A dead-letter mechanism on the replan queue with automated alerting ensures that silent failures don't leave the OR running on a stale schedule all day.
 
 The thing that surprised me most: the constraint that causes the most infeasibility isn't equipment or rooms. It's anesthesia coverage. When one anesthesiologist covers multiple rooms, their availability window becomes the binding constraint on the entire schedule. Model this carefully.
 

@@ -81,7 +81,7 @@ flowchart TD
 
 **Step 1: Ingest and enrich case data.** When the daily case list is finalized (typically by 4-5 PM the day before), the system pulls each case's details and enriches them with predicted duration, equipment needs, and constraint metadata. The duration prediction uses historical data for the specific procedure-surgeon combination. This enrichment step is what transforms a simple case list into an optimization-ready dataset. Skip it and the solver has no basis for intelligent sequencing.
 
-```
+```pseudocode
 FUNCTION enrich_case_list(raw_cases):
     // Pull the confirmed case list and add optimization-relevant metadata.
     enriched = empty list
@@ -122,7 +122,7 @@ FUNCTION enrich_case_list(raw_cases):
 
 **Step 2: Build the constraint model.** This step translates business rules into mathematical constraints the solver can process. The separation between business rules (which change frequently) and solver logic (which is stable) is intentional. When a new surgeon joins or a room gets renovated, you update the constraint configuration, not the solver code.
 
-```
+```pseudocode
 FUNCTION build_constraint_model(cases, rooms, staff_schedules):
     model = new ConstraintModel()
 
@@ -182,7 +182,7 @@ FUNCTION build_constraint_model(cases, rooms, staff_schedules):
 
 **Step 3: Solve.** Hand the model to the solver engine. For batch mode, allow several minutes of compute time to find a high-quality solution. For replan mode, fix already-completed cases and give the solver a tight time limit (10-30 seconds).
 
-```
+```pseudocode
 FUNCTION solve_schedule(model, mode):
     IF mode == "batch":
         // Overnight planning: take time to find optimal solution.
@@ -215,7 +215,7 @@ FUNCTION solve_schedule(model, mode):
 
 **Step 4: Handle real-time events.** Throughout the day, events arrive: cases finish early or late, cancellations happen, urgent add-ons appear. The replan trigger evaluates whether the disruption is significant enough to warrant re-optimization.
 
-```
+```pseudocode
 FUNCTION handle_or_event(event):
     current_schedule = read from database "or-schedule-current"
 
@@ -250,7 +250,7 @@ FUNCTION enqueue_replan(reason, **kwargs):
 
 **Step 5: Publish and visualize.** The optimized schedule is exposed via API for the OR dashboard, EHR integration, and mobile notifications to surgical teams.
 
-```
+```pseudocode
 FUNCTION publish_schedule(schedule):
     // Write to API-accessible format.
     FOR each room in schedule.rooms:
@@ -346,6 +346,8 @@ FUNCTION publish_schedule(schedule):
 | Schedule stability (cases not moved on replan) | 85-95% |
 
 **Where it struggles:** Days with many urgent add-ons (the schedule is constantly disrupted). Cases with highly uncertain durations (complex revisions, trauma). Facilities where surgeon preferences are treated as hard constraints rather than soft (the problem becomes over-constrained). And the political dimension: a mathematically optimal schedule that moves a senior surgeon's preferred time slot will be rejected regardless of its optimality.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets covering gaps a production deployment must close (e.g., EHR write-back, surgeon preference learning loop, compliance audit trail depth, failover for solver OOM). -->
 
 ---
 
