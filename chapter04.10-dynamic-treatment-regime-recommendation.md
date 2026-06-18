@@ -144,7 +144,7 @@ The clinical stakes are at the top of the chapter. The regulatory posture is the
 
 The pipeline has seven logical components: a regime catalog component that maintains the structured representation of regimes in scope (state definitions, action catalogs, reward functions, decision-point cadences, eligibility predicates, governance metadata); a trajectory pipeline component that constructs longitudinal trajectories from source clinical data; a sequential-causal-modeling component that estimates regimes (Q-learning, offline RL, target trial emulation) with uncertainty; an off-policy-evaluation component that estimates regime value with confidence intervals; a regime-serving component that produces recommendations at decision points; a clinician-facing decision-support component that packages recommendations with rationale, alternatives, and uncertainty; and a feedback and surveillance component that captures actual trajectories and drives retraining, calibration monitoring, and post-deployment surveillance.
 
-```
+```text
 ┌───────── REGIME CATALOG (governance-controlled) ──────────────┐
 │                                                                │
 │  [Pharmacy / Therapeutics]   [Clinical informatics]            │

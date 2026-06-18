@@ -220,7 +220,7 @@ flowchart LR
 
 **Step 1: Build longitudinal trajectories from source clinical data.** Trajectories are the substrate of dynamic-treatment-regime work; quality issues here propagate to every downstream model. Skip the careful identification of decision points, the precise state construction at each point, and the explicit handling of censoring, and the resulting trajectories produce policies that look defensible and are not.
 
-```
+```pseudocode
 FUNCTION build_trajectories(refresh_window):
     // refresh_window includes the start_date, end_date, and the
     // patient cohorts in scope for this trajectory build.
@@ -340,7 +340,7 @@ FUNCTION build_trajectories(refresh_window):
 
 **Step 2: Estimate the behavior policy.** Off-policy evaluation requires the propensity of the historical clinician to choose each action given the state. A poorly-estimated behavior policy produces poor importance weights and poor evaluations. The behavior policy is a model in its own right that requires validation, calibration, and monitoring; skip its discipline and the OPE results are not trustworthy.
 
-```
+```pseudocode
 FUNCTION estimate_behavior_policy(trajectories, regime):
     // Step 2A: assemble the behavior-policy training data: pairs of
     // (state, action) from across the trajectories.
@@ -399,7 +399,7 @@ FUNCTION estimate_behavior_policy(trajectories, regime):
 
 **Step 3: Train the regime with multiple methods, with sequential target trial emulation as the protocol.** Method diversity is the discipline; using only one estimator and shipping it produces a regime that has not been cross-validated against the alternative methodological choices. Skip the multi-method approach and the resulting regime is no more reliable than a single-method ML model.
 
-```
+```pseudocode
 FUNCTION train_regime(trajectories, behavior_policy, regime):
     candidate_regimes = []
 
@@ -501,7 +501,7 @@ FUNCTION train_regime(trajectories, behavior_policy, regime):
 
 **Step 4: Run off-policy evaluation with multiple estimators and sensitivity analysis, including cohort-stratified results.** OPE is the gate that determines whether a candidate regime can be deployed. Skip the multi-estimator approach and you have a single point estimate without the cross-validation discipline; skip the sensitivity analysis and you have not asked how robust the conclusion is to the unmeasured confounding the data cannot rule out; skip the cohort stratification and you can ship a regime whose overall value is high while its value for some cohorts is much lower or much more uncertain. Each omission produces a regime whose deployment risk is higher than the OPE results suggest.
 
-```
+```pseudocode
 FUNCTION run_ope(candidate_regimes, behavior_policy, trajectories, regime):
     ope_results = []
 
@@ -622,7 +622,7 @@ FUNCTION run_ope(candidate_regimes, behavior_policy, trajectories, regime):
 
 **Step 5: Serve recommendations at decision points with eligibility, OOD detection, similar-trajectory retrieval, and validator-protected narrative generation.** The serving path is where the regime meets the patient. Skip the eligibility check and the regime is applied to patients it was not designed for; skip the OOD check and recommendations become extrapolation rather than interpolation; skip the similar-trajectory retrieval and clinicians have no concrete evidence behind the recommendation; skip the validator and the LLM is allowed to drift from the structured recommendation into territory the regime does not support.
 
-```
+```pseudocode
 FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
     regime = DynamoDB.GetItem("regime-catalog", regime_id, latest_version = true)
 
@@ -790,7 +790,7 @@ FUNCTION serve_recommendation(patient_id, regime_id, decision_point_id):
 
 **Step 6: Capture the clinician's eventual action, the patient outcomes, and run the surveillance pipeline.** The feedback loop is what turns the regime from a static artifact into a living one. Skip the action-taken capture and you cannot tell whether clinicians follow the recommendations; skip the outcome surveillance and you cannot tell whether the regime is performing as the OPE estimated; skip the cohort-stratified surveillance and you cannot tell whether equity disparities have emerged in production. Each omission converts the regime back into a research artifact.
 
-```
+```pseudocode
 FUNCTION record_action_taken(recommendation_id, action_taken_payload):
     // action_taken_payload includes:
     //   - action_id (the action the clinician picked, which may be
