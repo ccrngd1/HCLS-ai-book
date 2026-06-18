@@ -205,41 +205,9 @@ A few practical updates worth knowing.
 
 ---
 
-<!-- TODO (TechWriter): Expert review C1 (CRITICAL), A1 (CRITICAL), and S1 (CRITICAL). Recipe is structurally incomplete. The file ends here, immediately after the "Where the Field Has Moved" subsection of Section 2 ("The Technology"). The required RECIPE-GUIDE.md sections from "General Architecture Pattern" through the Navigation footer are missing. By comparison, recipe 11.09 is approximately 2,729 lines; this file is currently around 200 lines. The TechWriter must author the missing sections following the chapter 11 pattern (recipes 11.6 through 11.9 specifically). Required sections, in order:
+## General Architecture Pattern
 
-1. **General Architecture Pattern** (vendor-agnostic): 10-stage decomposition with named architectural primitives: input safety screening with continuous emergency screening; identity verification with vulnerable-populations-aware posture (adult-self-decision, parental-permission-and-pediatric-assent, surrogate-decision-maker); trial-context loading with trial-state-and-amendment tracking; tool-use loop with IRB-citation discipline; conversational eligibility prescreen with deterministic per-criterion logic and clinical-judgment routing; output safety with IRB-language faithfulness verification; coordinator handoff orchestration with throughput control; per-cohort representativeness instrumentation with launch-gate discipline; recruitment-decision record persistence with research-grade retention; per-trial reporting and outcome correlation across the recruitment funnel.
-
-2. **Why These Services** (AWS service rationale per primitive): Bedrock Agents for tool-orchestration; Bedrock Knowledge Bases for IRB-approved-content RAG; OpenSearch Serverless for vector and lexical retrieval; DynamoDB for per-trial state, prescreen state, and recruitment-funnel-instrumentation; Step Functions for trial-state-and-amendment workflows; Lambda for the per-stage compute; SQS for the coordinator-handoff queue with throughput control; EventBridge for trial-state-change events; Connect and/or Pinpoint for SMS/voice channels; Comprehend Medical optional for de-identification of free-text patient-reported information; Bedrock Guardrails for recruitment-specific denied topics.
-
-3. **Architecture Diagram**: Mermaid flowchart with explicit per-trial-isolation boundaries and the IRB-approved-content corpus as a separately-stored, separately-keyed asset class.
-
-4. **Prerequisites table**: AWS Services, IAM Permissions, BAA, Encryption, VPC, CloudTrail, Sample Data, Cost Estimate.
-
-5. **Ingredients table**: per-service role.
-
-6. **Code (Pseudocode Walkthrough)** with Python-companion callout linking to `chapter11.10-python-example`. The 10-step decomposition should match the Python companion's existing structure (which already implements all 10 steps end-to-end).
-
-7. **Expected Results** with sample JSON output and performance benchmarks table.
-
-8. **The Honest Take**: 10-12 traps in CC's voice, including (suggested) the IRB-as-active-product-development-participant trap, the protocol-amendment-cadence trap, the coordinator-capacity-as-hard-constraint trap, the equity-gap-with-recruitment-platform-reach trap, the diversity-action-plan-as-regulatory-not-marketing trap, the ClinicalTrials.gov-integration-as-not-quite-as-clean-as-you-hoped trap, the multi-trial-disambiguation trap, the consent-vs-recruitment-line trap, the conversations-completed-as-vanity-metric trap, the per-trial-onboarding-as-multi-week-clinical-work trap, the build-vs-buy-and-vendor-coexistence trap.
-
-9. **Variations and Extensions**: 2-3 practical extensions (suggested: pediatric-recruitment with assent-and-parental-permission identity model; multilingual recruitment with culturally-appropriate content and community-research-engagement-team review; decentralized-trial recruitment with home-visit-and-telehealth visit-schedule communication).
-
-10. **Related Recipes**: cross-references to 11.1 (FAQ chatbot, pattern parent), 11.2 (appointment scheduling, handoff pattern), 11.6 (symptom triage, IRB-vs-medical-device distinction), 11.7 (chronic-disease coach, citation-grounding pattern), 11.8 (mental-health support, sensitive-topic-handling), 11.9 (care coordination, longitudinal-state pattern), and forward references to 13.x (knowledge graphs for trial-eligibility encoding).
-
-11. **Additional Resources**: ClinicalTrials.gov, FDA 2022 draft guidance / 2024 final guidance on Diversity Action Plans, FDORA, ICH E6 GCP, 21 CFR Part 11, 21 CFR Part 50, 45 CFR 46, AWS HealthLake, Bedrock, Bedrock Agents, Bedrock Knowledge Bases, AWS HIPAA Eligible Services list, AWS Solutions Library healthcare entries.
-
-12. **Estimated Implementation Time**: Basic / Production-ready / With variations.
-
-13. **Tags**: searchable labels.
-
-14. **Navigation footer**: prev/index/next links.
-
-The expert review predicts that 3 HIGH findings will emerge once the architecture sections are written (matching the chapter pattern from 11.7, 11.8, 11.9): multi-asset governance scaffolding (IRB-approved-content corpus as code, eligibility-evaluation rule library, FDA-strategy artifact, consent-language artifact, vulnerable-population-policy artifact, recruitment-funnel-instrumentation policy, coordinator-team-workflow policy, sponsor-relationship policy, ClinicalTrials.gov-integration policy); per-cohort recruitment-funnel monitoring with launch-gate discipline; research-record-class retention with separate KMS keying, separate access controls, separate audit trail, and FDA-regulated extensions (21 CFR Part 11 electronic-record-and-signature, ICH E6 retention rules, IND/IDE record obligations). The TechWriter is encouraged to address these proactively in the rewrite. -->
-
-<!-- TODO (TechWriter): Expert review N1 (CRITICAL). Same root cause as C1: VPC topology, VPC-endpoint posture, egress posture, and TLS-in-transit configuration cannot be evaluated until the AWS-Specific Build is written. Anticipated networking guidance: VPC endpoints for Bedrock, Bedrock Agents, Bedrock Knowledge Bases, S3, DynamoDB, Secrets Manager, Step Functions, KMS, CloudWatch Logs, Comprehend Medical, Connect, Pinpoint; TLS 1.2 minimum (1.3 preferred) at every external boundary; ClinicalTrials.gov integration over public TLS with no PHI on the outbound path; WAF in front of the chat endpoint with managed rule sets for SQL-injection, XSS, prompt-injection-pattern detection, and rate-limiting. -->
-
-<!-- TODO (TechWriter): Expert review V1 (CRITICAL). Same root cause as C1: voice cannot be evaluated end-to-end until the Honest Take and other missing sections exist. The Honest Take is where CC's voice typically lands hardest in chapter 11 recipes (see 11.7, 11.8, 11.9 reviews). The 30% AWS-specific content is missing entirely; vendor-balance cannot be evaluated. -->
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL), A1 (CRITICAL). Author the General Architecture Pattern section: 10-stage decomposition with named architectural primitives (input safety screening with continuous emergency screening; identity verification with vulnerable-populations-aware posture; trial-context loading with trial-state-and-amendment tracking; tool-use loop with IRB-citation discipline; conversational eligibility prescreen with deterministic per-criterion logic and clinical-judgment routing; output safety with IRB-language faithfulness verification; coordinator handoff orchestration with throughput control; per-cohort representativeness instrumentation with launch-gate discipline; recruitment-decision record persistence with research-grade retention; per-trial reporting and outcome correlation across the recruitment funnel). Follow the chapter 11 pattern from recipes 11.6 through 11.9. -->
 
 <!-- TODO (TechWriter): Expert review A2 (HIGH, anticipated). When the General Architecture Pattern is authored, address the IRB-amendment-application-mid-conversation edge case explicitly: snapshot trial-context-version at conversation start; on every turn re-fetch trial-state and compare versions; if material amendment, branch to the IRB-approved re-disclosure flow; if non-material amendment, continue on the original snapshot with stamped version-history. This is a recipe-distinct architectural primitive not present in 11.1 through 11.9. -->
 
@@ -247,16 +215,32 @@ The expert review predicts that 3 HIGH findings will emerge once the architectur
 
 <!-- TODO (TechWriter): Expert review A4 (MEDIUM, anticipated). When the General Architecture Pattern is authored, add a "Per-Conversation Trial-Binding" primitive to Cross-Cutting Design Points: per-conversation trial_id binding at session-start; switching trials within a session triggers a new conversation with new disclosures and new consent posture; cross-trial recommendation is structurally prohibited at the tool-dispatcher level. -->
 
-<!-- TODO (TechWriter): Expert review S2 (HIGH, anticipated). When the AWS-Specific Build is authored, follow through on research-data-as-distinct-record-class with separately-keyed buckets for the IRB-approved-content corpus, recruitment-conversation archive, prescreen-result store, coordinator-handoff queue, recruitment-funnel-instrumentation store, and diversity-action-plan-tracking store, with separate IAM principals scoped to research-data access (research-data-officer, sponsor-recruitment-team, IRB-inspector audit-only role, principal-investigator role, coordinator-team role) versus clinical-care principals. Cross-class read paths must be explicitly disallowed at the IAM-policy level. -->
+> **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter11.10-architecture). The Python example is linked from there.
 
-<!-- TODO (TechWriter): Expert review S3 (HIGH, anticipated). When the AWS-Specific Build is authored, specify Part-11-compliant audit logging, electronic-signature workflows for IRB-approved-content version sign-off, and inspection-ready audit-trail export for FDA-regulated trials. The recruitment platform's audit trail is part of the IND/IDE record under 21 CFR Part 11. -->
+---
 
-<!-- TODO (TechWriter): Expert review M6 (MEDIUM). When the AWS-Specific Build is authored, explicitly distinguish "interest captured" (allowed; non-consent) from "consent collected" (not allowed; coordinator-only) at the architecture level, following through on the existing prose's correct framing in "It is not the informed consent process". -->
+## The Honest Take
 
-<!-- TODO (TechWriter): Expert review M8 (MEDIUM). When the AWS-Specific Build is authored, specify recipe-distinct acuity-classifier extensions for recruitment-specific scenarios: prospective participants who, during the recruitment conversation, surface symptoms that suggest their condition is decompensating beyond what the trial protocol assumes; prospective participants who, during the eligibility prescreen, report a recent change in their condition that may reflect an acute event; prospective participants whose recruitment-conversation context surfaces psychosocial crisis that the recruitment platform is not equipped to handle. -->
+<!-- TODO (TechWriter): Expert review V1 (CRITICAL). Author The Honest Take section: 10-12 traps in CC's voice. Suggested traps: the IRB-as-active-product-development-participant trap, the protocol-amendment-cadence trap, the coordinator-capacity-as-hard-constraint trap, the equity-gap-with-recruitment-platform-reach trap, the diversity-action-plan-as-regulatory-not-marketing trap, the ClinicalTrials.gov-integration-as-not-quite-as-clean-as-you-hoped trap, the multi-trial-disambiguation trap, the consent-vs-recruitment-line trap, the conversations-completed-as-vanity-metric trap, the per-trial-onboarding-as-multi-week-clinical-work trap, the build-vs-buy-and-vendor-coexistence trap. Follow the chapter 11 pattern from recipes 11.7, 11.8, 11.9. -->
 
-<!-- TODO (TechWriter): Expert review M9 (MEDIUM). When the AWS-Specific Build is authored, specify the out-of-scope routing rules in table form: clinical questions about existing care → patient's care team; requests for medical advice → institutional patient-services line; requests to enroll without prescreen → coordinator team; attempts to recruit in violation of IRB-approved process → research-compliance office; emergencies → 911. The current prose lists these but the routing-table form would be clearer. -->
+---
 
-<!-- TODO (TechWriter): Expert review V4 (LOW). When the AWS-Specific Build is authored, make explicit that the IRB-approved disclosure copy itself is authored separately and reviewed by the IRB, not generated by the LLM. The architecture should treat the disclosure surface as IRB-approved content (like the recruitment-FAQ corpus) rather than as LLM-generated text. -->
+## Related Recipes
 
-<!-- TODO (TechWriter): Expert review V3 (LOW). The 13 inline `<!-- TODO: verify -->` markers in the existing prose should be resolved or accepted-as-hedge before publication. Specific markers worth prioritizing for resolution: 21 CFR Part 50 and ICH E6 GCP guidelines; 45 CFR 46 Subparts B/C/D; FDA 2022 draft guidance / 2024 final guidance / FDORA on diversity action plans; ClinicalTrials.gov registration requirements under FDAAA 801; FDA decentralized-trials guidance and EMA reflection paper. -->
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL). Author the Related Recipes section with cross-references to 11.1 (FAQ chatbot, pattern parent), 11.2 (appointment scheduling, handoff pattern), 11.6 (symptom triage, IRB-vs-medical-device distinction), 11.7 (chronic-disease coach, citation-grounding pattern), 11.8 (mental-health support, sensitive-topic-handling), 11.9 (care coordination, longitudinal-state pattern), and forward references to 13.x (knowledge graphs for trial-eligibility encoding). -->
+
+---
+
+## Tags
+
+<!-- TODO (TechWriter): Expert review C1 (CRITICAL). Add searchable tags. -->
+
+---
+
+<!-- TODO (TechWriter): Expert review M5 (MEDIUM). Extend the equity framing (in The Problem section's underrepresented-populations paragraph and in The Recruitment Reality subsection) to also acknowledge older adults, pediatric populations, pregnant patients, and patients with disabilities as historically underrepresented populations explicitly named in FDA's diversity-action-plan guidance. The recipe currently mentions racial and ethnic minorities, low-income populations, limited English proficiency, and geographic disparities; the broader population scope is a real regulatory and scientific frame. -->
+
+<!-- TODO (TechWriter): Expert review V3 (LOW). The 13 inline TODO-verify markers in the existing prose should be resolved or accepted-as-hedge before publication. Specific markers worth prioritizing for resolution: 21 CFR Part 50 and ICH E6 GCP guidelines; 45 CFR 46 Subparts B/C/D; FDA 2022 draft guidance / 2024 final guidance / FDORA on diversity action plans; ClinicalTrials.gov registration requirements under FDAAA 801; FDA decentralized-trials guidance and EMA reflection paper. -->
+
+---
+
+*← [Recipe 11.9: Care Coordination Assistant](chapter11.09-care-coordination-assistant) · [Chapter 11 Preface](chapter11-preface)*
