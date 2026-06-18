@@ -84,7 +84,7 @@ You can deploy denial prediction at three distinct points, each with different f
 
 Each prediction point is essentially a different model (different features available, different outcome windows, different interventions). Most organizations start with pre-billing because it has the highest ROI: you have the most features available and the intervention (fixing the claim before submission) is the cheapest.
 
-### General Architecture Pattern
+## General Architecture Pattern
 
 ```text
 [Claims Data Lake] → [Feature Pipeline] → [Model Training (periodic)]
@@ -128,7 +128,7 @@ Let's talk about what makes this harder than it looks on paper.
 
 **Precision vs. recall is a real tradeoff with operational consequences.** If you flag too many claims (high recall, low precision), your coders develop "alert fatigue" and start ignoring the system. If you flag too few (high precision, low recall), you miss preventable denials. The right threshold depends on your coding staff capacity and the cost of a false alarm (wasted reviewer time) versus the cost of a missed denial (rework cost). This is a business decision, not a model decision. Expect to tune it for months after launch.
 
-**Regulatory and fairness considerations are not afterthoughts.** If your model's denial predictions correlate with patient demographics in ways that result in differential treatment (e.g., claims for certain patient populations get extra scrutiny), you have a fairness problem even if the model is "just predicting what the payer will do." Monitor model performance across demographic groups. Use SageMaker Clarify to detect disparate impact. Ensure that the model's predictions don't result in differential access to care or services.
+**Regulatory and fairness considerations are not afterthoughts.** If your model's denial predictions correlate with patient demographics in ways that result in differential treatment (e.g., claims for certain patient populations get extra scrutiny), you have a fairness problem even if the model is "just predicting what the payer will do." Monitor model performance across demographic groups. Use bias detection tooling (SHAP subgroup analysis, demographic parity metrics) to detect disparate impact. Ensure that the model's predictions don't result in differential access to care or services.
 
 **Be careful with "route to alternative pathway" recommendations.** The model predicts financial outcomes (will the payer pay?), not clinical appropriateness (is this the right treatment?). If the clinically appropriate procedure has a high predicted denial rate, the right answer is to strengthen the PA submission, not to change the treatment plan. Clinical decisions must remain independent of denial predictions. The model's job is to reduce administrative friction for clinically appropriate care, not to optimize treatment selection for financial outcomes. Make this boundary explicit in your operational policies and training materials.
 

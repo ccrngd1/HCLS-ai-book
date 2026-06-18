@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for model training and real-time inference.** SageMaker handles the full ML lifecycle: training XGBoost/LightGBM models on historical claims data, hosting real-time endpoints for pre-billing scoring, and running batch transform for nightly portfolio-level scoring. The built-in XGBoost container supports the exact model type needed. SageMaker Clarify provides SHAP-based explainability out of the box, which is critical for generating the per-claim explanations that make this operationally useful. The billing system integration must be fail-open: if the endpoint is unavailable or times out (>500ms), submit the claim without a prediction and queue it for batch scoring in the next cycle. Use an SQS dead-letter queue to capture failed scoring requests so the nightly batch transform catches anything that missed real-time scoring.
 
@@ -22,7 +20,7 @@
 
 **Amazon CloudWatch for model monitoring.** Tracks prediction distributions, accuracy metrics (comparing predictions to actual outcomes as they arrive), and operational metrics (how many claims are flagged, how many are reviewed, how many were actually denied).
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -59,7 +57,7 @@ flowchart TD
     style K fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -72,7 +70,7 @@ flowchart TD
 | **Sample Data** | Synthetic claims data with realistic denial patterns. Model denial rates of 10-15% overall with payer-specific and procedure-specific variation. Include common denial reasons (no PA, medical necessity, bundling, timely filing). Never use real claims in dev environments. |
 | **Cost Estimate** | SageMaker training: ~$10-25 per weekly training run (ml.m5.2xlarge, 2-4 hours for large claim volumes). Real-time endpoint: ~$150-300/month (ml.m5.xlarge). Batch transform: ~$5-10 per nightly run. Glue: ~$1-3/DPU-hour. DynamoDB: ~$50-100/month. Total: ~$400-800/month for a mid-size health system. SHAP computation is the main cost variable for real-time scoring; at >2,000 daily flagged claims, consider auto-scaling the endpoint or pre-computing SHAP in the batch transform job. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -85,9 +83,7 @@ flowchart TD
 | **Amazon CloudWatch** | Monitor prediction distributions, model accuracy vs. actual outcomes, and pipeline health metrics |
 | **AWS KMS** | Manage encryption keys for all data stores containing PHI |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Feature engineering from claims history.** The Glue job pulls historical claims with known outcomes and computes the feature set the model needs. For each claim, it assembles procedure codes, diagnosis codes, payer-specific denial rates, provider-specific patterns, and structural claim features. The critical derived features are the payer-procedure denial rates (computed as rolling averages over the last 6-12 months) because they encode payer-specific rules that aren't documented anywhere accessible. Skip this step and your model has no knowledge of how individual payers actually behave.
 
@@ -453,7 +449,7 @@ FUNCTION generate_worklists(predictions_table):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.11-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample prediction output:**
 
@@ -509,6 +505,8 @@ FUNCTION generate_worklists(predictions_table):
 - Multi-line claims where denial is driven by interactions between line items
 
 ---
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Should cover gaps a production deployment must close (model governance, A/B testing framework, integration testing with billing system, DR/failover for the scoring endpoint, etc.). -->
 
 ## Variations and Extensions
 
