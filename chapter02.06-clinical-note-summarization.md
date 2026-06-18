@@ -107,6 +107,7 @@ What it doesn't do, and this has to be stated clearly, is remove the need for ca
 
 **Consultant silo-ing.** A consulting service's perspective is treated as gospel or as irrelevant, rather than as one opinion in a thread. Mitigation: represent consults as attributed recommendations, not as unattributed facts ("Cardiology recommended X on day 4" rather than "X is recommended").
 
+<!-- TODO (TechWriter): V3 (LOW). "Comprehend Medical" is a vendor name in a vendor-agnostic section. Consider replacing with "clinical NLP services with negation detection" or similar. -->
 **Negation errors.** Already covered. Hardest failure mode to catch automatically. Mitigation: negation-aware extraction (Comprehend Medical and similar tools handle this reasonably); explicit preservation of negating language in the structured representation.
 
 **Over-confident language.** The model smooths "possible pulmonary embolism, CT scheduled" into "pulmonary embolism diagnosed." Mitigation: preserve clinical uncertainty language in the extraction step and instruct the generator not to strengthen it.
@@ -158,8 +159,6 @@ Let's walk through the conceptual stages.
 **Deliver to requesting clinician.** Render and display the summary in the environment the clinician is working in: the EHR's context-sensitive sidebar, a handoff tool, a separate review UI. Delivery channel affects format (an EHR sidebar is tighter than a full-page review document).
 
 **Log for audit.** Every summary generated, every input set, every version. Clinical summaries that influence care decisions are part of the legal record. You need to be able to reconstruct what a summary said at a specific moment.
-
----
 
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter02.06-architecture). The Python example is linked from there.
 
