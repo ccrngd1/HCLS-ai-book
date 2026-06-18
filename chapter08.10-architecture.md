@@ -469,6 +469,8 @@ FUNCTION classify_patient(patient_id, criterion_results, phenotype_definition):
 - Historical note scans with OCR artifacts that degrade NLP accuracy
 - Phenotypes that require negation of a negation ("patient no longer denies suicidal ideation")
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add "Why This Isn't Production-Ready" section between Expected Results and Variations. Cover gaps like: no drift detection for phenotype accuracy over time, no automated re-validation when NLP model versions change, lack of clinician-in-the-loop adjudication workflow, and missing cross-institution portability testing. -->
+
 ---
 
 ## Variations and Extensions
