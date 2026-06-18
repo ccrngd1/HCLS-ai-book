@@ -37,8 +37,8 @@ One marquee recipe per chapter, chosen for broad relatability and self-contained
 
 | Ch | Capability | Recipe | Words | State |
 |----|-----------|--------|-------|-------|
-| 1 | Document Intelligence | 1.1 Insurance Card Scanning | 1,753 | lean |
-| 2 | Clinical Text Generation | 2.5 After-Visit Summary Generation | 7,283 | **HEAVY** |
+| 1 | Document Intelligence | 1.1 Insurance Card Scanning | 1,753 | lean — **author-approved 2026-06-18** |
+| 2 | Clinical Text Generation | 2.5 After-Visit Summary Generation | 4,026 | **author-approved 2026-06-18** (S2/L21/L25 resolved) |
 | 3 | Anomaly & Outlier Detection | 3.1 Duplicate Claim Detection *(pilot)* | 3,964 | lean |
 | 4 | Recommendation & Personalization | 4.9 Personalized Care Plan Generation | 8,575 | **HEAVY** |
 | 5 | Entity Resolution & Record Linkage | 5.1 Internal Duplicate Patient Detection | 6,115 | lean |
