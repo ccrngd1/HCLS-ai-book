@@ -115,7 +115,7 @@ The main challenge isn't the technology. It's keeping the graph honest. The form
 
 At a conceptual level, the pipeline has four stages:
 
-```
+```text
 [Ingest Formulary Data] → [Build/Update Graph] → [Query API] → [Prescriber Interface]
 ```
 

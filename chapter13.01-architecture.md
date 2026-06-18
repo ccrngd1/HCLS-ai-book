@@ -72,7 +72,7 @@ flowchart LR
 
 **Step 1: Parse formulary file into graph statements.** When a new formulary file lands in S3, the parser reads it and transforms each row into graph vertices (drugs, classes, plans) and edges (tier assignments, class memberships, restrictions). CMS formulary files have a defined column layout: NDC or RxNorm code, drug name, dosage form, tier level, restriction codes, therapeutic class, and alternatives. The parser maps these columns to graph entities and relationships. This step is where you handle data quality issues: missing codes, deprecated NDCs, and inconsistent class assignments. Skip this step and you have a flat file that can only answer "what tier is drug X?" but not "what are the alternatives?"
 
-```
+```pseudocode
 FUNCTION parse_formulary_file(bucket, key):
     // Read the raw formulary file from storage.
     // CMS Part D files are pipe-delimited text with a header row.
@@ -164,7 +164,7 @@ FUNCTION parse_formulary_file(bucket, key):
 
 **Step 2: Load graph data into Neptune.** Take the parsed vertices and edges and load them into the graph database. Neptune supports bulk loading via its loader API (for initial loads) and individual upserts via openCypher MERGE statements (for incremental updates). The key decision: on a quarterly full formulary refresh, do you drop and rebuild, or do you merge? Merging preserves any enrichment you've added (like manually curated alternative relationships), but it's slower and risks stale data if a drug is removed from the formulary. The pragmatic approach: use a versioned subgraph per formulary effective date, and point queries at the current version. Skip this step and your parsed data sits in Lambda's memory doing nothing.
 
-```
+```pseudocode
 FUNCTION load_graph(vertices, edges, neptune_endpoint):
     // For bulk initial load, use Neptune's bulk loader with a CSV staging file.
     // For incremental updates, use openCypher MERGE to upsert.
@@ -198,7 +198,7 @@ FUNCTION load_graph(vertices, edges, neptune_endpoint):
 
 **Step 3: Query for therapeutic alternatives.** This is the core value of the graph: answering "what can my patient take instead?" in a single traversal. The query starts at the prescribed drug, finds its therapeutic class, then finds all other drugs in that class that are covered under the patient's plan, sorted by tier (cheapest first). It also checks for restrictions so the prescriber knows upfront if an alternative requires prior auth or step therapy. Without the graph, this query would be a multi-table JOIN with subqueries. With the graph, it's a pattern match.
 
-```
+```pseudocode
 FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
     // The prescriber's question: "What's cheaper and covered for this patient?"
     // We traverse: prescribed drug -> therapeutic class -> other drugs in class -> 
@@ -246,7 +246,7 @@ FUNCTION find_alternatives(drug_id, plan_id, neptune_endpoint):
 
 <!-- TODO (TechWriter): Expert review S2 (HIGH). Add guidance on Redis security posture: (1) Enable ElastiCache AUTH (Redis AUTH token or IAM-based access control via ElastiCache for Redis 7.0+). (2) Note that cache keys containing plan_id create an access pattern log of medication inquiries per member; recommend using plan-type identifiers rather than member-specific plan IDs where possible, or document PHI implications if member-specific caching is required. (3) Confirm TLS in-transit is required for Lambda-to-Redis connections. -->
 
-```
+```pseudocode
 FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoint):
     // Build a deterministic cache key from the query parameters
     cache_key = "alternatives:" + drug_id + ":" + plan_id
@@ -270,7 +270,7 @@ FUNCTION get_alternatives_cached(drug_id, plan_id, redis_client, neptune_endpoin
 
 **Step 5: Expose via API with plan context.** The final step wraps the graph query in a clean API that accepts what the prescriber's system knows (drug name or code, patient's plan ID) and returns what they need (ranked alternatives with tier and restriction information). The API also handles the common case where the prescribed drug IS the preferred option: it returns a confirmation rather than alternatives. This matters for UX. A prescriber doesn't want to see "no alternatives found" when they've already picked the best option; they want "this is the preferred drug in its class."
 
-```
+```pseudocode
 FUNCTION handle_formulary_query(request):
     // Extract and validate parameters from the API request.
     // Validate format before querying: drug_id should match RxNorm CUI or NDC pattern,
