@@ -1,3 +1,16 @@
+<!--
+Editorial pass v1 (TechEditor, 2026-06-17):
+- Split-polish pass for ch03-r05-archsplit task. Verified this architecture
+  companion opens cleanly with backlink to main recipe, has no story
+  sections that belong in the main file, and does not duplicate The Honest
+  Take or Related Recipes content.
+- Style hygiene verified: zero em dashes (U+2014), zero en dashes (U+2013).
+  Code fences follow established convention: bare ``` for pseudocode,
+  ```mermaid for the architecture diagram, ```json for sample outputs.
+- All TODO markers preserved verbatim.
+- No structural changes, no new claims, no section reordering.
+-->
+
 # Recipe 3.5 Architecture and Implementation: Lab Result Outlier Detection
 
 *Companion to [Recipe 3.5: Lab Result Outlier Detection](chapter03.05-lab-result-outlier-detection). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*

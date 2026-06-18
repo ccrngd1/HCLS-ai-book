@@ -1,4 +1,22 @@
 <!--
+Editorial pass v9 (TechEditor, 2026-06-17):
+- Split-polish pass for ch03-r05-archsplit task. Verified transition seams
+  between this file (story and concepts) and chapter03.05-architecture.md
+  (AWS implementation and pseudocode).
+- Confirmed: General Architecture Pattern section is fully vendor-agnostic
+  with zero AWS service names in rendered prose. The Honest Take contains
+  no dangling references to AWS content that moved to the companion.
+- Architecture callout is correctly placed between General Architecture
+  Pattern and The Honest Take, matches RECIPE-GUIDE template verbatim,
+  and links to the correct companion filename (chapter03.05-architecture).
+- Architecture companion opens cleanly with title, backlink paragraph,
+  and separator before the AWS Implementation content.
+- Style hygiene re-verified: zero em dashes (U+2014), zero en dashes
+  (U+2013). Bare code fences on the ASCII-art architecture diagram follow
+  established Chapter 3 convention (bare ``` for pseudocode and ASCII-art).
+- All prior TODO markers preserved (16 TechEditor->TechWriter, 9 TechWriter
+  forward-placeholder). No structural changes, no new claims.
+
 Editorial pass v8 (TechEditor, 2026-05-21):
 - Verification-only no-op pass. Re-confirmed v7's audit baseline using the
   same BOM-aware UTF-8 reader (System.IO.File.ReadAllText). Counts hold:
