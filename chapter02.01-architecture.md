@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon Bedrock for LLM access.** Bedrock provides managed access to foundation models (Claude, Llama, Titan, and others) without managing infrastructure. For healthcare, the key advantages are: models run within your AWS account boundary, data is not used for model training, and Bedrock is on the HIPAA eligible services list with a signed BAA. You get API access to multiple model families and can switch between them without changing your application code.
 
@@ -22,7 +20,7 @@ Every prompt sent to Bedrock in this pipeline contains PHI (patient names, medic
 
 **Amazon EventBridge for message routing.** When a new patient message arrives (from your EHR integration or patient portal), EventBridge routes it to the processing pipeline. This decouples the message source from the processing logic and lets you add additional consumers (analytics, routing rules) without modifying the core pipeline.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart LR
@@ -44,7 +42,7 @@ flowchart LR
     style H fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -61,7 +59,7 @@ flowchart LR
 | **Sample Data** | Synthetic patient messages and mock EHR context. Never use real patient messages in dev. |
 | **Cost Estimate** | Bedrock (Claude Haiku): ~$0.01-0.03 per message depending on context length. Lambda and DynamoDB negligible at typical message volumes. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -75,9 +73,7 @@ flowchart LR
 | **AWS KMS** | Manages encryption keys for all data stores |
 | **Amazon CloudWatch** | Metrics on generation latency, guardrail interventions, and approval rates |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Classify message intent.** When a new patient message arrives, the first thing we do is figure out what they're asking about. This classification determines what context we need to gather and which prompt template to use. A refill request needs the patient's current medication list. An appointment question needs their upcoming schedule. A symptom question needs recent visit history. Getting this wrong means the draft will be grounded in irrelevant context, which means the provider will have to rewrite it from scratch. For routine messages, simple keyword and pattern matching works well. You don't need an LLM for this step.
 
@@ -242,7 +238,7 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter02.01-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a medication refill request:**
 
@@ -281,6 +277,8 @@ FUNCTION store_draft(message_id, patient_id, provider_id, original_message,
 **Where it struggles:** Messages with multiple questions interleaved. Emotionally charged messages where tone calibration is critical. Messages referencing conversations that happened outside the portal (phone calls, in-person). Messages requiring clinical judgment ("should I go to the ER?"). Messages from patients with complex multi-provider care where context assembly is incomplete.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content listing the gaps a production deployment must close. -->
 
 ## Variations and Extensions
 
