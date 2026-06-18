@@ -1,6 +1,6 @@
 # Recipe 15.5: Ventilator Weaning Protocols
 
-**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000–5,000/month (training infrastructure)
+**Complexity:** Medium · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-5,000/month (training infrastructure)
 
 ---
 
@@ -8,7 +8,7 @@
 
 Here's a scenario that plays out thousands of times a day in ICUs around the world. A patient is on a mechanical ventilator. They've been on it for three days. The attending physician looks at the vitals, the blood gas results, the sedation level, and makes a judgment call: is this patient ready to try breathing on their own?
 
-If they guess right, the patient gets extubated, breathes independently, and starts recovering. If they guess wrong (too early), the patient fails the spontaneous breathing trial, gets re-intubated (a traumatic, risky procedure), and spends more days on the vent. If they wait too long (too conservative), the patient accumulates ventilator-associated complications: pneumonia, muscle atrophy, delirium, tracheal damage. Every extra day on a ventilator increases mortality risk and adds roughly $3,000–5,000 in ICU costs.
+If they guess right, the patient gets extubated, breathes independently, and starts recovering. If they guess wrong (too early), the patient fails the spontaneous breathing trial, gets re-intubated (a traumatic, risky procedure), and spends more days on the vent. If they wait too long (too conservative), the patient accumulates ventilator-associated complications: pneumonia, muscle atrophy, delirium, tracheal damage. Every extra day on a ventilator increases mortality risk and adds roughly $3,000-5,000 in ICU costs.
 
 The decision is genuinely hard. There's no single number that tells you "this patient is ready." It's a constellation of factors: respiratory mechanics, oxygenation, hemodynamic stability, neurological status, sedation depth, underlying disease trajectory. Experienced intensivists develop intuition for this over years of practice, but that intuition varies between clinicians, between shifts, between institutions. Studies consistently show that protocolized weaning (following a checklist) outperforms ad-hoc physician judgment on average, but even the best protocols are static. They don't adapt to the individual patient's trajectory.
 
@@ -94,7 +94,7 @@ None of these are perfect. They all have assumptions that may not hold. The hone
 
 ## General Architecture Pattern
 
-```
+```text
 [EHR Data Stream] → [State Construction] → [RL Policy Engine] → [Recommendation] → [Clinician Review] → [Action Taken] → [Outcome Tracking] → [Policy Update]
 ```
 
@@ -141,5 +141,7 @@ What I'd do differently if starting over: I'd spend 80% of my time on data quali
 - **Recipe 15.6 (Glucose Control in ICU):** Another sequential ICU decision problem with continuous action spaces and tight safety constraints.
 - **Recipe 12.10 (Physiological Waveform Analysis):** Provides the real-time physiological data processing that feeds into the state constructor for this recipe.
 - **Recipe 7.9 (Mortality Risk Scoring, ICU):** The risk scores from this recipe could serve as features in the RL state representation.
+
+<!-- TODO (TechWriter): Add Tags section and Navigation footer per RECIPE-GUIDE. -->
 
 ---

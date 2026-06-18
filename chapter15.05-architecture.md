@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for RL model training and hosting.** SageMaker provides managed infrastructure for training RL models at scale, including support for custom RL algorithms via script mode. The training jobs handle the compute-intensive batch RL training on historical data, and SageMaker endpoints serve real-time inference for the policy engine.
 
@@ -20,7 +18,7 @@
 
 **Amazon EventBridge for orchestration.** Coordinates the periodic retraining pipeline: triggers data extraction, launches training jobs, runs off-policy evaluation, and promotes validated models.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -44,20 +42,20 @@ flowchart TD
 
 <!-- TODO (TechWriter): Expert review A1 (HIGH). Add DLQ/error handling for Kinesis-to-Lambda path. Configure SQS dead-letter queue with bisect-on-error, CloudWatch alarm on DLQ depth, and staleness flagging when state updates exceed 15 minutes. This is a patient safety concern: silent data loss means stale state feeding recommendations. -->
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
 | **AWS Services** | Amazon SageMaker, Amazon Kinesis, AWS Lambda, Amazon DynamoDB, Amazon S3, Amazon EventBridge, Amazon CloudWatch |
 | **IAM Permissions** | Separate IAM roles per component. State Constructor Lambda: `kinesis:GetRecords` on patient stream, `dynamodb:PutItem` on patient-state table. Inference endpoint: `dynamodb:GetItem` on patient-state table, `sagemaker:InvokeEndpoint` on weaning-policy endpoint. Safety Filter Lambda: `dynamodb:GetItem`, write to recommendation API. Training pipeline: `s3:GetObject` on training-data bucket, `s3:PutObject` on model-artifacts bucket, `sagemaker:CreateTrainingJob`. Logging: `dynamodb:PutItem` on episode-log table, `s3:PutObject` on audit bucket. All permissions scoped to specific resource ARNs. |
 | **BAA** | Required. All patient data is PHI. |
-| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption with minimum retention (24–48 hours, as PHI should not persist in the stream longer than operationally required); SageMaker: KMS for training volumes and endpoints; all transit over TLS |
+| **Encryption** | S3: SSE-KMS; DynamoDB: encryption at rest; Kinesis: server-side encryption with minimum retention (24-48 hours, as PHI should not persist in the stream longer than operationally required); SageMaker: KMS for training volumes and endpoints; all transit over TLS |
 | **VPC** | SageMaker endpoints and Lambda functions in VPC with VPC endpoints for all services. Required endpoints: S3 (gateway), DynamoDB (gateway), SageMaker Runtime (interface), Kinesis Data Streams (interface), CloudWatch Logs (interface), KMS (interface). No public internet access for PHI-processing components. |
 | **CloudTrail** | Enabled for all API calls. Enable DynamoDB Streams or CloudTrail data events for patient-state and episode-log tables to capture data-plane PHI access. Critical for audit trail of model recommendations and clinician decisions. |
 | **Sample Data** | MIMIC-III or MIMIC-IV (publicly available ICU dataset from MIT/Beth Israel Deaconess). Contains real ventilator data, de-identified. Appropriate for model development. |
-| **Cost Estimate** | SageMaker training: ~$50–200 per training run (depends on instance type and duration). SageMaker endpoint: ~$100–500/month (ml.m5.large). Kinesis, Lambda, DynamoDB: ~$200–500/month depending on patient volume. |
+| **Cost Estimate** | SageMaker training: ~$50-200 per training run (depends on instance type and duration). SageMaker endpoint: ~$100-500/month (ml.m5.large). Kinesis, Lambda, DynamoDB: ~$200-500/month depending on patient volume. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -70,13 +68,11 @@ flowchart TD
 | **Amazon CloudWatch** | Monitors model performance, data drift, and system health |
 | **AWS KMS** | Manages encryption keys for all PHI-containing services |
 
-### Code
+## Pseudocode Walkthrough
 
-#### Walkthrough
+**Step 1: State construction.** Raw clinical data arrives as a stream of events: a vital sign reading here, a ventilator parameter change there, a lab result an hour ago. The state constructor assembles these into a coherent snapshot of the patient's current condition. This is more complex than it sounds because data sources are asynchronous (vitals every 5 minutes, labs every 4-6 hours, vent settings on change), and you need to handle missing values gracefully. The state vector must capture not just current values but trends (is the patient improving or deteriorating?). Skip this step and the RL model receives garbage input, producing garbage recommendations.
 
-**Step 1: State construction.** Raw clinical data arrives as a stream of events: a vital sign reading here, a ventilator parameter change there, a lab result an hour ago. The state constructor assembles these into a coherent snapshot of the patient's current condition. This is more complex than it sounds because data sources are asynchronous (vitals every 5 minutes, labs every 4–6 hours, vent settings on change), and you need to handle missing values gracefully. The state vector must capture not just current values but trends (is the patient improving or deteriorating?). Skip this step and the RL model receives garbage input, producing garbage recommendations.
-
-```
+```pseudocode
 FUNCTION construct_state(patient_id, current_time):
     // Gather the most recent values for each clinical variable.
     // "Most recent" means different things for different data types:
@@ -122,7 +118,7 @@ FUNCTION construct_state(patient_id, current_time):
 
 **Step 2: Policy inference.** The trained RL model takes the current state and produces a recommended action. The action space is discrete (a finite set of possible weaning actions), and the model outputs both the recommended action and a Q-value (estimated long-term value) for each possible action. This lets the clinician see not just "what does the model recommend" but "how confident is it, and what are the alternatives?" Skip this step and you have a monitoring system with no decision support.
 
-```
+```pseudocode
 FUNCTION get_recommendation(state):
     // Send the state vector to the trained RL model for inference.
     // The model returns Q-values for each possible action.
@@ -159,7 +155,7 @@ FUNCTION get_recommendation(state):
 
 **Step 3: Safety filtering.** Before any recommendation reaches a clinician, it passes through a hard-constraint safety filter. This is not learned; it's a set of clinical rules that override the RL model when the recommendation would be unsafe. The RL model optimizes expected outcomes, but it can't guarantee constraint satisfaction. The safety filter provides that guarantee. This is non-negotiable in clinical deployment. Skip this step and you risk recommending extubation for a patient who is hemodynamically unstable.
 
-```
+```pseudocode
 SAFETY_RULES = {
     "recommend_extubation": {
         requires: [
@@ -212,7 +208,7 @@ FUNCTION apply_safety_filter(recommendation, state):
 
 For regulatory defensibility, audit logs should also be written to an S3 bucket with Object Lock (compliance mode) or to CloudWatch Logs with a resource policy preventing deletion. DynamoDB serves the operational read path; the immutable archive serves the compliance path.
 
-```
+```pseudocode
 FUNCTION deliver_and_log(patient_id, state, recommendation, timestamp):
     // Store the recommendation for the clinician dashboard
     write_to_dashboard(patient_id, {
@@ -242,7 +238,7 @@ FUNCTION deliver_and_log(patient_id, state, recommendation, timestamp):
 
 **Step 5: Outcome tracking and episode completion.** After the clinician acts, the system tracks what happens. Did the patient tolerate the change? Did the SBT succeed? Was extubation successful (defined as no reintubation within 48 hours)? These outcomes become the reward signal for future training. An episode begins when the patient meets initial weaning readiness screening criteria (e.g., FiO2 ≤ 60%, PEEP ≤ 10, hemodynamically stable, some respiratory drive present). Events before this point are acute stabilization, not weaning decisions. An episode ends when the patient is successfully extubated, dies, transitions to tracheostomy, or is transferred. Skip this step and the model never learns from its recommendations.
 
-```
+```pseudocode
 FUNCTION track_outcome(patient_id, episode_id):
     // Monitor for episode-ending events
     WATCH FOR:
@@ -279,7 +275,7 @@ FUNCTION track_outcome(patient_id, episode_id):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.05-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample recommendation output:**
 
@@ -331,6 +327,8 @@ FUNCTION track_outcome(patient_id, episode_id):
 
 ---
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add "Why This Isn't Production-Ready" section between Expected Results and Variations per the recipe structure guide. -->
+
 ## Variations and Extensions
 
 **Multi-objective optimization.** Instead of a single reward, optimize for multiple objectives simultaneously: minimize time on vent, minimize reintubation risk, minimize sedation exposure. Use constrained RL or multi-objective RL to find policies on the Pareto frontier, letting clinicians choose their preferred tradeoff.
@@ -364,9 +362,9 @@ FUNCTION track_outcome(patient_id, episode_id):
 
 | Phase | Timeline |
 |-------|----------|
-| **Basic** (offline RL training on MIMIC, off-policy evaluation) | 3–4 months |
-| **Production-ready** (real-time state construction, safety filters, clinician dashboard, IRB approval) | 12–18 months |
-| **With variations** (multi-objective, explainability, prospective validation study) | 24–36 months |
+| **Basic** (offline RL training on MIMIC, off-policy evaluation) | 3-4 months |
+| **Production-ready** (real-time state construction, safety filters, clinician dashboard, IRB approval) | 12-18 months |
+| **With variations** (multi-objective, explainability, prospective validation study) | 24-36 months |
 
 ---
 
