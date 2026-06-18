@@ -86,7 +86,7 @@ flowchart TD
 
 **Step 1: NLP extraction from clinical notes.** When new clinical notes arrive in the data lake, the system extracts SDOH-relevant mentions. This is a two-pass approach: first, Amazon Comprehend Medical identifies general medical entities and social history mentions. Second, a fine-tuned SDOH-specific model (hosted on SageMaker) performs targeted extraction for the six core SDOH domains. The two-pass approach matters because Comprehend Medical catches broad patterns efficiently, while the specialized model handles the indirect, nuanced language of social determinants that general models miss. Skip this step and you're limited to the 20-40% of patients who completed structured screening tools.
 
-```
+```pseudocode
 SDOH_DOMAINS = ["housing", "food", "transportation", "financial", "social_isolation", "safety"]
 
 FUNCTION extract_sdoh_from_note(note_text, patient_id, encounter_date):
@@ -133,7 +133,7 @@ FUNCTION extract_sdoh_from_note(note_text, patient_id, encounter_date):
 
 <!-- TODO (TechWriter): Expert review S1 (HIGH). Add guidance on geocoding PHI: recommend geocoding at zip+4 level (not full street address) when census-tract precision suffices for ADI/SVI lookup; call Location Service via VPC endpoint; cache geocode results in the feature store to avoid repeated address transmission; include geocoding calls in application-level audit logging. -->
 
-```
+```pseudocode
 FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
     features = empty map
 
@@ -207,7 +207,7 @@ FUNCTION assemble_patient_features(patient_id, lookback_months = 24):
 
 **Step 3: Clustering.** With the feature matrix assembled, this step applies a clustering algorithm to discover natural groupings of patients by social determinant profile. The choice of algorithm matters: we use Gower distance (which handles mixed binary, categorical, and continuous features natively) with hierarchical agglomerative clustering using average linkage (UPGMA). Average linkage is valid for non-Euclidean distance matrices like Gower. (Ward's linkage, while popular, requires Euclidean distances and produces unreliable results with Gower.) The optimal number of clusters is determined by a combination of silhouette score (statistical) and clinical interpretability (human judgment). In practice, SDOH phenotyping tends to produce 4-8 meaningful clusters. Fewer than 4 is too coarse to be actionable; more than 8 is too granular for care management teams to operationalize.
 
-```
+```pseudocode
 FUNCTION cluster_patients(feature_matrix, min_k = 4, max_k = 8):
     // Compute pairwise Gower distance matrix.
     // Gower distance handles mixed types:
@@ -247,7 +247,7 @@ FUNCTION cluster_patients(feature_matrix, min_k = 4, max_k = 8):
 
 **Step 4: Phenotype characterization and validation.** Raw cluster labels (0, 1, 2, ...) are meaningless to care teams. This step characterizes each cluster by its dominant features and assigns a human-readable phenotype name. It also runs the equity audit: checking whether clusters correlate with race/ethnicity in ways that could enable discrimination. The output is a phenotype catalog that care management teams can use to match patients to interventions.
 
-```
+```pseudocode
 FUNCTION characterize_phenotypes(feature_matrix, cluster_labels, patient_demographics):
     phenotypes = empty list
 
@@ -300,7 +300,7 @@ FUNCTION characterize_phenotypes(feature_matrix, cluster_labels, patient_demogra
 
 <!-- TODO (TechWriter): Expert review S4 (MEDIUM). Add requirement for application-level audit logging at the care management integration point: each phenotype lookup should log requesting user/system, patient_id, timestamp, and phenotype returned (HIPAA accounting-of-disclosures control). -->
 
-```
+```pseudocode
 STALENESS_THRESHOLD_DAYS = 180  // re-evaluate phenotype if older than 6 months
 
 FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_snapshot):
@@ -408,6 +408,8 @@ FUNCTION store_phenotype_assignment(patient_id, phenotype, confidence, feature_s
 - Indirect SDOH language ("patient seems stressed about bills") has lower extraction recall than explicit mentions
 - Community-level indicators are proxies; they don't capture individual circumstances within a neighborhood
 - Temporal dynamics: a patient's phenotype can change faster than the re-clustering cadence
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. The "Where it struggles" bullets above cover some of this, but the section should be explicit per template. -->
 
 ---
 

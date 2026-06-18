@@ -1,6 +1,6 @@
 # Recipe 6.9: Social Determinant Phenotyping
 
-**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$0.15–$0.40 per patient profile
+**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$0.15-$0.40 per patient profile
 
 ---
 
@@ -117,7 +117,7 @@ Unlike supervised learning, there's no ground truth for "correct" SDOH phenotype
 
 ## General Architecture Pattern
 
-```
+```text
 [Clinical Notes] ──→ [NLP Extraction] ──→ [SDOH Feature Store]
                                                     ↑
 [Screening Data] ──────────────────────────────────→│
