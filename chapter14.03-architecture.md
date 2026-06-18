@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **AWS Lambda for orchestration and execution logic.** The inventory monitoring and order generation logic is event-driven and stateless: check levels, compare to thresholds, generate orders. Lambda handles this cleanly without persistent infrastructure. The batch optimization trigger (nightly schedule) also fits Lambda's invocation model via EventBridge.
 
@@ -22,7 +20,7 @@
 
 **Amazon ECS (Fargate) for the optimization solver.** MIP solvers are CPU-intensive and may need more memory and runtime than Lambda allows (15-minute limit, 10GB memory). A Fargate task with the solver installed (HiGHS, CBC, or a commercial solver) handles the heavy computation. The task spins up on demand, solves, writes results, and terminates.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -46,7 +44,7 @@ flowchart TD
     style D fill:#f9f,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -60,7 +58,7 @@ flowchart TD
 | **Sample Data** | Historical consumption data (item, quantity, date, location). Synthetic data generators available for testing. Never use data linkable to patient records in dev. |
 | **Cost Estimate** | SageMaker inference: ~$50/month (ml.m5.large endpoint for forecasting). ECS Fargate solver: ~$5-20/month (nightly 10-minute task). Lambda + DynamoDB + S3: ~$10-30/month. Total: $65-200/month depending on item count and forecast complexity. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -73,13 +71,11 @@ flowchart TD
 | **Amazon EventBridge** | Schedules batch runs and routes real-time inventory events |
 | **Amazon CloudWatch** | Monitors solver performance, stockout events, and pipeline health |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Pull current inventory state.** The optimization pipeline starts by querying the current inventory management system (ERP, materials management system, or warehouse management system) for every item's current on-hand quantity, on-order quantity, and recent consumption history. This snapshot becomes the starting point for the optimization. Without accurate current state, the solver will calculate reorder points based on stale data, potentially triggering unnecessary orders or missing genuine stockouts. Most health systems expose this data via API or database views; the integration pattern depends on your specific ERP.
 
-```
+```pseudocode
 FUNCTION pull_inventory_snapshot():
     // Query the inventory management system for current state of all managed items.
     // "managed items" = items under automated reorder optimization (not all SKUs may be enrolled).
@@ -113,7 +109,7 @@ FUNCTION pull_inventory_snapshot():
 
 **Step 2: Generate demand forecasts.** For each item, predict future demand over the planning horizon (typically the lead time plus review period). The forecast must produce both a point estimate (expected demand) and a measure of uncertainty (standard deviation or prediction intervals). The uncertainty drives safety stock calculations: items with highly variable demand need more buffer. A time series model trained on historical consumption handles seasonality (flu season, summer surgical schedules) and trend (growing patient volume). Skip this step and you're setting reorder points based on averages that ignore the patterns in your data.
 
-```
+```pseudocode
 FUNCTION forecast_demand(snapshot, horizon_days):
     // For each item, generate a demand forecast over the planning horizon.
     // The horizon should cover lead_time + review_period (how often you check levels).
@@ -143,7 +139,7 @@ FUNCTION forecast_demand(snapshot, horizon_days):
 
 **Step 3: Estimate optimization parameters.** Transform the raw forecasts and item attributes into the specific parameters the solver needs. This includes calculating holding costs (cost of keeping one unit in stock for one day), estimating stockout costs or translating service level targets into safety stock requirements, and computing demand-during-lead-time distributions. The criticality tier maps to a service level target: critical items get 99.5% (you can tolerate a stockout only 0.5% of the time), essential items get 98%, standard items get 95%. These targets drive how much safety stock the optimizer will allocate.
 
-```
+```pseudocode
 FUNCTION estimate_parameters(snapshot, forecasts):
     // Convert raw data into solver-ready parameters for each item.
     
@@ -219,7 +215,7 @@ FUNCTION estimate_parameters(snapshot, forecasts):
 
 **Step 4: Solve the constrained optimization.** This is the core of the recipe. The solver takes all item parameters and system-wide constraints (total budget, total storage capacity) and finds the optimal reorder point and order quantity for each item simultaneously. "Simultaneously" is the key word: items compete for shared budget and storage space, so optimizing each item independently would violate system constraints. The MIP formulation handles integer order quantities, minimum order sizes, and the non-linear relationship between order quantity and average inventory level. Solve time depends on item count: hundreds of items solve in seconds, thousands in minutes. If the solver can't find a feasible solution (constraints are too tight), it reports which constraints are binding so you can make informed tradeoffs.
 
-```
+```pseudocode
 FUNCTION solve_optimization(parameters, constraints):
     // Build and solve the Mixed-Integer Programming model.
     //
@@ -304,7 +300,7 @@ FUNCTION solve_optimization(parameters, constraints):
 
 **Step 5: Validate and store policies.** Before committing new policies to the operational store, validate them against sanity checks. A reorder point that jumped 500% overnight probably indicates a data issue, not a genuine need. Compare new policies against current ones and flag dramatic changes for human review. Once validated, write to the policy store with versioning so you can track policy evolution over time and roll back if needed. A GSI on `solver_run_id` enables efficient rollback: query all policies from a specific run and revert them in batch.
 
-```
+```pseudocode
 FUNCTION validate_and_store(solver_result, current_policies):
     // Sanity checks before committing new policies to production.
     
@@ -355,7 +351,7 @@ FUNCTION validate_and_store(solver_result, current_policies):
 
 Reorder events are written to an immutable audit log (S3 with Object Lock or a dedicated CloudWatch Log Group with a retention policy). Each log entry includes the decision inputs (current level, reorder point, policy version) alongside the action taken, enabling full traceability for procurement audits.
 
-```
+```pseudocode
 FUNCTION check_and_reorder(inventory_event):
     // Triggered when an item's inventory level changes (consumption, receipt, adjustment).
     
@@ -404,7 +400,7 @@ FUNCTION check_and_reorder(inventory_event):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter14.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample policy output for a surgical supply item:**
 
@@ -437,6 +433,8 @@ FUNCTION check_and_reorder(inventory_event):
 | End-to-end pipeline (nightly) | 15-30 minutes |
 
 **Where it struggles:** Items with extremely sporadic demand (used once a month, then three times in a day). New items with no consumption history (cold-start problem). Supply chain disruptions that invalidate lead time assumptions. Items where demand is driven by a single physician's preference (one surgeon leaves, demand drops to zero overnight).
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullets on gaps a production deployment must close. -->
 
 ---
 
@@ -476,9 +474,6 @@ FUNCTION check_and_reorder(inventory_event):
 | **Basic** | 4-6 weeks | Single-location, batch nightly optimization for top 500 items. Statistical demand forecasting. Manual criticality classification. |
 | **Production-ready** | 3-4 months | Full item catalog. ML-based demand forecasting. ERP integration for real-time execution. Alerting and monitoring. Expiration handling. |
 | **With variations** | 6-9 months | Multi-location with redistribution. Vendor-managed inventory integration. Order consolidation for volume discounts. Demand sensing from surgical schedules. |
-
----
-
 
 ---
 

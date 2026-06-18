@@ -88,9 +88,11 @@ For most healthcare inventory problems, MIP with stochastic demand parameters (u
 
 The practical architecture for most health systems: batch optimization sets the policies, real-time monitoring executes them, and event-driven triggers force recalculation when the world changes faster than your batch cycle.
 
-### The General Architecture Pattern
+---
 
-```
+## General Architecture Pattern
+
+```text
 [Demand Forecasting] → [Parameter Estimation] → [Optimization Solver] → [Policy Store] → [Execution Engine]
                                                                                               ↓
 [Inventory Monitoring] ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← ← [Order Generation]
