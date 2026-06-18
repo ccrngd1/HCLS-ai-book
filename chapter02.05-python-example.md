@@ -35,6 +35,7 @@ One thing worth knowing before you start: Bedrock model IDs and inference profil
 Everything that's configuration rather than logic lives here. Model IDs, reading-level target, validation thresholds, and the S3/DynamoDB resource names are the knobs you'll change most often between environments.
 
 ```python
+import hashlib
 import json
 import logging
 import math
@@ -146,10 +147,10 @@ def receive_note_signed_event(event: dict) -> str:
     """
     Initialize a new AVS case and return the summary_id for downstream processing.
 
-    The event is the trigger for the entire pipeline. We persist the intake
-    state immediately so that if any later step fails, we have a record of
-    what was requested. In production this is also the hook for your workflow
-    orchestrator (Step Functions) to pick up the case.
+    The event is the trigger for the entire pipeline. Because EventBridge
+    delivers at-least-once, we first check idempotency using a fingerprint
+    derived from encounter_id and signed_at. If a prior execution already
+    handled this event, we return the existing summary_id without re-processing.
 
     Args:
         event: Dict with note-signed details from the EHR. Expected keys:
@@ -163,8 +164,38 @@ def receive_note_signed_event(event: dict) -> str:
     Returns:
         The generated summary_id (a UUID string).
     """
+    # Idempotency gate: derive a deterministic fingerprint from encounter_id
+    # and signed_at. A conditional write to DynamoDB prevents duplicate
+    # processing from at-least-once delivery.
+    fingerprint = hashlib.sha256(
+        f"{event['encounter_id']}|{event.get('signed_at', '')}".encode()
+    ).hexdigest()
+
+    idempotency_table = dynamodb.Table("avs-idempotency")
+    try:
+        idempotency_table.put_item(
+            Item={
+                "fingerprint": fingerprint,
+                "created_at": datetime.datetime.now(timezone.utc).isoformat(),
+            },
+            ConditionExpression="attribute_not_exists(fingerprint)",
+        )
+    except idempotency_table.meta.client.exceptions.ConditionalCheckFailedException:
+        # Duplicate event. Retrieve and return existing summary_id.
+        existing = idempotency_table.get_item(Key={"fingerprint": fingerprint})
+        existing_id = existing.get("Item", {}).get("summary_id", "UNKNOWN")
+        logger.info("Duplicate event for fingerprint=%s, returning existing %s", fingerprint, existing_id)
+        return existing_id
+
     summary_id = str(uuid.uuid4())
     now = datetime.datetime.now(timezone.utc)
+
+    # Store summary_id back on idempotency record for future duplicate lookups
+    idempotency_table.update_item(
+        Key={"fingerprint": fingerprint},
+        UpdateExpression="SET summary_id = :sid",
+        ExpressionAttributeValues={":sid": summary_id},
+    )
 
     summary_record = {
         "summary_id": summary_id,
@@ -526,14 +557,14 @@ def generate_summary(
     # languages, the safer path is to generate in English and post-process
     # through Amazon Translate. The boundary is fuzzy and should be
     # validated per language with native speakers.
-    # TODO (TechWriter): Code review Finding 1 (ERROR). The es/zh/vi strings below
-    # are double-encoded UTF-8 mojibake. Replace with correct UTF-8 characters.
-    # Spanish should read "español", not "espaÃ±ol". Save file as UTF-8 no BOM.    language_instruction = {
+    # Note: these instruction strings must be saved as UTF-8 (no BOM).
+    # Mojibake in prompts is a silent failure mode, not an obvious crash.
+    language_instruction = {
         "en": "Write the entire summary in English.",
-        "es": "Escribe todo el resumen en espaÃ±ol. Usa un tono natural y respetuoso.",
-        "zh": "ç”¨ä¸­æ–‡ç®€ä½“å†™æ•´ä¸ªæ‘˜è¦ã€‚è¯­æ°”è‡ªç„¶ã€å°Šé‡æ‚£è€…ã€‚",
-        "vi": "Viáº¿t toÃ n bá»™ báº£n tÃ³m táº¯t báº±ng tiáº¿ng Viá»‡t. GiỠgiá»ng vÄƒn tá»± nhiÃªn, tÃ´n trá»ng.",
-    }.get(language, f"Write the entire summary in the language with ISO code '{language}'.")
+        "es": "Escribe todo el resumen en español. Usa un tono natural y respetuoso.",
+        "zh": "用中文简体写整个摘要。语气自然、尊重患者。",
+        "vi": "Viết toàn bộ bản tóm tắt bằng tiếng Việt. Giữ giọng văn tự nhiên, tôn trọng.",
+    }.get(language, f"Write the entire summary in the language with ISO code '{language}'.") 
 
     generation_system = f"""You are drafting a patient-facing after-visit summary. Your reader is a patient who just finished a medical appointment. They may be tired, anxious, or distracted.
 
@@ -789,7 +820,7 @@ def check_readability(summary_text: str, target_grade_level: int) -> dict:
       FKGL = 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59
 
     This is English-language specific. For Spanish, use INFLESZ or
-    FernÃ¡ndez Huerta. For Mandarin, grade-level formulas don't translate
+    Fernández Huerta. For Mandarin, grade-level formulas don't translate
     directly; use character-count heuristics or trained readability models.
     A production pipeline should swap validators per language.
 
@@ -963,10 +994,16 @@ def render_and_deliver(
                 delivered_channels.append("email")
 
             elif channel == "sms":
-                # Stub: SMS has 160-char limits per segment. Chunk the key
-                # action items into a short sequence. Do NOT send full PHI
-                # via SMS; send a portal link and a brief action summary.
+                # Stub: SMS must NOT contain clinical content (medications,
+                # doses, warning signs). Default to notification-plus-portal-link:
+                # "Your after-visit summary is ready. View it in the patient
+                # portal: [link]." Only send clinical content if the patient
+                # has granted explicit sms_phi_consent after risk disclosure.
                 #
+                # if patient_prefs.get("sms_phi_consent") == "granted":
+                #     sms_body = _extract_action_items_only(summary_markdown)
+                # else:
+                #     sms_body = "Your after-visit summary is ready. View it in the patient portal."
                 # pinpoint_client.send_messages(...)
                 delivered_channels.append("sms")
 
@@ -1125,16 +1162,14 @@ def generate_after_visit_summary(
 
     # Step 7
     # Require clinician review for high-risk visits, validation flags,
-    # or readability-loop failures.
-    # TODO (TechWriter): Code review Finding 3 (WARNING). This check does not
-    # catch REQUIRES_REGENERATION status. If all attempts fail validation, the
-    # summary is auto-delivered to non-high-risk patients. Add
-    # validation["status"] == "REQUIRES_REGENERATION" and readability is None
-    # to the requires_review condition.
+    # or readability-loop failures. If all generation attempts exhausted
+    # without passing validation, route to review rather than auto-delivering
+    # an unvalidated summary.
     requires_review = (
         visit_type in HIGH_RISK_VISIT_TYPES
-        or (validation and validation["status"] == "NEEDS_CLINICIAN_REVIEW")
+        or (validation and validation["status"] in ("NEEDS_CLINICIAN_REVIEW", "REQUIRES_REGENERATION"))
         or (readability and not readability["pass"])
+        or readability is None  # loop exhausted before readability was checked
     )
 
     print(f"Step 7: Rendering and routing (clinician_review={requires_review})...")
@@ -1272,7 +1307,7 @@ Run this end-to-end against a synthetic encounter and you'll see the full patter
 
 **Portal delivery is a second integration project.** Publishing the finalized AVS to the patient portal is distinct from the FHIR read side. Each EHR's portal API (MyChart, HealtheLife, athenaCommunicator) has its own document publishing model, metadata requirements, and sometimes certification process for third-party content. Expect two to four weeks per portal, more if the vendor requires formal integration review.
 
-**Reading level for non-English languages is a separate project per language.** Flesch-Kincaid is English only. Spanish has INFLESZ and FernÃ¡ndez Huerta. Mandarin doesn't use grade levels in a directly comparable way. If you ship multilingual generation, you need per-language readability validators, each calibrated to norms in that language's patient communication literature. Many teams skip this and just trust the model. That mostly works and occasionally produces a Spanish summary written at a university register for a patient with a fourth-grade education, and the patient's trust in the communication erodes quietly.
+**Reading level for non-English languages is a separate project per language.** Flesch-Kincaid is English only. Spanish has INFLESZ and Fernández Huerta. Mandarin doesn't use grade levels in a directly comparable way. If you ship multilingual generation, you need per-language readability validators, each calibrated to norms in that language's patient communication literature. Many teams skip this and just trust the model. That mostly works and occasionally produces a Spanish summary written at a university register for a patient with a fourth-grade education, and the patient's trust in the communication erodes quietly.
 
 **Multilingual QA has to be an ongoing program, not a one-time launch.** Generate a hundred summaries in Spanish, have a bilingual community health worker review them, feed the findings back into prompt engineering, repeat quarterly. For Cuban-American vs. Mexican-American vs. Puerto Rican patient populations, regional phrasing preferences differ. This is the work behind "multilingual support" and it's almost never budgeted for at project kickoff.
 
@@ -1300,7 +1335,7 @@ Run this end-to-end against a synthetic encounter and you'll see the full patter
 
 **Model-ID lifecycle.** The model IDs in this example will be replaced over time as newer model versions launch. A production pipeline stores model IDs in configuration (SSM Parameter Store or AppConfig), not in code. When you update to a new model version, you rerun your regression suite before flipping the production config. Skipping this is how teams end up discovering at 2 AM that the new model version ignores a critical section of their prompt.
 
-**DynamoDB Decimal gotcha.** The validation_rate in Step 5 gets stored as a Decimal when written to DynamoDB, because DynamoDB doesn't accept Python floats. The example code handles this correctly (`Decimal(str(round(validation_rate, 4)))`), but it's a common trap on the first deployment. Always wrap floats with `Decimal(str(...))` when writing to DynamoDB; going through `str` avoids the binary-precision issues of `Decimal(float_value)`.
+**DynamoDB Decimal gotcha.** DynamoDB doesn't accept Python floats. The example code above does not persist `validation_rate` to DynamoDB, but if you extend it to do so (for example, adding validation metrics to the summary record), wrap it with `Decimal(str(round(validation_rate, 4)))` to avoid the binary-precision pitfall of `Decimal(float_value)`. Always go through `str` first. This applies to any float you store: cost-per-summary, processing-time-seconds, readability scores.
 
 **Observability and SLOs.** The target for AVS delivery is typically "before the patient leaves the parking lot," which means roughly 2-5 minutes from note signature to portal publication. Set CloudWatch SLOs for end-to-end latency at the 95th percentile, regeneration-rate SLO for prompt drift, validation-pass-rate SLO for generation quality, and delivery-success-rate SLO per channel. Alert when any of these drift. Without these, you'll discover problems from patient complaints instead of from dashboards.
 
