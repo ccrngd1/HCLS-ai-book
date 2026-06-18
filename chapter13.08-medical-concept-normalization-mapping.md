@@ -1,6 +1,6 @@
 # Recipe 13.8: Medical Concept Normalization and Mapping
 
-**Complexity:** Complex · **Phase:** Foundation · **Estimated Cost:** ~$2,000–8,000/month (graph database + compute)
+**Complexity:** Complex · **Phase:** Foundation · **Estimated Cost:** ~$2,000-8,000/month (graph database + compute)
 
 ---
 
@@ -90,7 +90,7 @@ The UMLS is not perfect. Its mappings are algorithmically generated and human-re
 
 At a conceptual level, a concept normalization system has these components:
 
-```
+```text
 [Terminology Sources] → [Graph Ingestion] → [Knowledge Graph Store] → [Normalization API] → [Consumers]
                                                       ↑
                                             [Curation Interface]
@@ -122,7 +122,7 @@ The curation interface is the thing that will consume the most ongoing effort. U
 
 Version management is the thing that surprised me most. I initially built this as a "current state" system: load the latest version of everything, done. Then someone asked "why did this patient's risk score change between last month and this month when nothing clinical changed?" The answer was that an ICD-10 annual update reclassified a code, which changed its SNOMED mapping, which changed its HCC category. Without temporal queries, you can't explain that. Retroactive terminology changes are a real operational concern.
 
-The cache invalidation problem is also non-trivial. When you load a new terminology version, which cache entries are stale? The naive answer is "flush everything," but that causes a thundering herd on Neptune. The smart answer is to compute the delta (which concepts changed) and selectively invalidate, but that requires tracking which cache entries depend on which graph nodes.
+The cache invalidation problem is also non-trivial. When you load a new terminology version, which cache entries are stale? The naive answer is "flush everything," but that causes a thundering herd on your graph database. The smart answer is to compute the delta (which concepts changed) and selectively invalidate, but that requires tracking which cache entries depend on which graph nodes.
 
 One more thing: licensing. UMLS requires a free license from NLM. SNOMED CT is free in the US (NLM holds the license). But CPT requires a paid AMA license, and some specialty terminologies have their own licensing terms. Budget for this and track your compliance.
 

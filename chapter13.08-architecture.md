@@ -53,7 +53,7 @@ flowchart TD
 | **CloudTrail** | Enabled for all API calls. Neptune audit logging enabled for query-level audit trail. |
 | **Terminology Licenses** | UMLS license (free, requires registration with NLM). SNOMED CT (free in US via NLM). CPT (paid AMA license). ICD-10 (free from CMS). LOINC (free, requires registration). RxNorm (free via NLM). |
 | **Sample Data** | UMLS Metathesaurus subset. NLM provides sample files for development. Never load full UMLS into a dev environment without understanding the size (multiple GB). |
-| **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200–2,000/month for a basic deployment. |
+| **Cost Estimate** | Neptune db.r5.large: ~$700/month. ElastiCache cache.r6g.large: ~$300/month. Glue ETL (monthly runs): ~$50/month. Lambda + API Gateway: ~$100/month at moderate query volume. S3 storage: ~$50/month. Total: ~$1,200-2,000/month for a basic deployment. |
 
 <!-- TODO (TechWriter): Expert review A-4 (MEDIUM). Recommend db.r5.xlarge (32GB) as minimum for full UMLS deployment, plus a read replica for query isolation during bulk loads. Route API queries to the read replica; route ingestion writes to the primary. Update cost estimate to ~$1,400/month for primary + replica. -->
 
@@ -79,7 +79,7 @@ flowchart TD
 
 **Step 1: Terminology file ingestion.** When a new terminology release arrives (downloaded manually or via automated NLM API calls), it lands in S3 and triggers the ingestion orchestrator. The first task is parsing the raw files into a normalized intermediate format. UMLS uses RRF (Rich Release Format), which is pipe-delimited with specific column semantics. SNOMED uses RF2 (Release Format 2), a set of tab-delimited files with concept, description, and relationship tables. Each terminology has its own parser, but they all produce the same output: a set of nodes (concepts) and edges (relationships) ready for graph loading. Skip this step and you have no data. Get the parsing wrong and you have wrong data, which is worse.
 
-```
+```pseudocode
 FUNCTION ingest_terminology(terminology_name, version, s3_path):
     // Download and validate the raw terminology files from S3.
     // Each terminology has a known file structure:
@@ -115,7 +115,7 @@ FUNCTION ingest_terminology(terminology_name, version, s3_path):
 
 **Step 2: Graph construction and loading.** The parsed concepts and relationships need to be loaded into Neptune. For initial loads and large updates, Neptune's bulk loader is dramatically faster than individual insert queries. The bulk loader reads CSV files from S3 in a specific format: one file for nodes, one for edges, with headers defining the property names and types. For incremental updates (a few hundred new concepts in a monthly RxNorm release), individual Gremlin or openCypher queries work fine. The choice between bulk and incremental depends on the size of the delta. This step also handles the critical task of linking concepts across terminologies: when UMLS tells us that SNOMED concept 44054006 and ICD-10 code E11 share a CUI, we create a cross-terminology edge between them.
 
-```
+```pseudocode
 FUNCTION build_graph_load_files(concepts, relationships):
     // Neptune bulk loader expects CSV files with specific headers.
     // Node file: ~id, ~label, code:String, display:String, terminology:String, 
@@ -171,7 +171,7 @@ FUNCTION build_graph_load_files(concepts, relationships):
 
 **Step 3: Cross-terminology linking via UMLS CUIs.** This is the heart of the normalization system. UMLS assigns a Concept Unique Identifier (CUI) to each distinct clinical meaning. When SNOMED concept 44054006 ("Type 2 diabetes mellitus") and ICD-10 code E11 ("Type 2 diabetes mellitus") share CUI C0011860, that tells us they represent the same clinical idea. This step creates the cross-terminology edges that make normalization possible. Without it, you have isolated terminology islands with no bridges between them.
 
-```
+```pseudocode
 FUNCTION create_cross_terminology_links(umls_concepts):
     // UMLS MRCONSO.RRF contains rows like:
     //   CUI | Language | Source | Code | Display
@@ -219,7 +219,7 @@ FUNCTION create_cross_terminology_links(umls_concepts):
 
 **Step 4: Normalization query service.** This is the API that consuming systems call. Given a concept (code + terminology), return the canonical form and all known mappings to other terminologies. The service first checks the Redis cache (most common lookups are repeated frequently). On cache miss, it queries Neptune with a graph traversal that follows cross-terminology edges, respecting relationship types and version constraints. The response includes confidence scores and provenance so consumers can make informed decisions about which mappings to trust.
 
-```
+```pseudocode
 FUNCTION normalize_concept(code, terminology, target_terminologies, version=null):
     // Build a cache key from the input parameters.
     cache_key = build_cache_key(code, terminology, target_terminologies, version)
@@ -282,7 +282,7 @@ FUNCTION normalize_concept(code, terminology, target_terminologies, version=null
 
 **Step 5: Hierarchy traversal for value set expansion.** Quality measures and clinical rules often reference value sets: "all codes that represent diabetes." This requires traversing the terminology hierarchy. In SNOMED CT, "Type 2 diabetes mellitus" (44054006) is-a "Diabetes mellitus" (73211009), which is-a "Disorder of glucose metabolism" (126877002). A value set defined at "Diabetes mellitus" needs to include all descendants. This step provides that expansion, which is computationally expensive for broad concepts but essential for correct quality measurement.
 
-```
+```pseudocode
 FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_depth=5, max_results=10000):
     // Start with the root concept.
     // "Value set expansion" means: give me this concept and everything below it
@@ -340,7 +340,7 @@ FUNCTION expand_value_set(root_code, terminology, include_descendants=true, max_
 
 **Step 6: Version management and temporal queries.** Terminologies change. A code that existed in ICD-10-CM 2023 might be retired in 2024 and replaced by two more specific codes. Your normalization system needs to answer questions like "what was the correct mapping for this code as of the date this claim was filed?" This step handles version-aware queries by maintaining historical edges and filtering by effective date.
 
-```
+```pseudocode
 FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_date):
     // Find the concept version that was active on the given date.
     // Terminology versions have effective dates (e.g., ICD-10-CM FY2024 effective Oct 1, 2023).
@@ -445,6 +445,8 @@ FUNCTION normalize_as_of_date(code, terminology, target_terminologies, as_of_dat
 - Composite concepts that require multiple codes in the target terminology. The API returns individual mappings; the consumer must assemble them.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
 
 ## Variations and Extensions
 
