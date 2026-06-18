@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for model training and hosting.** SageMaker handles the full ML lifecycle for this tabular classification problem. The built-in XGBoost algorithm is ideal for the feature types involved (mix of categorical, numerical, and ratio features). SageMaker's batch transform mode lets you score all open balances nightly without maintaining a persistent endpoint. For organizations that want real-time scoring at the point of service, a SageMaker real-time endpoint works too, but batch is usually sufficient since collection strategy doesn't need sub-second latency.
 
@@ -20,7 +18,7 @@
 
 **AWS Lambda for the strategy engine.** Reads predictions from DynamoDB, applies business rules (threshold-based routing), and triggers downstream actions: flag accounts for payment plan offers, route to financial counselors, or update the collection queue priority. Lambda's event-driven model fits the "react to new scores" pattern cleanly.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -47,7 +45,7 @@ flowchart TD
 
 <!-- TODO (TechWriter): Expert review A1 (HIGH). Add a feedback loop to the architecture diagram showing ground truth collection, calibration monitoring (rolling AUC and ECE to CloudWatch), and a retraining trigger when ECE exceeds 0.05 or AUC drops below 0.75. The recipe identifies calibration as the critical requirement but the diagram has no monitoring infrastructure. -->
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -60,7 +58,7 @@ flowchart TD
 | **Sample Data** | Synthetic patient balance records. Generate with realistic distributions: ~60% of balances paid within 90 days, ~20% partial payment, ~20% written off. Vary by balance amount and patient history. Never use real patient financial data in dev. |
 | **Cost Estimate** | SageMaker training: ~$5-15 per training run (ml.m5.xlarge, 1 hour). Batch transform: ~$2-5 per nightly scoring run. Glue: ~$0.44/DPU-hour. Total: ~$150-400/month for a mid-size health system. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -73,9 +71,7 @@ flowchart TD
 | **Amazon CloudWatch** | Monitor model performance, score distributions, and pipeline health |
 | **AWS KMS** | Manage encryption keys for all data stores containing PHI |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Feature engineering.** The Glue job runs nightly, pulling open balances from the billing system and enriching them with patient history and engagement data. For each open balance, it computes the features the model needs: the patient's historical payment rate with your organization, the balance amount and type, how long the balance has been open, insurance context, and recent engagement signals. The output is a clean dataset in S3, one row per open balance. Skip this step and you're asking the model to predict payment behavior without knowing anything about the patient's history or the balance characteristics.
 
@@ -341,7 +337,7 @@ FUNCTION apply_collection_strategy(balance_predictions):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter07.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a scored balance:**
 
@@ -425,9 +421,6 @@ FUNCTION apply_collection_strategy(balance_predictions):
 | **Basic** (single model, batch scoring, manual threshold tuning) | 3-4 weeks |
 | **Production-ready** (calibration, monitoring, fairness checks, automated retraining) | 8-12 weeks |
 | **With variations** (real-time scoring, multi-outcome, segmented models) | 14-20 weeks |
-
----
-
 
 ---
 

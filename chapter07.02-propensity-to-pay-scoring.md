@@ -74,7 +74,7 @@ Each of these is a valid outcome definition, and each produces a different model
 
 The right choice depends on your operational question. If you're deciding who to send to external collections at 90 days, train on a 90-day outcome. If you're deciding who to offer a payment plan at 30 days, train on a 30-day outcome. You may need multiple models for different decision points in your collection workflow.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
 ```text
 [Feature Store] → [Model Training] → [Scoring Service] → [Strategy Engine]
