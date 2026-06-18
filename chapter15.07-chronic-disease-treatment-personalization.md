@@ -1,6 +1,6 @@
 # Recipe 15.7: Chronic Disease Treatment Personalization
 
-**Complexity:** Complex · **Phase:** Research/Early Pilot · **Estimated Cost:** ~$1,500–4,000/month (training infrastructure + inference)
+**Complexity:** Complex · **Phase:** Research/Early Pilot · **Estimated Cost:** ~$1,500-4,000/month (training infrastructure + inference)
 
 ---
 
@@ -62,7 +62,7 @@ For chronic disease treatment personalization, Batch-Constrained Q-Learning (BCQ
 
 ### The General Architecture Pattern
 
-```
+```text
 [EHR Longitudinal Records] → [Episode Construction] → [Offline Policy Learning (BCQ)]
                                                                     ↓
 [Off-Policy Evaluation] → [Safety Constraint Layer] → [Clinical Decision Support]
@@ -109,3 +109,10 @@ Plan for 3-5 years from "working prototype" to "influencing treatment decisions 
 - **Recipe 15.1 (Alert Threshold Optimization):** A simpler RL application that shares the offline learning pattern in a lower-stakes setting. Good starting point before tackling treatment personalization.
 
 ---
+
+**Tags:** `reinforcement-learning`, `offline-rl`, `bcq`, `chronic-disease`, `diabetes`, `treatment-personalization`, `safety-constraints`, `clinical-decision-support`, `sequential-decision-making`, `off-policy-evaluation`
+
+---
+
+| [← 15.6: Glucose Control in ICU](chapter15.06-glucose-control-icu) | [Chapter 15 Index](chapter15-preface) | [15.8: Chemotherapy Dose Optimization →](chapter15.08-chemotherapy-dose-optimization) |
+|:---|:---:|---:|

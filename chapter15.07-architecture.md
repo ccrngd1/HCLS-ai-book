@@ -85,7 +85,7 @@ flowchart TB
 
 **Step 1: Reward function design.** The reward function is the most consequential design decision in chronic disease RL. Unlike acute care (where "keep glucose in range" is relatively straightforward), chronic disease has competing objectives that must be balanced explicitly. You want low HbA1c, but not at the cost of frequent hypoglycemia. You want effective treatment, but not unnecessary complexity. You want to escalate when needed, but not when the real problem is adherence. The reward function encodes all of these trade-offs numerically. Get it wrong and your agent optimizes for the wrong thing.
 
-```
+```pseudocode
 FUNCTION compute_quarterly_reward(
     hba1c, target_hba1c, hypo_events, severe_hypo,
     treatment_level, previous_treatment_level, adherence
@@ -130,7 +130,7 @@ FUNCTION compute_quarterly_reward(
 
 **Step 2: State construction from longitudinal records.** The state vector captures everything relevant to a treatment decision. Chronic disease state is richer than acute care because you have years of history and patient factors that matter enormously for treatment response. Each feature is normalized to [0, 1] for the RL algorithm. Missing values get midpoint imputation (in production, use last-known-value with a staleness indicator).
 
-```
+```pseudocode
 FUNCTION construct_state_vector(patient_data):
     // 16-dimensional state capturing the full decision context.
     state = [
@@ -156,7 +156,7 @@ FUNCTION construct_state_vector(patient_data):
 
 **Step 3: Episode construction from patient history.** Each patient's multi-year treatment history becomes an RL episode. A patient with 5 years of quarterly visits produces roughly 20 transitions. The key temporal structure: the reward for a treatment decision at visit N is computed from the outcome observed at visit N+1 (3 months later). This delayed reward is what makes chronic disease RL fundamentally different from supervised learning.
 
-```
+```pseudocode
 FUNCTION build_episode(patient_record):
     visits = patient_record.visits  // chronologically ordered quarterly visits
     episode = empty list
@@ -195,7 +195,7 @@ FUNCTION build_episode(patient_record):
 
 **Step 4: Offline RL training with BCQ.** The training loop learns a Q-function (expected cumulative reward for each state-action pair) while constraining the policy to only recommend actions that clinicians have historically taken in similar states. The BCQ threshold controls conservatism: higher means "stay closer to what clinicians do," lower means "willing to deviate if the data supports it."
 
-```
+```pseudocode
 FUNCTION train_bcq_policy(episodes, bcq_threshold=0.3, discount=0.95):
     // Flatten episodes into a replay buffer of transitions
     replay_buffer = flatten_all_transitions(episodes)
@@ -229,7 +229,7 @@ FUNCTION train_bcq_policy(episodes, bcq_threshold=0.3, discount=0.95):
 
 <!-- TODO (TechWriter): Expert review finding 3 (HIGH). The Python companion's evaluate_policy_offline docstring claims "weighted importance sampling" but the implementation only computes concordance metrics (agreement rate and average treatment levels). Either add actual importance sampling to the pseudocode here, or clarify that this is concordance-based evaluation with a note that full OPE would use IS/DR estimators. The current pseudocode below uses concordance metrics, which matches the Python implementation. -->
 
-```
+```pseudocode
 FUNCTION evaluate_policy_offline(policy, action_frequency, test_episodes):
     // Concordance-based evaluation: how often does the learned policy
     // agree with clinician decisions, and what's the treatment intensity profile?
@@ -265,7 +265,7 @@ FUNCTION evaluate_policy_offline(policy, action_frequency, test_episodes):
 
 **Step 6: Safety constraint layer.** Hard rules that override the RL policy regardless of what it recommends. These encode clinical guidelines and contraindications that should never be violated. The constraints are ordered by priority: later constraints can override earlier ones because safety trumps "give it more time."
 
-```
+```pseudocode
 FUNCTION apply_safety_constraints(recommended_action, patient_data):
     safe_action = recommended_action
     current_level = patient_data.current_treatment_level
@@ -325,7 +325,7 @@ FUNCTION apply_safety_constraints(recommended_action, patient_data):
 
 **Step 7: Clinical decision support at the quarterly visit.** This assembles the full pipeline: fetch patient state, update with new visit data, compute individualized target, query the policy, apply safety constraints, and present the recommendation. The clinician always has the final say.
 
-```
+```pseudocode
 FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, policy):
     // Fetch longitudinal patient state from DynamoDB
     patient_data = fetch_patient_state(patient_id)
@@ -406,6 +406,8 @@ FUNCTION generate_treatment_recommendation(patient_id, new_hba1c, visit_data, po
 - Populations underrepresented in training data (the policy may default to conservative recommendations for groups with fewer historical trajectories)
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add production gap analysis (model validation, regulatory pathway, clinician trust, prospective trial requirements). -->
 
 ## Variations and Extensions
 
