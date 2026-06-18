@@ -124,7 +124,7 @@ And explicitly out of scope:
 - Any care coordination question (defer to recipe 11.9)
 - Anything outside healthcare (general chitchat, current events, jokes, etc.)
 
-The scope boundary is enforced in three layers. The system prompt to the LLM explicitly defines the scope and the refusal pattern. A vendor-managed guardrail layer (like Bedrock Guardrails) provides defense-in-depth filtering for harmful or restricted content. An offline scope-drift review program samples conversations and flags scope violations for prompt and rule updates. Each layer catches things the others miss.
+The scope boundary is enforced in three layers. The system prompt to the LLM explicitly defines the scope and the refusal pattern. A vendor-managed guardrail layer provides defense-in-depth filtering for harmful or restricted content. An offline scope-drift review program samples conversations and flags scope violations for prompt and rule updates. Each layer catches things the others miss.
 
 The reason the scope discipline is the make-or-break operational issue is that the LLM will, by default, attempt to answer almost any question. It is good at sounding helpful. The institution's job is to make it unhelpful in a specific, principled way: unhelpful about the things it should not help with, helpful about the things it should. That balance is set by prompt design and enforced by runtime filtering and offline review. Underweighting any of those three is how a "harmless FAQ bot" ends up giving clinical advice that the institution did not authorize.
 
