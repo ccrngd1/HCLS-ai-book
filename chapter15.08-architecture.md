@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for RL training.** SageMaker provides managed infrastructure for training RL models, including support for custom environments and algorithms. For offline RL specifically, you'll use SageMaker's training jobs with custom containers running your CQL or BCQ implementation. The managed infrastructure handles GPU provisioning, distributed training, and experiment tracking without you managing EC2 instances directly.
 
@@ -20,7 +18,7 @@
 
 **Amazon CloudWatch for monitoring.** Model performance metrics, recommendation acceptance rates, and outcome tracking all flow through CloudWatch for operational visibility. Monitor for drift signals: recommendation acceptance rate dropping below 60% (clinicians disagreeing more often suggests the policy is out of step with current practice), patient state distributions shifting outside training data bounds, and outcome metrics degrading over time. Any of these should trigger a retraining cycle via Step Functions.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -45,7 +43,7 @@ flowchart TD
     style I fill:#f9f,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -58,7 +56,7 @@ flowchart TD
 | **Data Requirements** | Minimum 500-1000 complete treatment trajectories per regimen. More is better. Must include labs, dosing records, imaging, toxicity grades, and outcomes. |
 | **Cost Estimate** | Training: $50-200 per training run (GPU instances, 4-12 hours). Inference endpoint: $200-800/month (ml.m5.xlarge). Storage and ETL: $100-500/month depending on data volume. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -70,9 +68,7 @@ flowchart TD
 | **Amazon CloudWatch** | Monitoring: model drift, recommendation acceptance rates, outcome metrics |
 | **AWS KMS** | Encryption key management for all PHI-containing stores |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Extract treatment trajectories from EHR data.** The foundation of offline RL is historical data. You need complete treatment courses: every lab value, every dose administered, every imaging result, every toxicity event, assembled into a temporal sequence per patient. This is the hardest engineering step, not because the algorithms are complex, but because clinical data is messy. Labs arrive at irregular intervals. Imaging happens every 2-3 cycles, not every cycle. Toxicity is documented in free text that needs NLP extraction (see Chapter 8). Doses are sometimes modified mid-infusion. You need to align all of this into per-cycle state snapshots that the RL algorithm can consume. Skip this step or do it poorly, and your model learns from garbage.
 
@@ -410,7 +406,7 @@ FUNCTION validate_state(patient_state):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample recommendation output:**
 

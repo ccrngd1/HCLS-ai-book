@@ -118,7 +118,9 @@ Conservative approaches address this:
 
 The practical implication: offline RL policies tend to be conservative. They improve on historical practice incrementally, not dramatically. That's actually appropriate for a safety-critical domain.
 
-### General Architecture Pattern
+---
+
+## General Architecture Pattern
 
 ```text
 [Historical EHR Data] → [State/Action/Reward Extraction] → [Trajectory Construction]
