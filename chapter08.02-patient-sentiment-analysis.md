@@ -73,7 +73,9 @@ Standard sentiment analysis tooling was built for product reviews and social med
 
 **PHI contamination.** Patient feedback frequently contains protected health information: names of providers, specific diagnoses, dates of service, medication names. Any system processing this text must handle PHI appropriately. The sentiment analysis itself doesn't need the PHI (you're extracting themes, not re-identifying patients), but the pipeline must protect it.
 
-### The General Architecture Pattern
+---
+
+## General Architecture Pattern
 
 Conceptually, the pipeline looks like this:
 
@@ -93,9 +95,9 @@ Conceptually, the pipeline looks like this:
 
 **Visualize/Alert.** Surface insights through dashboards for patient experience teams. Configure alerts for significant negative trends. Generate periodic reports for department leaders. The output should be actionable, not just informational.
 
----
-
 > **The AWS build lives in a companion page.** This recipe covers the problem, the underlying technology, and the vendor-agnostic architecture. For the AWS services, architecture diagram, prerequisites, and the step-by-step pseudocode walkthrough, see the [Architecture and Implementation companion](chapter08.02-architecture). The Python example is linked from there.
+
+---
 
 ## The Honest Take
 

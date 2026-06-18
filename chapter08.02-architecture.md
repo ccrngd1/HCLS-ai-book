@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon Comprehend for sentiment and entity detection.** Comprehend is AWS's managed NLP service. Its sentiment analysis API classifies text as positive, negative, neutral, or mixed, with confidence scores for each. Crucially for healthcare, it also has a medical variant (Comprehend Medical) that detects PHI entities, which you need for the preprocessing step. You don't need to train, host, or scale any models. The tradeoff: Comprehend's built-in sentiment is document-level and uses generic categories. For aspect-level analysis, you'll need the custom classification feature or a separate model.
 
@@ -22,7 +20,7 @@
 
 **Amazon EventBridge for alerting.** When aggregation detects a significant negative trend (configurable thresholds), EventBridge routes an alert to the appropriate team via SNS, Slack, or PagerDuty. Early warning, not just retrospective reporting.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart LR
@@ -41,7 +39,7 @@ flowchart LR
     style H fill:#ff9,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -57,7 +55,7 @@ flowchart LR
 | **Sample Data** | Synthetic patient feedback. CMS publishes [HCAHPS survey results](https://data.cms.gov/provider-data/topics/hospitals/overall-hospital-quality-star-rating) (aggregate only). Generate synthetic verbatim comments for development. Never use real patient feedback in non-production environments without proper de-identification. |
 | **Cost Estimate** | Comprehend DetectSentiment: $0.0001 per unit (100 chars). For average 500-char feedback: ~$0.0005/item. PHI detection adds ~$0.01/item. Custom classification: $0.0005/item. Custom classification endpoint hosting: $0.50/hour per inference unit ($360/month minimum, always-on). At 50,000 items/month: ~$910/month total (including endpoint). For batch processing (non-real-time), use Comprehend async classification jobs instead of a real-time endpoint to eliminate hosting cost. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -72,14 +70,12 @@ flowchart LR
 | **Amazon CloudWatch** | Metrics, logs, and alarms for pipeline health |
 | **Amazon SQS** | Dead-letter queues for failed processing items |
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-comprehend-examples`](https://github.com/aws-samples/amazon-comprehend-examples): General Comprehend examples including sentiment analysis, custom classification, and entity detection
 > - [`amazon-comprehend-medical-fhir-integration`](https://github.com/aws-samples/amazon-comprehend-medical-fhir-integration): Healthcare-specific: integrating Comprehend Medical with FHIR for clinical NLP pipelines
-
-#### Walkthrough
 
 **Step 1: PHI detection and redaction.** Before any analysis, the system scans incoming feedback for protected health information. Patient comments routinely mention provider names, specific diagnoses, medication names, and dates of service. The PHI detection pass identifies these entities and either redacts them (replaces with placeholder tokens like `[PROVIDER_NAME]`) or tags them for downstream handling. This step is non-negotiable for any pipeline processing patient-generated text. The redacted version is what flows to sentiment analysis, so your sentiment models never need access to identifiable information. Skip this step and you're running PHI through analytics services without proper safeguards.
 
@@ -231,7 +227,7 @@ FUNCTION store_analysis_result(source_metadata, sentiment, aspects):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter08.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a typical patient survey comment:**
 
@@ -299,6 +295,8 @@ Input: "The doctor was very thorough and explained everything clearly. But I wai
 **Where it struggles:** Very short feedback ("fine", "ok", "terrible") provides too little context for aspect extraction. Sarcasm is reliably misclassified ("Oh sure, waiting two hours was GREAT"). Feedback in languages other than English requires separate model endpoints or translation, adding latency and cost. Mixed-sentiment comments where the positive/negative balance is close to 50/50 produce low-confidence labels that aren't actionable without human review.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add production gap analysis here. -->
 
 ## Variations and Extensions
 
