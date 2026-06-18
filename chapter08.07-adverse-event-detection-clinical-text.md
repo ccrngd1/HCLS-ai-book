@@ -153,3 +153,11 @@ One thing that surprised me: the highest-value outputs weren't the individual hi
 - **Recipe 13.4 (Drug-Drug Interaction Knowledge Base):** The knowledge graph structure used for known ADR lookup and plausibility checking
 
 ---
+
+## Tags
+
+`nlp`, `adverse-events`, `pharmacovigilance`, `patient-safety`, `relation-extraction`, `clinical-text`, `surveillance`, `drug-safety`
+
+---
+
+| [← 8.6: SDOH Extraction](chapter08.06-sdoh-extraction) | [Chapter 8 Index](chapter08-preface) | [8.8: Clinical Assertion Classification →](chapter08.08-clinical-assertion-classification) |

@@ -72,9 +72,7 @@ flowchart TD
 | **Amazon SNS** | Delivers real-time notifications for critical adverse events |
 | **AWS KMS** | Manages encryption keys across all data stores |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Receive and archive the clinical note.** When a clinician signs a note in the EHR, it arrives in the processing queue via an integration feed (HL7 ADT message, FHIR subscription, or direct EHR integration). The first thing we do is archive the raw note in durable storage. This serves two purposes: audit compliance (every piece of PHI we process must be traceable) and reprocessing capability (when models improve, we can run historical notes through the updated pipeline). Skip this step and you lose the ability to explain or reproduce any detection the system makes.
 
@@ -444,6 +442,8 @@ FUNCTION aggregate_signals(time_window_days):
 - Copy-pasted note sections that repeat mentions across visits without new clinical information
 
 ---
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section here per RECIPE-GUIDE. Cover gaps like: expected-effects tuning required, cross-note reasoning not implemented, knowledge-base maintenance burden, human review workflow not defined, regulatory reporting integration not included. -->
 
 ## Variations and Extensions
 
