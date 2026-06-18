@@ -302,7 +302,7 @@ flowchart LR
 
 **Step 1: Enroll the patient and instantiate the longitudinal store.** Enrollment is a clinical event, not a self-service signup. The patient's care team identifies them as appropriate for coaching, selects the care-plan template per the patient's primary chronic condition (and any secondary conditions), instantiates the care plan with patient-specific values, and signs it. The patient reviews and consents. The longitudinal store is initialized with the care plan reference, baseline behavior-change-stage estimates, baseline biometric values, and any patient preferences captured at intake. Skip this step and the coach has no foundation; the patient receives generic content with no longitudinal continuity.
 
-```
+```pseudocode
 ON enroll_patient(patient_id, primary_condition,
                   secondary_conditions,
                   clinical_team_signoff):
@@ -404,7 +404,7 @@ ON enroll_patient(patient_id, primary_condition,
 
 **Step 2: Ingest biometric data and evaluate against care-plan thresholds.** Connected devices feed the coach. Each reading is validated, stored, and evaluated against thresholds specified in the patient's care plan. Threshold-crossing events trigger engagement (or escalation, depending on severity). The thresholds are not chosen by the LLM; they are clinical-care-plan inputs signed by the patient's clinical team. Skip this and the coach is missing one of its highest-value inputs (the data the patient is generating between visits).
 
-```
+```pseudocode
 ON biometric_data_received(patient_id, device_type,
                            reading, reading_timestamp):
     // Step 2A: validate the reading.
@@ -505,7 +505,7 @@ ON biometric_data_received(patient_id, device_type,
 
 **Step 3: Schedule and deliver proactive engagement.** The engagement scheduler runs as a Step Functions workflow respecting the patient's preferences (channels, quiet hours, opt-outs), the institution's engagement policy (maximum frequency, fatigue mitigation), and the care plan's prescribed cadence. Each scheduled engagement composes a personalized message via the LLM grounded in the patient's longitudinal context, runs through output safety, and delivers via the preferred channel. Skip this and the coach is purely reactive, which limits its value to the patients who would have engaged unprompted (a small fraction of the broad chronic-disease majority).
 
-```
+```pseudocode
 ON scheduled_engagement_due(scheduled_engagement):
     patient_id = scheduled_engagement.patient_id
 
@@ -648,7 +648,7 @@ ON scheduled_engagement_due(scheduled_engagement):
 
 **Step 4: Handle patient-initiated or patient-responding conversation with longitudinal-context loading.** The coach loads the full longitudinal context (care plan, recent biometric data, recent conversation history, patient preferences, behavior-change-stage estimates, recent life-context disclosures) before generating any response. The longitudinal context is the architectural primitive that makes the coach a coach rather than a chatbot. Skip this and every conversation starts from scratch, which destroys the relationship the coach is supposed to maintain.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id,
                   user_message, auth_context):
     // Step 4A: identify or create the conversation
@@ -759,7 +759,7 @@ ON receive_message(channel, channel_session_id,
 
 **Step 5: Generate the response with care-plan-grounded reasoning and behavior-change-stage adaptation.** The LLM operates as a Bedrock Agent with the coaching tool surface. The system prompt includes the patient's behavior-change stage per goal, the patient's stated preferences, the active care plan, and the relevant clinical guidelines. Tool calls retrieve specific care-plan elements, biometric data, conversation history, education content, and clinical-guideline references as needed. The tone, pacing, and content are adapted to the patient's behavior-change stage. Skip the stage adaptation and the coach is appropriate for some patients and counter-productive for others.
 
-```
+```pseudocode
 FUNCTION handle_conversation(session_id, user_message):
     session = conversation_state_table.get(session_id)
     longitudinal_context = session.longitudinal_context
@@ -853,7 +853,7 @@ FUNCTION handle_conversation(session_id, user_message):
 
 **Step 6: Run output safety screening with citation grounding, scope verification, and behavior-change-stage tone check.** Every recommendation must trace to a cited care-plan element, clinical guideline, or institutional patient-education content. Scope verification rejects responses that attempt diagnosis, off-care-plan treatment recommendation, or new-condition guidance. The tone check verifies that the response is appropriate for the patient's behavior-change stage. Skip this and the coach occasionally produces ungrounded, off-scope, or stage-inappropriate responses.
 
-```
+```pseudocode
 FUNCTION screen_coach_output(session_id, response,
                              citations, tool_calls):
     // Step 6A: standard output safety primitives.
@@ -957,7 +957,7 @@ FUNCTION screen_coach_output(session_id, response,
 
 **Step 7: Persist the durable coaching-decision record and longitudinal updates.** The conversation log captures the dialog. The coaching-decision-record journal captures, separately, every coaching decision (escalation events, biometric-threshold events, behavior-change-stage updates, care-plan-deviation events, recommendation-with-citation events) with version stamps. The longitudinal store is updated with any new disclosures, preference changes, or context the conversation revealed. Skip this and the audit story is intact only at the conversation level, which is enough for some reviews and not enough for clinical-quality and outcome-correlation ones.
 
-```
+```pseudocode
 FUNCTION persist_coaching_artifacts(session_id,
                                      response,
                                      citations,
@@ -1068,7 +1068,7 @@ FUNCTION persist_coaching_artifacts(session_id,
 
 **Step 8: Generate care-team reports and run outcome correlation.** Real-time alerts flow to the care team for escalation events. Weekly digests summarize each patient's engagement, biometric trends, and key disclosures for the care team's review. Monthly summaries capture longitudinal trends. The outcome-correlation pipeline pulls subsequent encounter records, lab results, prescription fills, and patient-reported outcomes, calculates per-cohort and per-condition outcome metrics, and feeds signals back to the care-plan-template revision process. Skip this and the coach operates without care-team trust and without measurable outcome accountability.
 
-```
+```pseudocode
 FUNCTION generate_care_team_reports():
     // Step 8A: real-time alerts.
     new_alerts = care_team_alert_queue.poll_new()
@@ -1184,7 +1184,7 @@ FUNCTION generate_care_team_reports():
 
 **Sample conversation (illustrative, abbreviated, mid-relationship):**
 
-```
+```text
 Coach:   Hi Maria, just checking in. I noticed
          your fasting glucose readings have been
          a bit higher this week (averaging around

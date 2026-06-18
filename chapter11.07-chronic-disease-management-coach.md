@@ -202,7 +202,7 @@ A few practical updates worth knowing.
 
 A healthcare chronic-disease coach decomposes into eleven logical stages: enrollment and care-plan instantiation, longitudinal-store management, biometric-data ingestion, engagement scheduling, channel entry, input safety screening with continuous-emergency-screening, identity-and-context loading, conversation handling with care-plan-grounded responses, output safety screening, escalation routing, and care-team reporting with outcome correlation. The cross-cutting concerns from recipes 11.1 through 11.6 carry forward; this recipe adds five new ones (longitudinal-memory governance, care-plan-as-code with clinical-leadership ownership, biometric-data integration with clinical thresholds, engagement-policy enforcement with attrition mitigation, and behavior-change-stage tracking with conversation-style adaptation).
 
-```
+```text
 ┌────────── ENROLLMENT + CARE-PLAN INSTANTIATION ──────────┐
 │                                                           │
 │   [Patient enrolled by care team]                         │
@@ -244,8 +244,9 @@ A healthcare chronic-disease coach decomposes into eleven logical stages: enroll
 │      condition-specific clinical outcomes)                │
 │                                                           │
 │   [Storage architecture]                                  │
-│    - Structured data: DynamoDB tables                     │
-│    - Conversation transcript: S3 with vector retrieval    │
+│    - Structured data: key-value store tables               │
+│    - Conversation transcript: object store with vector    │
+│      retrieval                                            │
 │    - Recent-context summary: cached, refreshed on each    │
 │      conversation                                         │
 │    - Longitudinal summary: refreshed periodically         │
