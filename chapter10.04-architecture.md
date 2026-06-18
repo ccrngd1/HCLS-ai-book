@@ -221,7 +221,7 @@ flowchart LR
 
 **Step 1: Open the dictation session and load per-clinician configuration.** The clinician initiates a dictation session from inside the EHR (or from a desktop dictation client). The system authenticates the clinician, loads the per-clinician custom vocabulary, the active note template, and the patient context (if any), and prepares a streaming Transcribe Medical session with the right specialty configuration. Skip the per-clinician vocabulary load and the ASR runs without the institutional formulary biasing, which immediately drops accuracy on the medications the clinician most commonly prescribes.
 
-```
+```pseudocode
 ON dictation_start_request(clinician_session, note_context):
     // Step 1A: validate the clinician session is current
     // and the SMART on FHIR launch context (if present) is
@@ -306,7 +306,7 @@ ON dictation_start_request(clinician_session, note_context):
 
 **Step 2: Stream audio to Transcribe Medical and capture the verbatim transcript.** The clinician dictates. Audio frames stream from the client over WebSocket through API Gateway into the Transcribe Medical streaming session. Partial transcripts emit as audio is processed; the final transcript emits at end-of-dictation. Capture per-word confidence for downstream review-pane highlighting. Skip the per-word confidence and the read-back view loses its single most useful affordance for catching ASR errors.
 
-```
+```pseudocode
 FUNCTION stream_audio_to_asr(session_id, audio_stream):
     session = session_state_table.get(session_id)
     transcribe_session = session.transcribe_session
@@ -398,7 +398,7 @@ FUNCTION stream_audio_to_asr(session_id, audio_stream):
 
 **Step 3: Disambiguate commands from content and apply structural events.** Walk through the verbatim transcript and the timing-aligned word stream. Identify command phrases (the explicit prefix, or the configured command vocabulary) and route them to the system action handler; everything else is content. Apply navigation commands ("new paragraph," "next field," "go to assessment") to a structural-event log that the formatter will replay. Skip this step and command phrases either appear as literal text in the formatted note or get silently dropped without acting on the system, depending on which way the heuristic falls.
 
-```
+```pseudocode
 FUNCTION disambiguate_commands(verbatim_transcript, word_level_results, template):
     // Step 3A: tokenize the transcript into segments
     // separated by significant pauses (using word
@@ -454,7 +454,7 @@ FUNCTION disambiguate_commands(verbatim_transcript, word_level_results, template
 
 **Step 4: Format the verbatim content into the note template.** Apply punctuation inference, capitalization, number-and-date canonicalization, and section-header formatting. Optionally invoke a Bedrock LLM with a prompt that asks for the formatted note while preserving clinical content faithfulness. Render the formatted text into the note template, with each command-driven structural event directing content into the corresponding template field. Skip the faithfulness check on LLM output and the formatted note may paraphrase clinical content in ways that change meaning, which is the worst class of failure for this recipe.
 
-```
+```pseudocode
 FUNCTION format_and_structure(content_segments, structural_events, template, verbatim_transcript):
     // Step 4A: rule-based formatting pass. Punctuation
     // inference, capitalization, number-and-date
@@ -561,7 +561,7 @@ FUNCTION format_and_structure(content_segments, structural_events, template, ver
 
 **Step 5: Extract structured-field suggestions from the dictation.** Run Amazon Comprehend Medical (and optionally a Bedrock model with a structured-extraction prompt) over the verbatim transcript and the formatted note. Extract medications, problems, allergies, vitals, and procedures with coded references. Cross-check against the patient's structured chart and surface discrepancies. Skip this step and the dictation produces narrative text that never makes it into the structured chart, which is the entire reason the clinician was tempted to type it directly into the structured fields in the first place.
 
-```
+```pseudocode
 FUNCTION extract_structured_fields(verbatim_transcript, formatted_note, patient_context):
     // Step 5A: run Comprehend Medical to extract
     // coded clinical entities.
@@ -661,7 +661,7 @@ FUNCTION extract_structured_fields(verbatim_transcript, formatted_note, patient_
 
 **Step 6: Render the read-edit-sign view and capture clinician corrections.** Show the formatted note to the clinician with low-confidence words highlighted, the LLM's tracked changes (when used) visible, structured-field suggestions in a side panel, and cross-check warnings flagged. The clinician edits, accepts or rejects structured-field suggestions, and signs. Capture every correction as an adaptation signal. Skip the correction-capture and the system never improves; clinicians see the same recurring errors month after month.
 
-```
+```pseudocode
 FUNCTION render_review_view(session_id, formatted_note, structured_suggestions, word_level_results):
     // Step 6A: build the review payload. Each word
     // tagged with its confidence; suggestions tagged
@@ -743,7 +743,7 @@ FUNCTION render_review_view(session_id, formatted_note, structured_suggestions, 
 
 **Step 7: Hand off the signed note to the EHR and apply confirmed structured updates.** Push the signed note into the EHR's note repository, apply the structured-field updates the clinician confirmed, capture the EHR's response (note ID, document ID), and update the dictation-metadata record with the final state. Treat structured-field updates with the same idempotency and audit rigor as any other clinical write. Skip the explicit confirmation handling and structured updates execute silently, which is the same anti-pattern as the read-write boundary in recipe 10.3 and produces the same class of harm.
 
-```
+```pseudocode
 FUNCTION handoff_to_ehr(session_id, signed_note, structured_decisions, patient_context, clinician_session):
     // Step 7A: create the note in the EHR.
     // TODO (TechWriter): Expert review A5 (MEDIUM). Specify the
@@ -817,7 +817,7 @@ FUNCTION handoff_to_ehr(session_id, signed_note, structured_decisions, patient_c
 
 **Step 8: Audit, archive, and feed adaptation.** Capture the full lifecycle of the dictation in the audit archive: the audio reference (under the institution's retention policy), the verbatim transcript reference, the formatted note, the structured-field suggestions and decisions, the corrections stream, the signature, and the EHR handoff result. Emit operational telemetry for the dashboards and per-clinician adaptation signals for the next dictation. Skip the audit and the institution cannot reconstruct what the system did during a clinical-quality review or during litigation.
 
-```
+```pseudocode
 FUNCTION audit_archive_and_adapt(session_id, signed_note, corrections, structured_decisions, ehr_handoff_result):
     metadata = dictation_metadata_table.get(session_id)
 
@@ -967,7 +967,7 @@ Verbatim ASR output:
 
 After rule-based and LLM-driven formatting:
 
-```
+```text
 **Chief Complaint:** Chest pain.
 
 **History of Present Illness:**
