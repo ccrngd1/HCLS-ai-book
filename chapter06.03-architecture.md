@@ -75,7 +75,7 @@ flowchart TD
 
 **Step 1: Extract and join source data.** The first challenge is assembling a unified patient-level dataset from systems that were never designed to talk to each other. Billing knows about charges and payments. The EHR knows about visits and diagnoses. Eligibility knows about coverage. Each system has its own patient identifier, its own data model, and its own update cadence. This step pulls from each source, resolves to a single patient identity (using your MPI or whatever patient matching you have), and produces one row per patient with columns from all sources. Skip this step and you're clustering on incomplete information, which produces clusters that reflect data availability rather than actual financial risk.
 
-```
+```pseudocode
 FUNCTION extract_patient_financial_data(date_range):
     // Pull from billing system: payment behavior over the lookback period.
     // Key fields: total charges, total payments, days to payment, write-offs,
@@ -119,7 +119,7 @@ FUNCTION extract_patient_financial_data(date_range):
 
 **Step 2: Engineer and normalize features.** Raw data isn't ready for clustering. Dollar amounts span orders of magnitude. Categorical fields need numeric encoding. Missing values need handling. This step transforms the raw joined data into a clean numeric feature matrix where every feature is on a comparable scale. The choices here (which features to include, how to encode categoricals, how to handle missing data) have more impact on cluster quality than the choice of algorithm. Get this wrong and you'll cluster on noise or on a single dominant feature.
 
-```
+```pseudocode
 FUNCTION engineer_features(patient_features):
     // Derive ratio-based features that are more stable than raw counts.
     // A patient with $100K in charges and $90K in payments is different from
@@ -191,7 +191,7 @@ FUNCTION engineer_features(patient_features):
 
 **Step 3: Run clustering and evaluate.** Now the algorithm does its work. Run K-Means for multiple values of k, evaluate each using internal metrics and interpretability, and select the best segmentation. This isn't a one-shot operation. You'll typically try k=3 through k=8, examine the resulting cluster profiles, and pick the k that produces segments your finance team can actually act on. An algorithm that produces beautiful silhouette scores but clusters that nobody can explain is useless.
 
-```
+```pseudocode
 FUNCTION cluster_patients(feature_matrix, k_range=[3,4,5,6,7,8]):
     results = empty list
 
@@ -222,7 +222,7 @@ FUNCTION cluster_patients(feature_matrix, k_range=[3,4,5,6,7,8]):
 
 **Step 4: Profile clusters.** Raw cluster labels (0, 1, 2, 3, 4) mean nothing to a CFO. This step computes summary statistics for each cluster and generates human-readable profiles. The goal is that a revenue cycle director can look at the output and immediately say "Cluster 2 is our high-deductible commercial patients who don't pay their patient responsibility." If they can't name the clusters, the segmentation isn't useful regardless of how good the metrics are.
 
-```
+```pseudocode
 FUNCTION profile_clusters(patient_data, labels, feature_columns):
     profiles = empty map
 
@@ -259,7 +259,7 @@ FUNCTION profile_clusters(patient_data, labels, feature_columns):
 
 Important: K-Means cluster labels are arbitrary across runs. Cluster 0 this month might be Cluster 3 next month even if the underlying population segment is identical. To compare distributions between periods, align clusters by matching centroids (assign each new cluster to the previous-period cluster whose centroid is nearest) or use the previous period's centroids as initialization for the new run. Without label alignment, the shift detection below will produce false alerts when clusters simply swap labels.
 
-```
+```pseudocode
 FUNCTION detect_population_shift(current_distribution, previous_distribution, threshold=5.0):
     // current_distribution: {cluster_id: percentage} from this period's clustering
     // previous_distribution: same structure from last period
@@ -378,6 +378,8 @@ FUNCTION detect_population_shift(current_distribution, previous_distribution, th
 **Where it struggles:** Patients with very short history (new to the system, less than 6 months of data). Populations with highly uniform payer mix (if 90% of your patients are Medicare, clustering won't find much structure). Rapid coverage transitions (a patient who just lost commercial coverage and hasn't yet enrolled in Medicaid is temporarily unclassifiable). And the fundamental limitation: past payment behavior doesn't perfectly predict future behavior, especially during economic disruptions.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add this section covering gaps a production deployment must close. -->
 
 ## Variations and Extensions
 
