@@ -76,7 +76,7 @@ flowchart LR
 
 **Step 1: Textract extraction.** When a label image arrives in the S3 bucket, the pipeline wakes up automatically and sends it to Amazon Textract for analysis. As in Recipe 1.1, the critical choice is requesting FORMS extraction rather than basic OCR. FORMS mode understands spatial relationships: it recognizes that "SIG" and "Take 1 tab PO BID" appear adjacent to each other on the label, and it returns them as a matched key-value pair rather than two disconnected strings. Prescription labels are single-page and synchronous processing is appropriate: results come back in under 3 seconds. Skip FORMS and request plain text detection, and everything downstream falls apart: you're trying to reconstruct structure from a flat string, and accuracy drops significantly.
 
-```
+```pseudocode
 FUNCTION extract_label(bucket, key):
     // Send the label image to Textract for intelligent analysis.
     // "bucket" is the name of the S3 storage container; "key" is the filename/path.
@@ -89,7 +89,7 @@ FUNCTION extract_label(bucket, key):
 
 **Step 2: Parse key-value pairs.** Textract returns a collection of text blocks connected by relationship links. This step walks that structure and assembles the matched key-value pairs, along with confidence scores indicating how clearly each piece of text was read. The output is a map from raw label text (whatever the pharmacy printed, e.g., "SIG", "Rx #", "Dispense Date") to extracted value text, with a confidence score for each pair. Think of it as sorting through labeled index cards and connecting each label to its matching answer. Skip this step and you're left with raw building blocks; no downstream logic can use them.
 
-```
+```pseudocode
 FUNCTION parse_key_value_pairs(textract_response):
     // Pull out all detected text regions from Textract's response.
     blocks    = textract_response.Blocks
@@ -126,7 +126,7 @@ FUNCTION parse_key_value_pairs(textract_response):
 
 **Step 3: Normalize pharmacy fields.** Every pharmacy chain prints prescription labels differently. "Drug Name," "Medication," and "Rx" all mean the same field. "SIG" and "Directions" and "Instructions" all point to the patient instruction line. "Refills" and "Refills Remaining" and "Refills Left" all contain the same count. This step maps whatever labels Textract found on a given label to a consistent set of canonical field names. The mapping table (RX_FIELD_MAP) is the operational knowledge base of this recipe: it encodes real-world pharmacy label layouts and requires maintenance as new layouts are encountered. The NDC field is especially important to capture correctly: it is printed on most labels in 10-digit format and is the most reliable structured identifier for the specific drug dispensed. Skip this step and you have accurate text with no reliable way to use it across chains.
 
-```
+```pseudocode
 RX_FIELD_MAP = {
     "drug_name":    ["drug name", "medication", "medication name", "drug", "rx", "product"],
     "dosage":       ["strength", "dosage", "dose", "potency"],
@@ -160,7 +160,7 @@ FUNCTION normalize_rx_fields(raw_kv):
 
 **Step 4: Decode SIG abbreviations.** The directions field from a prescription label reads like "Take 1 TAB PO BID x 14d PRN pain." A human pharmacist reads this instantly. A downstream care management system or FHIR document cannot. This step decodes the pharmacy abbreviation shorthand in the directions field into plain language. It works as a word-level lookup: split the directions string on spaces, check each word against the SIG codebook, substitute the decoded meaning if found, and reassemble the string. The output is human-readable and machine-processable text that downstream systems can display to members and parse for structured frequency and route information. Skip this step and your medication records carry an abbreviation string that every consumer of the data has to decode independently, inconsistently.
 
-```
+```pseudocode
 SIG_CODES = {
     // Frequency codes
     "qd":   "once daily",
@@ -223,7 +223,7 @@ FUNCTION decode_sig(raw_sig):
 
 **Step 5: Map to RxNorm via Comprehend Medical.** This step takes the raw medication text (drug name and dosage extracted from the label) and passes it through Comprehend Medical's `DetectEntitiesV2` API. DetectEntitiesV2 is trained on clinical text to identify MEDICATION entities and their attributes (dosage, route, frequency), and it returns RxNorm concept IDs that correspond to each detected medication. The RxNorm concept ID is the clinical-equivalence identifier: it's the same for Lisinopril 10mg oral tablet regardless of manufacturer, package size, or dispensing pharmacy. This is what downstream systems need for medication reconciliation, drug interaction checking, and formulary matching. A confidence threshold filters out low-confidence mappings. Only include RxNorm concepts where the model is at least 70% confident in the linkage.
 
-```
+```pseudocode
 RXNORM_CONFIDENCE_THRESHOLD = 0.70  // discard low-confidence RxNorm mappings
 
 FUNCTION map_to_rxnorm(drug_name, dosage):
@@ -264,7 +264,7 @@ FUNCTION map_to_rxnorm(drug_name, dosage):
 
 **Step 6: Validate NDC and compute refill metrics.** Before writing the final record, two quick validation steps add significant downstream value. First, validate the extracted NDC code: NDC codes have a well-defined format (either 10-digit or 11-digit with hyphens) and can be verified against a known pattern. A malformed NDC indicates either an extraction error or a label format you haven't seen before. Flag it rather than silently passing a bad identifier downstream. Second, compute refill metrics from the raw label fields. "Refills: 3" tells you the remaining count. The days supply field tells you how long one fill lasts. Together, they give you the days of medication coverage remaining, which is directly useful for medication adherence programs and care gap identification. These calculations are simple arithmetic, but doing them here centralizes the logic so every consumer of the medication record gets the same computed values.
 
-```
+```pseudocode
 FUNCTION validate_ndc(ndc_raw):
     // Remove hyphens and whitespace for validation
     ndc_clean = remove all hyphens and spaces from ndc_raw
@@ -295,7 +295,7 @@ FUNCTION compute_refill_metrics(refills_remaining_str, days_supply_str):
 
 **Step 7: Assemble and store the medication record.** The final step assembles all pipeline outputs into a single record and writes it to the database. Every field carries both the raw extracted value (what the label actually said) and the normalized or decoded value (what it means). This dual representation is important for auditability: when a care coordinator or pharmacist reviews a record, they can see both what the label printed and how the system interpreted it. Any field that fell below the confidence threshold, any NDC that failed validation, and any failed RxNorm mappings are recorded in a flags array so downstream systems and review queues know exactly what needs a human eye.
 
-```
+```pseudocode
 CONFIDENCE_THRESHOLD = 90.0  // same threshold as Recipe 1.1; fields below this go to human review
 
 FUNCTION store_medication_record(image_key, normalized_fields, rxnorm_mappings, ndc_validation, refill_metrics):
@@ -441,6 +441,7 @@ The pseudocode and architecture above demonstrate the pattern. A real deployment
 
 --- 
 
+<!-- TODO (TechWriter): RECIPE-GUIDE requires an "Estimated Implementation Time" section (Basic / Production-ready / With variations tiers) before the navigation footer. -->
 
 ---
 

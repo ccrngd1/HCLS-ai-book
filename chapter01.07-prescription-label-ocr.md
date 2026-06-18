@@ -113,7 +113,7 @@ This entity extraction and ontology linking is what makes the pipeline interoper
 
 The pipeline for prescription label OCR looks like this:
 
-```
+```text
 [Capture] → [OCR / KVP Extraction] → [Field Normalization + SIG Parsing]
          → [Medical NLP (Medication Entities + RxNorm)] → [Store] → [Expose via API]
 ```
@@ -142,7 +142,7 @@ The curved label problem is the one that catches most teams off-guard. It's not 
 
 The SIG codebook is the part that requires the most ongoing maintenance. Latin pharmacy abbreviations are standardized in principle and inconsistent in practice. Individual pharmacies and pharmacy software systems add their own shorthand. "Inject 0.5 mL SubQ QW" and "Inject 0.5 mL SC every week" are the same instruction from different systems. Build the unrecognized-token logging on day one: you'll need it.
 
-The RxNorm confidence cutoff is a tradeoff to calibrate for your use case. The 70% threshold in the walkthrough is a starting point, not a gospel number. For medication reconciliation in a clinical program, you might want 85%+: a wrong RxNorm mapping in a drug interaction checker produces a false safety signal that a clinician has to investigate. For a member-facing informational display, 70% might be fine. Know your downstream use case before you pick the threshold.
+The RxNorm confidence cutoff is a tradeoff to calibrate for your use case. A 70% threshold is a reasonable starting point, not a gospel number. For medication reconciliation in a clinical program, you might want 85%+: a wrong RxNorm mapping in a drug interaction checker produces a false safety signal that a clinician has to investigate. For a member-facing informational display, 70% might be fine. Know your downstream use case before you pick the threshold.
 
 The thing I didn't anticipate building the first version of this: days supply is sometimes absent from the label. State regulations on what must appear on a prescription label vary, and some states don't require days supply to be printed. Your refill metrics logic needs to handle missing fields gracefully rather than throwing an exception when the field isn't found.
 
