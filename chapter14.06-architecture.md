@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **AWS Lambda for the optimization engine.** Bed assignment optimization for a single hospital (even a large one) is computationally lightweight. A 500-bed hospital with 20-40 pending assignments produces a problem that OR-Tools solves in under 2 seconds. Lambda's 15-minute timeout is more than sufficient, and the serverless model means you're not paying for idle compute between optimization runs. Package OR-Tools in a Lambda layer or container image.
 
@@ -29,7 +27,7 @@
 
 **Amazon CloudWatch for monitoring and alerting.** Track optimization solve times, recommendation acceptance rates, ED boarding times, and system health. Alert when solve times exceed thresholds or when the state model diverges from ADT reality.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -79,7 +77,7 @@ flowchart TD
     REST --> UI
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -95,7 +93,7 @@ flowchart TD
 <!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add VPC endpoint list to prerequisites: DynamoDB (gateway), S3 (gateway), Kinesis (interface), Step Functions (interface), EventBridge (interface), CloudWatch Logs (interface), execute-api (interface), KMS (interface). Budget ~$50-60/month for interface endpoints in 3-AZ deployment. -->
 <!-- TODO (TechWriter): Expert review N2 (MEDIUM). Add paragraph in State Ingestion or prerequisites on EHR integration network path: Direct Connect + VPN backup for on-premises EHR; VPC peering/PrivateLink for cloud-hosted EHR; monitor connection health; surface stale-state warning if ADT feed down >5 minutes. -->
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role in This Recipe |
 |-------------|-------------------|
@@ -109,9 +107,9 @@ flowchart TD
 | API Gateway (REST) | CRUD operations for assignments, overrides, constraints |
 | Amazon CloudWatch | Monitoring solve times, acceptance rates, boarding metrics |
 
-### Code: Pseudocode Walkthrough
+## Pseudocode Walkthrough
 
-#### Step 1: Ingest and Process ADT Events
+### Step 1: Ingest and Process ADT Events
 
 Every patient movement generates an ADT event. We consume these in real-time to maintain an accurate picture of the hospital's bed state.
 
@@ -150,7 +148,7 @@ FUNCTION process_adt_event(event):
     publish_state_change(event_type, bed_id, patient_id, timestamp)
 ```
 
-#### Step 2: Maintain the Live State Model
+### Step 2: Maintain the Live State Model
 
 The state model is the "digital twin" of the hospital's physical bed situation. It answers: what's occupied, what's available, what's coming available soon, and who's waiting.
 
@@ -198,7 +196,7 @@ FUNCTION get_current_hospital_state():
     RETURN state
 ```
 
-#### Step 3: Formulate the Optimization Model
+### Step 3: Formulate the Optimization Model
 
 This is where we translate the bed assignment problem into a mathematical model the solver can work with. Each pending patient gets matched to the best available bed.
 
@@ -279,7 +277,7 @@ FUNCTION build_assignment_model(state):
     RETURN model
 ```
 
-#### Step 4: Solve and Extract Recommendations
+### Step 4: Solve and Extract Recommendations
 
 Run the solver and translate the mathematical solution back into actionable bed assignments.
 
@@ -320,7 +318,7 @@ FUNCTION solve_and_recommend(model, state, solve_time_limit_seconds=5):
     RETURN validated
 ```
 
-#### Step 5: Publish and Track Recommendations
+### Step 5: Publish and Track Recommendations
 
 Deliver recommendations to bed management staff and track what happens next (accepted, overridden, expired).
 
@@ -351,8 +349,8 @@ FUNCTION publish_recommendations(recommendations):
     // Track outcomes for feedback loop
     SCHEDULE check_recommendation_outcomes(recommendations, after_minutes=30)
 
-<!-- TODO (TechWriter): Expert review S1 (HIGH). Add guidance on PHI minimization in WebSocket payloads: push only MRN + bed + confidence score; serve clinical reasoning on-demand via authenticated REST API, not proactively to all connected sessions. -->
-<!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add note on WebSocket auth model: Lambda authorizer on $connect, unit-level filtering of recommendations, connection TTLs for idle sessions. -->
+    // TODO (TechWriter): Expert review S1 (HIGH). Add guidance on PHI minimization in WebSocket payloads: push only MRN + bed + confidence score; serve clinical reasoning on-demand via authenticated REST API, not proactively to all connected sessions.
+    // TODO (TechWriter): Expert review S3 (MEDIUM). Add note on WebSocket auth model: Lambda authorizer on $connect, unit-level filtering of recommendations, connection TTLs for idle sessions.
 
 FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=NULL):
     IF action == "ACCEPT":
@@ -376,7 +374,7 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and OR-Tools, check out the [Python Example](chapter14.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample Recommendation Output:**
 
@@ -443,6 +441,8 @@ FUNCTION handle_coordinator_response(recommendation_id, action, override_reason=
 - **Behavioral health patients:** Placement constraints are complex and often undocumented (elopement risk, self-harm precautions, specific room configurations). We've seen 60%+ override rates for behavioral health placements. The model just doesn't have the context that experienced staff carry in their heads.
 - **"Soft" bed blocks:** Some hospitals informally reserve beds for specific services ("those two beds are always for cardiology"). These aren't in any system but staff enforce them religiously. The optimizer doesn't know about them and gets overridden, and you'll spend weeks tracking down why acceptance rates are low on certain units.
 - **Discharge prediction uncertainty:** If your predicted discharge time is wrong by 2 hours, beds you planned on aren't available when you need them. The optimization is only as good as the discharge predictions feeding it, and those predictions are often optimistic.
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE. Content could expand on the "Where It Struggles" bullets above plus production gaps like formal validation testing, integration certification with specific EHR vendors, and clinical safety review processes. -->
 
 ---
 
