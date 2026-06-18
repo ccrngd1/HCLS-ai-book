@@ -94,7 +94,7 @@ flowchart TD
 
 <!-- TODO (TechWriter): Expert review S-1 (HIGH). FHIR queries below should be scoped to clinically relevant data categories only (specific LOINC codes for eGFR, creatinine, HbA1c, albumin, hemoglobin, potassium; relevant condition categories like renal, cardiovascular, endocrine, metabolic). Querying all patient data violates the Minimum Necessary standard (45 CFR 164.502(b)) and may violate 42 CFR Part 2 if substance abuse records are returned. Add LOINC code filters and a note about consulting your privacy officer regarding consent requirements before assembling longitudinal datasets. -->
 
-```
+```pseudocode
 FUNCTION assemble_patient_timeline(patient_id, lookback_years):
     // Query the clinical data store for this patient's history.
     // We need labs, vitals, medications, and diagnoses over the lookback period.
@@ -147,7 +147,7 @@ FUNCTION assemble_patient_timeline(patient_id, lookback_years):
 
 **Step 2: Engineer temporal features.** Raw timeline data isn't directly usable by most models. This step transforms the longitudinal record into features that capture the dynamics of disease progression. The most important features aren't the current values; they're the rates of change, the variability, and the treatment context. A patient with eGFR declining at 5 points per year is in a very different situation than one declining at 1 point per year, even if their current eGFR is identical. This step computes those dynamics. Skip it and your model sees only snapshots, missing the trajectory information that makes progression modeling valuable.
 
-```
+```pseudocode
 FUNCTION engineer_progression_features(timeline, cutoff_date):
     // cutoff_date: the point in time from which we predict forward.
     // CRITICAL: Only use data available at cutoff_date. Using future labs
@@ -221,7 +221,7 @@ FUNCTION engineer_progression_features(timeline, cutoff_date):
 
 **Important:** The implementation below uses the pragmatic approach: conditioning on current treatment as a feature. This means predictions are implicitly "given current treatment continues." The model does not answer counterfactual questions ("what if we stop the ACE inhibitor?"). For causal progression modeling, see the Counterfactual Treatment Simulation variation at the end of this recipe.
 
-```
+```pseudocode
 FUNCTION train_progression_model(training_cohort, prediction_horizons):
     // training_cohort: list of patients with features and known outcomes
     // prediction_horizons: [6, 12, 24, 36] months into the future
@@ -285,7 +285,7 @@ FUNCTION train_progression_model(training_cohort, prediction_horizons):
 
 **Step 4: Generate individual patient predictions.** Given a trained model and a specific patient's current history, generate a predicted trajectory with uncertainty bounds. This is the inference step that runs in production. The output should communicate not just the most likely future but the range of plausible futures. A clinician needs to know: "Is this patient almost certainly going to progress, or is there meaningful uncertainty?" The prediction should also identify which factors are driving the trajectory (explainability), so the clinician can assess whether the model's reasoning aligns with their clinical judgment.
 
-```
+```pseudocode
 FUNCTION predict_progression(model, patient_features, horizons):
     // Generate predictions for each time horizon.
     predictions = empty map
@@ -334,7 +334,7 @@ FUNCTION predict_progression(model, patient_features, horizons):
 
 Note: The DynamoDB prediction cache must have access controls matching or exceeding the source clinical system, since SHAP explanations may contain specific lab values and medication names. Restrict table access to the clinical application's IAM role.
 
-```
+```pseudocode
 FUNCTION integrate_and_monitor(prediction, patient_id):
     // Store the prediction for clinical retrieval.
     // Clinicians need sub-second access during patient encounters.
@@ -453,6 +453,8 @@ FUNCTION integrate_and_monitor(prediction, patient_id):
 - Rapid, unexpected changes (acute kidney injury superimposed on chronic disease). The model predicts gradual progression, not sudden events.
 - Subgroups underrepresented in training data (rare diseases, pediatric populations, specific ethnic groups with different progression patterns).
 - Very long horizons (5+ years). Uncertainty compounds and predictions become too wide to be clinically actionable.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. It should summarize the gaps a production deployment must close (validation governance, causal inference for treatment effects, regulatory review, fairness testing across subgroups, etc.). -->
 
 ---
 

@@ -1,6 +1,6 @@
 # Recipe 7.8: Disease Progression Modeling
 
-**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$2,500–$8,000/month (model training + inference at scale)
+**Complexity:** Complex · **Phase:** Research/Production · **Estimated Cost:** ~$2,500-$8,000/month (model training + inference at scale)
 
 ---
 
@@ -88,7 +88,7 @@ The uncertainty should grow with prediction horizon. If your model is equally co
 
 ## General Architecture Pattern
 
-```
+```text
 [Longitudinal Data Assembly] → [Feature Engineering] → [Model Training] → [Individual Prediction] → [Clinical Integration]
 ```
 
@@ -137,7 +137,7 @@ Disease progression modeling is one of those problems where the concept is intui
 
 ## Tags
 
-`predictive-analytics` `disease-progression` `survival-analysis` `longitudinal-modeling` `chronic-disease` `CKD` `time-to-event` `uncertainty-quantification` `sagemaker` `healthlake` `complex`
+`predictive-analytics` `disease-progression` `survival-analysis` `longitudinal-modeling` `chronic-disease` `CKD` `time-to-event` `uncertainty-quantification` `complex`
 
 ---
 
