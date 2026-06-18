@@ -72,13 +72,11 @@ flowchart TD
 | **AWS KMS** | Manages encryption keys for all data stores and streams |
 | **Amazon CloudWatch** | Monitors pipeline latency, model inference time, alert rates, and system health |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Waveform ingestion.** Bedside monitors produce continuous streams of physiological data. A device integration engine (running on-premises or in the VPC) translates proprietary device protocols into a standardized format and pushes individual samples or small batches into Kinesis. Each record includes an opaque session identifier (not the patient's MRN), waveform type, timestamp, and the sample values. The partition key is this session ID combined with the waveform type, ensuring all data from one source arrives in order. Using an opaque session ID rather than a direct patient identifier prevents PHI leakage into stream metadata, S3 key paths, and CloudWatch dimensions. A separate identity service with restricted access maps session IDs to MRNs. Without ordered ingestion, downstream analysis would see scrambled waveforms and produce garbage classifications.
 
-```
+```pseudocode
 FUNCTION ingest_waveform_sample(session_id, waveform_type, timestamp, samples):
     // Package the waveform data into a structured record.
     // "samples" is an array of numerical values from the ADC (analog-to-digital converter).
@@ -108,7 +106,7 @@ FUNCTION ingest_waveform_sample(session_id, waveform_type, timestamp, samples):
 
 **Step 2: Preprocessing and quality control.** Raw waveform data is noisy. Before any ML model sees it, you need to filter out non-physiological noise, detect segments corrupted by artifact, and score the overall signal quality. This step runs continuously as data arrives. Segments that fail quality checks are logged (you need to know your data loss rate) but excluded from classification. Passing artifact-contaminated data to the classifier is worse than skipping it: you'll get confident wrong answers that trigger false alarms.
 
-```
+```pseudocode
 FUNCTION preprocess_waveform(raw_record):
     // Extract the raw sample values from the ingested record.
     samples     = raw_record.values
@@ -165,7 +163,7 @@ FUNCTION preprocess_waveform(raw_record):
 
 **Step 3: Model inference.** Clean, segmented waveform windows are sent to the classification model hosted on SageMaker. The model returns a classification (or set of classifications) with confidence scores for each window. For ECG, this might be rhythm classification (normal sinus, atrial fibrillation, ventricular tachycardia, etc.). For EEG, it might be seizure vs. non-seizure. The model is the core intelligence of the system, but it's only as good as the preprocessing that feeds it and the post-processing that interprets its output.
 
-```
+```pseudocode
 FUNCTION classify_waveform(preprocessed):
     // Send each analysis window to the SageMaker endpoint for classification.
     // The endpoint hosts a trained deep learning model (CNN or transformer).
@@ -210,7 +208,7 @@ FUNCTION classify_waveform(preprocessed):
 
 **Step 4: Post-processing and alert logic.** Raw model outputs are not clinical alerts. A single window classified as "atrial fibrillation" with 70% confidence is not actionable. This step applies clinical logic: requiring sustained detections (multiple consecutive windows agreeing), applying confidence thresholds, checking patient context (known conditions that should not re-alert), and enforcing cooldown periods. This is where you control your false alarm rate, and it's the difference between a system clinicians trust and one they disable. This Lambda function is triggered via SQS (not direct invocation), which provides built-in retry semantics and a DLQ for failed processing attempts.
 
-```
+```pseudocode
 FUNCTION apply_alert_logic(classification_results):
     session_id = classification_results.session_id
     results    = classification_results.results
@@ -284,7 +282,7 @@ FUNCTION apply_alert_logic(classification_results):
 
 **Step 5: Store and expose results.** Every classification, whether it triggered an alert or not, is stored in Timestream for retrospective analysis. This enables clinicians to review a patient's waveform analysis history ("show me all rhythm classifications for this patient over the last 24 hours"), supports model performance monitoring (tracking false positive rates over time), and provides the training data for model improvement. The storage layer also feeds dashboards that show unit-level alert rates, signal quality trends, and system health metrics.
 
-```
+```pseudocode
 FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
     // Write detailed results to Timestream for time-based queries.
     // Timestream's time-partitioned storage makes "last N hours" queries fast.
@@ -372,6 +370,8 @@ FUNCTION store_and_expose(session_id, classification_results, alerts_generated):
 | Storage cost (raw archive, 30 days) | ~$15-25/month in S3 |
 
 **Where it struggles:** Patients with pacemakers (pacing spikes confuse morphology analysis). Overlapping conditions (atrial fibrillation with frequent PVCs). Pediatric patients (different normal ranges, different waveform morphology). Periods of high artifact (patient transport, procedures, bathing). And the cold start problem: a new patient with no baseline requires conservative thresholds until the system learns their normal.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps like FDA validation, clinical workflow integration, and model drift monitoring. -->
 
 ---
 

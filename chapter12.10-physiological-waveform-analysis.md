@@ -1,6 +1,6 @@
 # Recipe 12.10: Physiological Waveform Analysis
 
-**Complexity:** Complex · **Phase:** Specialized · **Estimated Cost:** ~$0.15–$0.80 per patient-hour of monitoring
+**Complexity:** Complex · **Phase:** Specialized · **Estimated Cost:** ~$0.15-$0.80 per patient-hour of monitoring
 
 ---
 
@@ -78,7 +78,7 @@ For continuous monitoring, you slide this window across the incoming stream, pro
 
 At a conceptual level, continuous waveform analysis follows this pipeline:
 
-```
+```text
 [Ingest Streams] → [Preprocess & QC] → [Feature Extract / Classify] → [Post-Process & Suppress] → [Alert / Store]
 ```
 
@@ -119,7 +119,7 @@ The FDA question looms over everything. If your system makes diagnostic claims (
 - **Recipe 12.7 (Vital Sign Trajectory Monitoring):** Operates on derived vital sign values (heart rate, blood pressure numbers) rather than raw waveforms. Complementary: waveform analysis detects beat-level events, vital sign monitoring detects trend-level changes.
 - **Recipe 12.4 (Lab Result Trend Analysis):** Similar temporal pattern detection but on sparse, irregular measurements rather than continuous high-frequency streams. Different infrastructure requirements.
 - **Recipe 3.7 (ICU Alarm Fatigue Reduction):** Directly addresses the alert fatigue problem that waveform analysis systems must solve. The suppression logic in Step 4 of this recipe implements patterns from 3.7.
-- **Recipe 9.1 (Medical Image Classification):** Shares the deep learning classification pattern but applied to static images rather than streaming time series. Similar model hosting infrastructure on SageMaker.
+- **Recipe 9.1 (Medical Image Classification):** Shares the deep learning classification pattern but applied to static images rather than streaming time series. Similar model hosting infrastructure for GPU-based inference.
 
 ---
 
