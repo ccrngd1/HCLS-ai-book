@@ -150,7 +150,7 @@ A natural-language IVR splits cleanly into five logical stages: telephony ingres
 
 <!-- TODO (TechWriter): Expert review N1 (LOW). Add a brief Carrier-Side Transport prose note in the AWS Implementation section specifying TLS-for-SIP-signaling and SRTP-for-media as the institutional posture for the carrier-to-Connect boundary, with a carrier-BAA framing as the institutional-decision question. The PSTN side cannot be encrypted; the SIP-trunk side can. -->
 
-```
+```text
 ┌──────────────────── TELEPHONY INGRESS ────────────────────┐
 │                                                            │
 │   [Caller dials the practice's published number]          │

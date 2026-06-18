@@ -194,7 +194,7 @@ flowchart LR
 
 **Step 1: Answer the call and play the disclosure plus initial prompt.** This is the contact flow's entry state. Connect picks up the call, plays the recording-and-privacy disclosure, then immediately hands off to the Lex bot for the initial open-ended prompt. The disclosure is jurisdiction-aware. Skip the disclosure and you have a recording-consent compliance gap; skip the immediate Lex handoff and you've built a legacy IVR with extra steps.
 
-```
+```pseudocode
 ON inbound_call(call_id, ani, dnis):
     // call_id is Connect's contact identifier;
     // ani is the caller's phone number (when not blocked);
@@ -239,7 +239,7 @@ ON inbound_call(call_id, ani, dnis):
 
 **Step 2: Lex returns a turn result; classify and route.** The Lex bot has performed ASR, intent classification, and slot filling for the caller's first utterance. The turn result includes the intent, slot values, per-element confidence, and the raw transcript. The intent-router Lambda receives this as a fulfillment hook. Skip the per-intent confidence threshold and you'll route ambiguous utterances confidently to the wrong place.
 
-```
+```pseudocode
 FUNCTION handle_lex_turn(turn_event):
     call_id = turn_event.session_id
     transcript = turn_event.input_transcript
@@ -346,7 +346,7 @@ FUNCTION handle_lex_turn(turn_event):
 
 **Step 3: Verify the caller before any action that touches PHI or the back office.** A simple but easy-to-skip step. The caller-verifier Lambda checks whether the caller has already been verified for this call (verification persists for the session) and, if not, prompts for the verification slots and validates them. The exact verification policy varies. A common approach: date-of-birth plus partial phone-number-on-file or partial address. Skip this and the IVR will happily release a refill to whoever called.
 
-```
+```pseudocode
 FUNCTION verify_caller_if_needed(call_id, intent_name):
     context = active_call_context.get(call_id)
 
@@ -437,7 +437,7 @@ FUNCTION verify_slots_returned(call_id, dob, partial_phone):
 
 **Step 4: Fulfill a self-service refill request as an example fulfillment path.** With the caller verified and the intent classified, the refill-fulfillment Lambda takes over. It checks whether the requested medication is eligible for self-service refill (some are not; controlled substances usually require a clinical touch), submits the refill request to the e-prescribing system, and confirms with the caller. Skip the eligibility check and you'll auto-refill controlled substances, which is the kind of thing that ends careers.
 
-```
+```pseudocode
 FUNCTION handle_refill_intent(call_id, slots):
     context = active_call_context.get(call_id)
 
@@ -546,7 +546,7 @@ FUNCTION handle_refill_intent(call_id, slots):
 
 **Step 5: Capture the call disposition.** When the call ends (caller hangs up, transfer completes, self-service fulfillment confirmed), the disposition is captured. This is the row that goes into analytics and feeds the per-intent accuracy metrics and the containment rate.
 
-```
+```pseudocode
 ON call_end(call_id, end_reason):
     context = active_call_context.get(call_id)
 
