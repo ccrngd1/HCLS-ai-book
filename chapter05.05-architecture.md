@@ -192,7 +192,7 @@ flowchart LR
 
 **Step 1: Ingest the query or linkage submission.** Inbound queries arrive through the API Gateway endpoint as PIX/PDQ messages or FHIR `$match` requests. Linkage submissions arrive as continuity-of-care documents or FHIR Bundles, typically through a different ingestion path (often an SFTP-or-MLLP-to-S3 staging pipeline). Outbound queries from local clinicians arrive through internal workflows. All three paths produce a normalized query record that the downstream pipeline consumes. Skip this normalization and you have to build three slightly different matchers; the abstraction earns its keep.
 
-```
+```pseudocode
 FUNCTION ingest_query(inbound):
     // Branch by inbound source. Each source produces a
     // normalized query record with consistent fields.
@@ -259,7 +259,7 @@ FUNCTION ingest_query(inbound):
 
 **Step 2: Normalize the demographic search criteria.** Apply the same normalization the other recipes use: name case, suffix, hyphenation, transliteration; date format; address standardization (recipe 5.3 supplies this); phone E.164 with extension stripping; sex-or-gender normalization. The normalization layer also handles partial-data cases (date of birth with year only, last name only, demographic field missing) by passing through with a flag rather than rejecting; the matcher tolerates partial data by adjusting the per-feature weights. Skip this and the matcher's accuracy drops on the very queries that most need it (queries that arrive with imperfect demographic data are usually for patients who themselves have inconsistent demographic data across organizations).
 
-```
+```pseudocode
 FUNCTION normalize_query(query):
     raw = query.search_demographics
 
@@ -339,7 +339,7 @@ FUNCTION normalize_query(query):
 
 **Step 3: Evaluate the match against the local MPI.** Use the blocking keys to retrieve candidate records, score each candidate with the probabilistic-record-linkage scorer, apply confidence thresholds, and produce a match decision. The thresholds for cross-facility match are typically more conservative than for internal duplicate detection because the cost of false positives is higher. Skip the conservative thresholds and you produce wrong-patient overlays in the consuming organization's chart, which is the failure mode this whole architecture exists to prevent.
 
-```
+```pseudocode
 FUNCTION evaluate_match(query):
     normalized = query.normalized
 
@@ -488,7 +488,7 @@ FUNCTION evaluate_match(query):
 
 **Step 4: Apply consent and sensitivity filters.** Even when the identity match is high-confidence, the consent registry determines what data may be released, and the sensitivity-filter policy determines what categories must be withheld even within the consented set. Skip this and you produce the failure mode that nukes HIE participation: a release that violated the patient's consent or that exposed sensitive-category data to a requester who did not have the legal basis for it. This step has to fail closed: if the consent registry is unreachable, withhold release.
 
-```
+```pseudocode
 FUNCTION apply_consent_and_sensitivity(query):
     match_outcome = query.match_outcome
 
@@ -635,7 +635,7 @@ FUNCTION apply_consent_and_sensitivity(query):
 
 **Step 5: Release, audit, and propagate.** Construct the response payload according to the release decision, write the full audit record, and emit the cross-facility event. The audit record is the system of record for what was queried, what was matched, what was consented, what was released, and what was withheld. Skip the audit and you cannot answer the patient's right-to-know question, you cannot reconstruct an incident, and you cannot demonstrate compliance with the participation agreement.
 
-```
+```pseudocode
 FUNCTION release_and_audit(query):
     decision = query.release_decision
 
@@ -755,7 +755,7 @@ FUNCTION release_and_audit(query):
 
 **Step 6: Invalidate downstream state on consent or MPI changes.** Cross-facility match decisions are time-sensitive: a consent revocation, a local MPI merge or unmerge, a demographic change from recipe 5.7, all invalidate prior matches in ways the requesting organizations need to know about. Skip the invalidation pipeline and stale match decisions accumulate in downstream systems, producing data flowing about patients who have since revoked consent. The fail-closed posture on consent has to extend through the lifecycle, not just the initial release.
 
-```
+```pseudocode
 FUNCTION invalidate_on_event(event):
     // Identify which prior cross-facility matches are
     // affected by this event.

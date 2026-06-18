@@ -124,7 +124,7 @@ A few practical updates worth knowing:
 
 The pipeline has six logical stages: ingest the cross-facility query (or the linkage submission), normalize the demographic search criteria, evaluate against the local MPI (or, for query aggregators, fan out to participating organizations and aggregate the responses), apply the consent and sensitivity filters, persist the match decision with provenance, and react to events that invalidate prior matches (consent revocation, organization onboarding or offboarding, MPI updates).
 
-```
+```text
 ┌────────────── INGEST ─────────────────────────────┐
 │                                                    │
 │  [Trigger sources]                                 │
@@ -356,7 +356,7 @@ Last point, because it is specific to the regulatory context: the 21st Century C
 
 ## Tags
 
-`entity-resolution` · `record-linkage` · `cross-facility` · `hie` · `health-information-exchange` · `pix` · `pdq` · `fhir` · `patient-match` · `consent` · `sensitivity-filter` · `audit-log` · `tefca` · `carequality` · `dynamodb` · `elasticache` · `lambda` · `step-functions` · `event-driven` · `medium` · `production` · `hipaa` · `42-cfr-part-2` · `information-blocking`
+`entity-resolution` · `record-linkage` · `cross-facility` · `hie` · `health-information-exchange` · `pix` · `pdq` · `fhir` · `patient-match` · `consent` · `sensitivity-filter` · `audit-log` · `tefca` · `carequality` · `event-driven` · `medium` · `production` · `hipaa` · `42-cfr-part-2` · `information-blocking`
 
 ---
 
