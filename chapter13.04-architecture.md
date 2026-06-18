@@ -115,7 +115,7 @@ RxNorm provides the canonical drug identities that anchor the entire graph. With
 
 If you skip this step, you'll end up with duplicate drug nodes ("warfarin" and "Coumadin" as separate entities) and miss interactions because the system doesn't know they're the same molecule.
 
-```
+```pseudocode
 FUNCTION ingest_rxnorm(rxnorm_file_path):
     // RxNorm provides relationships between drug concepts:
     // brand names, generic names, ingredients, dose forms, therapeutic classes
@@ -155,7 +155,7 @@ This step builds the mechanistic layer of the graph. It connects drugs to the en
 
 Without this step, you can only represent interactions as direct drug-drug pairs. You lose the ability to infer new interactions based on shared metabolic pathways.
 
-```
+```pseudocode
 FUNCTION ingest_drugbank_mechanisms(drugbank_xml_path):
     // DrugBank encodes which enzymes metabolize each drug,
     // which transporters carry it, and the nature of the relationship
@@ -219,7 +219,7 @@ FDA labels contain interaction information in natural language text. This step u
 
 Skipping this step means missing FDA-reviewed interaction information that may not appear in other databases. FDA labels are the authoritative source for US-marketed drugs.
 
-```
+```pseudocode
 FUNCTION extract_fda_label_interactions(spl_xml_path):
     // FDA SPL files contain a "Drug Interactions" section
     // with semi-structured text describing known interactions
@@ -298,7 +298,7 @@ This step is what clinicians actually interact with. If it's too slow (over 500m
 
 For polypharmacy patients (15+ medications, common in elderly populations), pair count grows quadratically (25 medications = 300 pairs). Consider a tiered strategy: check only new or changed medications against the existing list in real time, then run the full pairwise check asynchronously and update the patient's interaction profile. The cache in Step 5 partially addresses this for stable medication combinations, but the first check for a complex patient will still be slow without tiering.
 
-```
+```pseudocode
 FUNCTION check_interactions(medication_list, patient_context):
     // medication_list: [{rxcui, dose, frequency, duration}, ...]
     // patient_context: {age, weight, renal_function, hepatic_function, genotype}
@@ -396,7 +396,7 @@ Clinical systems need sub-second response times. Caching interaction results for
 
 Important: after the normalizer Lambda completes a graph update, it should publish an EventBridge event (`graph.updated`) that triggers a cache flush. This flush invalidates all cached entries (or selectively invalidates entries containing affected drugs). Without explicit invalidation, the system could serve stale "no interaction found" results for up to the full TTL after a new interaction is added to the graph. For a safety-critical system, stale cache is a patient safety risk. The TTL below (24 hours) serves as a backstop, not the primary invalidation mechanism.
 
-```
+```pseudocode
 FUNCTION serve_interaction_check(request):
     // request: {medications: [...], patient_context: {...}}
     
@@ -503,6 +503,8 @@ Sample interaction check response:
 - Genetic polymorphism interactions (CYP2D6 poor metabolizers) when genotype data is unavailable
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance (MEDIUM). Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close. -->
 
 ## Variations and Extensions
 

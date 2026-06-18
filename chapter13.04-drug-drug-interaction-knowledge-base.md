@@ -38,7 +38,7 @@ A knowledge graph represents drug interactions not as pairs in a table, but as a
 
 Here's what the warfarin + fluconazole interaction looks like as a graph:
 
-```
+```text
 [Warfarin] --METABOLIZED_BY--> [CYP2C9]
 [Fluconazole] --INHIBITS--> [CYP2C9]
 [CYP2C9 Inhibition] --CAUSES--> [Increased Warfarin Concentration]
@@ -105,7 +105,7 @@ Not all interactions are created equal, and your graph needs to represent this. 
 
 ### General Architecture Pattern
 
-```
+```text
 [Data Sources]     → [Ingestion/NLP]  → [Graph Database]  → [Interaction Engine] → [Clinical Systems]
 (RxNorm, DrugBank,   (Parse, extract,    (Drugs, enzymes,    (Traversal, scoring,   (EHR alerts,
  FDA SPL, Literature)  normalize, link)    mechanisms, evidence) contextualization)     CPOE, pharmacy)
@@ -146,7 +146,7 @@ Here's what I've learned building these systems (mostly by getting it wrong firs
 ## Related Recipes
 
 - **[Recipe 13.1: Drug Formulary Navigation](chapter13.01-drug-formulary-navigation)** covers the foundational graph model for drug data. The formulary graph provides the drug identity and classification nodes that this recipe's interaction graph builds upon.
-- **[Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into Neptune and querying hierarchical relationships. The same ETL and query patterns apply here.
+- **[Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation)** demonstrates the pattern of loading medical ontologies into a graph database and querying hierarchical relationships. The same ETL and query patterns apply here.
 - **[Recipe 8.4: Medication Extraction and Normalization](chapter08.04-medication-extraction-normalization)** covers extracting medication mentions from clinical text and normalizing them to RxNorm. That's the upstream step that feeds medication lists into this recipe's interaction checker.
 - **[Recipe 7.6: Rising Risk Identification](chapter07.06-rising-risk-identification)** uses predictive models that could incorporate interaction burden as a risk factor. Patients on multiple interacting medications are at higher risk for adverse events.
 
