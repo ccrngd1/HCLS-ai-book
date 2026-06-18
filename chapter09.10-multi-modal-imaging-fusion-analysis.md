@@ -113,7 +113,7 @@ The registration quality problem deserves special attention. I've seen fusion pi
 
 The temporal mismatch problem is underappreciated in the literature. Research datasets typically have all modalities acquired on the same day. Clinical reality is that the PET was last Tuesday, the MRI was yesterday, and the CT is being done today for planning. In that two-week gap, the tumor grew 2mm along one margin. Your "perfect" registration is now aligning a slightly different anatomy, and there's no good automated way to detect or correct for this.
 
-The cost model is dominated by GPU compute for registration and inference. If you're processing 50 studies per day, a dedicated GPU instance makes more economic sense than on-demand SageMaker endpoints. If it's 5 studies per day, the on-demand model wins. The crossover point depends on your instance type and SageMaker pricing tier.
+The cost model is dominated by GPU compute for registration and inference. If you're processing 50 studies per day, a dedicated GPU instance makes more economic sense than on-demand inference endpoints. If it's 5 studies per day, the on-demand model wins. The crossover point depends on your instance type and your cloud provider's pricing tier.
 
 One last thing that surprised me: DICOM-RT Structure Set generation is harder than it should be. Converting a 3D segmentation mask back into the contour-per-slice format that treatment planning systems expect requires careful handling of slice geometry, multi-part contours (holes, separate components), and coordinate system conventions. Budget more engineering time here than you think you'll need.
 

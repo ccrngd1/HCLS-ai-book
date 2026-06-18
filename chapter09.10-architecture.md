@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon S3 for DICOM storage and processing pipeline.** Medical imaging generates massive data volumes. A single PET-CT study can be 500+ MB of DICOM files. S3 provides the durable, encrypted, high-throughput storage needed to receive studies from PACS, stage them for processing, and retain results. S3 event notifications trigger the processing pipeline when a complete study arrives. Lifecycle policies handle archival of processed studies to cheaper storage tiers.
 
@@ -21,7 +19,7 @@
 <!-- TODO (TechWriter): Verify whether HealthLake Imaging (announced re:Invent 2022) supports the DICOM-RT and multi-modal query patterns needed here, or whether a custom DICOM indexing layer on S3 is the better approach for this use case. -->
 **Amazon HealthLake or S3 + custom indexing for DICOM management.** For DICOM study management, evaluate HealthLake Imaging for native DICOM storage and retrieval, or build a custom indexing layer on S3 if your query patterns (DICOM-RT cross-references, multi-modal series linking) exceed what HealthLake supports natively.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -46,7 +44,7 @@ flowchart TD
     style M fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -60,7 +58,7 @@ flowchart TD
 | **Sample Data** | BraTS (Brain Tumor Segmentation) challenge data for brain multi-modal MRI. TCIA (The Cancer Imaging Archive) for PET-CT datasets. Never use real patient imaging in dev. |
 | **Cost Estimate** | Per study: ~$0.50 storage + $1.00-5.00 SageMaker GPU compute (registration + fusion) + $0.10 Lambda/Step Functions. Varies heavily with image resolution and model complexity. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -73,9 +71,7 @@ flowchart TD
 | **AWS KMS** | Encryption key management for PHI at rest |
 | **Amazon CloudWatch** | Monitoring, metrics, and alarms for pipeline health |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Study completeness detection.** When DICOM files arrive from PACS (typically pushed via DICOM C-STORE), they land in S3 one file at a time. A study might have 800 DICOM files across multiple series (the CT series, the PET series, each with hundreds of slices). The pipeline can't start processing until the entire study is present. This step monitors incoming files, groups them by study and series using DICOM metadata (StudyInstanceUID, SeriesInstanceUID), and triggers the pipeline only when all expected series are complete. Without this gate, you'd start processing an incomplete volume and produce garbage results.
 
@@ -313,7 +309,7 @@ FUNCTION package_and_deliver(analysis_results, original_study_metadata):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.10-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a brain tumor PET-MRI-CT fusion study:**
 
