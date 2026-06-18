@@ -76,7 +76,7 @@ The right choice depends on your operational question. If you're deciding who to
 
 ### The General Architecture Pattern
 
-```
+```text
 [Feature Store] → [Model Training] → [Scoring Service] → [Strategy Engine]
 ```
 

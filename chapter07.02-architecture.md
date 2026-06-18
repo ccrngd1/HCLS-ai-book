@@ -79,7 +79,7 @@ flowchart TD
 
 **Step 1: Feature engineering.** The Glue job runs nightly, pulling open balances from the billing system and enriching them with patient history and engagement data. For each open balance, it computes the features the model needs: the patient's historical payment rate with your organization, the balance amount and type, how long the balance has been open, insurance context, and recent engagement signals. The output is a clean dataset in S3, one row per open balance. Skip this step and you're asking the model to predict payment behavior without knowing anything about the patient's history or the balance characteristics.
 
-```
+```pseudocode
 FUNCTION compute_payment_features(open_balances, patient_history, engagement_data):
     // For each open balance, compute the feature vector that the model
     // needs to predict payment likelihood.
@@ -194,7 +194,7 @@ FUNCTION compute_payment_features(open_balances, patient_history, engagement_dat
 
 **Step 2: Model training.** A SageMaker training job picks up historical balance data (balances old enough to have definitive outcomes) and trains a gradient-boosted tree classifier. The outcome label is binary: paid within 90 days (1) or not paid within 90 days (0). The critical addition here is post-hoc calibration: after training, we apply Platt scaling to ensure the output probabilities are meaningful, not just well-ranked. A predicted 0.7 must actually mean 70% of similar balances get paid. Without calibration, the strategy engine's thresholds become meaningless. Retrain monthly to capture seasonal patterns and shifts in patient payment behavior.
 
-```
+```pseudocode
 FUNCTION train_propensity_model(training_data_path):
     // Configure the SageMaker training job.
     // XGBoost for tabular binary classification with calibration.
@@ -239,7 +239,7 @@ FUNCTION train_propensity_model(training_data_path):
 
 <!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add a note about interpreting scores relative to balance age. A 90-day model applied to a balance at day 85 has only 5 days of remaining outcome window, making the score more definitive than the same score on a day-5 balance. Consider recommending multiple time-horizon models or age-adjusted thresholds in the strategy engine. -->
 
-```
+```pseudocode
 FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_model):
     // Verify calibration model integrity before use.
     // A corrupted calibration model silently miscalibrates all predictions.
@@ -290,7 +290,7 @@ FUNCTION score_open_balances(feature_file_path, model_artifact, calibration_mode
 
 <!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add a 5-10% randomization holdout to the strategy engine pseudocode. Reserve a fraction of balances in each score band for random assignment to alternative strategies. This creates counterfactual data to validate thresholds and prevents the self-fulfilling prophecy warned about in the Honest Take. Log the randomization flag alongside the routing decision. -->
 
-```
+```pseudocode
 // Thresholds are business decisions, stored as configuration.
 // Adjust based on staff capacity and organizational policy.
 HIGH_THRESHOLD    = 0.75   // above this: patient will likely pay without intervention
@@ -383,6 +383,8 @@ FUNCTION apply_collection_strategy(balance_predictions):
 - Patients whose financial situation has recently changed (job loss, divorce, new insurance). Historical behavior stops being predictive.
 - Very small balances ($10-25) where the signal-to-noise ratio is poor and the collection cost exceeds the balance.
 - Balances in active dispute. A patient contesting a charge has different dynamics than one simply not paying.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. Should cover gaps a production deployment must close (monitoring, fairness audits, feedback loops, integration with billing system workflow). -->
 
 ---
 
