@@ -85,7 +85,7 @@ flowchart TD
 
 <!-- TODO (TechWriter): Expert review S-1 (HIGH). Add a PHI screening step between document parsing and NER. Case reports and clinical trial results may contain individually identifiable health information in source sentences. Flag case reports using MeSH publication type metadata. For flagged documents, either skip provenance sentence storage or redact potential identifiers from stored sentences before they enter Neptune/OpenSearch. -->
 
-```
+```pseudocode
 FUNCTION fetch_new_articles(last_watermark):
     // Query PubMed for articles published since our last fetch.
     // E-utilities returns article IDs matching our search criteria.
@@ -126,7 +126,7 @@ FUNCTION fetch_new_articles(last_watermark):
 
 **Step 2: Document parsing and sentence segmentation.** Raw XML needs to be converted into processable text segments. This step extracts the relevant sections (abstract, methods, results, discussion), splits them into individual sentences, and tags each sentence with its source location (which paper, which section, which paragraph). Sentence boundaries in biomedical text are tricky: abbreviations like "Fig. 2" and "et al." contain periods that aren't sentence endings. Use a biomedical-trained sentence splitter rather than a generic one. The section information matters for evidence grading later: a finding stated in the Results section carries more weight than one mentioned speculatively in the Discussion.
 
-```
+```pseudocode
 FUNCTION parse_and_segment(document_s3_key):
     // Load the raw article XML from the document lake
     raw_xml = load from S3 at document_s3_key
@@ -163,7 +163,7 @@ FUNCTION parse_and_segment(document_s3_key):
 
 **Step 3: Named entity recognition.** Each sentence is passed through biomedical NER to identify mentions of drugs, diseases, genes, proteins, anatomical structures, and other biomedical entities. Comprehend Medical handles the core entity types well. For specialized entity types (gene variants, molecular pathways, epigenetic modifications), you may need a supplementary custom model. The output is a list of entity mentions with their types, positions in the text, and confidence scores. Entities below a confidence threshold are discarded to prevent noise from propagating downstream.
 
-```
+```pseudocode
 FUNCTION extract_entities(sentences):
     // Process each sentence through biomedical NER
     // Comprehend Medical identifies: MEDICATION, MEDICAL_CONDITION,
@@ -212,7 +212,7 @@ FUNCTION extract_entities(sentences):
 
 <!-- TODO (TechWriter): Expert review A-2 (HIGH). Add a validation_status field to edges with values: "machine_extracted" (default), "human_validated", "human_rejected". Add query-time guidance: clinical applications should filter on validation_status = "human_validated" OR evidence_score >= 0.85 AND support_count >= 3. The 0.70 confidence threshold yields 18-30% false positives per the benchmarks, which is dangerous for downstream clinical use without this guardrail. -->
 
-```
+```pseudocode
 FUNCTION extract_relations(sentences, entity_mentions):
     // Group entities by sentence for pairwise relation extraction
     entities_by_sentence = group entity_mentions by sentence_id
@@ -265,7 +265,7 @@ FUNCTION extract_relations(sentences, entity_mentions):
 
 **Step 5: Entity normalization.** The same real-world entity appears under many surface forms in the literature. "Metformin," "Glucophage," "metformin hydrochloride," and "1,1-dimethylbiguanide" all refer to the same drug. This step maps each extracted entity mention to a canonical identifier in a standard biomedical ontology: RxNorm for drugs, SNOMED CT or ICD for diseases, HGNC for genes, UniProt for proteins. Without normalization, your graph would have separate nodes for each surface form, fragmenting the knowledge and making queries unreliable. The mapping uses a combination of exact string matching, fuzzy matching, and embedding-based similarity against the ontology's preferred terms and synonyms.
 
-```
+```pseudocode
 FUNCTION normalize_entities(triples):
     // Load ontology lookup tables (pre-built from UMLS, RxNorm, HGNC, etc.)
     // These map surface forms to canonical identifiers
@@ -338,7 +338,7 @@ FUNCTION normalize_entity(text, entity_type, drug_lookup, disease_lookup, gene_l
 
 **Step 6: Evidence grading and conflict resolution.** Each extracted triple gets an evidence score based on the source's reliability. A finding from a large RCT published in a top-tier journal scores higher than a case report in a regional publication. When multiple papers assert the same relationship, evidence accumulates. When papers contradict each other, the system flags the conflict. Contradictions above a certain evidence threshold on both sides go to a human review queue. This step is what separates a useful knowledge graph from a noisy dump of NLP outputs.
 
-```
+```pseudocode
 FUNCTION grade_and_resolve(normalized_triples, existing_graph):
     // Evidence scoring weights
     STUDY_TYPE_WEIGHTS = {
@@ -409,7 +409,7 @@ FUNCTION section_weight(section):
 
 **Step 7: Graph insertion and versioning.** Approved triples are inserted into Neptune as edges between normalized entity nodes. Each edge carries its full provenance chain: which paper, which sentence, what confidence, what evidence grade. When the same relationship is extracted from multiple papers, the edge accumulates evidence (multiple provenance entries, aggregated evidence score). The graph is versioned: you can query "what did the graph look like on date X" for reproducibility. This matters for research applications where you need to know what knowledge was available at the time a clinical decision was made.
 
-```
+```pseudocode
 FUNCTION insert_into_graph(scored_triples):
     FOR each triple in scored_triples:
         IF triple.status != "READY":
@@ -532,6 +532,8 @@ FUNCTION insert_into_graph(scored_triples):
 **Where it struggles:** Implicit relationships that require world knowledge to infer. Relationships spanning multiple sentences or paragraphs. Highly hedged language where the assertion strength is ambiguous. Novel entity types not in existing ontologies (newly discovered genes, experimental compounds). Languages other than English (most biomedical NER models are English-only). Retracted papers that remain in the corpus.
 
 <!-- TODO (TechWriter): Expert review A-3 (HIGH). Add retraction monitoring component to the architecture. A scheduled Lambda should check PubMed for newly retracted articles (using "Retracted Publication" publication type filter). When detected: flag affected edges with status "RETRACTED_SOURCE"; if the retracted paper was the sole source (support_count = 1), change edge status to "RETRACTED"; if other papers also support the edge, recalculate evidence_score excluding the retracted source. This is a patient safety concern: retracted findings (e.g., Wakefield MMR-autism) can persist and influence clinical queries. Add as a pipeline step or parallel monitoring process with pseudocode. -->
+
+<!-- TODO (TechWriter): Add a "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE structure. Content should cover the gaps a production deployment must close. -->
 
 ---
 

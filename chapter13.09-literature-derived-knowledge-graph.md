@@ -1,6 +1,6 @@
 # Recipe 13.9: Literature-Derived Knowledge Graph
 
-**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2,000–8,000/month depending on ingestion volume
+**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2,000-8,000/month depending on ingestion volume
 
 ---
 
@@ -54,7 +54,7 @@ Let me be direct about the failure modes:
 
 ### The General Architecture Pattern
 
-```
+```text
 [Literature Sources] → [Document Ingestion] → [NLP Pipeline] → [Triple Extraction]
     → [Normalization] → [Evidence Grading] → [Conflict Resolution]
     → [Knowledge Graph Store] → [Query Interface] → [Downstream Applications]
