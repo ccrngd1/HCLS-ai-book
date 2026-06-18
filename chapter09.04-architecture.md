@@ -4,11 +4,9 @@
 
 ---
 
-## The AWS Implementation
+## Why These Services
 
-### Why These Services
-
-**Amazon SageMaker for model hosting.** SageMaker provides managed inference endpoints that can serve a trained image classification model with auto-scaling, A/B testing, and model monitoring. For a dermatology triage model, you need low-latency inference (patients and clinicians expect results in seconds, not minutes) with the ability to swap model versions without downtime. SageMaker real-time endpoints deliver this. For production, deploy across multiple availability zones using SageMaker's multi-AZ endpoint configuration. SageMaker also handles the training pipeline if you're fine-tuning your own model, with built-in support for distributed training on GPU instances. SageMaker Clarify supports model explainability for image classification, enabling the saliency map generation discussed above.
+**Amazon SageMaker for model hosting.** SageMaker provides managed inference endpoints that can serve a trained image classification model with auto-scaling, A/B testing, and model monitoring. For a dermatology triage model, you need low-latency inference (patients and clinicians expect results in seconds, not minutes) with the ability to swap model versions without downtime. SageMaker real-time endpoints deliver this. For production, deploy across multiple availability zones using SageMaker's multi-AZ endpoint configuration. SageMaker also handles the training pipeline if you're fine-tuning your own model, with built-in support for distributed training on GPU instances. SageMaker Clarify supports model explainability for image classification, enabling the saliency map generation discussed in the main recipe.
 
 **Amazon S3 for image storage.** Lesion images are PHI (they're identifiable medical photographs). They need encrypted, durable, auditable storage. S3 with SSE-KMS encryption, versioning, and lifecycle policies is the standard choice. Object Lock can enforce retention policies for compliance.
 
@@ -22,7 +20,7 @@
 
 **Amazon CloudWatch for monitoring.** Model performance monitoring is critical for medical AI. Track inference latency, confidence score distributions, and triage category distributions. Monitor weekly triage category distribution and alert if the urgent rate shifts by more than 2 standard deviations from the 30-day rolling average. Track mean confidence scores per category; declining confidence suggests the model is seeing inputs unlike its training data. Compare model predictions against dermatologist dispositions (when available) to compute rolling accuracy metrics.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -46,7 +44,7 @@ flowchart TD
     style J fill:#9ff,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -62,7 +60,7 @@ flowchart TD
 | **Cost Estimate** | SageMaker real-time endpoint (ml.g4dn.xlarge): ~$0.736/hour. At 100 images/day, ~$0.08-0.15 per image including S3, Lambda, DynamoDB. |
 | **Regulatory** | Consult regulatory counsel. Triage framing reduces but does not eliminate FDA considerations. Document intended use clearly. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -76,14 +74,12 @@ flowchart TD
 | **AWS KMS** | Manages encryption keys for all PHI-containing services |
 | **Amazon CloudWatch** | Monitors model latency, confidence distributions, and triage category drift |
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns relevant to this recipe:
 >
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including image classification model training and deployment
 > - [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare and life science AI/ML examples on AWS
-
-#### Walkthrough
 
 **Step 1: Image upload and metadata stripping.** Patient-submitted smartphone photos contain EXIF metadata including GPS coordinates that reveal home addresses, device serial numbers, and photographer names. Before storing the image or running any analysis, strip all non-essential metadata. Retain only the timestamp and image dimensions. This is a privacy requirement, not an optimization. Skip this step and you're storing patient home addresses alongside their medical photographs.
 
@@ -282,7 +278,7 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter09.04-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a suspicious lesion:**
 
@@ -327,6 +323,8 @@ FUNCTION handle_inference_failure(case_id, patient_id, image_key, error):
 - Multiple lesions in a single image (model expects one lesion per image)
 
 ---
+
+<!-- TODO (TechWriter): "Why This Isn't Production-Ready" section is missing per RECIPE-GUIDE. Add between Expected Results and Variations. -->
 
 ## Variations and Extensions
 

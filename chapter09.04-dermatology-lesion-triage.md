@@ -74,7 +74,7 @@ Saliency maps (Grad-CAM or similar techniques) generate a heatmap showing which 
 
 For production systems, generate and store the saliency map alongside the original image in the review queue. The computational overhead is modest (one additional backward pass through the network) and the clinical adoption benefit is substantial.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
 ```text
 [Image Capture] → [Metadata Strip] → [Quality Check] → [Preprocessing] → [Classification Model] → [Confidence Scoring] → [Triage Routing] → [Dermatologist Review Queue]
@@ -126,3 +126,5 @@ Here's what will surprise you when you actually build this:
 - **Recipe 9.6 (Diabetic Retinopathy Screening):** Another screening use case with FDA regulatory pathway; more mature regulatory precedent
 
 ---
+
+<!-- TODO (TechWriter): Tags section and navigation footer are missing from the main recipe. Tags currently live only in the architecture companion. Add Tags and nav footer per RECIPE-GUIDE. -->
