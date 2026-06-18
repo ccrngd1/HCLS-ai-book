@@ -73,7 +73,7 @@ flowchart LR
 
 | **CloudTrail** | Enabled for all data-plane services, with CloudTrail data events on every PHI-bearing S3 bucket and the DynamoDB serving table. The audit trail of who accessed which patient's trajectory is non-negotiable, especially for rare-disease cohorts. CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode. |
 | **Sample Data** | Synthetic FHIR data from [Synthea](https://github.com/synthetichealth/synthea) supplemented with disease-specific synthetic generators (Synthea's CKD module produces longitudinal eGFR trajectories suitable for development). [MIMIC-IV](https://physionet.org/content/mimiciv/) provides de-identified inpatient labs through PhysioNet credentialing; useful for validation but limited for chronic outpatient trajectories. Disease-specific registry data are gold standard for validation but require formal data-use agreements. Never use real PHI in dev. |
-| **Cost Estimate** | HealthLake: ~$200–$800/month depending on cohort size and data volume. SageMaker training (Bayesian hierarchical model, monthly retrain): ~$200–$600/month. SageMaker inference endpoint: ~$100–$400/month. Glue ETL (weekly cohort refresh): ~$50–$150/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$100/month combined. KMS, CloudWatch, audit: ~$50/month. Total: ~$800–$3,500/month per disease-cohort workload depending on cohort size, data density, and model complexity. |
+| **Cost Estimate** | HealthLake: ~$200-$800/month depending on cohort size and data volume. SageMaker training (Bayesian hierarchical model, monthly retrain): ~$200-$600/month. SageMaker inference endpoint: ~$100-$400/month. Glue ETL (weekly cohort refresh): ~$50-$150/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$100/month combined. KMS, CloudWatch, audit: ~$50/month. Total: ~$800-$3,500/month per disease-cohort workload depending on cohort size, data density, and model complexity. |
 
 <!-- TODO (TechWriter): V1. Verify HealthLake, SageMaker training, and SageMaker inference pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
 
@@ -498,17 +498,17 @@ FUNCTION evaluate_counterfactual_scenarios(
 
 | Metric | Typical Value |
 |--------|---------------|
-| Cohort identification (50,000 candidate patients per disease) | 1–3 hours weekly |
-| Harmonization (per qualified patient) | 200–800 ms |
-| Model training (Bayesian hierarchical, 2,000–10,000 patient cohort) | 2–8 hours monthly |
-| Per-patient inference latency (single scenario) | 100–500 ms |
-| Counterfactual scenario evaluation (3–5 scenarios) | 300 ms–2 s |
-| Calibration on temporal holdout (90% credible interval coverage) | 85–93% |
-| Cost per disease-cohort workload per month | $800–$3,500 |
+| Cohort identification (50,000 candidate patients per disease) | 1-3 hours weekly |
+| Harmonization (per qualified patient) | 200-800 ms |
+| Model training (Bayesian hierarchical, 2,000-10,000 patient cohort) | 2-8 hours monthly |
+| Per-patient inference latency (single scenario) | 100-500 ms |
+| Counterfactual scenario evaluation (3-5 scenarios) | 300 ms-2 s |
+| Calibration on temporal holdout (90% credible interval coverage) | 85-93% |
+| Cost per disease-cohort workload per month | $800-$3,500 |
 
 <!-- TODO (TechWriter): A1. Performance benchmarks above are typical figures for production trajectory systems running on chronic-disease cohorts of 2,000-10,000 patients. Confirm against your reference data sources before publication. -->
 
-**Where it struggles:** Patients with fewer than three or four trajectory-relevant measurements (the per-patient layer cannot be estimated from too few observations). Patients with fewer than 12 months of observation history (the trajectory has not yet established a meaningful baseline). Patients undergoing active medication titration where the trajectory is changing for known reasons (the model may produce confidently wrong forecasts during the titration phase). Diseases with weak clinical research foundations (the literature priors are unreliable, and pure data-driven models extrapolate poorly). Rare diseases with cohorts under a few hundred patients (the population-level model is too noisy). Patients on combinations of interventions for which trial-derived effect sizes do not exist (the treatment-effect layer has to extrapolate). Acute episodes mixed into chronic-context training data (the model becomes whipsawed). Forecasts beyond 60–84 months for most chronic diseases (long-horizon extrapolation is fundamentally limited by the support of training data).
+**Where it struggles:** Patients with fewer than three or four trajectory-relevant measurements (the per-patient layer cannot be estimated from too few observations). Patients with fewer than 12 months of observation history (the trajectory has not yet established a meaningful baseline). Patients undergoing active medication titration where the trajectory is changing for known reasons (the model may produce confidently wrong forecasts during the titration phase). Diseases with weak clinical research foundations (the literature priors are unreliable, and pure data-driven models extrapolate poorly). Rare diseases with cohorts under a few hundred patients (the population-level model is too noisy). Patients on combinations of interventions for which trial-derived effect sizes do not exist (the treatment-effect layer has to extrapolate). Acute episodes mixed into chronic-context training data (the model becomes whipsawed). Forecasts beyond 60-84 months for most chronic diseases (long-horizon extrapolation is fundamentally limited by the support of training data).
 
 ---
 
@@ -599,9 +599,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (one disease cohort, mixed-effects trajectory, no counterfactuals, monthly cadence):** 8–12 weeks
-- **Production-ready (Bayesian hierarchical model, counterfactual scenarios, joint time-to-endpoint, calibration monitoring, governance):** 24–36 weeks
-- **With variations (multimodal integration, continuous-learning priors, patient-facing surface, federated learning):** 40–60 weeks
+- **Basic pipeline (one disease cohort, mixed-effects trajectory, no counterfactuals, monthly cadence):** 8-12 weeks
+- **Production-ready (Bayesian hierarchical model, counterfactual scenarios, joint time-to-endpoint, calibration monitoring, governance):** 24-36 weeks
+- **With variations (multimodal integration, continuous-learning priors, patient-facing surface, federated learning):** 40-60 weeks
 
 ---
 
