@@ -239,7 +239,7 @@ flowchart LR
 
 **Step 1: Capture consent at visit start and bootstrap the speech-to-text session.** When a telehealth visit begins, the system captures the appropriate consent (institutional-policy-driven, state-law-aware), enables the speech-to-text feature per the visit's configuration, and bootstraps a session that links the visit ID to the audio capture path. Skip the per-visit consent confirmation and the institution risks documenting visits where the patient explicitly opted out, which is a privacy violation regardless of the engineering quality.
 
-```
+```pseudocode
 ON visit_start(visit_id, patient_id, clinician_id,
                patient_jurisdiction, visit_type):
 
@@ -317,7 +317,7 @@ ON visit_start(visit_id, patient_id, clinician_id,
 
 **Step 2: Run streaming ASR per channel and update the live display.** As audio arrives from each channel, the streaming ASR produces partial-and-final transcripts that update the clinician's live display. Per-channel separation makes diarization trivial (the clinician's channel is labeled "clinician," the patient's channel is labeled "patient"). When the audio is mixed into a single channel, the streaming pipeline runs a single ASR with diarization enabled and the labels are mapped from acoustic clusters to roles using visit context. Skip the per-channel processing and diarization quality drops sharply for the audio configurations where it matters most.
 
-```
+```pseudocode
 FUNCTION run_streaming_asr(session_id, audio_capture_config):
     state = visit_state_table.get(session_id)
 
@@ -433,7 +433,7 @@ FUNCTION handle_streaming_event(session_id, speaker_role, event):
 
 **Step 3: Run batch ASR after the visit ends and reconcile with the streaming transcript.** When the visit ends, a batch ASR runs over the full audio with full context, producing a higher-accuracy transcript with full diarization. The batch transcript is reconciled with the streaming transcript: in-visit corrections from the clinician are carried forward, and the batch transcript is established as the canonical record. Skip the batch reprocessing and the canonical transcript is the lower-accuracy streaming output, which is fine for navigation but suboptimal for the documentation that goes into the chart.
 
-```
+```pseudocode
 ON visit_end(session_id):
     state = visit_state_table.get(session_id)
 
@@ -541,7 +541,7 @@ FUNCTION reconcile_streaming_and_batch(session_id, batch_transcript):
 
 <!-- TODO (TechWriter): The faithfulness check is described as a single Bedrock call; production deployments often use a cascade of cheaper rule-based checks (citation grounding, named-entity contradiction detection) followed by an LLM-judge pass for the harder cases. Consider expanding this in a follow-up revision based on expert review. -->
 
-```
+```pseudocode
 FUNCTION generate_note_draft(session_id, canonical_transcript):
     state = visit_state_table.get(session_id)
 
@@ -643,7 +643,7 @@ FUNCTION generate_note_draft(session_id, canonical_transcript):
 
 **Step 5: Extract structured fields with explicit clinician confirmation gates.** Beyond the narrative note, the system extracts structured clinical entities (medications, problems, allergies, vitals, orders) using Comprehend Medical for the entity detection and a Bedrock LLM for the higher-level structuring. Each extracted field is presented to the clinician for explicit confirmation before being applied to the structured chart. Skip the explicit confirmation and the structured chart can be silently modified with content the clinician would not have endorsed.
 
-```
+```pseudocode
 FUNCTION extract_structured_fields(session_id, canonical_transcript):
     state = visit_state_table.get(session_id)
 
@@ -742,7 +742,7 @@ FUNCTION extract_structured_fields(session_id, canonical_transcript):
 
 **Step 6: Present the draft to the clinician for review-and-sign with side-by-side transcript display.** The clinician opens the review interface, sees the draft note alongside the transcript with click-through citations, reviews flagged uncertain segments, confirms each structured-field extraction explicitly, edits the narrative as needed, and signs the final note. Skip the side-by-side display and the clinician cannot easily verify what was actually said versus what the LLM produced, which undermines the faithfulness story.
 
-```
+```pseudocode
 ON clinician_review_request(session_id, clinician_id):
     state = visit_state_table.get(session_id)
     note_draft = note_state_table.get(session_id)
@@ -854,7 +854,7 @@ ON clinician_sign(session_id, clinician_id):
 
 **Step 7: Audit, archive, and feed cohort-stratified accuracy monitoring.** Every visit produces a durable audit record: the streaming and batch transcripts, the generated draft, the clinician edits, the structured-field decisions, the final signed note, the consent and disclosure events. Cohort-stratified metrics (per-language, per-specialty, per-clinician, per-patient-cohort) feed the equity-monitoring dashboard. Skip the cohort segmentation and the system's per-cohort failure modes are invisible until a complaint or a regulator surfaces them.
 
-```
+```pseudocode
 FUNCTION audit_archive_and_telemetry(session_id):
     state = visit_state_table.get(session_id)
     note = note_state_table.get(session_id)

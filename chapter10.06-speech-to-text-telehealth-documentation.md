@@ -186,7 +186,7 @@ Some practical updates worth knowing.
 
 A telehealth speech-to-text system decomposes into eight logical stages: visit setup and consent capture (the visit begins with the appropriate disclosures and the speech-to-text feature is enabled per institutional policy), per-channel audio capture (the patient-side and clinician-side audio are captured, ideally as separate channels), streaming ASR with diarization (the audio becomes a real-time transcript with speaker labels), real-time display (the live transcript appears for the clinician to monitor during the visit), batch ASR for finalization (a higher-accuracy transcript is produced after the visit), LLM-driven note generation and structured-field extraction (the transcript becomes a draft note with extracted clinical data), clinician review and signature (the clinician reviews the draft, corrects errors, confirms structured extractions, and signs), and audit, archive, and learning (the audio, transcript, generated note, and metadata are stored with appropriate retention).
 
-```
+```text
 ┌──────────── VISIT SETUP & CONSENT CAPTURE ───────────────┐
 │                                                           │
 │   [Visit begins through telehealth platform]              │
