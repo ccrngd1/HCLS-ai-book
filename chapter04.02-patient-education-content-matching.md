@@ -1,6 +1,6 @@
 # Recipe 4.2: Patient Education Content Matching ⭐
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001–0.01 per recommendation (depends on LLM use)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.001-0.01 per recommendation (depends on LLM use)
 
 ---
 
@@ -109,7 +109,7 @@ Looking forward: Recipes 4.4 (Wellness Program Recommendations) and 4.5 (Medicat
 
 The pipeline has three logical components: a content ingestion path that prepares the catalog, an inference path that handles real-time recommendation requests, and a feedback path that captures engagement and refreshes the personalization model.
 
-```
+```text
 ┌─────────────── CONTENT INGESTION (offline) ───────────────┐
 │                                                            │
 │  [Education Content CMS]                                   │

@@ -118,7 +118,7 @@ flowchart LR
 
 **Step 1: Ingest content and build the searchable index.** When a piece of content lands in the CMS (or gets updated), an event triggers a small Step Functions workflow that extracts the textual portion, computes the reading-grade level, generates an embedding from the title and abstract, and writes the resulting metadata to DynamoDB and the embedding to OpenSearch. This is the offline preparation step. Skip it and your recommender has nothing to recommend; rush it and you index content with bad metadata that the recommender will faithfully surface to patients for the next year.
 
-```
+```pseudocode
 FUNCTION on_content_published(content_event):
     // The CMS event includes the content ID and version.
     content = CMS.GetContent(content_event.content_id, content_event.version)
@@ -178,7 +178,7 @@ FUNCTION on_content_published(content_event):
 
 **Step 2: Build the patient query context.** When a recommendation request fires (a patient loads the portal home page, or the post-visit summary generator wants to attach educational content), the recommender first assembles what it knows about the patient. Conditions from the problem list, language preference, reading-level estimate, recent content engagement, format preferences. This step is mostly a join across the patient profile table and any cached engagement aggregates. Skip it and the recommender falls back to one-size-fits-all matching, which is exactly what you were trying to escape.
 
-```
+```pseudocode
 FUNCTION build_patient_context(patient_id):
     // Load the patient profile. This includes language, reading-level estimate,
     // and format preferences, all of which were either set explicitly at registration
@@ -224,7 +224,7 @@ FUNCTION build_patient_context(patient_id):
 
 **Step 3: Apply hard filters and run candidate generation.** This is where Layers 1 and 2 of the architecture combine. Hard filters reduce the catalog to the "allowed" subset; semantic search plus tag overlap reduces the allowed subset to a few dozen candidates. OpenSearch handles both in a single query: a filter clause for the hard rules, a k-NN clause for the embedding similarity, and a should-match clause for tag overlap as a tiebreaker. Skip the hard-filter step and you'll show English-only content to non-English speakers; skip the candidate generation and you'll be ranking the entire catalog every request, which is wasteful and slow.
 
-```
+```pseudocode
 FUNCTION generate_candidates(patient_context, top_k = 50):
     // Embed the patient's intent text using the same model used for content embeddings.
     // Critical: same model, same configuration, otherwise the vectors don't live in the same space.
@@ -275,7 +275,7 @@ FUNCTION generate_candidates(patient_context, top_k = 50):
 
 **Step 4: Re-rank with personalization signals.** The candidate set is relevant in aggregate, but the order matters. The re-ranker scores each candidate against patient-specific features (does the patient prefer videos? is this content's reading level a fit? have they engaged with similar topics recently?). This is where personalization shows up. The re-ranker can be as simple as a weighted scoring function for v1, then graduate to a learned ranker (LambdaMART, XGBoost-Ranker) once you have enough labeled engagement data. Skip personalization re-ranking and you're returning generic semantic-search results; that's fine for an MVP but it leaves real value on the table.
 
-```
+```pseudocode
 FUNCTION rerank(candidates, patient_context, top_n = 5):
     // For an MVP / v1, a weighted scoring function is enough.
     // The weights here are the kind of thing you tune by hand from analytics
@@ -348,7 +348,7 @@ FUNCTION rerank(candidates, patient_context, top_n = 5):
 
 **Step 5: Log the recommendation and return.** Before returning to the caller, persist a recommendation log entry. This is the join point that makes engagement attribution possible later. Each recommendation gets a unique ID; impressions, clicks, and completions reference that ID. Skip this step and you cannot evaluate the model. You can run the recommender, you cannot improve it.
 
-```
+```pseudocode
 FUNCTION log_and_return(patient_id, recommendations):
     recommendation_id = new UUID
 
@@ -391,7 +391,7 @@ FUNCTION log_and_return(patient_id, recommendations):
 
 **Step 6: Capture engagement and update aggregates.** A separate Lambda consumes the engagement stream, joins each event back to the recommendation log, and updates two things: the patient's engagement summary (used by the re-ranker) and the training dataset (used for the periodic model refresh). The patient summary update can happen on the hot path; the training-dataset update is batched. Underinvest here and the model stops learning.
 
-```
+```pseudocode
 FUNCTION process_engagement_event(event):
     // Look up the recommendation that produced this event.
     rec = DynamoDB.GetItem("recommendation-log", event.recommendation_id)
