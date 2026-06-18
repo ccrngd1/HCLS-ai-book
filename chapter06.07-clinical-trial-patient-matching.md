@@ -1,6 +1,6 @@
 # Recipe 6.7: Clinical Trial Patient Matching
 
-**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.20–$0.75 per patient screened (depending on criteria complexity and NLP requirements)
+**Complexity:** Medium-Complex · **Phase:** Growth · **Estimated Cost:** ~$0.20-$0.75 per patient screened (depending on criteria complexity and NLP requirements)
 
 ---
 
@@ -97,7 +97,7 @@ Your matching system needs explicit temporal logic: what's the acceptable recenc
 
 ## General Architecture Pattern
 
-```
+```text
 [Trial Registry] → [Criteria Parser] → [Computable Criteria]
                                               ↓
 [Patient Data Store] → [Structured Pre-Screen] → [Candidate Pool]

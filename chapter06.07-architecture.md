@@ -61,7 +61,7 @@ flowchart TD
 | VPC | SageMaker endpoints and Glue jobs in private subnets. VPC endpoints for S3, DynamoDB, SageMaker Runtime, and Comprehend Medical (`com.amazonaws.{region}.comprehendmedical`). Consider adding Step Functions and Lambda VPC endpoints if orchestration components are VPC-bound. Restrict security group egress to VPC endpoints only (no internet egress) for Lambda functions and SageMaker endpoints processing clinical notes. Enable VPC Flow Logs to monitor data movement patterns. |
 | CloudTrail | Enabled for all API calls. Log who queried which patients and when. |
 | Sample Data | Synthetic patient records (Synthea is excellent for this). ClinicalTrials.gov API for real trial criteria. Never use real PHI in development. |
-| Cost Estimate | ~$0.20–$0.75 per patient screened (Comprehend Medical: ~$0.01/100 chars; SageMaker inference: ~$0.10/patient for custom NLP; Athena: ~$5/TB scanned). Store structured patient data in Parquet format partitioned by relevant dimensions (e.g., patient cohort, data type) to minimize Athena scan volume. Separate clinical notes from structured data in the S3 layout so the structured pre-screen doesn't scan note text. |
+| Cost Estimate | ~$0.20-$0.75 per patient screened (Comprehend Medical: ~$0.01/100 chars; SageMaker inference: ~$0.10/patient for custom NLP; Athena: ~$5/TB scanned). Store structured patient data in Parquet format partitioned by relevant dimensions (e.g., patient cohort, data type) to minimize Athena scan volume. Separate clinical notes from structured data in the S3 layout so the structured pre-screen doesn't scan note text. |
 
 ### Ingredients
 
@@ -85,7 +85,7 @@ Before you can match patients, you need to decompose the trial's eligibility cri
 
 If you skip this step, your matching logic is hardcoded per trial and you'll rewrite it every time a new trial opens. A generic criteria representation lets you add trials without code changes.
 
-```
+```pseudocode
 FUNCTION parse_trial_criteria(trial_id):
     // Fetch the raw eligibility text from the trial registry
     raw_criteria = fetch_from_clinicaltrials_gov(trial_id)
@@ -150,7 +150,7 @@ Run all structured criteria against the patient population using SQL. This elimi
 
 If you skip this step and run NLP on every patient, you'll spend 100x more on compute and wait hours instead of minutes. The structured pre-screen is your cost control mechanism.
 
-```
+```pseudocode
 FUNCTION structured_prescreen(trial_id, patient_population):
     criteria = LOAD FROM s3://trial-matching/criteria/{trial_id}.json
     structured_criteria = FILTER criteria WHERE data_source = "STRUCTURED"
@@ -190,7 +190,7 @@ For candidates that passed structured pre-screening, evaluate criteria that requ
 
 If you skip this step, you'll send coordinators candidates who are clearly ineligible based on information in their notes. That wastes coordinator time and erodes trust in the system.
 
-```
+```pseudocode
 FUNCTION nlp_deep_screen(trial_id, candidates):
     criteria = LOAD FROM s3://trial-matching/criteria/{trial_id}.json
     nlp_criteria = FILTER criteria WHERE data_source IN ("UNSTRUCTURED", "BOTH")
@@ -247,7 +247,7 @@ Assign each candidate a composite eligibility score based on how confidently the
 
 If you skip scoring and just present an unranked list, coordinators waste time on borderline cases when clear matches are available. Ranking focuses their effort where it's most likely to result in enrollment.
 
-```
+```pseudocode
 FUNCTION score_candidates(trial_id, candidates):
     criteria = LOAD FROM s3://trial-matching/criteria/{trial_id}.json
     
@@ -308,7 +308,7 @@ FUNCTION score_candidates(trial_id, candidates):
 
 Present the ranked candidates to research coordinators with actionable evidence for each criterion. The coordinator needs to see why the system thinks this patient qualifies, not just that it does.
 
-```
+```pseudocode
 FUNCTION generate_worklist(trial_id, top_n=50):
     // Retrieve top candidates from DynamoDB
     candidates = QUERY dynamodb table "trial-candidates"
