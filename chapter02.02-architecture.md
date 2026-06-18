@@ -79,7 +79,7 @@ flowchart LR
 
 <!-- TODO (TechWriter): Expert review A5 (MEDIUM). Add an explicit cache-lookup step (Step 0) before Step 1 that computes `cache_key = hash(original_text + "|" + target_grade)` and short-circuits to a cached result if present. The cost discussion, Expected Results cache-hit-rate benchmark, and "Why These Services" narrative all assume this step exists, but the pseudocode currently starts at Step 1 and never consults the cache. A reader implementing the walkthrough as written will get zero cache hits. -->
 
-```
+```pseudocode
 FUNCTION extract_critical_entities(clinical_text):
     // Call Comprehend Medical to identify medical entities in the source text
     response = call ComprehendMedical.DetectEntitiesV2 with:
@@ -128,7 +128,7 @@ FUNCTION extract_critical_entities(clinical_text):
 
 The classifier shown below is deliberately simple: keyword-based, first-match-wins. That's fine for a teaching example but worth knowing about. A section like "Please take this medication and follow up in 2 weeks" hits both `medications` and `instructions` keywords, and whichever iterates first wins. Misclassification matters because it changes which preservation rules the prompt carries. A medication list classified as `narrative` loses the verbatim-dosage constraint. For production, track how many keywords matched and for which types, apply the stricter prompt when ties occur (prefer `medications` over `instructions`), or replace the keyword classifier with a small learned model (TF-IDF + logistic regression, or a distilled transformer fine-tuned on labeled segments). See Variations.
 
-```
+```pseudocode
 SEGMENT_TYPES = {
     "medications":   ["medication", "prescription", "drug", "dose", "mg", "tablet"],
     "diagnosis":     ["diagnosis", "assessment", "impression", "condition"],
@@ -167,7 +167,7 @@ FUNCTION segment_document(clinical_text):
 
 Two things worth noting about the guardrail call. First, when the source text comes from untrusted channels (OCR of handwritten notes, patient-supplied free text, addenda copy-pasted from a portal), configure the Bedrock Guardrail with input-side prompt-attack filters in addition to the output filters shown here. Input filtering catches injection attempts before the model sees the manipulated text, which is a cheap defense-in-depth layer for PHI-carrying pipelines. Second, treat guardrail blocks as safety events: emit a distinct CloudWatch metric (e.g., `SegmentBlockedByGuardrail`) with dimensions for segment type and triggered policy so you can monitor which content triggers which policies and at what rate. Do not log the raw `guardrail_reason` string unredacted, because it may echo PHI from the blocked segment.
 
-```
+```pseudocode
 TARGET_READING_LEVEL = "6th grade (Flesch-Kincaid)"
 
 SIMPLIFICATION_PROMPTS = {
@@ -250,7 +250,7 @@ FUNCTION simplify_segment(segment, must_preserve, reading_level):
 
 **Step 4: Validate readability and preservation.** This is the automated quality gate. Two checks run on every simplified segment. First: does the output actually meet the target reading level? Readability formulas (Flesch-Kincaid, SMOG) calculate a grade level from sentence length and word complexity. If the simplified text still reads at a 12th-grade level, it failed. Second: do all critical entities from Step 1 still appear in the output? If the source mentioned "ticagrelor 90mg BID" and the simplified version doesn't contain "ticagrelor" or "90mg," something got lost. Both checks are deterministic and fast. No LLM needed. Segments that fail either check get flagged for human review or re-simplification with a more aggressive prompt.
 
-```
+```pseudocode
 FUNCTION validate_output(simplified_segment, original_segment, must_preserve, target_grade):
     issues = []
     
@@ -314,7 +314,7 @@ FUNCTION validate_output(simplified_segment, original_segment, must_preserve, ta
 
 The stored records are PHI from end to end: original text, simplified text, medication lists, and condition names all live in the table. Define a retention policy explicitly rather than letting the table grow forever. A common pattern is DynamoDB TTL for hot retention matching the patient portal access window (typically 6-12 months), archival of older records to S3 Glacier under a customer-managed KMS key for longer-term audit, and a deletion path that can act on patient-initiated data-subject requests under state privacy laws. Under HIPAA's minimum-necessary principle, "we kept it because the cache was warm" is not a retention rationale.
 
-```
+```pseudocode
 FUNCTION assemble_and_store(original_text, simplified_segments, validation_results, 
                             must_preserve, target_grade):
     // Reassemble segments in original document order
@@ -409,6 +409,8 @@ Simplified output (6th grade target):
 | Throughput | ~20 documents/second (Lambda concurrency limited) |
 
 **Where it struggles:** Very long documents (>3 pages) where context window limits force aggressive chunking. Highly specialized subspecialty text (genetics reports, pathology findings) where even the "simplified" version requires domain knowledge. Documents mixing multiple languages. Handwritten addenda that were OCR'd with errors in the source text (garbage in, garbage out).
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add it to match the companion file spec. -->
 
 ---
 

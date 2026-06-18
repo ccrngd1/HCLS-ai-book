@@ -35,11 +35,18 @@ Editorial pass 4 (TechEditor, 2026-05-11):
 Editorial pass 5 (TechEditor, 2026-05-31):
 - Added finding IDs to all three preserved TODO markers (A5, A4, V3) so the follow-up task generator can track them. No content changes to the markers themselves.
 - Final checklist: zero em dashes, zero trailing whitespace, no consecutive blank lines, header hierarchy (H1/H2/H3/H4) stable, all 12 URLs well-formed, no documentation-voice or hype markers, RECIPE-GUIDE section order compliant, vendor balance holds at ~70/30. Recipe is publication-ready pending the three deferred TechWriter items.
+
+Editorial pass 6 (TechEditor, 2026-06-17): Post-split polish.
+- Fixed en dash (U+2013) in cost line to hyphen.
+- Replaced "see Prerequisites for breakdown" with a link to the architecture companion (Prerequisites now lives there).
+- Replaced "The pseudocode here flags" with "The validation step flags" in The Honest Take to remove dangling reference to companion-file pseudocode.
+- Added `text` language tag to the pipeline-diagram code fence.
+- Verified: architecture callout is correctly placed at end of General Architecture Pattern, The Honest Take has no remaining forward-references to AWS content, all TODOs preserved (A4, A5, V3).
 -->
 
 # Recipe 2.2: Medical Terminology Simplification
 
-**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15–0.30 per document (Comprehend Medical dominates; see Prerequisites for breakdown)
+**Complexity:** Simple · **Phase:** MVP · **Estimated Cost:** ~$0.15-0.30 per document (Comprehend Medical dominates; see the [Architecture companion](chapter02.02-architecture) for a cost breakdown)
 
 ---
 
@@ -108,7 +115,7 @@ The gap between "impressive demo" and "reliable production system" is smaller he
 
 The pipeline at a conceptual level:
 
-```
+```text
 [Clinical Text] → [Segment by Type] → [Simplify with Constraints] → [Validate Readability] → [Verify Preservation] → [Output]
 ```
 
@@ -135,7 +142,7 @@ This is one of the most satisfying LLM applications to build because the results
 
 The part that surprised me: the segmentation step matters more than the model choice. A single prompt that says "simplify this entire discharge summary" produces mediocre results because the model tries to apply one strategy uniformly. Medication sections get over-explained. Instruction sections get under-simplified. Segmenting first and applying type-specific prompts produces dramatically better output.
 
-The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The pseudocode here flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): Expert review A4 (MEDIUM). If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
+The readability validation is your safety net, and it catches more issues than you'd expect. Models are good at simplification but they're not perfect at hitting a specific grade level. They tend to drift toward 8th-9th grade even when you ask for 6th grade. The validation step flags segments that miss the target grade for human review rather than re-simplifying them automatically. In practice, a retry loop with a stricter prompt (lower target grade, explicit short-sentence instruction) can reclaim 50-70% of flagged segments and is a reasonable first enhancement once you see which segments miss most often. <!-- TODO (TechWriter): Expert review A4 (MEDIUM). If a retry loop is added to the pseudocode, update the cost and latency estimates to account for the extra Bedrock calls on the failing segments. -->
 
 The entity preservation check is where you'll find your scariest bugs. Early in development, I watched the model simplify "ticagrelor 90mg BID" into "your blood thinner twice a day." Technically simpler. Also completely useless if the patient needs to verify their prescription at the pharmacy. The preservation checklist catches this, but you need to be thoughtful about what goes on the list.
 
