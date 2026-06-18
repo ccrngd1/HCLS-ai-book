@@ -94,7 +94,7 @@ flowchart TD
 
 **Step 1: Receive and filter DICOM studies.** When a new imaging study arrives in the S3 landing zone, the system checks whether it's a chest X-ray. Not every study needs triage. We filter using DICOM metadata: modality (CR or DX for computed/digital radiography), body part examined (CHEST), and view position (PA or AP). Non-chest studies are ignored. This filtering prevents wasted inference costs and keeps the model focused on what it was trained for. Skip this step and you'll be running knee X-rays through a chest model, burning GPU time and generating meaningless results.
 
-```
+```pseudocode
 FUNCTION route_study(bucket, key):
     // Read DICOM metadata from the file header (not the pixel data, just the tags).
     // DICOM files contain structured metadata describing the study, patient, and acquisition.
@@ -116,7 +116,7 @@ FUNCTION route_study(bucket, key):
 
 **Step 2: Preprocess the DICOM image for model input.** Raw DICOM pixel data is not ready for a neural network. DICOM images can be 12-bit or 16-bit, have varying dimensions, use different photometric interpretations (some are inverted: white = air, black = bone), and may include burned-in annotations or borders. This step extracts the pixel array, normalizes intensity values to the range the model expects, resizes to the model's input dimensions, and handles photometric inversion. The preprocessing must exactly replicate what was done during model training. Even small differences (different resize interpolation, different normalization range) can degrade accuracy significantly. This is one of the most common deployment failures in medical imaging AI.
 
-```
+```pseudocode
 FUNCTION preprocess_for_inference(bucket, key):
     // Load the full DICOM file including pixel data.
     dicom_file = load DICOM from S3 at bucket/key
@@ -154,7 +154,7 @@ FUNCTION preprocess_for_inference(bucket, key):
 
 **Step 3: Run inference on the triage model.** The preprocessed image is sent to the SageMaker endpoint hosting the trained model. The model returns a probability score for each finding category it was trained to detect. For a triage use case, the critical findings are typically: pneumothorax, large pleural effusion, cardiomegaly, pulmonary edema, and mass/nodule. The inference call should complete in under 5 seconds. If it takes longer, the triage value diminishes (the radiologist might have already opened the study). Monitor latency closely.
 
-```
+```pseudocode
 FUNCTION run_inference(preprocessed_image, study_id):
     // Serialize the preprocessed image into the format the endpoint expects.
     // Most SageMaker endpoints accept numpy arrays serialized as bytes or JSON.
@@ -180,7 +180,7 @@ FUNCTION run_inference(preprocessed_image, study_id):
 
 **Step 4: Calculate priority score and determine triage action.** Raw probability scores need to be converted into a clinical priority decision. This step applies finding-specific thresholds (pneumothorax has a lower threshold than cardiomegaly because it's more time-sensitive) and assigns a composite priority level. The priority levels map to worklist behavior: CRITICAL means interrupt the radiologist now, URGENT means move to top of queue, ROUTINE means normal ordering. The thresholds are the most important tunable parameters in the system. Set them too low and you flood the radiologist with false alarms (alert fatigue kills clinical AI adoption faster than anything). Set them too high and you miss the findings that matter. Calibrate on your institution's data with radiologist input.
 
-```
+```pseudocode
 // Thresholds per finding, calibrated on institutional validation data.
 // Lower threshold = more sensitive (fewer misses, more false alarms).
 // These values are examples; real thresholds require clinical validation.
@@ -244,7 +244,7 @@ FUNCTION calculate_priority(predictions):
 
 <!-- TODO (TechWriter): Expert review S2 (MEDIUM). The patient_id field is stored in the audit record. Add a justification comment explaining why (e.g., required for FDA post-market surveillance: must correlate AI findings with patient outcomes). If not needed for triage function itself, note that the DynamoDB table containing patient_id requires the same access controls as any PHI-containing data store. Alternatively, remove patient_id and note that patient linkage should be performed via PACS lookup using accession_number when needed. -->
 
-```
+```pseudocode
 FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_result):
     // Write the complete triage result to the audit database.
     write record to database table "triage-results":
@@ -320,13 +320,13 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency (S3 event to worklist update) | 3–8 seconds |
-| Model inference latency (SageMaker) | 1–3 seconds |
-| Sensitivity (pneumothorax) | 85–95% (varies by size/type) |
-| Specificity (pneumothorax) | 85–92% |
-| Sensitivity (large effusion) | 88–95% |
-| False positive rate (all findings) | 5–15% per study |
-| Cost per study | ~$0.10–$0.15 (inference + storage) |
+| End-to-end latency (S3 event to worklist update) | 3-8 seconds |
+| Model inference latency (SageMaker) | 1-3 seconds |
+| Sensitivity (pneumothorax) | 85-95% (varies by size/type) |
+| Specificity (pneumothorax) | 85-92% |
+| Sensitivity (large effusion) | 88-95% |
+| False positive rate (all findings) | 5-15% per study |
+| Cost per study | ~$0.10-$0.15 (inference + storage) |
 | Throughput | ~200 studies/hour per endpoint (full pipeline; limited by slowest stage, not inference alone. Scale horizontally with additional Lambda concurrency and SageMaker endpoint instances for higher volume.) |
 
 **Where it struggles:** Small apical pneumothoraces on supine patients (the hardest finding for both AI and humans). Subcutaneous emphysema mimicking pneumothorax. Skin folds creating false pleural lines. Portable AP studies with suboptimal positioning. Post-surgical patients with expected findings that shouldn't trigger alerts. Pediatric chest X-rays (most models are trained on adults).
@@ -376,9 +376,9 @@ FUNCTION store_and_notify(study_id, accession_number, patient_id, priority_resul
 
 | Tier | Timeline | What You Get |
 |------|----------|--------------|
-| **Basic (research/pilot)** | 4–6 weeks | Pre-trained model deployed on SageMaker, manual DICOM upload, results in DynamoDB, no PACS integration |
-| **Production-ready** | 4–6 months | Automated DICOM routing, PACS worklist integration, model validation on institutional data, monitoring and alerting, FDA regulatory submission (if building in-house) |
-| **With variations** | 9–12 months | Multi-finding composite scoring, longitudinal comparison, radiologist feedback loop, multi-site deployment |
+| **Basic (research/pilot)** | 4-6 weeks | Pre-trained model deployed on SageMaker, manual DICOM upload, results in DynamoDB, no PACS integration |
+| **Production-ready** | 4-6 months | Automated DICOM routing, PACS worklist integration, model validation on institutional data, monitoring and alerting, FDA regulatory submission (if building in-house) |
+| **With variations** | 9-12 months | Multi-finding composite scoring, longitudinal comparison, radiologist feedback loop, multi-site deployment |
 
 ---
 

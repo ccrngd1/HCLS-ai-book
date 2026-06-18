@@ -1,6 +1,6 @@
 # Recipe 9.5: Chest X-Ray Triage
 
-**Complexity:** Medium · **Phase:** Production (FDA pathway required) · **Estimated Cost:** ~$0.10–$0.50 per study
+**Complexity:** Medium · **Phase:** Production (FDA pathway required) · **Estimated Cost:** ~$0.10-$0.50 per study
 
 ---
 
@@ -52,11 +52,11 @@ Chest X-ray triage is one of the most studied problems in medical AI, and for go
 
 **Calibration.** A model that outputs 0.85 for pneumothorax needs that 0.85 to actually mean "85% chance of pneumothorax." If the model is poorly calibrated (overconfident or underconfident), your threshold-based triage logic will either miss critical findings or flood the radiologist with false alarms. Calibration is often neglected in model development and is critical for clinical deployment.
 
-### The General Architecture Pattern
+## General Architecture Pattern
 
 At a conceptual level, the pipeline looks like this:
 
-```
+```text
 [PACS/Modality] → [DICOM Listener] → [Preprocessing] → [Inference] → [Priority Score] → [Worklist Update]
 ```
 
