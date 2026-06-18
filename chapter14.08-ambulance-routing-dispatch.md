@@ -116,7 +116,7 @@ Travel time estimation approaches:
 
 ## General Architecture Pattern
 
-```
+```text
 [Call Intake] → [Demand Classifier] → [Dispatch Optimizer] → [Unit Assignment]
                                               ↑
                                     [Fleet State Tracker]
@@ -174,3 +174,9 @@ The dispatch scoring function is the easy part. Seriously. You can get a working
 - **Recipe 7.4 (ED Visit Prediction):** Predicting which patients will need emergency services feeds into the demand model for ambulance positioning.
 
 ---
+
+**Tags:** `optimization` · `vehicle-routing` · `real-time` · `ems` · `dispatch` · `geospatial` · `operations-research` · `coverage` · `fleet-management`
+
+---
+
+| [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-preface) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |

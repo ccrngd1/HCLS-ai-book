@@ -100,13 +100,11 @@ flowchart TB
 | **AWS KMS** | Encryption key management for all data stores |
 | **Amazon CloudWatch** | Metrics, alarms, dashboards for response time monitoring |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Ingest fleet GPS and maintain state.** Every ambulance reports its GPS position every 5 to 15 seconds. These positions flow through Kinesis into a Lambda processor that updates the fleet state table. The state table is the single source of truth for "where is every unit right now and what are they doing?" Without this real-time state, the dispatch optimizer is working with stale information, and stale information in EMS means sending a unit that's actually 15 minutes away instead of the one that's 3 minutes away. The state table also tracks unit status transitions: available, dispatched, en route, on scene, transporting, at hospital, returning. Each transition updates the record and potentially triggers a coverage recalculation.
 
-```
+```pseudocode
 FUNCTION process_gps_update(gps_event):
     // GPS event contains: unit_id, latitude, longitude, timestamp, speed, heading
     unit_id   = gps_event.unit_id
@@ -138,7 +136,7 @@ FUNCTION process_gps_update(gps_event):
 
 **Step 2: Score candidate units for dispatch.** When a call comes in, the dispatch optimizer needs to evaluate every available unit that meets the capability requirement. For each candidate, it computes a composite score that balances response time (primary), coverage impact (secondary), and operational factors (crew fatigue, fuel level, time remaining on shift). The scoring function is the heart of the system. A pure "closest unit" approach is fast but myopic. The scoring function adds system-level awareness: "yes, Unit 3 is closest, but sending it leaves the entire north zone uncovered, and Unit 5 is only 90 seconds farther." This is where optimization beats human intuition at scale.
 
-```
+```pseudocode
 FUNCTION score_candidates(call, available_units, fleet_state, coverage_model):
     // call contains: location (lat/lng), priority (1-5), required_capability (ALS/BLS),
     //               nature_code, patient_age
@@ -194,7 +192,7 @@ FUNCTION score_candidates(call, available_units, fleet_state, coverage_model):
 
 **Step 3: Select destination hospital.** Once a unit is assigned and the patient is assessed on scene, the system recommends a destination hospital. This is not always "the closest ED." A STEMI patient needs a cath lab. A stroke patient needs a certified stroke center. A trauma patient needs a Level I or II trauma center. And even when multiple hospitals meet the clinical requirement, you want to factor in current capacity: an ED with 40 patients boarding in the hallway and a 3-hour wait is not a good destination even if it's 2 minutes closer. Hospital diversion status, ED census, and specialty availability all feed into this decision.
 
-```
+```pseudocode
 FUNCTION select_hospital(patient_needs, unit_location, hospital_status_table):
     // patient_needs contains: required_capabilities (list), acuity_level, special_requirements
     // Example: required_capabilities = ["cath_lab", "interventional_cardiology"]
@@ -240,7 +238,7 @@ FUNCTION select_hospital(patient_needs, unit_location, hospital_status_table):
 
 **Step 4: Background coverage optimization (repositioning).** This runs every 2 to 5 minutes, or whenever a significant state change occurs (unit dispatched, unit becomes available, demand spike detected). It solves the coverage problem: given current unit positions and predicted demand, are there zones where response time would exceed the target if a call came in? If so, which idle unit should reposition to close the gap? This is where the heavier optimization lives. Because it's not blocking an active emergency, it can take 10 to 30 seconds to solve. The solver formulates this as a set-covering problem: minimize the number of unit moves while ensuring every demand zone has at least one unit within the target response time.
 
-```
+```pseudocode
 FUNCTION optimize_repositioning(fleet_state, demand_forecast, coverage_threshold):
     // Get all idle (available) units and their current positions
     idle_units = [u FOR u IN fleet_state WHERE u.status == "AVAILABLE"]
@@ -294,7 +292,7 @@ FUNCTION optimize_repositioning(fleet_state, demand_forecast, coverage_threshold
 
 **Step 5: Demand forecasting.** The repositioning optimizer needs to know where calls are likely to come from. This is a spatial-temporal forecasting problem. Historical call data shows strong patterns: more calls in residential areas during evenings, more in commercial districts during business hours, spikes near bars after midnight on weekends, seasonal patterns around holidays. The forecast model takes time-of-day, day-of-week, weather, and special events as inputs and produces a probability distribution over the service area grid. This doesn't need to be perfect. Even a rough forecast that captures the major patterns dramatically improves proactive positioning versus purely reactive dispatch.
 
-```
+```pseudocode
 FUNCTION forecast_demand(current_time, weather, special_events, historical_data):
     // Divide service area into grid zones (typically 1km x 1km for urban, larger for rural)
     // For each zone, predict call probability in the next 30-minute window
@@ -383,6 +381,8 @@ FUNCTION forecast_demand(current_time, weather, special_events, historical_data)
 - **Inter-agency coordination.** Many metro areas have overlapping EMS jurisdictions (fire department, private ambulance, hospital-based EMS). The optimizer only controls units it can see. Mutual aid decisions still require human coordination.
 
 ---
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section between Expected Results and Variations per RECIPE-GUIDE structure. The "Where it struggles" content in Expected Results partially covers this, but a dedicated section should call out gaps a production deployment must close (simulation environment requirement, dispatcher UI, CAD integration testing, certification/regulatory approval). -->
 
 ## Variations and Extensions
 
