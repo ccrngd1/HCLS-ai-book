@@ -59,7 +59,7 @@ flowchart LR
 | **VPC** | Production: SageMaker training and inference jobs in VPC with VPC endpoints for S3, CloudWatch Logs, and KMS. Required for HIPAA workloads. <!-- TODO (TechWriter): Expert review N1 (MEDIUM). Enumerate the full VPC endpoint set with endpoint type: gateway endpoints (free, no per-AZ cost) for S3 and DynamoDB; interface endpoints (per-AZ-per-endpoint cost) for SageMaker API, SageMaker Runtime, Step Functions, EventBridge, Glue, Lambda, KMS, CloudWatch Logs, CloudWatch Monitoring, and Secrets Manager (where used for ERP integration credentials). Add TLS 1.2 minimum (TLS 1.3 preferred) at every external boundary per N2 (LOW). --> |
 | **CloudTrail** | Enabled: log all SageMaker, S3, DynamoDB, and Glue API calls for HIPAA audit trail. <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Specify CloudTrail data events on the consumption-history, SKU-master, model-artifacts, and forecasts S3 buckets, on the DynamoDB serving table, and on the customer-managed KMS keys (management events alone log resource creation but not GetObject/GetItem reads). Note dedicated logs bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. --> |
 | **Sample Data** | Synthetic SKU consumption data. The [M5 Forecasting Competition dataset](https://www.kaggle.com/competitions/m5-forecasting-accuracy/data) is a useful (retail, not healthcare) public dataset for testing multi-SKU forecasting code. For healthcare-shaped synthetic data, generate from a known process (case volume * per-case usage + smooth consumables + intermittent specialty items + noise) so you can validate the pipeline against ground truth. Never use real consumption data linked to patient identifiers in dev. |
-| **Cost Estimate** | SageMaker training (multiple ml.m5.large jobs in parallel via Map state, ~30 min weekly): ~$2/week. SageMaker batch transform: ~$1/week. Glue ETL (~10 min weekly): ~$0.50/week. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $100–$400/month for a single facility's SKU portfolio, dominated by SageMaker compute and SKU count. <!-- TODO (TechWriter): Expert review V2 (LOW). Decompose the $100-$400/month range by SKU count and forecast cadence (assumes 5,000-15,000 SKUs and weekly cadence) and clarify how cost scales for multi-facility health-system deployments (approximately linearly with SKU count if per-segment training is decomposed by facility, or sublinearly with SKU count if a shared DeepAR model is used across facilities). --> |
+| **Cost Estimate** | SageMaker training (multiple ml.m5.large jobs in parallel via Map state, ~30 min weekly): ~$2/week. SageMaker batch transform: ~$1/week. Glue ETL (~10 min weekly): ~$0.50/week. S3, DynamoDB, Step Functions, Lambda: pennies per day. Total: $100-$400/month for a single facility's SKU portfolio, dominated by SageMaker compute and SKU count. <!-- TODO (TechWriter): Expert review V2 (LOW). Decompose the $100-$400/month range by SKU count and forecast cadence (assumes 5,000-15,000 SKUs and weekly cadence) and clarify how cost scales for multi-facility health-system deployments (approximately linearly with SKU count if per-segment training is decomposed by facility, or sublinearly with SKU count if a shared DeepAR model is used across facilities). --> |
 
 <!-- TODO (TechWriter): V1. Verify SageMaker, Glue, and DynamoDB pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
 
@@ -312,13 +312,13 @@ FUNCTION load_forecasts_to_dynamodb(forecast_records, table_name):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end pipeline runtime (5,000 SKUs, single facility) | 30–90 minutes weekly |
-| Forecast accuracy (smooth SKUs, 30-day MAPE) | 8–15% |
-| Forecast accuracy (intermittent SKUs, 30-day MASE) | 0.85–1.10 (lower is better; below 1.0 beats naive) |
+| End-to-end pipeline runtime (5,000 SKUs, single facility) | 30-90 minutes weekly |
+| Forecast accuracy (smooth SKUs, 30-day MAPE) | 8-15% |
+| Forecast accuracy (intermittent SKUs, 30-day MASE) | 0.85-1.10 (lower is better; below 1.0 beats naive) |
 | Procedure-driven SKU accuracy | Strongly dependent on case forecast quality |
-| Stockout reduction (mature deployment) | 30–60% relative to par-level baseline |
-| On-hand inventory reduction | 10–25% at the same service level |
-| Cost per facility per month | $100–$400 (dominated by SageMaker compute and SKU count) |
+| Stockout reduction (mature deployment) | 30-60% relative to par-level baseline |
+| On-hand inventory reduction | 10-25% at the same service level |
+| Cost per facility per month | $100-$400 (dominated by SageMaker compute and SKU count) |
 
 <!-- TODO (TechWriter): A1. Accuracy and operational benchmarks above are typical industry figures for healthcare supply forecasting on facilities with 2+ years of clean consumption history and a moderate SKU portfolio. Confirm these ranges against your reference data sources before publication. -->
 
@@ -387,9 +387,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (single facility, smooth SKUs only):** 2–3 weeks
-- **Production-ready (full segmentation, intermittent methods, monitoring, ERP integration):** 8–12 weeks
-- **With variations (hierarchical, multi-facility pooling, newsvendor):** 16–20 weeks
+- **Basic pipeline (single facility, smooth SKUs only):** 2-3 weeks
+- **Production-ready (full segmentation, intermittent methods, monitoring, ERP integration):** 8-12 weeks
+- **With variations (hierarchical, multi-facility pooling, newsvendor):** 16-20 weeks
 
 ---
 
