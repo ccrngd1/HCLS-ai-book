@@ -301,6 +301,8 @@ The 1.5-3 second figure represents Lambda processing time (DICOM parse, metrics 
 
 ---
 
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close. -->
+
 ## Variations and Extensions
 
 **Edge deployment for real-time feedback.** Instead of routing images to the cloud for assessment, deploy a lightweight model (quantized, optimized for inference) directly on hardware at the modality or DICOM router. This gets latency under 500ms and enables immediate feedback on the modality console. AWS IoT Greengrass or a SageMaker Edge deployment can manage model updates to edge devices. The tradeoff: you lose the scalability of cloud inference and need to manage edge hardware.
