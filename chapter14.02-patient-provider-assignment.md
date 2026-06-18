@@ -64,7 +64,7 @@ Both modes must use the same scoring function and respect the same constraints. 
 
 ## General Architecture Pattern
 
-```
+```text
 [Patient & Provider Data] → [Preference Scoring] → [Constraint Optimization] → [Validation] → [Human Review] → [EHR Write-back]
 ```
 
@@ -99,7 +99,7 @@ The optimization part is the easy part. Seriously. Formulating the integer progr
 
 **Providers will override your optimizer.** And that's fine. The optimizer suggests; humans decide. But track the override rate. If it's above 20%, your scoring function doesn't match clinical judgment and needs recalibration. If it's below 5%, you might be able to auto-approve low-risk assignments (healthy patients to providers with ample capacity) and only route complex cases to human review.
 
-**The incremental case is where you'll spend most of your engineering time.** The batch optimizer runs weekly or on-demand. The incremental assigner runs every time a new patient calls. It needs sub-second latency, which means you can't spin up a SageMaker job for each patient. Pre-compute provider scores and cache them. Update the cache when panel counts change. The architecture for incremental assignment is fundamentally different from batch, even though the scoring logic is shared.
+**The incremental case is where you'll spend most of your engineering time.** The batch optimizer runs weekly or on-demand. The incremental assigner runs every time a new patient calls. It needs sub-second latency, which means you can't spin up a batch compute job for each patient. Pre-compute provider scores and cache them. Update the cache when panel counts change. The architecture for incremental assignment is fundamentally different from batch, even though the scoring logic is shared.
 
 ---
 
@@ -108,5 +108,9 @@ The optimization part is the easy part. Seriously. Formulating the integer progr
 - **Recipe 14.1: Appointment Slot Optimization** - Optimizes the template structure; this recipe optimizes who fills those slots
 - **Recipe 14.3: Nurse Scheduling** - Similar constraint optimization but with shift-based temporal constraints
 - **Recipe 14.6: Real-Time Resource Allocation** - The real-time counterpart to this batch optimization
+
+---
+
+**Tags:** `optimization` · `operations-research` · `panel-management` · `assignment-problem` · `integer-programming` · `primary-care` · `patient-matching`
 
 ---

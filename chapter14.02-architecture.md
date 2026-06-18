@@ -82,7 +82,7 @@ The key factors:
 - **Panel balance.** Prefer providers who are further below their target. This naturally distributes patients toward providers with more capacity.
 - **Continuity bonus.** If the patient's previous provider left and this provider was on the same care team, there's a continuity benefit from shared knowledge of the care plan.
 
-```
+```pseudocode
 FUNCTION compute_preference_score(patient, provider):
     score = 0
 
@@ -121,7 +121,7 @@ The weights are tunable. Your medical director and operations team should agree 
 
 **Step 2: Formulate and solve the optimization.** Feed the score matrix into a binary integer program. Each decision variable represents whether a specific patient is assigned to a specific provider (1 = yes, 0 = no). The solver finds the combination that maximizes total match quality while respecting all constraints.
 
-```
+```pseudocode
 FUNCTION solve_assignment(patients, providers, preference_scores):
     // Decision variables: x[patient][provider] = 0 or 1
     FOR each patient, provider pair:
@@ -159,7 +159,7 @@ The solver handles problems with hundreds of patients and dozens of providers in
 
 **Step 3: Validate and interpret results.** After the solver runs, verify the solution makes clinical sense. The optimizer is mathematically correct, but "mathematically correct" and "clinically appropriate" aren't always the same thing.
 
-```
+```pseudocode
 FUNCTION validate_assignments(assignments, patients, providers):
     errors = []
     warnings = []
@@ -192,7 +192,7 @@ For each assignment, also generate a human-readable rationale explaining why tha
 
 **Step 4: Store proposed assignments.** Write results to DynamoDB with `status: "proposed"`. Each record includes the patient ID, assigned provider, match score, rationale, and batch identifier. The panel management team reviews these in a dashboard and either approves (triggering the EHR update) or overrides with a manual assignment.
 
-```
+```pseudocode
 FUNCTION store_assignments(records, validation, objective_value):
     batch_id = generate unique batch identifier
     timestamp = current UTC time
@@ -254,6 +254,8 @@ For a typical batch of 7 patients assigned across 4 providers (3 accepting):
 - Very large problems (5,000+ patients, 200+ providers) may need solver tuning or decomposition
 - Infeasible problems (more patients than total available capacity) require graceful handling, not crashes
 - Highly constrained problems (many closed panels, strict language requirements) may produce suboptimal assignments because feasibility dominates optimality
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Add a "Why This Isn't Production-Ready" section between Expected Results and Variations. Cover gaps like: no retry logic, no dead-letter handling for failed EHR write-backs, no incremental cache invalidation strategy, no automated weight-tuning feedback loop. -->
 
 ---
 
