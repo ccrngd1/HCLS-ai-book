@@ -223,13 +223,11 @@ flowchart LR
 
 ---
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Receive the chat message, bootstrap the session, and run input safety screening.** Same primitive as recipes 11.1 and 11.2. Crisis detection is especially important in refill contexts because patients sometimes disclose overdose, misuse, or self-harm intent during a refill conversation ("I took double yesterday because I was upset"). Skip the screening and a crisis signal is lost in the refill flow.
 
-```
+```pseudocode
 ON receive_message(channel, channel_session_id, user_message,
                   auth_context):
     // Step 1A: identify or create the session.
@@ -287,7 +285,7 @@ ON receive_message(channel, channel_session_id, user_message,
 
 **Step 2: Classify intent and route to the appropriate flow or handoff.** The refill bot's intent set is narrower than the scheduling bot's: request_refill, check_refill_status, cancel_refill_request, medication_question, medication_change (out of scope), clinical_question (out of scope), controlled_substance_request (route to clinician), out_of_scope. Skip the explicit out-of-scope handling and the LLM may attempt to answer a clinical question or process a dose-change request, both of which are exactly the failure modes the system is supposed to prevent.
 
-```
+```pseudocode
 FUNCTION handle_message(session_id, user_message,
                         attach_greeting):
     classification = classify_refill_intent(
@@ -347,7 +345,7 @@ FUNCTION handle_message(session_id, user_message,
 
 **Step 3: Verify identity at the assurance level appropriate for refill actions.** Refills generally require a higher assurance floor than scheduling because the consequence of a wrong action is therapeutic, not just administrative. Many institutions choose to limit unauthenticated paths to status-check intents only. Skip the higher floor and the bot may take medication actions on the wrong patient's record.
 
-```
+```pseudocode
 FUNCTION verify_identity(session_id, intent, auth_context):
     // Step 3A: short-circuit when authenticated.
     IF auth_context.authenticated:
@@ -416,7 +414,7 @@ FUNCTION verify_identity(session_id, intent, auth_context):
 
 **Step 4: Pull the patient's structured medication list and resolve the patient's free-text descriptor against it.** Once identity is verified, the bot fetches the medication list from the EHR via FHIR. The medication-resolution step uses the LLM with the medication list as context to map the patient's descriptor ("my metformin," "the white round one," "the diabetes pill") to a specific medication record. Skip this step and the bot acts on a medication that may not match what the patient meant.
 
-```
+```pseudocode
 FUNCTION resolve_medication(session_id, intent,
                            extracted_parameters):
     // Step 4A: pull the structured medication list.
@@ -523,7 +521,7 @@ FUNCTION resolve_medication(session_id, intent,
 
 **Step 5: Evaluate the practice's refill protocol against the resolved medication and chart context.** This is the bot's clinical-decision step. The protocol-evaluate tool reads the necessary chart context (active diagnoses, allergies, recent lab values, blood pressure history, other medications, last-fill date, refills-remaining) and runs the practice's protocol. The protocol returns a structured decision with reasoning. Skip this step and the bot makes refill decisions without a deterministic, auditable, version-stamped clinical rationale.
 
-```
+```pseudocode
 FUNCTION evaluate_protocol(session_id):
     medication = session.resolved_medication
 
@@ -641,7 +639,7 @@ FUNCTION evaluate_protocol(session_id):
 
 **Step 6: Execute the disposition (auto-approve, route, deny) through the appropriate transactional tool.** Each disposition has its own tool path: e-prescribe for auto-approve, clinical-routing for route-to-clinician, journal-only for deny. The pharmacy selection happens within auto-approve. Skip the disposition-specific paths and the bot conflates the dispositions and either e-prescribes things it should not or fails to e-prescribe things it should.
 
-```
+```pseudocode
 FUNCTION execute_disposition(session_id):
     decision = session.protocol_decision
     medication = session.resolved_medication
@@ -866,7 +864,7 @@ FUNCTION execute_clinical_routing(session_id, decision):
 
 **Step 7: Handle status-check, cancel, and medication-question intents through their own paths.** Status-check queries the e-prescribing platform and the pharmacy integration. Cancel reaches the existing pending refill request and revokes it (if it has not already been processed). Medication-question retrieves curated content from the medication-information knowledge base and answers within scope. Each path has its own tool calls and audit trail.
 
-```
+```pseudocode
 FUNCTION handle_status_check(session_id, extracted_parameters):
     // Step 7A: resolve the medication or accept
     // "all my refills" as the descriptor.
@@ -1013,7 +1011,7 @@ FUNCTION handle_medication_question(session_id,
 
 **Step 8: Handle refill failures and partial-success cases without losing the patient's trust.** Sometimes the e-prescribe transmission fails (the pharmacy is unreachable, the e-prescribing network has an outage, the prescription is rejected by the platform's validation). Sometimes the e-prescribe succeeds but the co-signature queue write fails. Sometimes the routing tool fails to enqueue the ticket. Each failure mode has its own recovery path. Skip the failure-specific handling and patients leave the conversation thinking the refill happened when it did not, or the refill happened twice because the bot retried after a partial success.
 
-```
+```pseudocode
 FUNCTION handle_eprescribe_failure(session_id, failure):
     medication = session.resolved_medication
 
@@ -1077,7 +1075,7 @@ FUNCTION handle_eprescribe_failure(session_id, failure):
 
 **Step 9: Run the same output safety screening as recipes 11.1 and 11.2, with refill-specific checks.** The standard output checks (scope filter, hallucination check, vendor-managed guardrails) carry forward. The new checks: did the bot say a refill was sent when no e_prescribe call returned success? Did the bot mention a medication that is not on the patient's list? Did the bot indicate it processed a controlled-substance refill auto-approval? Skip these checks and a hallucinated success-confirmation results in a patient assuming their medication is on the way when it is not.
 
-```
+```pseudocode
 FUNCTION screen_output(session_id, response,
                        tool_call_history):
     // Step 9A: standard checks from recipes 11.1
@@ -1159,7 +1157,7 @@ FUNCTION screen_output(session_id, response,
 
 **Step 10: Persist the durable conversation record, the tool-call ledger, and the refill-event journal; emit telemetry; close the session.** Same archive pattern as recipe 11.2 with the refill-event-journal addition. The conversation log captures the conversational details; the refill-event journal captures the durable medication-action records with retention sized to the institution's medical-records floor.
 
-```
+```pseudocode
 FUNCTION close_conversation_and_archive(session_id, reason):
     state = conversation_state_table.get(session_id)
     metadata =
@@ -1268,7 +1266,7 @@ FUNCTION close_conversation_and_archive(session_id, reason):
 
 **Sample conversation (illustrative):**
 
-```
+```text
 Bot:     Hi Eleanor, I'm Riverside Clinic's refill
          assistant. I can help you request refills,
          check status on requests you've already made,

@@ -166,7 +166,7 @@ A few practical updates worth knowing.
 
 A healthcare prescription refill bot decomposes into nine logical stages: channel entry, input safety screening, intent classification, identity verification, medication resolution, refill-eligibility evaluation, transactional fulfillment (e-prescribe or clinical routing), output safety screening, and audit logging. The cross-cutting concerns from recipes 11.1 and 11.2 carry forward; this recipe adds two new ones (clinical-protocol-as-code lifecycle, prescriber co-signature workflow).
 
-```
+```text
 ┌────────── CHANNEL ENTRY ─────────────────────────────────┐
 │                                                           │
 │   [Patient connects through one of the configured         │
@@ -525,7 +525,7 @@ The thing that surprises engineers coming from generic-chatbot backgrounds is ho
 
 The thing that surprises clinical leaders coming from clinical-software backgrounds is how much of the bot's value comes from the LLM's natural-language understanding of patient phrasing. The patient who says "the diabetes pill" or "my morning blood pressure pill" or "the round one in the gold bottle" is a parse that the bot handles trivially when the patient's medication list is in context. The bot's value to the patient is, in large part, "you can refer to your medications however you want, and the bot will figure out which one you mean." This capability did not exist five years ago. Underweighting it understates the patient-experience improvement the bot can deliver.
 
-The thing about Amazon Bedrock specifically: Bedrock Agents is the right level of abstraction for this recipe in most cases, same as recipe 11.2. The Agent handles the multi-step LLM-and-tool orchestration; the action groups are the bot's tool surface; Knowledge Bases provides the medication-information corpus and the protocol-language phrasings; Guardrails provides the safety filtering. The tool layer is where the institutional value lives.
+The thing about the AWS implementation specifically (covered in the [architecture companion](chapter11.03-architecture)): Bedrock Agents is the right level of abstraction for this recipe in most cases, same as recipe 11.2. The Agent handles the multi-step LLM-and-tool orchestration; the action groups are the bot's tool surface; Knowledge Bases provides the medication-information corpus and the protocol-language phrasings; Guardrails provides the safety filtering. The tool layer is where the institutional value lives.
 
 The thing about cost: the per-refill infrastructure cost is small relative to the operational savings versus nurse-and-prescriber-handled refill processing. A nurse-and-prescriber refill costs the institution a meaningful fraction of clinician time (5-15 minutes distributed across receptionist, nurse, and prescriber); a bot auto-approval costs $0.03-0.15 in infrastructure plus less than a minute of prescriber time at co-signature. The bot does not handle every refill (a meaningful fraction routes to clinical staff with structured context), but the auto-approved refills are a substantial cost saving. The dominant cost is engineering and operational overhead, not the AWS infrastructure.
 
