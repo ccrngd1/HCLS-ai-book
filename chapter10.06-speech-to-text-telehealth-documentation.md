@@ -490,6 +490,8 @@ The thing that surprises engineers coming from in-person ambient documentation b
 
 The thing that surprises engineers coming from dictation backgrounds is the conversational ASR challenge. Dictation is a single speaker speaking with intent toward a known transcription target. Telehealth is a conversation with overlap, interruption, and disfluency. The ASR has to handle the conversational structure, and the formatting layer has to decide what to do with the disfluencies. The dictation playbook does not transfer cleanly.
 
+A few implementation-specific observations (the full AWS architecture, pseudocode, and service details are in the [Architecture and Implementation companion](chapter10.06-architecture)):
+
 The thing about Amazon Transcribe specifically: the channel-identification feature for per-channel separated audio is the single most important capability for high-quality diarization in this recipe. The custom-vocabulary and custom-language-model features are the highest-leverage tuning levers for clinical accuracy. Use both. The streaming variant for in-visit display and the batch variant for canonical transcript run in parallel; do not try to use streaming as the canonical transcript.
 
 The thing about Amazon Bedrock specifically: the LLM-driven note generation is genuinely useful, the faithfulness story is genuinely tractable with citation grounding plus separate faithfulness-checker passes plus offline sampling review, and the structured-extraction pattern works well when paired with explicit clinician confirmation gates. Treat the LLM as a drafting partner with mandatory clinician oversight. Do not let the system auto-apply structured updates without clinician review.
