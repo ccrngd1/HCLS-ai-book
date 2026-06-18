@@ -185,7 +185,7 @@ flowchart LR
 
 **Step 1: Ingest and normalize the claims and clinical streams.** The two streams arrive on different cadences in different formats. Claims arrive as X12 837/835 transactions for outbound flows, and as payer-specific flat files or FHIR ExplanationOfBenefit resources for inbound flows. Clinical data arrives as EHR extracts (Epic Clarity / Caboodle, Cerner / Oracle Health, or the equivalent) or as FHIR resources from a FHIR-native data lake. Both streams have to land in the raw zone byte-for-byte for audit replay, then get parsed into a normalized representation that the rest of the pipeline can join on. Skip the strict raw-zone preservation and you cannot reconstruct the original payload when a claim is later disputed or when an audit reaches back to a transaction from three years ago.
 
-```
+```pseudocode
 FUNCTION normalize_claims_and_clinical(input_partition_keys):
     // Each partition processed by a Glue job; partition keys
     // identify which raw files to consume.
@@ -306,7 +306,7 @@ FUNCTION normalize_claims_and_clinical(input_partition_keys):
 
 **Step 2: Resolve patient identity across the streams.** Before any encounter-level linking can happen, the matcher has to know which clinical patient corresponds to which claims-side member. Within a single institution where a maintained MRN-to-member-ID cross-reference exists (built and maintained by the eligibility-matching pipeline from recipe 5.4 and the local MPI from recipe 5.1), this is largely deterministic. For external claims feeds covering populations where the cross-reference is incomplete, the patient link uses the same probabilistic-record-linkage scorer as 5.1 and 5.5 over the demographic fields the claims feed exposes. Skip the patient link or treat it as trivial and you produce encounter linkages that join the right encounters but the wrong patients, which silently corrupts every analytics output downstream.
 
-```
+```pseudocode
 FUNCTION link_patient(claim_record, cross_reference_table, mpi):
     // Step 2A: deterministic match via cross-reference.
     // The MRN-to-member-ID cross-reference is a DynamoDB
@@ -431,7 +431,7 @@ FUNCTION link_patient(claim_record, cross_reference_table, mpi):
 
 **Step 3: Cluster the patient-resolved claims into encounter clusters.** Multiple claims describe a single underlying encounter, and grouping them is the first structural job after the patient link. The cluster-key is patient plus encounter-class plus a service-date range; the date tolerance is encounter-class-specific. The clustering also needs to detect resubmissions and adjustments so the cluster's authoritative version of each claim is the latest valid one. Skip the clustering and you treat thirteen claims for one inpatient stay as thirteen separate encounters, which over-counts admissions, double-counts readmissions, and corrupts every cost-and-quality calculation that depends on encounter-level rollups.
 
-```
+```pseudocode
 FUNCTION cluster_claims_by_encounter(patient_resolved_claims):
     // Group by patient first, then process each patient's
     // claims independently. Spark partitions naturally on
@@ -530,7 +530,7 @@ FUNCTION cluster_claims_by_encounter(patient_resolved_claims):
 
 **Step 4: Match each encounter cluster to a clinical encounter.** The cluster has a patient, an encounter class, a date window, a set of diagnoses, and a billing provider. The clinical encounter has the same patient, an encounter class, an admission/discharge timestamp, an attending provider, and a diagnosis set. The match scores each (cluster, encounter) candidate pair and applies confidence thresholds. Skip the encounter-level link and you have claim clusters and clinical encounters but no joined unit of analysis, which means every analytics question that needs both administrative and clinical detail at the encounter grain has to be re-derived from raw data.
 
-```
+```pseudocode
 FUNCTION link_encounter(cluster, clinical_encounters_for_patient,
                           matcher_config):
     // The clinical encounters for the patient are pre-fetched
@@ -694,7 +694,7 @@ FUNCTION link_encounter(cluster, clinical_encounters_for_patient,
 
 **Step 5: Attribute claim line items to clinical events within the linked encounter.** Once the cluster is linked to a clinical encounter, the line items on the constituent claims need to be attributed to specific clinical events (orders, procedures, medication administrations) inside that encounter. The CPT/HCPCS codes on the claims map to internal procedure codes via the vocabulary map; the NDCs on pharmacy claims map to RxNorm codes that correspond to the medication administrations; the date-and-time on the claim line aligns with the clinical event's timestamp where the EHR captures it. Skip the line-item attribution and the linkage answers "did this encounter happen" but does not answer "what happened during it" at the level of cost-and-quality analytics that the institution typically needs.
 
-```
+```pseudocode
 FUNCTION attribute_care_events(linked_cluster, clinical_encounter,
                                   vocabulary_map):
     // Only run for linked clusters; external_encounter and
@@ -790,7 +790,7 @@ FUNCTION attribute_care_events(linked_cluster, clinical_encounter,
 
 **Step 6: Persist, audit, and react to invalidation events.** Write the linkage to DynamoDB as the system of record, archive the curated linkage record to S3, and emit the cross-recipe event so downstream consumers can refresh. On invalidation events, re-evaluate selectively rather than recomputing the entire pipeline. Skip the invalidation pipeline and the linkage table is correct on day one and silently wrong by month three.
 
-```
+```pseudocode
 FUNCTION persist_and_emit(linkage_decision, attribution_decision):
     // Step 6A: write the linkage record. The linkage table
     // is keyed on (encounter_cluster_id, version) with the
