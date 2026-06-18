@@ -67,9 +67,7 @@ flowchart LR
 | **AWS KMS** | Manages encryption keys for S3 and DynamoDB |
 | **Amazon CloudWatch** | Logs, metrics, alarms for extraction failures and API throttling |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Preprocess and section-detect.** Clinical notes often arrive as a wall of text with section headers embedded ("MEDICATIONS:", "ASSESSMENT:", "ALLERGIES:"). Before sending text to the NER engine, we identify which sections contain medication-relevant content. This helps with downstream context classification: a medication found under "ALLERGIES" gets tagged differently than one under "CURRENT MEDICATIONS." Section detection can be rule-based for common note formats. Skip this step and you'll correctly extract medication entities but incorrectly classify allergies as active medications.
 
@@ -376,6 +374,8 @@ FUNCTION store_medication_extraction(patient_id, note_id, medications, sections)
 - Medications in languages other than English (relevant for multilingual patient populations)
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add 3-5 bullet points covering gaps like pharmacist review workflow, handling of multi-language notes, deduplication across repeated processing, and integration testing against real clinical note diversity. -->
 
 ## Variations and Extensions
 
