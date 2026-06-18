@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for the model training and serving stack.** Three models live here: the clinical-need scorer (gradient-boosted, multi-output), the engagement predictor (gradient-boosted binary classifier), and the uplift estimator (causal forest or X-learner). SageMaker Training Jobs handle the periodic retraining. For inference, the batch nature of the recommendation run favors SageMaker Batch Transform (run a job, score the entire eligible population, write results back to S3) over a real-time endpoint. Batch Transform is dramatically cheaper for this workload because you don't pay for an idle endpoint between batch runs. SageMaker is HIPAA-eligible under BAA. <!-- TODO: confirm SageMaker Batch Transform's current HIPAA eligibility and the specific instance types appropriate for the model sizes implied here. -->
 
@@ -36,7 +34,7 @@
 
 **AWS KMS for encryption, CloudTrail for audit, CloudWatch for operations.** Same PHI infrastructure pattern as previous recipes. Customer-managed keys per data store. CloudTrail data events on the patient-profile and engagement tables. CloudWatch alarms on batch-run failures, DLQ depth, and per-cohort metric drift.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart LR
@@ -101,7 +99,7 @@ flowchart LR
     style L1 fill:#f9f,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -115,7 +113,7 @@ flowchart LR
 | **Sample Data** | A starter set of (synthetic) members with realistic clinical profiles ([Synthea](https://github.com/synthetichealth/synthea) for synthetic patient encounters), a small program catalog (3-5 programs spanning smoking cessation, weight management, DPP), and historical engagement data (synthetic or de-identified from prior cohorts). For uplift training, a randomized pilot cohort is the gold standard; in development, simulated treatment-effect data lets you validate the modeling pipeline before running real members through it. |
 | **Cost Estimate** | At a 400,000-member health plan with a slate of 6 programs and a weekly batch run touching ~80,000 eligible members per run: SageMaker Batch Transform (3 models per run, ~80K rows per run, weekly): roughly $50-150/month at modest instance sizes. SageMaker Feature Store offline store: $50-100/month. SageMaker training (monthly retraining of 3 models): $50-150/month. DynamoDB on-demand: $50-150/month. Lambda + Step Functions: $50-100/month. Bedrock message tailoring (~10K outreach messages per week, Haiku-class): $200-400/month. SES (~40K emails per week with BAA): $20-40/month. S3 + Glue + Athena: $100-300/month. QuickSight: $50/user/month for authors plus reader fees. Estimated total: $700-1,800/month range for a regional plan, before vendor program costs. <!-- TODO: replace with verified, current pricing once the implementing team can validate against the AWS Pricing Calculator. --> |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -139,7 +137,7 @@ flowchart LR
 
 ---
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** Useful aws-samples patterns for this recipe:
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): XGBoost and SageMaker Batch Transform notebooks that mirror the per-program scoring pattern used here.
@@ -147,11 +145,11 @@ flowchart LR
 > - [`amazon-bedrock-workshop`](https://github.com/aws-samples/amazon-bedrock-workshop): Demonstrates structured-output prompting with Claude Haiku and equivalents, applicable to the message-tailoring step.
 > <!-- TODO: confirm the current names and locations of these aws-samples repos. The list of SageMaker and Bedrock related repos has been reorganizing. -->
 
-#### Walkthrough
+### Walkthrough
 
 **Step 1: Build the eligible-member list per program.** Eligibility is a SQL-shaped filter applied to the data lake. For each program in the catalog, a Glue job pulls members who satisfy the program's clinical criteria, are active on the plan, have given consent for outreach if required, and are not currently enrolled or recently disenrolled. The result is written back to S3 as a per-program eligible-member list. Skip this and you'll waste downstream model inference on members who can't ever be allocated.
 
-```
+```pseudocode
 FUNCTION build_eligible_member_lists(programs, run_date):
     FOR each program in programs:
         // Pull the program's eligibility criteria from the catalog. Each
@@ -192,7 +190,7 @@ FUNCTION build_eligible_member_lists(programs, run_date):
 
 **Step 2: Score clinical need, engagement, and uplift per (member, program) pair.** Three SageMaker Batch Transform jobs run in parallel for each program: the clinical-need model, the engagement-prediction model, and the uplift estimator. Each consumes the eligible-member list and the per-member feature vector, and writes per-program scores back to S3. The need model says "is the member in the program's intended population." The engagement model says "if recommended, will the member enroll." The uplift model says "would the program change the member's outcome." Skip the uplift and you ship a recommender that targets sure things. Submit all per-program jobs in parallel; total wall-clock time is bounded by the slowest single Batch Transform job, not the sum across programs.
 
-```
+```pseudocode
 FUNCTION score_eligible_population(programs, run_date):
     // Submit all jobs in parallel; do not wait between programs.
     // Step Functions Map with concurrency, or a parallel-state fan-out,
@@ -262,7 +260,7 @@ FUNCTION score_eligible_population(programs, run_date):
 
 **Step 3: Combine scores into a per-member ranked list.** The ranking step consumes the consolidated scoring table and combines the three scores into a per-(member, program) priority. The combination weights are policy: documented, reviewable, and version-controlled. Skip the explicit policy and the weights drift silently, with no record of why one cohort started getting more or fewer recommendations.
 
-```
+```pseudocode
 FUNCTION rank_per_member(scores, policy):
     // policy.weights might be:
     // { need: 0.3, engagement: 0.2, uplift: 0.5 }
@@ -301,7 +299,7 @@ FUNCTION rank_per_member(scores, policy):
 
 **Step 4: Allocate slots under capacity constraints with equity floors.** The allocator turns per-member rankings into population-level allocations. Greedy by uplift is the starter version. Equity floors prevent the allocator from concentrating opportunity on the easiest-to-help cohorts. Skip the floors and you ship a system that quietly under-targets the populations that most need wellness investment.
 
-```
+```pseudocode
 FUNCTION allocate_capacity(per_member_rankings, programs, policy):
     // Build a flat list of (member, program, priority) tuples, sorted by
     // priority descending. The allocator walks this list and assigns slots.
@@ -386,7 +384,7 @@ FUNCTION allocate_capacity(per_member_rankings, programs, policy):
 
 **Step 5: Apply contact-frequency caps and consent verification.** Before outreach goes out, a final pass verifies that each allocated member is within their contact-frequency cap and that consent is current. Skip this and a member who got two wellness emails last week and a billing email yesterday gets a third wellness email today, which is the most common reason members opt out entirely.
 
-```
+```pseudocode
 FUNCTION enforce_outreach_caps(allocated, run_date, policy):
     outreach_list = []
     deferred = []
@@ -443,7 +441,7 @@ FUNCTION enforce_outreach_caps(allocated, run_date, policy):
 
 **Step 6: Tailor outreach messages with an LLM and dispatch through the channel optimizer.** The outreach list goes to a per-member message-tailoring step (Bedrock), then to Recipe 4.1's channel optimizer, which decides whether to send via email, SMS, portal nudge, or care-team alert. Skip the LLM tailoring and you send the same template to every member, which is fine but leaves the easiest engagement gain on the table.
 
-```
+```pseudocode
 FUNCTION tailor_and_dispatch(outreach_list, programs):
     FOR row in outreach_list:
         program = lookup_program(row.program_id, programs)
@@ -535,7 +533,7 @@ FUNCTION tailor_and_dispatch(outreach_list, programs):
 
 **Step 7: Capture engagement events and update short-, medium-, and long-horizon training data.** Members open the email, ignore it, click through, enroll, attend, drop out, complete. Each event flows into the engagement stream, gets joined to the recommendation log, and feeds back into the appropriate model on the appropriate cadence. A PCP override (the doctor declined the recommendation) is also a signal and gets the same treatment. Skip this and the models stop learning, the dashboards stop reflecting reality, and the program-level ROI evaluation has nothing to evaluate against.
 
-```
+```pseudocode
 FUNCTION process_engagement_event(event):
     // Look up the originating recommendation by tracking_id.
     rec = DynamoDB.GetItem("recommendation-log", key_from_tracking_id(event.tracking_id))
@@ -611,7 +609,7 @@ FUNCTION process_engagement_event(event):
 
 **Step 8: Run long-horizon outcome evaluation periodically.** Independent of the weekly batch run, a quarterly or semi-annual outcome-evaluation job compares the clinical and cost trajectories of recommended-and-engaged members against matched controls. The output drives the medical director's program-renewal decisions and surfaces evidence (or counter-evidence) for whether each program is actually moving the needle. Skip this and you can't honestly answer the question of whether the wellness investment is paying off.
 
-```
+```pseudocode
 FUNCTION run_outcome_evaluation(programs, evaluation_window):
     // For each program, build a treated cohort (members who were recommended
     // and engaged within the window) and a control cohort (matched members
@@ -664,7 +662,7 @@ FUNCTION run_outcome_evaluation(programs, evaluation_window):
 
 ---
 
-### Expected Results
+## Expected Results
 
 **Sample recommendation log entry (per-(member, program) row):**
 
