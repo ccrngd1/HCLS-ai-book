@@ -66,7 +66,7 @@ The reasoning engine operates in three phases:
 
 ### The General Architecture Pattern
 
-```
+```text
 [Patient Data Sources] → [Fact Assembly] → [Knowledge Graph] ← [Guideline Ontology]
                                                     ↓
                                            [Reasoning Engine]
@@ -110,5 +110,7 @@ The part that surprised me most: the condition hierarchy mapping is never "done.
 - **Recipe 13.5 (Clinical Pathway Protocol Modeling):** Models treatment protocols as graphs; care gaps are the delta between the protocol and reality
 - **Recipe 7.6 (Rising Risk Identification):** Identifies patients whose risk is increasing; combine with care gaps to prioritize outreach to rising-risk patients with open gaps
 - **Recipe 4.6 (Care Gap Prioritization):** Complements this recipe by adding personalization to gap outreach (which channel, what time, what message)
+
+<!-- TODO (TechWriter): Add Tags section and navigation footer per RECIPE-GUIDE.md. -->
 
 ---

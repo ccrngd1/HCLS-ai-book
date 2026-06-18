@@ -101,7 +101,7 @@ Here's what you need before you start building:
 
 **Step 1: Define the guideline ontology.** The foundation of the reasoning engine is the ontology: a formal representation of clinical guidelines as classes, properties, and relationships. Each guideline recommendation becomes a node with typed connections to its preconditions (what must be true about the patient) and its recommended action (what should happen). Condition hierarchies (ICD-10 codes rolling up to condition groups) are modeled as class hierarchies so the reasoner can infer membership automatically. This ontology is authored once per guideline set, updated when guidelines change (typically annually), and loaded into Neptune. Skip this step and you have no knowledge to reason over.
 
-```
+```pseudocode
 // Ontology structure (RDF/OWL concepts, expressed as pseudocode)
 // This defines the "knowledge" that the reasoning engine uses.
 
@@ -146,7 +146,7 @@ DiabetesMellitus subClassOf ChronicCondition
 
 **Step 2: Load patient facts into the evaluation context.** For each patient being evaluated, assemble their current clinical state from available data sources: active conditions (from claims and problem lists), demographics, current medications, and recent services with dates. This fact set becomes the patient's representation that the reasoner evaluates against the guideline ontology. The key challenge here is temporal: you need to know not just what conditions a patient has, but when their last relevant service occurred. Skip this step and the reasoner has nothing to evaluate.
 
-```
+```pseudocode
 FUNCTION assemble_patient_facts(patient_id, data_sources):
     // Pull the patient's current clinical state from all available sources.
     // This becomes the "fact set" that the reasoner evaluates.
@@ -189,7 +189,7 @@ FUNCTION assemble_patient_facts(patient_id, data_sources):
 
 **Step 3: Determine applicable recommendations.** This is where the reasoning happens. For each recommendation in the guideline ontology, evaluate whether its preconditions are satisfied by the patient's fact set. The ontological reasoning handles hierarchy traversal: if the patient has ICD-10 code E11.9 (Type 2 Diabetes without complications), and the recommendation applies to "Diabetes Mellitus" (the parent class), the reasoner resolves applicability through the subclass relationship using SPARQL property paths. Exclusions are checked after inclusions: if any exclusion condition is present, the recommendation is skipped regardless of whether inclusions are met. Skip this step and you're just listing all possible recommendations without knowing which ones actually apply to this patient.
 
-```
+```pseudocode
 FUNCTION find_applicable_recommendations(patient_facts, knowledge_graph):
     // Query the knowledge graph to find all recommendations whose
     // preconditions are satisfied by this patient's facts.
@@ -231,7 +231,7 @@ FUNCTION find_applicable_recommendations(patient_facts, knowledge_graph):
 
 **Step 4: Identify care gaps.** For each applicable recommendation, check whether the recommended action has been completed within the required timeframe. This is the "gap detection" step. A gap exists when a recommendation applies to the patient but the corresponding action (identified by CPT or LOINC codes) has not been performed within the specified frequency window. The output is a concrete list of what's missing, when it was last done (if ever), and how overdue it is. Skip this step and you know what should happen but not what's actually missing.
 
-```
+```pseudocode
 FUNCTION identify_gaps(applicable_recommendations, patient_facts, evaluation_date):
     // For each applicable recommendation, check if the action has been completed
     // within the required timeframe. If not, it's a care gap.
@@ -286,7 +286,7 @@ FUNCTION identify_gaps(applicable_recommendations, patient_facts, evaluation_dat
 
 **Step 5: Score and prioritize gaps.** Not all care gaps carry equal urgency. A missed cancer screening for a high-risk patient is more urgent than a slightly overdue wellness visit. This step assigns a composite priority score based on clinical urgency (from the guideline), how overdue the action is, the patient's risk profile, and the quality measure impact (Star Rating weight, for example). The scored output enables care management teams to focus outreach on the highest-impact gaps first. Skip this step and care managers waste time on low-priority gaps while critical ones go unaddressed.
 
-```
+```pseudocode
 FUNCTION score_gaps(gaps, patient_facts):
     // Assign a composite priority score to each gap for outreach prioritization.
 
@@ -323,7 +323,7 @@ FUNCTION score_gaps(gaps, patient_facts):
 
 **Step 6: Store results and trigger downstream workflows.** Write the scored gap list to the results store, keyed by patient ID and evaluation date. This creates the audit trail (what gaps were identified, when, based on what evidence) and feeds downstream systems: care management platforms for outreach, patient portals for self-service gap closure, and quality reporting dashboards. Include a summary record for population-level analytics.
 
-```
+```pseudocode
 FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
     // Persist the evaluation results for downstream consumption.
 
@@ -419,6 +419,8 @@ FUNCTION store_gap_results(patient_id, evaluation_date, scored_gaps):
 | Cost per patient evaluation | ~$0.002 (Neptune query + Lambda + DynamoDB write) |
 
 **Where it struggles:** Patients with complex multi-morbidity where guideline conflicts arise. Claims data lag causing false positive gaps. Exclusion criteria that require clinical judgment (e.g., "patient declined" is often not coded). Guidelines that reference social determinants not captured in structured data.
+
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE.md, between Expected Results and Variations. -->
 
 ---
 
