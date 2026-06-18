@@ -1,6 +1,25 @@
 # Recipe 4.1: Appointment Reminder Channel Optimization ⭐
 
 <!--
+TechEditor pass v2 (2026-06-17, ch04-r01-archsplit). Transition-seam polish
+after mechanical split into main recipe + architecture companion:
+- Removed dangling AWS reference in The Honest Take ("Kinesis records" →
+  "Stream records") so the main recipe stays vendor-agnostic.
+- Fixed dangling forward reference in "Where This Fits in the Bigger
+  Picture" ("More on that in the AWS implementation" → linked to the
+  architecture companion).
+- Updated header-comment RECIPE-GUIDE compliance note to reflect the
+  split (AWS sections now documented as living in architecture companion).
+- Updated header-comment vendor-balance note to reference the companion.
+- Added `text` language tag to the ASCII architecture diagram code block
+  in General Architecture Pattern (bare ``` → ```text).
+- Verified architecture callout is well placed at end of General
+  Architecture Pattern section (no change needed).
+- Verified The Honest Take has no other dangling AWS references.
+- No em dashes found (U+2014 count: 0).
+- En dashes (U+2013) remain only in numeric ranges per convention.
+- All existing TODO markers preserved verbatim.
+
 TechEditor pass v1 (2026-05-21, ch04-r01-edit). Editorial fixes:
 - Verified em-dash count: 0 (passes "no em dashes ever" rule).
 - En-dashes (U+2013) appear only in numeric ranges (82-85%, $30-$100,
@@ -22,13 +41,14 @@ TechEditor pass v1 (2026-05-21, ch04-r01-edit). Editorial fixes:
   verbatim as Voice Reviewer highlights.
 - Vendor balance: 70/30 maintained. The Problem, Technology, and
   General Architecture Pattern stay vendor-neutral. AWS service names
-  appear only from "The AWS Implementation" forward.
-- RECIPE-GUIDE compliance: all required sections present in correct
-  order (Problem, Technology, General Architecture, AWS Implementation
-  with Why These Services / Architecture Diagram / Prerequisites /
-  Ingredients / Code / Expected Results, Why This Isn't Production-
-  Ready, Honest Take, Variations, Related Recipes, Additional
-  Resources, Implementation Time, Tags, Footer Navigation).
+  now live in the architecture companion (chapter04.01-architecture.md).
+- RECIPE-GUIDE compliance: all required main-recipe sections present in
+  correct order (Problem, Technology, General Architecture Pattern with
+  architecture-companion callout, Honest Take, Related Recipes, Tags,
+  Footer Navigation). AWS-specific sections (Why These Services,
+  Architecture Diagram, Prerequisites, Ingredients, Code, Expected
+  Results, Why This Isn't Production-Ready, Variations, Additional
+  Resources, Implementation Time) live in the architecture companion.
 - Voice findings already addressed inline before this pass:
   * V15 (LOW): "modern approach" replaced with "The approach that
     generates its own training data" in Approach 3 of the Technology
@@ -191,7 +211,7 @@ The reward signal you feed the model is derived from these events. A reasonable 
 
 This recipe is a simple, well-scoped entry point into healthcare personalization. The infrastructure you build here (patient preference store, engagement event pipeline, reward computation, bandit or propensity model serving) is the same infrastructure that future personalization recipes reuse. Recipe 4.2 (Patient Education Content Matching) consumes the preference and engagement data. Recipe 4.5 (Medication Adherence Intervention Targeting) extends the bandit pattern to a more complex action space. Recipe 4.6 (Care Gap Prioritization) reuses the same engagement baselines. Treat this recipe as a capability investment, not just a point solution.
 
-One more framing note: channel optimization sits near the boundary between "operational tooling" and "clinical care." The reminder itself is operational (nobody's treatment decision is being altered by a channel choice), but the information inside a reminder is clinical PHI ("You have a cardiology follow-up on Friday" reveals both a diagnosis area and a care plan). That means the whole pipeline, SMS provider, email provider, everything, needs to be under a BAA. More on that in the AWS implementation.
+One more framing note: channel optimization sits near the boundary between "operational tooling" and "clinical care." The reminder itself is operational (nobody's treatment decision is being altered by a channel choice), but the information inside a reminder is clinical PHI ("You have a cardiology follow-up on Friday" reveals both a diagnosis area and a care plan). That means the whole pipeline, SMS provider, email provider, everything, needs to be under a BAA. More on that in the [architecture companion](chapter04.01-architecture).
 
 ---
 
@@ -199,7 +219,7 @@ One more framing note: channel optimization sits near the boundary between "oper
 
 At a conceptual level, the pipeline has two loops: a decision loop that runs on a schedule to send reminders, and a feedback loop that runs continuously to capture outcomes and update the model.
 
-```
+```text
 ┌────────────────── DECISION LOOP ───────────────────┐
 │                                                    │
 │  [Scheduled Appointments]                          │
@@ -274,7 +294,7 @@ The ML is the easy part. Thompson sampling with Beta-Binomial is ten lines of co
 
 The rule-based baseline is better than you think. Before you build a bandit, go run a rules engine for a quarter. Capture stated preferences at registration. Honor them. Send one reminder at T-24h by the patient's preferred channel. Measure the no-show rate. You will likely see a meaningful drop. The bandit's job is to capture the next increment of improvement, and the size of that increment is typically smaller than the size of the rule-based win. Don't skip the rule-based win to chase the bandit.
 
-The most surprising operational issue, at least in the deployments I've read about and advised on, is that the quality of the engagement event stream dominates everything else. Kinesis records that don't include the reminder ID are worse than useless. SMS carriers that don't reliably return delivery receipts force you to infer "delivered" from "no reply in 30 minutes," and that inference is wrong often enough to corrupt the bandit. Pin down event quality before you build the model. Seriously.
+The most surprising operational issue, at least in the deployments I've read about and advised on, is that the quality of the engagement event stream dominates everything else. Stream records that don't include the reminder ID are worse than useless. SMS carriers that don't reliably return delivery receipts force you to infer "delivered" from "no reply in 30 minutes," and that inference is wrong often enough to corrupt the bandit. Pin down event quality before you build the model. Seriously.
 
 The thing I'd do differently: start with explicit preference capture as the primary lever, and add the bandit later. Most patients, when asked, will tell you their preferred channel. Respect that stated preference. Only fall through to the bandit when preferences are missing, conflicting, or contradicted by actual behavior ("patient said voice but hasn't answered a voice call in two years"). The bandit is for the edges, not the middle. Treating it as the primary decision mechanism makes the system feel less personal than it should, because the patient is telling you what they want and you're asking a model instead of listening.
 

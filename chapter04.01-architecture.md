@@ -1,5 +1,16 @@
 # Recipe 4.1 Architecture and Implementation: Appointment Reminder Channel Optimization
 
+<!--
+TechEditor pass v1 (2026-06-17, ch04-r01-archsplit). Post-split polish:
+- Added `pseudocode` language tags to all five walkthrough code blocks
+  (previously bare ```).
+- Verified opening backlink header links correctly to main recipe.
+- Verified section order matches RECIPE-GUIDE architecture-companion spec.
+- No em dashes (U+2014 count: 0).
+- En dashes (U+2013) in numeric ranges only, per convention.
+- All existing TODO markers preserved verbatim.
+-->
+
 *Companion to [Recipe 4.1: Appointment Reminder Channel Optimization](chapter04.01-appointment-reminder-channel-optimization). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
@@ -99,7 +110,7 @@ flowchart LR
 
 **Step 1: On appointment creation, schedule the reminders.** When a new appointment lands in your EHR's scheduling module, it publishes a FHIR `Appointment` resource event (or an equivalent event from whatever scheduling system you run). A Lambda consumes that event and creates one EventBridge Scheduler schedule per reminder offset. Scheduling is cheap and durable: Scheduler handles retries, time-zone calculations, and cleanup. If you skip this step and try to poll your scheduling system for upcoming appointments on a cron, you've built a distributed lock problem you did not want.
 
-```
+```pseudocode
 FUNCTION on_appointment_created(appointment):
     // Convert the appointment's scheduled time into UTC for consistent arithmetic.
     appt_time_utc = parse(appointment.start) converted to UTC
@@ -129,7 +140,7 @@ FUNCTION on_appointment_created(appointment):
 
 **Step 2: At send time, fetch patient features and apply hard constraints.** When a schedule fires, the recommender Lambda loads the patient's profile (stated preferences, contact info, consent status) and a summary of their engagement history (prior response rates per channel). Before any modeling, hard constraints are applied: opt-outs, missing contact details, quiet-hours overrides, channels the patient has never confirmed consent for. Whatever makes it past this filter is the candidate set of channels the model is allowed to choose among. Skip this step, and sooner or later your model will cheerfully text a patient who opted out three years ago and your compliance team will remember your name.
 
-```
+```pseudocode
 FUNCTION get_eligible_channels(patient_id, send_time_utc):
     patient = DynamoDB.GetItem("patient-profile", patient_id)
 
@@ -161,7 +172,7 @@ FUNCTION get_eligible_channels(patient_id, send_time_utc):
 
 **Step 3: Score the candidate channels using Thompson sampling.** This is the recommendation core. For each eligible channel, maintain a Beta distribution over the channel's confirmation probability for this patient. The Beta-Binomial is the natural choice for binary reward (confirmed vs. not). For a fresh patient with no history, the prior comes from a cohort-level aggregate; once the patient has a handful of observations, their personal posterior dominates. Sample once from each channel's distribution and pick the channel with the highest sample. This is the exploration/exploitation machinery that makes the system self-correcting.
 
-```
+```pseudocode
 FUNCTION score_and_select(patient_id, candidates):
     scores = empty map
 
@@ -192,7 +203,7 @@ FUNCTION score_and_select(patient_id, candidates):
 
 **Step 4: Compose and dispatch the reminder.** Once a channel is selected, the recommender composes the reminder with minimum-necessary PHI. No diagnosis details, no procedure specifics unless the patient has explicitly consented to detailed reminders. Each message gets a unique reminder ID that rides along through delivery receipts so outcomes can be joined back to this decision. Different channels have different dispatch APIs, but the pattern is uniform: one call out, one reminder ID recorded.
 
-```
+```pseudocode
 FUNCTION dispatch(patient, appointment, channel):
     // Generate a unique ID for this specific reminder. It travels with the message
     // and comes back on delivery receipts so we can join outcomes to decisions later.
@@ -247,7 +258,7 @@ FUNCTION dispatch(patient, appointment, channel):
 
 **Step 5: Close the feedback loop.** A separate Lambda (or Kinesis consumer) listens to the engagement event bus, joins events to reminder decisions, computes the reward, and updates the bandit posterior. Delivery events alone aren't the reward; the reward is "did the patient actually confirm or show up." Since the "show up" signal lags by days, most practical implementations use a proxy reward (confirmed within 4 hours of the reminder) that can be computed quickly, then retrospectively correct the posterior with the true outcome once it's available. This is the step most teams under-invest in. It is the one that makes the model get smarter.
 
-```
+```pseudocode
 FUNCTION process_engagement_event(event):
     // Look up the reminder this event refers to.
     decision = DynamoDB.GetItem("reminder-decisions", event.reminder_id)
