@@ -1,6 +1,6 @@
 # Recipe 13.10: Federated Clinical Knowledge Network
 
-**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$8,000–15,000/month (multi-node federation)
+**Complexity:** Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$8,000-15,000/month (multi-node federation)
 
 ---
 
@@ -68,7 +68,7 @@ None of these fully solve the problem. But they provide building blocks that mak
 
 A federated clinical knowledge network has these logical components:
 
-```
+```text
 [Local Knowledge Graphs] → [Federation Layer] → [Query Router] → [Result Assembler] → [Consumer Applications]
          ↑                        ↑                    ↑
     [Ontology Alignment]    [Access Control]    [Provenance Tracking]

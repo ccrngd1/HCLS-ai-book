@@ -110,7 +110,7 @@ flowchart TB
 
 **Step 1: Register a source in the federation catalog.** Before an institution can participate in federated queries, it must register itself in the source catalog. This registration declares what types of knowledge the institution holds (drug interactions, treatment protocols, genomic associations), what ontology standards it aligns to, what sharing policies it enforces, and how to reach its query endpoint. Think of this as the institution raising its hand and saying "I have knowledge about these topics, and here's how to ask me about them." Without this step, the federation layer has no idea which sources to contact for a given query. The catalog is the routing table for the entire network.
 
-```
+```pseudocode
 FUNCTION register_source(institution_id, capabilities, endpoint_config, sharing_policy):
     // Build the catalog entry that tells the federation layer everything it needs
     // to route queries to this institution and respect its governance rules.
@@ -141,7 +141,7 @@ FUNCTION register_source(institution_id, capabilities, endpoint_config, sharing_
 
 **Step 2: Load and version ontology mappings.** Each institution models clinical concepts differently. One might represent "Type 2 Diabetes" as a SNOMED code (44054006). Another might use an ICD-10 code (E11). A third might use a local identifier. The ontology mapping layer translates between these representations so that a federated query for "treatments for Type 2 Diabetes" can be understood by every source, regardless of their local coding system. These mappings are stored in S3, versioned, and loaded by the query translation Lambdas. Maintaining these mappings is ongoing work. Every time a source updates their local schema or a new ontology version is released, the mappings need updating. Skip this step and federated queries will miss results because they're asking in the wrong "language" for each source.
 
-```
+```pseudocode
 FUNCTION load_ontology_mapping(source_institution_id, mapping_version):
     // Fetch the mapping file for this institution from the ontology registry in S3.
     // Each institution has its own mapping file that translates between the
@@ -167,7 +167,7 @@ FUNCTION load_ontology_mapping(source_institution_id, mapping_version):
 
 **Step 3: Decompose a federated query.** When a clinician asks a question like "what drug interactions are known for Metformin in patients with renal impairment?", the federation layer needs to figure out which sources might have relevant answers and how to ask each one. This is query decomposition. The decomposer consults the source catalog to identify sources with relevant capabilities, loads the ontology mapping for each source, and rewrites the query into each source's local query language. It then dispatches all sub-queries in parallel with per-source timeouts and circuit breaker protection. This is the heart of the federation engine. Get it wrong and you either miss relevant sources (incomplete results) or flood irrelevant sources with queries they can't answer (wasted latency and cost).
 
-```
+```pseudocode
 FUNCTION decompose_and_route(federated_query, requester_context):
     // Parse the incoming federated query to understand what's being asked.
     // Extract the knowledge domains involved (e.g., "drug_interactions", "renal")
@@ -246,7 +246,7 @@ FUNCTION decompose_and_route(federated_query, requester_context):
 
 **Step 4: Execute a local query with access control.** Each institution's query adapter receives a translated query from the federation layer, validates the requester's authorization, executes the query against the local Neptune graph, and returns results with provenance metadata attached. This is where institutional governance is enforced. The adapter can filter results based on fine-grained policies: "share drug interaction data with any federation member, but restrict patient-derived treatment outcomes to approved research collaborators only." The adapter also attaches provenance to every result: where it came from, what evidence supports it, and when it was last validated. Skip the access control and you've built a data breach. Skip the provenance and clinicians can't assess the trustworthiness of results.
 
-```
+```pseudocode
 FUNCTION execute_local_query(translated_query, requester_context, local_neptune_endpoint):
     // Validate that the requester is authorized for this specific query.
     // This is a second check (the federation layer already checked sharing policy),
@@ -285,7 +285,7 @@ FUNCTION execute_local_query(translated_query, requester_context, local_neptune_
 
 **Step 5: Assemble and deduplicate federated results.** Results stream back from multiple sources. The assembler's job is to merge them into a coherent, deduplicated response. This is harder than it sounds. Two sources might report the same drug interaction with different severity ratings. Three sources might report the same treatment with different evidence levels. The assembler needs strategies for conflict resolution: highest evidence level wins? Most recent validation date wins? Majority vote? The right strategy depends on the use case. For clinical decision support, you probably want to surface all perspectives with their provenance rather than silently picking a winner. For automated alerting, you need a deterministic resolution. This step also handles ranking: results with stronger evidence and more recent validation appear first.
 
-```
+```pseudocode
 FUNCTION assemble_results(partial_results_from_all_sources):
     // Flatten all results into a single list with their provenance intact.
     all_results = empty list
@@ -391,12 +391,12 @@ FUNCTION assemble_results(partial_results_from_all_sources):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end federated query latency | 1.5–5 seconds (depends on source count and network) |
-| Local Neptune query execution | 50–200ms |
-| Cross-account PrivateLink overhead | 5–15ms per hop |
-| Query translation (Lambda) | 100–300ms |
-| Result assembly | 200–500ms |
-| Source catalog lookup | 10–30ms |
+| End-to-end federated query latency | 1.5-5 seconds (depends on source count and network) |
+| Local Neptune query execution | 50-200ms |
+| Cross-account PrivateLink overhead | 5-15ms per hop |
+| Query translation (Lambda) | 100-300ms |
+| Result assembly | 200-500ms |
+| Source catalog lookup | 10-30ms |
 | Concurrent source queries | Up to 10 in parallel |
 | Ontology mapping load (cached) | <5ms |
 
