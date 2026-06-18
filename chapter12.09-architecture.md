@@ -577,7 +577,4 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this fo
 
 ---
 
-
----
-
 *← [Main Recipe 12.9](chapter12.09-epidemic-forecasting) · [Python Example](chapter12.09-python-example) · [Chapter Preface](chapter12-preface)*
