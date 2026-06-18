@@ -249,7 +249,7 @@ flowchart LR
 
 **Step 1: Receive the channel entry, play the recording-consent disclosure, and bootstrap the conversation.** The patient connects through phone, app, or smart speaker. The system plays the recording-consent disclosure (text varies by jurisdiction), captures the channel and caller-ID metadata, and bootstraps a conversation session. Skip the consent disclosure and the institution risks state-law compliance violations in all-party-consent jurisdictions.
 
-```
+```pseudocode
 ON channel_entry(channel_type, caller_id, channel_session):
     // Step 1A: determine the recording-consent regime
     // for this caller. Conservative default is to play
@@ -326,7 +326,7 @@ ON channel_entry(channel_type, caller_id, channel_session):
 
 <!-- TODO (TechWriter): Expert review A1 (HIGH). The pseudocode below treats `crisis_detector.evaluate(text, metadata)` as a single language-agnostic call. Update it to load per-language detection assets (curated vocabulary, classifier weights, LLM-prompt) from the session's language and to fall back to direct human-agent transfer when the caller's language has no native-speaker-curated detection assets on file. -->
 
-```
+```pseudocode
 FUNCTION on_utterance_received(session_id, utterance):
     // Step 2A: every utterance, regardless of dialog
     // state, runs through the crisis detector first.
@@ -416,7 +416,7 @@ FUNCTION handle_crisis(session_id, severity, category, utterance):
 
 **Step 3: Classify the intent, extract slots, and decide the next dialog turn.** Within the non-crisis flow, the intent classifier maps the utterance to one of the configured intents and extracts the relevant slots. Out-of-scope intents have explicit handlers that refuse politely and offer a concrete alternative. Skip the explicit out-of-scope handler and the LLM may attempt to answer clinical questions, which is the worst class of failure for this recipe.
 
-```
+```pseudocode
 FUNCTION classify_intent_and_slots(session_id, utterance):
     session_state = conversation_state_table.get(session_id)
 
@@ -517,7 +517,7 @@ FUNCTION classify_intent_and_slots(session_id, utterance):
 
 <!-- TODO (TechWriter): Expert review S3 (MEDIUM). Add OTP rate-limiting and throttling to the `phi_disclosing` branch: per-patient hourly issuance limit, per-caller-ID hourly limit, per-destination throttle to bound SMS-cost exposure. On limit exceeded, escalate to live agent rather than continuing the OTP retry loop. Add CloudWatch alarm on aggregate OTP-issuance rate spikes. -->
 
-```
+```pseudocode
 FUNCTION ensure_identity_for_intent(session_id, intent):
     state = conversation_state_table.get(session_id)
     current_level = state.identity_assurance_level
@@ -627,7 +627,7 @@ FUNCTION ensure_identity_for_intent(session_id, intent):
 
 <!-- TODO (TechWriter): Expert review A4 (MEDIUM). Specify foundation-model, prompt, knowledge-base, and rule-catalog versioning. The pseudocode references `INTENT_FALLBACK_MODEL`, `RESPONSE_GENERATION_MODEL`, `INSTITUTIONAL_KB_ID`, `PATIENT_ASSISTANT_GUARDRAIL` as constants; promote each to a versioned-and-aliased deployment artifact. Add a Deployment Pattern subsection covering canary inference profiles with traffic shift, rollback-on-regression triggered by held-out evaluation set, held-out evaluation including per-language samples, accent samples, scope-edge cases, crisis-edge cases, and prompt-injection test cases. Stamp every conversation's audit record with the active versions. -->
 
-```
+```pseudocode
 FUNCTION fulfill_intent(session_id, intent, slots, identity_context):
     IF intent == "confirm_appointment":
         appointments = fhir_client.search_appointments(
@@ -738,7 +738,7 @@ FUNCTION fulfill_intent(session_id, intent, slots, identity_context):
 
 <!-- TODO (TechWriter): Expert review A2 (HIGH). The pseudocode below treats `scope_filter.evaluate(text, allowed_categories)` as a single opaque check. Replace with a layered call that consults the disallowed-content category catalog, the per-intent allowed-content allowlist, and the Bedrock Guardrails action result, and that records `layer_caught` on the scope-violation event. -->
 
-```
+```pseudocode
 FUNCTION speak(response_text, options):
     // Step 6A: scope filter on the response. Even when
     // the upstream intent classification was correct,
@@ -785,7 +785,7 @@ FUNCTION speak(response_text, options):
 
 **Step 7: Escalate to a human with a warm-handoff packet.** When the assistant cannot or should not continue, the call transfers to a human agent (or to crisis triage) with a context packet that includes the conversation summary, the transcript reference, the identity-verification status, the detected intent and slots so far, and any crisis flags. The agent receives the packet on screen before they answer, so the patient does not have to repeat themselves. Skip the warm-handoff packet and patient experience drops sharply at the moment the assistant hands off, which is the wrong place to drop experience because the patient is already in some difficulty.
 
-```
+```pseudocode
 FUNCTION warm_transfer(session_id, target_queue, target_subqueue):
     state = conversation_state_table.get(session_id)
 
@@ -842,7 +842,7 @@ FUNCTION warm_transfer(session_id, target_queue, target_subqueue):
 
 **Step 8: Audit, archive, and feed cohort-stratified accuracy monitoring.** Every conversation produces a durable audit record: the audio reference (under retention policy), the transcript reference, the intent and slots, the identity-verification trail, the fulfillment outcome, the escalation events. Cohort-stratified metrics (per-language, per-channel, per-cohort axis) feed the equity-monitoring dashboard. Skip the cohort segmentation and the assistant's per-cohort failure modes are invisible until a complaint or a regulator surfaces them.
 
-```
+```pseudocode
 FUNCTION audit_archive_and_telemetry(session_id):
     state = conversation_state_table.get(session_id)
 
@@ -964,7 +964,7 @@ FUNCTION audit_archive_and_telemetry(session_id):
 
 **Sample conversation excerpt (illustrative):**
 
-```
+```text
 Assistant: Thanks for calling Riverside Clinic. This call may
            be recorded for quality. How can I help you today?
 

@@ -184,7 +184,7 @@ Some practical updates worth knowing.
 
 A patient-facing voice assistant decomposes into nine logical stages: channel entry and audio capture (the patient connects via phone, app, or smart speaker), streaming ASR (audio becomes text), parallel crisis detection (the highest-priority signal extraction), intent classification and slot extraction (mapping speech to a structured request), identity verification (gating PHI access at the level the request requires), fulfillment (executing the request through the appropriate integration), response generation and TTS (the assistant's reply is composed and spoken back), escalation and warm handoff (when the assistant cannot or should not handle the request), and audit, archive, and learning (durable record-keeping and per-cohort accuracy monitoring).
 
-```
+```text
 ┌──────────── CHANNEL ENTRY & AUDIO CAPTURE ───────────────┐
 │                                                           │
 │   [Patient connects through one of three channels]        │
