@@ -166,7 +166,7 @@ One more thing: the clusters will reveal uncomfortable truths. You'll find that 
 
 ## Tags
 
-`clustering` `provider-profiling` `practice-variation` `case-mix-adjustment` `peer-comparison` `value-based-care` `sagemaker` `redshift` `quicksight` `population-health`
+`clustering` `provider-profiling` `practice-variation` `case-mix-adjustment` `peer-comparison` `value-based-care` `population-health`
 
 ---
 

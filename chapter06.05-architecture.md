@@ -443,7 +443,4 @@ FUNCTION generate_reports(assignments, profiles, provider_metrics):
 
 ---
 
-
----
-
 *← [Main Recipe 6.5](chapter06.05-provider-practice-pattern-analysis) · [Python Example](chapter06.05-python-example) · [Chapter Preface](chapter06-preface)*
