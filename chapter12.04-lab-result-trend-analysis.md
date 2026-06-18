@@ -1,6 +1,6 @@
 # Recipe 12.4: Lab Result Trend Analysis ⭐⭐⭐
 
-**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$300–$1,500 per month per panel-of-tests workload
+**Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$300-$1,500 per month per panel-of-tests workload
 
 ---
 

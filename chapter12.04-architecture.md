@@ -73,7 +73,7 @@ flowchart LR
 <!-- TODO (TechWriter): Expert review S2 / M1 (MEDIUM). Specify CloudTrail data events on every PHI-bearing S3 bucket (raw feeds, harmonized data, patient baselines, trend scores, suppressed trends), the DynamoDB serving table, customer-managed KMS keys, and HealthLake (FHIR resource access logging). CloudTrail logs land in a dedicated S3 bucket with Object Lock in compliance mode and lifecycle to S3 Glacier Deep Archive after 90 days. -->
 | **Sample Data** | Synthetic FHIR Observation resources for development. The [Synthea](https://github.com/synthetichealth/synthea) project produces realistic synthetic patient records including longitudinal lab results with LOINC codes. The [MIMIC-IV](https://physionet.org/content/mimiciv/) database is a de-identified real-data option through PhysioNet credentialing. Never use real PHI in dev. |
 <!-- TODO (TechWriter): Expert review N3 / L3 (LOW). Note that reference-data downloads (LOINC, UCUM, Synthea, MIMIC-IV) should go through a controlled artifact-mirror (an internal S3 bucket populated by an audited download workflow) rather than direct public-internet downloads from the development VPC. -->
-| **Cost Estimate** | HealthLake: ~$200–$600/month depending on data volume. SageMaker inference (small endpoint): ~$50/month. Glue ETL (nightly): ~$30/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$50/month combined. Total: ~$300–$1,500/month per panel-of-tests workload depending on patient population size and storage volume. |
+| **Cost Estimate** | HealthLake: ~$200-$600/month depending on data volume. SageMaker inference (small endpoint): ~$50/month. Glue ETL (nightly): ~$30/month. Lambda, DynamoDB, S3, Step Functions, EventBridge: ~$50/month combined. Total: ~$300-$1,500/month per panel-of-tests workload depending on patient population size and storage volume. |
 <!-- TODO (TechWriter): Expert review V2 / L5 (LOW). Decompose the $300-$1,500/month range by patient cohort size and monitored LOINC count. The quoted range assumes a 10,000-50,000-patient cohort with 5-10 monitored LOINC codes (typical for a CKD-and-diabetes panel). A 100,000-patient deployment with 20-30 LOINC codes can reach $2,500-$5,000/month, with HealthLake storage and SageMaker inference as the dominant cost drivers. -->
 
 <!-- TODO (TechWriter): V1. Verify HealthLake and SageMaker pricing assumptions reflect current rates. AWS pricing changes; confirm against the AWS pricing calculator before publication. -->
@@ -382,12 +382,12 @@ FUNCTION deliver_trends(relevance_results, table_name):
 
 | Metric | Typical Value |
 |--------|---------------|
-| Nightly pipeline runtime (100k active patients, 6 chronic-condition labs) | 30–90 minutes |
-| Per-patient inference latency (single lab) | 50–200 ms |
-| Surfaced trends per patient per month | 0–2 across all monitored labs |
-| Suppressed-but-detected trends per patient per month | 5–15 |
-| Cost per panel-of-tests workload per month | $300–$1,500 |
-| Median clinician inbox alerts per day from this pipeline | 3–8 |
+| Nightly pipeline runtime (100k active patients, 6 chronic-condition labs) | 30-90 minutes |
+| Per-patient inference latency (single lab) | 50-200 ms |
+| Surfaced trends per patient per month | 0-2 across all monitored labs |
+| Suppressed-but-detected trends per patient per month | 5-15 |
+| Cost per panel-of-tests workload per month | $300-$1,500 |
+| Median clinician inbox alerts per day from this pipeline | 3-8 |
 
 <!-- TODO (TechWriter): A1. Performance benchmarks above are typical figures for production lab trend systems running on chronic-disease panels. Confirm against your reference data sources before publication. -->
 
@@ -481,9 +481,9 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 
 ## Estimated Implementation Time
 
-- **Basic pipeline (one chronic-disease panel, slope detection, nightly cadence):** 4–6 weeks
-- **Production-ready (multi-panel, change-point detection, clinical rule layer, monitoring, drift detection):** 12–20 weeks
-- **With variations (hierarchical models, panel-level reasoning, real-time CDS Hooks integration):** 24–36 weeks
+- **Basic pipeline (one chronic-disease panel, slope detection, nightly cadence):** 4-6 weeks
+- **Production-ready (multi-panel, change-point detection, clinical rule layer, monitoring, drift detection):** 12-20 weeks
+- **With variations (hierarchical models, panel-level reasoning, real-time CDS Hooks integration):** 24-36 weeks
 
 ---
 
