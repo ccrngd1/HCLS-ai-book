@@ -72,7 +72,7 @@ Patient-facing voice assistants are built from a stack of pretty distinct techno
 
 **Intent classification.** Mapping a transcript to one of a finite set of intents: "confirm appointment," "request refill," "facility hours," "billing inquiry," "request callback," "out-of-scope clinical question," "crisis signal," "transfer to agent," and however many others the institution chooses to support. Modern intent classification is increasingly LLM-driven (zero or few-shot prompting with a list of intents) rather than trained classifiers, because the LLM-driven approach handles paraphrase variation better and lets the institution add intents without retraining a model. The trade-off is per-call cost and latency. The hybrid pattern (small fast classifier as the first stage, LLM as the second-stage fallback for low-confidence cases) is a reasonable middle ground.
 
-**Slot extraction.** Within an intent, extracting the structured parameters: the medication name for a refill, the date for an appointment confirmation, the billing-question topic. Comprehend Medical's coded entity extraction is useful here for medical entities (medications, conditions). For non-medical entities (dates, phone numbers, simple names), simpler tools are fine. The slot-extraction step is where the LLM-driven approach has been pulling significant weight in recent years; LLM extraction handles the long tail of how patients phrase things ("the blue pill I take for my pressure," "the one I started after my stroke") far better than rule-based or classifier-based extraction.
+**Slot extraction.** Within an intent, extracting the structured parameters: the medication name for a refill, the date for an appointment confirmation, the billing-question topic. Medical-entity extraction services (which link mentions to standard terminologies like RxNorm) are useful here for medications and conditions. For non-medical entities (dates, phone numbers, simple names), simpler tools are fine. The slot-extraction step is where the LLM-driven approach has been pulling significant weight in recent years; LLM extraction handles the long tail of how patients phrase things ("the blue pill I take for my pressure," "the one I started after my stroke") far better than rule-based or classifier-based extraction.
 
 **Dialog management.** The turn-by-turn orchestration that decides what to say next. Slot-filling state machines, LLM-driven open dialog, or hybrid. Patient-facing healthcare overwhelmingly uses slot-filling state machines for the core fulfillment paths (confirm appointment, request refill, retrieve hours), with LLM augmentation for clarification and reformulation. The reasons are the same as in recipe 10.1: predictability, debuggability, compliance review, and the ability to certify that the system will not say something it should not say. Full LLM-driven dialog is more conversational and harder to constrain.
 
@@ -256,7 +256,7 @@ A patient-facing voice assistant decomposes into nine logical stages: channel en
 │                                                           │
 │   [Extract slots within the intent]                       │
 │    - Medication name (with RxNorm linking via             │
-│      Comprehend Medical for refill intents)               │
+│      medical-entity extraction for refill intents)        │
 │    - Date and time (for appointment intents)              │
 │    - Provider name (for appointment intents)              │
 │    - Location (for facility-info intents)                 │
