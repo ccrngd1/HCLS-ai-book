@@ -81,7 +81,7 @@ flowchart TD
 
 **Step 1: Slide ingestion and metadata extraction.** When a whole slide image arrives in the storage bucket, the system registers it, extracts basic metadata (scanner type, magnification, dimensions, stain type), and queues it for analysis. This step validates that the file is a supported format and that the image dimensions are within expected bounds. A corrupted or truncated upload gets flagged immediately rather than failing halfway through a 20-minute GPU job. Skip this step and you'll waste expensive GPU time on files that were never going to process successfully.
 
-```
+```pseudocode
 FUNCTION ingest_slide(bucket, key):
     // Read the slide file header to extract metadata without loading the full image.
     // WSI formats store metadata (dimensions, magnification, scanner info) in the header.
@@ -120,7 +120,7 @@ FUNCTION ingest_slide(bucket, key):
 
 **Step 2: Tissue detection.** Most of a glass slide is empty: clear glass with no tissue. Processing empty regions wastes compute and introduces noise. This step generates a binary tissue mask at low resolution (typically the lowest pyramid level, around 1000x1000 pixels) to identify where tissue actually exists. The approach is straightforward: convert to a color space where tissue is distinguishable from background (HSV or LAB), apply Otsu thresholding, and clean up with morphological operations. The output is a mask that tells the patch extraction step which coordinates to process. Skip this and you'll extract 3-5x more patches than necessary, most of which are blank glass.
 
-```
+```pseudocode
 FUNCTION detect_tissue(slide_id, s3_path):
     // Read the lowest resolution level of the pyramidal image.
     // This is typically 16x-64x downsampled from the full resolution.
@@ -160,7 +160,7 @@ FUNCTION detect_tissue(slide_id, s3_path):
 
 **Step 3: Patch extraction coordinates.** Given the tissue mask, this step determines which patches to extract from the full-resolution image. It maps the low-resolution mask back to full-resolution coordinates and generates a list of (x, y) positions for each patch that overlaps with tissue. The patch size and magnification level are configurable: 256x256 at 20x is standard for many tasks, but some applications benefit from larger patches or higher magnification. The output is a manifest of patch coordinates that the feature extraction step will process.
 
-```
+```pseudocode
 PATCH_SIZE = 256          // pixels per patch side
 TARGET_MAGNIFICATION = 20  // 20x objective magnification
 OVERLAP = 0               // no overlap between patches (common for efficiency)
@@ -206,7 +206,7 @@ FUNCTION generate_patch_coordinates(slide_id, tissue_mask, slide_metadata):
 
 **Step 4: Feature extraction (GPU-intensive).** This is the computational core. Each patch is read from the WSI, preprocessed (normalized, resized if needed), and passed through a pre-trained feature extractor (typically a vision transformer or ResNet variant trained on pathology data). The output is a feature vector per patch (512-2048 dimensions). For a slide with 30,000 patches, this produces a feature matrix of shape [30000, feature_dim]. This step runs on GPU and dominates the total processing time. Batch processing (feeding multiple patches through the model simultaneously) is critical for throughput.
 
-```
+```pseudocode
 BATCH_SIZE = 64           // patches per GPU batch
 FEATURE_DIM = 1024        // output dimension of the feature extractor
 
@@ -253,7 +253,7 @@ FUNCTION extract_features(slide_id, s3_path, patch_coordinates):
 
 **Step 5: MIL aggregation and classification.** The aggregation step takes the bag of patch features and produces slide-level predictions. An attention-based MIL model assigns importance weights to each patch and computes a weighted combination for classification. The attention weights are the key to interpretability: patches with high attention are the regions the model considers most diagnostic. The output includes both the prediction (e.g., "malignant, Gleason grade 4") and the attention heatmap for pathologist review. For slides with more than 30,000 patches, the feature matrix alone exceeds 120 MB; consider running aggregation on a lightweight SageMaker endpoint or Fargate task rather than Lambda for these outliers.
 
-```
+```pseudocode
 FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
     // Load the task-specific MIL classifier.
     // This is a lightweight model trained on slide-level labels (e.g., cancer vs. benign).
@@ -334,12 +334,12 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 
 | Metric | Typical Value |
 |--------|---------------|
-| End-to-end latency | 8–25 minutes per slide (GPU-dependent) |
+| End-to-end latency | 8-25 minutes per slide (GPU-dependent) |
 | Feature extraction throughput | ~200 patches/second on ml.g4dn.xlarge |
-| Classification accuracy (cancer detection) | 90–97% AUC depending on cancer type and dataset |
-| Sensitivity (cancer present) | 92–98% at 90% specificity (task-dependent) |
-| Cost per slide | $2.50–$8.00 (dominated by GPU time) |
-| Storage per slide | 2–5 GB raw + ~50 MB features |
+| Classification accuracy (cancer detection) | 90-97% AUC depending on cancer type and dataset |
+| Sensitivity (cancer present) | 92-98% at 90% specificity (task-dependent) |
+| Cost per slide | $2.50-$8.00 (dominated by GPU time) |
+| Storage per slide | 2-5 GB raw + ~50 MB features |
 
 **Where it struggles:**
 
@@ -348,6 +348,8 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 - Cases requiring immunohistochemistry (IHC) interpretation alongside H&E
 - Grading tasks where inter-pathologist agreement is already low (e.g., certain breast cancer grades)
 - Slides from scanners not represented in training data (stain/color shift)
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering production gaps (stain normalization across labs, model monitoring/drift, regulatory submission requirements, LIS integration). -->
 
 ---
 
@@ -388,9 +390,9 @@ FUNCTION aggregate_and_classify(slide_id, features, patch_coordinates):
 
 | Phase | Timeline |
 |-------|----------|
-| **Basic** (single cancer type, single scanner, research prototype) | 3–4 months |
-| **Production-ready** (multi-scanner normalization, LIS integration, monitoring) | 8–12 months |
-| **With variations** (multi-cancer, grading, biomarker prediction, FDA submission) | 18–24+ months |
+| **Basic** (single cancer type, single scanner, research prototype) | 3-4 months |
+| **Production-ready** (multi-scanner normalization, LIS integration, monitoring) | 8-12 months |
+| **With variations** (multi-cancer, grading, biomarker prediction, FDA submission) | 18-24+ months |
 
 ---
 

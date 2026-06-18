@@ -1,6 +1,6 @@
 # Recipe 9.8: Pathology Slide Analysis
 
-**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2.50–$8.00 per slide (compute-heavy)
+**Complexity:** Complex · **Phase:** Research/Production Hybrid · **Estimated Cost:** ~$2.50-$8.00 per slide (compute-heavy)
 
 ---
 
@@ -69,9 +69,10 @@ This matters for implementation because it dramatically reduces the data require
 
 **Regulatory landscape.** In the US, pathology AI tools that make diagnostic claims require FDA clearance (typically through the 510(k) or De Novo pathway). Several products have been cleared for specific indications (prostate cancer detection, cervical cytology screening), but the regulatory pathway for each new indication is separate and time-consuming.
 
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. "General Architecture Pattern" should be H2, not H3 nested under The Technology. Promote to ## when restructuring. -->
 ### The General Architecture Pattern
 
-```
+```text
 [Slide Scanning] → [Storage / Tile Server] → [Tissue Detection] → [Patch Extraction] →
 [Feature Extraction] → [Aggregation / Classification] → [Heatmap Generation] →
 [Pathologist Review Interface] → [Report Integration]
@@ -105,7 +106,7 @@ Pathology AI is one of those fields where the research papers look incredible an
 
 Stain normalization is the thing that will humble you first. Your model achieves 96% AUC on your development data, you deploy it, and the first lab that sends slides stained slightly differently sees performance drop to 85%. The Macenko or Reinhard normalization methods help, but they're not magic. You need diverse training data from multiple labs and scanners.
 
-The compute cost surprised me. When you're processing 30,000 patches per slide and your lab generates 200 slides per day, you're looking at 6 million inference calls daily. That's real GPU spend. Batch transform with spot instances helps, but you need to architect for cost from day one.
+The compute cost surprised me. When you're processing 30,000 patches per slide and your lab generates 200 slides per day, you're looking at 6 million inference calls daily. That's real GPU spend. Batch inference with preemptible or spot capacity helps, but you need to architect for cost from day one.
 
 The regulatory piece is non-trivial. If your system makes any claim that influences diagnosis (even "regions of interest" that a pathologist might interpret as "the AI thinks this is cancer"), you're likely in FDA territory. The distinction between "clinical decision support" and "diagnostic device" is nuanced and evolving. Get regulatory counsel early.
 
