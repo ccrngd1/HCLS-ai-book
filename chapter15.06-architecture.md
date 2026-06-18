@@ -4,9 +4,7 @@
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon SageMaker for model training and hosting.** RL model training requires GPU instances for batch processing of historical episodes, hyperparameter tuning across reward formulations, and model versioning. SageMaker provides managed training jobs with spot instance support (RL training is fault-tolerant and restartable), model registry for versioning policies, and real-time endpoints for inference. The SageMaker RL toolkit supports custom environments, which you'll need for the glucose simulator integration.
 
@@ -20,7 +18,7 @@
 
 **AWS Step Functions for the training pipeline.** The offline training pipeline (data extraction, episode construction, training, evaluation, model registration) is a multi-step workflow that runs periodically as new data accumulates. Step Functions orchestrates this cleanly with error handling and retry logic.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TB
@@ -57,7 +55,7 @@ flowchart TB
 
 <!-- TODO (TechWriter): Expert review A2 (MEDIUM). Add model rollback and canary deployment strategy. Describe SageMaker production variants for canary deployment, override rate monitoring, and automatic rollback triggers when new model underperforms. -->
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -76,7 +74,7 @@ flowchart TB
 
 <!-- TODO (TechWriter): Expert review A4 (MEDIUM). Add capacity planning note for concurrent patient handling. Typical ICU (20-50 patients, checks every 1-4 hours) produces low peak concurrency (< 10/minute). Single ml.m5.large sufficient for one ICU; configure auto-scaling for hospital-wide deployment. -->
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -88,13 +86,11 @@ flowchart TB
 | **Amazon CloudWatch** | Monitors recommendation patterns, outcome tracking, drift detection |
 | **AWS KMS** | Manages encryption keys for all PHI-containing services |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Episode construction from EHR data.** The first challenge is transforming raw EHR data into RL episodes. An episode is one ICU stay, discretized into decision intervals (typically 1-4 hours). At each timestep, you need the state (what the clinician observed), the action (what they did), and the reward (how things turned out). This step is where most of the engineering effort lives. EHR data is messy: glucose measurements come from different sources (point-of-care meters, arterial blood gas analyzers, continuous glucose monitors) with different accuracies and different timestamps. Insulin orders don't always align with administration times, and nutrition changes happen asynchronously. You need to bin everything into consistent time windows and handle missing data gracefully. Skip this step or do it poorly, and your RL agent learns from garbage.
 
-```
+```pseudocode
 FUNCTION build_episode(patient_icu_stay):
     // Discretize the ICU stay into fixed-length decision intervals.
     // 4 hours is common: it matches typical glucose check frequency.
@@ -137,7 +133,7 @@ FUNCTION build_episode(patient_icu_stay):
 
 **Step 2: Reward function design.** This is the most consequential design decision in the entire system. The reward function encodes what "good glucose control" means numerically. Get it wrong and your agent optimizes for the wrong thing. The key insight: hypoglycemia and hyperglycemia are not symmetric risks. A glucose of 60 mg/dL is immediately life-threatening. A glucose of 200 mg/dL is harmful over hours but not acutely dangerous. Your reward function must reflect this asymmetry. Most published work uses a piecewise function with a steep penalty below 70 mg/dL, a mild penalty above 180 mg/dL, and a positive reward in the 80-180 mg/dL range. The exact shape matters enormously and should be calibrated with clinical input.
 
-```
+```pseudocode
 FUNCTION compute_reward(glucose_mg_dl):
     // Asymmetric reward function reflecting clinical risk.
     // Hypoglycemia is immediately dangerous; hyperglycemia is gradually harmful.
@@ -174,7 +170,7 @@ FUNCTION compute_reward(glucose_mg_dl):
 
 **Step 3: Offline RL training with safety constraints.** Standard RL algorithms (DQN, PPO) assume online interaction with the environment. We can't do that. We need offline RL: learning a policy purely from historical data without additional environment interaction. The key challenge is distributional shift. If the historical clinicians never gave 20 units of insulin to a patient with glucose of 150, your agent has no data to evaluate that action. Naive offline RL might still recommend it if the Q-function extrapolates incorrectly. Conservative Q-Learning (CQL) addresses this by adding a penalty for actions that are far from the historical data distribution. Batch Constrained Q-Learning (BCQ) restricts the policy to only recommend actions that were actually observed in similar states. Either approach prevents the dangerous extrapolation problem.
 
-```
+```pseudocode
 FUNCTION train_offline_rl_policy(episodes, safety_constraints):
     // Use Conservative Q-Learning (CQL) to learn a policy
     // that stays close to the historical data distribution.
@@ -232,7 +228,7 @@ FUNCTION train_offline_rl_policy(episodes, safety_constraints):
 
 **Step 4: Off-policy evaluation.** Before deploying any learned policy, you need to estimate how it would have performed on historical patients. This is off-policy evaluation (OPE). The core idea: if the learned policy would have recommended the same action the clinician took, we can directly use the observed outcome. If it would have recommended a different action, we need to reweight the observation using importance sampling. OPE is imperfect (high variance, relies on overlap between policies), but it's the best tool available for safety validation without live experimentation. Run OPE on a held-out test set of episodes that were not used for training.
 
-```
+```pseudocode
 FUNCTION evaluate_policy_offline(learned_policy, test_episodes, behavior_policy):
     // Weighted Importance Sampling (WIS) estimator for policy value.
     // Estimates what the cumulative reward would have been if the learned
@@ -282,7 +278,7 @@ FUNCTION evaluate_policy_offline(learned_policy, test_episodes, behavior_policy)
 
 **Step 5: Safety constraint layer.** Even after training with safety-aware objectives and validating with OPE, the deployed system needs a hard safety layer. This is the last line of defense: regardless of what the RL policy recommends, certain actions are never allowed. Think of it as a safety envelope around the policy. The policy operates freely within the envelope; anything outside gets clipped or rejected. This layer encodes clinical knowledge that should never be violated, even if the data-driven policy disagrees.
 
-```
+```pseudocode
 FUNCTION apply_safety_constraints(recommended_dose, patient_state, constraints):
     // Hard safety constraints that override the RL policy.
     // These are non-negotiable clinical rules.
@@ -333,7 +329,7 @@ FUNCTION apply_safety_constraints(recommended_dose, patient_state, constraints):
 
 <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add tamper-evident audit trail guidance after the store_recommendation call. Recommendation logs should also be written to S3 with Object Lock (compliance mode) or CloudWatch Logs with a resource policy preventing deletion. The operational store (DynamoDB) serves real-time reads; the immutable archive serves compliance. -->
 
-```
+```pseudocode
 FUNCTION generate_recommendation(patient_id, new_glucose_reading):
     // Called when a new glucose measurement is entered for an ICU patient.
 
@@ -383,7 +379,7 @@ FUNCTION generate_recommendation(patient_id, new_glucose_reading):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter15.06-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample recommendation output:**
 

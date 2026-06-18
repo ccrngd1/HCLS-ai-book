@@ -1,6 +1,6 @@
 # Recipe 15.6: Glucose Control in ICU
 
-**Complexity:** Medium-Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000–5,000/month (training infrastructure)
+**Complexity:** Medium-Complex · **Phase:** Research/Pilot · **Estimated Cost:** ~$2,000-5,000/month (training infrastructure)
 
 ---
 
@@ -66,7 +66,7 @@ The honest status: no RL-based glucose controller is in routine clinical use as 
 
 At a conceptual level, an RL-based glucose control system has these components:
 
-```
+```text
 [Historical Data] → [State Construction] → [Offline Policy Learning] → [Policy Evaluation]
                                                                               ↓
 [Simulator Validation] → [Constrained Policy Refinement] → [Clinical Decision Support]
