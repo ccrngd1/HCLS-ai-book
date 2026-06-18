@@ -1,6 +1,6 @@
 # Recipe 14.9 Architecture and Implementation: Chemotherapy Scheduling
 
-*Companion to [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 14.9: Chemotherapy Scheduling](chapter14.09-chemotherapy-scheduling). This page covers the AWS architecture, services, prerequisites, and implementation guidance. For the problem framing, conceptual approach, and pseudocode walkthrough, start with the main recipe.*
 
 ---
 
