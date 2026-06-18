@@ -183,7 +183,7 @@ flowchart LR
 
 **Step 1: Compute per-(patient, medication) adherence features.** The PDC computation runs nightly. For each patient, for each chronic medication therapeutic class, compute carry-forward days-supply, the PDC over the trailing 365 days (and 90 days, for short-window targeting), and per-medication regimen features. Skip carry-forward and a 90-day mail-order patient looks like a non-adherent retail patient.
 
-```
+```pseudocode
 FUNCTION compute_adherence_features(patients, run_date):
     // Pull settled fill claims for the trailing 12 months. The "settled"
     // window means claims with fill_date at least 30 days before run_date,
@@ -272,7 +272,7 @@ FUNCTION compute_adherence_features(patients, run_date):
 
 **Step 2: Classify barriers per (patient, medication) below the adherence threshold.** The rule-based classifier runs first and is deterministic; the supervised classifier refines confidence where labels exist; the LLM second opinion runs for high-stakes cases. The output is a ranked list of barriers per (patient, medication). Skip this and the recommender treats every adherence gap the same way.
 
-```
+```pseudocode
 FUNCTION classify_barriers(target_set, features, run_date):
     FOR each (patient_id, therapeutic_class) in target_set:
         adherence = features.get_adherence(patient_id, therapeutic_class)
@@ -395,7 +395,7 @@ FUNCTION classify_barriers(target_set, features, run_date):
 
 **Step 3: Build the per-(patient, intervention, medication) candidate set with eligibility.** Not every intervention is eligible for every (patient, medication). Cost-assistance navigation is gated on cost-sharing tier and brand status. Med-sync requires the patient's pharmacy to be a partner. Pharmacist consults require pharmacist availability in the patient's region/language. Skip the eligibility filter and you waste downstream model inference on combinations that can't ever be allocated.
 
-```
+```pseudocode
 FUNCTION build_candidate_triples(target_set, intervention_catalog, run_date):
     candidates = []
     FOR each (patient_id, therapeutic_class) in target_set:
@@ -471,7 +471,7 @@ FUNCTION build_candidate_triples(target_set, intervention_catalog, run_date):
 
 **Step 4: Score need, barrier-fit, engagement, and uplift per candidate.** Same fan-out pattern as Recipe 4.4. SageMaker Batch Transform jobs in parallel; do not loop sequentially across interventions or therapeutic classes. Skip uplift and you over-target patients who would have improved on their own.
 
-```
+```pseudocode
 FUNCTION score_candidates(candidates, run_date):
     // Group candidates by intervention_type so each intervention's models
     // run on the relevant subset; the per-intervention engagement and
@@ -554,7 +554,7 @@ FUNCTION score_candidates(candidates, run_date):
 
 **Step 5: Combine scores into per-candidate priority with cost-effectiveness.** The combination weights are policy: documented, version-controlled, reviewable. The cost-effectiveness term divides expected-uplift by intervention cost so a $0.05 reminder doesn't get crowded out by a $80 pharmacist consult on every candidate. Skip the cost term and the system over-allocates expensive interventions to patients where a cheaper one would have worked.
 
-```
+```pseudocode
 FUNCTION compute_priority(scored_candidates, policy):
     // Policy weights live in versioned config, not code:
     // {
@@ -607,7 +607,7 @@ FUNCTION compute_priority(scored_candidates, policy):
 
 **Step 6: Allocate under heterogeneous capacities with multi-intervention-per-patient and equity floors.** The allocator walks priority-sorted candidates and assigns slots subject to: each intervention's daily capacity, the cumulative per-patient cap (default: at most 2 interventions per run, at most 1 high-touch), the cross-intervention exclusions (a pharmacist consult on a medication suppresses lower-touch interventions for the same medication), and the equity floors. Skip the floors and the optimization quietly redistributes opportunity to the easiest-to-help cohorts.
 
-```
+```pseudocode
 FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
     candidates_sorted = sort prioritized by priority DESC
 
@@ -739,7 +739,7 @@ FUNCTION allocate_heterogeneous(prioritized, interventions, policy, run_date):
 
 **Step 7: Orchestrate outreach across heterogeneous channels.** Patient-facing interventions go to the channel optimizer from Recipe 4.1. Staff-facing interventions go to staff queues with structured pre-work. Cost-assistance flows to a dedicated case-management queue. Med-sync flows to the partner pharmacy's API or a flagged-for-action work queue. Skip the per-intervention-type orchestration and your interventions become "send a generic email" regardless of what was actually allocated.
 
-```
+```pseudocode
 FUNCTION orchestrate_interventions(allocated, run_date, policy):
     FOR row in allocated:
         member = DynamoDB.GetItem("patient-profile", row.patient_id)
@@ -893,7 +893,7 @@ FUNCTION orchestrate_interventions(allocated, run_date, policy):
 
 **Step 8: Capture engagement, fill, and barrier-elicited events; update training data on appropriate horizons.** Pharmacist consults that elicit a ground-truth barrier are gold for retraining the barrier classifier. Pharmacy fills observed after an intervention are the medium-horizon uplift signal. Clinical outcomes are the long-horizon signal. Skip this and the models stop learning, the dashboards stop reflecting reality, and you cannot honestly answer whether any intervention works.
 
-```
+```pseudocode
 FUNCTION process_adherence_event(event):
     rec = lookup_recommendation_by_tracking_id(event.tracking_id)
         // Some events (pharmacy_fill_observed, organic) won't have a

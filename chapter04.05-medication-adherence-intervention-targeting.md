@@ -144,7 +144,7 @@ The uplift-modeling investment from 4.4 transfers directly. The capacity-aware a
 
 The pipeline has five logical components: a pharmacy-data ingestion path that computes adherence metrics correctly, a barrier-classification path that turns adherence gaps into hypothesized "why" labels, an intervention-catalog ingestion path that maintains the slate of intervention types and capacities, a batch recommendation path that runs frequently to produce (patient, intervention, medication) allocations, and a feedback path that captures fill outcomes, intervention engagement, and downstream clinical change.
 
-```
+```text
 ┌──────── PHARMACY DATA INGESTION (continuous) ─────────────┐
 │                                                            │
 │  [Retail pharmacy]   [Mail-order]   [Specialty pharmacy]   │
