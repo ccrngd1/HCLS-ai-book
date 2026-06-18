@@ -81,7 +81,7 @@ flowchart TD
 
 **Step 1: Ingest alert events and clinician responses.** Every alert that fires in the clinical system produces an event record: what type of alert, what threshold triggered it, which patient, what unit, what time. Separately, the EHR tracks clinician responses: acknowledgments, dismissals, orders placed, escalations. These two streams need to be joined (alert event + subsequent response) to create the training signal. The join window is typically 5-15 minutes: if no action follows an alert within that window, it's classified as "dismissed/ignored." Skip this step and you have no feedback signal. The entire system depends on knowing which alerts led to action and which ones were noise.
 
-```
+```pseudocode
 FUNCTION ingest_alert_event(event):
     // An alert just fired in the clinical system.
     // Record everything we need to later determine if this was useful.
@@ -108,7 +108,7 @@ FUNCTION ingest_alert_event(event):
 
 **Step 2: Calculate reward from clinician response.** This is where the magic happens. After an alert fires, we observe what the clinician does (or doesn't do). The reward function translates that response into a scalar signal that tells the RL agent whether the alert was valuable. A meaningful clinical action following an alert is a positive signal (the alert was useful). A rapid dismissal is a negative signal (the alert was noise). A missed clinical event (deterioration without a preceding alert) is a strongly negative signal (the threshold was too permissive). The reward function is the single most important design decision. Get it wrong and the agent optimizes for the wrong thing.
 
-```
+```pseudocode
 // Reward weights: these encode clinical priorities.
 // Adjust based on your institution's risk tolerance.
 // In production, store these in a configuration store (e.g., Parameter Store or DynamoDB)
@@ -153,7 +153,7 @@ FUNCTION calculate_reward(alert_event, clinician_response, patient_outcome):
 
 **Step 3: Detect missed events (the safety check).** The reward function above handles alerts that fired. But the most dangerous failure mode is an alert that should have fired but didn't (because the threshold was too high). This step scans for clinical deterioration events (rapid response calls, code blues, unplanned ICU transfers) and checks whether a relevant alert preceded them. If not, that's a missed event, and the agent receives a large negative reward for the threshold setting that allowed it. This is the safety mechanism that prevents the agent from simply raising all thresholds to eliminate noise. Skip this step and the agent will happily silence every alert to maximize the "no dismissals" reward.
 
-```
+```pseudocode
 FUNCTION detect_missed_events(time_window):
     // Scan for clinical deterioration events in the given time window.
     // These are events that SHOULD have been preceded by an alert.
@@ -185,7 +185,7 @@ FUNCTION detect_missed_events(time_window):
 
 **Step 4: Aggregate state for the RL agent.** The agent needs a summary of the current situation to make threshold decisions. This isn't raw event data; it's aggregated features that capture the relevant context. Think of it as the agent's "view of the world" at decision time. The state includes recent alert volumes, response rates, patient acuity distribution, and time-based features. The aggregation window matters: too short and the state is noisy; too long and it's stale. A 4-8 hour window (roughly one shift) is a reasonable starting point.
 
-```
+```pseudocode
 FUNCTION aggregate_state(unit, alert_type, time_window):
     // Build the state vector that the RL agent will observe.
     // This summarizes "what's happening right now" for this unit and alert type.
@@ -221,7 +221,7 @@ FUNCTION aggregate_state(unit, alert_type, time_window):
 
 **Step 5: Policy inference (get the agent's recommendation).** Given the current state, the trained RL policy outputs an action: adjust the threshold up, down, or leave it unchanged. The action is a small delta (e.g., +2 bpm, -1 bpm, or 0). The policy has learned, from historical data, which adjustments tend to improve the alert-to-action ratio without increasing missed events. This step is lightweight inference, not training. It runs periodically (every few hours or once per shift) rather than on every alert.
 
-```
+```pseudocode
 FUNCTION get_threshold_action(state):
     // Ask the trained policy: given this state, what should we do?
     
@@ -240,7 +240,7 @@ FUNCTION get_threshold_action(state):
 
 **Step 6: Apply threshold with safety constraints.** The agent's recommendation passes through a safety layer before reaching the live alerting system. This layer enforces hard bounds (thresholds can never exceed clinically defined maximums or go below minimums), rate limits (no more than X% change per day), and rollback conditions (if alert-to-action ratio drops below a floor, revert immediately). The safety layer is the reason this system is deployable in healthcare. Without it, you'd need to prove the RL policy is perfect before deployment. With it, you only need to prove it's bounded.
 
-```
+```pseudocode
 // Safety configuration: these are set by clinical leadership, not learned.
 SAFETY_BOUNDS = {
     "heart_rate_high":  { min: 90,  max: 150, max_daily_change: 5 },

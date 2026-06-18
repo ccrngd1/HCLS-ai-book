@@ -99,7 +99,7 @@ The agent needs to occasionally try different thresholds to learn which ones wor
 
 At a conceptual level, the system has four components:
 
-```
+```text
 [Alert Event Stream] → [State Aggregator] → [RL Agent / Policy] → [Threshold Controller]
                                                     ↑
                                             [Reward Calculator]
