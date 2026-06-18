@@ -137,6 +137,22 @@ TechEditor pass v4 (2026-05-21, ch04-r06-edit). Re-verification only:
   when the HIGH TODOs resolve.
 -->
 
+<!--
+TechEditor pass v5 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
+- Updated TODO A2 to clarify that Step 1-5 references and "Where it
+  struggles" section now live in the architecture companion file
+  (chapter04.06-architecture.md).
+- Verified architecture callout is well-placed between General Architecture
+  Pattern and The Honest Take.
+- Verified The Honest Take has no dangling references to AWS content.
+- Verified General Architecture Pattern prose is vendor-agnostic (AWS
+  service names in "Where This Sits in the Chapter" are cross-references
+  to prior recipes' shared infrastructure, not new AWS content).
+- Verified architecture companion opens cleanly with backlink header.
+- Em-dash count: 0. En-dash count: 0.
+- All prior TODO markers preserved.
+-->
+
 **Complexity:** Medium · **Phase:** Production · **Estimated Cost:** ~$0.002-0.012 per prioritized gap recommendation (depends on uplift model serving and LLM pre-visit summary tailoring)
 
 ---
@@ -456,7 +472,7 @@ The pipeline has six logical components: a measure-registry component that maint
 
 **Closure tracking is multi-source by design.** Closure events arrive from claims (slow, canonical for HEDIS), EHR (fast, canonical for the practice), lab feeds (fast, canonical for lab-based gaps), pharmacy (fast, canonical for some immunizations), immunization registries (medium speed, canonical in some states), and patient self-report (fast, low confidence, valuable for suppression of unnecessary outreach). The tracker's state machine reconciles these and gates downstream consumers (chase teams, dashboards, billing) on the appropriate confidence level. The HEDIS measure won't credit a self-report; the chase team should still suppress outreach when one arrives.
 
-<!-- TODO (TechWriter, HIGH per Expert Review A2): Add a paragraph naming the data_quality_flag gate explicitly. The flag is computed and persisted in Step 1, then never gates downstream decisions. The "Where it struggles" section says explicitly that downstream consumers should gate on it; the pseudocode does not. Five places need the gate: (a) Step 2 dampens urgency confidence on non-`complete` cases, (b) Step 3 suppresses low-quality gaps from the in-visit agenda, (c) Step 4 routes low-quality cases to a verification-first pathway before any closure-pathway-specific outreach, (d) Step 5 tightens (or relaxes, for `cross_provider_fragmentation`) the canonical-source rule, (e) Step 4 chase brief opens with verification framing when data quality is in doubt. The "calling a patient about a colonoscopy they had last week" failure mode the Honest Take warns against is exactly what `cross_provider_fragmentation` flags; not gating on it produces precisely that failure. Frame as: "the data_quality_flag is not metadata; it's an input to every downstream stage." -->
+<!-- TODO (TechWriter, HIGH per Expert Review A2): Add a paragraph here naming the data_quality_flag gate explicitly. The flag is computed and persisted in Step 1 of the architecture companion (chapter04.06-architecture.md), then never gates downstream decisions. The "Where it struggles" section in the architecture companion says explicitly that downstream consumers should gate on it; the pseudocode does not. Five places in the architecture companion need the gate: (a) Step 2 dampens urgency confidence on non-`complete` cases, (b) Step 3 suppresses low-quality gaps from the in-visit agenda, (c) Step 4 routes low-quality cases to a verification-first pathway before any closure-pathway-specific outreach, (d) Step 5 tightens (or relaxes, for `cross_provider_fragmentation`) the canonical-source rule, (e) Step 4 chase brief opens with verification framing when data quality is in doubt. The "calling a patient about a colonoscopy they had last week" failure mode the Honest Take warns against is exactly what `cross_provider_fragmentation` flags; not gating on it produces precisely that failure. Frame as: "the data_quality_flag is not metadata; it's an input to every downstream stage." -->
 
 **Equity instrumentation runs across all components.** Gap-identification rates by cohort (a measure that produces three times as many open gaps for one cohort versus another may reflect actual unmet need or may reflect data-completeness disparities; the dashboard surfaces both). Urgency-score distribution by cohort. In-visit closure rates by cohort and by clinician. Referral completion rates by cohort. Long-horizon closure rates by cohort. Each axis is a monitored dashboard.
 

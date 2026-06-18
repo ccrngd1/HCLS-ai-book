@@ -1,5 +1,18 @@
 # Recipe 4.6 Architecture and Implementation: Care Gap Prioritization
 
+<!--
+TechEditor pass v1 (2026-06-17, ch04-r06-archsplit). Post-split seam polish:
+- Updated TODO A6 to clarify that the chained-closure state machine
+  primitive belongs in this file's Walkthrough, not the main recipe's
+  General Architecture Pattern section (which is now a separate file).
+- Verified backlink header opens cleanly and references main recipe.
+- Verified no dangling references to main-recipe sections in prose
+  (cross-references in TODOs to "The Technology section" are valid
+  TechWriter coordination notes).
+- Em-dash count: 0. En-dash count: 0.
+- All prior TODO markers preserved.
+-->
+
 *Companion to [Recipe 4.6: Care Gap Prioritization](chapter04.06-care-gap-prioritization). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
 
 ---
@@ -1235,7 +1248,7 @@ The pseudocode and architecture above demonstrate the pattern. A production depl
 <!-- TODO (TechWriter, MEDIUM per Expert Review A6): The specialist-coordination
 workflow named in this Variation requires a chained-closure state machine
 that the core architecture doesn't show. Add the architectural primitive to
-General Architecture Pattern (or a new subsection): `recommendation-log` adds
+this file's Walkthrough (or a new subsection here): `recommendation-log` adds
 chain_id (UUID), chain_position, chain_total, predecessor_recommendation_id.
 Step 4 emits the first link of the chain (e.g., referral_generation) with
 chain_position = 1; later links are not allocated until the predecessor
