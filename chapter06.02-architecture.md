@@ -4,11 +4,9 @@
 
 ---
 
-## The AWS Implementation
+## Why These Services
 
-Now let's build this. The utilization segmentation pipeline is a batch analytics workload: you pull data periodically, compute features, run clustering, and push segment assignments to operational systems. It's not real-time. It doesn't need sub-second latency. It needs to handle large populations (hundreds of thousands to millions of members) reliably and repeatably.
-
-### Why These Services
+The utilization segmentation pipeline is a batch analytics workload: you pull data periodically, compute features, run clustering, and push segment assignments to operational systems. It's not real-time. It doesn't need sub-second latency. It needs to handle large populations (hundreds of thousands to millions of members) reliably and repeatably.
 
 **Amazon SageMaker for ML pipeline orchestration and model training.** SageMaker provides managed infrastructure for the entire ML lifecycle: data processing (Processing Jobs), model training (Training Jobs), batch inference (Batch Transform), and pipeline orchestration (SageMaker Pipelines). For a clustering workload that runs monthly on a large population, SageMaker Processing Jobs handle the feature engineering at scale, and the built-in K-Means or your own scikit-learn container handles the clustering itself. You get experiment tracking, model versioning, and reproducibility without managing Spark clusters or ML infrastructure.
 
@@ -22,7 +20,7 @@ Now let's build this. The utilization segmentation pipeline is a batch analytics
 
 **Amazon QuickSight for visualization and stakeholder reporting.** Segment profiles, migration patterns, outcome comparisons, and equity dashboards all need visual representation for leadership consumption. QuickSight connects directly to Athena (and therefore to your S3 data lake) for interactive dashboards without data movement.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -48,7 +46,7 @@ flowchart TD
 
 **A note on Batch Transform:** For K-Means specifically, scoring is just computing distances to k centroids, which is trivially fast. An alternative is to include scoring within the same Processing Job that computes features, reducing pipeline stages. Batch Transform becomes more valuable when you graduate to GMMs, ensemble methods, or when you need to score new members independently of the monthly full-population run.
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -62,7 +60,7 @@ flowchart TD
 | **Sample Data** | CMS Synthetic Public Use Files (SynPUF) provide realistic claims data for development. Never use real member data in dev/test environments. |
 | **Cost Estimate** | SageMaker Processing (ml.m5.xlarge, 2 hrs/month): ~$0.50/run. Training (ml.m5.xlarge, 30 min): ~$0.13/run. S3 storage: ~$2/month for feature data. DynamoDB: ~$5/month for on-demand reads. Total pipeline: ~$10-20/month for 500K-member population. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -75,14 +73,14 @@ flowchart TD
 | **AWS KMS** | Encryption key management for all data at rest |
 | **Amazon CloudWatch** | Pipeline monitoring, alerting on failures or segment drift |
 
-### Code
+## Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate patterns used in this recipe:
 >
 > - [`amazon-sagemaker-examples`](https://github.com/aws/amazon-sagemaker-examples): Comprehensive SageMaker examples including built-in K-Means, PCA, and custom scikit-learn containers for clustering workloads
 > - [`aws-healthcare-lifescience-ai-ml`](https://github.com/aws-samples/aws-healthcare-lifescience-ai-ml): Healthcare-specific ML examples on AWS including patient cohort analysis patterns
 
-#### Walkthrough
+### Walkthrough
 
 **Step 1: Extract utilization data.** The pipeline starts by pulling 12-24 months of claims and encounter data from your data warehouse. You need one row per member with all their utilization events within the lookback window. This is typically the most time-consuming step (not computationally, but in terms of getting the data right). The extract should include encounter type (ED, inpatient, outpatient, pharmacy), dates, provider identifiers, diagnosis codes, and allowed amounts. Missing this step or using incomplete data means your features will be wrong, your clusters will be meaningless, and nobody will trust the output.
 
@@ -339,7 +337,7 @@ FUNCTION store_assignments(features, labels, profiles):
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter06.02-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output (segment profile summary):**
 
@@ -433,6 +431,8 @@ FUNCTION store_assignments(features, labels, profiles):
 - Rapid behavioral changes (a new diagnosis that shifts utilization patterns won't be reflected until the next clustering run)
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering production gaps (monitoring, drift detection, retraining triggers, integration testing). -->
 
 ## Variations and Extensions
 
