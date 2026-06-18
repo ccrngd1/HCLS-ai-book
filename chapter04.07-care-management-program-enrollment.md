@@ -5,7 +5,10 @@ TechEditor pass v1 (2026-05-16, ch04-r07-edit). Editorial fixes:
 - Verified em-dash count: 0 (passes "no em dashes ever" rule).
 - Verified en-dash count: 0.
 - Header hierarchy: H1 title only, H2 for major sections, H3 for
-  subsections, one H4 (#### Walkthrough). No skipped levels.
+  subsections, no skipped levels. AWS-specific sections (The AWS
+  Implementation, Why This Isn't Production-Ready, Variations,
+  Additional Resources, Estimated Implementation Time) now live in
+  the architecture companion.
 - Voice drift scan: no documentation-voice openings in body prose, no
   LinkedIn-influencer patterns, no "we are excited" announcements.
   "High-leverage" appears twice (Step 3 pseudocode comment, Variations)
@@ -15,13 +18,15 @@ TechEditor pass v1 (2026-05-16, ch04-r07-edit). Editorial fixes:
   preserved verbatim per Voice Reviewer V1.
 - Vendor balance: 70/30 maintained. The Problem, The Technology, and
   General Architecture Pattern stay vendor-neutral; AWS service names
-  appear only in The AWS Implementation, Why This Isn't
-  Production-Ready, and Variations.
-- RECIPE-GUIDE compliance: all required sections present in correct
-  order (Problem, Technology, General Architecture, AWS Implementation,
-  Expected Results, Why This Isn't Production-Ready, Honest Take,
-  Variations, Related Recipes, Additional Resources, Implementation
-  Time, Tags, Footer Navigation).
+  appear only in the architecture companion
+  (chapter04.07-architecture.md).
+- RECIPE-GUIDE compliance: main-recipe sections present in correct
+  order (Problem, Technology, General Architecture Pattern ending with
+  architecture-companion callout, Honest Take, Related Recipes, Tags,
+  Footer Navigation). AWS Implementation, Expected Results, Why This
+  Isn't Production-Ready, Variations, Additional Resources, and
+  Implementation Time live in the architecture companion
+  (chapter04.07-architecture.md).
 - Existing TechWriter / prior-editor TODO markers preserved verbatim
   (TCM CPT codes, SageMaker Batch Transform HIPAA, Bedrock service
   terms, SES/Pinpoint scope, HealthLake pricing, Cost Estimate
@@ -67,25 +72,24 @@ TechEditor pass v2 (2026-05-21, ch04-r07-edit). Re-verification of
 v1 pass against the editorial checklist:
 - Em-dash count: 0 (re-verified). En-dash count: 0 (re-verified).
 - Header hierarchy: H1 title only; H2 for major sections (The Problem,
-  The Technology, General Architecture Pattern, The AWS Implementation,
-  Why This Isn't Production-Ready, The Honest Take, Variations and
-  Extensions, Related Recipes, Additional Resources, Estimated
-  Implementation Time, Tags); H3 for subsections inside The Technology
-  and The AWS Implementation; one H4 (Walkthrough). No skipped levels.
-- All four HIGH/ERROR finding TODOs confirmed present with their
-  finding IDs on the same TODO line so the follow-up task generator
-  can track them: A1 at the record_outreach_attempt pseudocode block,
-  A2 at the evaluate_disenrollment pseudocode block, A3 at the
-  Disenrollment governance and review paragraph in Why This Isn't
-  Production-Ready, and ERROR 1 at the Idempotency paragraph.
+  The Technology, General Architecture Pattern, The Honest Take,
+  Related Recipes, Tags); H3 for subsections inside The Technology.
+  No skipped levels. AWS Implementation, Why This Isn't Production-
+  Ready, Variations, Additional Resources, and Estimated
+  Implementation Time now live in architecture companion.
+- HIGH/ERROR finding TODOs: A1 at the record_outreach_attempt
+  pseudocode block (architecture companion), A2 at the
+  evaluate_disenrollment pseudocode block (architecture companion),
+  A3 at the Disenrollment governance and review paragraph in Why This
+  Isn't Production-Ready (architecture companion), and ERROR 1 at the
+  Idempotency paragraph (architecture companion).
 - All prior TechWriter and editor TODOs preserved verbatim.
 - Voice drift sentinel scan: no documentation-voice openings, no
   LinkedIn-influencer patterns, no announcement statements. The two
   "high-leverage" hits flagged by Voice V3 are colloquial leverage-
   point sense and acceptable per the persona instructions.
-- Vendor balance: 70/30 maintained. AWS service names confined to
-  The AWS Implementation, Why This Isn't Production-Ready, and
-  Variations.
+- Vendor balance: 70/30 maintained. Main recipe is vendor-neutral;
+  AWS service names appear only in the architecture companion.
 - Footer navigation present and well-formed (Recipe 4.6 back-link,
   Chapter 4 Preface, Recipe 4.8 forward-link).
 - Linda continuity: vignette-to-briefing patient name reconciliation
