@@ -134,7 +134,7 @@ Recipes 4.4 (Wellness Programs) and 4.5 (Adherence Interventions) will reuse the
 
 The pipeline has three logical components: an ingestion path that maintains the searchable provider catalog, a query path that handles real-time search requests, and a feedback path that captures click and downstream signals to refine the ranker and flag data quality issues.
 
-```
+```text
 ┌──────── PROVIDER CATALOG INGESTION (continuous) ───────────┐
 │                                                            │
 │  [Credentialing System]   [Claims Feed]   [Provider Self-  │
@@ -271,7 +271,7 @@ One last point, because it's specific to this use case: the directory is often t
 ## Related Recipes
 
 - **Recipe 4.1 (Appointment Reminder Channel Optimization):** Provides the patient profile, preference store, and engagement event pipeline this recipe consumes; the patient context object used here is the same one used there.
-- **Recipe 4.2 (Patient Education Content Matching):** Shares the candidate-generation-plus-re-ranking pattern and the engagement attribution pipeline. The OpenSearch and Bedrock infrastructure stood up here is reusable for content search variations.
+- **Recipe 4.2 (Patient Education Content Matching):** Shares the candidate-generation-plus-re-ranking pattern and the engagement attribution pipeline. The search and embedding infrastructure stood up here is reusable for content search variations.
 - **Recipe 4.7 (Care Management Program Enrollment):** Reuses the fairness re-ranking patterns from this recipe (exposure caps, safety-net floors) for a different resource-allocation problem.
 - **Recipe 5.x (Entity Resolution / Record Linkage):** The provider match-and-merge step in ingestion is itself an entity resolution problem; the techniques covered in Chapter 5 apply directly to provider deduplication and match scoring.
 - **Recipe 6.x (Cohort Analysis / Clustering):** Network adequacy analysis depends on cohort-level views of provider availability against member geographies. The clustering techniques in Chapter 6 support that analysis upstream of this recipe.

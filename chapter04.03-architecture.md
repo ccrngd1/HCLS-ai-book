@@ -149,7 +149,7 @@ flowchart LR
 
 **Step 1: Ingest a provider record and validate it before indexing.** When a provider event arrives (new credentialing record, claims-derived update, NPPES delta), the ingestion pipeline matches the record to existing providers (NPI is the primary key; tax ID and address-similarity are fallbacks for dedupe), validates the data, annotates it with the standardized taxonomy, generates an embedding for the searchable profile text, and only then promotes it into the index. Skip validation and you index garbage; skip embedding and you lose semantic search; skip the staging step and bad records are visible to patients before anyone notices.
 
-```
+```pseudocode
 FUNCTION on_provider_event(event):
     // Match the inbound record to an existing catalog entry. NPI is the
     // primary key; if NPI is missing or the inbound record is from a system
@@ -260,7 +260,7 @@ FUNCTION on_provider_event(event):
 
 **Step 2: Parse the search query into structured intent.** The patient typed something into a search box. Stage 1's job is to figure out what they meant. The output is a structured intent object that downstream stages use to build the OpenSearch query. Skip this and you'll be doing keyword matching against unnormalized free text, which works for exact-name searches and falls down on everything else.
 
-```
+```pseudocode
 FUNCTION parse_query(query_string, patient_context):
     // For a small set of obvious patterns, take a fast path that skips the LLM.
     // Empty query, exact NPI lookup, or a name-shaped string are deterministic.
@@ -303,7 +303,7 @@ FUNCTION parse_query(query_string, patient_context):
 
 **Step 3: Apply eligibility filters and retrieve candidates with hybrid search.** Stages 2 and 3 combine into a single OpenSearch query. The filter clause enforces hard "shall not show" rules; the must clause does keyword and vector match for relevance; the should clause adds soft signals (sub-specialty match, language preference) as boosts. Skip the filters and you'll show out-of-network providers in in-network searches, which is a contractual problem. Skip the hybrid match and you'll be choosing between keyword brittleness and vector black-box; you want both.
 
-```
+```pseudocode
 FUNCTION retrieve_candidates(intent, patient_context, top_k = 200):
     // Build the patient-context filters that are non-negotiable.
     eligibility_filters = [
@@ -389,7 +389,7 @@ FUNCTION retrieve_candidates(intent, patient_context, top_k = 200):
 
 **Step 4: Join personalization features for the ranker.** The candidates from Stage 3 are relevant in aggregate, but the personalized ranker needs more signal: distance, prior visits, provider quality, panel openness, freshness penalties. This step parallel-fetches those signals from the patient profile, the provider catalog, and any feature-store enrichments. Underinvest here and the ranker has nothing personal to rank by.
 
-```
+```pseudocode
 FUNCTION join_features(candidates, patient_context):
     // For each candidate, build a feature vector that the LTR model consumes.
     feature_rows = []
@@ -445,7 +445,7 @@ FUNCTION join_features(candidates, patient_context):
 
 **Step 5: Score and rank with the LTR model.** The feature rows feed an XGBoost-Ranker (or LightGBM `lambdarank`) model. The model produces a relevance score per provider. Sorting by that score gives the raw ranking. Skip this step and you're back to "closest first," which is what you were trying to escape.
 
-```
+```pseudocode
 FUNCTION rank(feature_rows, model):
     // Build the feature matrix in the order the model expects.
     X = build_feature_matrix(feature_rows, FEATURE_ORDER)
@@ -467,7 +467,7 @@ FUNCTION rank(feature_rows, model):
 
 **Step 6: Re-rank for fairness and diversity.** The raw LTR output is locally optimal but may produce structurally bad outcomes (a handful of providers dominating impressions, safety-net providers buried, near-duplicates clustering). The fairness re-ranker enforces explicit policy constraints. Skip this step and you ship a system that quietly concentrates patient flow on a small subset of the network.
 
-```
+```pseudocode
 FUNCTION fairness_rerank(sorted_rows, patient_context, policy):
     // Three policies typically apply, in order:
 
@@ -524,7 +524,7 @@ FUNCTION fairness_rerank(sorted_rows, patient_context, policy):
 
 **Step 7: Assemble results with explanations and log the search.** Each result returned to the UI carries a short rationale. Skip the explanations and patients can't tell why one provider is ranked above another, which erodes trust and makes the system feel arbitrary. Skip the search log and you cannot evaluate the ranker, debug a complaint, or train the next model.
 
-```
+```pseudocode
 FUNCTION assemble_and_log(reranked_rows, patient_context, intent, top_n = 10):
     search_id = new UUID
 
@@ -619,7 +619,7 @@ FUNCTION assemble_and_log(reranked_rows, patient_context, intent, top_n = 10):
 
 **Step 8: Capture engagement and feed back into ranker training and data quality.** A separate Lambda consumes the engagement stream, joins each event back to the search log, applies position-bias correction, and updates two things: ranker training data (for the periodic retrain) and the provider catalog's freshness signals (a "ghost provider" complaint is high-priority operational signal). Underinvest here and the model stops learning and the catalog stops self-correcting.
 
-```
+```pseudocode
 FUNCTION process_engagement_event(event):
     // Look up the originating search.
     search = DynamoDB.GetItem("search-log", event.search_id)
