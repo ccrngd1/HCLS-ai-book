@@ -1,12 +1,10 @@
 # Recipe 13.3 Architecture and Implementation: ICD/CPT Hierarchy Navigation
 
-*Companion to [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+*Companion to [Recipe 13.3: ICD/CPT Hierarchy Navigation](chapter13.03-icd-cpt-hierarchy-navigation). This page covers the AWS architecture, services, prerequisites, and pseudocode walkthrough. For the problem framing, conceptual approach, and honest assessment, start with the main recipe.*
 
 ---
 
-## The AWS Implementation
-
-### Why These Services
+## Why These Services
 
 **Amazon Neptune for graph storage and traversal.** Neptune is AWS's managed graph database, supporting both property graph (Gremlin/openCypher) and RDF (SPARQL) query models. For ICD/CPT hierarchy navigation, the property graph model with openCypher is the natural fit: codes are nodes with properties, relationships are typed edges with metadata. Neptune handles the index management, replication, and backup that you'd otherwise manage yourself. It's also on the HIPAA eligible services list, which matters because code assignments linked to patients are PHI-adjacent (they're part of the designated record set). Use Neptune's reader endpoint for query traffic and the cluster (writer) endpoint for bulk loads so read and write workloads don't compete.
 
@@ -18,7 +16,7 @@
 
 **Amazon ElastiCache (Redis) for query caching.** Hierarchy traversals are deterministic for a given code version. The children of E11 don't change between October updates. Caching traversal results in Redis eliminates repeated graph queries for popular codes and keeps response times under 50ms for cached paths.
 
-### Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
@@ -41,7 +39,7 @@ flowchart TD
     style H fill:#ff9,stroke:#333
 ```
 
-### Prerequisites
+## Prerequisites
 
 | Requirement | Details |
 |-------------|---------|
@@ -54,7 +52,7 @@ flowchart TD
 | **Sample Data** | CMS publishes ICD-10-CM files at [cms.gov/medicare/coding-billing/icd-10-codes](https://www.cms.gov/medicare/coding-billing/icd-10-codes). CPT requires AMA license. Use ICD-10-CM (free) for development; add CPT when licensed. |
 | **Cost Estimate** | Neptune db.r5.large: ~$0.348/hr (~$254/month). Neptune I/O: ~$0.20 per million requests (at 1M queries/month with 85% cache hit rate, expect ~150K Neptune I/Os, negligible; spikes during cache-cold periods post-update). ElastiCache cache.t3.medium: ~$0.068/hr (~$50/month). Lambda and API Gateway negligible at query volumes under 1M/month. |
 
-### Ingredients
+## Ingredients
 
 | AWS Service | Role |
 |------------|------|
@@ -66,9 +64,7 @@ flowchart TD
 | **AWS KMS** | Encryption keys for Neptune, S3, and ElastiCache |
 | **Amazon CloudWatch** | Query latency metrics, cache hit rates, ETL job monitoring |
 
-### Code
-
-#### Walkthrough
+## Pseudocode Walkthrough
 
 **Step 1: Parse ICD-10-CM source files into graph nodes and edges.** CMS distributes ICD-10-CM as a set of flat files: a tabular code list with descriptions, and an "order file" that encodes the hierarchy through indentation levels and parent references. This step reads those files and produces two outputs: a node list (one row per code with its properties) and an edge list (one row per relationship). The hierarchy is encoded in the code structure itself (E11 is parent of E11.6, which is parent of E11.65), but the source files also contain explicit "includes," "excludes1," and "excludes2" annotations that become additional edge types. Skip this step and you have no graph to query. Get the parsing wrong and your hierarchy traversals return incorrect results, which means wrong cohort counts and invalid coding suggestions.
 
@@ -342,7 +338,7 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 
 > **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3 and the Neptune openCypher endpoint, check out the [Python Example](chapter13.03-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
 
-### Expected Results
+## Expected Results
 
 **Sample output for a "children" query on E11 (Type 2 diabetes):**
 
@@ -406,6 +402,8 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 
 ---
 
+<!-- TODO (TechWriter): Add "Why This Isn't Production-Ready" section per RECIPE-GUIDE.md. Should appear between Expected Results and Variations. -->
+
 ## Variations and Extensions
 
 **Coding assistance with similarity search.** Combine the hierarchy graph with a text embedding model. When a coder types a free-text description ("chest wall pain after coughing"), embed it, find the nearest code descriptions in vector space, then use the graph to show the full context: parent codes, sibling codes, and exclusions. The graph turns a flat similarity search into a navigable decision tree.
@@ -444,9 +442,6 @@ FUNCTION apply_version_update(new_version_nodes, new_version_edges, current_vers
 | **Basic** (ICD-10-CM hierarchy only, single version) | 2-3 weeks |
 | **Production-ready** (ICD + CPT + cross-walks, versioning, caching, monitoring) | 6-8 weeks |
 | **With variations** (payer-specific rules, coding assistance, claim editing integration) | 10-14 weeks |
-
----
-
 
 ---
 
