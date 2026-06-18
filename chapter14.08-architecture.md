@@ -1,0 +1,448 @@
+# Recipe 14.8 Architecture and Implementation: Ambulance Routing and Dispatch
+
+*Companion to [Recipe 14.8: Ambulance Routing and Dispatch](chapter14.08-ambulance-routing-dispatch). This page covers the AWS architecture, services, prerequisites, and pseudocode. For the problem framing and the conceptual approach, start with the main recipe.*
+
+---
+
+## The AWS Implementation
+
+<!-- TODO (TechWriter): Expert review A1 (HIGH). Add a failover/degradation strategy section. The CAD system must retain native proximity-based dispatch as a fallback when the optimization layer is unavailable (timeout >3 seconds triggers fallback). This is mandatory for a life-safety system. Include fallback rate monitoring and alerting thresholds. -->
+
+<!-- TODO (TechWriter): Expert review A2 (HIGH). Add dispatcher-in-the-loop mechanism to the architecture. The "Honest Take" section correctly advises recommendation mode, but the architecture shows direct assignment to MDT with no human confirmation step. Define auto-dispatch vs. recommendation mode by priority level, add dispatcher console component, log accept/reject actions for model improvement. -->
+
+### Why These Services
+
+**Amazon Location Service for travel time and routing.** You need road-network travel times that account for current traffic conditions. Amazon Location Service gives you this: route calculations between arbitrary points with real-time traffic awareness, including route matrices (many-to-many travel times), which is exactly what you need when evaluating multiple candidate units against a call location. It replaces the need to build and maintain your own road network graph.
+
+**AWS Lambda for the real-time dispatch function.** The dispatch decision is a short-lived, stateless computation: take the current fleet state and call details, score candidate units, return the best assignment. Lambda gives you automatic scaling during high-call-volume periods and no infrastructure to manage. Provisioned concurrency is mandatory for the dispatch function (not optional). A cold start adding 2 seconds to a cardiac arrest dispatch is unacceptable. Set provisioned concurrency to handle your peak simultaneous dispatch rate (typically 3-5x your average concurrent dispatches to handle multi-casualty incident bursts). Monitor the `ProvisionedConcurrencySpilloverInvocations` metric; any spillover means a dispatch request hit a cold start. Target: zero spillover invocations.
+
+**Amazon DynamoDB for fleet state.** Unit locations, statuses, and capabilities change constantly. DynamoDB's single-digit-millisecond reads and writes make it ideal for the fleet state store. The dispatch function reads current state on every call; DynamoDB handles this access pattern without breaking a sweat. DynamoDB Streams can trigger downstream processing when state changes (e.g., a unit becomes available, triggering a coverage recalculation).
+
+**Amazon ElastiCache (Redis) for pre-computed travel time matrices.** Computing travel times on every dispatch call adds latency. For the most common origin-destination pairs (station locations to high-demand zones), pre-compute and cache travel times in Redis. Update the cache every few minutes with fresh traffic data. The dispatch function checks the cache first; only falls back to Location Service for cache misses.
+
+**AWS Step Functions for the repositioning workflow.** The background repositioning optimizer is a multi-step workflow: gather current fleet state, compute coverage levels, identify gaps, run the solver, issue move-up commands, wait for acknowledgment. Step Functions orchestrates this cleanly with built-in retry logic and state management.
+
+**Amazon SageMaker for demand forecasting.** The demand forecast model (predicting where calls will come from in the next few hours) is a time-series ML model trained on historical call data. SageMaker hosts the trained model behind a real-time endpoint that the repositioning optimizer queries.
+
+**Amazon Kinesis Data Streams for GPS ingestion.** Ambulance GPS units report location every 5 to 15 seconds. That's a high-throughput stream of small messages. Kinesis ingests these, and a Lambda consumer updates the fleet state in DynamoDB. This decouples the GPS feed from the state store and handles burst traffic gracefully.
+
+<!-- TODO (TechWriter): Expert review N1 (MEDIUM). Add discussion of GPS device authentication and data validation. GPS/AVL devices typically connect through a vendor gateway that forwards to Kinesis via an authenticated API (API Gateway with API keys or IAM auth). Validate coordinates (within service area bounds, speed physically plausible, timestamp recent). Flag impossible movement patterns as potential device malfunction or spoofing. -->
+
+**Amazon EventBridge for hospital status updates.** Hospitals publish diversion status, ED census, and bed availability through various mechanisms. EventBridge provides a clean event bus for these updates, routing them to the appropriate consumers (the hospital selection component of the dispatch optimizer).
+
+### Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph "Real-Time Dispatch (< 2 sec)"
+        A[911 Call / CAD] -->|Dispatch Request| B[API Gateway]
+        B --> C[Lambda: Dispatch Optimizer]
+        C -->|Read Fleet State| D[DynamoDB: Fleet State]
+        C -->|Travel Times| E[ElastiCache: Route Matrix]
+        C -->|Fallback| F[Amazon Location Service]
+        C -->|Hospital Status| G[DynamoDB: Hospital Status]
+        C -->|Assignment| H[CAD System / MDT]
+    end
+
+    subgraph "Fleet Tracking"
+        I[Ambulance GPS] -->|Location Stream| J[Kinesis Data Streams]
+        J --> K[Lambda: GPS Processor]
+        K -->|Update Position| D
+    end
+
+    subgraph "Background Optimization (every 2-5 min)"
+        L[EventBridge: Schedule] --> M[Step Functions: Repositioning]
+        M -->|Current State| D
+        M -->|Demand Forecast| N[SageMaker Endpoint]
+        M -->|Solve Coverage| O[Lambda: MIP Solver]
+        O -->|Move-Up Commands| H
+    end
+
+    subgraph "Hospital Integration"
+        P[Hospital Systems] -->|Diversion/Census| Q[EventBridge]
+        Q --> R[Lambda: Hospital Status Updater]
+        R --> G
+    end
+
+    style C fill:#ff9,stroke:#333
+    style D fill:#9ff,stroke:#333
+    style N fill:#f9f,stroke:#333
+```
+
+### Prerequisites
+
+| Requirement | Details |
+|-------------|---------|
+| **AWS Services** | Amazon Location Service, AWS Lambda, Amazon DynamoDB, Amazon ElastiCache (Redis), AWS Step Functions, Amazon SageMaker, Amazon Kinesis Data Streams, Amazon EventBridge, Amazon API Gateway |
+| **IAM Permissions** | `geo:CalculateRoute`, `geo:CalculateRouteMatrix`, `dynamodb:GetItem`, `dynamodb:PutItem`, `dynamodb:Query`, `kinesis:PutRecord`, `kinesis:GetRecords`, `sagemaker:InvokeEndpoint`, `states:StartExecution`. ElastiCache Redis access is controlled via security groups (Lambda in the same VPC/subnet with appropriate SG rules). If using IAM-based authentication (Redis 7.0+), scope `elasticache:Connect` to the specific replication group ARN. |
+| **BAA** | Required. Patient location, call details, and destination hospital are PHI under HIPAA. |
+| **Encryption** | DynamoDB: encryption at rest (default). ElastiCache: in-transit and at-rest encryption enabled. Kinesis: server-side encryption with customer-managed KMS CMK (automatic annual rotation enabled); restrict `kms:Decrypt` to the GPS processor Lambda execution role and authorized administrative principals. Use a separate CMK for the GPS stream to enable independent access control. All API calls over TLS. |
+| **VPC** | Production: Lambda functions in VPC with VPC endpoints for DynamoDB, Kinesis, SageMaker, and CloudWatch Logs. ElastiCache must be in VPC (it always is). Location Service accessed via VPC endpoint (preferred; keeps all traffic within the AWS network). Use NAT Gateway only if the Location Service VPC endpoint is not available in your region. |
+| **CloudTrail** | Enabled for all API calls. Dispatch decisions are auditable events. |
+| **Sample Data** | Synthetic call records with timestamps, locations, priorities. Synthetic fleet positions. Never use real patient data in dev. NEMSIS (National EMS Information System) provides de-identified dataset structures for testing. |
+| **Cost Estimate** | Location Service route calculations: $0.04 per request (batch matrix calls reduce this). Lambda: negligible at typical call volumes. DynamoDB: on-demand pricing, ~$50-200/month for a mid-size fleet. SageMaker endpoint: ~$100-500/month depending on instance. ElastiCache: ~$50-200/month for a small Redis cluster. Total: $2,000-8,000/month for a metro-area EMS system. |
+
+<!-- TODO (TechWriter): Expert review S6 (MEDIUM). Add dispatch decision audit trail specification. Every dispatch decision must be logged as an immutable audit record (full decision payload with all candidate scores, fleet state snapshot, travel times used, final assignment, and dispatcher accept/reject action). Store in DynamoDB table or S3 with object lock. Retention: minimum 7-10 years (state EMS record retention requirements vary). These records are legal documents and may be subpoenaed in malpractice cases. -->
+
+### Ingredients
+
+| AWS Service | Role |
+|------------|------|
+| **Amazon Location Service** | Road-network travel time calculations with real-time traffic |
+| **AWS Lambda** | Real-time dispatch scoring, GPS processing, hospital status updates |
+| **Amazon DynamoDB** | Fleet state store (unit positions, statuses, capabilities) and hospital status |
+| **Amazon ElastiCache (Redis)** | Cached travel time matrices for low-latency dispatch lookups |
+| **AWS Step Functions** | Orchestrates background repositioning optimization workflow |
+| **Amazon SageMaker** | Hosts demand forecast model for coverage optimization |
+| **Amazon Kinesis Data Streams** | Ingests high-throughput GPS location stream from fleet |
+| **Amazon EventBridge** | Routes hospital status events and triggers scheduled repositioning |
+| **Amazon API Gateway** | Exposes dispatch API to CAD system integration |
+| **AWS KMS** | Encryption key management for all data stores |
+| **Amazon CloudWatch** | Metrics, alarms, dashboards for response time monitoring |
+
+### Code
+
+#### Walkthrough
+
+**Step 1: Ingest fleet GPS and maintain state.** Every ambulance reports its GPS position every 5 to 15 seconds. These positions flow through Kinesis into a Lambda processor that updates the fleet state table. The state table is the single source of truth for "where is every unit right now and what are they doing?" Without this real-time state, the dispatch optimizer is working with stale information, and stale information in EMS means sending a unit that's actually 15 minutes away instead of the one that's 3 minutes away. The state table also tracks unit status transitions: available, dispatched, en route, on scene, transporting, at hospital, returning. Each transition updates the record and potentially triggers a coverage recalculation.
+
+```
+FUNCTION process_gps_update(gps_event):
+    // GPS event contains: unit_id, latitude, longitude, timestamp, speed, heading
+    unit_id   = gps_event.unit_id
+    latitude  = gps_event.latitude
+    longitude = gps_event.longitude
+    timestamp = gps_event.timestamp
+
+    // Update the fleet state table with the new position.
+    // Use a conditional write to avoid overwriting with an older GPS fix
+    // (out-of-order delivery is possible with streaming systems).
+    UPDATE fleet_state_table
+        SET latitude      = latitude,
+            longitude     = longitude,
+            last_gps_time = timestamp,
+            speed         = gps_event.speed,
+            heading       = gps_event.heading
+        WHERE unit_id = unit_id
+        AND last_gps_time < timestamp   // only accept newer fixes
+    // If conditional write fails (out-of-order fix), catch the exception and discard.
+    // This is expected behavior, not an error. Log at DEBUG level for troubleshooting.
+    // Do NOT retry or raise; the newer fix is already in the table.
+
+    // If the unit is currently en route to a call, recalculate ETA.
+    unit_record = GET fleet_state_table WHERE unit_id = unit_id
+    IF unit_record.status == "EN_ROUTE":
+        new_eta = calculate_travel_time(latitude, longitude, unit_record.destination)
+        UPDATE fleet_state_table SET current_eta = new_eta WHERE unit_id = unit_id
+```
+
+**Step 2: Score candidate units for dispatch.** When a call comes in, the dispatch optimizer needs to evaluate every available unit that meets the capability requirement. For each candidate, it computes a composite score that balances response time (primary), coverage impact (secondary), and operational factors (crew fatigue, fuel level, time remaining on shift). The scoring function is the heart of the system. A pure "closest unit" approach is fast but myopic. The scoring function adds system-level awareness: "yes, Unit 3 is closest, but sending it leaves the entire north zone uncovered, and Unit 5 is only 90 seconds farther." This is where optimization beats human intuition at scale.
+
+```
+FUNCTION score_candidates(call, available_units, fleet_state, coverage_model):
+    // call contains: location (lat/lng), priority (1-5), required_capability (ALS/BLS),
+    //               nature_code, patient_age
+    candidates = []
+
+    FOR each unit in available_units:
+        // Filter: unit must meet capability requirement
+        IF call.required_capability == "ALS" AND unit.capability != "ALS":
+            CONTINUE  // skip this unit, it can't handle this call
+
+        // Get travel time from unit's current position to call location.
+        // Check cache first; fall back to routing service for cache miss.
+        travel_time = get_travel_time(
+            origin      = (unit.latitude, unit.longitude),
+            destination = call.location
+        )
+
+        // Calculate coverage impact: what happens to system coverage if we send this unit?
+        // This is the key differentiator from simple proximity dispatch.
+        coverage_impact = coverage_model.evaluate_removal(unit.unit_id, unit.zone)
+        // coverage_impact is a score from 0 (no impact) to 1 (critical gap created)
+
+        // Operational factors
+        hours_on_shift  = (current_time - unit.shift_start) / 3600
+        fatigue_penalty = 0.0
+        IF hours_on_shift > 10:
+            fatigue_penalty = 0.1 * (hours_on_shift - 10)  // slight penalty for long shifts
+
+        // Composite score (lower is better)
+        // Weights are configurable and should be tuned per system
+        score = (
+            0.60 * normalize(travel_time, max=20)     // response time (dominant factor)
+          + 0.25 * coverage_impact                     // coverage preservation
+          + 0.10 * fatigue_penalty                     // crew welfare
+          + 0.05 * normalize(unit.calls_today, max=10) // workload balance
+        )
+
+        // Priority 1 calls: override coverage concern, pure speed matters
+        IF call.priority == 1:
+            score = 0.90 * normalize(travel_time, max=20) + 0.10 * coverage_impact
+
+        candidates.append({
+            unit_id:      unit.unit_id,
+            travel_time:  travel_time,
+            score:        score,
+            coverage_gap: coverage_impact
+        })
+
+    // Sort by score (ascending = best first)
+    SORT candidates BY score ASC
+    RETURN candidates
+```
+
+**Step 3: Select destination hospital.** Once a unit is assigned and the patient is assessed on scene, the system recommends a destination hospital. This is not always "the closest ED." A STEMI patient needs a cath lab. A stroke patient needs a certified stroke center. A trauma patient needs a Level I or II trauma center. And even when multiple hospitals meet the clinical requirement, you want to factor in current capacity: an ED with 40 patients boarding in the hallway and a 3-hour wait is not a good destination even if it's 2 minutes closer. Hospital diversion status, ED census, and specialty availability all feed into this decision.
+
+```
+FUNCTION select_hospital(patient_needs, unit_location, hospital_status_table):
+    // patient_needs contains: required_capabilities (list), acuity_level, special_requirements
+    // Example: required_capabilities = ["cath_lab", "interventional_cardiology"]
+
+    eligible_hospitals = []
+
+    FOR each hospital in hospital_status_table:
+        // Hard filter: hospital must have required capabilities
+        IF NOT all(cap in hospital.capabilities FOR cap in patient_needs.required_capabilities):
+            CONTINUE
+
+        // Hard filter: hospital must not be on diversion for this patient type
+        IF hospital.diversion_status == "FULL_DIVERSION":
+            CONTINUE
+        IF hospital.diversion_status == "CONDITIONAL" AND patient_needs.acuity_level < 3:
+            CONTINUE  // conditional diversion: only accepting critical patients
+
+        // Calculate transport time from unit's current location to hospital
+        transport_time = get_travel_time(unit_location, hospital.location)
+
+        // Capacity score: lower ED census relative to capacity is better
+        capacity_ratio = hospital.current_ed_census / hospital.ed_capacity
+        capacity_score = capacity_ratio  // 0.0 = empty, 1.0 = at capacity
+
+        // Composite destination score (lower is better)
+        dest_score = (
+            0.50 * normalize(transport_time, max=30)  // transport time matters most
+          + 0.35 * capacity_score                      // avoid overwhelmed EDs
+          + 0.15 * (1.0 IF hospital.has_specialty_bed ELSE 0.5)  // specialty bed availability
+        )
+
+        eligible_hospitals.append({
+            hospital_id:    hospital.id,
+            name:           hospital.name,
+            transport_time: transport_time,
+            score:          dest_score,
+            capabilities:   hospital.capabilities
+        })
+
+    SORT eligible_hospitals BY score ASC
+    RETURN eligible_hospitals[0]  // recommend the best option
+```
+
+**Step 4: Background coverage optimization (repositioning).** This runs every 2 to 5 minutes, or whenever a significant state change occurs (unit dispatched, unit becomes available, demand spike detected). It solves the coverage problem: given current unit positions and predicted demand, are there zones where response time would exceed the target if a call came in? If so, which idle unit should reposition to close the gap? This is where the heavier optimization lives. Because it's not blocking an active emergency, it can take 10 to 30 seconds to solve. The solver formulates this as a set-covering problem: minimize the number of unit moves while ensuring every demand zone has at least one unit within the target response time.
+
+```
+FUNCTION optimize_repositioning(fleet_state, demand_forecast, coverage_threshold):
+    // Get all idle (available) units and their current positions
+    idle_units = [u FOR u IN fleet_state WHERE u.status == "AVAILABLE"]
+
+    // Get demand zones with predicted call probability for next 30 minutes
+    demand_zones = demand_forecast.get_zone_probabilities(horizon_minutes=30)
+
+    // For each demand zone, check if any idle unit can reach it within threshold
+    uncovered_zones = []
+    FOR each zone in demand_zones:
+        IF zone.predicted_calls < 0.1:
+            CONTINUE  // very low probability, don't worry about it
+
+        // Find the fastest unit that could reach this zone's centroid
+        min_time = INFINITY
+        FOR each unit in idle_units:
+            time = get_travel_time(unit.location, zone.centroid)
+            min_time = MIN(min_time, time)
+
+        IF min_time > coverage_threshold:
+            uncovered_zones.append({
+                zone:           zone,
+                current_best:   min_time,
+                demand_weight:  zone.predicted_calls
+            })
+
+    IF uncovered_zones is empty:
+        RETURN []  // coverage is adequate, no moves needed
+
+    // Solve: which idle units should move where to cover the gaps?
+    // Formulate as assignment problem: minimize total repositioning cost
+    // while covering all high-priority gaps.
+    moves = solve_coverage_assignment(
+        units           = idle_units,
+        gaps            = uncovered_zones,
+        max_moves       = 3,              // don't move more than 3 units at once
+        move_cost_weight = 0.3,           // penalize long repositioning drives
+        coverage_weight  = 0.7            // prioritize closing coverage gaps
+    )
+
+    // Issue move-up commands
+    FOR each move in moves:
+        SEND move_up_command(
+            unit_id     = move.unit_id,
+            destination = move.target_position,
+            reason      = "Coverage gap in zone " + move.zone.id
+        )
+
+    RETURN moves
+```
+
+**Step 5: Demand forecasting.** The repositioning optimizer needs to know where calls are likely to come from. This is a spatial-temporal forecasting problem. Historical call data shows strong patterns: more calls in residential areas during evenings, more in commercial districts during business hours, spikes near bars after midnight on weekends, seasonal patterns around holidays. The forecast model takes time-of-day, day-of-week, weather, and special events as inputs and produces a probability distribution over the service area grid. This doesn't need to be perfect. Even a rough forecast that captures the major patterns dramatically improves proactive positioning versus purely reactive dispatch.
+
+```
+FUNCTION forecast_demand(current_time, weather, special_events, historical_data):
+    // Divide service area into grid zones (typically 1km x 1km for urban, larger for rural)
+    // For each zone, predict call probability in the next 30-minute window
+
+    features = {
+        hour_of_day:    current_time.hour,
+        day_of_week:    current_time.weekday,
+        month:          current_time.month,
+        is_holiday:     check_holiday_calendar(current_time),
+        temperature:    weather.temperature,
+        precipitation:  weather.precipitation_mm,
+        special_events: encode_events(special_events)  // concerts, sports, etc.
+    }
+
+    // Call the trained ML model (hosted on SageMaker endpoint)
+    zone_predictions = invoke_sagemaker_endpoint(
+        endpoint_name = "ems-demand-forecast",
+        payload       = features
+    )
+
+    // zone_predictions is a map: zone_id -> predicted_call_count (float, 0 to N)
+    // Normalize to probabilities for the coverage optimizer
+    total_predicted = SUM(zone_predictions.values())
+    zone_probabilities = {
+        zone_id: count / total_predicted
+        FOR zone_id, count IN zone_predictions
+    }
+
+    RETURN zone_probabilities
+```
+
+> **Curious how this looks in Python?** The pseudocode above covers the concepts. If you'd like to see sample Python code that demonstrates these patterns using boto3, check out the [Python Example](chapter14.08-python-example). It walks through each step with inline comments and notes on what you'd need to change for a real deployment.
+
+### Expected Results
+
+**Sample dispatch decision output:**
+
+```json
+{
+  "call_id": "CAD-2026-0601-1847",
+  "call_priority": 1,
+  "call_location": {"lat": 38.9072, "lng": -77.0369},
+  "nature_code": "CHEST_PAIN",
+  "assigned_unit": {
+    "unit_id": "MEDIC-7",
+    "capability": "ALS",
+    "estimated_response_time_seconds": 312,
+    "current_location": {"lat": 38.9121, "lng": -77.0298},
+    "route_distance_km": 2.1
+  },
+  "recommended_hospital": {
+    "hospital_id": "HOSP-GWU",
+    "name": "GW University Hospital",
+    "capabilities": ["cath_lab", "interventional_cardiology", "level_1_trauma"],
+    "estimated_transport_minutes": 8,
+    "current_ed_census": 24,
+    "ed_capacity": 45
+  },
+  "coverage_impact": {
+    "zone_gap_created": false,
+    "nearest_backup_unit": "MEDIC-12",
+    "backup_response_time_seconds": 480
+  },
+  "decision_timestamp": "2026-06-01T18:47:03.221Z",
+  "solver_time_ms": 847
+}
+```
+
+**Performance benchmarks:**
+
+| Metric | Typical Value |
+|--------|---------------|
+| Dispatch decision latency | 500ms to 2 seconds |
+| GPS state update latency | < 200ms (Kinesis to DynamoDB) |
+| Repositioning solve time | 10 to 30 seconds |
+| Demand forecast inference | < 500ms |
+| Response time improvement vs. proximity-only | 1 to 3 minutes average reduction |
+| Coverage maintenance | > 95% of zones within threshold |
+| Hospital selection accuracy | > 90% agreement with retrospective clinical review |
+
+**Where it struggles:**
+
+- **Simultaneous multi-casualty incidents.** The optimizer is designed for steady-state operations. A mass casualty event (MCI) overwhelms the model because it violates the assumption of independent, sequential calls. MCI protocols require a different decision framework entirely.
+- **GPS dead zones.** Parking garages, tunnels, dense urban canyons. If you lose GPS for 2 minutes, the fleet state is stale and dispatch decisions degrade.
+- **Rapid demand spikes.** A sudden weather event or large-scale accident can generate a burst of calls that exceeds fleet capacity. The optimizer can only assign units that exist; it can't create new ones.
+- **Inter-agency coordination.** Many metro areas have overlapping EMS jurisdictions (fire department, private ambulance, hospital-based EMS). The optimizer only controls units it can see. Mutual aid decisions still require human coordination.
+
+---
+
+## Variations and Extensions
+
+### Multi-Agency Coordination
+
+In metro areas with multiple EMS providers (fire-based, hospital-based, private), extend the optimizer to consider mutual aid units. This requires data sharing agreements, standardized status reporting across agencies, and a shared dispatch protocol. The technical challenge is modest (just more units in the candidate pool). The organizational challenge is enormous. Start with a read-only view of partner agency positions, then graduate to cross-agency dispatch recommendations.
+
+### Predictive Dispatch (Pre-Positioning for Events)
+
+For planned events (concerts, sporting events, parades), pre-position units based on historical call patterns for similar events. This is a batch optimization problem: given the event location, expected attendance, duration, and historical incident rates for similar events, where should you stage units and how many? Solve this hours or days in advance. The demand forecast model can be extended with event features to improve predictions.
+
+### Dynamic Routing with Real-Time Traffic Rerouting
+
+Once a unit is dispatched and en route, continue monitoring the route for traffic changes. If an accident blocks the planned route, automatically compute an alternative and push it to the unit's MDT (Mobile Data Terminal). This requires continuous route monitoring (not just a one-time calculation at dispatch) and integration with the in-vehicle navigation system. The marginal improvement is small (maybe 30 seconds saved on rare occasions), but in cardiac arrest, 30 seconds matters.
+
+---
+
+## Additional Resources
+
+### AWS Documentation
+
+- [Amazon Location Service Route Calculator](https://docs.aws.amazon.com/location/latest/developerguide/route-calculator.html): Route calculation API including travel time matrices
+- [Amazon Location Service Pricing](https://aws.amazon.com/location/pricing/): Per-request pricing for route calculations
+- [Amazon Kinesis Data Streams Developer Guide](https://docs.aws.amazon.com/streams/latest/dev/introduction.html): High-throughput streaming ingestion for GPS data
+- [Amazon SageMaker Real-Time Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/realtime-endpoints.html): Hosting ML models for low-latency prediction
+- [AWS Step Functions Developer Guide](https://docs.aws.amazon.com/step-functions/latest/dg/welcome.html): Orchestrating multi-step optimization workflows
+- [Amazon ElastiCache for Redis](https://docs.aws.amazon.com/AmazonElastiCache/latest/red-ug/WhatIs.html): In-memory caching for travel time lookups
+- [DynamoDB Streams](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Streams.html): Change data capture for fleet state events
+
+### Industry References
+
+- [NEMSIS (National EMS Information System)](https://nemsis.org/): National standard for EMS data collection and reporting. Useful for understanding data structures and benchmarking.
+<!-- TODO (TechWriter): Expert review V1 (MEDIUM). Verify and add links for NAEMD response time standards documentation and OR papers on ambulance dispatch optimization (Gendreau et al. 2001, Brotcorne et al. 2003). Provide DOI links rather than potentially unstable URLs. -->
+
+### Related Concepts
+
+- Vehicle Routing Problem (VRP) and its dynamic variants
+- Set Covering Location Problem (SCLP) for station placement
+- System Status Management (SSM) for dynamic redeployment
+- Medical Priority Dispatch System (MPDS) for call triage protocols
+
+---
+
+## Estimated Implementation Time
+
+| Phase | Duration | What You Get |
+|-------|----------|--------------|
+| **Basic** | 3-4 months | Proximity-based dispatch with travel time (replaces straight-line distance), basic fleet state tracking, single-hospital recommendation |
+| **Production-ready** | 8-12 months | Full scoring function with coverage awareness, background repositioning, demand forecasting, hospital capacity integration, dispatcher UI, simulation environment |
+| **With variations** | 14-18 months | Multi-agency coordination, predictive pre-positioning for events, dynamic rerouting, full analytics dashboard with response time reporting |
+
+---
+
+**Tags:** `optimization` · `vehicle-routing` · `real-time` · `ems` · `dispatch` · `geospatial` · `operations-research` · `coverage` · `fleet-management`
+
+---
+
+| [← 14.7: OR Case Sequencing](chapter14.07-or-case-sequencing) | [Chapter 14 Index](chapter14-preface) | [14.9: Chemotherapy Scheduling →](chapter14.09-chemotherapy-scheduling) |
+
+
+---
+
+*← [Main Recipe 14.8](chapter14.08-ambulance-routing-dispatch) · [Python Example](chapter14.08-python-example) · [Chapter Preface](chapter14-preface)*
