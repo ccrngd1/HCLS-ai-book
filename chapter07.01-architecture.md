@@ -74,7 +74,7 @@ flowchart TD
 
 **Step 1: Feature engineering.** The Glue job runs nightly, pulling the latest appointment and patient data from your scheduling system. For each upcoming appointment, it computes the features the model needs: the patient's historical no-show rate, the lead time in days, the day of week, the appointment type, and demographic factors. It also pulls the outcome labels for recent past appointments (to feed retraining). The output is a clean CSV or Parquet file in S3, one row per appointment, ready for the model. Skip this step and you're asking the model to work with raw database records that have no predictive signal computed.
 
-```
+```pseudocode
 FUNCTION compute_features(appointments, patient_history):
     // For each upcoming appointment, compute the feature vector
     // that the model needs to make a prediction.
@@ -142,7 +142,7 @@ FUNCTION compute_features(appointments, patient_history):
 
 **Step 2: Model training.** Periodically (weekly or monthly), a SageMaker training job picks up the historical feature dataset (appointments with known outcomes) and trains a gradient-boosted tree classifier. The training job handles hyperparameter tuning, cross-validation, and outputs both the model artifact and an evaluation report. The key metrics to track are AUC-ROC (overall discrimination ability), calibration (does a predicted 0.7 actually mean 70% no-show?), and performance across subgroups (does the model work equally well for different patient populations?). Skip retraining and your model will drift as patient behavior and scheduling patterns change over time.
 
-```
+```pseudocode
 FUNCTION train_model(training_data_path):
     // Configure the SageMaker training job.
     // XGBoost is the right choice for tabular binary classification:
@@ -183,7 +183,7 @@ FUNCTION train_model(training_data_path):
 
 **Step 3: Batch scoring.** Every evening, a SageMaker batch transform job scores all appointments for the next 48 hours. Batch transform is more cost-effective than a persistent endpoint for this use case: you need predictions once per day, not continuously. The job reads the feature file from Step 1, applies the trained model, and outputs a prediction for each appointment. Each prediction is a probability between 0.0 and 1.0 representing the model's estimate of no-show likelihood.
 
-```
+```pseudocode
 FUNCTION score_upcoming_appointments(model_path, features_path):
     // Configure batch transform: apply the model to all upcoming appointments at once.
     // This is cheaper than a real-time endpoint when you only need predictions once daily.
@@ -215,7 +215,7 @@ FUNCTION score_upcoming_appointments(model_path, features_path):
 
 <!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add conditional write guidance to prevent overwriting predictions already acted upon. Use condition expression `attribute_not_exists(acted_at)` or append a pipeline_run_id for audit consistency between predictions and actions. -->
 
-```
+```pseudocode
 FUNCTION store_predictions(predictions):
     // Write each prediction to DynamoDB for fast downstream access.
     // The action engine and scheduling UI both read from this table.
@@ -241,7 +241,7 @@ FUNCTION classify_risk(probability):
 
 **Step 5: Action engine.** A Lambda function, triggered by EventBridge on a schedule (e.g., every morning at 6 AM for that day's appointments, and again at 6 PM for the next day's), queries DynamoDB for high-risk appointments and triggers the appropriate intervention. The intervention depends on the risk tier and your operational capacity. High-risk appointments might get a personal phone call from staff. Medium-risk gets an automated text reminder. Low-risk gets the standard reminder workflow (which you probably already have). The key insight: this is where the prediction becomes action. A model that scores perfectly but never triggers an intervention is worthless.
 
-```
+```pseudocode
 FUNCTION run_action_engine(target_date):
     // Query all predictions for the target date, filtered to actionable risk levels.
     high_risk = query DynamoDB "appointment-predictions"
@@ -328,6 +328,8 @@ FUNCTION run_action_engine(target_date):
 - Patients who always confirm but still no-show. Confirmation behavior and actual attendance aren't perfectly correlated.
 - Seasonal shifts (holiday weeks, school breaks) that don't appear in the training window.
 - Practice changes (new provider, new location, new hours) that invalidate historical patterns.
+
+<!-- TODO (TechWriter): RECIPE-GUIDE requires a "Why This Isn't Production-Ready" section between Expected Results and Variations. Add section covering gaps a production deployment must close (monitoring, ground truth collection, fairness auditing, etc.). -->
 
 ---
 

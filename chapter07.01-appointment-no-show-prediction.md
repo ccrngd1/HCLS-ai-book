@@ -70,7 +70,7 @@ No-show prediction has several properties that make it unusually tractable:
 
 The pipeline has four logical stages:
 
-```
+```text
 [Feature Store] → [Model Training] → [Scoring Service] → [Action Engine]
 ```
 
@@ -114,3 +114,9 @@ Retraining frequency matters more than you'd think. Patient populations shift. N
 - **Recipe 12.1 (Appointment Volume Forecasting):** Complements no-show prediction by forecasting aggregate demand. Together, they enable intelligent capacity planning.
 
 ---
+
+**Tags:** `predictive-analytics`, `binary-classification`, `no-show`, `scheduling`, `operations`
+
+---
+
+| [← Chapter 7 Index](chapter07-preface) | [Chapter 7 Index](chapter07-preface) | [Recipe 7.2 →](chapter07.02-propensity-to-pay-scoring) |
