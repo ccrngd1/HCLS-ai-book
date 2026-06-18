@@ -93,9 +93,7 @@ The routing decision is implicit in the data source: continuous monitor feeds (s
 | **AWS KMS** | Manages encryption keys for all data stores and streams |
 | **Amazon CloudWatch** | Monitors pipeline health, latency, error rates; alarms on processing delays |
 
-### Code
-
-#### Walkthrough
+### Pseudocode Walkthrough
 
 **Step 1: Ingest vital sign event.** A new vital sign reading arrives from any source: a bedside monitor transmitting continuous waveforms, a nurse entering assessment data into the EHR, or a connected device reporting a measurement. The ingestion layer normalizes this into a standard event format and places it onto the streaming layer, keyed by patient ID to ensure per-patient ordering. The normalization step matters because different sources use different units (Celsius vs. Fahrenheit), different measurement types (invasive vs. non-invasive blood pressure), and different timestamp formats. Without normalization here, every downstream component would need to handle these variations. Skip this step and you get a stream of incompatible data formats that no trajectory logic can reliably process.
 
@@ -489,6 +487,8 @@ In production, pager notifications typically contain location identifiers (room/
 **Where it struggles:** Patients with highly variable baselines (atrial fibrillation patients whose HR naturally swings 30+ bpm). Post-operative patients where expected recovery trajectories are hard to distinguish from deterioration. Patients on multiple vasoactive medications where vital signs are being actively managed. And the first 4-6 hours of any admission, where the system doesn't yet know what "normal" is for this patient.
 
 ---
+
+<!-- TODO (TechWriter): RECIPE-GUIDE compliance. Missing "Why This Isn't Production-Ready" section between Expected Results and Variations. Add content covering gaps a production deployment must close (e.g., clinical validation study, alarm committee approval, EHR integration certification). Do not duplicate content already in The Honest Take. -->
 
 ## Variations and Extensions
 

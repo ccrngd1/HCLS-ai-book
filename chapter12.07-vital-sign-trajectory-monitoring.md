@@ -115,7 +115,7 @@ The biggest surprise: simple works. A basic slope + deviation model with good su
 
 ## Tags
 
-`time-series` · `vital-signs` · `trajectory` · `deterioration` · `streaming` · `kinesis` · `flink` · `timestream` · `dynamodb` · `clinical-monitoring` · `alert-fatigue` · `real-time` · `hipaa` · `medium-complex`
+`time-series` · `vital-signs` · `trajectory` · `deterioration` · `streaming` · `clinical-monitoring` · `alert-fatigue` · `real-time` · `hipaa` · `medium-complex`
 
 ---
 
