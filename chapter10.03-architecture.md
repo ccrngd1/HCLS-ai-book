@@ -191,7 +191,7 @@ flowchart LR
 
 **Step 1: Activate the session and capture audio.** The clinician presses the push-to-talk button on the rolling cart (or the foot pedal, or the headset button). The client app opens a streaming audio session through API Gateway's WebSocket endpoint. The session carries the clinician's authenticated identity, the device identity, and the SMART on FHIR launch context (the patient currently open in the EHR, if any). Audio frames stream as the clinician speaks. Skip the activation acknowledgment (the LED, the tone) and the clinician will not know whether the system heard them; this is the most common MVP regression.
 
-```
+```pseudocode
 ON activation_signal(device_id, clinician_session, smart_on_fhir_context):
     // Step 1A: validate the clinician session is current
     // and the SMART on FHIR launch context is fresh.
@@ -245,7 +245,7 @@ ON activation_signal(device_id, clinician_session, smart_on_fhir_context):
 
 **Step 2: Stream audio to ASR and finalize the transcript.** Audio frames stream from the client to API Gateway to the Transcribe streaming endpoint. Partial transcripts emit as audio is processed; the final transcript emits when end-of-utterance is detected (button release, in push-to-talk mode). The pipeline computes aggregate confidence and gates further processing on it. Skip the per-word confidence aggregation and the downstream layers cannot make confidence-aware decisions; the read-write boundary breaks down.
 
-```
+```pseudocode
 FUNCTION stream_audio_to_asr(audio_session, biasing_list):
     // Step 2A: open the Transcribe streaming session
     // with the appropriate language model variant. For
@@ -307,7 +307,7 @@ FUNCTION stream_audio_to_asr(audio_session, biasing_list):
 
 **Step 3: Parse the command into intent and slots.** The transcript goes to Lex (or the LLM fallback) for intent classification and slot extraction. The output is a structured command object with intent, slots, and per-component confidence. Strict validation against the configured taxonomy: out-of-vocabulary intents are coerced to "unknown" rather than passed through. Skip the strict validation and a hallucinated intent could trigger an unintended EHR action.
 
-```
+```pseudocode
 FUNCTION parse_command(transcript, session_context):
     // Step 3A: invoke the Lex bot. Lex returns the
     // intent name, slot values, per-intent confidence,
@@ -391,7 +391,7 @@ FUNCTION parse_command(transcript, session_context):
 
 **Step 4: Resolve context and disambiguate.** The parsed command meets the EHR's current context. If the command includes a patient slot, the patient is resolved against the day's schedule, the clinician's panel, or a broader index. Ambiguous matches go to a disambiguation prompt; unique matches proceed; zero matches go to a clarification prompt. The system never silently picks a patient when input is ambiguous. Skip this gate and you are one misrecognition away from opening the wrong patient's chart.
 
-```
+```pseudocode
 FUNCTION resolve_context(parsed_command, session_context):
     // Step 4A: re-fetch the EHR's current context. The
     // EHR is the authoritative source of truth; voice-
@@ -478,7 +478,7 @@ FUNCTION resolve_context(parsed_command, session_context):
 
 **Step 5: Confirm write-class commands; execute read-class commands directly.** The read-write classification gates the confirmation flow. Read commands execute immediately if the intent and slot confidence are above threshold; otherwise a brief confirmation card displays. Write commands always require explicit, non-voice confirmation: the system displays the proposed action and waits for a button press or typed signature. Skip the asymmetric confirmation rigor and either the system is too cautious to be useful (everything confirms) or too aggressive to be safe (writes execute on voice alone).
 
-```
+```pseudocode
 FUNCTION confirm_command(enriched_command, session_context):
     // Step 5A: read-only commands with high confidence
     // execute immediately.
@@ -543,7 +543,7 @@ FUNCTION confirm_command(enriched_command, session_context):
 
 **Step 6: Execute against the EHR and reflect the result.** The execution layer translates the structured command into one or more EHR API calls. SMART on FHIR is the preferred path; vendor-specific platforms are next; UI automation is the fallback. The result either updates the EHR's display directly (when the integration supports it) or returns data that the voice-navigation client renders alongside the EHR. Capture every API call's success or failure for the audit log. Skip detailed audit and you have no way to reconstruct what the system did when something goes wrong later.
 
-```
+```pseudocode
 FUNCTION execute_command(enriched_command, session_context):
     intent = enriched_command.intent
     slots = enriched_command.slots
@@ -656,7 +656,7 @@ FUNCTION execute_command(enriched_command, session_context):
 
 **Step 7: Audit and emit telemetry.** Every command is recorded with the full pipeline detail: original transcript, parsed intent, resolved slots, confirmation event (if any), execution result. The audit feeds two consumers: the durable HIPAA-grade audit log (DynamoDB plus S3 archive via Firehose) and the operational telemetry layer (CloudWatch metrics, EventBridge events). Skip the durable audit and you cannot reconstruct what the system did during an investigation or quality review.
 
-```
+```pseudocode
 FUNCTION audit_and_telemetry(enriched_command, confirmation_result, execution_log, session_context):
     // Step 7A: write the durable audit record. This is
     // the HIPAA-grade record of who issued what command,

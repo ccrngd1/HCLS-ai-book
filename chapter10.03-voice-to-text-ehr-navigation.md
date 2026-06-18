@@ -170,7 +170,7 @@ Some practical updates worth knowing.
 
 A voice-to-text EHR navigation system splits cleanly into seven logical stages: activation (the user signals intent to issue a command), audio capture (microphone, push-to-talk, optional wake word detection), transcription (streaming ASR with vocabulary biasing), command parsing (intent classification and slot extraction), context resolution (which patient, which encounter, which clinician, which device), execution (against the EHR via API, SMART on FHIR, or fallback automation), and feedback (visual confirmation in the EHR, optional voice confirmation, audit log).
 
-```
+```text
 ┌──────────────────── ACTIVATION ──────────────────────────┐
 │                                                           │
 │   [User signals start of command]                         │
