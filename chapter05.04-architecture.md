@@ -178,7 +178,7 @@ flowchart LR
 
 **Step 1: Ingest the eligibility-verification trigger.** Triggers come from registration (real-time), scheduled pre-warm (batch, runs nightly), batch reconciliation against payer rosters, charity-care screening, and refresh-on-coverage-change events. Each trigger produces a structured inquiry record with the patient, the payer, the service date, the requesting provider, the service-type codes, and the trigger metadata. Skip the trigger metadata and you lose the audit trail that lets you explain later why a particular inquiry was made.
 
-```
+```pseudocode
 FUNCTION ingest_eligibility_trigger(trigger_event):
     inquiry = {
         inquiry_id: generate_uuid(),
@@ -254,7 +254,7 @@ FUNCTION ingest_eligibility_trigger(trigger_event):
 
 **Step 2: Normalize the patient demographics for this payer.** Each payer has subtly different formatting expectations. The same patient submitted to two different payers needs two different 270 payloads. The normalization layer applies payer-specific rules from a configuration table. Skip this and you get more "member not found" responses than necessary because the payer's matcher could not parse what you sent.
 
-```
+```pseudocode
 FUNCTION normalize_inquiry(inquiry):
     // Step 2A: pull patient demographics from the MPI / active
     // registration record. Use the MPI master record where the
@@ -355,7 +355,7 @@ FUNCTION normalize_inquiry(inquiry):
 
 **Step 3: Submit the inquiry through the configured connectivity layer.** Real-time inquiries call the clearinghouse or direct-payer API and wait for the synchronous 271 response. Batch inquiries are queued for async submission. The connectivity layer handles authentication, retries with exponential backoff, timeout (calibrated to the response-time SLA), and idempotency on the inquiry hash. Skip retry-and-idempotency and you get duplicate transactions on transient failures, which clearinghouses charge for and which can produce confusing duplicate match outcomes.
 
-```
+```pseudocode
 FUNCTION submit_inquiry(inquiry):
     // Step 3A: select the connectivity channel based on payer
     // configuration. Direct connections to the largest payers,
@@ -409,7 +409,7 @@ FUNCTION submit_inquiry(inquiry):
 
 **Step 4: Evaluate the response and resolve identity.** The 271 response (or FHIR response) comes back with one of several outcomes: primary key matched, search match returned, search match with multiple candidates, not found, rejected, or partial. The evaluator parses the response, runs the probabilistic-record-linkage scorer against the candidate(s), and applies confidence thresholds. Skip this and you trust the payer's match decision blindly, which is wrong about a measurable fraction of the time (in particular, search-match candidates need scoring on your side too because the payer's matcher does not see the same demographic context yours does).
 
-```
+```pseudocode
 FUNCTION evaluate_response(inquiry):
     response = inquiry.response
 
@@ -564,7 +564,7 @@ FUNCTION evaluate_response(inquiry):
 
 **Step 5: Persist the match outcome and propagate.** Write the match outcome to DynamoDB (and the cache), archive to S3, emit an EventBridge event. Downstream consumers pick up the event and update their views. Skip the event emission and downstream consumers either pull on a stale cache or block on the eligibility lookup, defeating the purpose of the asynchronous pipeline.
 
-```
+```pseudocode
 FUNCTION persist_and_propagate(inquiry, match_outcome):
     // Step 5A: read the previous match outcome for this
     // (patient, payer, service_date) so we can detect changes.
@@ -661,7 +661,7 @@ FUNCTION persist_and_propagate(inquiry, match_outcome):
 
 **Step 6: React to coverage-change signals and invalidate cached eligibility.** Eligibility data changes constantly. The system subscribes to coverage-change signals (monthly payer roster delta, 277/277CA claim status responses, 834 enrollment files, patient-side events from recipes 5.1 and 5.3) and invalidates affected cache entries. Skip the invalidation pipeline and the cache slowly fills up with stale answers; revenue cycle starts seeing claim denials for coverage that the cache thought was active.
 
-```
+```pseudocode
 FUNCTION invalidate_on_coverage_change(change_event):
     // Step 6A: classify the change event and identify the
     // affected (patient, payer, service_date) keys.

@@ -124,7 +124,7 @@ A few practical updates worth knowing:
 
 The pipeline has six logical stages: ingest the eligibility-verification trigger (real-time at registration, scheduled pre-warm, batch reconciliation), normalize the patient demographics on the requesting side, route the inquiry to the right payer, evaluate the response and resolve identity, persist the matched eligibility state with provenance, and react to downstream events that invalidate cached eligibility.
 
-```
+```text
 ┌────────────── INGEST / TRIGGER ───────────────────┐
 │                                                    │
 │  [Trigger sources]                                 │
