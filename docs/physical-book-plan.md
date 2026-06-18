@@ -1,7 +1,7 @@
 # Physical Book Plan & Main-Third Finalization
 
 Status: **DRAFT — pending selection sign-off**
-Last updated: 2026-06-18 (finding-resolution overnight runbook added, section 6b)
+Last updated: 2026-06-18 (added section 2b: print cross-reference transform; section 6b runbook)
 
 ## 1. Vision
 
@@ -15,6 +15,21 @@ Last updated: 2026-06-18 (finding-resolution overnight runbook added, section 6b
 - **Print = story third only.** Architecture + python stay digital; print callouts point readers to the digital edition.
 - **Publishing path:** print-on-demand. Amazon KDP (simplest) or IngramSpark (better wholesale/bookstore reach). Generate a print-specific 6x9 PDF from the selected Markdown.
 - **Tightening applies to the main third regardless of medium.** Dense prose is a problem online too. But it is targeted, not uniform (see §5).
+
+## 2b. Print as a derived artifact: the cross-reference transform (added 2026-06-18)
+
+The print edition is a **derived artifact built from the canonical source**, the same way the HTML and EPUB variants are. The canonical recipe files are never edited for print; a build step takes a copy and applies print-specific transforms. This keeps the digital edition's cross-references valid (the full book has all 152 recipes) while making the print subset self-contained.
+
+**Why this is needed:** the flagship is a breadth sampler (one recipe per chapter), so a recipe's intra-chapter cross-references almost never resolve in print. Example: recipe 2.5 references 2.1, 2.2, 2.4, 2.6, 2.8, and 11.x, but only 11.6 is in the flagship-15. As-is, the printed recipe would point to pages that do not exist.
+
+**Print-build cross-reference transforms (applied to a copy, uniformly across all flagship recipes):**
+
+1. **Strip the navigation footer** (`← Recipe N · Recipe N →`) entirely. It is web sequential navigation and is meaningless in a 15-recipe book.
+2. **Reframe the "Related Recipes" section** into a short pointer to the digital edition rather than a list of absent recipes, for example: *"In the full digital cookbook, this recipe connects to patient-message drafting, prior-auth letter generation, and ambient documentation. See [digital edition]."* This removes dangling references and doubles as a hook back to the canon.
+3. **Rewrite inline `Recipe N.N` mentions to describe the concept**, dropping the number: "unlike Recipe 2.1, which handles one-off messages" becomes "unlike one-off patient messaging." Where a referenced recipe IS also a flagship, renumber it to its print chapter instead of removing it.
+4. (Also in this pass, per Phase C) rewrite the architecture-companion callout to point at the digital edition, and add print front/back matter.
+
+**Implementation note:** this is a transform in the print pipeline (canonical Markdown -> print-adapted Markdown -> 6x9 PDF), parallel to the HTML/EPUB builders. It must be deterministic and re-runnable, and it must never write back to the canonical files. The set of "flagship recipes present in print" is the input that drives the renumber-vs-remove decision for each cross-reference.
 
 ## 3. Flagship-15 selection (PROPOSED — needs sign-off)
 
@@ -104,7 +119,7 @@ For the *later* full-book pass, after the physical book ships. The median recipe
 
 - **Phase A — Lock selection.** Confirm/adjust the flagship-15 (§3).
 - **Phase B — Finalize the 15.** Apply the §4 rubric. Pilot the tightening on the 4 heavy ones (2.5, 4.9, 10.7, 11.6) by hand for sign-off, then light cleanup on the other 11. Higher editorial bar than the web polish run.
-- **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online").
+- **Phase C — Print pipeline.** `print/` manifest of the 15; 6x9 PDF build path; front matter (title, copyright, preface, how-to-use, URL/QR to the digital edition) + back matter (index, "137 more recipes online"). Includes the cross-reference transform (see section 2b).
 - **Phase D — Publish.** KDP or IngramSpark.
 - **Phase E — Book-wide tightening.** Work the 41-recipe backlog (§5) via a ralph run (TechEditor edits, TechExpertReviewer enforces rubric), independent/parallel, plus scaffolding + vendor cleanup across the broader corpus.
 
