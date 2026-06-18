@@ -20,6 +20,8 @@
 
 **Amazon EventBridge for orchestration.** The scoring pipeline runs on a schedule (weekly or monthly). EventBridge Scheduler triggers the pipeline, and EventBridge rules route completion events to downstream consumers (notifications to care managers, updates to the care management platform, alerts for rapid deterioration).
 
+<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about pipeline failure monitoring: recommend Step Functions or equivalent orchestrator with error handling. Each step should emit success/failure metrics to CloudWatch. Configure alarms for: pipeline not completing within expected window, any step failure, anomalous output (flagged count deviating >50% from prior cycle). Alert ops team if pipeline fails, since a missed cycle means rising-risk patients go unidentified for an additional month. -->
+
 <!-- TODO (TechWriter): Expert review S2 (MEDIUM). Add note: SNS notifications with patient IDs and trajectory data are PHI. Restrict subscriptions to HIPAA-compliant endpoints (SQS, Lambda, HTTPS). Avoid email/SMS with clinical details. Send minimal alerts with dashboard links instead of embedding trajectory data in notification body. -->
 
 **Amazon QuickSight for population-level dashboards.** Leadership needs to see the rising risk population in aggregate: how many patients are flagged, what's the distribution of trajectory severity, which programs are at capacity. QuickSight can query the S3 score history directly, so you don't need to stand up a separate data warehouse just for leadership dashboards.
@@ -82,7 +84,7 @@ flowchart TD
 
 **Step 1: Feature assembly from source systems.** On each scoring cycle, pull the relevant clinical and utilization data for the entire managed population. This includes current diagnoses, recent lab results, medication lists, encounter history, and prior utilization. The feature set should match what the risk model was trained on, plus additional temporal features (days since last visit, number of encounters in trailing windows). This step is the most time-consuming because it involves joining data from multiple source systems, handling missing values, and applying the same transformations used during model training. Skip this step or get the transformations wrong, and your scores will be meaningless or worse, systematically biased.
 
-```
+```pseudocode
 FUNCTION assemble_features(population_list, scoring_date):
     // Pull data for all patients in the managed population as of the scoring date.
     // Each source system provides a different slice of the patient's clinical picture.
@@ -123,7 +125,7 @@ FUNCTION assemble_features(population_list, scoring_date):
 
 **Step 2: Batch risk scoring.** Pass the assembled feature matrix through the trained risk model to produce a risk score for every patient in the population. This is a batch operation: you're scoring hundreds of thousands of patients in a single job, not one at a time. The output is a score (typically a probability or a relative risk index) for each patient, timestamped with the current scoring cycle. These scores will be appended to the longitudinal history, not overwritten. Every historical score is retained because trajectory computation needs the full time series.
 
-```
+```pseudocode
 FUNCTION score_population(feature_matrix, model_endpoint, scoring_date):
     // Submit the full feature matrix to the model for batch scoring.
     // The model returns one risk score per patient.
@@ -155,7 +157,7 @@ FUNCTION score_population(feature_matrix, model_endpoint, scoring_date):
 
 **Step 3: Trajectory computation.** This is the core of rising risk detection. For each patient, retrieve their full score history and compute trajectory metrics: slope over multiple time windows, absolute and relative deltas, acceleration (change in slope), and percentile position. The multi-window approach is important because it captures both rapid deterioration (3-month spike) and slow drift (12-month gradual increase). A patient might have a flat 3-month trajectory but a clearly rising 12-month trajectory, or vice versa. Both patterns are clinically meaningful but suggest different intervention urgencies.
 
-```
+```pseudocode
 FUNCTION compute_trajectories(current_scores, score_history):
     // For each patient, compute trajectory metrics using their full score history.
     // This is embarrassingly parallel: each patient's computation is independent.
@@ -229,7 +231,7 @@ FUNCTION compute_trajectories(current_scores, score_history):
 
 **Step 4: Rising risk detection and classification.** Apply detection rules to the trajectory metrics to identify patients whose risk is meaningfully increasing. The rules combine multiple signals to reduce false positives: a single elevated metric might be noise, but multiple converging indicators suggest genuine deterioration. The output is a classified list: patients flagged as "rising risk" with a severity tier and the specific signals that triggered the flag. This transparency is critical for care managers, who need to understand why a patient was flagged before they can design an appropriate intervention.
 
-```
+```pseudocode
 // Detection thresholds. These should be calibrated to your population and intervention capacity.
 // Start conservative (fewer flags, higher confidence) and loosen as you validate.
 THRESHOLDS = {
@@ -303,7 +305,7 @@ FUNCTION detect_rising_risk(trajectories):
 
 **Step 5: Store results and route to care management.** Write the rising risk flags to the operational database so care management platforms can access them in real-time. Also emit events for newly flagged patients so care managers receive notifications. The routing logic determines which care management program is most appropriate based on the nature of the risk increase (e.g., behavioral health escalation vs. chronic disease management vs. social needs). Include the trajectory summary in the notification so the care manager has context without needing to look it up separately.
 
-```
+```pseudocode
 FUNCTION store_and_route(flagged_patients, previous_flags):
     // Identify newly flagged patients (not flagged in the previous cycle).
     // Only send notifications for new flags to avoid alert fatigue.

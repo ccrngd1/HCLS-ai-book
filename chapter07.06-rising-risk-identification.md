@@ -104,13 +104,11 @@ Identifying rising-risk patients is only half the problem. The other half is dec
 
 The rising risk pipeline operates on a different cadence than real-time scoring. It's a batch process that runs periodically (weekly or monthly), compares current state to historical state, and produces a ranked list of patients whose trajectories warrant attention.
 
-```
+```text
 [Periodic Risk Scoring] → [Score History Storage] → [Trajectory Computation] → [Rising Risk Detection] → [Prioritization & Routing]
 ```
 
 **Periodic Risk Scoring.** On a regular schedule, compute risk scores for the entire managed population. This might use an existing risk model (HCC, proprietary, or custom ML) or a purpose-built trajectory model. The key requirement is consistency: the same model version must be used across scoring cycles, or score comparisons become meaningless.
-
-<!-- TODO (TechWriter): Expert review A3 (MEDIUM). Add note about pipeline failure monitoring: recommend Step Functions or equivalent orchestrator with error handling. Each step should emit success/failure metrics to CloudWatch. Configure alarms for: pipeline not completing within expected window, any step failure, anomalous output (flagged count deviating >50% from prior cycle). Alert ops team if pipeline fails, since a missed cycle means rising-risk patients go unidentified for an additional month. -->
 
 **Score History Storage.** Every scoring cycle's results are stored with timestamps, creating a longitudinal record of each patient's risk trajectory. This is a time-series storage problem: millions of patients, each with a score at each cycle, potentially going back years. The storage must support efficient queries like "give me all scores for patient X over the last 24 months" and "give me all patients whose most recent score exceeds their score from 6 months ago by more than 0.5."
 
