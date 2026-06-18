@@ -4,7 +4,7 @@
 
 ---
 
-## Why These Services (AWS Implementation)
+## Why These Services
 
 <!-- TODO (TechWriter): Expert review C1 (CRITICAL). Introduce each AWS service and explain why it was chosen for that specific piece of the architecture. The Python companion uses Amazon S3, AWS Glue, Amazon SageMaker, AWS Lambda, AWS Step Functions, Amazon DynamoDB, Amazon EventBridge, and Amazon CloudWatch. Connect each back to the conceptual stage from the General Architecture Pattern section. -->
 
@@ -96,36 +96,6 @@ Apply the chapter-12 pattern of leaving an audit-pass TODO note acknowledging th
 ## Estimated Implementation Time
 
 <!-- TODO (TechWriter): Expert review C1 (CRITICAL). Three tiers (Basic, Production-ready, With variations) per RECIPE-GUIDE. Use the chapter-12 pattern from recipes 12.4 and 12.5 as the reference for ranges. -->
-
----
-
-## Code Review Findings (forwarded to TechWriter)
-
-The Python companion `chapter12.06-python-example.md` has been code-reviewed (verdict PASS, see `reviews/chapter12.06-code-review.md`). Findings the TechWriter must address when drafting the architecture companion and reconciling the Python companion:
-
-<!-- TODO (TechWriter): Code review W1 (WARNING). Denial-and-appeal sub-process double-counts the denied-recovered cohort already absorbed into the Kaplan-Meier curve. The fitted curve in `fit_payer_payment_curves` includes denied-recovered claims as paid events at lag = first_lag + appeal_extra; `simulate_claim_payment` then re-rolls a fresh denial-and-appeal sub-process on top of the curve. Resolutions: (a) drop the explicit denial sub-process and use the curve directly, with prose stating the curve absorbs the recovered-from-appeal cohort by construction; or (b) carve out the denial-recovery cohort from the curve fitting (only fit on `denial_flag=False` records) and then explicitly compose the two distributions in the simulation. The per-claim `denial_flag` is also currently ignored; bias the denial branch on `claim.get("denial_flag")` so a claim with `denial_flag=True` always goes down the appeal branch and a claim with `denial_flag=False` samples a fresh denial outcome. The chosen resolution must be reflected in the main recipe's Denial-and-Appeals subsection. -->
-
-<!-- TODO (TechWriter): Code review W2 (WARNING). Step 4 section header in the Python companion is "Aggregate to Per-Week Cash Flow Forecasts" but the file's preamble describes Step 4 as "seasonality, denial-and-appeal cycle adjustments, and patient-responsibility tail modeling." The actual seasonality logic lives inside Step 3 (`simulate_cash_flow`) and the denial-and-appeal logic lives inside Step 3 (`simulate_claim_payment`). Patient-responsibility tail modeling is not implemented as a separate step. Either relabel the Step 4 section header to match the aggregation function it actually heads, or move the seasonality/denial/self-pay logic into a true Step 4 function. The main recipe's pseudocode walkthrough must agree with whichever resolution lands. -->
-
-<!-- TODO (TechWriter): Code review NOTE 1. `harmonize_ar_records` is called twice in `run_cash_flow_pipeline` and re-writes the same S3 keys with the same content. Remove the duplicate invocation. -->
-
-<!-- TODO (TechWriter): Code review NOTE 2. Dict comprehension in the trajectory write is a no-op. Either remove it or replace it with the intended transformation. -->
-
-<!-- TODO (TechWriter): Code review NOTE 3. Magic-number `or 30` fallback when the curve sample returns `None` in the denial-recovery branch. Promote the fallback to a named constant with a comment explaining the rationale, or compute it from the curve's median. -->
-
-<!-- TODO (TechWriter): Code review NOTE 4. `simulate_cash_flow` silently skips claims with no payer curve, with no metric or count. Add a CloudWatch counter for skipped claims and log the payer ids that lack curves. -->
-
-<!-- TODO (TechWriter): Code review NOTE 5. Module-level boto3 clients `sagemaker_runtime` and `lambda_client` are constructed but never exercised, even by the production code paths the comment promises. Either remove them or wire them into the production-path comment block so the example illustrates the intended invocation. -->
-
-<!-- TODO (TechWriter): Code review NOTE 6. Manual outer chunking around `batch_writer` is redundant given the SDK auto-chunks. Remove the manual chunking and let `batch_writer` handle it. -->
-
-<!-- TODO (TechWriter): Code review NOTE 7. Per-record `as_of` timestamp evaluates `datetime.now(timezone.utc)` once per record. Hoist the timestamp computation out of the loop so all records in a single forecast run share the same `as_of` value. -->
-
-<!-- TODO (TechWriter): Code review NOTE 8. Sample Output prose says "Numbers vary because of the synthetic-data noise" but the seed is fixed across all generators. Either remove the variability claim from the prose or unfix the seed (and document the determinism trade-off explicitly). -->
-
-<!-- TODO (TechWriter): Code review NOTE 9. `aggregate_forecasts` percentile selection uses index truncation rather than interpolation. Replace with `statistics.quantiles` or a NumPy `percentile` call so P10/P50/P90 match the standard library and the panel's expected definitions. -->
-
-<!-- TODO (TechWriter): Code review NOTE 10. `_to_decimal` returns `bool` unchanged rather than converting. Add an `isinstance(value, bool)` branch that converts to `Decimal(int(value))` so the boolean flags do not bypass the Decimal discipline at the DynamoDB write site. -->
 
 ---
 
