@@ -110,7 +110,7 @@ Duplicate detection can run in either mode, and the right choice depends on when
 
 **Retrospective.** Run the detector against already-paid claims to identify duplicates that slipped through, then recover payments. Some of the biggest payback comes from this mode, but it's slow and it's a different operational workflow (recovery, not prevention).
 
-Most payers end up running batch for prevention and retrospective for recovery, sometimes with a real-time layer for specific high-risk claim types. All three modes share the same scoring logic; what differs is the trigger and the action. For this recipe, we'll build the batch pre-adjudication pattern, because it covers the common case and it's the pattern that maps most cleanly to AWS primitives. The real-time variant is a straightforward adaptation (swap the batch trigger for an event stream; keep everything else).
+Most payers end up running batch for prevention and retrospective for recovery, sometimes with a real-time layer for specific high-risk claim types. All three modes share the same scoring logic; what differs is the trigger and the action. For this recipe, we'll build the batch pre-adjudication pattern, because it covers the common case and it's the pattern that maps most cleanly to managed cloud services. The real-time variant is a straightforward adaptation (swap the batch trigger for an event stream; keep everything else).
 
 ---
 
