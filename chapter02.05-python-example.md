@@ -706,7 +706,7 @@ def validate_summary(
 
         # Bidirectional substring check: asserted must appear in source
         # or source must appear in asserted. This is forgiving (it accepts
-        # "5 mg" claimed against a source "apixaban 5 mg twice daily") but
+        # "5 mg" claimed against a source "warfarin 5 mg once daily") but
         # will reject a dose mismatch ("10 mg" vs source "5 mg").
         if asserted_norm in source_norm or source_norm in asserted_norm:
             continue  # verified
@@ -1185,9 +1185,9 @@ if __name__ == "__main__":
         "medications": [
             {
                 "id": "MED-NEW-001",
-                "name": "apixaban",
+                "name": "warfarin",
                 "dose": "5 mg",
-                "frequency": "twice daily",
+                "frequency": "once daily in the evening",
                 "change_type": "new",
                 "reason": "stroke prevention in atrial fibrillation",
                 "changed_today": True,
@@ -1196,8 +1196,8 @@ if __name__ == "__main__":
         "orders": [
             {
                 "id": "ORD-001",
-                "name": "Complete blood count and basic metabolic panel",
-                "instructions": "Draw in 3 days at any in-network lab",
+                "name": "INR (prothrombin time)",
+                "instructions": "Draw in 3 days at any in-network lab, then on a regular schedule",
                 "when_expected": "Results within 2 business days",
             }
         ],
@@ -1221,16 +1221,18 @@ if __name__ == "__main__":
         "note_text": (
             "Patient is a 68-year-old with new-onset atrial fibrillation "
             "diagnosed on today's ECG. Counseled at length on stroke risk "
-            "and anticoagulation rationale. Started apixaban 5 mg twice "
-            "daily. Discussed red-flag symptoms: the patient should call "
+            "and anticoagulation rationale. Started warfarin 5 mg once "
+            "daily in the evening. Counseled to keep dietary vitamin K "
+            "(leafy green vegetables) intake consistent from week to week. "
+            "Discussed red-flag symptoms: the patient should call "
             "911 for sudden severe headache, one-sided weakness, trouble "
             "speaking, chest pain, or bleeding that will not stop. Call "
             "the office during business hours for easy bruising, nose "
             "bleeds, blood in urine or stool, or dizziness. Lifestyle "
             "counseling included avoiding contact sports and notifying "
             "all providers of anticoagulation before any procedure. "
-            "Return for follow-up in 2 weeks (scheduled). Labs ordered "
-            "for day 3 to establish baseline."
+            "Return for follow-up in 2 weeks (scheduled). INR ordered "
+            "for day 3, then on a regular monitoring schedule."
         ),
     }
 

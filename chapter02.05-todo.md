@@ -1,16 +1,9 @@
 # Open TODOs — Recipe 2.5: After-Visit Summary Generation
 
-> Auto-extracted 2026-06-18 from inline source comments (26 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+> Auto-extracted 2026-06-18 from inline source comments (24 items; S2 resolved 2026-06-18). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
 
 ## main — `chapter02.05-after-visit-summary-generation.md`
 
-- **L9** — TODO (EXPERT REVIEW - CRITICAL, Finding S2): The anticoagulation vignette below
-     is written for warfarin (greens interact, INR draw at 3 days) but the Sample Output
-     in "Expected Results" shows apixaban 5 mg with a CBC/kidney check at 3 days.
-     These clinical pictures are incompatible. Pick one drug and use it consistently
-     across the Problem narrative and the Sample Output. The reviewer recommends
-     keeping warfarin here (the specific details are strong teaching) and switching
-     the Sample Output to match. See reviews/chapter02.05-expert-review.md Finding S2.
 - **L21** — TODO: verify specific percentages against current health literacy literature (Kessels 2003 is commonly cited but somewhat dated)
 - **L21** — TODO (EXPERT REVIEW - LOW, Finding V3): The "8th-grade level" shorthand traces back to NAAL 2003. Consider softening to AHRQ/CDC guidance targeting 6th-to-8th-grade for patient materials, without the "average" framing.
 - **L25** — TODO: verify current CMS readmission statistics
@@ -97,13 +90,6 @@
      Also add a section in "Why This Isn't Production-Ready" titled "SMS and PHI"
      covering HIPAA consent, content-minimization best practice, lack of SMS
      end-to-end encryption, and jurisdiction-specific overlays. See Finding S1.
-- **L569** — TODO (EXPERT REVIEW - CRITICAL, Finding S2): This sample shows apixaban 5 mg
-     and a CBC/kidney-check lab, which is clinically correct for a DOAC. The Problem
-     section narrative describes warfarin counseling (greens interact, INR draw).
-     Either this sample or the Problem narrative must change so they are consistent.
-     Reviewer recommends changing this sample to a warfarin picture (e.g., warfarin
-     5 mg nightly, INR in 3 days, keep leafy-green intake steady, same bleeding
-     warning list) so the Problem section's concrete details map to the AVS.
 - **L577** — TODO (EXPERT REVIEW - MEDIUM, Finding A5): The factual_claims array below lists
      only 5 claims, but the summary text contains 15-25 specific claims (warning
      signs, lifestyle instructions, practice phone, hours, etc.). For a recipe
