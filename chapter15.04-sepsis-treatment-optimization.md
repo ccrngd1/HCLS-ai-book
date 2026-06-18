@@ -131,7 +131,7 @@ If you're building this: start with the data pipeline and evaluation infrastruct
 
 ## Tags
 
-`reinforcement-learning` · `offline-rl` · `sepsis` · `treatment-optimization` · `icu` · `clinical-decision-support` · `sagemaker` · `safety-constraints` · `off-policy-evaluation` · `medium-complexity` · `research-stage` · `hipaa`
+`reinforcement-learning` · `offline-rl` · `sepsis` · `treatment-optimization` · `icu` · `clinical-decision-support` · `safety-constraints` · `off-policy-evaluation` · `medium-complexity` · `research-stage` · `hipaa`
 
 ---
 
