@@ -123,14 +123,6 @@ The same pattern as Recipes 4.5 through 4.7, with treatment-response-specific no
 - **Free-form clinical reasoning about which drug to choose.** No. The LLM does not pick; it packages. The line is the same line as in 4.7. Treatment-response prediction is the highest-stakes recipe in this chapter, so the line is even more important.
 - **Evidence synthesis and citation.** Yes, when the system surfaces guideline references, trial evidence, and consensus statements alongside the model's prediction. The LLM packages a structured evidence summary; the underlying citations come from a curated knowledge source (formulary, UpToDate or similar via licensed integration, society guidelines), not from the LLM's own knowledge. 
 
-### Where This Sits in the Chapter
-
-This recipe is the most clinically consequential in Chapter 4 and inhabits the borderland between research-grade methodology and production decision support. The patient-feature pipeline from earlier recipes (4.1 through 4.7) is reused: the feature store contents for clinical risk, comorbidity profile, medication history, adherence patterns, social determinants. The cohort fairness instrumentation from 4.3 through 4.7 is reused, with sharper consequences here because cohort-stratified treatment-effect estimates that systematically favor or disfavor protected populations are direct civil-rights concerns. The validator pattern protecting LLM outputs from 4.5 through 4.7 is reused, with stricter rules: the validator allows the LLM to *describe* the comparison but not to *recommend* a specific treatment, and any text that crosses into recommendation is rewritten or suppressed.
-
-The new architectural pieces are the treatment catalog (the structured representation of the treatments in scope, with comparators, eligibility criteria, outcome definitions, and target patient phenotypes), the causal-inference modeling stack (per-treatment-comparator CATE models with multiple estimators), the cohort-retrieval engine (the "similar patient" lookup, with proper handling of the failure modes above), the uncertainty-aware scoring layer, the clinician-facing comparison view (the part the clinician actually sees), the regulatory-aware governance layer (model risk classification, predetermined change control plan, post-deployment surveillance), and the post-decision feedback loop (the patient's actual outcome compared to the prediction, fed into model retraining and calibration drift detection).
-
-This is also the recipe where the rest of Chapter 4 starts feeding 4.9 (personalized care plan generation) and 4.10 (dynamic treatment regime recommendation): the per-treatment CATE estimate is one input to the broader care-plan synthesis in 4.9 and the sequential-decision-making in 4.10.
-
 ---
 
 ## General Architecture Pattern

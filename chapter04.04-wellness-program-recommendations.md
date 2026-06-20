@@ -130,12 +130,6 @@ Same answer as 4.2 and 4.3, with a wellness-specific twist:
 
 What the LLM does not do: pick the program. The recommender picks the program. The LLM packages it.
 
-### Where This Sits in the Chapter
-
-Recipes 4.1 through 4.3 built the personalization infrastructure: patient profile store, engagement event pipeline, content recommendation patterns, fairness re-ranking. Recipe 4.4 reuses all of it and adds three new capabilities: uplift modeling, capacity-aware allocation, and longitudinal outcome tracking. The patient-profile store from 4.1 is the same store. The engagement-event stream is the same stream (with new event types added: `program_recommended`, `program_enrolled`, `program_session_attended`, `program_completed`, `program_dropped_out`). The cohort dashboards are the same dashboards (with new metrics added: per-program enrollment rate, completion rate, uplift estimate by cohort).
-
-Looking forward, Recipes 4.5 (Medication Adherence Intervention Targeting) and 4.7 (Care Management Program Enrollment) reuse the uplift-and-allocation pattern almost wholesale. The uplift-modeling investment you make in 4.4 is reusable infrastructure for the rest of the chapter. The capacity allocator becomes more sophisticated in 4.7 and graduates to formal optimization in Chapter 14, but the bones are the same.
-
 ---
 
 ## General Architecture Pattern

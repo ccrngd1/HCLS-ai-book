@@ -118,12 +118,6 @@ Same answer as Recipe 4.2, more emphatic:
 
 LLMs are useful here in the **query-understanding** step (Stage 1), where they take fuzzy natural-language inputs and produce structured filters with much less brittleness than regex-based parsers. They are also useful in the **explanation** step (Stage 7), where they take the ranking features and render them as a friendly natural-language reason ("matches your preference for Spanish-speaking providers; in your plan's preferred tier"). They do not pick the providers. The ranker picks the providers. The LLM is a presentation layer.
 
-### Where This Sits in the Chapter
-
-Recipe 4.1 built channel optimization. Recipe 4.2 built content recommendation. Both produced patient-level personalization on small, well-defined item catalogs. Recipe 4.3 graduates to a larger, dirtier catalog with regulatory constraints and explicit fairness considerations. The patient-profile store, engagement event pipeline, and feature store you built in 4.1 and 4.2 are reusable here. What's new is the IR plumbing (the searchable index of providers), the data quality machinery (catalog freshness, ghost-provider detection), and the fairness re-ranker.
-
-Recipes 4.4 (Wellness Programs) and 4.5 (Adherence Interventions) will reuse the patient feature store again, but they're back to recommending from curated catalogs. Recipe 4.7 (Care Management Enrollment) will pull on the fairness patterns we set up here, because it makes resource-allocation decisions that have similar equity exposure. So 4.3 is something of a structural turning point in the chapter: it's where personalization stops being "what should we show this patient" and starts being "how does our system shape access to care, and how do we keep that shaping aligned with what we promised our members and our regulators."
-
 ---
 
 ## General Architecture Pattern

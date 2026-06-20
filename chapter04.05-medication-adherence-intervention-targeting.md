@@ -132,12 +132,6 @@ Same as 4.4 with adherence-specific notes:
 
 What the LLM does *not* do: pick the intervention. Decide whether to escalate to a pharmacist. Override the cost-barrier path with a cheaper reminder because the LLM thought the patient seemed compliant. The recommender picks. The LLM packages.
 
-### Where This Sits in the Chapter
-
-This recipe builds directly on Recipe 4.4. The patient-profile DynamoDB table from 4.1, extended in 4.4, gets new attributes (`pharmacy_data_quality`, `cash_pay_history`, `cost_sharing_tier`, `med_sync_enrolled`). The engagement-event Kinesis stream gets new event types (`adherence_intervention_recommended`, `intervention_engaged`, `intervention_completed`, `pharmacy_fill_observed`, `barrier_elicited`). The SageMaker Feature Store features defined in 4.4 are reused; new features are added for medication-specific signals (per-medication PDC, days since last fill, cost-sharing for the specific drug, formulary tier, days-supply pattern).
-
-The uplift-modeling investment from 4.4 transfers directly. The capacity-aware allocator gains a multi-intervention-per-patient mode and a per-intervention-capacity model. The cohort fairness instrumentation from 4.3 and 4.4 becomes more important here because adherence outcomes have well-documented disparities by race, language, geography, and socioeconomic status, and a poorly built recommender will encode those disparities into its targeting. Recipe 4.6 (Care Gap Prioritization) and Recipe 4.7 (Care Management Program Enrollment) reuse this recipe's barrier-classification and multi-intervention scoring patterns.
-
 ---
 
 ## General Architecture Pattern

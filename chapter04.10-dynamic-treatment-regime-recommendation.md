@@ -131,12 +131,6 @@ Same pattern as Recipes 4.5 through 4.9, with regime-specific notes:
 - **Free-form clinical reasoning about which regime to follow.** No. The LLM does not pick; it packages. The line is the same line as in 4.7 and 4.8. Treatment regimes are the highest-stakes recipe in this chapter, so the line is even more important.
 - **Why-this-action narrative.** Yes, when the system surfaces feature contributions, similar-trajectory examples, and guideline references alongside the policy's recommendation. The LLM packages a structured rationale; the underlying contributors come from the regime model and the clinical-content layer, not from the LLM's own knowledge.
 
-### Where This Sits in the Chapter
-
-This is the synthesis-extension recipe of Chapter 4. Recipe 4.9 produces a personalized care plan at a point in time; Recipe 4.10 produces sequences of plan adjustments over time, optimized against long-horizon outcomes. The infrastructure compounds heavily: the patient-feature pipeline from 4.5 through 4.9, the cohort modeling from 4.6 through 4.9, the per-treatment CATE infrastructure from 4.8, the validator pattern from 4.5 through 4.9, the equity instrumentation from 4.4 through 4.9. The new architectural pieces are the trajectory store (longitudinal observation of state, action, and outcome triples), the sequential-causal-modeling stack, the off-policy evaluation pipeline, the regime serving layer that produces the recommendation at a decision point, the regime governance layer (model risk classification, change control plan, surveillance), and the post-decision feedback loop (the actual trajectory compared to the predicted trajectory, fed into model retraining and drift detection).
-
-The clinical stakes are at the top of the chapter. The regulatory posture is the strictest. The validation discipline is the most demanding. Most organizations should build to Recipe 4.9 first and treat 4.10 as a deliberate extension undertaken with clinical leadership engagement, regulatory legal involvement, and conservative scoping. Pick a clinical area with strong sequential-decision needs (chronic disease management with frequent decision points, oncology with line-of-therapy decisions, ICU sedation and weaning), build the regime carefully, validate it thoroughly, deploy it with conservative use restrictions, and expand from there. The pattern that fails is treating Recipe 4.10 as just-another-ML-model and shipping a policy that has not been validated to the standard the clinical use requires.
-
 ---
 
 ## General Architecture Pattern

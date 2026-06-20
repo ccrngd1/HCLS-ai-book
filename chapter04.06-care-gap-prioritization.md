@@ -143,12 +143,6 @@ Same as 4.5 with care-gap-specific notes:
 
 What the LLM does *not* do: pick the gaps, decide whether a gap is open, override the urgency model with its own clinical reasoning, or speak directly to a patient in an autonomous loop about screening recommendations. The recommender picks. The LLM packages.
 
-### Where This Sits in the Chapter
-
-This recipe builds directly on Recipes 4.4 and 4.5. The patient-profile DynamoDB table from 4.1, extended in 4.4 and 4.5, gets new attributes (`open_gaps`, `gap_closure_history`, `last_visit_date`, `next_scheduled_visit`, `provider_id`). The engagement-event Kinesis stream gets new event types (`gap_identified`, `gap_provisionally_closed`, `gap_confirmed_closed`, `gap_reopened`, `gap_excluded`, `gap_referral_scheduled`, `gap_referral_completed`). The SageMaker Feature Store features defined in 4.4 and 4.5 are reused; new features are added for gap-specific signals (per-gap state, days-in-window, days-overdue, prior closures of this gap type, prior referral-completion rate). The barrier classifier from 4.5 helps here too: a patient with documented cost or transportation barriers is unlikely to complete a referral-based gap closure regardless of how high the clinical urgency is, and the recommender should know that.
-
-The visit-context ranker and the multi-source closure tracker are the new architectural pieces. The uplift-modeling investment from 4.4 and 4.5 transfers directly. The cohort fairness instrumentation from 4.3, 4.4, and 4.5 becomes especially important here because care gap closure patterns have well-documented disparities by race, language, geography, and access, and a poorly built recommender will encode those disparities into its targeting (and into its urgency model, if you're not careful with training data).
-
 ---
 
 ## General Architecture Pattern

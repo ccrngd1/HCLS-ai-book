@@ -163,12 +163,6 @@ Same pattern as Recipes 4.5 and 4.6, with care-management-specific notes:
 - **Disenrollment-decision-support narratives.** Yes, with care. When the deterministic policy recommends disenrollment, the LLM generates a clinician-readable rationale that lists the engagement-history evidence and the policy-rule that triggered. This is decision support for a human who makes the actual disenrollment call, not autonomous disenrollment.
 - **Open-ended clinical reasoning about which program to recommend.** No. The deterministic uplift models pick. The LLM packages the picks.
 
-### Where This Sits in the Chapter
-
-This recipe is the apex of the targeting recipes in Chapter 4 in operational complexity. The patient-profile DynamoDB table from 4.1, extended through 4.4, 4.5, 4.6, gets new attributes (`program_eligibility`, `program_state`, `program_history`, `engagement_history_per_program`, `cross_program_coordination_state`). The engagement-event Kinesis stream gains program-specific event types (`program_recommended`, `program_outreach_initiated`, `program_enrolled`, `program_engaged`, `program_at_risk`, `program_disenrolled`, `program_graduated`, `program_re_eligible`). The SageMaker Feature Store features from earlier recipes are reused; new feature groups capture program-specific features (per-program enrollment history, per-program response history, cross-program coordination state). The barrier classifier from 4.5 is reused; some care management enrollment failures are barrier-explained (a patient with a transportation barrier who is recommended into a program that requires in-person visits is a structural mismatch; the recommender should account for it). The care-gap state from 4.6 is reused; multiple open high-urgency gaps are a feature of complex-care eligibility.
-
-The new architectural pieces are the multi-program response stack (per-program uplift models trained against program-specific outcomes), the multi-stage enrollment-decision orchestrator, the longitudinal state tracker with cross-program transition logic, and the engagement-and-retention worker. The cohort fairness instrumentation from 4.3 through 4.6 is here too, with higher operational consequences because every misallocated slot is a patient who could have benefited and didn't.
-
 ---
 
 ## General Architecture Pattern
