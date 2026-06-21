@@ -89,219 +89,54 @@ A few developments shape what is achievable today:
 
 ## General Architecture Pattern
 
-The pipeline has seven logical components: a clinical-content component that maintains the structured guideline content, action templates, and goal templates; an inputs-aggregation component that pulls in upstream signals from the systems that produce them (the personalization recipes earlier in this chapter, or equivalent capabilities your organization already runs) and from source clinical and social data; a goal-derivation component that produces the patient's goal set from condition-specific guidelines, goals-of-care preferences, and quality-program requirements; an action-assembly component that produces candidate actions per goal and reconciles conflicts; a plan-finalization component that prioritizes and sequences the action set into a coherent plan with assigned owners and due dates; a narrative-and-rendering component that produces the clinician-facing and patient-facing artifacts with the LLM and the validator; and a feedback-and-adaptation component that captures plan adherence, plan effectiveness, and patient feedback and drives plan revisions.
+The pipeline has seven logical components, governed by an eighth: a **clinical-content** component (the structured guideline, goal, and action templates); an **inputs-aggregation** component that pulls upstream signals and source data into a frozen plan-input record; a **goal-derivation** component; an **action-assembly-and-reconciliation** component; a **plan-finalization** component; a **narrative-and-rendering** component; and a **feedback-and-adaptation** component.
 
 ```text
-┌───────── CLINICAL CONTENT (governance-controlled) ────────────┐
-│                                                                │
-│  [Clinical guideline curation]   [Pharmacy and Therapeutics]   │
-│  [Patient education library]   [Care management programs]     │
-│  [Quality measure library]   [Geriatric / palliative]          │
-│           │                       │                  │         │
-│           └──────────┬────────────┴────────┬─────────┘         │
-│                      ▼                     ▼                   │
-│         [Goal templates: condition_id, goal_id, horizon,       │
-│          measurable_outcome, evidence_level, priority_weight,  │
-│          cohort_overrides, version, effective_dates]           │
-│                                                                │
-│         [Action templates: action_id, goal_link, owner_role,   │
-│          duration, due_date_logic, success_criteria,           │
-│          fallback_chain, dependencies, burden_score,           │
-│          contraindications, cohort_overrides, version]         │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── INPUTS AGGREGATION (per care-plan run) ──────────────┐
-│                                                                │
-│  [Condition list and severity (FHIR Conditions)]               │
-│  [Medication list (FHIR MedicationRequest)]                    │
-│  [Recent labs and trajectories]                                │
-│  [Recent encounters and admissions]                            │
-│  [Care gap inventory]                                          │
-│  [Adherence intervention recommendations]                      │
-│  [Care management enrollment]                                  │
-│  [Treatment-response predictions]                              │
-│  [Wellness program candidates]                                 │
-│  [Educational content matches]                                 │
-│  [Provider relationships]                                      │
-│  [Channel preferences]                                         │
-│  [Goals-of-care preferences (POLST, advance directive)]        │
-│  [Stated preferences (portal, intake forms)]                   │
-│  [Social determinants of health]                               │
-│  [Functional and cognitive status]                             │
-│  [Family and caregiver involvement]                            │
-│                          │                                     │
-│                          ▼                                     │
-│              [Persist normalized inputs to plan-input          │
-│               record; freeze for plan reproducibility]         │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── GOAL DERIVATION ─────────────────────────────────────┐
-│                                                                │
-│  [Plan-input record]  [Goal templates]                         │
-│                          │                                     │
-│                          ▼                                     │
-│              [Match conditions to goal templates,              │
-│               apply cohort overrides, compute baseline         │
-│               priority weights]                                │
-│                          │                                     │
-│                          ▼                                     │
-│              [Apply goals-of-care alignment:                   │
-│               re-weight goals against patient preferences      │
-│               and POLST]                                       │
-│                          │                                     │
-│                          ▼                                     │
-│              [Apply quality-program requirements:              │
-│               attach measure references to applicable          │
-│               goals]                                           │
-│                          │                                     │
-│                          ▼                                     │
-│              [Persist goal_set with provenance per goal]       │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── ACTION ASSEMBLY AND RECONCILIATION ──────────────────┐
-│                                                                │
-│  [Goal set]  [Action templates]  [Plan inputs]                 │
-│                          │                                     │
-│                          ▼                                     │
-│              [For each goal, generate candidate actions        │
-│               from action templates, applying cohort           │
-│               overrides and contraindication filters]          │
-│                          │                                     │
-│                          ▼                                     │
-│              [Drug-drug, drug-disease, drug-allergy            │
-│               interaction filters; suppress contraindicated    │
-│               actions and surface deprescribing candidates]    │
-│                          │                                     │
-│                          ▼                                     │
-│              [Burden estimation: compute cumulative            │
-│               burden of the action set; if above threshold,    │
-│               trigger prioritization compression]              │
-│                          │                                     │
-│                          ▼                                     │
-│              [Capacity reconciliation: actions whose owner     │
-│               is at capacity (e.g., a care manager with        │
-│               a full panel) are flagged for substitution       │
-│               or deferral]                                     │
-│                          │                                     │
-│                          ▼                                     │
-│              [Schedule reconciliation: actions whose timing    │
-│               conflicts with the patient's stated capacity     │
-│               are sequenced rather than parallelized]          │
-│                          │                                     │
-│                          ▼                                     │
-│              [Persist reconciled_action_set with provenance    │
-│               and reconciliation decisions per action]         │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── PLAN FINALIZATION ───────────────────────────────────┐
-│                                                                │
-│  [Reconciled action set]  [Goal set]  [Plan inputs]            │
-│                          │                                     │
-│                          ▼                                     │
-│              [Sequence actions: this-week,                     │
-│               this-month, this-quarter, ongoing]               │
-│                          │                                     │
-│                          ▼                                     │
-│              [Assign owners per action; verify each action     │
-│               has an owner and a fallback path]                │
-│                          │                                     │
-│                          ▼                                     │
-│              [Assemble plan_record: goals, actions, owners,    │
-│               due dates, success criteria, fallback chains,    │
-│               dependencies, provenance, plan_version]          │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── NARRATIVE GENERATION AND VALIDATION ─────────────────┐
-│                                                                │
-│  [Plan record]  [Patient communication preferences]            │
-│  [Reading level]  [Language]                                   │
-│                          │                                     │
-│                          ▼                                     │
-│              [Clinician-facing narrative: structured           │
-│               summary plus prose; LLM-generated, validator-    │
-│               protected; flags conflicts and changes]          │
-│                          │                                     │
-│                          ▼                                     │
-│              [Patient-facing narrative: tailored,              │
-│               reading-level matched, language matched,         │
-│               channel-formatted; LLM-generated; validator-     │
-│               protected]                                       │
-│                          │                                     │
-│                          ▼                                     │
-│              [Care-team-internal disagreement narrative        │
-│               where reconciliation could not resolve]          │
-│                          │                                     │
-│                          ▼                                     │
-│              [Persist narratives keyed to plan_version]        │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── REVIEW, DELIVERY, AND ACTIVATION ────────────────────┐
-│                                                                │
-│  [Plan record + narratives]                                    │
-│                          │                                     │
-│                          ▼                                     │
-│              [Clinical-team review surface: PCP,               │
-│               care manager, relevant specialists; suggest      │
-│               edits, override actions, approve]                │
-│                          │                                     │
-│                          ▼                                     │
-│              [Patient review: present plan in preferred        │
-│               channel; capture acknowledgment, questions,      │
-│               and edits; teach-back where appropriate]         │
-│                          │                                     │
-│                          ▼                                     │
-│              [Activation: actions become live tasks,           │
-│               owners are notified, dependencies resolved,      │
-│               communications are scheduled]                    │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
-
-┌───────── FEEDBACK, ADAPTATION, EVALUATION ────────────────────┐
-│                                                                │
-│  [Action completion events]  [Outcome events]                  │
-│  [Patient-reported feedback]  [Adverse events]                 │
-│                          │                                     │
-│                          ▼                                     │
-│              [Update action statuses; compute plan adherence   │
-│               and effectiveness metrics]                       │
-│                          │                                     │
-│                          ▼                                     │
-│              [Trigger plan revision when conditions change,    │
-│               actions fail, or scheduled review interval       │
-│               elapses]                                         │
-│                          │                                     │
-│                          ▼                                     │
-│              [Cohort-stratified plan-quality monitoring;       │
-│               outcome-trajectory monitoring]                   │
-│                                                                │
-└────────────────────────────────────────────────────────────────┘
+CLINICAL CONTENT (governance-controlled: versioned goal + action templates)
+      │
+      ▼
+INPUTS AGGREGATION ─ freeze a plan-input record (clinical data, upstream
+      │              signals, preferences, SDOH, goals-of-care)
+      ▼
+GOAL DERIVATION ─── match templates to conditions; cohort overrides;
+      │              re-weight by goals-of-care + quality programs
+      ▼
+ACTION ASSEMBLY & RECONCILIATION ─ candidate actions; interaction +
+      │              contraindication filters; burden / capacity / schedule
+      ▼
+PLAN FINALIZATION ─ sequence into time horizons; assign owners + fallbacks;
+      │              emit structured plan_record (system of record)
+      ▼
+NARRATIVE GENERATION & VALIDATION ─ clinician / patient / care-team
+      │              narratives; LLM behind a strict validator
+      ▼
+REVIEW, DELIVERY & ACTIVATION ─ care-team review; patient review;
+      │              activate approved actions into live tasks
+      ▼
+FEEDBACK, ADAPTATION & EVALUATION ─ completion / outcome / PRO / adverse
+                     events; adherence metrics; cohort equity monitoring;
+                     trigger revision
 ```
 
-**The clinical content layer is governance, not engineering.** Goal templates and action templates are clinical artifacts that the clinical-content team (clinical informatics, pharmacy and therapeutics, care management, quality, patient education) curates and approves. The templates are versioned, with effective dates, with cohort overrides, and with explicit provenance back to the source guideline. Updates go through the same kind of change-management process used for any versioned clinical catalog: changes that affect plan content are reviewed, parallel-evaluated against the prior version, and rolled out with a defined cutover window. The pattern that fails is when the templates are owned by engineering and updated as part of feature work; the clinical content drifts away from the current state of clinical practice and the system is shipping advice that the clinicians no longer endorse.
+**The clinical content layer is governance, not engineering.** Goal and action templates are clinical artifacts owned by the clinical-content team (informatics, pharmacy and therapeutics, care management, quality, patient education), versioned with effective dates, cohort overrides, and provenance to the source guideline. They move through clinical change management, not engineering feature work. When engineering owns them, the content drifts from current practice and the system ships advice clinicians no longer endorse.
 
-**The inputs aggregation layer is where the upstream signals compound.** Each input is produced by an upstream personalization system, whether that is one of the earlier recipes in this chapter or an equivalent capability your organization already runs: channel preferences, matched educational content, provider relationships, wellness program candidates, adherence intervention recommendations, the care gap inventory, care management enrollment status, and treatment-response predictions. The aggregation layer fetches the latest signals and freezes them in a plan-input record so the plan can be reproduced; reproducibility is a requirement for audit and for adverse-event investigation. The aggregation layer also pulls source clinical data (conditions, medications, labs, encounters), goals-of-care preferences (POLST, advance directives), stated preferences (portal questionnaires, intake forms), social determinants of health, functional and cognitive status, and family and caregiver involvement. The breadth of inputs is the personalization density that distinguishes 4.9 from prior recipes.
+**The inputs aggregation layer is where the upstream signals compound.** Each input is produced upstream, whether by this chapter's recipes or by equivalent capabilities your organization already runs: channel preferences, educational-content matches, provider relationships, wellness candidates, adherence interventions, the care-gap inventory, enrollment status, and treatment-response predictions, plus source clinical data, goals-of-care preferences, SDOH, and functional and cognitive status. The layer freezes them into a plan-input record so the plan is reproducible for audit and adverse-event investigation.
 
-**The goal derivation layer is where condition-specific clinical guidelines meet patient-specific goals of care.** Goal templates are matched to the patient's active conditions, applying cohort overrides for pediatric, geriatric, palliative, pregnancy, and other populations where the disease-specific defaults do not apply unmodified. Baseline priority weights are computed from clinical urgency and from quality-program weighting (a goal that is also a quality measure may carry additional weight depending on the program). Goals-of-care alignment then re-weights the goals against the patient's stated preferences: a patient who has explicitly elected comfort-focused care has different goal weights than a patient who is pursuing aggressive disease management. The output is the goal set, with explicit provenance per goal so a clinician reviewing the plan can see why each goal is present and why it is weighted as it is.
+**The goal derivation layer is where guidelines meet the patient's goals of care.** Goal templates match the patient's active conditions, with cohort overrides for geriatric, palliative, pregnancy, and similar populations. Baseline priority weights come from clinical urgency and quality-program weighting; goals-of-care alignment then re-weights them against the patient's stated preferences (comfort-focused care weights goals differently than aggressive disease management). The output is a goal set with per-goal provenance.
 
-**The action assembly and reconciliation layer is the heaviest synthesis work.** For each goal, the action templates produce candidate actions. Cohort overrides and contraindication filters remove the actions that do not apply to the patient. Drug-drug, drug-disease, and drug-allergy interaction checks filter further; the action assembly layer also surfaces deprescribing candidates as actions in their own right (a polypharmacy-aware care plan deprescribes proactively, not just prescribes). The burden estimation step computes the cumulative therapeutic burden of the candidate action set and triggers prioritization compression if the total burden exceeds a threshold; the threshold is patient-specific and reflects the patient's documented capacity. Capacity reconciliation flags actions whose owner is at capacity, suggesting substitution or deferral. Schedule reconciliation sequences actions that conflict on the patient's time. Each reconciliation decision is logged with provenance so the care team can review and override.
+**The action assembly and reconciliation layer is the heaviest synthesis work.** For each goal, action templates produce candidates; cohort overrides, contraindication filters, and drug-drug/disease/allergy checks remove what does not apply and surface deprescribing candidates. Burden estimation compresses the action set when cumulative therapeutic burden exceeds the patient's documented capacity; capacity reconciliation flags over-loaded owners; schedule reconciliation sequences time conflicts. Every reconciliation decision is logged with provenance for care-team review and override.
 
-**The plan finalization layer produces the structured plan that is the system of record.** Actions are sequenced into time horizons (this-week, this-month, this-quarter, ongoing). Each action is assigned an owner; actions without an owner are surfaced to the care team for assignment rather than silently shipped without accountability. Each action has a fallback path; actions without a fallback are similarly surfaced. The plan record is assembled with goals, actions, owners, due dates, success criteria, fallback chains, dependencies, provenance, and a plan_version. The plan record is the structured artifact that downstream rendering, review, and activation operates on.
+**The plan finalization layer produces the system of record.** Actions are sequenced into time horizons (this-week through ongoing) and assigned owners and fallback paths; any action missing an owner or fallback is surfaced to the care team rather than shipped silently. The result is the structured plan_record (goals, actions, owners, due dates, success criteria, dependencies, provenance, plan_version) on which rendering, review, and activation operate.
 
-**The narrative generation and validation layer produces the human-readable artifacts.** Three narratives are produced per plan: the clinician-facing narrative (structured summary plus prose, surfacing conflicts, changes since prior plan, and any care-team-action-required items), the patient-facing narrative (tailored to the patient's reading level, language, channel preferences, and stated preferences), and the care-team-internal disagreement narrative (when reconciliation could not resolve a conflict, the narrative describes the conflict, candidate resolutions, and recommended escalation path). Each narrative goes through the LLM with a strict validator: the validator checks reading-level compliance, fact grounding (every clinical claim in the narrative must trace to a structured action, goal, or observation in the plan), prohibited-language patterns (no recommendation language for treatments not in the structured plan, no probabilistic claims framed as guarantees), required content (the patient-facing narrative must include the shared-decision framing, the contact information for questions, and the next-action callout), and approved-claim language enforcement. Failed validations regenerate with feedback or fall back to a templated narrative that is deterministic and always passes.
+**The narrative generation and validation layer produces the human-readable artifacts.** Three narratives are produced: clinician-facing, patient-facing, and a care-team disagreement narrative when reconciliation could not resolve a conflict. Each goes through the LLM behind a strict validator that checks reading-level compliance, fact grounding (every clinical claim traces to a structured action, goal, or observation), prohibited-language patterns, and required content. Failed validations regenerate with feedback or fall back to a deterministic templated narrative.
 
-**The review, delivery, and activation layer is where the plan meets humans.** The clinical-team review surface presents the plan to the appropriate clinicians (PCP always, care manager always, relevant specialists per the active conditions). The clinicians can approve, suggest edits, override specific actions, or send the plan back for regeneration with structured feedback. The patient review presents the plan in the preferred channel (portal, mailed letter, in-person review with the care manager). Teach-back is offered where the clinical-content team has flagged it as appropriate. The patient's acknowledgment, questions, and edits are captured in structured form. Activation flips approved actions into live tasks: the medication change goes to the e-prescribing system, the appointment goes to the scheduling system, the program enrollment goes to the program registry, the patient-facing reminder goes to the channel-appropriate sender, and the care manager's outreach is queued.
+**The review, delivery, and activation layer is where the plan meets humans.** The plan goes to the right clinicians (PCP and care manager always, specialists per active conditions) to approve, edit, override, or send back. The patient reviews it in their preferred channel, with teach-back where flagged; their acknowledgment, questions, and edits are captured. Activation turns approved actions into live tasks: prescriptions to e-prescribing, appointments to scheduling, enrollments to the program registry, reminders to the channel-appropriate sender.
 
-**The feedback, adaptation, and evaluation layer is what turns this from a one-shot artifact into a living plan.** Action-completion events (the colonoscopy was completed, the cardiac rehab session was attended, the medication was filled) and outcome events (the A1c at three months, the weight trend, the blood pressure trend, the readmission status) feed back into the plan. The patient's self-reported feedback (PROMs, PREMs, portal messages) feeds back. Adverse events (a fall, a hospitalization, a medication side effect) feed back. The update layer changes action statuses, computes plan adherence and effectiveness metrics, and triggers plan revision when conditions change, actions fail, or the scheduled review interval elapses. The cohort-stratified plan-quality monitoring layer watches for differential plan ambition, complexity, and outcome trajectories across cohorts; differential plan complexity that correlates with race, language, or insurance is a fairness signal that needs investigation, not a cohort-specific feature.
+**The feedback, adaptation, and evaluation layer turns a one-shot artifact into a living plan.** Action-completion and outcome events, patient-reported feedback (PROMs, PREMs), and adverse events feed back; the layer updates statuses, computes adherence and effectiveness, and triggers revision when conditions change, actions fail, or the review interval elapses.
 
-**Equity instrumentation is non-negotiable.** Plan ambition parity across cohorts (the plan does not systematically aim lower for some cohorts than others). Plan complexity parity (the plan is not systematically simpler or more burdensome for some cohorts than others). Action assignment parity (some cohorts are not systematically assigned more self-management actions while other cohorts get more clinician-led actions). Outcome trajectory parity (plan-attributable outcome improvements are not concentrated in some cohorts). Each axis is monitored, with thresholds that trigger committee review when crossed. The Obermeyer pattern (proxies that encode access disparities driving differential recommendations) applies here in a slightly different form: a care plan generation system that aims its plans at what the model thinks the patient can do, where what-the-patient-can-do is conflated with what-the-patient-has-historically-had-access-to, will produce systematically less ambitious plans for patients in under-resourced cohorts. That is exactly the disparity the system should be working against, not reinforcing.
+**Equity instrumentation is non-negotiable.** Monitor parity across cohorts on four axes: plan ambition (the plan does not systematically aim lower for some cohorts), plan complexity (not systematically more burdensome for some), action assignment (some cohorts are not pushed toward self-management while others get clinician-led actions), and outcome trajectory. The Obermeyer trap applies in a specific form: a system that aims plans at "what the patient can do," where that is conflated with what the patient has historically had *access to*, will produce systematically less ambitious plans for under-resourced cohorts, reinforcing the disparity it should be working against. Thresholds on each axis trigger committee review.
 
-**Regulatory posture is set early.** In implementations where the care plan is reviewed and modified by the care team before activation, the clinical decision support is mediated by clinician judgment and the regulatory framing is similar to other care-management workflows. In implementations where the plan is presented to the patient with minimal clinical review (a chronic-disease self-management plan delivered through a patient portal, for example), the regulatory analysis tightens; depending on jurisdiction and the clinical claims made in the patient-facing narrative, FDA SaMD regulation may apply. Most production deployments err toward the reviewed-by-care-team posture; teams attempting more direct-to-patient delivery should invest in regulatory analysis early. 
+**Regulatory posture is set early.** Where the care team reviews and modifies the plan before activation, the decision support is clinician-mediated and the framing resembles other care-management workflows. Where the plan reaches the patient with minimal review, the analysis tightens; depending on jurisdiction and the clinical claims in the patient-facing narrative, FDA SaMD regulation may apply. Most deployments err toward care-team review; teams pursuing more direct-to-patient delivery should invest in regulatory analysis early.
 
 ---
 
