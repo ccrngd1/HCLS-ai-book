@@ -59,7 +59,7 @@ flowchart LR
 | **AWS KMS** | Manages encryption keys for S3 and DynamoDB |
 | **Amazon CloudWatch** | Logs, metrics, alarms for extraction failures and latency |
 
-### Code
+### Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate the patterns used in this recipe:
 >
@@ -301,7 +301,15 @@ The pseudocode and architecture above demonstrate the pattern. Deploying this to
 - [Enhanced Document Understanding on AWS](https://aws.amazon.com/solutions/implementations/enhanced-document-understanding-on-aws): Deployable solution for document classification, extraction, and search
 - [Automating Paper-to-Electronic Healthcare Claims Processing with AWS](https://aws.amazon.com/blogs/storage/automating-paper-to-electronic-healthcare-claims-processing-with-aws): End-to-end architecture for digitizing paper healthcare claims
 
---- 
+---
+
+## Estimated Implementation Time
+
+| Tier | Timeframe | What You Get |
+|------|-----------|--------------|
+| **Basic (proof of concept)** | 1-2 days | S3 bucket, Lambda function, Textract FORMS call, basic field parsing, DynamoDB storage. Enough to scan a single card and see structured output. |
+| **Production-ready** | 2-3 weeks | Dead letter queue, idempotency guards, VPC with endpoints, CloudWatch alarms, confidence gating, human review queue integration (Recipe 1.6), expanded FIELD_MAP covering major payers. |
+| **With variations** | 4-6 weeks | Add front/back merge, mobile API Gateway endpoint with image quality checks, auto-eligibility verification (Recipe 8.1), and integration testing against live EHR intake workflows. |
 
 ---
 

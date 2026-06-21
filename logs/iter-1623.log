@@ -1,0 +1,219 @@
+# parallel_worker header: concurrency_limit=4 batch_id=batch-1782006956573-000001-749acceb3f5f1043 iteration=1623 task_id=ch01-r02-findings persona=TechWriter
+[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m582 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md
+[38;5;244m - Completed in 0.1s[0m
+
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m, from line [38;5;141m100[0m to [38;5;141m130[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m3940 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow I can see the finding clearly. The paragraph at L109 (the second paragraph of "The Honest Take") contains AWS-specific details: "extraction service role," "publish to your notification topic," "role-passing permission on your function." While it avoids naming Textract/IAM/SNS explicitly, it's still quite AWS-specific in its implementation detail. The fix is to generalize it to a vendor-agnostic "service role" gotcha and move the specific details to the architecture companion.[0m[0m
+[0m[0m
+Let me check the architecture companion to see if this detail already exists there:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m35840 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md
+[38;5;244m - Completed in 0.15s[0m
+
+[38;5;141m> [0mNow let me look at the specific area in the main recipe that needs fixing (lines 109-112 more closely):[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m, from line [38;5;141m105[0m to [38;5;141m115[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2388 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.208s[0m
+
+[38;5;141m> [0mNow I have a clear picture. The finding says paragraph 2 of "The Honest Take" (lines 109-110) contains AWS-specific language that should be generalized. Let me look at the exact text:[0m[0m
+[0m[0m
+[38;5;244m│ "The thing that will surprise you is the extraction service role. The document processing service needs its own dedicated role to publish to your notification topic; it can't use your function's execution role. This is easy to miss because it's not how most services work. You'll know you got it wrong when your jobs submit successfully but completion notifications never arrive. Check the role-passing permission on your function and make sure the extraction service role has publish access on your topic."[0m[0m
+[0m[0m
+This paragraph talks about "extraction service role," "publish to your notification topic," "function's execution role," and "role-passing permission on your function." These are all AWS-specific concepts (Textract service role, SNS topic, Lambda execution role, iam:PassRole). The fix: generalize this to a vendor-agnostic "service-to-service credential" gotcha, and ensure the AWS-specific details are in the architecture companion.[0m[0m
+[0m[0m
+Let me check if the architecture companion already covers this adequately:[0m[0m
+[0m[0m
+The architecture companion already covers this in the Prerequisites table:[0m[0m
+[38;5;244m│ **Textract Service Role** | A dedicated IAM role that Textract can assume to publish job completion notifications to your SNS topic. Textract requires this; it cannot use the Lambda execution role.[0m[0m
+[0m[0m
+And in the pseudocode step 1 comments. So the AWS-specific detail is already well-documented in the companion. Now I just need to generalize the main recipe paragraph.[0m[0m
+[0m[0m
+Let me apply the fix:[0m[0m
+I'll modify the following file: [38;5;141mchapter01.02-patient-intake-digitization.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Generalize paragraph 2 of The Honest Take to be vendor-agnostic, replacing AWS-specific terms (Textract service role, SNS topic, Lambda execution role, iam:PassRole) with generic equivalents, and pointing to the architecture companion for AWS specifics.
+
+[49m[38;5;9m- 109     [0m:[38;5;9m[49m The thing that will surprise you is the extraction service role. The document processing service needs its own dedicated role to publish to your notification topic; it can't use your function's execution role. This is easy to miss because it's not how most services work. You'll know you got it wrong when your jobs submit successfully but completion notifications never arrive. Check the role-passing permission on your function and make sure the extraction service role has publish access on your topic.
+[0m[49m[38;5;10m+      109[0m:[38;5;10m[49m The thing that will surprise you is the service-to-service credential setup. In the async pattern, the extraction service needs its own dedicated identity to push completion signals to your notification channel. It cannot piggyback on your orchestration function's credentials. This trips up every team at least once because most cloud services share the caller's permissions implicitly. You'll know you got it wrong when jobs submit successfully but completion callbacks never arrive. The fix is always the same: grant the extraction service a scoped credential with publish-only access to your notification channel, and give your orchestration function permission to delegate that credential at job submission time. (The [Architecture companion](chapter01.02-architecture) spells out the exact IAM roles and policies for the AWS implementation.)
+[0m[K
+Updating: [38;5;141mchapter01.02-patient-intake-digitization.md[0m
+[38;5;244m - Completed in 0.9s[0m
+
+[38;5;141m> [0mNow let me verify the fix reads well in context:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m, from line [38;5;141m105[0m to [38;5;141m115[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m2730 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mGood. The paragraph is now vendor-agnostic while still teaching the same lesson. It references the architecture companion for AWS specifics. Let me check for em dashes or en dashes in my edit:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m for pattern: [38;5;141m—|–[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern '—|–' in /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNo em dashes or en dashes anywhere in the file. Now let me clear the resolved finding from the todo file:[0m[0m
+I'll create the following file: [38;5;141mchapter01.02-todo.md[0m[38;5;244m (using tool: write)[0m
+Purpose: Clear the resolved finding from the todo file since it has been addressed.
+
+[49m[39m  1, 1[0m:[39m[49m # Open TODOs — Recipe 1.2: Patient Intake Form Digitization ⭐
+[0m[49m[39m  2, 2[0m:[39m[49m 
+[0m[49m[39m  3, 3[0m:[39m[49m > Auto-extracted 2026-06-18 from inline source comments (1 items). Captured before the scaffolding-cleanup pass; resolve or consciously drop each before declaring the recipe final.
+[0m[49m[39m  4, 4[0m:[39m[49m 
+[0m[49m[38;5;9m- 5   [0m:[38;5;9m[49m ## main — `chapter01.02-patient-intake-digitization.md`
+[0m[49m[38;5;9m- 6   [0m:[38;5;9m[49m 
+[0m[49m[38;5;9m- 7   [0m:[38;5;9m[49m - **L109** — TODO (TechWriter): The Honest Take paragraph 2 contains AWS-specific implementation detail (Textract service role, IAM PassRole, sns:Publish). Consider generalizing to a vendor-agnostic "service role" gotcha or moving the detail to the architecture companion.
+[0m[49m[38;5;10m+    5[0m:[38;5;10m[49m (All findings resolved.)
+[0m[K
+Replacing: [38;5;141mchapter01.02-todo.md[0m
+[38;5;244m - Completed in 0.60s[0m
+
+[38;5;141m> [0mNow let me verify the architecture companion and python example remain consistent with the change. The main recipe now says "the extraction service needs its own dedicated identity" and points to the architecture companion for specifics. The architecture companion already has:[0m[0m
+- The Textract Service Role prerequisite explaining the exact AWS mechanism[0m[0m
+- Step 1 pseudocode comments mentioning "role Textract assumes to publish to SNS" and "(Textract needs its own role; it can't use yours)"[0m[0m
+[0m[0m
+These are consistent. The main recipe teaches the vendor-agnostic principle; the companion teaches the AWS-specific implementation. Let me also quickly verify the Python example doesn't need adjustment:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md[0m for pattern: [38;5;141mservice.role|textract_role|role_arn[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'service.role|textract_role|role_arn' in /tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md
+[38;5;244m - Completed in 0.94s[0m
+
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md[0m for pattern: [38;5;141mrole[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 19 matches for pattern 'role' in /tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThe Python example already properly references "the Textract service role" in AWS-specific context (since the Python example is explicitly an AWS/boto3 implementation). This is correct - the Python companion is meant to be AWS-specific. The cross-references say "See the Prerequisites section in the main recipe for details" at line 25, which still works since the main recipe now explains the concept generically and points to the architecture companion.[0m[0m
+[0m[0m
+Wait, line 25 says "See the Prerequisites section in the main recipe for details" but the main recipe doesn't have a Prerequisites section - that's in the architecture companion. Let me check:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md[0m, from line [38;5;141m23[0m to [38;5;141m27[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m361 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mThis says "the main recipe" but the Prerequisites section is actually in the architecture companion. However, this is a pre-existing issue not related to my finding. My finding was specifically about generalizing paragraph 2 of The Honest Take in the main recipe. The Python example is correctly AWS-specific and this reference, while slightly inaccurate about which file contains Prerequisites, is outside the scope of the todo finding I was asked to fix.[0m[0m
+[0m[0m
+Let me do a final check on my changes to make sure everything is consistent:[0m[0m
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m273 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+[38;5;141m> [0mDone. Let me verify my edit didn't introduce any [38;5;10m<!-- TODO -->[0m comments:[0m[0m
+Searching: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m for pattern: [38;5;141mtodo[0m[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mFound 0 matches for pattern 'TODO' in /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.10s[0m
+
+[38;5;141m> [0mAll clean. Here's a summary of what I did:[0m[0m
+[0m[0m
+[1mFinding resolved:[22m L109 in the main recipe - The Honest Take paragraph 2 contained AWS-specific implementation detail (Textract service role, IAM PassRole, sns:Publish).[0m[0m
+[0m[0m
+[1mFix applied:[22m Rewrote paragraph 2 to use vendor-agnostic language ("service-to-service credential setup," "dedicated identity," "notification channel," "scoped credential with publish-only access") while preserving the same lesson (the extraction service needs its own credential, can't use the caller's, and silent failure is the symptom of getting it wrong). Added a parenthetical link to the Architecture companion for the AWS-specific IAM details.[0m[0m
+[0m[0m
+[1mConsistency check:[22m The architecture companion already documents the AWS-specific implementation (Textract Service Role in Prerequisites, inline comments in Step 1 pseudocode). The Python example is inherently AWS-specific and correctly uses the Textract/IAM terminology in that context. No conflicts introduced.[0m[0m
+[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 5.32 • Time: 1m 32s
+
+[0m[1G[0m[0m[?25h[1mTodo file:[22m Cleared the resolved finding. No items deferred to [38;5;10m[NEEDS HUMAN][0m since this was a straightforward generalization that the architecture companion already supported.[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mamzn-builder[0m was found in the global directory.
+[0m[38;5;11mWARNING: [0mDuplicate agent with name [38;5;10mmeshclaw-lite[0m was found in the global directory.
+[0mNot all mcp servers loaded. Configure non-interactive timeout with q settings mcp.noInteractiveTimeout
+------
+[32mAll tools are now trusted ([0m[31m![0m[32m). Kiro will execute tools without asking for confirmation.[0m
+Agents can sometimes do unexpected things so understand the risks.
+
+Learn more at [38;5;141mhttps://kiro.dev/docs/cli/chat/security/#using-tools-trust-all-safely[0m
+
+
+
+[38;5;141m> [0mI need to review the task artifacts to determine if the findings in [38;5;10mchapter01.02-todo.md[0m have been properly resolved. Let me examine the relevant files.[0m[0m
+[38;5;252m[0m[?25l[?25l[0m[0m[1mTool validation failed: [0m
+[38;5;9mFailed to validate tool parameters: '/tmp/ralph-worktrees/iter-1623/chapters/01/recipe-01.02-architecture.md' does not exist
+Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md[0m, all lines[38;5;244m (using tool: read)[0m
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m273 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-todo.md
+[38;5;244m - Completed in 0.0s[0m
+
+Searching for files: [38;5;141mchapters/01/*01.02*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623[0m[38;5;244m (using tool: glob)[0m
+[38;5;9m ❗ [0mNo files found matching pattern: [38;5;244mchapters/01/*01.02*[0m under /tmp/ralph-worktrees/iter-1623
+[38;5;244m - Completed in 0.947s[0m
+
+Searching for files: [38;5;141m**/*01.02*[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623[0m[38;5;244m (using tool: glob)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m4 files[0m under /tmp/ralph-worktrees/iter-1623
+[38;5;244m - Completed in 0.594s[0m
+
+Batch fs_read operation with [38;5;141m3[0m operations[38;5;244m (using tool: read)[0m
+
+↱ Operation 1: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md[0m, all lines
+↱ Operation 2: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md[0m, all lines
+↱ Operation 3: Reading file: [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m, all lines
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m35840 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m44997 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md
+
+[38;5;10m ✓ [0mSuccessfully read [38;5;244m15920 bytes[0m from /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+
+ ⋮ 
+
+[38;5;244m- [0mSummary: 3 operations processed, 3 successful, 0 failed
+[38;5;244m - Completed in 0.1s[0m
+
+[38;5;141m> [0mNow let me check for em dashes in all the files and verify the todo file state:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623[0m ([38;5;141m*01.02*[0m)[38;5;244m (using tool: grep)[0m
+[38;5;10m ✓ [0mSuccessfully found [38;5;244m1 matches[0m in [38;5;244m1 files[0m under /tmp/ralph-worktrees/iter-1623
+[38;5;244m - Completed in 5.593s[0m
+
+[38;5;141m> [0mThere is an em dash in the todo file's header. Let me also check for [38;5;10m<!-- TODO -->[0m comments in the source files:[0m[0m
+Searching for: [38;5;141m<!-- TODO[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623[0m ([38;5;141m*01.02*[0m)[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m<!-- TODO[0m under /tmp/ralph-worktrees/iter-1623
+[38;5;244m - Completed in 2.512s[0m
+
+[38;5;141m> [0mNow let me verify consistency between the architecture companion and Python example. Let me check key elements that should match:[0m[0m
+[0m[0m
+1. The architecture companion describes a two-Lambda SNS pattern; the Python example explains it uses polling but notes production should use the two-Lambda pattern - [1mconsistent[22m.[0m[0m
+2. Both reference the same FIELD_MAP entries - [1mconsistent[22m.[0m[0m
+3. Both use CONFIDENCE_THRESHOLD of 90.0 - [1mconsistent[22m.[0m[0m
+4. Both describe the same 6-step pipeline (submit, retrieve, parse forms, parse tables, normalize/gate, assemble/store) - [1mconsistent[22m.[0m[0m
+5. Both reference SSN last-4 truncation - [1mconsistent[22m.[0m[0m
+6. Both describe the same DynamoDB table names and record structure - [1mconsistent[22m.[0m[0m
+[0m[0m
+Now let me verify the todo file findings state. The todo file says "(All findings resolved.)" which means all findings have been addressed. However, there is an em dash ([38;5;10m—[0m) in the todo file header itself.[0m[0m
+[0m[0m
+The pass condition states: "No em dashes." The em dash in the todo file header ([38;5;10m# Open TODOs — Recipe 1.2[0m) violates this requirement.[0m[0m
+[0m[0m
+Let me also verify there are no other issues by checking if the architecture and python files have any em dashes:[0m[0m
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1623/chapter01.02-architecture.md
+[38;5;244m - Completed in 0.343s[0m
+
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1623/chapter01.02-python-example.md
+[38;5;244m - Completed in 0.7s[0m
+
+Searching for: [38;5;141m—[0m in [38;5;141m/tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md[0m[38;5;244m (using tool: grep)[0m
+[38;5;9m ❗ [0mNo matches found for pattern: [38;5;244m—[0m under /tmp/ralph-worktrees/iter-1623/chapter01.02-patient-intake-digitization.md
+[38;5;244m - Completed in 0.15s[0m
+
+[38;5;141m> [0mGood - the three source files are clean of em dashes. Only the todo file header has one.[0m[0m
+[0m[0m
+Let me now assess the overall state:[0m[0m
+[0m[0m
+1. [1mTodo file findings resolved:[22m Yes - the file states "(All findings resolved.)" and no individual findings remain listed.[0m[0m
+2. [1mResolved items removed from todo:[22m Yes - no individual items are listed.[0m[0m
+3. [1mArchitecture and Python example mutually consistent:[22m Yes - same pipeline steps, same constants, same record structure, same field map entries.[0m[0m
+4. [1mNo clinical or security regressions:[22m The files look complete with proper HIPAA considerations (SSN truncation, encryption requirements, BAA, VPC, audit trails).[0m[0m
+5. [1mNo [38;5;10m<!-- TODO -->[0m comments in source files:[22m Confirmed clean.[0m[0m
+6. [1mNo em dashes:[22m The three source files are clean. The todo file header contains one em dash ([38;5;10m—[0m). This is a violation of the pass condition.[0m[0m
+[0m[0m
+[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[?25l[0m[0m[?25l[0m[0m[0m
+[38;5;8m
+ ▸ Credits: 6.14 • Time: 1m 11s
+
+[0m[1G[0m[0m[?25h{"verdict": "fail", "rationale": "The todo file header contains an em dash: '# Open TODOs — Recipe 1.2'. The pass condition requires no em dashes anywhere. All other conditions are met: findings are resolved, architecture and python example are consistent, no clinical/security regressions, no TODO comments in source files."}
