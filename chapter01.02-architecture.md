@@ -67,7 +67,7 @@ flowchart LR
 | **AWS KMS** | Customer-managed keys for S3 and DynamoDB encryption |
 | **Amazon CloudWatch** | Logs, metrics, and alarms for job failures, latency, and confidence distribution |
 
-### Code
+### Pseudocode Walkthrough
 
 > **Reference implementations:** The following AWS sample repos demonstrate the patterns used in this recipe:
 >
